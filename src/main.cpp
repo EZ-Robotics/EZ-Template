@@ -1,6 +1,16 @@
 #include "main.h"
 
 /**
+ * Disables all tasks.
+ *
+ * This runs during disabled and initialize to turn off all user created tasks.
+ */
+void
+disable_all_tasks() {
+	drive_pid.suspend();
+}
+
+/**
  * A callback function for LLEMU's center button.
  *
  * When this callback is fired, it will toggle line 2 of the LCD text between
@@ -27,8 +37,7 @@ void
 initialize() {
 	pros::delay(500);
 
-	// Stop tasks here...
-	drive_pid.suspend();
+	disable_all_tasks();
 
 	pros::lcd::initialize();
 	pros::lcd::set_text(1, "Hello PROS User!");
@@ -45,7 +54,9 @@ initialize() {
  * the robot is enabled, this task will exit.
  */
 void
-disabled() {}
+disabled() {
+	disable_all_tasks();
+}
 
 /**
  * Runs after initialize(), and before autonomous when connected to the Field
@@ -57,7 +68,9 @@ disabled() {}
  * starts.
  */
 void
-competition_initialize() {}
+competition_initialize() {
+	disable_all_tasks();
+}
 
 /**
  * Runs the user autonomous code. This function will be started in its own task
@@ -77,7 +90,11 @@ autonomous() {
 	set_drive_brake(MOTOR_BRAKE_HOLD);
 	drive_pid.resume();
 
-	set_drive_pid(drive, 12, 110);
+	//auto_1();
+	//auto_2();
+	//auto_3();
+	//auto_4();
+	//auto_5();
 }
 
 /**

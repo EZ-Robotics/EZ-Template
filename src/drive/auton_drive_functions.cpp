@@ -7,12 +7,9 @@ const int SLEW_MIN_POWER[2] = {80, 80}; // Starting speed for the slew
 const int SLEW_DISTANCE [2] = {7, 7};  // Distance the robot slews at before reaching max speed
 
 // Tick to Inch Conversion
-const float WHEEL_SIZE    = 4.125; 	// Have the robot go 6ft forward and adjust this value until the robot actually goes 6ft
-const float CART_RPM = 200;
-const float RATIO = 1;
-const float TICK_PER_REV  = (50*(3600/CART_RPM)) * RATIO;
-const float CIRCUMFERENCE = WHEEL_SIZE*M_PI;
-const float TICK_PER_INCH = (TICK_PER_REV/CIRCUMFERENCE);
+const float WHEEL_SIZE = 3.25; // Have the robot go 8ft forward and adjust this value until the robot actually goes 8ft
+const float CART_RPM	 = 600;	 // Output RPM of the cart
+const float RATIO			 = 5/3;	 // External drive ratio
 
 const bool DEBUG = false;
 
@@ -68,6 +65,10 @@ const float drive_constant[2][2] = {
 	{bw_drive_kp, bw_drive_kd}  // Backward KP, KD
 };
 int direction;
+
+const float TICK_PER_REV  = (50*(3600/CART_RPM)) * RATIO; // with no cart, the encoder reads 50 counts per rotation
+const float CIRCUMFERENCE = WHEEL_SIZE*M_PI;
+const float TICK_PER_INCH = (TICK_PER_REV/CIRCUMFERENCE);
 
 
 

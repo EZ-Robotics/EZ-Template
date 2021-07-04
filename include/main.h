@@ -45,6 +45,8 @@
 #include "drive/util.hpp"
 #include "drive/joystick_control.hpp"
 #include "drive/auton_drive_functions.hpp"
+// More includes here...
+#include "autons.hpp"
 
 /**
  * If you find doing pros::Motor() to be tedious and you'd prefer just to do
