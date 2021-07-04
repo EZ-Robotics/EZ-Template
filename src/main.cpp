@@ -119,8 +119,6 @@ opcontrol() {
 	while (true) {
 		chassis_joystick_control();
 
-		printf("\n%i %i", left_sensor(), right_sensor());
-
 		pros::delay(10);
 	}
 }

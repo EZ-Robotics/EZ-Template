@@ -1,5 +1,7 @@
 #pragma once
 
+void reset_constants();
+
 void auto_1();
 void auto_2();
 void auto_3();

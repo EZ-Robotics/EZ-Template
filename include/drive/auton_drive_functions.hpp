@@ -1,9 +1,32 @@
 #pragma once
-
 #include "api.h"
 
-void adjusted_swing_constants(float kp, float kd);
-void default_swing_constants();
+
+void set_slew_min_power(int fw, int bw);
+void set_slew_distance (int fw, int bw);
+
+void set_fw_drive_constants(float kp, float kd);
+void set_bw_drive_constants(float kp, float kd);
+
+void set_heading_constants(float kp, float kd);
+
+void set_turn_constants(float kp, float ki, float kd);
+void set_turn_i_constants(float starting, int clipping);
+
+void set_swing_constants(float kp, float kd);
+
+
+void reset_slew_min_power();
+void reset_slew_distance();
+
+void reset_fw_drive_constants();
+void reset_bw_drive_constants();
+
+void reset_turn_constants();
+void reset_turn_i_constants();
+
+void reset_swing_constants();
+
 
 void drive_pid_task(void*);
 extern pros::Task drive_pid;

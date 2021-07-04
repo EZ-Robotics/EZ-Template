@@ -3,68 +3,152 @@
 
 // Slew
 // Variables that are arrays mean the first variable is for forward and the second is for backward
-const int SLEW_MIN_POWER[2] = {80, 80}; // Starting speed for the slew
-const int SLEW_DISTANCE [2] = {7, 7};  // Distance the robot slews at before reaching max speed
-
-// Tick to Inch Conversion
-const float WHEEL_SIZE = 3.25; // Have the robot go 8ft forward and adjust this value until the robot actually goes 8ft
-const float CART_RPM	 = 600;	 // Output RPM of the cart
-const float RATIO			 = 5/3;	 // External drive ratio
+int SLEW_MIN_POWER[2] = {FW_SLEW_MIN_POWER, BW_SLEW_MIN_POWER}; // Starting speed for the slew
+int SLEW_DISTANCE [2] = {FW_SLEW_DISTANCE, BW_SLEW_DISTANCE};  // Distance the robot slews at before reaching max speed
 
 const bool DEBUG = false;
 
+const int FORWARD  = 0;
+const int BACKWARD = 1;
+
 // Forward Drive Constants
-const float fw_drive_kp = 0.45;
-const float fw_drive_kd = 5;
+float fw_drive_kp = FW_DRIVE_KP;
+float fw_drive_kd = FW_DRIVE_KD;
 
 // Backward Drive Constants
-const float bw_drive_kp = 0.375;
-const float bw_drive_kd = 4;
+float bw_drive_kp = BW_DRIVE_KP;
+float bw_drive_kd = BW_DRIVE_KD;
 
 // Minimum speed for driving and error to stop within
 // if spede goes below min_speed, robot travels at min_speed until it gets within min_error, where motors go 0
-const int min_speed = 0;
-const int min_error = 0;
+int min_speed = MIN_SPEED;
+int min_error = MIN_ERROR;
 
 // Heading Constants (uses imu to keep robot driving straight)
-const float heading_kp = 11;
-const float heading_kd = 20;
+float heading_kp = HEADING_KP;
+float heading_kd = HEADING_KD;
 
 // Turn Constants
-const float gyro_kp = 5;
-const float gyro_ki = 0.003;
-const float gyro_kd = 35;
-const int   start_i = 15; // Start I when error is this
-const int clipped_turn_i_speed = 30; // When I engages, this becomes max power
+float gyro_kp = GYRO_KP;
+float gyro_ki = GYRO_KI;
+float gyro_kd = GYRO_KD;
+int   start_i = START_I; // Start I when error is this
+int clipped_turn_i_speed = CLIPPED_TURN_I_SPEED; // When I engages, this becomes max power
 
 // Swing Constants
-const float swing_kp = 12;
-const float swing_kd = 35;
-const float swing_thresh = 5; // Threshold that the opposite side stops moving
-const float swing_max_power = 110;
+float swing_kp = SWING_KP;
+float swing_kd = SWING_KD;
 
-bool use_adjusted_constants = false;
-float adjusted_swing_kp = 0, adjusted_swing_kd = 0;
-void
-adjusted_swing_constants(float kp, float kd) {
-	use_adjusted_constants = true;
-	adjusted_swing_kp = kp;
-	adjusted_swing_kd = kd;
-}
-void
-default_swing_constants() {
-	use_adjusted_constants = false;
-}
-
-float swing_kp_return() { return use_adjusted_constants?adjusted_swing_kp:swing_kp; }
-float swing_kd_return() { return use_adjusted_constants?adjusted_swing_kd:swing_kd; }
-
-
-const float drive_constant[2][2] = {
+float drive_constant[2][2] = {
 	{fw_drive_kp, fw_drive_kd}, // Foward KP, KD
 	{bw_drive_kp, bw_drive_kd}  // Backward KP, KD
 };
 int direction;
+
+///
+// Adjust Constants
+///
+void
+set_slew_min_power(int fw, int bw) {
+	SLEW_MIN_POWER[FORWARD]  = fw;
+	SLEW_MIN_POWER[BACKWARD] = bw;
+}
+
+void
+set_slew_distance(int fw, int bw) {
+	SLEW_DISTANCE[FORWARD]  = fw;
+	SLEW_DISTANCE[BACKWARD] = bw;
+}
+
+void
+set_fw_drive_constants(float kp, float kd) {
+	drive_constant[FORWARD][0] = kp;
+	drive_constant[FORWARD][1] = kd;
+}
+
+void
+set_bw_drive_constants(float kp, float kd) {
+	drive_constant[BACKWARD][0] = kp;
+	drive_constant[BACKWARD][1] = kd;
+}
+
+void
+set_heading_constants(float kp, float kd) {
+	heading_kp = kp;
+	heading_kd = kd;
+}
+
+void
+set_turn_constants(float kp, float ki, float kd) {
+	gyro_kp = kp;
+	gyro_ki = ki;
+	gyro_kd = kd;
+}
+
+void
+set_turn_i_constants(float starting, int clipping) {
+	start_i = starting;
+	clipped_turn_i_speed = clipping;
+}
+
+void
+set_swing_constants(float kp, float kd) {
+	swing_kp = kp;
+	swing_kd = kd;
+}
+
+///
+// Reset to default constants
+///
+void
+reset_slew_min_power() {
+	SLEW_MIN_POWER[FORWARD]  = FW_SLEW_MIN_POWER;
+	SLEW_MIN_POWER[BACKWARD] = FW_SLEW_MIN_POWER;
+}
+
+void
+reset_slew_distance() {
+	SLEW_DISTANCE[FORWARD]  = FW_SLEW_DISTANCE;
+	SLEW_DISTANCE[BACKWARD] = FW_SLEW_DISTANCE;
+}
+
+void
+reset_fw_drive_constants() {
+	fw_drive_kp = FW_DRIVE_KP;
+	fw_drive_kd = FW_DRIVE_KD;
+}
+
+void
+reset_bw_drive_constants() {
+	bw_drive_kp = BW_DRIVE_KP;
+	bw_drive_kd = BW_DRIVE_KD;
+}
+
+void
+reset_heading_constants() {
+	heading_kp = HEADING_KP;
+	heading_kd = HEADING_KD;
+}
+
+void
+reset_turn_constants() {
+	gyro_kp = GYRO_KP;
+	gyro_ki = GYRO_KI;
+	gyro_kd = GYRO_KD;
+}
+
+void
+reset_turn_i_constants() {
+	start_i = START_I;
+	clipped_turn_i_speed = CLIPPED_TURN_I_SPEED;
+}
+
+void
+reset_swing_constants() {
+	swing_kp = SWING_KP;
+	swing_kd = SWING_KD;
+}
+
 
 const float TICK_PER_REV  = (50*(3600/CART_RPM)) * RATIO; // with no cart, the encoder reads 50 counts per rotation
 const float CIRCUMFERENCE = WHEEL_SIZE*M_PI;
@@ -132,7 +216,7 @@ drive_pid_task(void*) {
 		else if (active_drive_type==turn)
 			gyro_output = (gyro_error*gyro_kp) + (gyro_integral*gyro_ki) + (gyro_der*gyro_kd);
 		else if (active_drive_type==l_swing || active_drive_type==r_swing)
-			gyro_output = (gyro_error*swing_kp_return()) + (gyro_der*swing_kd_return());
+			gyro_output = (gyro_error*swing_kp) + (gyro_der*swing_kd);
 
 		// If enabled, slew the drive at the begining so the robot doesn't wheelie
 		if (slew) {
@@ -163,7 +247,7 @@ drive_pid_task(void*) {
 				gyro_output = clip_num(gyro_output, clipped_turn_i_speed, -clipped_turn_i_speed);
 		}
 		else if (active_drive_type==l_swing || active_drive_type==r_swing) {
-			gyro_output = clip_num(gyro_output, swing_max_power, -swing_max_power);
+			gyro_output = clip_num(gyro_output, max_speed, -max_speed);
 		}
 
 		// Set drive based on m
@@ -197,27 +281,11 @@ drive_pid_task(void*) {
 		}
 		else if (active_drive_type == l_swing) {
 			l_output = gyro_output;
-			if (!stop) {
-				if (fabs(gyro_error) > swing_thresh)
-					r_output = max_speed*swing_sign;
-				else
-					r_output = 0;
-			}
-			else {
-				r_output = max_speed;
-			}
+			r_output = 0;
 		}
 		else if (active_drive_type == r_swing) {
 			r_output = -gyro_output;
-			if (!stop) {
-				if (fabs(gyro_error) > swing_thresh)
-					l_output = max_speed*swing_sign;
-				else
-					l_output = 0;
-			}
-			else {
-				l_output = max_speed;
-			}
+			l_output = 0;
 		}
 
 		if (pros::millis()<2000) {
@@ -256,9 +324,9 @@ set_drive_pid(int type, float target, int speed, bool slew_on, bool toggle_headi
 		r_start = right_sensor();
 
 		if (target<l_start && target<r_start) {
-			direction = 1;
+			direction = BACKWARD;
 		} else {
-			direction = 0;
+			direction = FORWARD;
 		}
 
 		l_target_encoder = l_start + (target*TICK_PER_INCH);

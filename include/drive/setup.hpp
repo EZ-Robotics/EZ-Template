@@ -65,4 +65,55 @@ const float CURVE_MODIFY_INTERVAL      = 0.1;   // When you modify the scaler wi
 //  -if you don't like active brake, set ACTIVE_BRAKE_KP to 0
 ///
 const float ACTIVE_BRAKE_KP = 0; // Constant for activebrake (increase this to make it more aggressive)
-const int  THRESH = 5; // Joystick threshold to trigger activebrake
+const int THRESH = 5; // Joystick threshold to trigger activebrake
+
+
+
+///
+// Wheel Size
+//  -for tick to inch conversion
+///
+const float WHEEL_SIZE = 3.25; // Have the robot go 8ft forward and adjust this value until the robot actually goes 8ft
+const float CART_RPM	 = 600;	 // Output RPM of the cart
+const float RATIO			 = 5/3;	 // External drive ratio
+
+
+
+///
+// PID Default Constants
+//  -all constants have independent forward (FW) and backward (BW) constants
+///
+
+// Slew
+const int FW_SLEW_MIN_POWER = 80; // Starting speed when slew is enabled
+const int BW_SLEW_MIN_POWER = 80;
+
+const int FW_SLEW_DISTANCE  = 7; // After robot has traveled this far, the robot will go max speed
+const int BW_SLEW_DISTANCE  = 7;
+
+// Drive
+const float FW_DRIVE_KP = 0.45;
+const float FW_DRIVE_KD = 5;
+
+const float BW_DRIVE_KP = 0.375;
+const float BW_DRIVE_KD = 4;
+
+// Heading
+const float HEADING_KP = 11;
+const float HEADING_KD = 20;
+
+// Gyro
+const float GYRO_KP = 5;
+const float GYRO_KI = 0.003;
+const float GYRO_KD = 35;
+const float START_I = 15; // Start I when error is this
+const int CLIPPED_TURN_I_SPEED = 30; // When I engages, this becomes max power
+
+// Swing
+const float SWING_KP = 12;
+const float SWING_KD = 35;
+
+// Minimum speed for driving and error to stop within
+// if speed goes below min_speed, robot travels at min_speed until it gets within min_error, where motors go 0
+const int MIN_SPEED = 0;
+const int MIN_ERROR = 0;

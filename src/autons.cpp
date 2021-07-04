@@ -2,12 +2,54 @@
 
 const int DRIVE_SPEED = 110;
 const int TURN_SPEED  = 90;
+const int SWING_SPEED = 90;
+
+///
+// Constants
+///
+
+// Reset all constants to default
+void
+reset_constants() {
+  reset_slew_min_power();
+  reset_slew_distance();
+  reset_fw_drive_constants();
+  reset_bw_drive_constants();
+  reset_turn_constants();
+  reset_turn_i_constants();
+  reset_swing_constants();
+}
+
+// Functions to change constants
+/*
+void
+one_mogo_constants() {
+  set_slew_min_power(80, 80);
+  set_slew_distance(7, 7);
+  set_fw_drive_constants(0.45, 5);
+  set_bw_drive_constants(0.375, 4);
+  set_turn_constants(5, 0.003, 35);
+  set_turn_i_constants(15, 30);
+  set_swing_constants(12, 35);
+}
+
+void
+two_mogo_constants() {
+  set_slew_min_power(80, 80);
+  set_slew_distance(7, 7);
+  set_fw_drive_constants(0.45, 5);
+  set_bw_drive_constants(0.375, 4);
+  set_turn_constants(5, 0.003, 35);
+  set_turn_i_constants(15, 30);
+  set_swing_constants(12, 35);
+}
+*/
+
+
 
 // All drive movements use the "set_drive_pid" function
 // the first parameter is the type of motion (drive, turn, r_swing, l_swing)
 // below are example codes using each type
-
-
 
 ///
 // Drive Example
@@ -115,20 +157,16 @@ auto_4() {
 ///
 void
 auto_5() {
-  // the power of the moving side is constant and can be adjusted in drive.cpp by changing swing_max_power
-
   // The second parameter is target degrees
-  // The third parameter is speed of the stationary side of the drive
-  // The fourth parameter is a boolean (true or false) for enabling/disabling robot stopping after motion
-  // the boolean, if true, the robot will not be set to 0 when robot meets target, but continue to move at the third parameter
+  // The third parameter is speed of the moving side of the drive
 
-  set_drive_pid(l_swing, 45, 20, true);
+  set_drive_pid(l_swing, 45, SWING_SPEED);
   wait_drive();
 
   set_drive_pid(drive, 24, DRIVE_SPEED, true);
   wait_until(12);
 
-  set_drive_pid(r_swing, 0, -20, false);
+  set_drive_pid(r_swing, 0, SWING_SPEED);
   wait_drive();
 }
 
