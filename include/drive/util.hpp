@@ -16,3 +16,10 @@ int left_sensor();
 int left_velocity();
 
 void reset_drive_sensor();
+
+void tare_gyro();
+float get_gyro();
+void imu_calibrate();
+
+int sgn(int input);
+float clip_num(float input, float max, float min);

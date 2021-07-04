@@ -35,6 +35,8 @@ const bool L_REVERSED = false; // Reversed?
 const int  R_CHASSIS_PORTS[MOTORS_PER_SIDE] = {9, 10}; // Ports, the first number will be used for sensing
 const bool R_REVERSED = true; // Reversed?
 
+#define GYRO_PORT 16
+
 
 // util ////////////////////////////
 
