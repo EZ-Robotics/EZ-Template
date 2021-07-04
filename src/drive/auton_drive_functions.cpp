@@ -7,8 +7,10 @@ const int SLEW_MIN_POWER[2] = {80, 80}; // Starting speed for the slew
 const int SLEW_DISTANCE [2] = {7, 7};  // Distance the robot slews at before reaching max speed
 
 // Tick to Inch Conversion
-const float WHEEL_SIZE    = 2.79124162145; 	// Have the robot go 6ft forward and adjust this value until the robot actually goes 6ft
-const float TICK_PER_REV  = 300 * (5/3); // yes 300 is wrong but as long as the robot goes the correct distance it doesnt matter so dont bother me about it :)
+const float WHEEL_SIZE    = 4.125; 	// Have the robot go 6ft forward and adjust this value until the robot actually goes 6ft
+const float CART_RPM = 200;
+const float RATIO = 1;
+const float TICK_PER_REV  = (50*(3600/CART_RPM)) * RATIO;
 const float CIRCUMFERENCE = WHEEL_SIZE*M_PI;
 const float TICK_PER_INCH = (TICK_PER_REV/CIRCUMFERENCE);
 

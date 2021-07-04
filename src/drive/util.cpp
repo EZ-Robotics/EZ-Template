@@ -1,7 +1,7 @@
 #include "main.h"
 
-pros::Motor l_motor(L_CHASSIS_PORTS[0], L_REVERSED);
-pros::Motor r_motor(R_CHASSIS_PORTS[0], R_REVERSED);
+pros::Motor l_motor(L_CHASSIS_PORTS[0], MOTOR_GEARSET_6, L_REVERSED, MOTOR_ENCODER_COUNTS);
+pros::Motor r_motor(R_CHASSIS_PORTS[0], MOTOR_GEARSET_6, R_REVERSED, MOTOR_ENCODER_COUNTS);
 
 pros::Imu gyro(GYRO_PORT);
 
@@ -9,8 +9,8 @@ pros::Imu gyro(GYRO_PORT);
 void
 chassis_motor_init() {
 	for(int i=0;i<MOTORS_PER_SIDE;i++) {
-		pros::Motor a(L_CHASSIS_PORTS[i], L_REVERSED);
-		pros::Motor b(R_CHASSIS_PORTS[i], R_REVERSED);
+		pros::Motor a(L_CHASSIS_PORTS[i], MOTOR_GEARSET_6, L_REVERSED, MOTOR_ENCODER_COUNTS);
+		pros::Motor b(R_CHASSIS_PORTS[i], MOTOR_GEARSET_6, R_REVERSED, MOTOR_ENCODER_COUNTS);
 	}
 }
 
