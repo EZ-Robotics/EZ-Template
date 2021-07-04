@@ -2,6 +2,9 @@
 
 #include "api.h"
 
+extern pros::Motor l_motor;
+extern pros::Motor r_motor;
+
 void chassis_motor_init();
 
 void set_left_chassis(int left);

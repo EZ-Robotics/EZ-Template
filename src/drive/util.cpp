@@ -1,7 +1,7 @@
 #include "main.h"
 
-pros::Motor l_sensor(L_CHASSIS_PORTS[0], L_REVERSED);
-pros::Motor r_sensor(R_CHASSIS_PORTS[0], R_REVERSED);
+pros::Motor l_motor(L_CHASSIS_PORTS[0], L_REVERSED);
+pros::Motor r_motor(R_CHASSIS_PORTS[0], R_REVERSED);
 
 pros::Imu gyro(GYRO_PORT);
 
@@ -46,16 +46,16 @@ set_drive_brake(pros::motor_brake_mode_e_t input) {
 }
 
 
-int right_sensor()   { return r_sensor.get_position(); }
-int right_velocity() { return r_sensor.get_actual_velocity(); }
+int right_sensor()   { return r_motor.get_position(); }
+int right_velocity() { return r_motor.get_actual_velocity(); }
 
-int left_sensor()    { return l_sensor.get_position(); }
-int left_velocity()  { return l_sensor.get_actual_velocity(); }
+int left_sensor()    { return l_motor.get_position(); }
+int left_velocity()  { return l_motor.get_actual_velocity(); }
 
 void
 reset_drive_sensor() {
-	l_sensor.tare_position();
-	r_sensor.tare_position();
+	l_motor.tare_position();
+	r_motor.tare_position();
 }
 
 
