@@ -27,6 +27,9 @@ void
 initialize() {
 	pros::delay(500);
 
+	// Stop tasks here...
+	drive_pid.suspend();
+
 	pros::lcd::initialize();
 	pros::lcd::set_text(1, "Hello PROS User!");
 
@@ -72,6 +75,9 @@ autonomous() {
 	tare_gyro();
 	reset_drive_sensor();
 	set_drive_brake(MOTOR_BRAKE_HOLD);
+	drive_pid.resume();
+
+	set_drive_pid(drive, 12, 110);
 }
 
 /**
@@ -89,15 +95,13 @@ autonomous() {
  */
 void
 opcontrol() {
+	drive_pid.suspend();
 	reset_drive_sensor();
 	set_drive_brake(MOTOR_BRAKE_HOLD); // this is preference to what you like to drive on
 
 	while (true) {
-		int left = master.get_analog(ANALOG_LEFT_Y);
-		int right = master.get_analog(ANALOG_RIGHT_Y);
-
-		//set_tank(left, right);
 		chassis_joystick_control();
-		pros::delay(20);
+
+		pros::delay(10);
 	}
 }
