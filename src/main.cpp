@@ -40,12 +40,13 @@ initialize() {
 	disable_all_tasks();
 
 	pros::lcd::initialize();
+	if(!imu_calibrate())
+		pros::lcd::set_text(3, "IMU Failed to Calibrate!  Are you sure it's plugged in?");
+
+	chassis_motor_init();
 	pros::lcd::set_text(1, "Hello PROS User!");
 
 	pros::lcd::register_btn1_cb(on_center_button);
-
-	imu_calibrate();
-	chassis_motor_init();
 }
 
 /**
@@ -89,6 +90,8 @@ autonomous() {
 	reset_drive_sensor();
 	set_drive_brake(MOTOR_BRAKE_HOLD);
 	drive_pid.resume();
+
+	test_auton();
 
 	//auto_1();
 	//auto_2();

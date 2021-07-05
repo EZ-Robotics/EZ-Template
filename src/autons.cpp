@@ -129,9 +129,9 @@ auto_4() {
   // When the robot gets to 12 inches, the intakes will spin until the robot has traveled 24 inches
   set_drive_pid(drive, 24, DRIVE_SPEED, true);
   wait_until(12);
-  //set_intake(127);
+  //set_intake(127); // Commented because no intake function in this code
   wait_drive();
-  //set_intake(0);
+  //set_intake(0); // Commented because no intake function in this code
 
   set_drive_pid(turn, 45, TURN_SPEED);
   wait_drive();
@@ -145,9 +145,9 @@ auto_4() {
   // When the robot gets to -12 inches, the intakes will spin until the robot has traveled -24 inches
   set_drive_pid(drive, -24, DRIVE_SPEED, true);
   wait_until(-12);
-  //set_intake(127);
+  //set_intake(127); // Commented because no intake function in this code
   wait_drive();
-  //set_intake(0);
+  //set_intake(0); // Commented because no intake function in this code
 }
 
 
@@ -167,6 +167,29 @@ auto_5() {
   wait_until(12);
 
   set_drive_pid(r_swing, 0, SWING_SPEED);
+  wait_drive();
+}
+
+
+
+///
+// Auto that tests everything
+///
+void
+test_auton() {
+  set_drive_pid(drive, 24, DRIVE_SPEED, true);
+  wait_drive();
+
+  set_drive_pid(turn, 45, TURN_SPEED);
+  wait_drive();
+
+  set_drive_pid(r_swing, -45, TURN_SPEED);
+  wait_drive();
+
+  set_drive_pid(turn, 0, TURN_SPEED);
+  wait_drive();
+
+  set_drive_pid(drive, -24, DRIVE_SPEED, true);
   wait_drive();
 }
 

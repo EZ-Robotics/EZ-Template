@@ -4,6 +4,9 @@
 float LEFT_CURVE_SCALE  = STARTING_LEFT_CURVE_SCALE;
 float RIGHT_CURVE_SCALE = STARTING_RIGHT_CURVE_SCALE;
 
+///
+// Increase / Decrease Input Curve
+///
 void
 modify_curve_with_controller() {
     static bool r_lock = false, l_lock = false;
@@ -75,11 +78,15 @@ left_curve_function(int x) {
     return x;
 }
 
+///
+// Joystick Control
+///
 void
 chassis_joystick_control() {
 	if (!DISBALE_CONTROLLER)
 		modify_curve_with_controller();
 
+  // Toggle for arcade / tank
   int left_stick, right_stick;
   if (TANK_CONTROL)
     right_stick  = left_curve_function(master.get_analog(RIGHT_JOYSTICK));
@@ -87,6 +94,7 @@ chassis_joystick_control() {
     right_stick  = right_curve_function(master.get_analog(RIGHT_JOYSTICK));
   left_stick = left_curve_function(master.get_analog(LEFT_JOYSTICK));
 
+  // Threshold if joysticks don't come back to perfect 0
 	if (abs(left_stick)>THRESH || abs(right_stick)>THRESH) {
     if (TANK_CONTROL)
 		  set_tank(left_stick, right_stick);
@@ -94,6 +102,7 @@ chassis_joystick_control() {
       set_tank(left_stick+right_stick, left_stick-right_stick);
 		reset_drive_sensor();
 	}
+  // When joys are released, run active brake (P) on drive
 	else {
 		set_tank((0-left_sensor())*ACTIVE_BRAKE_KP, (0-right_sensor())*ACTIVE_BRAKE_KP);
 	}

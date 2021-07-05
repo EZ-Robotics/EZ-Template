@@ -62,7 +62,7 @@ reset_drive_sensor() {
 void  tare_gyro() { gyro.set_rotation(0); }
 float get_gyro()  { return gyro.get_rotation(); }
 
-void
+bool
 imu_calibrate() {
   gyro.reset();
   int time = pros::millis();
@@ -74,11 +74,13 @@ imu_calibrate() {
 
 		if (iter > 3000) {
 			printf("No IMU plugged in, (took %d ms to realize that)\n", iter);
-			return;
+			return false;
 		}
     pros::delay(delay);
   }
+	master.rumble(".");
   printf("IMU is done calibrating (took %d ms)\n", iter);
+	return true;
 }
 
 

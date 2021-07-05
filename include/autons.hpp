@@ -12,3 +12,5 @@ void auto_7();
 void auto_8();
 void auto_9();
 void auto_10();
+
+void test_auton();

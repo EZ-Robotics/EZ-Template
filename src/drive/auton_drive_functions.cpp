@@ -320,6 +320,7 @@ set_drive_pid(int type, float target, int speed, bool slew_on, bool toggle_headi
 
 	// If drive or line, set targets to drive
 	if (type==drive) {
+		printf("Drive Started... Target Value: %f", target);
 		l_start = left_sensor();
 		r_start = right_sensor();
 
@@ -331,7 +332,6 @@ set_drive_pid(int type, float target, int speed, bool slew_on, bool toggle_headi
 
 		l_target_encoder = l_start + (target*TICK_PER_INCH);
 	  r_target_encoder = r_start + (target*TICK_PER_INCH);
-		//printf("\nL %i, R %i, %f, %i", l_target_encoder, r_target_encoder, TICK_PER_INCH, l_start);
 
 		l_sign = sgn(l_target_encoder-left_sensor());
 		r_sign = sgn(r_target_encoder-right_sensor());
@@ -348,6 +348,7 @@ set_drive_pid(int type, float target, int speed, bool slew_on, bool toggle_headi
 
 	// If turn, set targets to angle
 	else if (type == turn) {
+		printf("Turn Started... Target Value: %f", target);
 		gyro_target = target;
 		gyro_sign = sgn(target - get_gyro());
 		//printf("\nTURNING   Target: %ideg with", target);
@@ -355,6 +356,7 @@ set_drive_pid(int type, float target, int speed, bool slew_on, bool toggle_headi
 
 	// If l_turn, set targets to angle
 	else if (type == l_swing || type == r_swing) {
+		printf("Swing Started... Target Value: %f", target);
 		gyro_target = target;
 		swing_sign = sgn(target - get_gyro());
 	}
@@ -371,7 +373,7 @@ drive_exit_condition(int small_timeout, int start_small_counter_within, int big_
 		//printf("\nJ: %i", j/10);
 
 		if (j>small_timeout/10) {
-			printf("\nJ DRIVE BROKEN");
+			printf("\nDrive Timed Out - Small Thresh");
 			return false;
 		}
 	}
@@ -386,7 +388,7 @@ drive_exit_condition(int small_timeout, int start_small_counter_within, int big_
 		//printf("\nI: %i", i/10);
 
 		if (i>big_timeout/10) {
-			printf("\nI DRIVE BROKEN");
+			printf("\nDrive Timed Out - Big Thresh");
 			return false;
 		}
 	}
@@ -399,7 +401,7 @@ drive_exit_condition(int small_timeout, int start_small_counter_within, int big_
 		//printf("\nI: %i", i/10);
 
 		if (k>velocity_timeout) {
-			printf("\nI DRIVE BROKEN");
+			printf("\nDrive Timed Out - Velocity 0");
 			return false;
 		}
 	}
@@ -421,7 +423,7 @@ turn_exit_condition(int small_timeout, int start_small_counter_within, int big_t
 		//printf("\nJ: %i", j/10);
 
 		if (j>small_timeout/10) {
-			printf("\nJ TURN BROKEN");
+			printf("\nTurn Timed Out - Small Thresh");
 			return false;
 		}
 	}
@@ -435,7 +437,7 @@ turn_exit_condition(int small_timeout, int start_small_counter_within, int big_t
 		//printf("\nI: %i", i/10);
 
 		if (i>big_timeout/10) {
-			printf("\nI TURN BROKEN");
+			printf("\nTurn Timed Out - Big Thresh");
 			return false;
 		}
 	}
@@ -448,7 +450,7 @@ turn_exit_condition(int small_timeout, int start_small_counter_within, int big_t
 		//printf("\nI: %i", i/10);
 
 		if (k>velocity_timeout/10) {
-			printf("\nI DRIVE BROKEN");
+			printf("\nTurn Timed Out - Velocity 0");
 			return false;
 		}
 	}
