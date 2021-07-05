@@ -26,6 +26,16 @@ const bool R_REVERSED = true; // Reversed? (false is default, true is flipped)
 
 
 ///
+// Wheel Size
+//  -for tick to inch conversion
+///
+const float WHEEL_SIZE = 4; // Have the robot go 8ft forward and adjust this value until the robot actually goes 8ft
+const float CART_RPM	 = 200;	 // Output RPM of the cart
+const float RATIO			 = 1;	 // External drive ratio
+
+
+
+///
 // Joystick Setup
 ///
 
@@ -71,16 +81,6 @@ const float CURVE_MODIFY_INTERVAL      = 0.1;   // When you modify the scaler wi
 ///
 const float ACTIVE_BRAKE_KP = 0; // Constant for activebrake (increase this to make it more aggressive)
 const int THRESH = 5; // Joystick threshold to trigger activebrake
-
-
-
-///
-// Wheel Size
-//  -for tick to inch conversion
-///
-const float WHEEL_SIZE = 4; // Have the robot go 8ft forward and adjust this value until the robot actually goes 8ft
-const float CART_RPM	 = 200;	 // Output RPM of the cart
-const float RATIO			 = 1;	 // External drive ratio
 
 
 
