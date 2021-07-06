@@ -11,7 +11,9 @@ Simple PROS template that handles drive base functions for VEX robots.
 * Simple swing turns
 
 ## Setup
-In `setup.hpp`, configure drive/imu ports to what they are on your robot, configure your wheel size and cartridge, and enable tank or arcade.
+1) Clone or download the project by clicking the green button in the top right.  
+2) In `drive/setup.hpp`, configure drive/imu ports to what they are on your robot, configure your wheel size and cartridge, and enable tank or arcade. Remember that 4" omni wheels are actually 4.125"!
+3) And that's it!  Download the code and make sure `test_auton()` runs.  For making new autonomous routines, check `autons.cpp` for examples on how to use the drive functions. 
 
 ## License
 
