@@ -293,13 +293,13 @@ drive_pid_task(void*) {
 			l_output = 0;
 		}
 
-		if (pros::millis()<2000) {
+		if (pros::millis()<1500) {
 			set_tank(0, 0);
 		} else {
 			set_tank(l_output, r_output);
 		}
 
-		if (DEBUG) {
+		if (DEBUG && pros::millis()>1500) {
 			if (active_drive_type == drive)  printf("\nle: %f   re: %f   l_der %f", left_error, right_error, l_der*drive_constant[direction][1]);
 			if (active_drive_type==turn || active_drive_type==l_swing || active_drive_type==r_swing)   printf("\noutput: %f   error: %f   p: %f   i: %f   d: %f", gyro_output, gyro_error, gyro_error*gyro_kp, gyro_integral*gyro_ki, gyro_der*gyro_kd);
 		}

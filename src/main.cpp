@@ -35,13 +35,16 @@ on_center_button() {
  */
 void
 initialize() {
+	print_ez_template();
 	pros::delay(500);
 
 	disable_all_tasks();
 
 	pros::lcd::initialize();
-	if(!imu_calibrate())
-		pros::lcd::set_text(3, "IMU Failed to Calibrate!  Are you sure it's plugged in?");
+	if(!imu_calibrate()) {
+		pros::lcd::set_text(3, "IMU failed to calibrate!");
+		pros::lcd::set_text(4, "Are you sure it's plugged in?");
+	}
 
 	chassis_motor_init();
 	pros::lcd::set_text(1, "Hello PROS User!");

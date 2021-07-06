@@ -12,13 +12,9 @@ extern pros::Controller master;
 ///
 const int MOTORS_PER_SIDE = 2; // Motors per side of drive
 
-// Left Drive
+// Make the port negative if it's reversed
 const int  L_CHASSIS_PORTS[MOTORS_PER_SIDE] = {2, 6}; // Ports, the first number will be used for sensing
-const bool L_REVERSED = false; // Reversed? (false is default, true is flipped)
-
-// Rught Drive
-const int  R_CHASSIS_PORTS[MOTORS_PER_SIDE] = {9, 10}; // Ports, the first number will be used for sensing
-const bool R_REVERSED = true; // Reversed? (false is default, true is flipped)
+const int  R_CHASSIS_PORTS[MOTORS_PER_SIDE] = {-9, -10}; // Ports, the first number will be used for sensing
 
 // IMU Port
 #define GYRO_PORT 16
