@@ -29,9 +29,10 @@ const bool R_REVERSED = true; // Reversed? (false is default, true is flipped)
 // Wheel Size
 //  -for tick to inch conversion
 ///
-const float WHEEL_SIZE = 4; // Have the robot go 8ft forward and adjust this value until the robot actually goes 8ft
-const float CART_RPM	 = 200;	 // Output RPM of the cart
-const float RATIO			 = 1;	 // External drive ratio
+// Remember that 4" wheels are actually 4.125"!
+const float WHEEL_DIA = 4.125; // Have the robot go 8ft forward and adjust this value until the robot actually goes 8ft
+const float CART_RPM	= 200;	 // Output RPM of the cart
+const float RATIO			= 1;	 // External drive ratio
 
 
 
