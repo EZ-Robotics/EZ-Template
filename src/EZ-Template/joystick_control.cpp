@@ -86,22 +86,52 @@ left_curve_function(int x) {
 ///
 // Joystick Control
 ///
+
+pros::controller_analog_e_t current_l_stick = LEFT_JOYSTICK;
+pros::controller_analog_e_t current_r_stick = RIGHT_JOYSTICK;
+bool IS_TANK = TANK_CONTROL;
+
+int x = 0;
+void
+arcade_tank_toggle() {
+  if (master.get_digital(TOGGLE_BUTTON) && x==0) {
+    x=1;
+    IS_TANK = !IS_TANK;
+
+    if (IS_TANK) {
+      current_l_stick = pros::E_CONTROLLER_ANALOG_LEFT_Y;
+      current_r_stick = pros::E_CONTROLLER_ANALOG_RIGHT_Y;
+    } else {
+      current_l_stick = pros::E_CONTROLLER_ANALOG_LEFT_Y;
+      current_r_stick = pros::E_CONTROLLER_ANALOG_RIGHT_X;
+    }
+  }
+  else if (!master.get_digital(TOGGLE_BUTTON)) {
+    x=0;
+  }
+}
+
 void
 chassis_joystick_control() {
+  // Arcade tank toggle
+  if (ARCADE_TANK_TOGGLE)
+    arcade_tank_toggle();
+
+  // Toggle for controller curve
 	if (!DISBALE_CONTROLLER)
 		modify_curve_with_controller();
 
   // Toggle for arcade / tank
   int left_stick, right_stick;
-  if (TANK_CONTROL)
-    right_stick  = left_curve_function(master.get_analog(RIGHT_JOYSTICK));
+  if (IS_TANK)
+    right_stick  = left_curve_function(master.get_analog(current_r_stick));
   else
-    right_stick  = right_curve_function(master.get_analog(RIGHT_JOYSTICK));
-  left_stick = left_curve_function(master.get_analog(LEFT_JOYSTICK));
+    right_stick  = right_curve_function(master.get_analog(current_r_stick));
+  left_stick = left_curve_function(master.get_analog(current_l_stick));
 
   // Threshold if joysticks don't come back to perfect 0
 	if (abs(left_stick)>THRESH || abs(right_stick)>THRESH) {
-    if (TANK_CONTROL)
+    if (IS_TANK)
 		  set_tank(left_stick, right_stick);
     else
       set_tank(left_stick+right_stick, left_stick-right_stick);
