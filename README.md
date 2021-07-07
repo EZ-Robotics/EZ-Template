@@ -1,6 +1,6 @@
 [![License: MPL 2.0](https://img.shields.io/badge/License-MPL%202.0-brightgreen.svg)](https://opensource.org/licenses/MPL-2.0)
 # EZ-Template
-Simple PROS template that handles drive base functions for VEX robots. 
+Simple PROS template that handles drive base functions for VEX robots.  
 
 [Autonomous routines that used EZ-Template](https://photos.app.goo.gl/yRwuvmq7hDoM4f6EA)
 
