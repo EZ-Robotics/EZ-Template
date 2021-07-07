@@ -9,6 +9,10 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 float LEFT_CURVE_SCALE  = STARTING_LEFT_CURVE_SCALE;
 float RIGHT_CURVE_SCALE = STARTING_RIGHT_CURVE_SCALE;
 
+pros::controller_analog_e_t current_l_stick = LEFT_JOYSTICK;
+pros::controller_analog_e_t current_r_stick = RIGHT_JOYSTICK;
+bool IS_TANK = TANK_CONTROL;
+
 ///
 // Increase / Decrease Input Curve
 ///
@@ -33,7 +37,7 @@ modify_curve_with_controller() {
         l_lock = false;
     }
 
-    if (!TANK_CONTROL) {
+    if (!IS_TANK) {
       static bool y_lock = false, a_lock = false;
       if (master.get_digital(DECREASE_R_CURVE) && !y_lock) {
           RIGHT_CURVE_SCALE = RIGHT_CURVE_SCALE-CURVE_MODIFY_INTERVAL;
@@ -55,7 +59,7 @@ modify_curve_with_controller() {
 
     auto sf = std::to_string(RIGHT_CURVE_SCALE);
     auto st = std::to_string(LEFT_CURVE_SCALE);
-    if (!TANK_CONTROL)
+    if (!IS_TANK)
       master.set_text(2, 0, st+"   "+sf);
     else
       master.set_text(2, 0, st);
@@ -87,10 +91,6 @@ left_curve_function(int x) {
 // Joystick Control
 ///
 
-pros::controller_analog_e_t current_l_stick = LEFT_JOYSTICK;
-pros::controller_analog_e_t current_r_stick = RIGHT_JOYSTICK;
-bool IS_TANK = TANK_CONTROL;
-
 int x = 0;
 void
 arcade_tank_toggle() {
@@ -105,6 +105,7 @@ arcade_tank_toggle() {
       current_l_stick = pros::E_CONTROLLER_ANALOG_LEFT_Y;
       current_r_stick = pros::E_CONTROLLER_ANALOG_RIGHT_X;
     }
+    master.clear_line(2);
   }
   else if (!master.get_digital(TOGGLE_BUTTON)) {
     x=0;

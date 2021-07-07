@@ -25,10 +25,14 @@ print_ez_template() {
 }
 
 
-bool is_reversed(int input) { return sgn(input) == -1 ? true : false; }
+bool is_reversed(int input) {
+	if (input < 0)
+		return true;
+	return false;
+}
 
-pros::Motor l_motor(L_CHASSIS_PORTS[0], MOTOR_GEARSET_6, is_reversed(L_CHASSIS_PORTS[0]), MOTOR_ENCODER_COUNTS);
-pros::Motor r_motor(R_CHASSIS_PORTS[0], MOTOR_GEARSET_6, is_reversed(L_CHASSIS_PORTS[0]), MOTOR_ENCODER_COUNTS);
+pros::Motor l_motor(abs(L_CHASSIS_PORTS[0]), MOTOR_GEARSET_6, is_reversed(L_CHASSIS_PORTS[0]), MOTOR_ENCODER_COUNTS);
+pros::Motor r_motor(abs(R_CHASSIS_PORTS[0]), MOTOR_GEARSET_6, is_reversed(R_CHASSIS_PORTS[0]), MOTOR_ENCODER_COUNTS);
 
 pros::Imu gyro(GYRO_PORT);
 
@@ -37,7 +41,7 @@ void
 chassis_motor_init() {
 	for(int i=0;i<MOTORS_PER_SIDE;i++) {
 		pros::Motor a(abs(L_CHASSIS_PORTS[i]), MOTOR_GEARSET_6, is_reversed(L_CHASSIS_PORTS[i]), MOTOR_ENCODER_COUNTS);
-		pros::Motor b(abs(R_CHASSIS_PORTS[i]), MOTOR_GEARSET_6, is_reversed(L_CHASSIS_PORTS[i]), MOTOR_ENCODER_COUNTS);
+		pros::Motor b(abs(R_CHASSIS_PORTS[i]), MOTOR_GEARSET_6, is_reversed(R_CHASSIS_PORTS[i]), MOTOR_ENCODER_COUNTS);
 	}
 }
 
