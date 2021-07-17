@@ -9,7 +9,7 @@ Current Version: pre-release
 ## Features
 * Joystick Curve
 * Active Brake
-* Autonomous PID with slew
+* Autonomous Drive PID with slew
 * Simple swing turns
 
 ## Setup
