@@ -300,8 +300,8 @@ drive_pid_task(void*) {
 		}
 
 		if (DEBUG && pros::millis()>1500) {
-			if (active_drive_type == drive)  printf("\nle: %f   re: %f   l_der %f", left_error, right_error, l_der*drive_constant[direction][1]);
-			if (active_drive_type==turn || active_drive_type==l_swing || active_drive_type==r_swing)   printf("\noutput: %f   error: %f   p: %f   i: %f   d: %f", gyro_output, gyro_error, gyro_error*gyro_kp, gyro_integral*gyro_ki, gyro_der*gyro_kd);
+			if (active_drive_type == drive)  printf("le: %f   re: %f   l_der %f\n", left_error, right_error, l_der*drive_constant[direction][1]);
+			if (active_drive_type==turn || active_drive_type==l_swing || active_drive_type==r_swing)   printf("output: %f   error: %f   p: %f   i: %f   d: %f\n", gyro_output, gyro_error, gyro_error*gyro_kp, gyro_integral*gyro_ki, gyro_der*gyro_kd);
 		}
 
     last_time       = pros::millis();
@@ -325,7 +325,7 @@ set_drive_pid(int type, float target, int speed, bool slew_on, bool toggle_headi
 
 	// If drive or line, set targets to drive
 	if (type==drive) {
-		printf("Drive Started... Target Value: %f", target);
+		printf("Drive Started... Target Value: %f\n", target);
 		l_start = left_sensor();
 		r_start = right_sensor();
 
@@ -353,7 +353,7 @@ set_drive_pid(int type, float target, int speed, bool slew_on, bool toggle_headi
 
 	// If turn, set targets to angle
 	else if (type == turn) {
-		printf("Turn Started... Target Value: %f", target);
+		printf("Turn Started... Target Value: %f\n", target);
 		gyro_target = target;
 		gyro_sign = sgn(target - get_gyro());
 		//printf("\nTURNING   Target: %ideg with", target);
@@ -361,7 +361,7 @@ set_drive_pid(int type, float target, int speed, bool slew_on, bool toggle_headi
 
 	// If l_turn, set targets to angle
 	else if (type == l_swing || type == r_swing) {
-		printf("Swing Started... Target Value: %f", target);
+		printf("Swing Started... Target Value: %f\n", target);
 		gyro_target = target;
 		swing_sign = sgn(target - get_gyro());
 	}
@@ -378,7 +378,7 @@ drive_exit_condition(int small_timeout, int start_small_counter_within, int big_
 		//printf("\nJ: %i", j/10);
 
 		if (j>small_timeout/10) {
-			printf("\nDrive Timed Out - Small Thresh");
+			printf("Drive Timed Out - Small Thresh\n");
 			return false;
 		}
 	}
@@ -393,7 +393,7 @@ drive_exit_condition(int small_timeout, int start_small_counter_within, int big_
 		//printf("\nI: %i", i/10);
 
 		if (i>big_timeout/10) {
-			printf("\nDrive Timed Out - Big Thresh");
+			printf("\nDrive Timed Out - Big Thresh\n");
 			return false;
 		}
 	}
@@ -406,7 +406,7 @@ drive_exit_condition(int small_timeout, int start_small_counter_within, int big_
 		//printf("\nI: %i", i/10);
 
 		if (k>velocity_timeout) {
-			printf("\nDrive Timed Out - Velocity 0");
+			printf("\nDrive Timed Out - Velocity 0\n");
 			return false;
 		}
 	}
@@ -428,7 +428,7 @@ turn_exit_condition(int small_timeout, int start_small_counter_within, int big_t
 		//printf("\nJ: %i", j/10);
 
 		if (j>small_timeout/10) {
-			printf("\nTurn Timed Out - Small Thresh");
+			printf("\nTurn Timed Out - Small Thresh\n");
 			return false;
 		}
 	}
@@ -442,7 +442,7 @@ turn_exit_condition(int small_timeout, int start_small_counter_within, int big_t
 		//printf("\nI: %i", i/10);
 
 		if (i>big_timeout/10) {
-			printf("\nTurn Timed Out - Big Thresh");
+			printf("\nTurn Timed Out - Big Thresh\n");
 			return false;
 		}
 	}
@@ -455,7 +455,7 @@ turn_exit_condition(int small_timeout, int start_small_counter_within, int big_t
 		//printf("\nI: %i", i/10);
 
 		if (k>velocity_timeout/10) {
-			printf("\nTurn Timed Out - Velocity 0");
+			printf("\nTurn Timed Out - Velocity 0\n");
 			return false;
 		}
 	}
