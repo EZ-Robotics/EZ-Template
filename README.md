@@ -7,9 +7,9 @@ Current Version: pre-release
 [Autonomous routines that used EZ-Template](https://photos.app.goo.gl/yRwuvmq7hDoM4f6EA)
 
 ## Features
-* Joystick Curve
-* Active Brake
-* Autonomous Drive PID with slew
+* Joystick curve
+* Active brake
+* Autonomous drive PID with slew
 * Simple swing turns
 
 ## Setup
