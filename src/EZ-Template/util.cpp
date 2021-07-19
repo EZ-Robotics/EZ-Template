@@ -22,7 +22,7 @@ print_ez_template() {
 	                                   |_|
 )" << '\n';
 
-	printf("Version: pre-release testing\n");
+	printf("Version: 1.0.0 testing\n");
 }
 
 

@@ -2,7 +2,7 @@
 # EZ-Template
 Simple PROS template that handles drive base functions for VEX robots.  
 
-Current Version: pre-release
+Current Version: 1.0.0
 
 [Autonomous routines that used EZ-Template](https://photos.app.goo.gl/yRwuvmq7hDoM4f6EA)
 
