@@ -393,7 +393,7 @@ drive_exit_condition(int small_timeout, int start_small_counter_within, int big_
 		//printf("\nI: %i", i/10);
 
 		if (i>big_timeout/10) {
-			printf("\nDrive Timed Out - Big Thresh\n");
+			printf("Drive Timed Out - Big Thresh\n");
 			return false;
 		}
 	}
@@ -406,7 +406,7 @@ drive_exit_condition(int small_timeout, int start_small_counter_within, int big_
 		//printf("\nI: %i", i/10);
 
 		if (k>velocity_timeout) {
-			printf("\nDrive Timed Out - Velocity 0\n");
+			printf("Drive Timed Out - Velocity 0\n");
 			return false;
 		}
 	}
@@ -428,7 +428,7 @@ turn_exit_condition(int small_timeout, int start_small_counter_within, int big_t
 		//printf("\nJ: %i", j/10);
 
 		if (j>small_timeout/10) {
-			printf("\nTurn Timed Out - Small Thresh\n");
+			printf("Turn Timed Out - Small Thresh\n");
 			return false;
 		}
 	}
@@ -442,7 +442,7 @@ turn_exit_condition(int small_timeout, int start_small_counter_within, int big_t
 		//printf("\nI: %i", i/10);
 
 		if (i>big_timeout/10) {
-			printf("\nTurn Timed Out - Big Thresh\n");
+			printf("Turn Timed Out - Big Thresh\n");
 			return false;
 		}
 	}
@@ -455,7 +455,7 @@ turn_exit_condition(int small_timeout, int start_small_counter_within, int big_t
 		//printf("\nI: %i", i/10);
 
 		if (k>velocity_timeout/10) {
-			printf("\nTurn Timed Out - Velocity 0\n");
+			printf("Turn Timed Out - Velocity 0\n");
 			return false;
 		}
 	}

@@ -26,9 +26,12 @@ const int  R_CHASSIS_PORTS[MOTORS_PER_SIDE] = {-9, -10}; // Ports, the first num
 //  -for tick to inch conversion
 ///
 // Remember that 4" wheels are actually 4.125"!
+// If you tune an inch conversion not listed below, tell us you have it with a pull request!
 const float WHEEL_DIA = 4.125; // Have the robot go 8ft forward and adjust this value until the robot actually goes 8ft
 const float CART_RPM	= 200;	 // Output RPM of the cart
-const float RATIO			= 1;	 // External drive ratio
+const float RATIO			= 1;     // External drive ratio (MUST BE DECIMAL)
+// eg. if your drive is 84:36 where the 36t is powered, your RATIO would be 2.333.
+// eg. if your drive is 36:60 where the 60t is powered, your RATIO would be 0.6.
 
 
 
