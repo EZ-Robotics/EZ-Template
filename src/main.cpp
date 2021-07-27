@@ -27,6 +27,64 @@ on_center_button() {
 	}
 }
 
+
+const int num_of_pages = 6;
+int current_page = 0;
+
+void
+auto_select(bool is_auton) {
+	for (int i = 0; i<8;i++)
+		pros::lcd::clear_line(i);
+
+	pros::lcd::set_text(0, "Autonomous "+std::to_string(current_page+1)+":");
+
+	switch (current_page) {
+		case 0: // Auto 1
+			pros::lcd::set_text(1, "Test Auton");
+			if (is_auton) test_auton();
+			break;
+		case 1: // Auto 2
+			pros::lcd::set_text(1, "Auton 1");
+			if (is_auton) auto_1();
+			break;
+		case 2: // Auto 3
+			pros::lcd::set_text(1, "Auton 2");
+			if (is_auton) auto_2();
+			break;
+		case 3: // Auto 4
+			pros::lcd::set_text(1, "Auton 3");
+			if (is_auton) auto_3();
+			break;
+		case 4: // Auto 5
+			pros::lcd::set_text(1, "Auton 4");
+			if (is_auton) auto_4();
+			break;
+		case 5: // Auto 6
+			pros::lcd::set_text(1, "Auton 5");
+			if (is_auton) auto_5();
+			break;
+
+		default:
+			break;
+	}
+}
+void
+page_up() {
+	if(current_page==num_of_pages-1)
+		current_page=0;
+	else
+		current_page++;
+	auto_select(false);
+}
+void
+page_down() {
+	if(current_page==0)
+		current_page=num_of_pages-1;
+	else
+		current_page--;
+	auto_select(false);
+}
+
 /**
  * Runs initialization code. This occurs as soon as the program is started.
  *
@@ -41,15 +99,14 @@ initialize() {
 	disable_all_tasks();
 
 	pros::lcd::initialize();
+	auto_select(false);
+	pros::lcd::register_btn0_cb(page_down);
+	pros::lcd::register_btn2_cb(page_up);
 	if(!imu_calibrate()) {
-		pros::lcd::set_text(3, "IMU failed to calibrate!");
-		pros::lcd::set_text(4, "Are you sure it's plugged in?");
+		pros::lcd::set_text(7, "IMU failed to calibrate!");
 	}
 
 	chassis_motor_init();
-	pros::lcd::set_text(1, "Hello PROS User!");
-
-	pros::lcd::register_btn1_cb(on_center_button);
 }
 
 /**
@@ -94,13 +151,7 @@ autonomous() {
 	set_drive_brake(MOTOR_BRAKE_HOLD);
 	drive_pid.resume();
 
-	test_auton();
-
-	//auto_1();
-	//auto_2();
-	//auto_3();
-	//auto_4();
-	//auto_5();
+	auto_select(true);
 }
 
 /**
