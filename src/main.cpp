@@ -11,32 +11,21 @@ disable_all_tasks() {
 }
 
 /**
- * A callback function for LLEMU's center button.
+ * Autonomous selector using LLEMU.
  *
- * When this callback is fired, it will toggle line 2 of the LCD text between
- * "I was pressed!" and nothing.
+ * When this function is called, display the current selected auton to the brain.
+ * When is_auton is true, the autonomous mode will run.  Otherwise, it will only
+ * print to brain.
  */
-void
-on_center_button() {
-	static bool pressed = false;
-	pressed = !pressed;
-	if (pressed) {
-		pros::lcd::set_text(2, "I was pressed!");
-	} else {
-		pros::lcd::clear_line(2);
-	}
-}
-
-
-const int num_of_pages = 6;
+const int num_of_pages = 6; // Number of pages
 int current_page = 0;
 
 void
 auto_select(bool is_auton) {
-	for (int i = 0; i<8;i++)
+	for (int i = 0; i<7;i++)
 		pros::lcd::clear_line(i);
 
-	pros::lcd::set_text(0, "Autonomous "+std::to_string(current_page+1)+":");
+	pros::lcd::set_text(0, "Autonomous "+std::to_string(current_page+1));
 
 	switch (current_page) {
 		case 0: // Auto 1
@@ -68,6 +57,8 @@ auto_select(bool is_auton) {
 			break;
 	}
 }
+
+// Page up/down
 void
 page_up() {
 	if(current_page==num_of_pages-1)

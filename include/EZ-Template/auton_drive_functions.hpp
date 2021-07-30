@@ -42,6 +42,7 @@ const int turn = 1;
 const int l_swing = 2;
 const int r_swing = 3;
 
+void set_max_speed(int speed);
 void set_drive_pid(int type, float target, int speed, bool slew_on = false, bool toggle_heading = false);
 void wait_drive(bool goal_yes = false, int delay_after = 0);
 void wait_until(int input);

@@ -316,6 +316,11 @@ drive_pid_task(void*) {
 pros::Task drive_pid(drive_pid_task, nullptr, "drive_pid");
 
 void
+set_max_speed(int speed) {
+	max_speed = speed;
+}
+
+void
 set_drive_pid(int type, float target, int speed, bool slew_on, bool toggle_heading) {
 	// Global setup
 	active_drive_type = type;
