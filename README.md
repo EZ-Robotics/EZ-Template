@@ -19,6 +19,8 @@ To disable hot/cold linking, open your `Makefile` and change `USE_PACKAGE:=1` to
 * Active brake
 * Autonomous drive PID with slew
 * Simple swing turns
+* Autonomous selector
+* Pink emulated LCD
 
 ## Setup
 1) Clone or download the project by clicking the green button in the top right.  
