@@ -105,8 +105,8 @@ const int BW_SLEW_DISTANCE  = 7;
 const float FW_DRIVE_KP = 0.45;
 const float FW_DRIVE_KD = 5;
 
-const float BW_DRIVE_KP = 0.375;
-const float BW_DRIVE_KD = 4;
+const float BW_DRIVE_KP = 0.45;
+const float BW_DRIVE_KD = 5;
 
 // Heading
 const float HEADING_KP = 11;
