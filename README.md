@@ -6,6 +6,10 @@ Current Version: 1.0.0
 
 [Autonomous routines that used EZ-Template](https://photos.app.goo.gl/yRwuvmq7hDoM4f6EA)
 
+## Downloading
+
+Download the latest released [here](https://github.com/Unionjackjz1/EZ-Template/releases/tag/latest) and open it as a new project in PROS.
+
 ## Warning
 
 EZ-Template uses a unique PROS kernel that makes the emulated LCD pink instead of green.  Using this with hot/cold linking enabled (it is by default) could possible delete other PROS projects in other slots on your brain. 
