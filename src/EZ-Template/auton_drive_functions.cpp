@@ -165,14 +165,12 @@ const float TICK_PER_INCH = (TICK_PER_REV/CIRCUMFERENCE);
 // "Enumerator" for drive type
 int active_drive_type = drive;
 
-// Drive PID with active straight code
-// - it makes sure the angle of the robot is what it should be all the way through the movements,
-// - turning if needed to keep it going straight
 bool heading_on = false;
 float l_target_encoder, r_target_encoder;
 float l_start, r_start;
 int max_speed = 0;
 float gyro_target = 0;
+
 // Slew variables
 int l_x_intercept, r_x_intercept;
 int l_y_intercept, r_y_intercept;
@@ -180,9 +178,14 @@ int l_sign, r_sign, gyro_sign;
 float l_slew_error, r_slew_error;
 float l_slope, r_slope;
 bool slew = false;
+
 // Swing variables
 int swing_sign = 0;
 bool stop = false;
+
+// Drive PID with active straight code
+// - it makes sure the angle of the robot is what it should be all the way through the movements,
+// - turning if needed to keep it going straight
 void
 drive_pid_task(void*) {
   float left_error, right_error, gyro_error;
@@ -216,7 +219,7 @@ drive_pid_task(void*) {
     // Combing P I D
     left_output    = (left_error *drive_constant[direction][0])  + (l_der*drive_constant[direction][1]);
     right_output   = (right_error*drive_constant[direction][0])  + (r_der*drive_constant[direction][1]);
-		// Different kP and kD are used for turning and heading
+		// Different kP, kI and kD are used for turning, heading and swings
 		if (active_drive_type==drive)
 			gyro_output = (gyro_error*heading_kp) + (gyro_der*heading_kd);
 		else if (active_drive_type==turn)
@@ -256,7 +259,7 @@ drive_pid_task(void*) {
 			gyro_output = clip_num(gyro_output, max_speed, -max_speed);
 		}
 
-		// Set drive based on m
+		// Set drive based on drive type
 		if (active_drive_type == drive) {
 			if (heading_on) {
 				l_output = left_output;
@@ -266,6 +269,7 @@ drive_pid_task(void*) {
 				r_output = right_output - gyro_output;
 			}
 
+			// Setting drive to min_speed
 			if (!slew) {
 				if (abs(l_output)<min_speed) {
 					if (fabs(left_error)>min_error)
@@ -281,19 +285,27 @@ drive_pid_task(void*) {
 				}
 			}
 		}
+
+		// Turn
 		else if (active_drive_type == turn) {
 			l_output =  gyro_output;
 			r_output = -gyro_output;
 		}
+
+		// L Swing
 		else if (active_drive_type == l_swing) {
 			l_output = gyro_output;
 			r_output = 0;
 		}
+
+		// R Swing
 		else if (active_drive_type == r_swing) {
 			r_output = -gyro_output;
 			l_output = 0;
 		}
 
+		// Don't run motors in the first 1500 the program is on
+		// (while IMU is calibrating)
 		if (pros::millis()<1500) {
 			set_tank(0, 0);
 		} else {
@@ -320,6 +332,8 @@ set_max_speed(int speed) {
 	max_speed = speed;
 }
 
+int last_motion;
+float last_l_target, last_r_target;
 void
 set_drive_pid(int type, float target, int speed, bool slew_on, bool toggle_heading) {
 	// Global setup
@@ -341,8 +355,13 @@ set_drive_pid(int type, float target, int speed, bool slew_on, bool toggle_headi
 			direction = FORWARD;
 		}
 
-		l_target_encoder = l_start + (target*TICK_PER_INCH);
-	  r_target_encoder = r_start + (target*TICK_PER_INCH);
+		if (last_motion==turn || last_motion==l_swing || last_motion==r_swing) {
+			reset_drive_sensor();
+			last_l_target = 0;
+			last_r_target = 0;
+		}
+		l_target_encoder = last_l_target + (target*TICK_PER_INCH);
+		r_target_encoder = last_r_target + (target*TICK_PER_INCH);
 
 		l_sign = sgn(l_target_encoder-left_sensor());
 		r_sign = sgn(r_target_encoder-right_sensor());
@@ -362,15 +381,19 @@ set_drive_pid(int type, float target, int speed, bool slew_on, bool toggle_headi
 		printf("Turn Started... Target Value: %f\n", target);
 		gyro_target = target;
 		gyro_sign = sgn(target - get_gyro());
-		//printf("\nTURNING   Target: %ideg with", target);
 	}
 
 	// If l_turn, set targets to angle
 	else if (type == l_swing || type == r_swing) {
 		printf("Swing Started... Target Value: %f\n", target);
 		gyro_target = target;
-		swing_sign = sgn(target - get_gyro());
+		swing_sign = sgn(target-get_gyro());
 	}
+
+	// Previous states
+	last_motion = type;
+	last_l_target = l_target_encoder;
+	last_r_target = r_target_encoder;
 }
 
 bool

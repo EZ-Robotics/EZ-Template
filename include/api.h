@@ -41,8 +41,8 @@
 
 #define PROS_VERSION_MAJOR 3
 #define PROS_VERSION_MINOR 5
-#define PROS_VERSION_PATCH 0
-#define PROS_VERSION_STRING "3.5.0-Pink"
+#define PROS_VERSION_PATCH 2
+#define PROS_VERSION_STRING "3.5.2"
 
 #define PROS_ERR (INT32_MAX)
 #define PROS_ERR_F (INFINITY)
@@ -51,6 +51,7 @@
 #include "pros/colors.h"
 #include "pros/distance.h"
 #include "pros/ext_adi.h"
+#include "pros/gps.h"
 #include "pros/imu.h"
 #include "pros/llemu.h"
 #include "pros/misc.h"
@@ -64,6 +65,7 @@
 #ifdef __cplusplus
 #include "pros/adi.hpp"
 #include "pros/distance.hpp"
+#include "pros/gps.hpp"
 #include "pros/imu.hpp"
 #include "pros/llemu.hpp"
 #include "pros/misc.hpp"

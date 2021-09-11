@@ -22,7 +22,7 @@ print_ez_template() {
 	                                   |_|
 )" << '\n';
 
-	printf("Version: 1.0.0\n");
+	printf("Version: 1.0.1\n");
 }
 
 
@@ -35,7 +35,7 @@ bool is_reversed(int input) {
 pros::Motor l_motor(abs(L_CHASSIS_PORTS[0]), MOTOR_GEARSET_6, is_reversed(L_CHASSIS_PORTS[0]), MOTOR_ENCODER_COUNTS);
 pros::Motor r_motor(abs(R_CHASSIS_PORTS[0]), MOTOR_GEARSET_6, is_reversed(R_CHASSIS_PORTS[0]), MOTOR_ENCODER_COUNTS);
 
-pros::Imu gyro(GYRO_PORT);
+pros::Imu gyro(IMU_PORT);
 
 // Initializes pros reversing
 void
