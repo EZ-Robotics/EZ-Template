@@ -1,5 +1,5 @@
 # Additing Autonomous Routines
-After reading through `auton.cpp` file and understanding how to use all the functions, now we can use them!
+
 ### 1) Make a new function in `auton.cpp` and name it something that says what the autonomous will do.
 ```C++
 void 
@@ -22,14 +22,15 @@ NeutralStealPlatUp() {
   // Autonomous code goes here
 }
 ```
-### 2) In `auton.hpp` add the name of your function.
+### 2) Read through `auton.cpp` and learn how to use the autonomous functions by reading through the example routines!
+### 3) In `auton.hpp` add the name of your function.
 ```C++
 void SoloAWP();
 void ScoreRingsPlatDown();
 void NeutralStealPlatDown();
 void NeutralStealPlatUp();
 ```
-### 3) To add the autonomous mode to the on screen selector, in `main.cpp` go to `void auto_select()` and either replace an existing autonomous mode or create a new page.  
+### 4) To add the autonomous mode to the on screen selector, in `main.cpp` go to `void auto_select()` and either replace an existing autonomous mode or create a new page.  
 Remember to update `const int num_of_pages` when you add or remove an autonomous mode from this function!  
 ```C++
 const int num_of_pages = 4; // Number of pages
