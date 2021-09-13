@@ -20,7 +20,8 @@ Download the latest released [here](https://github.com/Unionjackjz1/EZ-Template/
 ## Setup
 1) Download the latest release [here](https://github.com/Unionjackjz1/EZ-Template/releases/latest).  Extract it, and open it in PROS. 
 2) In `EZ-Template/setup.hpp`, configure drive and IMU ports to what they are on your robot, configure your wheel size and cartridge, and enable tank or arcade. Remember that 4" omni wheels are actually 4.125"!
-3) And that's it!  To test the test autonomous modes, plug into a competition switch and select the autonomous mode on the brain screen by pressing the left and right buttons!  The current page will be the autonomous that runs.  For making new autonomous routines, check `autons.cpp` for examples on how to use the drive functions.
+3) Turn the robot on and make sure the ports are correct and reversed correctly.  
+4) To test the test autonomous modes, plug into a competition switch and select the autonomous mode on the brain screen by pressing the left and right buttons!  The current page will be the autonomous that runs.  For making new autonomous routines, check `autons.cpp` for examples on how to use the drive functions.
 
 ## Additing Autonomous Routines
 [Check out the tutorial on adding new autonomous routines here!](Adding-Autonomous-Routines.MD)
