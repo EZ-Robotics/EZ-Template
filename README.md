@@ -11,8 +11,27 @@ Current Version: 1.0.1
 Download the latest released [here](https://github.com/Unionjackjz1/EZ-Template/releases/latest) and open it as a new project in PROS.
 
 ## Features
-* Joystick curve
-* Active brake
+<details open>
+<summary><bold>Joystick Curve</bold></summary>
+<br>
+  
+> Using the [5225 curves from 2018](https://www.desmos.com/calculator/rcfjjg83zx), (explained [here](https://www.vexforum.com/t/team-5225a-in-the-zone-code-release-yes-you-read-that-right/63199/10)).  The x-axis is the joystick input and the y-axis is the motor output.  
+  
+> Normally, pushing the joystick half way means the robot goes half speed.  With an input curve, pushing the joystick half way may only move the robot at 1/4 power.  This means more of the joystick movement goes to lower speeds, giving you more control of the robot.
+  
+> When the robot is on, pressing/holding the left/right arrows will increase/decrease how large the curve is.  When arcade is enabled, each stick will have it's own curve.  Y/a will increase/decrease the curve for the right stick. 
+  
+</details>
+
+<details open>
+  
+<summary><bold>Active Brake</bold></summary>
+<br>
+  
+> hi
+  
+</details>
+
 * Autonomous drive PID with slew
 * Simple swing turns
 * Autonomous selector
