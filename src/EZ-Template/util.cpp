@@ -40,7 +40,7 @@ pros::Imu gyro(IMU_PORT);
 // Initializes pros reversing
 void
 chassis_motor_init() {
-  for(int i=0;i<MOTORS_PER_SIDE;i++) {
+  for(int i=0; i<MOTORS_PER_SIDE; i++) {
     pros::Motor a(abs(L_CHASSIS_PORTS[i]), MOTOR_GEARSET_6, is_reversed(L_CHASSIS_PORTS[i]), MOTOR_ENCODER_COUNTS);
     pros::Motor b(abs(R_CHASSIS_PORTS[i]), MOTOR_GEARSET_6, is_reversed(R_CHASSIS_PORTS[i]), MOTOR_ENCODER_COUNTS);
   }
@@ -48,35 +48,42 @@ chassis_motor_init() {
 
 // Set drive
 void
-set_left_chassis(int left) {
-  for (int i=0;i<MOTORS_PER_SIDE;i++) {
-    pros::c::motor_move_voltage(abs(L_CHASSIS_PORTS[i]), left*(12000/127));
+set_left_chassis(int l) {
+  for(int i=0; i<MOTORS_PER_SIDE; i++) {
+    pros::c::motor_move_voltage(abs(L_CHASSIS_PORTS[i]), l*(12000.0/127.0));
   }
 }
 
 void
-set_right_chassis(int right) {
-  for (int i=0;i<MOTORS_PER_SIDE;i++) {
-    pros::c::motor_move_voltage(abs(R_CHASSIS_PORTS[i]), right*(12000/127));
+set_right_chassis(int r) {
+  for(int i=0; i<MOTORS_PER_SIDE; i++) {
+    pros::c::motor_move_voltage(abs(R_CHASSIS_PORTS[i]), r*(12000.0/127.0));
   }
 }
 
 void
-set_tank(int input_l, int input_r) {
-  set_left_chassis(input_l);
-  set_right_chassis(input_r);
+set_tank(int l, int r) {
+  set_left_chassis(l);
+  set_right_chassis(r);
 }
 
 
 // Brake modes
 void
 set_drive_brake(pros::motor_brake_mode_e_t input) {
-  for (int i=0;i<MOTORS_PER_SIDE;i++) {
+  for(int i=0; i<MOTORS_PER_SIDE; i++) {
     pros::c::motor_set_brake_mode(abs(L_CHASSIS_PORTS[i]), input);
     pros::c::motor_set_brake_mode(abs(R_CHASSIS_PORTS[i]), input);
   }
 }
 
+
+// Motor telemetry
+void
+reset_drive_sensor() {
+  l_motor.tare_position();
+  r_motor.tare_position();
+}
 
 int right_sensor()   { return r_motor.get_position(); }
 int right_velocity() { return r_motor.get_actual_velocity(); }
@@ -84,15 +91,10 @@ int right_velocity() { return r_motor.get_actual_velocity(); }
 int left_sensor()    { return l_motor.get_position(); }
 int left_velocity()  { return l_motor.get_actual_velocity(); }
 
-void
-reset_drive_sensor() {
-  l_motor.tare_position();
-  r_motor.tare_position();
-}
-
 
 void  tare_gyro() { gyro.set_rotation(0); }
 float get_gyro()  { return gyro.get_rotation(); }
+
 
 bool
 imu_calibrate() {
