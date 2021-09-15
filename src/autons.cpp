@@ -1,6 +1,9 @@
 #include "main.h"
 
-const int DRIVE_SPEED = 110;
+const int DRIVE_SPEED = 110; // This is 110/127 (around 87% of max speed).  We don't suggest making this 127.
+                             // If this is 127 and the robot tries ot heading correct, it's only correcting by
+                             // making one side slower.  When this is 87%, it's correcting by making one side
+                             // faster and one side slower, giving better heading correction.
 const int TURN_SPEED  = 90;
 const int SWING_SPEED = 90;
 
@@ -8,7 +11,7 @@ const int SWING_SPEED = 90;
 // Constants
 ///
 
-// Reset all constants to default
+// Reset all constants to default (what's in setup.hpp is default)
 void
 reset_constants() {
   reset_slew_min_power();
@@ -21,6 +24,7 @@ reset_constants() {
 }
 
 // Functions to change constants
+// (if the robot has different weight to it, sometimes we need to change constants)
 /*
 void
 one_mogo_constants() {
@@ -120,7 +124,7 @@ auto_3() {
 
 
 ///
-// Wait Until
+// Wait Until and Changing Max Speed
 ///
 void
 auto_4() {
@@ -130,9 +134,8 @@ auto_4() {
   // When the robot gets to 12 inches, the intakes will spin until the robot has traveled 24 inches
   set_drive_pid(drive, 24, DRIVE_SPEED, true);
   wait_until(12);
-  //set_intake(127); // Commented because no intake function in this code
+  set_max_speed(40); // After driving 12 inches at DRIVE_SPEED, the robot will go the remaining distance at 40 speed.
   wait_drive();
-  //set_intake(0); // Commented because no intake function in this code
 
   set_drive_pid(turn, 45, TURN_SPEED);
   wait_drive();
@@ -146,9 +149,8 @@ auto_4() {
   // When the robot gets to -12 inches, the intakes will spin until the robot has traveled -24 inches
   set_drive_pid(drive, -24, DRIVE_SPEED, true);
   wait_until(-12);
-  //set_intake(127); // Commented because no intake function in this code
+  set_max_speed(40); // After driving 12 inches at DRIVE_SPEED, the robot will go the remaining distance at 40 speed.
   wait_drive();
-  //set_intake(0); // Commented because no intake function in this code
 }
 
 
