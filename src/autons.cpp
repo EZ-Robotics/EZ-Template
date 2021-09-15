@@ -131,10 +131,10 @@ auto_4() {
   // wait_until will wait until the robot gets to a desired position
 
 
-  // When the robot gets to 12 inches, the intakes will spin until the robot has traveled 24 inches
+  // When the robot gets to 12 inches, the robot will travel the remaining distance at a max speed of 40
   set_drive_pid(drive, 24, DRIVE_SPEED, true);
   wait_until(12);
-  set_max_speed(40); // After driving 12 inches at DRIVE_SPEED, the robot will go the remaining distance at 40 speed.
+  set_max_speed(40); // After driving 12 inches at DRIVE_SPEED, the robot will go the remaining distance at 40 speed
   wait_drive();
 
   set_drive_pid(turn, 45, TURN_SPEED);
@@ -146,10 +146,10 @@ auto_4() {
   set_drive_pid(turn, 0, TURN_SPEED);
   wait_drive();
 
-  // When the robot gets to -12 inches, the intakes will spin until the robot has traveled -24 inches
+  // When the robot gets to -12 inches, the robot will travel the remaining distance at a max speed of 40
   set_drive_pid(drive, -24, DRIVE_SPEED, true);
   wait_until(-12);
-  set_max_speed(40); // After driving 12 inches at DRIVE_SPEED, the robot will go the remaining distance at 40 speed.
+  set_max_speed(40); // After driving 12 inches at DRIVE_SPEED, the robot will go the remaining distance at 40 speed
   wait_drive();
 }
 
