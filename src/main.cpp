@@ -22,7 +22,7 @@ int current_page = 0;
 
 void
 auto_select(bool is_auton) {
-  for (int i = 0; i<7;i++)
+  for (int i=0; i<7; i++)
     pros::lcd::clear_line(i);
 
   pros::lcd::set_text(0, "Autonomous "+std::to_string(current_page+1));

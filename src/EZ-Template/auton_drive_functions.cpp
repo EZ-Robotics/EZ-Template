@@ -332,8 +332,6 @@ set_max_speed(int speed) {
   max_speed = speed;
 }
 
-int last_motion;
-float last_l_target, last_r_target;
 void
 set_drive_pid(int type, float target, int speed, bool slew_on, bool toggle_heading) {
   // Global setup
@@ -355,13 +353,8 @@ set_drive_pid(int type, float target, int speed, bool slew_on, bool toggle_headi
       direction = FORWARD;
     }
 
-    if (last_motion==turn || last_motion==l_swing || last_motion==r_swing) {
-      reset_drive_sensor();
-      last_l_target = 0;
-      last_r_target = 0;
-    }
-    l_target_encoder = last_l_target + (target*TICK_PER_INCH);
-    r_target_encoder = last_r_target + (target*TICK_PER_INCH);
+    l_target_encoder = l_start + (target*TICK_PER_INCH);
+	  r_target_encoder = r_start + (target*TICK_PER_INCH);
 
     l_sign = sgn(l_target_encoder-left_sensor());
     r_sign = sgn(r_target_encoder-right_sensor());
@@ -389,11 +382,6 @@ set_drive_pid(int type, float target, int speed, bool slew_on, bool toggle_headi
     gyro_target = target;
     swing_sign = sgn(target-get_gyro());
   }
-
-  // Previous states
-  last_motion = type;
-  last_l_target = l_target_encoder;
-  last_r_target = r_target_encoder;
 }
 
 bool

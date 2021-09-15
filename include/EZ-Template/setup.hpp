@@ -47,11 +47,12 @@ const bool TANK_CONTROL = false;
 #define LEFT_JOYSTICK  pros::E_CONTROLLER_ANALOG_LEFT_Y   // This is the "forward" stick
 #define RIGHT_JOYSTICK pros::E_CONTROLLER_ANALOG_RIGHT_X  // This is the "turning" stick
 */
-
+///*
 // Tank Control...
 const bool TANK_CONTROL = true;
 #define LEFT_JOYSTICK  pros::E_CONTROLLER_ANALOG_LEFT_Y
 #define RIGHT_JOYSTICK pros::E_CONTROLLER_ANALOG_RIGHT_Y
+//*/
 
 // Do you want a button to toggle between arcade and tank?
 const bool ARCADE_TANK_TOGGLE = false; // True is yes, false is no
@@ -86,7 +87,7 @@ const double CURVE_MODIFY_INTERVAL      = 0.1;   // When you modify the scaler w
 //  -when both sticks are let go, run a p loop on the drive to make sure opponents can't push you
 //  -if you don't like active brake, set ACTIVE_BRAKE_KP to 0
 ///
-const float ACTIVE_BRAKE_KP = 0; // Constant for activebrake (increase this to make it more aggressive)
+const float ACTIVE_BRAKE_KP = 0; // Constant for activebrake (increase this to make it more aggressive, 0.1 is recommended)
 const int THRESH = 5; // Joystick threshold to trigger activebrake
 
 
