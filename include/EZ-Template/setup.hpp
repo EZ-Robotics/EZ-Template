@@ -65,7 +65,8 @@ const bool ARCADE_TANK_TOGGLE = false; // True is yes, false is no
 ///
 
 const bool  CURVE_TYPE         = true;  // true is red, false is blue in the demos link above
-const bool  DISBALE_CONTROLLER = false; // If false, allows controller to modify CURVE_SCALE.  if true, locks CURVE_SCALE to whatever it's set to.
+const bool  DISBALE_CONTROLLER = false; // If false, allows controller to modify CURVE_SCALE.
+                                        // if true, locks STARTING_LEFT_CURVE_SCALE and STARTING_RIGHT_CURVE_SCALE to whatever it's set to.
 
 // Arcade uses two sticks to control, and you need control over the curve on each stick.
 // these buttons only do anything when DISABLE_CONTROLLER is FALSE
@@ -74,9 +75,9 @@ const bool  DISBALE_CONTROLLER = false; // If false, allows controller to modify
 #define DECREASE_R_CURVE pros::E_CONTROLLER_DIGITAL_Y     // decrease right joystick curve (disabled when TANK_CONTROL = false)
 #define INCREASE_R_CURVE pros::E_CONTROLLER_DIGITAL_A     // increase right joystick curve (disabled when TANK_CONTROL = false)
 
-const float STARTING_LEFT_CURVE_SCALE  = 0;     // Starting value for curve (if 0, linear graph)
-const float STARTING_RIGHT_CURVE_SCALE = 0;     // Starting value for curve (if 0, linear graph) (disabled when TANK_CONTROL = false)
-const float CURVE_MODIFY_INTERVAL      = 0.1;   // When you modify the scaler with the controller, it will increase/decrease by this interval
+const double STARTING_LEFT_CURVE_SCALE  = 0;     // Starting value for curve (if 0, linear graph)
+const double STARTING_RIGHT_CURVE_SCALE = 0;     // Starting value for curve (if 0, linear graph) (disabled when TANK_CONTROL = false)
+const double CURVE_MODIFY_INTERVAL      = 0.1;   // When you modify the scaler with the controller, it will increase/decrease by this interval
 
 
 

@@ -18,46 +18,68 @@ bool IS_TANK = TANK_CONTROL;
 ///
 // Increase / Decrease Input Curve
 ///
-int r_timer = 0;
-int l_timer;
+
+// Math to increase / decrease left and right curve, capping at 0
+void l_increase() { LEFT_CURVE_SCALE += CURVE_MODIFY_INTERVAL; }
+void l_decrease() {
+  LEFT_CURVE_SCALE -= CURVE_MODIFY_INTERVAL;
+  LEFT_CURVE_SCALE =  LEFT_CURVE_SCALE<0 ? 0 : LEFT_CURVE_SCALE;
+}
+void r_increase() { RIGHT_CURVE_SCALE += CURVE_MODIFY_INTERVAL; }
+void r_decrease() {
+  RIGHT_CURVE_SCALE -= CURVE_MODIFY_INTERVAL;
+  RIGHT_CURVE_SCALE =  RIGHT_CURVE_SCALE<0 ? 0 : RIGHT_CURVE_SCALE;
+}
+
+// Hold button constants
+const int WAIT = 500; // Time button needs to be held before increasing
+const int INCREASE_INTERVAL = 50; // After buttin is held for WAIT, curve scaler will increase every this amount of time
+
+// Struct for pointer values
+typedef struct {
+  bool lock;
+  int init_timer;
+  int increase = INCREASE_INTERVAL;
+} button_;
+
+// Button logic
+// When tapped, run increase/decrease function once
+// When held, run increase/decrease function every INCREASE_INTERCAL time
+void
+button_press(button_ *input_name, int button, void (*f)()) {
+  if (button && !input_name->lock) {
+    f();
+    input_name->lock = true;
+  }
+  else if (button && input_name->lock) {
+    input_name->init_timer+=DELAY_TIME;
+    if (input_name->init_timer > WAIT) {
+      input_name->increase+=DELAY_TIME;
+      if (input_name->increase > INCREASE_INTERVAL) {
+        f();
+        input_name->increase = 0;
+      }
+    }
+  }
+  else if (!button) {
+    input_name->lock = false;
+    input_name->init_timer = 0;
+  }
+}
+
+// Creating variables for each button
+button_ l_increase_;
+button_ l_decrease_;
+button_ r_increase_;
+button_ r_decrease_;
+
 void
 modify_curve_with_controller() {
-  static bool r_lock = false, l_lock = false;
-  if (master.get_digital(INCREASE_L_CURVE) && !r_lock) {
-    LEFT_CURVE_SCALE = LEFT_CURVE_SCALE+CURVE_MODIFY_INTERVAL;
-    r_lock = true;
-  }
-  else if (!master.get_digital(INCREASE_L_CURVE)){
-    r_lock = false;
-  }
-
-  if (master.get_digital(DECREASE_L_CURVE) && !l_lock) {
-    LEFT_CURVE_SCALE = LEFT_CURVE_SCALE-CURVE_MODIFY_INTERVAL;
-    LEFT_CURVE_SCALE = LEFT_CURVE_SCALE<0 ? 0 : LEFT_CURVE_SCALE;
-    l_lock = true;
-  }
-  else if (!master.get_digital(DECREASE_L_CURVE)) {
-    l_lock = false;
-  }
-
+  button_press(&l_increase_, master.get_digital(INCREASE_L_CURVE), l_increase);
+  button_press(&l_decrease_, master.get_digital(DECREASE_L_CURVE), l_decrease);
   if (!IS_TANK) {
-    static bool y_lock = false, a_lock = false;
-    if (master.get_digital(DECREASE_R_CURVE) && !y_lock) {
-      RIGHT_CURVE_SCALE = RIGHT_CURVE_SCALE-CURVE_MODIFY_INTERVAL;
-      RIGHT_CURVE_SCALE = RIGHT_CURVE_SCALE<0 ? 0 : RIGHT_CURVE_SCALE;
-      y_lock = true;
-    }
-    else if (!master.get_digital(DECREASE_R_CURVE)){
-      y_lock = false;
-    }
-
-    if (master.get_digital(INCREASE_R_CURVE) && !a_lock) {
-      RIGHT_CURVE_SCALE = RIGHT_CURVE_SCALE+CURVE_MODIFY_INTERVAL;
-      a_lock = true;
-    }
-    else if (!master.get_digital(INCREASE_R_CURVE)) {
-      a_lock = false;
-    }
+    button_press(&r_increase_, master.get_digital(INCREASE_R_CURVE), r_increase);
+    button_press(&r_decrease_, master.get_digital(DECREASE_R_CURVE), r_decrease);
   }
 
   auto sf = std::to_string(RIGHT_CURVE_SCALE);
