@@ -11,7 +11,7 @@ Current Version: 1.0.1
 Download the latest released [here](https://github.com/Unionjackjz1/EZ-Template/releases/latest) and open it as a new project in PROS.
 
 ## Features
-<details open>
+<details closed>
 <summary><bold>Joystick Curve</bold></summary>
 <br>
   
@@ -23,7 +23,7 @@ Download the latest released [here](https://github.com/Unionjackjz1/EZ-Template/
   
 </details>
 
-<details open>
+<details closed>
   
 <summary><bold>Active Brake</bold></summary>
 <br>
