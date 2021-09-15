@@ -1,6 +1,8 @@
 # Additing Autonomous Routines
 
-### 1) Make a new function in `auton.cpp` and name it something that says what the autonomous will do.
+### 1) Read through `auton.cpp` ([click here](src/autons.cpp)) and learn how to use the autonomous functions by reading through the example routines!
+
+### 2) Make a new function in `auton.cpp` and name it something that says what the autonomous will do.
 ```C++
 void 
 SoloAWP() {
@@ -22,7 +24,7 @@ NeutralStealPlatUp() {
   // Autonomous code goes here
 }
 ```
-### 2) Read through `auton.cpp` and learn how to use the autonomous functions by reading through the example routines!
+
 ### 3) In `auton.hpp` add the name of your function.
 ```C++
 void SoloAWP();
