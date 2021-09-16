@@ -21,7 +21,7 @@ Download the latest released [here](https://github.com/Unionjackjz1/EZ-Template/
 
 > When the robot is on, tapping/holding the left/right arrows will increase/decrease how large the curve is.  When arcade is enabled, each stick will have it's own curve.  The y/a buttons will increase/decrease the curve for the right stick.  
 
-> After you find values you like, in `setup.hpp` set `STARTING_LEFT_CURVE_SCALE` and `STARTING_RIGHT_CURVE_SCALE` to whatever you liked!
+> After you find values you like, in `EZ-Template/setup.hpp` set `STARTING_LEFT_CURVE_SCALE` and `STARTING_RIGHT_CURVE_SCALE` to whatever you liked!
 
 </details>
 
@@ -34,7 +34,7 @@ Download the latest released [here](https://github.com/Unionjackjz1/EZ-Template/
 
 > If you put the motors on brake type hold, a robot can still push the robot a bit, and when you let go of the joysticks the robot just locks in place.  Active brake runs a P loop on the drive when you let go of the joysticks.  By adjusting the kP, you adjust how hard the robot fights back.  If you make it smaller, there will be a larger deadzone and you'll coast a little bit.  Active brake vs brake type is personal preference.
 
-> To adjust the kP, in `setup.hpp` change `ACTIVE_BRAKE_KP`.  We suggest around `0.1`.
+> To adjust the kP, in `EZ-Template/setup.hpp` change `ACTIVE_BRAKE_KP`.  We suggest around `0.1`.
 
 </details>
 
@@ -47,7 +47,7 @@ Download the latest released [here](https://github.com/Unionjackjz1/EZ-Template/
 
 > In autonomous, you input inches, the code converts that to ticks and that's our target position, the robot gets to that position using PD.  The robot also uses the IMU to maintain a heading while driving straight.
 
-> The robot also ramps up from a minimum speed to a maximum speed for X inches, that can be adjusted at the bottom of `setup.hpp`.
+> The robot also ramps up from a minimum speed to a maximum speed for X inches, that can be adjusted at the bottom of `EZ-Template/setup.hpp`.
 
 > [Check out the tutorial on adding new autonomous routines here!](Adding-Autonomous-Routines.MD)
 
