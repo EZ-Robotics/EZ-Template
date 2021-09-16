@@ -21,7 +21,7 @@ Download the latest released [here](https://github.com/Unionjackjz1/EZ-Template/
 
 > When the robot is on, tapping/holding the left/right arrows will increase/decrease how large the curve is.  When arcade is enabled, each stick will have it's own curve.  The y/a buttons will increase/decrease the curve for the right stick.  
 
-> After you find values you like, in `EZ-Template/setup.hpp` set `STARTING_LEFT_CURVE_SCALE` and `STARTING_RIGHT_CURVE_SCALE` to whatever you liked!
+> After you find values you like, in `include/EZ-Template/setup.hpp` set `STARTING_LEFT_CURVE_SCALE` and `STARTING_RIGHT_CURVE_SCALE` to whatever you liked!
 
 </details>
 
@@ -34,7 +34,7 @@ Download the latest released [here](https://github.com/Unionjackjz1/EZ-Template/
 
 > If you put the motors on brake type hold, a robot can still push the robot a bit, and when you let go of the joysticks the robot just locks in place.  Active brake runs a P loop on the drive when you let go of the joysticks.  By adjusting the kP, you adjust how hard the robot fights back.  If you make it smaller, there will be a larger deadzone and you'll coast a little bit.  Active brake vs brake type is personal preference.
 
-> To adjust the kP, in `EZ-Template/setup.hpp` change `ACTIVE_BRAKE_KP`.  We suggest around `0.1`.
+> To adjust the kP, in `include/EZ-Template/setup.hpp` change `ACTIVE_BRAKE_KP`.  We suggest around `0.1`.
 
 </details>
 
@@ -47,7 +47,7 @@ Download the latest released [here](https://github.com/Unionjackjz1/EZ-Template/
 
 > In autonomous, you input inches, the code converts that to ticks and that's our target position, the robot gets to that position using PD.  The robot also uses the IMU to maintain a heading while driving straight.
 
-> The robot also ramps up from a minimum speed to a maximum speed for X inches, that can be adjusted at the bottom of `EZ-Template/setup.hpp`.
+> The robot also ramps up from a minimum speed to a maximum speed for X inches, that can be adjusted at the bottom of `include/EZ-Template/setup.hpp`.
 
 > [Check out the tutorial on adding new autonomous routines here!](Adding-Autonomous-Routines.MD)
 
@@ -84,11 +84,11 @@ Download the latest released [here](https://github.com/Unionjackjz1/EZ-Template/
 
 ## Setup
 1) Download the latest release [here](https://github.com/Unionjackjz1/EZ-Template/releases/latest).  Extract it, and open it in PROS.
-2) In `EZ-Template/setup.hpp`, configure drive and IMU ports to what they are on your robot.  Be sure to read the comments!
+2) In `include/EZ-Template/setup.hpp`, configure drive and IMU ports to what they are on your robot.  Be sure to read the comments!
 3) Configure your wheel size and cartridge.  Remember that 4" omni wheels are actually 4.125"!
 4) Enable tank or arcade.  Be sure to read the comments!
 5) Turn the robot on and use it in driver control.  Make sure the ports are correct and reversed correctly.  
-6) To test the test autonomous modes, plug into a competition switch and select the autonomous mode on the brain screen by pressing the left and right buttons!  The current page will be the autonomous that runs.  For making new autonomous routines, check `autons.cpp` for examples on how to use the drive functions.
+6) To test the test autonomous modes, plug into a competition switch and select the autonomous mode on the brain screen by pressing the left and right buttons!  The current page will be the autonomous that runs.  For making new autonomous routines, check `src/autons.cpp` for examples on how to use the drive functions.
 
 ## Additing Autonomous Routines
 [Check out the tutorial on adding new autonomous routines here!](Adding-Autonomous-Routines.MD)
