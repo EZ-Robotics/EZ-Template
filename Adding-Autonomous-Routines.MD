@@ -25,7 +25,7 @@ NeutralStealPlatUp() {
 }
 ```
 
-### 3) In `src/auton.hpp` add the name of your function.
+### 3) In `include/auton.hpp` add the name of your function.
 ```C++
 void SoloAWP();
 void ScoreRingsPlatDown();
