@@ -144,7 +144,7 @@ chassis_joystick_control() {
     arcade_tank_toggle();
 
   // Toggle for controller curve
-  if (!DISBALE_CONTROLLER)
+  if (!DISABLE_CONTROLLER)
     modify_curve_with_controller();
 
   // Toggle for arcade / tank
