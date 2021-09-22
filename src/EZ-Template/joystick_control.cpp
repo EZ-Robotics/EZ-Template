@@ -7,9 +7,6 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include "main.h"
 
 
-float LEFT_CURVE_SCALE  = STARTING_LEFT_CURVE_SCALE;
-float RIGHT_CURVE_SCALE = STARTING_RIGHT_CURVE_SCALE;
-
 pros::controller_analog_e_t current_l_stick = LEFT_JOYSTICK;
 pros::controller_analog_e_t current_r_stick = RIGHT_JOYSTICK;
 bool IS_TANK = TANK_CONTROL;
@@ -19,13 +16,65 @@ bool IS_TANK = TANK_CONTROL;
 // Increase / Decrease Input Curve
 ///
 
+// Set the starting
+float LEFT_CURVE_SCALE  = STARTING_LEFT_CURVE_SCALE;
+float RIGHT_CURVE_SCALE = STARTING_RIGHT_CURVE_SCALE;
+void
+init_curve_sd() {
+  // If no SD card, return
+  if (!IS_SD_CARD) return;
+
+  // Set Starting Curve to SD Card
+  // Left Curve
+  FILE* l_usd_file_read = fopen("/usd/left_curve.txt", "r");
+  char l_buf[5];
+  fread(l_buf, 1, 5, l_usd_file_read);
+  LEFT_CURVE_SCALE = std::stof(l_buf);
+  fclose(l_usd_file_read);
+
+  // Right Curve
+  FILE* r_usd_file_read = fopen("/usd/right_curve.txt", "r");
+  char r_buf[5];
+  fread(r_buf, 1, 5, r_usd_file_read);
+  RIGHT_CURVE_SCALE = std::stof(r_buf);
+  fclose(r_usd_file_read);
+}
+
+// Save New left Curve
+void
+save_l_curve_sd() {
+  // If no SD card, return
+  if (!IS_SD_CARD) return;
+
+  FILE* usd_file_write = fopen("/usd/left_curve.txt", "w");
+  std::string in_str = std::to_string(LEFT_CURVE_SCALE);
+  char const *in_c = in_str.c_str();
+  fputs(in_c, usd_file_write);
+  fclose(usd_file_write);
+}
+void
+save_r_curve_sd() {
+  // If no SD card, return
+  if (!IS_SD_CARD) return;
+
+  FILE* usd_file_write = fopen("/usd/right_curve.txt", "w");
+  std::string in_str = std::to_string(RIGHT_CURVE_SCALE);
+  char const *in_c = in_str.c_str();
+  fputs(in_c, usd_file_write);
+  fclose(usd_file_write);
+}
+
 // Math to increase / decrease left and right curve, capping at 0
-void l_increase() { LEFT_CURVE_SCALE += CURVE_MODIFY_INTERVAL; }
+void l_increase() {
+  LEFT_CURVE_SCALE += CURVE_MODIFY_INTERVAL;
+}
 void l_decrease() {
   LEFT_CURVE_SCALE -= CURVE_MODIFY_INTERVAL;
   LEFT_CURVE_SCALE =  LEFT_CURVE_SCALE<0 ? 0 : LEFT_CURVE_SCALE;
 }
-void r_increase() { RIGHT_CURVE_SCALE += CURVE_MODIFY_INTERVAL; }
+void r_increase() {
+  RIGHT_CURVE_SCALE += CURVE_MODIFY_INTERVAL;
+}
 void r_decrease() {
   RIGHT_CURVE_SCALE -= CURVE_MODIFY_INTERVAL;
   RIGHT_CURVE_SCALE =  RIGHT_CURVE_SCALE<0 ? 0 : RIGHT_CURVE_SCALE;
@@ -33,12 +82,14 @@ void r_decrease() {
 
 // Hold button constants
 const int WAIT = 500; // Time button needs to be held before increasing
-const int INCREASE_INTERVAL = 50; // After buttin is held for WAIT, curve scaler will increase every this amount of time
+const int INCREASE_INTERVAL = 100; // After buttin is held for WAIT, curve scaler will increase every this amount of time
 
 // Struct for pointer values
 typedef struct {
-  bool lock;
-  int init_timer;
+  bool lock = false;
+  bool release_reset = false;
+  int release_timer = 0;
+  int hold_timer = 0;
   int increase = INCREASE_INTERVAL;
 } button_;
 
@@ -46,14 +97,15 @@ typedef struct {
 // When tapped, run increase/decrease function once
 // When held, run increase/decrease function every INCREASE_INTERCAL time
 void
-button_press(button_ *input_name, int button, void (*f)()) {
+button_press(button_ *input_name, int button, void (*f)(), void (*save)()) {
   if (button && !input_name->lock) {
     f();
     input_name->lock = true;
+    input_name->release_reset = true;
   }
   else if (button && input_name->lock) {
-    input_name->init_timer+=DELAY_TIME;
-    if (input_name->init_timer > WAIT) {
+    input_name->hold_timer+=DELAY_TIME;
+    if (input_name->hold_timer > WAIT) {
       input_name->increase+=DELAY_TIME;
       if (input_name->increase > INCREASE_INTERVAL) {
         f();
@@ -63,7 +115,16 @@ button_press(button_ *input_name, int button, void (*f)()) {
   }
   else if (!button) {
     input_name->lock = false;
-    input_name->init_timer = 0;
+    input_name->hold_timer = 0;
+
+    if (input_name->release_reset) {
+      input_name->release_timer+=DELAY_TIME;
+      if (input_name->release_timer > WAIT/2.0) {
+        save();
+        input_name->release_timer = 0;
+        input_name->release_reset = false;
+      }
+    }
   }
 }
 
@@ -75,11 +136,11 @@ button_ r_decrease_;
 
 void
 modify_curve_with_controller() {
-  button_press(&l_increase_, master.get_digital(INCREASE_L_CURVE), l_increase);
-  button_press(&l_decrease_, master.get_digital(DECREASE_L_CURVE), l_decrease);
+  button_press(&l_increase_, master.get_digital(INCREASE_L_CURVE), l_increase, save_l_curve_sd);
+  button_press(&l_decrease_, master.get_digital(DECREASE_L_CURVE), l_decrease, save_l_curve_sd);
   if (!IS_TANK) {
-    button_press(&r_increase_, master.get_digital(INCREASE_R_CURVE), r_increase);
-    button_press(&r_decrease_, master.get_digital(DECREASE_R_CURVE), r_decrease);
+    button_press(&r_increase_, master.get_digital(INCREASE_R_CURVE), r_increase, save_r_curve_sd);
+    button_press(&r_decrease_, master.get_digital(DECREASE_R_CURVE), r_decrease, save_r_curve_sd);
   }
 
   auto sf = std::to_string(RIGHT_CURVE_SCALE);
@@ -111,6 +172,7 @@ left_curve_function(int x) {
   }
   return x;
 }
+
 
 ///
 // Joystick Control

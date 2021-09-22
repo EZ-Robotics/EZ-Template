@@ -7,6 +7,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #pragma once
 #include "api.h"
 extern pros::Controller master;
+const bool IS_SD_CARD = pros::usd::is_installed();
 const int DELAY_TIME = 10;
 
 ///

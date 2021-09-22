@@ -1,4 +1,6 @@
 #include "main.h"
+#include <iostream>
+
 
 /**
  * Disables all tasks.
@@ -9,6 +11,7 @@ void
 disable_all_tasks() {
   drive_pid.suspend();
 }
+
 
 /**
  * Autonomous selector using LLEMU.
@@ -25,7 +28,7 @@ auto_select(bool is_auton) {
   for (int i=0; i<7; i++)
     pros::lcd::clear_line(i);
 
-  pros::lcd::set_text(0, "Autonomous "+std::to_string(current_page+1));
+  pros::lcd::set_text(0, "Page "+std::to_string(current_page+1));
 
   switch (current_page) {
     case 0: // Auto 1
@@ -58,6 +61,9 @@ auto_select(bool is_auton) {
   }
 }
 
+// Global for updating SD
+void update_auto_sd();
+
 // Page up/down
 void
 page_up() {
@@ -65,16 +71,57 @@ page_up() {
     current_page=0;
   else
     current_page++;
+  update_auto_sd();
   auto_select(false);
 }
+
 void
 page_down() {
   if(current_page==0)
     current_page=num_of_pages-1;
   else
     current_page--;
+  update_auto_sd();
   auto_select(false);
 }
+
+
+/**
+ * Store the last page to the micro SD card
+ *
+ * This allows you to select your autonomous mode while in the queue or in the pits.
+ * If you powercycle the robot or turn off the code, the autonomous mode you selected
+ * will still hold.
+ */
+void
+update_auto_sd() {
+  // If no SD card, return
+  if (!IS_SD_CARD) return;
+
+  FILE* usd_file_write = fopen("/usd/auto.txt", "w");
+  std::string cp_str = std::to_string(current_page);
+  char const *cp_c = cp_str.c_str();
+  fputs(cp_c, usd_file_write);
+  fclose(usd_file_write);
+}
+
+void
+init_auto_sd() {
+  // If no SD card, return
+  if (!IS_SD_CARD)  return;
+
+  // Auton Selector
+  FILE* usd_file_read = fopen("/usd/auto.txt", "r");
+  char buf[5];
+  fread(buf, 1, 5, usd_file_read);
+  current_page = std::stoi(buf);
+  fclose(usd_file_read);
+
+  if(current_page>num_of_pages-1 || current_page<0)
+    current_page=0;
+  update_auto_sd();
+}
+
 
 /**
  * Runs initialization code. This occurs as soon as the program is started.
@@ -87,7 +134,12 @@ initialize() {
   print_ez_template();
   pros::delay(500);
 
+  if (!IS_SD_CARD) printf("No SD Card Found!\n");
+
   disable_all_tasks();
+
+  init_auto_sd();
+  init_curve_sd();
 
   pros::lcd::initialize();
   auto_select(false);
@@ -100,6 +152,7 @@ initialize() {
   chassis_motor_init();
 }
 
+
 /**
  * Runs while the robot is in the disabled state of Field Management System or
  * the VEX Competition Switch, following either autonomous or opcontrol. When
@@ -109,6 +162,7 @@ void
 disabled() {
   disable_all_tasks();
 }
+
 
 /**
  * Runs after initialize(), and before autonomous when connected to the Field
@@ -123,6 +177,7 @@ void
 competition_initialize() {
   disable_all_tasks();
 }
+
 
 /**
  * Runs the user autonomous code. This function will be started in its own task
@@ -144,6 +199,7 @@ autonomous() {
 
   auto_select(true);
 }
+
 
 /**
  * Runs the operator control code. This function will be started in its own task
