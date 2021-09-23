@@ -7,7 +7,7 @@
  */
 void
 disable_all_tasks() {
-  drive_pid.suspend() // no semi, break build
+  drive_pid.suspend(); 
 }
 
 /**
