@@ -385,17 +385,18 @@ set_drive_pid(int type, float target, int speed, bool slew_on, bool toggle_headi
 }
 
 bool
-drive_exit_condition(int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout) {
+drive_exit_condition(float l_target, float r_target, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, bool wait_until = false) {
   static int i = 0, j = 0, k = 0, g = 0;
-  static int delay_time = 10;
 
   // If the robot gets within the target, make sure it's there for small_timeout amount of time
-  if (fabs(l_target_encoder-left_sensor())<start_small_counter_within && fabs(r_target_encoder-right_sensor())<start_small_counter_within) {
-    j++;
+  if (fabs(l_target-left_sensor())<start_small_counter_within && fabs(r_target-right_sensor())<start_small_counter_within) {
+    j+=DELAY_TIME;
     //printf("\nJ: %i", j/10);
 
-    if (j>small_timeout/10) {
-      printf("Drive Timed Out - Small Thresh\n");
+    if (j>small_timeout) {
+      if (!wait_until) printf("Drive Timed Out");
+      else             printf("Drive Wait Until Timed Out");
+      printf(" - Small Thresh\n");
       return false;
     }
   }
@@ -405,12 +406,14 @@ drive_exit_condition(int small_timeout, int start_small_counter_within, int big_
 
   // If the robot is close to the target, start a timer.  If the robot doesn't get closer within
   // a certain amount of time, exit and continue.
-  if (fabs(l_target_encoder-left_sensor())<start_big_counter_within && fabs(r_target_encoder-right_sensor())<start_big_counter_within) {
-    i++;
+  if (fabs(l_target-left_sensor())<start_big_counter_within && fabs(r_target-right_sensor())<start_big_counter_within) {
+    i+=DELAY_TIME;
     //printf("\nI: %i", i/10);
 
-    if (i>big_timeout/10) {
-      printf("Drive Timed Out - Big Thresh\n");
+    if (i>big_timeout) {
+      if (!wait_until) printf("Drive Timed Out");
+      else             printf("Drive Wait Until Timed Out");
+      printf(" - Big Thresh\n");
       return false;
     }
   }
@@ -419,11 +422,13 @@ drive_exit_condition(int small_timeout, int start_small_counter_within, int big_
   }
 
   if (right_velocity()==0 && left_velocity()==0) {
-    k+=delay_time;
+    k+=DELAY_TIME;
     //printf("\nI: %i", i/10);
 
     if (k>velocity_timeout) {
-      printf("Drive Timed Out - Velocity 0\n");
+      if (!wait_until) printf("Drive Timed Out");
+      else             printf("Drive Wait Until Timed Out");
+      printf(" - Velocity 0\n");
       return false;
     }
   }
@@ -435,17 +440,18 @@ drive_exit_condition(int small_timeout, int start_small_counter_within, int big_
 }
 
 bool
-turn_exit_condition(int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout) {
+turn_exit_condition(float target, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, bool wait_until = false) {
   static int i, j, k;
-  static int delay_time = 10;
 
   // If the robot gets within the target, make sure it's there for small_timeout amount of time
-  if (fabs(gyro_target-get_gyro())<start_small_counter_within) {
-    j++;
+  if (fabs(target-get_gyro())<start_small_counter_within) {
+    j+=DELAY_TIME;
     //printf("\nJ: %i", j/10);
 
-    if (j>small_timeout/10) {
-      printf("Turn Timed Out - Small Thresh\n");
+    if (j>small_timeout) {
+      if (!wait_until) printf("Turn Timed Out");
+      else             printf("Turn Wait Until Timed Out");
+      printf(" - Small Thresh\n");
       return false;
     }
   }
@@ -454,12 +460,14 @@ turn_exit_condition(int small_timeout, int start_small_counter_within, int big_t
   }
   // If the robot is close to the target, start a timer.  If the robot doesn't get closer within
   // a certain amount of time, exit and continue.
-  if (fabs(gyro_target-get_gyro())<start_big_counter_within) {
-    i++;
+  if (fabs(target-get_gyro())<start_big_counter_within) {
+    i+=DELAY_TIME;
     //printf("\nI: %i", i/10);
 
-    if (i>big_timeout/10) {
-      printf("Turn Timed Out - Big Thresh\n");
+    if (i>big_timeout) {
+      if (!wait_until) printf("Turn Timed Out");
+      else             printf("Turn Wait Until Timed Out");
+      printf(" - Big Thresh\n");
       return false;
     }
   }
@@ -468,11 +476,13 @@ turn_exit_condition(int small_timeout, int start_small_counter_within, int big_t
   }
 
   if (right_velocity()==0 && left_velocity()==0) {
-    k++;
+    k+=DELAY_TIME;
     //printf("\nI: %i", i/10);
 
-    if (k>velocity_timeout/10) {
-      printf("Turn Timed Out - Velocity 0\n");
+    if (k>velocity_timeout) {
+      if (!wait_until) printf("Turn Timed Out");
+      else             printf("Turn Wait Until Timed Out");
+      printf(" - Velocity 0\n");
       return false;
     }
   }
@@ -485,28 +495,28 @@ turn_exit_condition(int small_timeout, int start_small_counter_within, int big_t
 //Wait for drive
 void
 wait_drive(bool goal_yes, int delay_after) {
-  int delay_time = 10;
+  pros::delay(DELAY_TIME);
 
-  pros::delay(delay_time);
   // Parameters for exit condition function:
-  // #1 - time the robot has to be within #2 of target
-  // #2 - threshold for timer to start
-  // #3 - time for if position is never reached
-  // #4 - position for robot to be within to never reach target
-  // #5 - velocity timeout
+  // #3 - time the robot has to be within #2 of target
+  // #4 - threshold for timer to start
+  // #5 - time for if position is never reached
+  // #6 - position for robot to be within to never reach target
+  // #7 - velocity timeout
+
   if (active_drive_type==drive) {
-    while (drive_exit_condition(80, 50, 300, 150, 500)) {
-      pros::delay(delay_time);
+    while (drive_exit_condition(l_target_encoder, r_target_encoder, 80, 50, 300, 150, 500)) {
+      pros::delay(DELAY_TIME);
     }
   }
   else if (active_drive_type==turn) {
-    while (turn_exit_condition(100, 3, 500, 7, 500)) {
-      pros::delay(delay_time);
+    while (turn_exit_condition(gyro_target, 100, 3, 500, 7, 500)) {
+      pros::delay(DELAY_TIME);
     }
   }
   else if (active_drive_type==l_swing || active_drive_type==r_swing) {
-    while (turn_exit_condition(100, 3, 500, 7, 500)) {
-      pros::delay(delay_time);
+    while (turn_exit_condition(gyro_target, 100, 3, 500, 7, 500)) {
+      pros::delay(DELAY_TIME);
     }
     //while (turn_exit_condition(100, 3, 500, 7) && fabs(lf.get_power()-rf.get_power())<20) {
     //  pros::delay(delay_time);
@@ -533,10 +543,18 @@ wait_until(int input) {
       r_error = r_tar - right_sensor();
 
       // Break the loop once target is passed
-      if (sgn(l_error)!=l_sgn && sgn(r_error)!=r_sgn)
+      if (sgn(l_error)==l_sgn && sgn(r_error)==r_sgn) {
+        run = true; // this makes sure that the following else if is rnu after the sgn is flipped
+      }
+      else if (sgn(l_error)!=l_sgn && sgn(r_error)!=r_sgn) {
+        printf("Drive Wait Until Completed- Error Sgn Flipped\n");
         run = false;
+      }
+      else if (!drive_exit_condition(l_tar, r_tar, 80, 50, 300, 150, 500, true)) {
+        run = false;
+      }
 
-      pros::delay(10);
+      pros::delay(DELAY_TIME);
     }
   }
 
@@ -551,10 +569,17 @@ wait_until(int input) {
       g_error = input - get_gyro();
 
       // Break the loop once target is passed
-      if (sgn(g_error)!=g_sgn)
+      if (sgn(g_error)==g_sgn) {
+        run = true; // this makes sure that the following else if is rnu after the sgn is flipped
+      }
+      else if (sgn(g_error)!=g_sgn) {
         run = false;
+      }
+      else if (!turn_exit_condition(input, 100, 3, 500, 7, 500, true)) {
+        run = false;
+      }
 
-      pros::delay(10);
+      pros::delay(DELAY_TIME);
     }
   }
 }
