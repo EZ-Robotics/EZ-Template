@@ -5,8 +5,8 @@
  *
  * This runs during disabled and initialize to turn off all user created tasks.
  */
-void
-disable_all_tasks() {
+void disable_all_tasks()
+{
   drive_pid.suspend();
 }
 
@@ -20,57 +20,64 @@ disable_all_tasks() {
 const int num_of_pages = 6; // Number of pages
 int current_page = 0;
 
-void
-auto_select(bool is_auton) {
-  for (int i=0; i<7; i++)
+void auto_select(bool is_auton)
+{
+  for (int i = 0; i < 1; i++)
     pros::lcd::clear_line(i);
 
-  pros::lcd::set_text(0, "Autonomous "+std::to_string(current_page+1));
+  pros::lcd::set_text(0, "Autonomous " + std::to_string(current_page + 1));
 
-  switch (current_page) {
-    case 0: // Auto 1
-      pros::lcd::set_text(1, "Test Auton");
-      if (is_auton) test_auton();
-      break;
-    case 1: // Auto 2
-      pros::lcd::set_text(1, "Auton 1");
-      if (is_auton) auto_1();
-      break;
-    case 2: // Auto 3
-      pros::lcd::set_text(1, "Auton 2");
-      if (is_auton) auto_2();
-      break;
-    case 3: // Auto 4
-      pros::lcd::set_text(1, "Auton 3");
-      if (is_auton) auto_3();
-      break;
-    case 4: // Auto 5
-      pros::lcd::set_text(1, "Auton 4");
-      if (is_auton) auto_4();
-      break;
-    case 5: // Auto 6
-      pros::lcd::set_text(1, "Auton 5");
-      if (is_auton) auto_5();
-      break;
+  switch (current_page)
+  {
+  case 0: // Auto 1
+    pros::lcd::set_text(1, "Test Auton");
+    if (is_auton)
+      test_auton();
+    break;
+  case 1: // Auto 2
+    pros::lcd::set_text(1, "Auton 1");
+    if (is_auton)
+      auto_1();
+    break;
+  case 2: // Auto 3
+    pros::lcd::set_text(1, "Auton 2");
+    if (is_auton)
+      auto_2();
+    break;
+  case 3: // Auto 4
+    pros::lcd::set_text(1, "Auton 3");
+    if (is_auton)
+      auto_3();
+    break;
+  case 4: // Auto 5
+    pros::lcd::set_text(1, "Auton 4");
+    if (is_auton)
+      auto_4();
+    break;
+  case 5: // Auto 6
+    pros::lcd::set_text(1, "Auton 5");
+    if (is_auton)
+      auto_5();
+    break;
 
-    default:
-      break;
+  default:
+    break;
   }
 }
 
 // Page up/down
-void
-page_up() {
-  if(current_page==num_of_pages-1)
-    current_page=0;
+void page_up()
+{
+  if (current_page == num_of_pages - 1)
+    current_page = 0;
   else
     current_page++;
   auto_select(false);
 }
-void
-page_down() {
-  if(current_page==0)
-    current_page=num_of_pages-1;
+void page_down()
+{
+  if (current_page == 0)
+    current_page = num_of_pages - 1;
   else
     current_page--;
   auto_select(false);
@@ -82,8 +89,8 @@ page_down() {
  * All other competition modes are blocked by initialize; it is recommended
  * to keep execution time for this mode under a few seconds.
  */
-void
-initialize() {
+void initialize()
+{
   print_ez_template();
   pros::delay(500);
 
@@ -93,7 +100,8 @@ initialize() {
   auto_select(false);
   pros::lcd::register_btn0_cb(page_down);
   pros::lcd::register_btn2_cb(page_up);
-  if(!imu_calibrate()) {
+  if (!imu_calibrate())
+  {
     pros::lcd::set_text(7, "IMU failed to calibrate!");
   }
 
@@ -105,8 +113,8 @@ initialize() {
  * the VEX Competition Switch, following either autonomous or opcontrol. When
  * the robot is enabled, this task will exit.
  */
-void
-disabled() {
+void disabled()
+{
   disable_all_tasks();
 }
 
@@ -119,8 +127,8 @@ disabled() {
  * This task will exit when the robot is enabled and autonomous or opcontrol
  * starts.
  */
-void
-competition_initialize() {
+void competition_initialize()
+{
   disable_all_tasks();
 }
 
@@ -135,8 +143,8 @@ competition_initialize() {
  * will be stopped. Re-enabling the robot will restart the task, not re-start it
  * from where it left off.
  */
-void
-autonomous() {
+void autonomous()
+{
   tare_gyro();
   reset_drive_sensor();
   set_drive_brake(MOTOR_BRAKE_HOLD);
@@ -158,13 +166,14 @@ autonomous() {
  * operator control task will be stopped. Re-enabling the robot will restart the
  * task, not resume it from where it left off.
  */
-void
-opcontrol() {
+void opcontrol()
+{
   drive_pid.suspend();
   reset_drive_sensor();
   set_drive_brake(MOTOR_BRAKE_COAST); // This is preference to what you like to drive on
 
-  while (true) {
+  while (true)
+  {
     chassis_joystick_control();
 
     pros::delay(DELAY_TIME);

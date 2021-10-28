@@ -7,8 +7,15 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #pragma once
 #include "api.h"
 
-
+/**
+ * DEV
+ * A slew setup function; modify your slew settings in setup.hpp
+*/
 void set_slew_min_power(int fw, int bw);
+/**
+ * DEV
+ * A slew setup function; modify your slew settings in setup.hpp
+*/
 void set_slew_distance (int fw, int bw);
 
 void set_fw_drive_constants(float kp, float kd);
