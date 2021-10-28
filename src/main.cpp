@@ -1,7 +1,6 @@
 #include "main.h"
 #include <iostream>
 
-
 /**
  * Disables all tasks.
  *
@@ -149,7 +148,7 @@ void initialize()
     pros::lcd::set_text(7, "IMU failed to calibrate!");
   }
 
-  chassis_motor_init();
+  chassis_motor_init({-11, -5, -7}, {3, 2, 17});
 }
 
 

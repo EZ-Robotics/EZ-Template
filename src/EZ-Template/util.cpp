@@ -5,6 +5,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
 #include "main.h"
+#include <list>
 
 
 void
@@ -32,32 +33,38 @@ bool is_reversed(int input) {
   return false;
 }
 
-pros::Motor l_motor(abs(L_CHASSIS_PORTS[0]), MOTOR_GEARSET_6, is_reversed(L_CHASSIS_PORTS[0]), MOTOR_ENCODER_COUNTS);
-pros::Motor r_motor(abs(R_CHASSIS_PORTS[0]), MOTOR_GEARSET_6, is_reversed(R_CHASSIS_PORTS[0]), MOTOR_ENCODER_COUNTS);
+std::list<int> LL_MOTOR_PORTS;
+std::list<int> RR_MOTOR_PORTS;
+
+pros::Motor l_motor(abs(LL_MOTOR_PORTS.front()), MOTOR_GEARSET_6, is_reversed(LL_MOTOR_PORTS.front()), MOTOR_ENCODER_COUNTS);
+pros::Motor r_motor(abs(RR_MOTOR_PORTS.front()), MOTOR_GEARSET_6, is_reversed(RR_MOTOR_PORTS.front()), MOTOR_ENCODER_COUNTS);
 
 pros::Imu gyro(IMU_PORT);
 
 // Initializes pros reversing
-void
-chassis_motor_init() {
-  for(int i=0; i<MOTORS_PER_SIDE; i++) {
-    pros::Motor a(abs(L_CHASSIS_PORTS[i]), MOTOR_GEARSET_6, is_reversed(L_CHASSIS_PORTS[i]), MOTOR_ENCODER_COUNTS);
-    pros::Motor b(abs(R_CHASSIS_PORTS[i]), MOTOR_GEARSET_6, is_reversed(R_CHASSIS_PORTS[i]), MOTOR_ENCODER_COUNTS);
+void chassis_motor_init(std::list<int> l, std::list<int> r) {
+  LL_MOTOR_PORTS.assign(l.begin(), l.end());
+  RR_MOTOR_PORTS.assign(r.begin(), r.end());
+  for (int i : LL_MOTOR_PORTS) {
+    pros::Motor a(abs(i), MOTOR_GEARSET_6, is_reversed(i), MOTOR_ENCODER_COUNTS);
+  }
+  for (int i : RR_MOTOR_PORTS) {
+    pros::Motor b(abs(i), MOTOR_GEARSET_6, is_reversed(i), MOTOR_ENCODER_COUNTS);
   }
 }
 
 // Set drive
 void
 set_left_chassis(int l) {
-  for(int i=0; i<MOTORS_PER_SIDE; i++) {
-    pros::c::motor_move_voltage(abs(L_CHASSIS_PORTS[i]), l*(12000.0/127.0));
+  for (int i : LL_MOTOR_PORTS) {
+    pros::c::motor_move_voltage(abs(i), l*(12000.0/127.0));
   }
 }
 
 void
 set_right_chassis(int r) {
-  for(int i=0; i<MOTORS_PER_SIDE; i++) {
-    pros::c::motor_move_voltage(abs(R_CHASSIS_PORTS[i]), r*(12000.0/127.0));
+  for (int i : RR_MOTOR_PORTS) {
+    pros::c::motor_move_voltage(abs(i), r*(12000.0/127.0));
   }
 }
 
@@ -67,13 +74,14 @@ set_tank(int l, int r) {
   set_right_chassis(r);
 }
 
-
 // Brake modes
 void
 set_drive_brake(pros::motor_brake_mode_e_t input) {
-  for(int i=0; i<MOTORS_PER_SIDE; i++) {
-    pros::c::motor_set_brake_mode(abs(L_CHASSIS_PORTS[i]), input);
-    pros::c::motor_set_brake_mode(abs(R_CHASSIS_PORTS[i]), input);
+  for (int i : LL_MOTOR_PORTS) {
+    pros::c::motor_set_brake_mode(abs(i), input);
+  }
+  for (int i : RR_MOTOR_PORTS) {
+    pros::c::motor_set_brake_mode(abs(i), input);
   }
 }
 
@@ -81,15 +89,15 @@ set_drive_brake(pros::motor_brake_mode_e_t input) {
 // Motor telemetry
 void
 reset_drive_sensor() {
-  l_motor.tare_position();
-  r_motor.tare_position();
+  pros::c::motor_tare_position(abs(LL_MOTOR_PORTS.front()));
+  pros::c::motor_tare_position(abs(RR_MOTOR_PORTS.front()));
 }
 
-int right_sensor()   { return r_motor.get_position(); }
-int right_velocity() { return r_motor.get_actual_velocity(); }
+int right_sensor()   { return pros::c::motor_get_position(abs(RR_MOTOR_PORTS.front())); }
+int right_velocity() { return pros::c::motor_get_actual_velocity(abs(RR_MOTOR_PORTS.front())); }
 
-int left_sensor()    { return l_motor.get_position(); }
-int left_velocity()  { return l_motor.get_actual_velocity(); }
+int left_sensor()    { return pros::c::motor_get_position(abs(LL_MOTOR_PORTS.front())); }
+int left_velocity()  { return pros::c::motor_get_actual_velocity(abs(LL_MOTOR_PORTS.front())); }
 
 
 void  tare_gyro() { gyro.set_rotation(0); }
