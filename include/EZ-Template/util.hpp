@@ -79,7 +79,7 @@ bool imu_calibrate();
 
 /**
  * DEV
- * The jankiest way I've ever seen to get if a number is negative
+ * a **readable** way to get if a number is negative
 */
 int sgn(int input);
 /**
