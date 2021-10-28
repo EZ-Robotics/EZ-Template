@@ -6,10 +6,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "main.h"
 
-
-pros::controller_analog_e_t current_l_stick = LEFT_JOYSTICK;
-pros::controller_analog_e_t current_r_stick = RIGHT_JOYSTICK;
-bool IS_TANK = TANK_CONTROL;
+bool is_tank;
 
 
 ///
@@ -138,14 +135,14 @@ void
 modify_curve_with_controller() {
   button_press(&l_increase_, master.get_digital(INCREASE_L_CURVE), l_increase, save_l_curve_sd);
   button_press(&l_decrease_, master.get_digital(DECREASE_L_CURVE), l_decrease, save_l_curve_sd);
-  if (!IS_TANK) {
+  if (!is_tank) {
     button_press(&r_increase_, master.get_digital(INCREASE_R_CURVE), r_increase, save_r_curve_sd);
     button_press(&r_decrease_, master.get_digital(DECREASE_R_CURVE), r_decrease, save_r_curve_sd);
   }
 
   auto sf = std::to_string(RIGHT_CURVE_SCALE);
   auto st = std::to_string(LEFT_CURVE_SCALE);
-  if (!IS_TANK)
+  if (!is_tank)
     master.set_text(2, 0, st+"   "+sf);
   else
     master.set_text(2, 0, st);
@@ -174,55 +171,87 @@ left_curve_function(int x) {
 }
 
 
-///
-// Joystick Control
-///
-
-int x = 0;
-void
-arcade_tank_toggle() {
-  if (master.get_digital(TOGGLE_BUTTON) && x==0) {
-    x=1;
-    IS_TANK = !IS_TANK;
-
-    if (IS_TANK) {
-      current_l_stick = pros::E_CONTROLLER_ANALOG_LEFT_Y;
-      current_r_stick = pros::E_CONTROLLER_ANALOG_RIGHT_Y;
-    } else {
-      current_l_stick = pros::E_CONTROLLER_ANALOG_LEFT_Y;
-      current_r_stick = pros::E_CONTROLLER_ANALOG_RIGHT_X;
-    }
-    master.clear_line(2);
-  }
-  else if (!master.get_digital(TOGGLE_BUTTON)) {
-    x=0;
-  }
-}
-
-void
-chassis_joystick_control() {
-  // Arcade tank toggle
-  if (ARCADE_TANK_TOGGLE)
-    arcade_tank_toggle();
+// Tank control
+void chassis_tank() {
+  is_tank = true;
 
   // Toggle for controller curve
   if (!DISABLE_CONTROLLER)
     modify_curve_with_controller();
 
-  // Toggle for arcade / tank
-  int left_stick, right_stick;
-  if (IS_TANK)
-    right_stick  = left_curve_function(master.get_analog(current_r_stick));
-  else
-    right_stick  = right_curve_function(master.get_analog(current_r_stick));
-  left_stick = left_curve_function(master.get_analog(current_l_stick));
+  // Put the joysticks through the curve function
+  int l_stick = left_curve_function(master.get_analog(ANALOG_LEFT_Y));
+  int r_stick = right_curve_function(master.get_analog(ANALOG_RIGHT_Y));
 
   // Threshold if joysticks don't come back to perfect 0
-  if (abs(left_stick)>THRESH || abs(right_stick)>THRESH) {
-    if (IS_TANK)
-      set_tank(left_stick, right_stick);
-    else
-      set_tank(left_stick+right_stick, left_stick-right_stick);
+  if (abs(l_stick)>THRESH || abs(r_stick)>THRESH) {
+    set_tank(l_stick, r_stick);
+    reset_drive_sensor();
+  }
+  // When joys are released, run active brake (P) on drive
+  else {
+    set_tank((0-left_sensor())*ACTIVE_BRAKE_KP, (0-right_sensor())*ACTIVE_BRAKE_KP);
+  }
+}
+
+
+// Arcade control standard
+void chassis_arcade_standard(e_type t) {
+  is_tank = false;
+
+  // Toggle for controller curve
+  if (!DISABLE_CONTROLLER)
+    modify_curve_with_controller();
+
+  int l_stick, r_stick;
+  // Check arcade type (split vs single, normal vs flipped)
+  if (t == k_split) {
+    // Put the joysticks through the curve function
+    l_stick = left_curve_function(master.get_analog(ANALOG_LEFT_Y));
+    r_stick = right_curve_function(master.get_analog(ANALOG_RIGHT_X));
+  }
+  else if (t == k_single) {
+    // Put the joysticks through the curve function
+    l_stick = left_curve_function(master.get_analog(ANALOG_LEFT_Y));
+    r_stick = right_curve_function(master.get_analog(ANALOG_LEFT_X));
+  }
+
+  // Threshold if joysticks don't come back to perfect 0
+  if (abs(l_stick)>THRESH || abs(r_stick)>THRESH) {
+    set_tank(l_stick+r_stick, l_stick-r_stick);
+    reset_drive_sensor();
+  }
+  // When joys are released, run active brake (P) on drive
+  else {
+    set_tank((0-left_sensor())*ACTIVE_BRAKE_KP, (0-right_sensor())*ACTIVE_BRAKE_KP);
+  }
+}
+
+
+// Arcade control standard
+void chassis_arcade_flipped(e_type t) {
+  is_tank = false;
+
+  // Toggle for controller curve
+  if (!DISABLE_CONTROLLER)
+    modify_curve_with_controller();
+
+  int l_stick, r_stick;
+  // Check arcade type (split vs single, normal vs flipped)
+  if (t == k_split) {
+    // Put the joysticks through the curve function
+    r_stick = right_curve_function(master.get_analog(ANALOG_RIGHT_Y));
+    l_stick = left_curve_function(master.get_analog(ANALOG_LEFT_X));
+  }
+  else if (t == k_single) {
+    // Put the joysticks through the curve function
+    r_stick = right_curve_function(master.get_analog(ANALOG_RIGHT_Y));
+    l_stick = left_curve_function(master.get_analog(ANALOG_RIGHT_X));
+  }
+
+  // Threshold if joysticks don't come back to perfect 0
+  if (abs(l_stick)>THRESH || abs(r_stick)>THRESH) {
+    set_tank(r_stick+l_stick, r_stick-l_stick);
     reset_drive_sensor();
   }
   // When joys are released, run active brake (P) on drive

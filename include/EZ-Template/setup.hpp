@@ -39,29 +39,6 @@ const float RATIO     = 1.66666666667; // External drive ratio (MUST BE DECIMAL)
 
 
 ///
-// Joystick Setup
-///
-
-// Arcade Control...
-/*
-const bool TANK_CONTROL = false;
-#define LEFT_JOYSTICK  pros::E_CONTROLLER_ANALOG_LEFT_Y   // This is the "forward" stick
-#define RIGHT_JOYSTICK pros::E_CONTROLLER_ANALOG_RIGHT_X  // This is the "turning" stick
-*/
-///*
-// Tank Control...
-const bool TANK_CONTROL = true;
-#define LEFT_JOYSTICK  pros::E_CONTROLLER_ANALOG_LEFT_Y
-#define RIGHT_JOYSTICK pros::E_CONTROLLER_ANALOG_RIGHT_Y
-//*/
-
-// Do you want a button to toggle between arcade and tank?
-const bool ARCADE_TANK_TOGGLE = false; // True is yes, false is no
-#define TOGGLE_BUTTON pros::E_CONTROLLER_DIGITAL_UP // If above is true, this button will toggle the drive
-
-
-
-///
 // Input Curve Setup
 //  -adds an input curve to the joysticks, here https://www.desmos.com/calculator/rcfjjg83zx
 ///

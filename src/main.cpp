@@ -219,9 +219,13 @@ void opcontrol()
   reset_drive_sensor();
   set_drive_brake(MOTOR_BRAKE_COAST); // This is preference to what you like to drive on
 
-  while (true)
-  {
-    chassis_joystick_control();
+  while (true) {
+
+    chassis_tank(); // Tank control
+    // chassis_arcade_standard(split);
+    // chassis_arcade_standard(single);
+    // chassis_arcade_flipped(split);
+    // chassis_arcade_flipped(single);
 
     pros::delay(DELAY_TIME);
   }

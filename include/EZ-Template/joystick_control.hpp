@@ -10,4 +10,7 @@ void init_curve_sd();
 /**
  * Sets the chassis motors speeds to the controller joystick throttle amounts (settings in setup.hpp)
 */
-void chassis_joystick_control();
+enum e_type{ k_single=0, k_split=1 };
+void chassis_tank();
+void chassis_arcade_standard(e_type t);
+void chassis_arcade_flipped(e_type t);
