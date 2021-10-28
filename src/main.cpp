@@ -1,4 +1,6 @@
 #include "main.h"
+#include <iostream>
+
 
 /**
  * Disables all tasks.
@@ -9,6 +11,7 @@ void disable_all_tasks()
 {
   drive_pid.suspend();
 }
+
 
 /**
  * Autonomous selector using LLEMU.
@@ -25,45 +28,41 @@ void auto_select(bool is_auton)
   for (int i = 0; i < 1; i++)
     pros::lcd::clear_line(i);
 
-  pros::lcd::set_text(0, "Autonomous " + std::to_string(current_page + 1));
+  pros::lcd::set_text(0, "Page "+std::to_string(current_page+1));
 
-  switch (current_page)
-  {
-  case 0: // Auto 1
-    pros::lcd::set_text(1, "Test Auton");
-    if (is_auton)
-      test_auton();
-    break;
-  case 1: // Auto 2
-    pros::lcd::set_text(1, "Auton 1");
-    if (is_auton)
-      auto_1();
-    break;
-  case 2: // Auto 3
-    pros::lcd::set_text(1, "Auton 2");
-    if (is_auton)
-      auto_2();
-    break;
-  case 3: // Auto 4
-    pros::lcd::set_text(1, "Auton 3");
-    if (is_auton)
-      auto_3();
-    break;
-  case 4: // Auto 5
-    pros::lcd::set_text(1, "Auton 4");
-    if (is_auton)
-      auto_4();
-    break;
-  case 5: // Auto 6
-    pros::lcd::set_text(1, "Auton 5");
-    if (is_auton)
-      auto_5();
-    break;
+  switch (current_page) {
+    case 0: // Auto 1
+      pros::lcd::set_text(1, "Test Auton");
+      if (is_auton) test_auton();
+      break;
+    case 1: // Auto 2
+      pros::lcd::set_text(1, "Auton 1");
+      if (is_auton) auto_1();
+      break;
+    case 2: // Auto 3
+      pros::lcd::set_text(1, "Auton 2");
+      if (is_auton) auto_2();
+      break;
+    case 3: // Auto 4
+      pros::lcd::set_text(1, "Auton 3");
+      if (is_auton) auto_3();
+      break;
+    case 4: // Auto 5
+      pros::lcd::set_text(1, "Auton 4");
+      if (is_auton) auto_4();
+      break;
+    case 5: // Auto 6
+      pros::lcd::set_text(1, "Auton 5");
+      if (is_auton) auto_5();
+      break;
 
-  default:
-    break;
+    default:
+      break;
   }
 }
+
+// Global for updating SD
+void update_auto_sd();
 
 // Page up/down
 void page_up()
@@ -72,6 +71,7 @@ void page_up()
     current_page = 0;
   else
     current_page++;
+  update_auto_sd();
   auto_select(false);
 }
 void page_down()
@@ -80,8 +80,47 @@ void page_down()
     current_page = num_of_pages - 1;
   else
     current_page--;
+  update_auto_sd();
   auto_select(false);
 }
+
+
+/**
+ * Store the last page to the micro SD card
+ *
+ * This allows you to select your autonomous mode while in the queue or in the pits.
+ * If you powercycle the robot or turn off the code, the autonomous mode you selected
+ * will still hold.
+ */
+void
+update_auto_sd() {
+  // If no SD card, return
+  if (!IS_SD_CARD) return;
+
+  FILE* usd_file_write = fopen("/usd/auto.txt", "w");
+  std::string cp_str = std::to_string(current_page);
+  char const *cp_c = cp_str.c_str();
+  fputs(cp_c, usd_file_write);
+  fclose(usd_file_write);
+}
+
+void
+init_auto_sd() {
+  // If no SD card, return
+  if (!IS_SD_CARD)  return;
+
+  // Auton Selector
+  FILE* usd_file_read = fopen("/usd/auto.txt", "r");
+  char buf[5];
+  fread(buf, 1, 5, usd_file_read);
+  current_page = std::stoi(buf);
+  fclose(usd_file_read);
+
+  if(current_page>num_of_pages-1 || current_page<0)
+    current_page=0;
+  update_auto_sd();
+}
+
 
 /**
  * Runs initialization code. This occurs as soon as the program is started.
@@ -94,7 +133,12 @@ void initialize()
   print_ez_template();
   pros::delay(500);
 
+  if (!IS_SD_CARD) printf("No SD Card Found!\n");
+
   disable_all_tasks();
+
+  init_auto_sd();
+  init_curve_sd();
 
   pros::lcd::initialize();
   auto_select(false);
@@ -108,6 +152,7 @@ void initialize()
   chassis_motor_init();
 }
 
+
 /**
  * Runs while the robot is in the disabled state of Field Management System or
  * the VEX Competition Switch, following either autonomous or opcontrol. When
@@ -117,6 +162,7 @@ void disabled()
 {
   disable_all_tasks();
 }
+
 
 /**
  * Runs after initialize(), and before autonomous when connected to the Field
@@ -131,6 +177,7 @@ void competition_initialize()
 {
   disable_all_tasks();
 }
+
 
 /**
  * Runs the user autonomous code. This function will be started in its own task
@@ -152,6 +199,7 @@ void autonomous()
 
   auto_select(true);
 }
+
 
 /**
  * Runs the operator control code. This function will be started in its own task

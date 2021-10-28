@@ -7,6 +7,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #pragma once
 #include "api.h"
 extern pros::Controller master;
+const bool IS_SD_CARD = pros::usd::is_installed();
 const int DELAY_TIME = 10;
 
 ///
@@ -66,7 +67,7 @@ const bool ARCADE_TANK_TOGGLE = false; // True is yes, false is no
 ///
 
 const bool  CURVE_TYPE         = true;  // true is red, false is blue in the demos link above
-const bool  DISBALE_CONTROLLER = false; // If false, allows controller to modify CURVE_SCALE.
+const bool  DISABLE_CONTROLLER = false; // If false, allows controller to modify CURVE_SCALE.
                                         // if true, locks STARTING_LEFT_CURVE_SCALE and STARTING_RIGHT_CURVE_SCALE to whatever it's set to.
 
 // Arcade uses two sticks to control, and you need control over the curve on each stick.
