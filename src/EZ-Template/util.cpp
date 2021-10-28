@@ -134,8 +134,8 @@ sgn (int input) {
   return 0;
 }
 
-float
-clip_num(float input, float max, float min) {
+double
+clip_num(double input, double max, double min) {
   if (input > max)
     return max;
   else if (input < min)

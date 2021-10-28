@@ -494,7 +494,7 @@ turn_exit_condition(float target, int small_timeout, int start_small_counter_wit
 
 //Wait for drive
 void
-wait_drive(bool goal_yes, int delay_after) {
+wait_drive() {
   pros::delay(DELAY_TIME);
 
   // Parameters for exit condition function:

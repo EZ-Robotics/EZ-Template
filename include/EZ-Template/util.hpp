@@ -14,23 +14,49 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 void print_ez_template();
 
 /**
- * The left motors you specified in setup.hpp
+ * The left sensored motor.  Use this for telementry.
 */
 extern pros::Motor l_motor;
 
 /**
- * The right motors you specified in setup.hpp
+ * The right sensored motor.  Use this for telementry.
 */
 extern pros::Motor r_motor;
 
 /**
  * Declares and prepares chassis motors for pid and joystick control (run in initialize())
+ * \param l
+ *        left chassis ports
+ * \param r
+ *        right chassis ports
 */
 void chassis_motor_init(std::list<int> l, std::list<int> r);
 
+/**
+ * DEV
+ * Sets the left side of the drive
+ * \param left
+ *        voltage for left side, -127 to 127
+*/
 void set_left_chassis(int left);
+
+/**
+ * DEV
+ * Sets the right side of the drive
+ * \param right
+ *        voltage for right side, -127 to 127
+*/
 void set_right_chassis(int right);
+
+/**
+ * Sets the chassis to voltage
+ * \param input_l
+ *        voltage for left side, -127 to 127
+ * \param input_r
+ *        voltage for right side, -127 to 127
+*/
 void set_tank(int input_l, int input_r);
+
 /**
  * Changes the way the drive behaves when it is not under active user control
  * \param input
@@ -43,6 +69,7 @@ void set_drive_brake(pros::motor_brake_mode_e_t input);
  * The position of the right motor
 */
 int right_sensor();
+
 /**
  * DEV
  * The velocity of the right motor
@@ -50,12 +77,11 @@ int right_sensor();
 int right_velocity();
 
 /**
- * DEV
  * The position of the left motor
 */
+
 int left_sensor();
 /**
- * DEV
  * The velocity of the left motor
 */
 int left_velocity();
@@ -69,23 +95,24 @@ void reset_drive_sensor();
  * Resets the imu so that where the drive is pointing is zero in set_drive_pid(turn)
 */
 void tare_gyro();
+
 /**
  * Resets the imu so that where the drive is pointing is zero in set_drive_pid(turn)
  * Reccomended to run before auton
 */
 float get_gyro();
+
 /**
  * Calibrates the IMU, reccomended to run in initialize()
 */
 bool imu_calibrate();
 
 /**
- * DEV
- * a **readable** way to get if a number is negative
+ * Returns 1 if input is positive and -1 if input is negative
 */
 int sgn(int input);
+
 /**
- * DEV
  * Returns input restricted to min-max threshold
 */
-float clip_num(float input, float max, float min);
+double clip_num(double input, double max, double min);

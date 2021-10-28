@@ -7,10 +7,24 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #pragma once
 
 void init_curve_sd();
-/**
- * Sets the chassis motors speeds to the controller joystick throttle amounts (settings in setup.hpp)
-*/
+
 enum e_type{ k_single=0, k_split=1 };
+
+/**
+ * Sets the chassis to controller joysticks, using tank control.
+*/
 void chassis_tank();
+
+/**
+ * Sets the chassis to controller joysticks, using standard arcade control.
+ * \param t
+ *        enum e_type, k_single or k_split control
+*/
 void chassis_arcade_standard(e_type t);
+
+/**
+ * Sets the chassis to controller joysticks, using flipped arcade control.
+ * \param t
+ *        enum e_type, k_single or k_split control
+*/
 void chassis_arcade_flipped(e_type t);
