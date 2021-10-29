@@ -1,6 +1,7 @@
 #include "main.h"
+#include "AutonSelector.hpp"
 #include <iostream>
-
+using namespace std;
 /**
  * Disables all tasks.
  *
@@ -21,7 +22,7 @@ void disable_all_tasks()
  */
 const int num_of_pages = 6; // Number of pages
 int current_page = 0;
-
+function<void()> autonSelected;
 void auto_select(bool is_auton)
 {
   for (int i = 0; i < 1; i++)
@@ -32,27 +33,28 @@ void auto_select(bool is_auton)
   switch (current_page) {
     case 0: // Auto 1
       pros::lcd::set_text(1, "Test Auton");
-      if (is_auton) test_auton();
+
+      autonSelected = test_auton;
       break;
     case 1: // Auto 2
       pros::lcd::set_text(1, "Auton 1");
-      if (is_auton) auto_1();
+      autonSelected = auto_1;
       break;
     case 2: // Auto 3
       pros::lcd::set_text(1, "Auton 2");
-      if (is_auton) auto_2();
+      autonSelected = auto_2;
       break;
     case 3: // Auto 4
       pros::lcd::set_text(1, "Auton 3");
-      if (is_auton) auto_3();
+      autonSelected = auto_3;
       break;
     case 4: // Auto 5
       pros::lcd::set_text(1, "Auton 4");
-      if (is_auton) auto_4();
+      autonSelected = auto_4;
       break;
     case 5: // Auto 6
       pros::lcd::set_text(1, "Auton 5");
-      if (is_auton) auto_5();
+      autonSelected = auto_5;
       break;
 
     default:
@@ -63,9 +65,14 @@ void auto_select(bool is_auton)
 // Global for updating SD
 void update_auto_sd();
 
+
 // Page up/down
+
+auto List { tuple<std::string, std::function<void()>> {"name", auto_1}};
+AutonSelector as{ { tuple("name", auto_1) }};
 void page_up()
 {
+
   if (current_page == num_of_pages - 1)
     current_page = 0;
   else
