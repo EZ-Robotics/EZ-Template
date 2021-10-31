@@ -41,11 +41,8 @@
  */
 //#include "okapi/api.hpp"
 //#include "pros/api_legacy.h"
-
-#include "EZ-Template/setup.hpp"
 #include "EZ-Template/util.hpp"
-#include "EZ-Template/joystick_control.hpp"
-#include "EZ-Template/auton_drive_functions.hpp"
+#include "EZ-Template/drive.hpp"
 // More includes here...
 #include "autons.hpp"
 //#include "autons.hpp"
