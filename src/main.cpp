@@ -1,5 +1,6 @@
 #include "main.h"
 #include "EZ-Template/AutonSelector.hpp"
+#include "EZ-Template/SDcard.hpp"
 #include <iostream>
 using namespace std;
 /**
@@ -21,31 +22,11 @@ void disable_all_tasks()
  * print to brain.
  */
 
-// Global for updating SD
-void update_auto_sd();
 
 
 // Page up/down
 AutonSelector autoSelector {};
-void page_up()
-{
 
-  if (autoSelector.CurrentAutonPage == autoSelector.AutonCount - 1)
-    autoSelector.CurrentAutonPage = 0;
-  else
-    autoSelector.CurrentAutonPage++;
-  update_auto_sd();
-  autoSelector.PrintSelectedAuto();
-}
-void page_down()
-{
-  if (autoSelector.CurrentAutonPage == 0)
-    autoSelector.CurrentAutonPage = autoSelector.AutonCount - 1;
-  else
-    autoSelector.CurrentAutonPage--;
-  update_auto_sd();
-  autoSelector.PrintSelectedAuto();
-}
 
 
 /**
@@ -55,34 +36,6 @@ void page_down()
  * If you powercycle the robot or turn off the code, the autonomous mode you selected
  * will still hold.
  */
-void
-update_auto_sd() {
-  // If no SD card, return
-  if (!IS_SD_CARD) return;
-
-  FILE* usd_file_write = fopen("/usd/auto.txt", "w");
-  std::string cp_str = std::to_string(autoSelector.CurrentAutonPage);
-  char const *cp_c = cp_str.c_str();
-  fputs(cp_c, usd_file_write);
-  fclose(usd_file_write);
-}
-
-void
-init_auto_sd() {
-  // If no SD card, return
-  if (!IS_SD_CARD)  return;
-
-  // Auton Selector
-  FILE* usd_file_read = fopen("/usd/auto.txt", "r");
-  char buf[5];
-  fread(buf, 1, 5, usd_file_read);
-  autoSelector.CurrentAutonPage = std::stoi(buf);
-  fclose(usd_file_read);
-
-  if(autoSelector.CurrentAutonPage>autoSelector.AutonCount-1 || autoSelector.CurrentAutonPage<0)
-    autoSelector.CurrentAutonPage=0;
-  update_auto_sd();
-}
 
 
 /**
@@ -96,17 +49,17 @@ void initialize()
   print_ez_template();
   pros::delay(500);
 
-  if (!IS_SD_CARD) printf("No SD Card Found!\n");
+  if (!EZ::SD::IS_SD_CARD) printf("No SD Card Found!\n");
 
   disable_all_tasks();
 
-  init_auto_sd();
+  EZ::SD::init_auto_sd();
   init_curve_sd();
 
   pros::lcd::initialize();
   autoSelector.PrintSelectedAuto();
-  pros::lcd::register_btn0_cb(page_down);
-  pros::lcd::register_btn2_cb(page_up);
+  pros::lcd::register_btn0_cb(EZ::SD::page_down);
+  pros::lcd::register_btn2_cb(EZ::SD::page_up);
   if (!imu_calibrate())
   {
     pros::lcd::set_text(7, "IMU failed to calibrate!");

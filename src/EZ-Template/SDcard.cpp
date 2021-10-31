@@ -4,8 +4,10 @@ namespace EZ
 {
   namespace SD
   {
+    AutonSelector autonSelector{};
+    const bool IS_SD_CARD = pros::usd::is_installed();
     void
-    update_auto_sd(AutonSelector autoSelector) {
+    update_auto_sd() {
       // If no SD card, return
       if (!IS_SD_CARD) return;
 
@@ -17,7 +19,7 @@ namespace EZ
     }
 
     void
-    init_auto_sd(AutonSelector autoSelector) {
+    init_auto_sd() {
       // If no SD card, return
       if (!IS_SD_CARD)  return;
 
@@ -31,8 +33,27 @@ namespace EZ
       if(autoSelector.CurrentAutonPage>autoSelector.AutonCount-1 || autoSelector.CurrentAutonPage<0)
       {
         autoSelector.CurrentAutonPage=0;
-        update_auto_sd(autoSelector);
+        update_auto_sd();
       }
+    }
+    void page_up()
+    {
+
+      if (autoSelector.CurrentAutonPage == autoSelector.AutonCount - 1)
+        autoSelector.CurrentAutonPage = 0;
+      else
+        autoSelector.CurrentAutonPage++;
+      update_auto_sd();
+      autoSelector.PrintSelectedAuto();
+    }
+    void page_down()
+    {
+      if (autoSelector.CurrentAutonPage == 0)
+        autoSelector.CurrentAutonPage = autoSelector.AutonCount - 1;
+      else
+        autoSelector.CurrentAutonPage--;
+      update_auto_sd();
+      autoSelector.PrintSelectedAuto();
     }
   }
 }
