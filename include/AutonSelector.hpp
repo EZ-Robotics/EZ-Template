@@ -1,5 +1,6 @@
 #pragma once
-#include <list>
+//#include <list>
+#include "main.h"
 #include "Auton.hpp"
 #include <tuple>
 
@@ -7,24 +8,39 @@ using namespace std;
 class AutonSelector
 {
 public:
-  std::list<Auton> Autons;
-  int AutonIndex;
+  std::vector<Auton> Autons;
+  int CurrentAutonPage;
+  int AutonCount;
   AutonSelector();
-  AutonSelector(std::list<tuple<string, std::function<void()>>>);
-
+  AutonSelector(std::vector<tuple<std::string, std::function<void()>>>);
+  void CallSelectedAuto();
+  void PrintSelectedAuto();
 };
 AutonSelector::AutonSelector()
 {
-  AutonIndex = 0;
+  AutonCount = 0;
+  CurrentAutonPage = 0;
   Autons = {};
 }
-AutonSelector::AutonSelector(std::list<tuple<string, std::function<void()>>> autons)
+
+AutonSelector::AutonSelector(std::vector<tuple<std::string, std::function<void()>>> autons)
 {
-  AutonIndex = 0;
+  AutonCount = autons.size();
+  CurrentAutonPage = 0;
   //Autons();
   for(auto i : autons)
   {
     Auton temp(get<0>(i), get<1>(i));
     Autons.push_back(temp);
   }
+}
+void AutonSelector::PrintSelectedAuto()
+{
+  pros::lcd::clear_line(0);
+  pros::lcd::set_text(0, "Page "+std::to_string(CurrentAutonPage+1));
+  pros::lcd::set_text(1, Autons[CurrentAutonPage].Name);
+}
+void AutonSelector::CallSelectedAuto()
+{
+  Autons[AutonCount].CallAuton();
 }
