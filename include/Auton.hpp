@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include <functional>
+//hpp file
 class Auton
 {
 public:
@@ -10,14 +11,3 @@ public:
 private:
   std::function<void()> AutonCall;
 };
-
-Auton::Auton(std::string name, std::function<void()> callback)
-{
-  Name = name;
-  AutonCall = callback;
-}
-
-void Auton::CallAuton()
-{
-  AutonCall();
-}
