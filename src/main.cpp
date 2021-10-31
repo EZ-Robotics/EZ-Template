@@ -65,7 +65,7 @@ void initialize()
     pros::lcd::set_text(7, "IMU failed to calibrate!");
   }
 
-  chassis_motor_init({-11, -5, -7}, {3, 2, 17});
+  Drive ({-11, -5, -7}, {3, 2, 17}, 18, );
 }
 
 
@@ -144,6 +144,6 @@ void opcontrol()
     // chassis_arcade_flipped(split);
     // chassis_arcade_flipped(single);
 
-    pros::delay(DELAY_TIME);
+    pros::delay(10); // tweak to improve performance
   }
 }
