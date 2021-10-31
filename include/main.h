@@ -41,13 +41,16 @@
  */
 //#include "okapi/api.hpp"
 //#include "pros/api_legacy.h"
+
 #include "EZ-Template/setup.hpp"
 #include "EZ-Template/util.hpp"
 #include "EZ-Template/joystick_control.hpp"
 #include "EZ-Template/auton_drive_functions.hpp"
 // More includes here...
 #include "autons.hpp"
-#include "EZ-Template/SDcard.hpp"
+//#include "autons.hpp"
+
+//#include "EZ-Template/SDcard.hpp"
 /**
  * If you find doing pros::Motor() to be tedious and you'd prefer just to do
  * Motor, you can use the namespace with the following commented out line.
@@ -65,6 +68,7 @@
  * that they can be called from user code (i.e. calling autonomous from a
  * button press in opcontrol() for testing purposes).
  */
+
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -8,20 +8,7 @@ const int DRIVE_SPEED = 110; // This is 110/127 (around 87% of max speed).  We d
                              // faster and one side slower, giving better heading correction.
 const int TURN_SPEED  = 90;
 const int SWING_SPEED = 90;
-std::vector<tuple<std::string, std::function<void()>>> autoList = {
-  { tuple("Auton 1", auto_1) },
-  { tuple("Auton 2", auto_2) },
-  { tuple("Auton 3", auto_3) },
-  { tuple("Auton 4", auto_4) },
-  { tuple("Auton 5", auto_5) },
-  { tuple("Auton 6", auto_6) },
-  { tuple("Auton 7", auto_7) },
-  { tuple("Auton 8", auto_8) },
-  { tuple("Auton 9", auto_9) },
-  { tuple("Auton 10", auto_10) },
-};
 
-AutonSelector autoSelector{autoList};
 ///
 // Constants
 ///
@@ -34,6 +21,7 @@ reset_constants() {
   reset_fw_drive_constants();
   reset_bw_drive_constants();
   reset_turn_constants();
+
   reset_turn_i_constants();
   reset_swing_constants();
 }

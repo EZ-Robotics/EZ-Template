@@ -11,17 +11,3 @@ public:
 private:
   std::function<void()> AutonCall;
 };
-
-
-//cpp file
-Auton::Auton(std::string name, std::function<void()> callback)
-{
-  Name = name;
-  AutonCall = callback;
-}
-
-void Auton::CallAuton()
-{
-
-  AutonCall();
-}

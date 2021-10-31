@@ -1,5 +1,6 @@
 #include "main.h"
-#include "AutonSelector.hpp"
+#include "EZ-Template/AutonSelector.hpp"
+#include "EZ-Template/SDcard.hpp"
 #include <iostream>
 using namespace std;
 
@@ -12,7 +13,7 @@ void disable_all_tasks()
 {
   drive_pid.suspend();
 }
-
+AutonSelector autoSelector;
 
 /**
  * Autonomous selector using LLEMU.
@@ -30,9 +31,6 @@ void disable_all_tasks()
 
 //Example code for creating autos)
 //Ways to write it
-std::vector ls { tuple<std::string, std::function<void()>> {"name", EZ::auto_1}};
-AutonSelector as{ { tuple("name", EZ::auto_1) }};
-AutonSelector temp{ls};
 
 
 
@@ -43,29 +41,29 @@ AutonSelector temp{ls};
 void page_up()
 {
 
-  if(EZ::autoSelector.CurrentAutonPage == EZ::autoSelector.AutonCount - 1)
+  if(autoSelector.CurrentAutonPage == autoSelector.AutonCount - 1)
   {
-    EZ::autoSelector.CurrentAutonPage = 0;
+    autoSelector.CurrentAutonPage = 0;
   }
   else
   {
-    EZ::autoSelector.CurrentAutonPage++;
+    autoSelector.CurrentAutonPage++;
   }
-  EZ::SD::update_auto_sd();
-  EZ::autoSelector.PrintSelectedAuto();
+  EZ::SD::update_auto_sd(autoSelector);
+  autoSelector.PrintSelectedAuto();
 }
 void page_down()
 {
-  if(EZ::autoSelector.CurrentAutonPage == 0)
+  if(autoSelector.CurrentAutonPage == 0)
   {
-    EZ::autoSelector.CurrentAutonPage = EZ::autoSelector.AutonCount - 1;
+    autoSelector.CurrentAutonPage = autoSelector.AutonCount - 1;
   }
   else
   {
-    EZ::autoSelector.CurrentAutonPage--;
+    autoSelector.CurrentAutonPage--;
   }
-  EZ::SD::update_auto_sd();
-  EZ::autoSelector.PrintSelectedAuto();
+  EZ::SD::update_auto_sd(autoSelector);
+  autoSelector.PrintSelectedAuto();
 }
 
 
@@ -95,11 +93,11 @@ void initialize()
 
   disable_all_tasks();
 
-  EZ::SD::init_auto_sd();
+  EZ::SD::init_auto_sd(autoSelector);
   init_curve_sd();
 
   pros::lcd::initialize();
-  EZ::autoSelector.PrintSelectedAuto();
+  autoSelector.PrintSelectedAuto();
   pros::lcd::register_btn0_cb(page_down);
   pros::lcd::register_btn2_cb(page_up);
   if (!imu_calibrate())
@@ -155,7 +153,7 @@ void autonomous()
   set_drive_brake(MOTOR_BRAKE_HOLD);
   drive_pid.resume();
 
-  EZ::autoSelector.CallSelectedAuto();
+  autoSelector.CallSelectedAuto();
 }
 
 

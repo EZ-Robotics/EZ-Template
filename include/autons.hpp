@@ -1,8 +1,8 @@
-#pragma once
-#include "AutonSelector.hpp"
+#define AUTONS_HPP
+#ifndef AUTONS_HPP
 namespace EZ
 {
-  extern AutonSelector autoSelector;
+
   void reset_constants();
   void auto_1();
   void auto_2();
@@ -17,3 +17,4 @@ namespace EZ
 
   void test_auton();
 }
+#endif
