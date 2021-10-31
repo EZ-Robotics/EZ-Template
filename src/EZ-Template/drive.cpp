@@ -13,7 +13,7 @@ class Drive {
     // IMU Port
     int IMU_PORT;
 
-    pros::Imu gyro(IMU_PORT);
+    pros::Imu gyro;
 
     pros::Controller master;
     //! Params
@@ -115,9 +115,6 @@ class Drive {
     // if speed goes below min_speed, robot travels at min_speed until it gets within min_error, where motors go 0
     const int MIN_SPEED = 0;
     const int MIN_ERROR = 0;
-    Drive(std::vector<int> pLL_MOTOR_PORTS, std::vector<int> pRR_MOTOR_PORTS, int pIMU_PORT, pros::controller_id_e_t pController) {
-      
-    }
 
     // !Util
     bool is_reversed(int input) {
@@ -126,11 +123,6 @@ class Drive {
       return false;
     }
 
-    // Initializes pros reversing
-    void chassis_motor_init(std::list<int> l, std::list<int> r) {
-      LL_MOTOR_PORTS.assign(l.begin(), l.end());
-      RR_MOTOR_PORTS.assign(r.begin(), r.end());
-    }
 
     // Set drive
     void
@@ -306,8 +298,8 @@ class Drive {
       int hold_timer = 0;
       int increase = INCREASE_INTERVAL;
     } button_;
-
-    // Button logic
+    
+        // Button logic
     // When tapped, run increase/decrease function once
     // When held, run increase/decrease function every INCREASE_INTERCAL time
     void
@@ -794,7 +786,8 @@ class Drive {
         pros::delay(10);
       }
     }
-    pros::Task drive_pid(drive_pid_task, nullptr, "drive_pid");
+    // the task that will hold this function
+    pros::Task drive_pid;
 
     void
     set_max_speed(int speed) {
@@ -1052,4 +1045,15 @@ class Drive {
         }
       }
     }
+  
+  Drive(std::vector<int> pLL_MOTOR_PORTS, std::vector<int> pRR_MOTOR_PORTS, int pIMU_PORT, pros::controller_id_e_t pController) {
+    // initializes motor reversing
+    LL_MOTOR_PORTS.assign(pLL_MOTOR_PORTS.begin(), pLL_MOTOR_PORTS.end());
+    RR_MOTOR_PORTS.assign(pRR_MOTOR_PORTS.begin(), pRR_MOTOR_PORTS.end());
+    // declares imu
+    pros::IMU gyro(pIMU_PORT);
+    // gets drive_pid_task going
+    pros::Task drive_pid(drive_pid_task, nullptr, "drive_pid");
+
+  }
 };
