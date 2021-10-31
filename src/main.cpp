@@ -1,6 +1,7 @@
 #include "main.h"
+#include "EZ-Template/AutonSelector.hpp"
 #include <iostream>
-
+using namespace std;
 /**
  * Disables all tasks.
  *
@@ -19,68 +20,31 @@ void disable_all_tasks()
  * When is_auton is true, the autonomous mode will run.  Otherwise, it will only
  * print to brain.
  */
-const int num_of_pages = 6; // Number of pages
-int current_page = 0;
-
-void auto_select(bool is_auton)
-{
-  for (int i = 0; i < 1; i++)
-    pros::lcd::clear_line(i);
-
-  pros::lcd::set_text(0, "Page "+std::to_string(current_page+1));
-
-  switch (current_page) {
-    case 0: // Auto 1
-      pros::lcd::set_text(1, "Test Auton");
-      if (is_auton) test_auton();
-      break;
-    case 1: // Auto 2
-      pros::lcd::set_text(1, "Auton 1");
-      if (is_auton) auto_1();
-      break;
-    case 2: // Auto 3
-      pros::lcd::set_text(1, "Auton 2");
-      if (is_auton) auto_2();
-      break;
-    case 3: // Auto 4
-      pros::lcd::set_text(1, "Auton 3");
-      if (is_auton) auto_3();
-      break;
-    case 4: // Auto 5
-      pros::lcd::set_text(1, "Auton 4");
-      if (is_auton) auto_4();
-      break;
-    case 5: // Auto 6
-      pros::lcd::set_text(1, "Auton 5");
-      if (is_auton) auto_5();
-      break;
-
-    default:
-      break;
-  }
-}
 
 // Global for updating SD
 void update_auto_sd();
 
+
 // Page up/down
+AutonSelector autoSelector {};
 void page_up()
 {
-  if (current_page == num_of_pages - 1)
-    current_page = 0;
+
+  if (autoSelector.CurrentAutonPage == autoSelector.AutonCount - 1)
+    autoSelector.CurrentAutonPage = 0;
   else
-    current_page++;
+    autoSelector.CurrentAutonPage++;
   update_auto_sd();
-  auto_select(false);
+  autoSelector.PrintSelectedAuto();
 }
 void page_down()
 {
-  if (current_page == 0)
-    current_page = num_of_pages - 1;
+  if (autoSelector.CurrentAutonPage == 0)
+    autoSelector.CurrentAutonPage = autoSelector.AutonCount - 1;
   else
-    current_page--;
+    autoSelector.CurrentAutonPage--;
   update_auto_sd();
-  auto_select(false);
+  autoSelector.PrintSelectedAuto();
 }
 
 
@@ -97,7 +61,7 @@ update_auto_sd() {
   if (!IS_SD_CARD) return;
 
   FILE* usd_file_write = fopen("/usd/auto.txt", "w");
-  std::string cp_str = std::to_string(current_page);
+  std::string cp_str = std::to_string(autoSelector.CurrentAutonPage);
   char const *cp_c = cp_str.c_str();
   fputs(cp_c, usd_file_write);
   fclose(usd_file_write);
@@ -112,11 +76,11 @@ init_auto_sd() {
   FILE* usd_file_read = fopen("/usd/auto.txt", "r");
   char buf[5];
   fread(buf, 1, 5, usd_file_read);
-  current_page = std::stoi(buf);
+  autoSelector.CurrentAutonPage = std::stoi(buf);
   fclose(usd_file_read);
 
-  if(current_page>num_of_pages-1 || current_page<0)
-    current_page=0;
+  if(autoSelector.CurrentAutonPage>autoSelector.AutonCount-1 || autoSelector.CurrentAutonPage<0)
+    autoSelector.CurrentAutonPage=0;
   update_auto_sd();
 }
 
@@ -140,7 +104,7 @@ void initialize()
   init_curve_sd();
 
   pros::lcd::initialize();
-  auto_select(false);
+  autoSelector.PrintSelectedAuto();
   pros::lcd::register_btn0_cb(page_down);
   pros::lcd::register_btn2_cb(page_up);
   if (!imu_calibrate())
@@ -196,7 +160,7 @@ void autonomous()
   set_drive_brake(MOTOR_BRAKE_HOLD);
   drive_pid.resume();
 
-  auto_select(true);
+  autoSelector.CallSelectedAuto();
 }
 
 
