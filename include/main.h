@@ -45,6 +45,7 @@
 #include "EZ-Template/drive.hpp"
 // More includes here...
 #include "autons.hpp"
+#include "EZ-Template/Helper.hpp"
 //#include "autons.hpp"
 
 //#include "EZ-Template/SDcard.hpp"

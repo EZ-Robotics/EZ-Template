@@ -5,14 +5,15 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
 #pragma once
+#include "main.h"
 
-enum e_type{ k_single=0, k_split=1 };
 
 class Drive {
     public:
         std::vector<int> LL_MOTOR_PORTS = {};
         std::vector<int> RR_MOTOR_PORTS = {};
     private:
+
         // IMU Port
         int IMU_PORT;
 
@@ -47,12 +48,9 @@ class Drive {
 
 
 
-        ///
-        // Input Curve Setup
-        //  -adds an input curve to the joysticks, here https://www.desmos.com/calculator/rcfjjg83zx
-        ///
 
-        const bool  CURVE_TYPE         = true;  // true is red, false is blue in the demos link above
+
+
         const bool  DISABLE_CONTROLLER = false; // If false, allows controller to modify CURVE_SCALE.
                                                 // if true, locks STARTING_LEFT_CURVE_SCALE and STARTING_RIGHT_CURVE_SCALE to whatever it's set to.
 
@@ -61,8 +59,7 @@ class Drive {
         ///
 
         // Set the starting
-        float LEFT_CURVE_SCALE  = 0;
-        float RIGHT_CURVE_SCALE = 0;
+
 
         // Arcade uses two sticks to control, and you need control over the curve on each stick.
         // these buttons only do anything when DISABLE_CONTROLLER is FALSE
@@ -83,7 +80,7 @@ class Drive {
         //  -if you don't like active brake, set ACTIVE_BRAKE_KP to 0
         ///
         const float ACTIVE_BRAKE_KP = 0; // Constant for activebrake (increase this to make it more aggressive, 0.1 is recommended)
-        const int THRESH = 5; // Joystick threshold to trigger activebrake
+
 
 
 
@@ -127,30 +124,13 @@ class Drive {
         const int MIN_ERROR = 0;
     public:
         // ! Joystick
-        /**
-         * Sets the chassis to controller joysticks, using tank control.
-        */
-        void chassis_tank();
 
-        /**
-         * Sets the chassis to controller joysticks, using standard arcade control.
-         * \param t
-         *        enum e_type, k_single or k_split control
-        */
-        void chassis_arcade_standard(e_type t);
-
-        /**
-         * Sets the chassis to controller joysticks, using flipped arcade control.
-         * \param t
-         *        enum e_type, k_single or k_split control
-        */
-        void chassis_arcade_flipped(e_type t);
 
         /**
          * The left sensored motor.  Use this for telementry.
         */
         pros::Motor l_motor;
-        
+
         /**
          * The right sensored motor.  Use this for telementry.
         */
@@ -159,8 +139,8 @@ class Drive {
         /**
         *
         */
-       float left_curve_function(int x);
-       float right_curve_function(int x);
+
+
 
         // ! Util
         /**
@@ -247,20 +227,7 @@ class Drive {
         */
         bool imu_calibrate();
 
-        /**
-         * Returns 1 if input is positive and -1 if input is negative
-        */
-        int sgn(int input);
 
-        /**
-         * Returns true if the input is < 0
-        */
-        bool is_reversed(int input);
-
-        /**
-         * Returns input restricted to min-max threshold
-        */
-        double clip_num(double input, double max, double min);
 
         // !Auton
         void drive_exit_condition(float l_target, float r_target, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, bool wait_until = false);
