@@ -19,6 +19,7 @@ private:
   double StartI;
   double PrevError;
   double Integral;
+  double Derivative;
   long Time;
   long PrevTime;
 };

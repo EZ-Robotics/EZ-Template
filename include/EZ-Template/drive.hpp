@@ -55,14 +55,14 @@ class Drive {
          * \param t
          *        enum e_type, k_single or k_split control
         */
-        void chassis_arcade_flipped(e_type t);/**
-         * DEV
+        void chassis_arcade_flipped(e_type t);
+
+        /**
          * The position of the right motor
         */
         int right_sensor();
 
         /**
-         * DEV
          * The velocity of the right motor
         */
         int right_velocity();

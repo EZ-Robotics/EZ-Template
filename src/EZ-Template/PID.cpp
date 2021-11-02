@@ -34,7 +34,7 @@ void PID::SetTarget(double target)
   Target = target;
 }
 
-void Compute(double SensorValue)
+void PID::Compute(double SensorValue)
 {
   PrevError = Error;
   Error = Target - SensorValue;
