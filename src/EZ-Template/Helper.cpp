@@ -1,11 +1,11 @@
 #include "EZ-Template/Helper.hpp"
-bool is_reversed(int input) {
+static bool Helper::is_reversed(int input) {
   if (input < 0)
     return true;
   return false;
 }
 
-int sgn (int input) {
+int Helper::sgn (int input) {
   if (input > 0)
     return 1;
   else if (input < 0)
@@ -13,7 +13,7 @@ int sgn (int input) {
   return 0;
 }
 
-double clip_num(double input, double max, double min) {
+double Helper::clip_num(double input, double max, double min) {
   if (input > max)
     return max;
   else if (input < min)

@@ -22,11 +22,12 @@ PID::PID(double KP, double KI, double KD, double startI)
   SetConstants(kP, kI, kD);
   ResetVariables();
 }
-void PID::SetConstants(double p, double i, double d)
+void PID::SetConstants(double p, double i, double d, double startI)
 {
   kP = p;
   kI = i;
   kD = d;
+  StartI = startI;
 }
 void PID::SetTarget(double target)
 {

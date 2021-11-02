@@ -10,36 +10,29 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 // !Util
 
 
+Drive::Drive(int leftMotorPorts[], int rightMotorPorts[], int imuPort, double wheelDiameter = 3.25, double motorCartridge = 600, double ratio = 1.66666666667)
+{
 
-// Set drive
-void
-Drive::set_left_chassis(int l) {
-  for (int i : LL_MOTOR_PORTS) {
-    pros::c::motor_move_voltage(abs(i), sgn(i) * l * (12000.0/127.0));
-  }
-}
-
-void
-Drive::set_right_chassis(int r) {
-  for (int i : RR_MOTOR_PORTS) {
-    pros::c::motor_move_voltage(abs(i), sgn(i) * r * (12000.0/127.0));
-  }
 }
 
 void
 Drive::set_tank(int l, int r) {
-  set_left_chassis(l);
-  set_right_chassis(r);
+  for (auto i : LeftMotors) {
+    i.move_voltage(l*(12000.0/127.0));
+  }
+  for (auto i : RightMotors) {
+    i.move_voltage(r*(12000.0/127.0));
+  }
 }
 
 // Brake modes
 void
 Drive::set_drive_brake(pros::motor_brake_mode_e_t input) {
-  for (int i : LL_MOTOR_PORTS) {
-    pros::c::motor_set_brake_mode(abs(i), input);
+  for (auto i : LeftMotors) {
+    i.set_brake_mode(input);
   }
-  for (int i : RR_MOTOR_PORTS) {
-    pros::c::motor_set_brake_mode(abs(i), input);
+  for (auto i : RightMotors) {
+    i.set_brake_mode(input);
   }
 }
 
@@ -47,15 +40,15 @@ Drive::set_drive_brake(pros::motor_brake_mode_e_t input) {
 // Motor telemetry
 void
 Drive::reset_drive_sensor() {
-  pros::c::motor_tare_position(abs(LL_MOTOR_PORTS.front()));
-  pros::c::motor_tare_position(abs(RR_MOTOR_PORTS.front()));
+  LeftMotors.front().tare_position();
+  RightMotors.front().tare_position();
 }
 
-int Drive::right_sensor()   { return pros::c::motor_get_position(abs(RR_MOTOR_PORTS.front())); }
-int Drive::right_velocity() { return pros::c::motor_get_actual_velocity(abs(RR_MOTOR_PORTS.front())); }
+int Drive::right_sensor()   { return RightMotors.front().get_position(); }
+int Drive::right_velocity() { return RightMotors.front().get_actual_velocity(); }
 
-int Drive::left_sensor()    { return pros::c::motor_get_position(abs(LL_MOTOR_PORTS.front())); }
-int Drive::left_velocity()  { return pros::c::motor_get_actual_velocity(abs(LL_MOTOR_PORTS.front())); }
+int Drive::left_sensor()    { return LeftMotors.front().get_position(); }
+int Drive::left_velocity()  { return LeftMotors.front().get_actual_velocity(); }
 
 
 void  Drive::tare_gyro() { gyro.set_rotation(0); }
@@ -666,6 +659,7 @@ Drive::wait_until(int input) {
     }
   }
 }
+/*
 Drive(std::vector<int> pLL_MOTOR_PORTS, std::vector<int> pRR_MOTOR_PORTS, int pIMU_PORT, pros::controller_id_e_t pController) {
   // initializes motor reversing
   LL_MOTOR_PORTS.assign(pLL_MOTOR_PORTS.begin(), pLL_MOTOR_PORTS.end());
@@ -674,4 +668,4 @@ Drive(std::vector<int> pLL_MOTOR_PORTS, std::vector<int> pRR_MOTOR_PORTS, int pI
   pros::IMU gyro(pIMU_PORT);
   // gets drive_pid_task going
   drive_pid(drive_pid_task, nullptr, "drive_pid");
-}
+}*/

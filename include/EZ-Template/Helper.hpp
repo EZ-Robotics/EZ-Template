@@ -1,5 +1,6 @@
 #pragma once
-
+class Helper
+{
 /**
  * Returns 1 if input is positive and -1 if input is negative
 */
@@ -15,4 +16,5 @@ static double clip_num(double input, double min, double max);
 /**
  * DriverType
 */
-enum e_type{ k_single=0, k_split=1 };
+ 
+};

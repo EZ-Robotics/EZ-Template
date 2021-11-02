@@ -6,167 +6,35 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #pragma once
 #include "main.h"
-
-
+#include "EZ-Template/Helper.hpp"
+#include "EZ-Template/PID.hpp"
 class Drive {
     public:
-        std::vector<int> LL_MOTOR_PORTS = {};
-        std::vector<int> RR_MOTOR_PORTS = {};
-    private:
-
-        // IMU Port
-        int IMU_PORT;
-
+        enum e_type{ k_single=0, k_split=1 };
+        std::vector<pros::Motor> LeftMotors;
+        std::vector<pros::Motor> RightMotors;
         pros::Imu gyro;
 
-        pros::Controller master;
-        //! Params
-        const int DELAY_TIME = 10;
+        PID headingPID;
+        PID turnPID;
+        PID drivePID;
+        PID swingPID;
+        PID activeBrakePID;
 
-        ///
-        // Port Setup
-        ///
-        //const int MOTORS_PER_SIDE = 3; // Motors per side of drive
-
-        // Make the port negative if it's reversed
-        //const int  L_CHASSIS_PORTS[MOTORS_PER_SIDE] = {-4, 3, -5}; // Ports, the first number will be used for sensing
-        //const int  R_CHASSIS_PORTS[MOTORS_PER_SIDE] = {7, -8, 6}; // Ports, the first number will be used for sensing
-
-
-
-        ///
-        // Wheel Size
-        //  -for tick to inch conversion
-        ///
-        // Remember that 4" wheels are actually 4.125"!
-        // If you tune an inch conversion not listed below, tell us you have it with a pull request!
-        const float WHEEL_DIA = 3.25; // Have the robot go 8ft forward and adjust this value until the robot actually goes 8ft
-        const float CART_RPM  = 600;   // Output RPM of the cart
-        const float RATIO     = 1.66666666667; // External drive ratio (MUST BE DECIMAL)
-        // eg. if your drive is 84:36 where the 36t is powered, your RATIO would be 2.333.
-        // eg. if your drive is 36:60 where the 60t is powered, your RATIO would be 0.6.
-
-
-
-
-
-
-        const bool  DISABLE_CONTROLLER = false; // If false, allows controller to modify CURVE_SCALE.
-                                                // if true, locks STARTING_LEFT_CURVE_SCALE and STARTING_RIGHT_CURVE_SCALE to whatever it's set to.
-
-        ///
-        // Input Curve
-        ///
-
-        // Set the starting
-
-
-        // Arcade uses two sticks to control, and you need control over the curve on each stick.
-        // these buttons only do anything when DISABLE_CONTROLLER is FALSE
-        #define DECREASE_L_CURVE pros::E_CONTROLLER_DIGITAL_LEFT  // decrease left joystick curve
-        #define INCREASE_L_CURVE pros::E_CONTROLLER_DIGITAL_RIGHT // increase left joystick curve
-        #define DECREASE_R_CURVE pros::E_CONTROLLER_DIGITAL_Y     // decrease right joystick curve (disabled when TANK_CONTROL = false)
-        #define INCREASE_R_CURVE pros::E_CONTROLLER_DIGITAL_A     // increase right joystick curve (disabled when TANK_CONTROL = false)
-
-        const double STARTING_LEFT_CURVE_SCALE  = 0;     // Starting value for curve (if 0, linear graph)
-        const double STARTING_RIGHT_CURVE_SCALE = 0;     // Starting value for curve (if 0, linear graph) (disabled when TANK_CONTROL = false)
-        const double CURVE_MODIFY_INTERVAL      = 0.1;   // When you modify the scaler with the controller, it will increase/decrease by this interval
-
-
-
-        ///
-        // Active Brake Constants
-        //  -when both sticks are let go, run a p loop on the drive to make sure opponents can't push you
-        //  -if you don't like active brake, set ACTIVE_BRAKE_KP to 0
-        ///
-        const float ACTIVE_BRAKE_KP = 0; // Constant for activebrake (increase this to make it more aggressive, 0.1 is recommended)
-
-
-
-
-        ///
-        // PID Default Constants
-        //  -all constants have independent forward (FW) and backward (BW) constants
-        ///
-
-        // Slew
-        const int FW_SLEW_MIN_POWER = 80; // Starting speed when slew is enabled
-        const int BW_SLEW_MIN_POWER = 80;
-
-        const int FW_SLEW_DISTANCE  = 7; // After robot has traveled this far, the robot will go max speed
-        const int BW_SLEW_DISTANCE  = 7;
-
-        // Drive
-        const float FW_DRIVE_KP = 0.45;
-        const float FW_DRIVE_KD = 5;
-
-        const float BW_DRIVE_KP = 0.45;
-        const float BW_DRIVE_KD = 5;
-
-        // Heading
-        const float HEADING_KP = 11;
-        const float HEADING_KD = 20;
-
-        // Gyro
-        const float GYRO_KP = 5;
-        const float GYRO_KI = 0.003;
-        const float GYRO_KD = 35;
-        const float START_I = 15; // Start I when error is this
-        const int CLIPPED_TURN_I_SPEED = 30; // When I engages, this becomes max power
-
-        // Swing
-        const float SWING_KP = 12;
-        const float SWING_KD = 35;
-
-        // Minimum speed for driving and error to stop within
-        // if speed goes below min_speed, robot travels at min_speed until it gets within min_error, where motors go 0
-        const int MIN_SPEED = 0;
-        const int MIN_ERROR = 0;
-    public:
-        // ! Joystick
-
+        pros::Task drive_pid;
+        pros::Task turn_pid;
+        pros::Task swing_pid;
 
         /**
-         * The left sensored motor.  Use this for telementry.
+        * Give Sensor and Motor Ports (give a negative port if motor is reversed)
         */
-        pros::Motor l_motor;
+        Drive(int leftMotorPorts[], int rightMotorPorts[], int imuPort, double wheelDiameter = 3.25, double motorCartridge = 600, double ratio = 1.66666666667);
+        ~Drive();
 
         /**
-         * The right sensored motor.  Use this for telementry.
+        * Set Either the headingPID, turnPID, drivePID, activeBrakePID, or swingPID(IF NOT DONE PID WILL DEFAULT TO 0!)
         */
-        pros::Motor r_motor;
-
-        /**
-        *
-        */
-
-
-
-        // ! Util
-        /**
-         * Declares and prepares chassis motors for pid and joystick control (run in initialize())
-         * \param l
-         *        left chassis ports
-         * \param r
-         *        right chassis ports
-        */
-        void chassis_motor_init(std::list<int> l, std::list<int> r);
-
-        /**
-         * DEV
-         * Sets the left side of the drive
-         * \param left
-         *        voltage for left side, -127 to 127
-        */
-        void set_left_chassis(int left);
-
-        /**
-         * DEV
-         * Sets the right side of the drive
-         * \param right
-         *        voltage for right side, -127 to 127
-        */
-        void set_right_chassis(int right);
+        void SetPIDConstants(PID, double kP, double kI, double kD, double startI);
 
         /**
          * Sets the chassis to voltage
@@ -176,15 +44,18 @@ class Drive {
          *        voltage for right side, -127 to 127
         */
         void set_tank(int input_l, int input_r);
-
         /**
-         * Changes the way the drive behaves when it is not under active user control
-         * \param input
-         *        the 'brake mode' of the motor e.g. 'pros::E_MOTOR_BRAKE_COAST' 'pros::E_MOTOR_BRAKE_BRAKE' 'pros::E_MOTOR_BRAKE_HOLD'
+         * Sets the chassis to controller joysticks, using standard arcade control.
+         * \param t
+         *        enum e_type, k_single or k_split control
         */
-        void set_drive_brake(pros::motor_brake_mode_e_t input);
-
+        void chassis_arcade_standard(e_type t);
         /**
+         * Sets the chassis to controller joysticks, using flipped arcade control.
+         * \param t
+         *        enum e_type, k_single or k_split control
+        */
+        void chassis_arcade_flipped(e_type t);/**
          * DEV
          * The position of the right motor
         */
@@ -226,114 +97,12 @@ class Drive {
          * Calibrates the IMU, reccomended to run in initialize()
         */
         bool imu_calibrate();
-
-
-
-        // !Auton
-        void drive_exit_condition(float l_target, float r_target, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, bool wait_until = false);
-
-        void turn_exit_condition(float target, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, bool wait_until = false);
-
         /**
-         * Sets minimum slew speed constants.
-         * \param fw
-         *        minimum power for forward drive pd
-         * \param bw
-         *        minimum power for backwards drive pd
+         * Changes the way the drive behaves when it is not under active user control
+         * \param input
+         *        the 'brake mode' of the motor e.g. 'pros::E_MOTOR_BRAKE_COAST' 'pros::E_MOTOR_BRAKE_BRAKE' 'pros::E_MOTOR_BRAKE_HOLD'
         */
-        void set_slew_min_power(int fw, int bw);
-
-        /**
-         * Sets minimum slew distance constants.
-         * \param fw
-         *        minimum distance for forward drive pd
-         * \param bw
-         *        minimum distance for backwards drive pd
-        */
-        void set_slew_distance (int fw, int bw);
-
-        /**
-         * Sets kp and kd for forward drive pd.
-         * \param kp
-         *        multipler for p
-         * \param kd
-         *        multipler for d
-        */
-        void set_fw_drive_constants(float kp, float kd);
-
-        /**
-         * Sets kp and kd for backwards drive pd.
-         * \param kp
-         *        multipler for p
-         * \param kd
-         *        multipler for d
-        */
-        void set_bw_drive_constants(float kp, float kd);
-
-        /**
-         * Sets kp and kd for heading control.  This keeps the robot facing an angle while driving.
-         * \param kp
-         *        multipler for p
-         * \param kd
-         *        multipler for d
-        */
-        void set_heading_constants(float kp, float kd);
-
-        /**
-         * Sets kp, ki and kd for turning.
-         * \param kp
-         *        multipler for p
-         * \param ki
-         *        multipler for i
-         * \param kd
-         *        multipler for d
-        */
-        void set_turn_constants(float kp, float ki, float kd);
-
-        /**
-         * Set i constants
-         * \param starting
-         *        enable i when error is within this
-         * \param clipping
-         *        when within starting, clip speed to this
-        */
-        void set_turn_i_constants(float starting, int clipping);
-
-        /**
-         * Sets kp and kd for swing turns.
-         * \param kp
-         *        multipler for p
-         * \param kd
-         *        multipler for d
-        */
-        void set_swing_constants(float kp, float kd);
-
-        // these will get deleted when we get rid of setup.hpp
-        void reset_slew_min_power();
-        void reset_slew_distance();
-        void reset_fw_drive_constants();
-        void reset_bw_drive_constants();
-        void reset_turn_constants();
-        void reset_turn_i_constants();
-        void reset_swing_constants();
-
-
-        /**
-         * DEV
-         * Drive pid task
-        */
-        void drive_pid_task(void*);
-        pros::Task drive_pid;
-
-        /**
-         * DEV
-         * Variables that should be an enum.
-        */
-        const int drive = 0;
-        const int turn = 1;
-        const int l_swing = 2;
-        const int r_swing = 3;
-
+        void set_drive_brake(pros::motor_brake_mode_e_t input);
         /**
          * Changes max speed during a drive motion.
          * \param speed
@@ -367,4 +136,140 @@ class Drive {
          *        when driving, this is inches.  when turning, this is degrees.
         */
         void wait_until(int input);
+    private:
+      void drive_pid_task(void*);
+      float WHEEL_DIA; // Have the robot go 8ft forward and adjust this value until the robot actually goes 8ft
+      float CART_RPM;   // Output RPM of the cart
+      float RATIO; // External drive ratio (MUST BE DECIMAL)
+
+      void chassis_tank();
+
+
+
+      float left_curve_function(int x);
+      float right_curve_function(int x);
+
+
+
+        pros::Controller master;
+        //! Params
+        const int DELAY_TIME = 10;
+
+        const bool  DISABLE_CONTROLLER = false; // If false, allows controller to modify CURVE_SCALE.
+                                                // if true, locks STARTING_LEFT_CURVE_SCALE and STARTING_RIGHT_CURVE_SCALE to whatever it's set to.
+
+        ///
+        // Input Curve
+        ///
+
+        // Set the starting
+
+
+        // Arcade uses two sticks to control, and you need control over the curve on each stick.
+        // these buttons only do anything when DISABLE_CONTROLLER is FALSE
+        #define DECREASE_L_CURVE pros::E_CONTROLLER_DIGITAL_LEFT  // decrease left joystick curve
+        #define INCREASE_L_CURVE pros::E_CONTROLLER_DIGITAL_RIGHT // increase left joystick curve
+        #define DECREASE_R_CURVE pros::E_CONTROLLER_DIGITAL_Y     // decrease right joystick curve (disabled when TANK_CONTROL = false)
+        #define INCREASE_R_CURVE pros::E_CONTROLLER_DIGITAL_A     // increase right joystick curve (disabled when TANK_CONTROL = false)
+
+        const double STARTING_LEFT_CURVE_SCALE  = 0;     // Starting value for curve (if 0, linear graph)
+        const double STARTING_RIGHT_CURVE_SCALE = 0;     // Starting value for curve (if 0, linear graph) (disabled when TANK_CONTROL = false)
+        const double CURVE_MODIFY_INTERVAL      = 0.1;   // When you modify the scaler with the controller, it will increase/decrease by this interval
+
+
+
+        ///
+        // Active Brake Constants
+        //  -when both sticks are let go, run a p loop on the drive to make sure opponents can't push you
+        //  -if you don't like active brake, set ACTIVE_BRAKE_KP to 0
+        ///
+        const float ACTIVE_BRAKE_KP = 0; // Constant for activebrake (increase this to make it more aggressive, 0.1 is recommended)
+
+
+
+
+        // !Auton
+        void drive_exit_condition(float l_target, float r_target, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, bool wait_until = false);
+
+        void turn_exit_condition(float target, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, bool wait_until = false);
+
+        /**
+         * Sets minimum slew speed constants.
+         * \param fw
+         *        minimum power for forward drive pd
+         * \param bw
+         *        minimum power for backwards drive pd
+        */
+        void set_slew_min_power(int fw, int bw);
+
+        /**
+         * Sets minimum slew distance constants.
+         * \param fw
+         *        minimum distance for forward drive pd
+         * \param bw
+         *        minimum distance for backwards drive pd
+        */
+        void set_slew_distance (int fw, int bw);
+
+        /**
+         * Sets kp and kd for forward drive pd.
+         * \param kp
+         *        multipler for p
+         * \param kd
+         *        multipler for d
+        */
+        // these will get deleted when we get rid of setup.hpp
+        void reset_slew_min_power();
+        void reset_slew_distance();
+        void reset_fw_drive_constants();
+        void reset_bw_drive_constants();
+        void reset_turn_constants();
+        void reset_turn_i_constants();
+        void reset_swing_constants();
+
+        //IDK WHAT TO DO WITH THIS YET
+
+/*
+
+
+
+        ///
+        // PID Default Constants
+        //  -all constants have independent forward (FW) and backward (BW) constants
+        ///
+
+        // Slew
+        const int FW_SLEW_MIN_POWER = 80; // Starting speed when slew is enabled
+        const int BW_SLEW_MIN_POWER = 80;
+
+        const int FW_SLEW_DISTANCE  = 7; // After robot has traveled this far, the robot will go max speed
+        const int BW_SLEW_DISTANCE  = 7;
+
+        // Drive
+        const float FW_DRIVE_KP = 0.45;
+        const float FW_DRIVE_KD = 5;
+
+        const float BW_DRIVE_KP = 0.45;
+        const float BW_DRIVE_KD = 5;
+
+        // Heading
+        const float HEADING_KP = 11;
+        const float HEADING_KD = 20;
+
+        // Gyro
+        const float GYRO_KP = 5;
+        const float GYRO_KI = 0.003;
+        const float GYRO_KD = 35;
+        const float START_I = 15; // Start I when error is this
+        const int CLIPPED_TURN_I_SPEED = 30; // When I engages, this becomes max power
+
+        // Swing
+        const float SWING_KP = 12;
+        const float SWING_KD = 35;
+
+        // Minimum speed for driving and error to stop within
+        // if speed goes below min_speed, robot travels at min_speed until it gets within min_error, where motors go 0
+        const int MIN_SPEED = 0;
+        const int MIN_ERROR = 0;*/
+
 };
