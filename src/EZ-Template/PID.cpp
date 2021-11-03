@@ -47,5 +47,5 @@ void PID::Compute(double SensorValue)
   {
     Integral = 0;
   }
- Output = Error * kP + Integral * kI + Derivative * kD;
+  Output = Error * kP + Integral * kI + Derivative * kD;
 }

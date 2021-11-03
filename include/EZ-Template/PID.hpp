@@ -4,9 +4,9 @@ class PID
 public:
   PID();
   PID(double, double, double, double);
-  void SetConstants(double, double, double);
+  void SetConstants(double, double, double, double);
   void SetTarget(double);
-  double Compute(double);
+  void Compute(double);
 
 private:
   void ResetVariables();
