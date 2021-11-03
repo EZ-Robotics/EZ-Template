@@ -13,13 +13,13 @@ void PID::ResetVariables()
 
 PID::PID()
 {
-  SetConstants(0, 0, 0);
+  SetConstants(0, 0, 0, 0);
   ResetVariables();
 }
 PID::PID(double KP, double KI, double KD, double startI)
 {
   StartI = startI;
-  SetConstants(kP, kI, kD);
+  SetConstants(kP, kI, kD, startI);
   ResetVariables();
 }
 void PID::SetConstants(double p, double i, double d, double startI)
