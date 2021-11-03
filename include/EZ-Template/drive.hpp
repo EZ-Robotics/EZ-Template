@@ -14,7 +14,7 @@ class Drive {
         std::vector<pros::Motor> LeftMotors;
         std::vector<pros::Motor> RightMotors;
         pros::Imu gyro;
-
+        pros::Controller master;
         PID headingPID;
         PID turnPID;
         PID drivePID;
@@ -26,15 +26,18 @@ class Drive {
         pros::Task swing_pid;
 
         /**
-        * Give Sensor and Motor Ports (give a negative port if motor is reversed)
+        * Creates A Controller.
+        * Give Sensor Ports, Motor Ports (give a negative port if motor is reversed), Drive Measurements
+        * Set PID Constants
         */
         Drive(int leftMotorPorts[], int rightMotorPorts[], int imuPort, double wheelDiameter = 3.25, double motorCartridge = 600, double ratio = 1.66666666667);
         ~Drive();
 
+
         /**
         * Set Either the headingPID, turnPID, drivePID, activeBrakePID, or swingPID(IF NOT DONE PID WILL DEFAULT TO 0!)
         */
-        void SetPIDConstants(PID, double kP, double kI, double kD, double startI);
+        void SetPIDConstants(PID pid, double kP, double kI, double kD, double startI);
 
         /**
          * Sets the chassis to voltage
@@ -124,23 +127,37 @@ class Drive {
          *        toggle for heading correction
         */
         void set_drive_pid(int type, float target, int speed, bool slew_on = false, bool toggle_heading = false);
-
+        void set_turn_pid(double target, int speed, bool slew_on);
+        void set_swing_pid(double target, int speed, bool slew_on);
         /**
          * Lock the code in a while loop until the robot has settled.
         */
-        void wait_drive();
-
+        void wait_drive(double l_target, double r_target, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, int delay_time = 10, bool wait_until = false);
+        void wait_turn(double target, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, int delay_time = 10, bool wait_until = false);
+        void wait_swing(double target, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, int delay_time = 10, bool wait_until = false);
         /**
          * Lock the code in a while loop until this position has passed.
          * \param input
          *        when driving, this is inches.  when turning, this is degrees.
         */
-        void wait_until(int input);
-    private:
+        void wait_until_drive(double input, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, int delay_time = 10, bool wait_until = true);
+
+        void wait_until_swing(double input, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, int delay_time = 10, bool wait_until = true);
+
+        void wait_until_turn(double input, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, int delay_time = 10, bool wait_until = true);
+
+    private:  // !Auton
+      void drive_exit_condition(double l_target, double r_target, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, bool wait_until = false, int delay_time = 10);
+
+      void turn_exit_condition(double target, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, bool wait_until = false, int delay_time = 10);
+
+      double WHEEL_DIA; // Have the robot go 8ft forward and adjust this value until the robot actually goes 8ft
+      double CART_RPM;   // Output RPM of the cart
+      double RATIO; // External drive ratio (MUST BE DECIMAL)
+
       void drive_pid_task(void*);
-      float WHEEL_DIA; // Have the robot go 8ft forward and adjust this value until the robot actually goes 8ft
-      float CART_RPM;   // Output RPM of the cart
-      float RATIO; // External drive ratio (MUST BE DECIMAL)
+      void swing_pid_task(void*);
+      void turn_pid_task(void*);
 
       void chassis_tank();
 
@@ -151,9 +168,6 @@ class Drive {
 
 
 
-        pros::Controller master;
-        //! Params
-        const int DELAY_TIME = 10;
 
         const bool  DISABLE_CONTROLLER = false; // If false, allows controller to modify CURVE_SCALE.
                                                 // if true, locks STARTING_LEFT_CURVE_SCALE and STARTING_RIGHT_CURVE_SCALE to whatever it's set to.
@@ -188,10 +202,6 @@ class Drive {
 
 
 
-        // !Auton
-        void drive_exit_condition(float l_target, float r_target, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, bool wait_until = false);
-
-        void turn_exit_condition(float target, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, bool wait_until = false);
 
         /**
          * Sets minimum slew speed constants.

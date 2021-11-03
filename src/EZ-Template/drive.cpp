@@ -409,7 +409,7 @@ Drive::set_max_speed(int speed) {
 }
 
 void
-Drive::set_drive_pid(int type, float target, int speed, bool slew_on, bool toggle_heading) {
+Drive::set_drive_pid(int type, float target, int speed, bool slew_on, bool toggle_heading, ) {
   // Global setup
   active_drive_type = type;
   max_speed = speed;
@@ -461,12 +461,12 @@ Drive::set_drive_pid(int type, float target, int speed, bool slew_on, bool toggl
 }
 
 bool
-Drive::drive_exit_condition(float l_target, float r_target, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, bool wait_until = false) {
+Drive::drive_exit_condition(float l_target, float r_target, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, int delay_time = 10, bool wait_until = false) {
   static int i = 0, j = 0, k = 0, g = 0;
 
   // If the robot gets within the target, make sure it's there for small_timeout amount of time
   if (fabs(l_target-left_sensor())<start_small_counter_within && fabs(r_target-right_sensor())<start_small_counter_within) {
-    j+=DELAY_TIME;
+    j+=delay_time;
     //printf("\nJ: %i", j/10);
 
     if (j>small_timeout) {
@@ -483,7 +483,7 @@ Drive::drive_exit_condition(float l_target, float r_target, int small_timeout, i
   // If the robot is close to the target, start a timer.  If the robot doesn't get closer within
   // a certain amount of time, exit and continue.
   if (fabs(l_target-left_sensor())<start_big_counter_within && fabs(r_target-right_sensor())<start_big_counter_within) {
-    i+=DELAY_TIME;
+    i+=delay_time;
     //printf("\nI: %i", i/10);
 
     if (i>big_timeout) {
@@ -498,7 +498,7 @@ Drive::drive_exit_condition(float l_target, float r_target, int small_timeout, i
   }
 
   if (right_velocity()==0 && left_velocity()==0) {
-    k+=DELAY_TIME;
+    k+=delay_time;
     //printf("\nI: %i", i/10);
 
     if (k>velocity_timeout) {
@@ -516,12 +516,12 @@ Drive::drive_exit_condition(float l_target, float r_target, int small_timeout, i
 }
 
 bool
-Drive::turn_exit_condition(float target, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, bool wait_until = false) {
+Drive::turn_exit_condition(double target, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, int delay_time = 10, bool wait_until = false) {
   static int i, j, k;
 
   // If the robot gets within the target, make sure it's there for small_timeout amount of time
   if (fabs(target-get_gyro())<start_small_counter_within) {
-    j+=DELAY_TIME;
+    j+=delay_time;
     //printf("\nJ: %i", j/10);
 
     if (j>small_timeout) {
@@ -537,7 +537,7 @@ Drive::turn_exit_condition(float target, int small_timeout, int start_small_coun
   // If the robot is close to the target, start a timer.  If the robot doesn't get closer within
   // a certain amount of time, exit and continue.
   if (fabs(target-get_gyro())<start_big_counter_within) {
-    i+=DELAY_TIME;
+    i+=delay_time;
     //printf("\nI: %i", i/10);
 
     if (i>big_timeout) {
@@ -552,7 +552,7 @@ Drive::turn_exit_condition(float target, int small_timeout, int start_small_coun
   }
 
   if (right_velocity()==0 && left_velocity()==0) {
-    k+=DELAY_TIME;
+    k+=delay_time;
     //printf("\nI: %i", i/10);
 
     if (k>velocity_timeout) {
@@ -570,8 +570,8 @@ Drive::turn_exit_condition(float target, int small_timeout, int start_small_coun
 
 //Wait for drive
 void
-Drive::wait_drive() {
-  pros::delay(DELAY_TIME);
+Drive::wait_drive(float l_target, float r_target, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, int delay_time = 10, bool wait_until = false) {
+  pros::delay(delay_time);
 
   // Parameters for exit condition function:
   // #3 - time the robot has to be within #2 of target
@@ -580,31 +580,30 @@ Drive::wait_drive() {
   // #6 - position for robot to be within to never reach target
   // #7 - velocity timeout
 
-  if (active_drive_type==drive) {
-    while (drive_exit_condition(l_target_encoder, r_target_encoder, 80, 50, 300, 150, 500)) {
-      pros::delay(DELAY_TIME);
+    while (drive_exit_condition(l_target_encoder, r_target_encoder, small_timeout, start_small_counter_within, big_timeout, start_big_counter_within, velocity_timeout, delay_time, wait_until)) {
+      pros::delay(delay_time);
     }
-  }
-  else if (active_drive_type==turn) {
-    while (turn_exit_condition(gyro_target, 100, 3, 500, 7, 500)) {
-      pros::delay(DELAY_TIME);
-    }
-  }
-  else if (active_drive_type==l_swing || active_drive_type==r_swing) {
-    while (turn_exit_condition(gyro_target, 100, 3, 500, 7, 500)) {
-      pros::delay(DELAY_TIME);
-    }
-    //while (turn_exit_condition(100, 3, 500, 7) && fabs(lf.get_power()-rf.get_power())<20) {
-    //  pros::delay(delay_time);
-    //}
   }
 }
+void
+Drive::wait_turn(double target, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, int delay_time = 10, bool wait_until = false)
+{
+  while (turn_exit_condition(target, small_timeout, start_small_counter_within, big_timeout, start_big_counter_within, velocity_timeout, delay_time, wait_until)) {
+    pros::delay(delay_time);
+  }
 
+}
+void
+Drive::wait_swing(double target, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, int delay_time = 10, bool wait_until = false)
+{
+  while (turn_exit_condition(target, small_timeout, start_small_counter_within, big_timeout, start_big_counter_within, velocity_timeout, delay_time, wait_until)) {
+    pros::delay(delay_time);
+  }
+}
 // Function to wait until a certain position is reached
 void
-Drive::wait_until(int input) {
+Drive::wait_until_drive(double input, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, int delay_time = 10) {
   // If robot is driving...
-  if (active_drive_type == drive) {
     // Calculate error between current and target (target needs to be an inbetween position)
     int l_tar   = l_start + (input*TICK_PER_INCH);
     int r_tar   = r_start + (input*TICK_PER_INCH);
@@ -626,46 +625,39 @@ Drive::wait_until(int input) {
         printf("Drive Wait Until Completed- Error Sgn Flipped\n");
         run = false;
       }
-      else if (!drive_exit_condition(l_tar, r_tar, 80, 50, 300, 150, 500, true)) {
+      else if (!drive_exit_condition(l_tar, r_tar, small_timeout, start_small_counter_within, big_timeout, start_big_counter_within, velocity_timeout, delay_time, true)) {
         run = false;
       }
 
-      pros::delay(DELAY_TIME);
+      pros::delay(delay_time);
     }
-  }
+}
+void
+Drive::wait_until_turn(double input, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, int delay_time = 10)
+{
+  int g_error = input - get_gyro();
+  int g_sgn   = sgn(g_error);
+  bool run    = true;
 
-  // If robot is turning...
-  else if (active_drive_type==turn || active_drive_type==l_swing || active_drive_type==r_swing) {
-    // Calculate error between current and target (target needs to be an inbetween position)
-    int g_error = input - get_gyro();
-    int g_sgn   = sgn(g_error);
-    bool run    = true;
+  while (run) {
+    g_error = input - get_gyro();
 
-    while (run) {
-      g_error = input - get_gyro();
-
-      // Break the loop once target is passed
-      if (sgn(g_error)==g_sgn) {
-        run = true; // this makes sure that the following else if is rnu after the sgn is flipped
-      }
-      else if (sgn(g_error)!=g_sgn) {
-        run = false;
-      }
-      else if (!turn_exit_condition(input, 100, 3, 500, 7, 500, true)) {
-        run = false;
-      }
-
-      pros::delay(DELAY_TIME);
+    // Break the loop once target is passed
+    if (sgn(g_error)==g_sgn) {
+      run = true; // this makes sure that the following else if is rnu after the sgn is flipped
     }
+    else if (sgn(g_error)!=g_sgn) {
+      run = false;
+    }
+    else if (!turn_exit_condition(input, small_timeout, start_small_counter_within, big_timeout, start_big_counter_within, velocity_timeout, delay_time, true)) {
+      run = false;
+    }
+
+    pros::delay(delay_time);
   }
 }
-/*
-Drive(std::vector<int> pLL_MOTOR_PORTS, std::vector<int> pRR_MOTOR_PORTS, int pIMU_PORT, pros::controller_id_e_t pController) {
-  // initializes motor reversing
-  LL_MOTOR_PORTS.assign(pLL_MOTOR_PORTS.begin(), pLL_MOTOR_PORTS.end());
-  RR_MOTOR_PORTS.assign(pRR_MOTOR_PORTS.begin(), pRR_MOTOR_PORTS.end());
-  // declares imu
-  pros::IMU gyro(pIMU_PORT);
-  // gets drive_pid_task going
-  drive_pid(drive_pid_task, nullptr, "drive_pid");
-}*/
+void
+Drive::wait_until_swing(double input, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, int delay_time = 10)
+{
+  wait_until_turn(input, small_timeout, start_small_counter_within, big_timeout, start_big_counter_within, velocity_timeout, delay_time);
+}
