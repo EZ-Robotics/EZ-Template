@@ -1,5 +1,7 @@
 #include "EZ-Template/PID.hpp"
 #include "main.h"
+#include "EZ-Template/Helper.hpp"
+
 void PID::ResetVariables()
 {
   Output = 0;
@@ -43,7 +45,7 @@ void PID::Compute(double SensorValue)
   {
     Integral += Error;
   }
-  if(sgn(Error) != sgn(PrevError))
+  if(ez::util::sgn(Error) != ez::util::sgn(PrevError))
   {
     Integral = 0;
   }

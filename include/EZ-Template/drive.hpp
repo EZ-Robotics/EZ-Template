@@ -19,7 +19,6 @@ class Drive {
         PID turnPID;
         PID drivePID;
         PID swingPID;
-        PID activeBrakePID;
 
         pros::Task drive_pid;
         pros::Task turn_pid;
@@ -31,8 +30,7 @@ class Drive {
         * Set PID Constants
         */
         Drive(int leftMotorPorts[], int rightMotorPorts[], int imuPort, double wheelDiameter = 3.25, double motorCartridge = 600, double ratio = 1.66666666667);
-        ~Drive();
-
+        ~Drive(); // deconstructor (DELETE POINTERS HERE) (DONT LEEK MEMORY) (I DONT THINK WE NEED THIS)
 
         /**
         * Set Either the headingPID, turnPID, drivePID, activeBrakePID, or swingPID(IF NOT DONE PID WILL DEFAULT TO 0!)
@@ -47,12 +45,19 @@ class Drive {
          *        voltage for right side, -127 to 127
         */
         void set_tank(int input_l, int input_r);
+
+        /**
+         * Sets the chassis to controller joysticks, using the best control, tank.
+        */
+        void chassis_tank();
+
         /**
          * Sets the chassis to controller joysticks, using standard arcade control.
          * \param t
          *        enum e_type, k_single or k_split control
         */
         void chassis_arcade_standard(e_type t);
+
         /**
          * Sets the chassis to controller joysticks, using flipped arcade control.
          * \param t
@@ -75,6 +80,7 @@ class Drive {
         */
 
         int left_sensor();
+
         /**
          * The velocity of the left motor
         */
@@ -100,12 +106,14 @@ class Drive {
          * Calibrates the IMU, reccomended to run in initialize()
         */
         bool imu_calibrate();
+
         /**
          * Changes the way the drive behaves when it is not under active user control
          * \param input
          *        the 'brake mode' of the motor e.g. 'pros::E_MOTOR_BRAKE_COAST' 'pros::E_MOTOR_BRAKE_BRAKE' 'pros::E_MOTOR_BRAKE_HOLD'
         */
         void set_drive_brake(pros::motor_brake_mode_e_t input);
+
         /**
          * Changes max speed during a drive motion.
          * \param speed
@@ -126,30 +134,31 @@ class Drive {
          * \param toggle_heading
          *        toggle for heading correction
         */
-        void set_drive_pid(int type, float target, int speed, bool slew_on = false, bool toggle_heading = false);
+        void set_drive_pid(float target, int speed, bool slew_on = false, bool toggle_heading = false);
         void set_turn_pid(double target, int speed, bool slew_on);
         void set_swing_pid(double target, int speed, bool slew_on);
+
         /**
          * Lock the code in a while loop until the robot has settled.
         */
-        void wait_drive(double l_target, double r_target, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, int delay_time = 10, bool wait_until = false);
-        void wait_turn(double target, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, int delay_time = 10, bool wait_until = false);
-        void wait_swing(double target, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, int delay_time = 10, bool wait_until = false);
+        void wait_drive();
+        //void wait_drive(double l_target, double r_target, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, int delay_time = 10, bool wait_until = false);
+        //void wait_turn(double target, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, int delay_time = 10, bool wait_until = false);
+        //void wait_swing(double target, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, int delay_time = 10, bool wait_until = false);
+
         /**
          * Lock the code in a while loop until this position has passed.
          * \param input
          *        when driving, this is inches.  when turning, this is degrees.
         */
-        void wait_until_drive(double input, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, int delay_time = 10, bool wait_until = true);
-
-        void wait_until_swing(double input, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, int delay_time = 10, bool wait_until = true);
-
-        void wait_until_turn(double input, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, int delay_time = 10, bool wait_until = true);
+        void wait_until(double target);
+        //void wait_until_drive(double input, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, int delay_time = 10, bool wait_until = true);
+        //void wait_until_swing(double input, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, int delay_time = 10, bool wait_until = true);
+        //void wait_until_turn(double input, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, int delay_time = 10, bool wait_until = true);
 
     private:  // !Auton
-      void drive_exit_condition(double l_target, double r_target, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, bool wait_until = false, int delay_time = 10);
-
-      void turn_exit_condition(double target, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, bool wait_until = false, int delay_time = 10);
+      bool drive_exit_condition(double l_target, double r_target);
+      bool turn_exit_condition(double target);
 
       double WHEEL_DIA; // Have the robot go 8ft forward and adjust this value until the robot actually goes 8ft
       double CART_RPM;   // Output RPM of the cart
@@ -159,7 +168,6 @@ class Drive {
       void swing_pid_task(void*);
       void turn_pid_task(void*);
 
-      void chassis_tank();
 
 
 
@@ -169,26 +177,12 @@ class Drive {
 
 
 
-        const bool  DISABLE_CONTROLLER = false; // If false, allows controller to modify CURVE_SCALE.
-                                                // if true, locks STARTING_LEFT_CURVE_SCALE and STARTING_RIGHT_CURVE_SCALE to whatever it's set to.
-
-        ///
-        // Input Curve
-        ///
-
-        // Set the starting
+        bool  DISABLE_CONTROLLER = false; // If false, allows controller to modify CURVE_SCALE.
 
 
-        // Arcade uses two sticks to control, and you need control over the curve on each stick.
-        // these buttons only do anything when DISABLE_CONTROLLER is FALSE
-        #define DECREASE_L_CURVE pros::E_CONTROLLER_DIGITAL_LEFT  // decrease left joystick curve
-        #define INCREASE_L_CURVE pros::E_CONTROLLER_DIGITAL_RIGHT // increase left joystick curve
-        #define DECREASE_R_CURVE pros::E_CONTROLLER_DIGITAL_Y     // decrease right joystick curve (disabled when TANK_CONTROL = false)
-        #define INCREASE_R_CURVE pros::E_CONTROLLER_DIGITAL_A     // increase right joystick curve (disabled when TANK_CONTROL = false)
-
-        const double STARTING_LEFT_CURVE_SCALE  = 0;     // Starting value for curve (if 0, linear graph)
-        const double STARTING_RIGHT_CURVE_SCALE = 0;     // Starting value for curve (if 0, linear graph) (disabled when TANK_CONTROL = false)
-        const double CURVE_MODIFY_INTERVAL      = 0.1;   // When you modify the scaler with the controller, it will increase/decrease by this interval
+        double STARTING_LEFT_CURVE_SCALE  = 0;     // Starting value for curve (if 0, linear graph)
+        double STARTING_RIGHT_CURVE_SCALE = 0;     // Starting value for curve (if 0, linear graph) (disabled when TANK_CONTROL = false)
+        double CURVE_MODIFY_INTERVAL      = 0.1;   // When you modify the scaler with the controller, it will increase/decrease by this interval
 
 
 
@@ -197,9 +191,7 @@ class Drive {
         //  -when both sticks are let go, run a p loop on the drive to make sure opponents can't push you
         //  -if you don't like active brake, set ACTIVE_BRAKE_KP to 0
         ///
-        const float ACTIVE_BRAKE_KP = 0; // Constant for activebrake (increase this to make it more aggressive, 0.1 is recommended)
-
-
+        float ACTIVE_BRAKE_KP = 0; // Constant for activebrake (increase this to make it more aggressive, 0.1 is recommended)
 
 
 
@@ -221,21 +213,6 @@ class Drive {
         */
         void set_slew_distance (int fw, int bw);
 
-        /**
-         * Sets kp and kd for forward drive pd.
-         * \param kp
-         *        multipler for p
-         * \param kd
-         *        multipler for d
-        */
-        // these will get deleted when we get rid of setup.hpp
-        void reset_slew_min_power();
-        void reset_slew_distance();
-        void reset_fw_drive_constants();
-        void reset_bw_drive_constants();
-        void reset_turn_constants();
-        void reset_turn_i_constants();
-        void reset_swing_constants();
 
         //IDK WHAT TO DO WITH THIS YET
 
