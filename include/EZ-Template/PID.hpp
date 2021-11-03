@@ -2,24 +2,29 @@
 class PID
 {
 public:
+  struct Constants
+  {
+    double kP;
+    double kI;
+    double kD;
+    double StartI;
+  };
   PID();
   PID(double, double, double, double);
   void SetConstants(double, double, double, double);
   void SetTarget(double);
   void Compute(double);
-
+  Constants GetConstants();
 private:
   void ResetVariables();
-  double kP;
-  double kI;
-  double kD;
-  double Output;
-  double Target;
-  double Error;
-  double StartI;
-  double PrevError;
-  double Integral;
-  double Derivative;
-  long Time;
-  long PrevTime;
+  Constants constants;
+  double output;
+  double target;
+  double error;
+
+  double prev_error;
+  double integral;
+  double derivative;
+  long time;
+  long prev_time;
 };

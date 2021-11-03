@@ -4,13 +4,13 @@
 
 void PID::ResetVariables()
 {
-  Output = 0;
-  Target = 0;
-  Error = 0;
-  PrevError = 0;
-  Integral = 0;
-  Time = 0;
-  PrevTime = 0;
+  output = 0;
+  target = 0;
+  error = 0;
+  prev_error = 0;
+  integral = 0;
+  time = 0;
+  prev_time = 0;
 }
 
 PID::PID()
@@ -18,36 +18,39 @@ PID::PID()
   SetConstants(0, 0, 0, 0);
   ResetVariables();
 }
+PID::Constants PID::GetConstants()
+{
+  return constants;
+}
 PID::PID(double KP, double KI, double KD, double startI)
 {
-  StartI = startI;
-  SetConstants(kP, kI, kD, startI);
+  SetConstants(KP, KI, KD, startI);
   ResetVariables();
 }
 void PID::SetConstants(double p, double i, double d, double startI)
 {
-  kP = p;
-  kI = i;
-  kD = d;
-  StartI = startI;
+  constants.kP = p;
+  constants.kI = i;
+  constants.kD = d;
+  constants.StartI = startI;
 }
 void PID::SetTarget(double target)
 {
-  Target = target;
+  target = target;
 }
 
 void PID::Compute(double SensorValue)
 {
-  PrevError = Error;
-  Error = Target - SensorValue;
-  Derivative = Error - PrevError;
-  if(fabs(Error) < StartI)
+  prev_error = error;
+  error = target - SensorValue;
+  derivative = error - prev_error;
+  if(fabs(error) < constants.StartI)
   {
-    Integral += Error;
+    integral += error;
   }
-  if(ez::util::sgn(Error) != ez::util::sgn(PrevError))
+  if(ez::util::sgn(error) != ez::util::sgn(prev_error))
   {
-    Integral = 0;
+    integral = 0;
   }
-  Output = Error * kP + Integral * kI + Derivative * kD;
+  output = error * constants.kP + integral * constants.kI + derivative * constants.kD;
 }

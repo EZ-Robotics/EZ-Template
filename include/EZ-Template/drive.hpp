@@ -8,18 +8,29 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include "main.h"
 #include "EZ-Template/Helper.hpp"
 #include "EZ-Template/PID.hpp"
+#include <functional>
 class Drive {
     public:
         enum e_type{ k_single=0, k_split=1 };
+
         std::vector<pros::Motor> LeftMotors;
         std::vector<pros::Motor> RightMotors;
         pros::Imu gyro;
         pros::Controller master;
         PID headingPID;
         PID turnPID;
-        PID drivePID;
+        PID forwardDrivePID;
+        PID leftPID;
+        PID rightPID;
+        PID backwardDrivePID;
         PID swingPID;
-
+        typedef struct {
+          bool lock = false;
+          bool release_reset = false;
+          int release_timer = 0;
+          int hold_timer = 0;
+          double increase = 100;
+        } button_;
         pros::Task drive_pid;
         pros::Task turn_pid;
         pros::Task swing_pid;
@@ -29,7 +40,7 @@ class Drive {
         * Give Sensor Ports, Motor Ports (give a negative port if motor is reversed), Drive Measurements
         * Set PID Constants
         */
-        Drive(int leftMotorPorts[], int rightMotorPorts[], int imuPort, double wheelDiameter = 3.25, double motorCartridge = 600, double ratio = 1.66666666667);
+        Drive(std::vector<int> leftMotorPorts, std::vector<int> rightMotorPorts, int imuPort, double wheelDiameter = 3.25, double motorCartridge = 600, double ratio = 1.66666666667);
         ~Drive(); // deconstructor (DELETE POINTERS HERE) (DONT LEEK MEMORY) (I DONT THINK WE NEED THIS)
 
         /**
@@ -155,8 +166,18 @@ class Drive {
         //void wait_until_drive(double input, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, int delay_time = 10, bool wait_until = true);
         //void wait_until_swing(double input, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, int delay_time = 10, bool wait_until = true);
         //void wait_until_turn(double input, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, int delay_time = 10, bool wait_until = true);
-
+        void set_curve_default(int left, int right);
+        void init_curve_sd();
     private:  // !Auton
+      double TICK_PER_REV;
+      double CIRCUMFERENCE;
+      double TICK_PER_INCH;
+      int max_speed;
+      static void save_l_curve_sd();
+      static void save_r_curve_sd();
+      void modify_curve_with_controller();
+      void button_press(button_ *input_name, int button, std::function<void()> changeCurve, std::function<void()> save);
+
       bool drive_exit_condition(double l_target, double r_target);
       bool turn_exit_condition(double target);
 
@@ -164,10 +185,9 @@ class Drive {
       double CART_RPM;   // Output RPM of the cart
       double RATIO; // External drive ratio (MUST BE DECIMAL)
 
-      void drive_pid_task(void*);
-      void swing_pid_task(void*);
-      void turn_pid_task(void*);
-
+      static void drive_pid_task(void*);
+      static void swing_pid_task(void*);
+      static void turn_pid_task(void*);
 
 
 
@@ -177,16 +197,21 @@ class Drive {
 
 
 
-        bool  DISABLE_CONTROLLER = false; // If false, allows controller to modify CURVE_SCALE.
+      bool  DISABLE_CONTROLLER = false; // If false, allows controller to modify CURVE_SCALE.
+      bool is_tank;
+      static double left_curve_scale;
+      static double right_curve_scale;
+
+      static void l_decrease();
+      static void l_increase();
+      static void r_decrease();
+      static void r_increase();
 
 
-        double STARTING_LEFT_CURVE_SCALE  = 0;     // Starting value for curve (if 0, linear graph)
-        double STARTING_RIGHT_CURVE_SCALE = 0;     // Starting value for curve (if 0, linear graph) (disabled when TANK_CONTROL = false)
-        double CURVE_MODIFY_INTERVAL      = 0.1;   // When you modify the scaler with the controller, it will increase/decrease by this interval
-
-
-
-        ///
+      button_ l_increase_;
+      button_ l_decrease_;
+      button_ r_increase_;
+      button_ r_decrease_;  ///
         // Active Brake Constants
         //  -when both sticks are let go, run a p loop on the drive to make sure opponents can't push you
         //  -if you don't like active brake, set ACTIVE_BRAKE_KP to 0

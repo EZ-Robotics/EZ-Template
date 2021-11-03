@@ -8,8 +8,10 @@ using namespace std;
  *
  * This runs during disabled and initialize to turn off all user created tasks.
  */
+
 void disable_all_tasks()
 {
+
   drive_pid.suspend();
 }
 
@@ -106,8 +108,11 @@ void competition_initialize()
  * will be stopped. Re-enabling the robot will restart the task, not re-start it
  * from where it left off.
  */
+ void x()
+{}
 void autonomous()
 {
+  Auton temp {"Name", x};
   tare_gyro();
   reset_drive_sensor();
   set_drive_brake(MOTOR_BRAKE_HOLD);

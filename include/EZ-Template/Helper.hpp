@@ -18,6 +18,6 @@ namespace ez {
     /**
      * DriverType
     */
-
+    extern bool IS_SD_CARD;
   } // util namespace
 } // ez namespace
