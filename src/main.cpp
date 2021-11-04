@@ -67,7 +67,7 @@ void initialize()
 
   disable_all_tasks();
 
-  ez::sd::init_auto_sd();
+  ez::sd::init_auton_selector(autoSelector);
   //init_curve_sd();
 
   pros::lcd::initialize();

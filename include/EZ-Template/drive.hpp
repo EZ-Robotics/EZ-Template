@@ -218,10 +218,7 @@ class Drive {
       double CIRCUMFERENCE;
       double TICK_PER_INCH;
       int max_speed;
-      static void save_l_curve_sd();
-      static void save_r_curve_sd();
-      void modify_curve_with_controller();
-      void button_press(button_ *input_name, int button, std::function<void()> changeCurve, std::function<void()> save);
+
 
       bool drive_exit_condition(double l_target, double r_target);
       bool turn_exit_condition(double target);
@@ -237,8 +234,7 @@ class Drive {
 
 
 
-      float left_curve_function(int x);
-      float right_curve_function(int x);
+      float unction(int x);
 
 
       double SLEW_DISTANCE [2];
@@ -248,17 +244,26 @@ class Drive {
       double r_start = 0;
 
 
-
-
       bool  DISABLE_CONTROLLER = false; // If false, allows controller to modify CURVE_SCALE.
       bool is_tank;
-      static double left_curve_scale;
-      static double right_curve_scale;
 
-      static void l_decrease();
-      static void l_increase();
-      static void r_decrease();
-      static void r_increase();
+      double left_curve_function(double x);
+      double right_curve_function(double x);
+
+       void save_l_curve_sd();
+      void save_r_curve_sd();
+     void modify_curve_with_controller();
+     void button_press(button_ *input_name, int button, std::function<void()> changeCurve, std::function<void()> save);
+     //void button_press(button_ *input_name, int button, void (*changeCurve)(), void (*save)());
+
+        double left_curve_scale;
+        double right_curve_scale;
+
+        void l_decrease();
+        void l_increase();
+        void r_decrease();
+        void r_increase();
+
 
 
       button_ l_increase_;

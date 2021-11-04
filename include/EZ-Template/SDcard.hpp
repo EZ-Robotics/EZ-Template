@@ -12,10 +12,11 @@ namespace ez
 {
   namespace sd
   {
-    extern AutonSelector autoSelector;
+
+    //extern AutonSelector autoSelector;
     extern const bool IS_SD_CARD;
+    void init_auton_selector(AutonSelector selector);
     void update_auto_sd();
-    void init_auto_sd();
     void page_up();
     void page_down();
   } // sd namespace

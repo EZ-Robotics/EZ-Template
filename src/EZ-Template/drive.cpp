@@ -86,8 +86,7 @@ Drive::init_curve_sd() {
 }
 
 // Save New left Curve
-void
-Drive::save_l_curve_sd() {
+void Drive::save_l_curve_sd() {
   // If no SD card, return
   if (!ez::util::IS_SD_CARD) return;
 
@@ -97,8 +96,7 @@ Drive::save_l_curve_sd() {
   fputs(in_c, usd_file_write);
   fclose(usd_file_write);
 }
-void
-Drive::save_r_curve_sd() {
+void Drive::save_r_curve_sd() {
   // If no SD card, return
   if (!ez::util::IS_SD_CARD) return;
 
@@ -124,33 +122,18 @@ void Drive::r_decrease() {
   right_curve_scale =  right_curve_scale<0 ? 0 : right_curve_scale;
 }
 void
-Drive::modify_curve_with_controller() {
-
-  button_press(&l_increase_, master.get_digital(pros::E_CONTROLLER_DIGITAL_RIGHT), l_increase, save_l_curve_sd);
-  button_press(&l_decrease_, master.get_digital(pros::E_CONTROLLER_DIGITAL_LEFT), l_decrease, save_l_curve_sd);
-  if (!is_tank) {
-    button_press(&r_increase_, master.get_digital(pros::E_CONTROLLER_DIGITAL_A), r_increase, save_r_curve_sd);
-    button_press(&r_decrease_, master.get_digital(pros::E_CONTROLLER_DIGITAL_Y), r_decrease, save_r_curve_sd);
-  }
-
-  auto sf = std::to_string(right_curve_scale);
-  auto st = std::to_string(left_curve_scale);
-  if (!is_tank)
-    master.set_text(2, 0, st+"   "+sf);
-  else
-    master.set_text(2, 0, st);
-}
-void
 Drive::button_press(button_ *input_name, int button, std::function<void()> changeCurve, std::function<void()> save) {
+//Drive::button_press(button_ *input_name, int button, void (*changeCurve)(), void (*save)()) {
+
   if (button && !input_name->lock) {
     changeCurve();
     input_name->lock = true;
     input_name->release_reset = true;
   }
   else if (button && input_name->lock) {
-    input_name->hold_timer+=10;
+    input_name->hold_timer+=ez::util::DELAY_TIME;
     if (input_name->hold_timer > 500.0) {
-      input_name->increase+=10;
+      input_name->increase+=ez::util::DELAY_TIME;
       if (input_name->increase > 0.1) {
         changeCurve();
         input_name->increase = 0;
@@ -162,7 +145,7 @@ Drive::button_press(button_ *input_name, int button, std::function<void()> chang
     input_name->hold_timer = 0;
 
     if (input_name->release_reset) {
-      input_name->release_timer+=10;
+      input_name->release_timer+=ez::util::DELAY_TIME;
       if (input_name->release_timer > 500.0/2.0) {
         save();
         input_name->release_timer = 0;
@@ -170,6 +153,41 @@ Drive::button_press(button_ *input_name, int button, std::function<void()> chang
       }
     }
   }
+}
+void Drive::modify_curve_with_controller() {
+  button_press(&l_increase_, master.get_digital(pros::E_CONTROLLER_DIGITAL_RIGHT), ([this]{ this->l_increase(); }), ([this]{ this->save_l_curve_sd(); }));
+  button_press(&l_decrease_, master.get_digital(pros::E_CONTROLLER_DIGITAL_LEFT), ([this]{ this->l_decrease(); }), ([this]{ this->save_l_curve_sd(); }));
+  if (!is_tank) {
+    button_press(&r_increase_, master.get_digital(pros::E_CONTROLLER_DIGITAL_A), ([this]{ this->r_increase(); }), ([this]{ this->save_r_curve_sd(); }));
+    button_press(&r_decrease_, master.get_digital(pros::E_CONTROLLER_DIGITAL_Y), ([this]{ this->r_decrease(); }), ([this]{ this->save_r_curve_sd(); }));
+  }
+
+  auto sf = std::to_string(right_curve_scale);
+  auto st = std::to_string(left_curve_scale);
+  if (!is_tank)
+    master.set_text(2, 0, st+"   "+sf);
+  else
+    master.set_text(2, 0, st);
+}
+
+
+double Drive::left_curve_function(double x) {
+  if (left_curve_scale != 0) {
+    //if (CURVE_TYPE)
+      return (powf(2.718, -(left_curve_scale/10)) + powf(2.718, (fabs(x)-127)/10) * (1-powf(2.718, -(left_curve_scale/10))))*x;
+    //else
+      //return powf(2.718, ((abs(x)-127)*RIGHT_CURVE_SCALE)/100)*x;
+  }
+  return x;
+}
+double Drive::right_curve_function(double x) {
+  if (right_curve_scale != 0) {
+    //if (CURVE_TYPE)
+      return (powf(2.718, -(right_curve_scale/10)) + powf(2.718, (fabs(x)-127)/10) * (1-powf(2.718, -(right_curve_scale/10))))*x;
+    //else
+      //return powf(2.718, ((abs(x)-127)*RIGHT_CURVE_SCALE)/100)*x;
+  }
+  return x;
 }
 
 
@@ -226,8 +244,7 @@ Drive::chassis_arcade_standard(e_type t) {
 
 
 // Arcade control standard
-void
-Drive::chassis_arcade_flipped(e_type t) {
+void Drive::chassis_arcade_flipped(e_type t) {
   is_tank = false;
 
   int l_stick, r_stick;
