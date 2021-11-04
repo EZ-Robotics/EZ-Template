@@ -341,7 +341,7 @@ Drive::set_slew_distance(int fwd, int rev) {
 void
 Drive::set_drive_pid(double target, int speed, bool slew_on, bool toggle_heading) {
   // Global setup
-  set_max_speed(speed);
+  set_max_speed(abs(speed));
   bool slew = slew_on;
   HEADING_ON = toggle_heading;
   bool isBackwards = false;
@@ -351,8 +351,8 @@ Drive::set_drive_pid(double target, int speed, bool slew_on, bool toggle_heading
   // If drive or line, set targets to drive
 
     printf("Drive Started... Target Value: %f\n", target);
-    double l_start = left_sensor();
-    double r_start = right_sensor();
+    l_start = left_sensor();
+    r_start = right_sensor();
     l_target_encoder = l_start + (target*TICK_PER_INCH);
     r_target_encoder = r_start + (target*TICK_PER_INCH);
     if (target<l_start && target<r_start) {
@@ -378,35 +378,34 @@ Drive::set_drive_pid(double target, int speed, bool slew_on, bool toggle_heading
     l.x_intercept = l_start + (SLEW_DISTANCE[isBackwards]*TICK_PER_INCH);
     r.x_intercept = r_start + (SLEW_DISTANCE[isBackwards]*TICK_PER_INCH);
 
-    l.y_intercept = max_speed * l.sign;
-    r.y_intercept = max_speed * r.sign;
+    l.y_intercept = abs(speed) * l.sign;
+    r.y_intercept = abs(speed) * r.sign;
 
-    l.slope = (SLEW_MIN_POWER[isBackwards]-max_speed) / ((l_start+(SLEW_DISTANCE[isBackwards]*TICK_PER_INCH))-0);
-    r.slope = (SLEW_MIN_POWER[isBackwards]-max_speed) / ((l_start+(SLEW_DISTANCE[isBackwards]*TICK_PER_INCH))-0);
+    l.slope = (SLEW_MIN_POWER[isBackwards]-abs(speed)) / ((l_start+(SLEW_DISTANCE[isBackwards]*TICK_PER_INCH))-0);
+    r.slope = (SLEW_MIN_POWER[isBackwards]-abs(speed)) / ((l_start+(SLEW_DISTANCE[isBackwards]*TICK_PER_INCH))-0);
 
     turn_pid.suspend();
     swing_pid.suspend();
     drive_pid.resume();
 }
-void
-Drive::set_turn_pid(double target, int speed, bool slew_on)
+
+void Drive::set_turn_pid(double target, int speed)
 {
   printf("Turn Started... Target Value: %f\n", target);
   turnPID.SetTarget(target);
   swing_pid.suspend();
   drive_pid.suspend();
   turn_pid.resume();
-  set_max_speed(speed);
+  set_max_speed(abs(speed));
 
   //gyro_sign = sgn(target - get_gyro());
 }
 
-void
-Drive::set_swing_pid(double target, int speed, bool slew_on)
+void Drive::set_swing_pid(double target, int speed)
 {
   printf("Swing Started... Target Value: %f\n", target);
   swingPID.SetTarget(target);
-  set_max_speed(speed);
+  set_max_speed(abs(speed));
   //swing_sign = sgn(target-get_gyro());
 }
 ///
@@ -416,24 +415,6 @@ Drive::set_swing_pid(double target, int speed, bool slew_on)
 
 
 // "Enumerator" for drive type
-
-bool heading_on = false;
-float l_target_encoder, r_target_encoder;
-float l_start, r_start;
-int max_speed = 0;
-float gyro_target = 0;
-
-// Slew variables
-int l_x_intercept, r_x_intercept;
-int l_y_intercept, r_y_intercept;
-int l_sign, r_sign, gyro_sign;
-float l_slew_error, r_slew_error;
-float l_slope, r_slope;
-bool slew = false;
-
-// Swing variables
-int swing_sign = 0;
-bool stop = false;
 
 // Drive PID with active straight code
 // - it makes sure the angle of the robot is what it should be all the way through the movements,

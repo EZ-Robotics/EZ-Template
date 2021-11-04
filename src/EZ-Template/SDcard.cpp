@@ -1,8 +1,14 @@
+/*
+This Source Code Form is subject to the terms of the Mozilla Public
+License, v. 2.0. If a copy of the MPL was not distributed with this
+file, You can obtain one at http://mozilla.org/MPL/2.0/.
+*/
+
 #include "SDcard.hpp"
 
-namespace EZ
+namespace ez
 {
-  namespace SD
+  namespace sd
   {
     AutonSelector autonSelector{};
     const bool IS_SD_CARD = pros::usd::is_installed();
@@ -55,5 +61,5 @@ namespace EZ
       update_auto_sd();
       autoSelector.PrintSelectedAuto();
     }
-  }
-}
+  } // sd namespace
+} // ez namespace

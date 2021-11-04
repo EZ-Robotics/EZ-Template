@@ -1,8 +1,19 @@
 #include "main.h"
 #include "EZ-Template/AutonSelector.hpp"
 #include "EZ-Template/SDcard.hpp"
+#include "EZ-Template/drive.hpp"
 #include <iostream>
 using namespace std;
+
+Drive chassis (
+  {1, 2, 3},  // Left Chassis Ports
+  {4, 5, 6},  // Right Chassis Ports
+  11,         // IMU Port
+  4.125,      // Wheel Diameter (Remember, 4" wheels are actually 4.125!)
+  600,        // Cartridge RPM
+  2.333       // External Gear Ratio
+);
+
 /**
  * Disables all tasks.
  *
@@ -11,8 +22,9 @@ using namespace std;
 
 void disable_all_tasks()
 {
-
-  drive_pid.suspend();
+  chassis.drive_pid.suspend();
+  chassis.turn_pid. suspend();
+  chassis.swing_pid.suspend();
 }
 
 
@@ -51,23 +63,21 @@ void initialize()
   print_ez_template();
   pros::delay(500);
 
-  if (!EZ::SD::IS_SD_CARD) printf("No SD Card Found!\n");
+  if (!ez::sd::IS_SD_CARD) printf("No SD Card Found!\n");
 
   disable_all_tasks();
 
-  EZ::SD::init_auto_sd();
-  init_curve_sd();
+  ez::sd::init_auto_sd();
+  //init_curve_sd();
 
   pros::lcd::initialize();
   autoSelector.PrintSelectedAuto();
-  pros::lcd::register_btn0_cb(EZ::SD::page_down);
-  pros::lcd::register_btn2_cb(EZ::SD::page_up);
-  if (!imu_calibrate())
+  pros::lcd::register_btn0_cb(ez::sd::page_down);
+  pros::lcd::register_btn2_cb(ez::sd::page_up);
+  if (!chassis.imu_calibrate())
   {
     pros::lcd::set_text(7, "IMU failed to calibrate!");
   }
-
-  Drive ({-11, -5, -7}, {3, 2, 17}, 18, );
 }
 
 
@@ -113,10 +123,9 @@ void competition_initialize()
 void autonomous()
 {
   Auton temp {"Name", x};
-  tare_gyro();
-  reset_drive_sensor();
-  set_drive_brake(MOTOR_BRAKE_HOLD);
-  drive_pid.resume();
+  chassis.tare_gyro();
+  chassis.reset_drive_sensor();
+  chassis.set_drive_brake(MOTOR_BRAKE_HOLD);
 
   autoSelector.CallSelectedAuto();
 }
@@ -137,13 +146,13 @@ void autonomous()
  */
 void opcontrol()
 {
-  drive_pid.suspend();
-  reset_drive_sensor();
-  set_drive_brake(MOTOR_BRAKE_COAST); // This is preference to what you like to drive on
+  disable_all_tasks();
+  chassis.reset_drive_sensor();
+  chassis.set_drive_brake(MOTOR_BRAKE_COAST); // This is preference to what you like to drive on
 
   while (true) {
 
-    chassis_tank(); // Tank control
+    chassis.chassis_tank(); // Tank control
     // chassis_arcade_standard(split);
     // chassis_arcade_standard(single);
     // chassis_arcade_flipped(split);

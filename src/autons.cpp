@@ -11,6 +11,7 @@ const int SWING_SPEED = 90;
 // Constants
 ///
 
+/*
 // Reset all constants to default (what's in setup.hpp is default)
 void
 reset_constants() {
@@ -23,6 +24,7 @@ reset_constants() {
   reset_turn_i_constants();
   reset_swing_constants();
 }
+*/
 
 // Functions to change constants
 // It's best practice to tune constants when the robot is empty and with heavier game objects, or with lifts up vs down.
@@ -63,6 +65,7 @@ two_mogo_constants() {
 ///
 void
 auto_1() {
+  /*
   // The second parameter is target inches
   // The third parameter is max speed the robot will drive at
   // The fourth parameter is a boolean (true or false) for enabling/disabling a slew at the start of drive motions
@@ -77,6 +80,7 @@ auto_1() {
 
   set_drive_pid(drive, -12, DRIVE_SPEED);
   wait_drive();
+  */
 }
 
 
@@ -86,6 +90,7 @@ auto_1() {
 ///
 void
 auto_2() {
+  /*
   // The second parameter is target degrees
   // The third parameter is max speed the robot will drive at
 
@@ -98,6 +103,7 @@ auto_2() {
 
   set_drive_pid(turn, 0, TURN_SPEED);
   wait_drive();
+  */
 }
 
 
@@ -107,6 +113,7 @@ auto_2() {
 ///
 void
 auto_3() {
+  /*
   set_drive_pid(drive, 24, DRIVE_SPEED, true);
   wait_drive();
 
@@ -121,6 +128,7 @@ auto_3() {
 
   set_drive_pid(drive, -24, DRIVE_SPEED, true);
   wait_drive();
+  */
 }
 
 
@@ -130,6 +138,7 @@ auto_3() {
 ///
 void
 auto_4() {
+  /*
   // wait_until will wait until the robot gets to a desired position
 
 
@@ -153,6 +162,7 @@ auto_4() {
   wait_until(-12);
   set_max_speed(40); // After driving 12 inches at DRIVE_SPEED, the robot will go the remaining distance at 40 speed
   wait_drive();
+  */
 }
 
 
@@ -162,6 +172,7 @@ auto_4() {
 ///
 void
 auto_5() {
+  /*
   // The second parameter is target degrees
   // The third parameter is speed of the moving side of the drive
 
@@ -173,6 +184,7 @@ auto_5() {
 
   set_drive_pid(r_swing, 0, SWING_SPEED);
   wait_drive();
+  */
 }
 
 
@@ -182,6 +194,7 @@ auto_5() {
 ///
 void
 test_auton() {
+  /*
   set_drive_pid(drive, 24, DRIVE_SPEED, true);
   wait_drive();
 
@@ -196,6 +209,7 @@ test_auton() {
 
   set_drive_pid(drive, -24, DRIVE_SPEED, true);
   wait_drive();
+  */
 }
 
 

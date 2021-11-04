@@ -12,10 +12,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include "EZ-Template/PID.hpp"
 #include "EZ-Template/slew.hpp"
 
-
-#include <random>
 #include <iostream>
-#include <memory>
 #include <functional>
 
 class Drive {
@@ -26,6 +23,7 @@ class Drive {
         std::vector<pros::Motor> RightMotors;
         pros::Imu gyro;
         pros::Controller master;
+
         PID headingPID;
         PID turnPID;
         PID forwardDrivePID;
@@ -33,6 +31,7 @@ class Drive {
         PID rightPID;
         PID backwardDrivePID;
         PID swingPID;
+
         typedef struct {
           bool lock = false;
           bool release_reset = false;
@@ -40,6 +39,7 @@ class Drive {
           int hold_timer = 0;
           double increase = 100;
         } button_;
+
         pros::Task drive_pid;
         pros::Task turn_pid;
         pros::Task swing_pid;
@@ -49,8 +49,8 @@ class Drive {
         * Give Sensor Ports, Motor Ports (give a negative port if motor is reversed), Drive Measurements
         * Set PID Constants
         */
-        Drive(std::vector<int> leftMotorPorts, std::vector<int> rightMotorPorts, int imuPort, double wheelDiameter = 3.25, double motorCartridge = 600, double ratio = 1.66666666667);
-        ~Drive(); // deconstructor (DELETE POINTERS HERE) (DONT LEEK MEMORY) (I DONT THINK WE NEED THIS)
+        Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double motor_cartridge, double ratio);
+        //~Drive(); // deconstructor (DELETE POINTERS HERE) (DONT LEEK MEMORY) (I DONT THINK WE NEED THIS)
 
         /**
         * Set Either the headingPID, turnPID, drivePID, activeBrakePID, or swingPID(IF NOT DONE PID WILL DEFAULT TO 0!)
@@ -143,10 +143,8 @@ class Drive {
 
         /**
          * Changes max speed during a drive motion.
-         * \param type
-         *        type of drive motion.  drive, turn, l_swing, r_swing
          * \param target
-         *        target value (inches for drive, degrees for turn)
+         *        target value in inches
          * \param speed
          *        0 to 127, max speed during motion
          * \param slew_on
@@ -155,8 +153,24 @@ class Drive {
          *        toggle for heading correction
         */
         void set_drive_pid(double target, int speed, bool slew_on = false, bool toggle_heading = true);
-        void set_turn_pid(double target, int speed, bool slew_on);
-        void set_swing_pid(double target, int speed, bool slew_on);
+
+        /**
+         * Changes max speed during a drive motion.
+         * \param target
+         *        target value in degrees
+         * \param speed
+         *        0 to 127, max speed during motion
+        */
+        void set_turn_pid(double target, int speed);
+
+        /**
+         * Changes max speed during a drive motion.
+         * \param target
+         *        target value in degrees
+         * \param speed
+         *        0 to 127, max speed during motion
+        */
+        void set_swing_pid(double target, int speed);
 
         /**
          * Lock the code in a while loop until the robot has settled.
@@ -229,6 +243,9 @@ class Drive {
 
       double SLEW_DISTANCE [2];
       double SLEW_MIN_POWER[2];
+
+      double l_start = 0;
+      double r_start = 0;
 
 
 
