@@ -6,12 +6,18 @@
 using namespace std;
 
 Drive chassis (
-  {1, 2, 3},  // Left Chassis Ports
-  {4, 5, 6},  // Right Chassis Ports
-  11,         // IMU Port
-  4.125,      // Wheel Diameter (Remember, 4" wheels are actually 4.125!)
-  600,        // Cartridge RPM
-  2.333       // External Gear Ratio
+  // Left Chassis Ports
+  {-11, -5, -7},
+  // Right Chassis Ports
+  {3, 2, 17},
+  // IMU Port
+  18,
+  // Wheel Diameter (Remember, 4" wheels are actually 4.125!)
+  3.25,
+  // Cartridge RPM
+  600,
+  // External Gear Ratio
+  1.66666666667
 );
 
 /**
@@ -67,13 +73,16 @@ void initialize()
 
   disable_all_tasks();
 
+  chassis.init_curve_sd();
+
+  /*
   ez::sd::init_auton_selector(autoSelector);
-  //init_curve_sd();
 
   pros::lcd::initialize();
   autoSelector.PrintSelectedAuto();
   pros::lcd::register_btn0_cb(ez::sd::page_down);
   pros::lcd::register_btn2_cb(ez::sd::page_up);
+  */
   if (!chassis.imu_calibrate())
   {
     pros::lcd::set_text(7, "IMU failed to calibrate!");
@@ -153,11 +162,11 @@ void opcontrol()
   while (true) {
 
     chassis.chassis_tank(); // Tank control
-    // chassis_arcade_standard(split);
-    // chassis_arcade_standard(single);
-    // chassis_arcade_flipped(split);
-    // chassis_arcade_flipped(single);
+    // chassis.chassis_arcade_standard(chassis.k_split);
+    // chassis.chassis_arcade_standard(chassis.k_single);
+    // chassis.chassis_arcade_flipped(chassis.k_split);
+    // chassis.chassis_arcade_flipped(chassis.k_single);
 
-    pros::delay(10); // tweak to improve performance
+    pros::delay(ez::util::DELAY_TIME); // Don't hog the CPU!  This is used for timer calculations
   }
 }

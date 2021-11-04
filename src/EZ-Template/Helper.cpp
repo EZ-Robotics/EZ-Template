@@ -9,7 +9,6 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 namespace ez{
   namespace util{
-    bool IS_SD_CARD = pros::usd::is_installed();
 bool isReversed(double input) {
   if (input < 0)
     return true;

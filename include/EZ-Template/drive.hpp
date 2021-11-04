@@ -254,7 +254,6 @@ class Drive {
       void save_r_curve_sd();
      void modify_curve_with_controller();
      void button_press(button_ *input_name, int button, std::function<void()> changeCurve, std::function<void()> save);
-     //void button_press(button_ *input_name, int button, void (*changeCurve)(), void (*save)());
 
         double left_curve_scale;
         double right_curve_scale;

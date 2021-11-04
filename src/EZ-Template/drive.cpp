@@ -121,32 +121,37 @@ void Drive::r_decrease() {
   right_curve_scale -= 0.1;
   right_curve_scale =  right_curve_scale<0 ? 0 : right_curve_scale;
 }
-void
-Drive::button_press(button_ *input_name, int button, std::function<void()> changeCurve, std::function<void()> save) {
-//Drive::button_press(button_ *input_name, int button, void (*changeCurve)(), void (*save)()) {
 
+
+void Drive::button_press(button_ *input_name, int button, std::function<void()> changeCurve, std::function<void()> save) {
+  // If button is pressed, increase the curve and set toggles.
   if (button && !input_name->lock) {
     changeCurve();
     input_name->lock = true;
     input_name->release_reset = true;
   }
+
+  // If the button is still held, check if it's held for 500ms.
+  // Then, increase the curve every 100ms by 0.1
   else if (button && input_name->lock) {
     input_name->hold_timer+=ez::util::DELAY_TIME;
     if (input_name->hold_timer > 500.0) {
       input_name->increase+=ez::util::DELAY_TIME;
-      if (input_name->increase > 0.1) {
+      if (input_name->increase > 100.0) {
         changeCurve();
         input_name->increase = 0;
       }
     }
   }
+
+  // When button is released for 250ms, save the new curve value to the SD card
   else if (!button) {
     input_name->lock = false;
     input_name->hold_timer = 0;
 
     if (input_name->release_reset) {
       input_name->release_timer+=ez::util::DELAY_TIME;
-      if (input_name->release_timer > 500.0/2.0) {
+      if (input_name->release_timer > 250.0) {
         save();
         input_name->release_timer = 0;
         input_name->release_reset = false;
@@ -155,6 +160,8 @@ Drive::button_press(button_ *input_name, int button, std::function<void()> chang
   }
 }
 void Drive::modify_curve_with_controller() {
+  if (DISABLE_CONTROLLER) return;
+
   button_press(&l_increase_, master.get_digital(pros::E_CONTROLLER_DIGITAL_RIGHT), ([this]{ this->l_increase(); }), ([this]{ this->save_l_curve_sd(); }));
   button_press(&l_decrease_, master.get_digital(pros::E_CONTROLLER_DIGITAL_LEFT), ([this]{ this->l_decrease(); }), ([this]{ this->save_l_curve_sd(); }));
   if (!is_tank) {
@@ -162,12 +169,12 @@ void Drive::modify_curve_with_controller() {
     button_press(&r_decrease_, master.get_digital(pros::E_CONTROLLER_DIGITAL_Y), ([this]{ this->r_decrease(); }), ([this]{ this->save_r_curve_sd(); }));
   }
 
-  auto sf = std::to_string(right_curve_scale);
-  auto st = std::to_string(left_curve_scale);
+  auto sr = std::to_string(right_curve_scale);
+  auto sl = std::to_string(left_curve_scale);
   if (!is_tank)
-    master.set_text(2, 0, st+"   "+sf);
+    master.set_text(2, 0, sl+"   "+sr);
   else
-    master.set_text(2, 0, st);
+    master.set_text(2, 0, sl);
 }
 
 
@@ -191,18 +198,16 @@ double Drive::right_curve_function(double x) {
 }
 
 
-void
-Drive::chassis_tank()
+void Drive::chassis_tank()
 {
   is_tank = true;
 
   // Toggle for controller curve
-  if (!DISABLE_CONTROLLER)
-    modify_curve_with_controller();
+  modify_curve_with_controller();
 
   // Put the joysticks through the curve function
   int l_stick = left_curve_function(master.get_analog(ANALOG_LEFT_Y));
-  int r_stick = right_curve_function(master.get_analog(ANALOG_RIGHT_Y));
+  int r_stick = left_curve_function(master.get_analog(ANALOG_RIGHT_Y));
 
   // Threshold if joysticks don't come back to perfect 0
   if (abs(l_stick)>5 || abs(r_stick)>5) {
@@ -214,9 +219,12 @@ Drive::chassis_tank()
     set_tank((0-left_sensor())*ACTIVE_BRAKE_KP, (0-right_sensor())*ACTIVE_BRAKE_KP);
   }
 }
-void
-Drive::chassis_arcade_standard(e_type t) {
+
+void Drive::chassis_arcade_standard(e_type t) {
   is_tank = false;
+
+  // Toggle for controller curve
+  modify_curve_with_controller();
 
   int l_stick, r_stick;
   // Check arcade type (split vs single, normal vs flipped)
@@ -242,10 +250,12 @@ Drive::chassis_arcade_standard(e_type t) {
   }
 }
 
-
 // Arcade control standard
 void Drive::chassis_arcade_flipped(e_type t) {
   is_tank = false;
+
+  // Toggle for controller curve
+  modify_curve_with_controller();
 
   int l_stick, r_stick;
   // Check arcade type (split vs single, normal vs flipped)
@@ -270,6 +280,8 @@ void Drive::chassis_arcade_flipped(e_type t) {
     set_tank((0-left_sensor())*ACTIVE_BRAKE_KP, (0-right_sensor())*ACTIVE_BRAKE_KP);
   }
 }
+
+
 // Motor telemetry
 void
 Drive::reset_drive_sensor() {

@@ -6,6 +6,8 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #pragma once
 
+#include "api.h"
+
 namespace ez {
   namespace util{
 
@@ -24,7 +26,7 @@ namespace ez {
     /**
      * DriverType
     */
-    extern bool IS_SD_CARD;
+    const bool IS_SD_CARD = pros::usd::is_installed();
 
     /**
      * Delay time for tasks

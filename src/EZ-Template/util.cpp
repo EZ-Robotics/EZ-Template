@@ -23,5 +23,5 @@ print_ez_template() {
                                      |_|
 )" << '\n';
 
-  printf("Version: 1.0.2\n");
+  printf("Version: 2.0.0 Test\n");
 }
