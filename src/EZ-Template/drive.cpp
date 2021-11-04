@@ -6,13 +6,15 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "main.h"
 #include <list>
+
 #include "EZ-Template/Helper.hpp"
 // !Util
 
-
 Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double motor_cartridge, double ratio)
- : gyro (imu_port), master(pros::E_CONTROLLER_MASTER), drive_pid(drive_pid_task, nullptr, "Drive Task"),
- turn_pid(turn_pid_task, nullptr, "Turn Task"), swing_pid(swing_pid_task, nullptr, "Swing Task")
+ : gyro (imu_port), master(pros::E_CONTROLLER_MASTER),
+ drive_pid([this]{ this->drive_pid_task(); }),
+ turn_pid([this]{ this->turn_pid_task(); }),
+ swing_pid([this]{ this->swing_pid_task(); })
 {
   for(auto i : left_motor_ports)
   {
@@ -36,6 +38,10 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
   swingPID = {12, 0, 35, 0};
   leftPID = {.45, 0, 5, 0};
   rightPID = {.45, 0, 5, 0};
+
+  set_exit_condition(turn_exit,  100, 3,  500, 7,   500);
+  set_exit_condition(swing_exit, 100, 3,  500, 7,   500);
+  set_exit_condition(drive_exit, 80,  50, 300, 150, 500);
 }
 void Drive::set_curve_default(int left, int right)
 {
@@ -317,115 +323,36 @@ Drive::set_max_speed(int speed) {
 
 // ! Auton
 
-// Slew
-// Variables that are arrays mean the first variable is for forward and the second is for backward
-int SLEW_MIN_POWER[2] = {FW_SLEW_MIN_POWER, BW_SLEW_MIN_POWER}; // Starting speed for the slew
-int SLEW_DISTANCE [2] = {FW_SLEW_DISTANCE, BW_SLEW_DISTANCE};  // Distance the robot slews at before reaching max speed
-
-const bool DEBUG = false;
-
-const int FORWARD  = 0;
-const int BACKWARD = 1;
-
-// Forward Drive Constants
-float fw_drive_kp = FW_DRIVE_KP;
-float fw_drive_kd = FW_DRIVE_KD;
-
-// Backward Drive Constants
-float bw_drive_kp = BW_DRIVE_KP;
-float bw_drive_kd = BW_DRIVE_KD;
-
-// Minimum speed for driving and error to stop within
-// if spede goes below min_speed, robot travels at min_speed until it gets within min_error, where motors go 0
-int min_speed = MIN_SPEED;
-int min_error = MIN_ERROR;
-
-// Heading Constants (uses imu to keep robot driving straight)
-float heading_kp = HEADING_KP;
-float heading_kd = HEADING_KD;
-
-// Turn Constants
-float gyro_kp = GYRO_KP;
-float gyro_ki = GYRO_KI;
-float gyro_kd = GYRO_KD;
-int   start_i = START_I; // Start I when error is this
-int clipped_turn_i_speed = CLIPPED_TURN_I_SPEED; // When I engages, this becomes max power
-
-// Swing Constants
-float swing_kp = SWING_KP;
-float swing_kd = SWING_KD;
-
-float drive_constant[2][2] = {
-  {fw_drive_kp, fw_drive_kd}, // Foward KP, KD
-  {bw_drive_kp, bw_drive_kd}  // Backward KP, KD
-};
-int direction;
-
 ///
 // Adjust Constants
 ///
 void
-Drive::set_slew_min_power(int fw, int bw) {
-  SLEW_MIN_POWER[FORWARD]  = fw;
-  SLEW_MIN_POWER[BACKWARD] = bw;
+Drive::set_slew_min_power(int fwd, int rev) {
+  SLEW_MIN_POWER[0] = fwd;
+  SLEW_MIN_POWER[1] = rev;
 }
 
 void
-Drive::set_slew_distance(int fw, int bw) {
-  SLEW_DISTANCE[FORWARD]  = fw;
-  SLEW_DISTANCE[BACKWARD] = bw;
+Drive::set_slew_distance(int fwd, int rev) {
+  SLEW_DISTANCE[0] = fwd;
+  SLEW_DISTANCE[1] = rev;
 }
 
 void
-Drive::set_fw_drive_constants(float kp, float kd) {
-  drive_constant[FORWARD][0] = kp;
-  drive_constant[FORWARD][1] = kd;
-}
-
-void
-Drive::set_bw_drive_constants(float kp, float kd) {
-  drive_constant[BACKWARD][0] = kp;
-  drive_constant[BACKWARD][1] = kd;
-}
-
-void
-Drive::set_heading_constants(float kp, float kd) {
-  heading_kp = kp;
-  heading_kd = kd;
-}
-
-void
-Drive::set_turn_constants(float kp, float ki, float kd) {
-  gyro_kp = kp;
-  gyro_ki = ki;
-  gyro_kd = kd;
-}
-
-void
-Drive::set_turn_i_constants(float starting, int clipping) {
-  start_i = starting;
-  clipped_turn_i_speed = clipping;
-}
-
-void
-Drive::set_swing_constants(float kp, float kd) {
-  swing_kp = kp;
-  swing_kd = kd;
-}
-void
-Drive::set_drive_pid(double target, int speed, bool slew_on, bool toggle_heading, ) {
+Drive::set_drive_pid(double target, int speed, bool slew_on, bool toggle_heading) {
   // Global setup
   set_max_speed(speed);
-  active_drive_type = type;
-  slew = slew_on;
-  stop = slew;
-  heading_on = toggle_heading;
+  bool slew = slew_on;
+  HEADING_ON = toggle_heading;
   bool isBackwards = false;
+
+  double l_target_encoder, r_target_encoder;
+
   // If drive or line, set targets to drive
 
     printf("Drive Started... Target Value: %f\n", target);
-    l_start = left_sensor();
-    r_start = right_sensor();
+    double l_start = left_sensor();
+    double r_start = right_sensor();
     l_target_encoder = l_start + (target*TICK_PER_INCH);
     r_target_encoder = r_start + (target*TICK_PER_INCH);
     if (target<l_start && target<r_start) {
@@ -445,17 +372,18 @@ Drive::set_drive_pid(double target, int speed, bool slew_on, bool toggle_heading
     leftPID.SetTarget(l_target_encoder);
     rightPID.SetTarget(r_target_encoder);
 
-    l_sign = sgn(l_target_encoder-left_sensor());
-    r_sign = sgn(r_target_encoder-right_sensor());
+    l.sign = ez::util::sgn(l_target_encoder-left_sensor());
+    r.sign = ez::util::sgn(r_target_encoder-right_sensor());
 
-    l_x_intercept = l_start + (SLEW_DISTANCE[isBackwards]*TICK_PER_INCH);
-    r_x_intercept = r_start + (SLEW_DISTANCE[isBackwards]*TICK_PER_INCH);
+    l.x_intercept = l_start + (SLEW_DISTANCE[isBackwards]*TICK_PER_INCH);
+    r.x_intercept = r_start + (SLEW_DISTANCE[isBackwards]*TICK_PER_INCH);
 
-    l_y_intercept = max_speed * l_sign;
-    r_y_intercept = max_speed * r_sign;
+    l.y_intercept = max_speed * l.sign;
+    r.y_intercept = max_speed * r.sign;
 
-    l_slope = (SLEW_MIN_POWER[isBackwards]-max_speed) / ((l_start+(SLEW_DISTANCE[isBackwards]*TICK_PER_INCH))-0);
-    r_slope = (SLEW_MIN_POWER[isBackwards]-max_speed) / ((l_start+(SLEW_DISTANCE[isBackwards]*TICK_PER_INCH))-0);
+    l.slope = (SLEW_MIN_POWER[isBackwards]-max_speed) / ((l_start+(SLEW_DISTANCE[isBackwards]*TICK_PER_INCH))-0);
+    r.slope = (SLEW_MIN_POWER[isBackwards]-max_speed) / ((l_start+(SLEW_DISTANCE[isBackwards]*TICK_PER_INCH))-0);
+
     turn_pid.suspend();
     swing_pid.suspend();
     drive_pid.resume();
@@ -472,6 +400,7 @@ Drive::set_turn_pid(double target, int speed, bool slew_on)
 
   //gyro_sign = sgn(target - get_gyro());
 }
+
 void
 Drive::set_swing_pid(double target, int speed, bool slew_on)
 {
@@ -510,161 +439,51 @@ bool stop = false;
 // - it makes sure the angle of the robot is what it should be all the way through the movements,
 // - turning if needed to keep it going straight
 void
-Drive::drive_pid_task(void*) {
-  float left_error, right_error, gyro_error;
-  float last_time, last_l_error, last_r_error, last_gyro_error;
-  float l_der, r_der, gyro_der;
-  float gyro_integral;
-  float right_output, left_output, gyro_output;
-  int l_output, r_output;
-  bool slow_turn = false;
+Drive::drive_pid_task() {
   while (true) {
 
-    // Math for P
-    left_error    = l_target_encoder - left_sensor();
-    right_error   = r_target_encoder - right_sensor();
-    gyro_error    = gyro_target      - get_gyro();
+    pros::delay(10);
+  }
+}
 
-    // Math for D
-    l_der    = left_error  - last_l_error;
-    r_der    = right_error - last_r_error;
-    gyro_der = gyro_error  - last_gyro_error;
+void
+Drive::turn_pid_task() {
+  while (true) {
 
-    // Math for I
-    if (fabs(gyro_error)<start_i/* && sgn(gyro_error)==gyro_sign*/) {
-      slow_turn = true;
-      gyro_integral = gyro_integral + gyro_error;
-    } else {
-      slow_turn = false;
-      gyro_integral = 0;
-    }
+    pros::delay(10);
+  }
+}
 
-    // Combing P I D
-    left_output    = (left_error *drive_constant[direction][0])  + (l_der*drive_constant[direction][1]);
-    right_output   = (right_error*drive_constant[direction][0])  + (r_der*drive_constant[direction][1]);
-    // Different kP, kI and kD are used for turning, heading and swings
-    if (active_drive_type==drive)
-      gyro_output = (gyro_error*heading_kp) + (gyro_der*heading_kd);
-    else if (active_drive_type==turn)
-      gyro_output = (gyro_error*gyro_kp) + (gyro_integral*gyro_ki) + (gyro_der*gyro_kd);
-    else if (active_drive_type==l_swing || active_drive_type==r_swing)
-      gyro_output = (gyro_error*swing_kp) + (gyro_der*swing_kd);
-
-    // If enabled, slew the drive at the begining so the robot doesn't wheelie
-    if (slew) {
-      // Error for distance it needs to trigger this code
-      l_slew_error = l_x_intercept - left_sensor();
-      r_slew_error = r_x_intercept - right_sensor();
-      if (active_drive_type==drive) {
-        // y=mx+b using everything calculated, where x is error
-        if (sgn(l_slew_error) == l_sign) {
-          left_output  = (l_slope * l_slew_error) + l_y_intercept;
-        }
-        if (sgn(r_slew_error) == r_sign) {
-          right_output = (r_slope * r_slew_error) + r_y_intercept;
-        }
-        if (sgn(r_slew_error)!=r_sign && sgn(l_slew_error)!=l_sign) {
-          slew = false;
-        }
-      }
-    }
-
-    // Clip the speeds to be slower
-    left_output  = clip_num(left_output,  max_speed, -max_speed);
-    right_output = clip_num(right_output, max_speed, -max_speed);
-    if (active_drive_type==turn) {
-      if (!slow_turn)
-        gyro_output = clip_num(gyro_output, max_speed, -max_speed);
-      else
-        gyro_output = clip_num(gyro_output, clipped_turn_i_speed, -clipped_turn_i_speed);
-    }
-    else if (active_drive_type==l_swing || active_drive_type==r_swing) {
-      gyro_output = clip_num(gyro_output, max_speed, -max_speed);
-    }
-
-    // Set drive based on drive type
-    if (active_drive_type == drive) {
-      if (heading_on) {
-        l_output = left_output;
-        r_output = right_output;
-      } else {
-        l_output = left_output  + gyro_output;
-        r_output = right_output - gyro_output;
-      }
-
-      // Setting drive to min_speed
-      if (!slew) {
-        if (abs(l_output)<min_speed) {
-          if (fabs(left_error)>min_error)
-            l_output = min_speed * sgn(left_error);
-          else
-            l_output = 0;
-        }
-        if (abs(r_output)<min_speed) {
-          if (fabs(right_error)>min_error)
-            r_output = min_speed * sgn(right_error);
-          else
-            r_output = 0;
-        }
-      }
-    }
-
-    // Turn
-    else if (active_drive_type == turn) {
-      l_output =  gyro_output;
-      r_output = -gyro_output;
-    }
-
-    // L Swing
-    else if (active_drive_type == l_swing) {
-      l_output = gyro_output;
-      r_output = 0;
-    }
-
-    // R Swing
-    else if (active_drive_type == r_swing) {
-      r_output = -gyro_output;
-      l_output = 0;
-    }
-
-    // Don't run motors in the first 1500 the program is on
-    // (while IMU is calibrating)
-    if (pros::millis()<1500) {
-      set_tank(0, 0);
-    } else {
-      set_tank(l_output, r_output);
-    }
-
-    if (DEBUG && pros::millis()>1500) {
-      if (active_drive_type == drive)  printf("le: %f   re: %f   l_der %f\n", left_error, right_error, l_der*drive_constant[direction][1]);
-      if (active_drive_type==turn || active_drive_type==l_swing || active_drive_type==r_swing)   printf("output: %f   error: %f   p: %f   i: %f   d: %f\n", gyro_output, gyro_error, gyro_error*gyro_kp, gyro_integral*gyro_ki, gyro_der*gyro_kd);
-    }
-
-    last_time       = pros::millis();
-    last_l_error    = left_error;
-    last_r_error    = right_error;
-    last_gyro_error = gyro_error;
+void
+Drive::swing_pid_task() {
+  while (true) {
 
     pros::delay(10);
   }
 }
 
 
+void Drive::set_exit_condition(exit_condition_ type, int p_small_exit_time, int p_small_error, int p_big_exit_time, int p_big_error, int p_velocity_exit_time) {
+  type.small_exit_time = p_small_exit_time;
+  type.small_error = p_small_error;
+  type.big_exit_time = p_big_exit_time;
+  type.big_error = p_big_error;
+  type.velocity_exit_time = p_velocity_exit_time;
+}
 
 
-bool
-Drive::drive_exit_condition(float l_target, float r_target, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, int delay_time = 10, bool wait_until = false) {
-  static int i = 0, j = 0, k = 0, g = 0;
+
+bool Drive::drive_exit_condition(double l_target, double r_target) {
+  static int i = 0, j = 0, k = 0;
+  int delay_time = ez::util::DELAY_TIME;
 
   // If the robot gets within the target, make sure it's there for small_timeout amount of time
-  if (fabs(l_target-left_sensor())<start_small_counter_within && fabs(r_target-right_sensor())<start_small_counter_within) {
+  if (fabs(l_target-left_sensor())<drive_exit.small_error && fabs(r_target-right_sensor())<drive_exit.small_error) {
     j+=delay_time;
     //printf("\nJ: %i", j/10);
 
-    if (j>small_timeout) {
-      if (!wait_until) printf("Drive Timed Out");
-      else             printf("Drive Wait Until Timed Out");
-      printf(" - Small Thresh\n");
+    if (j>drive_exit.small_exit_time) {
+      i=0;k=0;j=0;
       return false;
     }
   }
@@ -674,14 +493,12 @@ Drive::drive_exit_condition(float l_target, float r_target, int small_timeout, i
 
   // If the robot is close to the target, start a timer.  If the robot doesn't get closer within
   // a certain amount of time, exit and continue.
-  if (fabs(l_target-left_sensor())<start_big_counter_within && fabs(r_target-right_sensor())<start_big_counter_within) {
+  if (fabs(l_target-left_sensor())<drive_exit.big_error && fabs(r_target-right_sensor())<drive_exit.big_error) {
     i+=delay_time;
     //printf("\nI: %i", i/10);
 
-    if (i>big_timeout) {
-      if (!wait_until) printf("Drive Timed Out");
-      else             printf("Drive Wait Until Timed Out");
-      printf(" - Big Thresh\n");
+    if (i>drive_exit.big_exit_time) {
+      i=0;k=0;j=0;
       return false;
     }
   }
@@ -693,10 +510,8 @@ Drive::drive_exit_condition(float l_target, float r_target, int small_timeout, i
     k+=delay_time;
     //printf("\nI: %i", i/10);
 
-    if (k>velocity_timeout) {
-      if (!wait_until) printf("Drive Timed Out");
-      else             printf("Drive Wait Until Timed Out");
-      printf(" - Velocity 0\n");
+    if (k>drive_exit.velocity_exit_time) {
+      i=0;k=0;j=0;
       return false;
     }
   }
@@ -707,19 +522,17 @@ Drive::drive_exit_condition(float l_target, float r_target, int small_timeout, i
   return true;
 }
 
-bool
-Drive::turn_exit_condition(double target, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, int delay_time = 10, bool wait_until = false) {
-  static int i, j, k;
+bool Drive::turn_exit_condition(double target) {
+  static int i = 0, j = 0, k = 0;
+  int delay_time = ez::util::DELAY_TIME;
 
   // If the robot gets within the target, make sure it's there for small_timeout amount of time
-  if (fabs(target-get_gyro())<start_small_counter_within) {
+  if (fabs(target-get_gyro())<turn_exit.small_error) {
     j+=delay_time;
     //printf("\nJ: %i", j/10);
 
-    if (j>small_timeout) {
-      if (!wait_until) printf("Turn Timed Out");
-      else             printf("Turn Wait Until Timed Out");
-      printf(" - Small Thresh\n");
+    if (j>turn_exit.small_exit_time) {
+      i=0;k=0;j=0;
       return false;
     }
   }
@@ -728,14 +541,12 @@ Drive::turn_exit_condition(double target, int small_timeout, int start_small_cou
   }
   // If the robot is close to the target, start a timer.  If the robot doesn't get closer within
   // a certain amount of time, exit and continue.
-  if (fabs(target-get_gyro())<start_big_counter_within) {
+  if (fabs(target-get_gyro())<turn_exit.big_error) {
     i+=delay_time;
     //printf("\nI: %i", i/10);
 
-    if (i>big_timeout) {
-      if (!wait_until) printf("Turn Timed Out");
-      else             printf("Turn Wait Until Timed Out");
-      printf(" - Big Thresh\n");
+    if (i>turn_exit.big_exit_time) {
+      i=0;k=0;j=0;
       return false;
     }
   }
@@ -747,10 +558,55 @@ Drive::turn_exit_condition(double target, int small_timeout, int start_small_cou
     k+=delay_time;
     //printf("\nI: %i", i/10);
 
-    if (k>velocity_timeout) {
-      if (!wait_until) printf("Turn Timed Out");
-      else             printf("Turn Wait Until Timed Out");
-      printf(" - Velocity 0\n");
+    if (k>turn_exit.velocity_exit_time) {
+      i=0;k=0;j=0;
+      return false;
+    }
+  }
+  else {
+    k = 0;
+  }
+  return true;
+}
+
+bool Drive::swing_exit_condition(double target) {
+  static int i = 0, j = 0, k = 0;
+  int delay_time = ez::util::DELAY_TIME;
+
+  // If the robot gets within the target, make sure it's there for small_timeout amount of time
+  if (fabs(target-get_gyro())<swing_exit.small_error) {
+    j+=delay_time;
+    //printf("\nJ: %i", j/10);
+
+    if (j>swing_exit.small_exit_time) {
+      i=0;k=0;j=0;
+      return false;
+    }
+  }
+  else {
+    j = 0;
+  }
+  // If the robot is close to the target, start a timer.  If the robot doesn't get closer within
+  // a certain amount of time, exit and continue.
+  if (fabs(target-get_gyro())<swing_exit.big_error) {
+    i+=delay_time;
+    //printf("\nI: %i", i/10);
+
+    if (i>swing_exit.big_exit_time) {
+      i=0;k=0;j=0;
+      return false;
+    }
+  }
+  else {
+    i = 0;
+  }
+
+  if (right_velocity()==0 && left_velocity()==0) {
+    k+=delay_time;
+    //printf("\nI: %i", i/10);
+
+    if (k>swing_exit.velocity_exit_time) {
+      i=0;k=0;j=0;
       return false;
     }
   }
@@ -761,48 +617,40 @@ Drive::turn_exit_condition(double target, int small_timeout, int start_small_cou
 }
 
 //Wait for drive
-void
-Drive::wait_drive(float l_target, float r_target, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, int delay_time = 10, bool wait_until = false) {
+void Drive::wait_drive() {
+  int delay_time = ez::util::DELAY_TIME;
   pros::delay(delay_time);
 
-  // Parameters for exit condition function:
-  // #3 - time the robot has to be within #2 of target
-  // #4 - threshold for timer to start
-  // #5 - time for if position is never reached
-  // #6 - position for robot to be within to never reach target
-  // #7 - velocity timeout
-
-    while (drive_exit_condition(l_target_encoder, r_target_encoder, small_timeout, start_small_counter_within, big_timeout, start_big_counter_within, velocity_timeout, delay_time, wait_until)) {
+  // if (drive task running) {
+    while (drive_exit_condition(leftPID.GetTarget(), rightPID.GetTarget())) {
       pros::delay(delay_time);
     }
-  }
-}
-void
-Drive::wait_turn(double target, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, int delay_time = 10, bool wait_until = false)
-{
-  while (turn_exit_condition(target, small_timeout, start_small_counter_within, big_timeout, start_big_counter_within, velocity_timeout, delay_time, wait_until)) {
-    pros::delay(delay_time);
-  }
-
-}
-void
-Drive::wait_swing(double target, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, int delay_time = 10, bool wait_until = false)
-{
-  while (turn_exit_condition(target, small_timeout, start_small_counter_within, big_timeout, start_big_counter_within, velocity_timeout, delay_time, wait_until)) {
-    pros::delay(delay_time);
-  }
+  // }
+  // else if (turn task running) {
+    while (turn_exit_condition(turnPID.GetTarget())) {
+      pros::delay(delay_time);
+    }
+  // }
+  // else if (swing task running) {
+    while (swing_exit_condition(swingPID.GetTarget())) {
+      pros::delay(delay_time);
+    }
+  // }
 }
 // Function to wait until a certain position is reached
-void
-Drive::wait_until_drive(double input, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, int delay_time = 10) {
+void Drive::wait_until(double target) {
+  const int delay_time = ez::util::DELAY_TIME;
+
   // If robot is driving...
+  if (true/*drive task running*/) { // CHANGE THIS TO DETECT IF TASK IS RUNNING
+    // If robot is driving...
     // Calculate error between current and target (target needs to be an inbetween position)
-    int l_tar   = l_start + (input*TICK_PER_INCH);
-    int r_tar   = r_start + (input*TICK_PER_INCH);
+    int l_tar   = l_start + (target*TICK_PER_INCH);
+    int r_tar   = r_start + (target*TICK_PER_INCH);
     int l_error = l_tar   - left_sensor();
     int r_error = r_tar   - right_sensor();
-    int l_sgn   = sgn(l_error);
-    int r_sgn   = sgn(r_error);
+    int l_sgn   = ez::util::sgn(l_error);
+    int r_sgn   = ez::util::sgn(r_error);
     bool run    = true;
 
     while (run) {
@@ -810,46 +658,43 @@ Drive::wait_until_drive(double input, int small_timeout, int start_small_counter
       r_error = r_tar - right_sensor();
 
       // Break the loop once target is passed
-      if (sgn(l_error)==l_sgn && sgn(r_error)==r_sgn) {
+      if (ez::util::sgn(l_error)==l_sgn && ez::util::sgn(r_error)==r_sgn) {
         run = true; // this makes sure that the following else if is rnu after the sgn is flipped
       }
-      else if (sgn(l_error)!=l_sgn && sgn(r_error)!=r_sgn) {
+      else if (ez::util::sgn(l_error)!=l_sgn && ez::util::sgn(r_error)!=r_sgn) {
         printf("Drive Wait Until Completed- Error Sgn Flipped\n");
         run = false;
       }
-      else if (!drive_exit_condition(l_tar, r_tar, small_timeout, start_small_counter_within, big_timeout, start_big_counter_within, velocity_timeout, delay_time, true)) {
+      else if (!drive_exit_condition(l_tar, r_tar)) {
         run = false;
       }
 
       pros::delay(delay_time);
     }
-}
-void
-Drive::wait_until_turn(double input, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, int delay_time = 10)
-{
-  int g_error = input - get_gyro();
-  int g_sgn   = sgn(g_error);
-  bool run    = true;
-
-  while (run) {
-    g_error = input - get_gyro();
-
-    // Break the loop once target is passed
-    if (sgn(g_error)==g_sgn) {
-      run = true; // this makes sure that the following else if is rnu after the sgn is flipped
-    }
-    else if (sgn(g_error)!=g_sgn) {
-      run = false;
-    }
-    else if (!turn_exit_condition(input, small_timeout, start_small_counter_within, big_timeout, start_big_counter_within, velocity_timeout, delay_time, true)) {
-      run = false;
-    }
-
-    pros::delay(delay_time);
   }
-}
-void
-Drive::wait_until_swing(double input, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, int delay_time = 10)
-{
-  wait_until_turn(input, small_timeout, start_small_counter_within, big_timeout, start_big_counter_within, velocity_timeout, delay_time);
+
+  // If robot is turning...
+  else if (true /*turning or swinging is running*/) { // CHANGE THIS TO CHECK FOR TASK RUNNING!
+    // Calculate error between current and target (target needs to be an inbetween position)
+    int g_error = target - get_gyro();
+    int g_sgn   = ez::util::sgn(g_error);
+    bool run    = true;
+
+    while (run) {
+      g_error = target - get_gyro();
+
+      // Break the loop once target is passed
+      if (ez::util::sgn(g_error)==g_sgn) {
+        run = true; // this makes sure that the following else if is rnu after the sgn is flipped
+      }
+      else if (ez::util::sgn(g_error)!=g_sgn) {
+        run = false;
+      }
+      else if (!turn_exit_condition(target)) {
+        run = false;
+      }
+
+      pros::delay(delay_time);
+    }
+  }
 }

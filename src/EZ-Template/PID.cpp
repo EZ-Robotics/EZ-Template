@@ -38,6 +38,9 @@ void PID::SetTarget(double target)
 {
   target = target;
 }
+double PID::GetTarget() {
+  return target;
+}
 
 void PID::Compute(double SensorValue)
 {

@@ -19,5 +19,10 @@ namespace ez {
      * DriverType
     */
     extern bool IS_SD_CARD;
+
+    /**
+     * Delay time for tasks
+    */
+    const int DELAY_TIME = 10;
   } // util namespace
 } // ez namespace

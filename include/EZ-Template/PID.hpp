@@ -14,6 +14,7 @@ public:
   void SetConstants(double, double, double, double);
   void SetTarget(double);
   void Compute(double);
+  double GetTarget();
   Constants GetConstants();
 private:
   void ResetVariables();

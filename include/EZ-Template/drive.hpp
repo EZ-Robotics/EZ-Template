@@ -5,10 +5,19 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
 #pragma once
+
 #include "main.h"
+
 #include "EZ-Template/Helper.hpp"
 #include "EZ-Template/PID.hpp"
+#include "EZ-Template/slew.hpp"
+
+
+#include <random>
+#include <iostream>
+#include <memory>
 #include <functional>
+
 class Drive {
     public:
         enum e_type{ k_single=0, k_split=1 };
@@ -145,7 +154,7 @@ class Drive {
          * \param toggle_heading
          *        toggle for heading correction
         */
-        void set_drive_pid(float target, int speed, bool slew_on = false, bool toggle_heading = false);
+        void set_drive_pid(double target, int speed, bool slew_on = false, bool toggle_heading = true);
         void set_turn_pid(double target, int speed, bool slew_on);
         void set_swing_pid(double target, int speed, bool slew_on);
 
@@ -168,7 +177,29 @@ class Drive {
         //void wait_until_turn(double input, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, int delay_time = 10, bool wait_until = true);
         void set_curve_default(int left, int right);
         void init_curve_sd();
+
+        typedef struct {
+          int small_exit_time;
+          int small_error;
+          int big_exit_time;
+          int big_error;
+          int velocity_exit_time;
+        }exit_condition_;
+
+        exit_condition_ turn_exit;
+        exit_condition_ swing_exit;
+        exit_condition_ drive_exit;
+
+        void set_exit_condition(exit_condition_ type, int p_small_exit_time, int p_small_error, int p_big_exit_time, int p_big_error, int p_velocity_exit_time);
     private:  // !Auton
+
+    slew_ l;
+    slew_ r;
+
+
+
+      double HEADING_ON = true;
+
       double TICK_PER_REV;
       double CIRCUMFERENCE;
       double TICK_PER_INCH;
@@ -180,19 +211,24 @@ class Drive {
 
       bool drive_exit_condition(double l_target, double r_target);
       bool turn_exit_condition(double target);
+      bool swing_exit_condition(double target);
 
       double WHEEL_DIA; // Have the robot go 8ft forward and adjust this value until the robot actually goes 8ft
       double CART_RPM;   // Output RPM of the cart
       double RATIO; // External drive ratio (MUST BE DECIMAL)
 
-      static void drive_pid_task(void*);
-      static void swing_pid_task(void*);
-      static void turn_pid_task(void*);
+       void drive_pid_task();
+       void swing_pid_task();
+       void turn_pid_task();
 
 
 
       float left_curve_function(int x);
       float right_curve_function(int x);
+
+
+      double SLEW_DISTANCE [2];
+      double SLEW_MIN_POWER[2];
 
 
 
@@ -227,7 +263,7 @@ class Drive {
          * \param bw
          *        minimum power for backwards drive pd
         */
-        void set_slew_min_power(int fw, int bw);
+        void set_slew_min_power(int fwd, int rev);
 
         /**
          * Sets minimum slew distance constants.
@@ -236,7 +272,7 @@ class Drive {
          * \param bw
          *        minimum distance for backwards drive pd
         */
-        void set_slew_distance (int fw, int bw);
+        void set_slew_distance (int fwd, int rev);
 
 
         //IDK WHAT TO DO WITH THIS YET
