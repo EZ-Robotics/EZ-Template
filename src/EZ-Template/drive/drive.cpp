@@ -28,8 +28,8 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
   }
 
   // Tick per inch calculation
-  TICK_PER_REV  = (50*(3600/CART_RPM)) * RATIO; // with no cart, the encoder reads 50 counts per rotation
-  CIRCUMFERENCE = WHEEL_DIA*M_PI;
+  TICK_PER_REV  = (50.0*(3600.0/motor_cartridge)) * ratio; // with no cart, the encoder reads 50 counts per rotation
+  CIRCUMFERENCE = wheel_diameter*M_PI;
   TICK_PER_INCH = (TICK_PER_REV/CIRCUMFERENCE);
 
   // PID Constants
@@ -135,6 +135,9 @@ Drive::set_slew_distance(int fwd, int rev) {
 
 void
 Drive::set_drive_pid(double target, int speed, bool slew_on, bool toggle_heading) {
+  turn_pid.suspend();
+  swing_pid.suspend();
+
   // Global setup
   set_max_speed(abs(speed));
   bool slew = slew_on;
@@ -165,9 +168,6 @@ Drive::set_drive_pid(double target, int speed, bool slew_on, bool toggle_heading
 
     leftPID. SetTarget(l_target_encoder);
     rightPID.SetTarget(r_target_encoder);
-    printf("%f  ", leftPID.GetTarget());
-    printf("%f", rightPID.GetTarget());
-    printf("\n");
 
     l.sign = ez::util::sgn(l_target_encoder-left_sensor());
     r.sign = ez::util::sgn(r_target_encoder-right_sensor());
@@ -181,28 +181,35 @@ Drive::set_drive_pid(double target, int speed, bool slew_on, bool toggle_heading
     l.slope = (SLEW_MIN_POWER[isBackwards]-abs(speed)) / ((l_start+(SLEW_DISTANCE[isBackwards]*TICK_PER_INCH))-0);
     r.slope = (SLEW_MIN_POWER[isBackwards]-abs(speed)) / ((l_start+(SLEW_DISTANCE[isBackwards]*TICK_PER_INCH))-0);
 
-    turn_pid.suspend();
-    swing_pid.suspend();
     drive_pid.resume();
 }
 
 void Drive::set_turn_pid(double target, int speed)
 {
-  printf("Turn Started... Target Value: %f\n", target);
-  turnPID.SetTarget(target);
   swing_pid.suspend();
   drive_pid.suspend();
-  turn_pid.resume();
+
+  printf("Turn Started... Target Value: %f\n", target);
+  turnPID.SetTarget(target);
+  headingPID.SetTarget(target);
   set_max_speed(abs(speed));
+
+  turn_pid.resume();
 
   //gyro_sign = sgn(target - get_gyro());
 }
 
 void Drive::set_swing_pid(double target, int speed)
 {
+  drive_pid.suspend();
+  turn_pid.suspend();
+
   printf("Swing Started... Target Value: %f\n", target);
   swingPID.SetTarget(target);
+  headingPID.SetTarget(target);
   set_max_speed(abs(speed));
+
+  swing_pid.resume();
   //swing_sign = sgn(target-get_gyro());
 }
 

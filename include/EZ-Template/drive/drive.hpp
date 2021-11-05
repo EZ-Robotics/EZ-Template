@@ -231,10 +231,6 @@ class Drive {
       bool turn_exit_condition(double target);
       bool swing_exit_condition(double target);
 
-      double WHEEL_DIA; // Have the robot go 8ft forward and adjust this value until the robot actually goes 8ft
-      double CART_RPM;   // Output RPM of the cart
-      double RATIO; // External drive ratio (MUST BE DECIMAL)
-
        void drive_pid_task();
        void swing_pid_task();
        void turn_pid_task();

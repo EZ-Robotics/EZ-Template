@@ -48,18 +48,18 @@ double PID::GetTarget() {
 
 void PID::Compute(double current)
 {
-  prev_error = error;
   error = target - current;
   derivative = error - prev_error;
-  if(fabs(error) < constants.StartI)
-  {
-    integral += error;
-  }
-  if(ez::util::sgn(error) != ez::util::sgn(prev_error))
-  {
-    integral = 0;
+
+  if (constants.kI!=0) {
+    if(fabs(error) < constants.StartI)
+      integral += error;
+
+    if(ez::util::sgn(error) != ez::util::sgn(prev_error))
+      integral = 0;
   }
 
-  //printf("%f\n", target);
-  output = error * constants.kP + integral * constants.kI + derivative * constants.kD;
+  output = (error*constants.kP) + (integral*constants.kI) + (derivative*constants.kD);
+
+  prev_error = error;
 }

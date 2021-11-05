@@ -12,11 +12,15 @@ void Drive::drive_pid_task() {
 
     leftPID. Compute(left_sensor());
     rightPID.Compute(left_sensor());
+    headingPID.Compute(get_gyro());
 
-    //printf("%f   %f\n", leftPID.output, rightPID.output);
+    double l_drive_out = ez::util::clip_num(leftPID. output, max_speed, -max_speed);
+    double r_drive_out = ez::util::clip_num(rightPID.output, max_speed, -max_speed);
 
-    set_tank(leftPID.output, rightPID.output);
-    //set_tank(127, 127);
+    double l_out = l_drive_out + headingPID.output;
+    double r_out = r_drive_out - headingPID.output;
+
+    set_tank(l_out, r_out);
 
     pros::delay(ez::util::DELAY_TIME);
   }
