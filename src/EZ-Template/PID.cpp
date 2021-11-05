@@ -4,9 +4,7 @@ License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-#include "EZ-Template/PID.hpp"
 #include "main.h"
-#include "EZ-Template/Helper.hpp"
 
 void PID::ResetVariables()
 {
@@ -21,8 +19,8 @@ void PID::ResetVariables()
 
 PID::PID()
 {
-  SetConstants(0, 0, 0, 0);
   ResetVariables();
+  SetConstants(0, 0, 0, 0);
 }
 PID::Constants PID::GetConstants()
 {
@@ -30,8 +28,8 @@ PID::Constants PID::GetConstants()
 }
 PID::PID(double KP, double KI, double KD, double startI)
 {
-  SetConstants(KP, KI, KD, startI);
   ResetVariables();
+  SetConstants(KP, KI, KD, startI);
 }
 void PID::SetConstants(double p, double i, double d, double startI)
 {
@@ -40,18 +38,18 @@ void PID::SetConstants(double p, double i, double d, double startI)
   constants.kD = d;
   constants.StartI = startI;
 }
-void PID::SetTarget(double target)
+void PID::SetTarget(double input)
 {
-  target = target;
+  target = input;
 }
 double PID::GetTarget() {
   return target;
 }
 
-void PID::Compute(double SensorValue)
+void PID::Compute(double current)
 {
   prev_error = error;
-  error = target - SensorValue;
+  error = target - current;
   derivative = error - prev_error;
   if(fabs(error) < constants.StartI)
   {
@@ -61,5 +59,7 @@ void PID::Compute(double SensorValue)
   {
     integral = 0;
   }
+
+  //printf("%f\n", target);
   output = error * constants.kP + integral * constants.kI + derivative * constants.kD;
 }

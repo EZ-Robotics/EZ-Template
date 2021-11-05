@@ -16,18 +16,20 @@ public:
     double StartI;
   };
   PID();
-  PID(double, double, double, double);
-  void SetConstants(double, double, double, double);
-  void SetTarget(double);
-  void Compute(double);
+  PID(double p, double i, double d, double startI);
+  void SetConstants(double p, double i, double d, double starI);
+  void SetTarget(double input);
+  void Compute(double current);
   double GetTarget();
   Constants GetConstants();
+
+  double output;
+  double error;
 private:
   void ResetVariables();
   Constants constants;
-  double output;
   double target;
-  double error;
+
 
   double prev_error;
   double integral;

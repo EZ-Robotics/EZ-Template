@@ -1,7 +1,5 @@
 #include "main.h"
-#include "EZ-Template/AutonSelector.hpp"
-#include "EZ-Template/SDcard.hpp"
-#include "EZ-Template/drive.hpp"
+
 #include <iostream>
 using namespace std;
 
@@ -74,6 +72,8 @@ void initialize()
   disable_all_tasks();
 
   chassis.init_curve_sd();
+  chassis.toggle_controller_curve_modifier(true);
+  chassis.set_active_brake(0.1);
 
   /*
   ez::sd::init_auton_selector(autoSelector);
@@ -131,12 +131,15 @@ void competition_initialize()
 {}
 void autonomous()
 {
-  Auton temp {"Name", x};
+  //Auton temp {"Name", x};
   chassis.tare_gyro();
   chassis.reset_drive_sensor();
   chassis.set_drive_brake(MOTOR_BRAKE_HOLD);
 
-  autoSelector.CallSelectedAuto();
+  chassis.set_drive_pid(12, 127);
+  chassis.wait_drive();
+
+  //autoSelector.CallSelectedAuto();
 }
 
 
@@ -157,7 +160,9 @@ void opcontrol()
 {
   disable_all_tasks();
   chassis.reset_drive_sensor();
-  chassis.set_drive_brake(MOTOR_BRAKE_COAST); // This is preference to what you like to drive on
+
+  // This is preference to what you like to drive on.
+  chassis.set_drive_brake(MOTOR_BRAKE_COAST);
 
   while (true) {
 

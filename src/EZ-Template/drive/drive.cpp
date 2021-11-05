@@ -7,7 +7,6 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include "main.h"
 #include <list>
 
-#include "EZ-Template/Helper.hpp"
 // !Util
 
 Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double motor_cartridge, double ratio)
@@ -16,6 +15,7 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
  turn_pid([this]{ this->turn_pid_task(); }),
  swing_pid([this]{ this->swing_pid_task(); })
 {
+  // Set ports to a global vector
   for(auto i : left_motor_ports)
   {
     pros::Motor temp(abs(i), ez::util::isReversed(i));
@@ -26,11 +26,13 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
     pros::Motor temp(abs(i), ez::util::isReversed(i));
     RightMotors.push_back(temp);
   }
-  //pros::Imu gyro(imu_port);
+
+  // Tick per inch calculation
   TICK_PER_REV  = (50*(3600/CART_RPM)) * RATIO; // with no cart, the encoder reads 50 counts per rotation
   CIRCUMFERENCE = WHEEL_DIA*M_PI;
   TICK_PER_INCH = (TICK_PER_REV/CIRCUMFERENCE);
 
+  // PID Constants
   headingPID = {11, 0, 20, 0};
   forwardDrivePID = {.45, 0, 5, 0};
   backwardDrivePID = {.45, 0, 5, 0};
@@ -39,15 +41,15 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
   leftPID = {.45, 0, 5, 0};
   rightPID = {.45, 0, 5, 0};
 
+  // Exit condition constants
   set_exit_condition(turn_exit,  100, 3,  500, 7,   500);
   set_exit_condition(swing_exit, 100, 3,  500, 7,   500);
   set_exit_condition(drive_exit, 80,  50, 300, 150, 500);
+
+  // Modify joystick curve on controller (defaults to disabled)
+  toggle_controller_curve_modifier(false);
 }
-void Drive::set_curve_default(int left, int right)
-{
-  left_curve_scale = left;
-  right_curve_scale = right;
-}
+
 void Drive::SetPIDConstants(PID pid, double kP, double kI, double kD, double startI)
 {
   pid.SetConstants(kP, kI, kD, startI);
@@ -55,229 +57,13 @@ void Drive::SetPIDConstants(PID pid, double kP, double kI, double kD, double sta
 
 void
 Drive::set_tank(int l, int r) {
+  if (pros::millis() < 1500) return;
 
   for (auto i : LeftMotors) {
     i.move_voltage(l*(12000.0/127.0));
   }
   for (auto i : RightMotors) {
     i.move_voltage(r*(12000.0/127.0));
-  }
-}
-
-void
-Drive::init_curve_sd() {
-  // If no SD card, return
-  if (!ez::util::IS_SD_CARD) return;
-
-  // Set Starting Curve to SD Card
-  // Left Curve
-  FILE* l_usd_file_read = fopen("/usd/left_curve.txt", "r");
-  char l_buf[5];
-  fread(l_buf, 1, 5, l_usd_file_read);
-  left_curve_scale = std::stof(l_buf);
-  fclose(l_usd_file_read);
-
-  // Right Curve
-  FILE* r_usd_file_read = fopen("/usd/right_curve.txt", "r");
-  char r_buf[5];
-  fread(r_buf, 1, 5, r_usd_file_read);
-  right_curve_scale = std::stof(r_buf);
-  fclose(r_usd_file_read);
-}
-
-// Save New left Curve
-void Drive::save_l_curve_sd() {
-  // If no SD card, return
-  if (!ez::util::IS_SD_CARD) return;
-
-  FILE* usd_file_write = fopen("/usd/left_curve.txt", "w");
-  std::string in_str = std::to_string(left_curve_scale);
-  char const *in_c = in_str.c_str();
-  fputs(in_c, usd_file_write);
-  fclose(usd_file_write);
-}
-void Drive::save_r_curve_sd() {
-  // If no SD card, return
-  if (!ez::util::IS_SD_CARD) return;
-
-  FILE* usd_file_write = fopen("/usd/right_curve.txt", "w");
-  std::string in_str = std::to_string(right_curve_scale);
-  char const *in_c = in_str.c_str();
-  fputs(in_c, usd_file_write);
-  fclose(usd_file_write);
-}
-
-void Drive::l_increase() {
-  left_curve_scale += 0.1;
-}
- void Drive::l_decrease() {
-  left_curve_scale -= 0.1;
-  left_curve_scale =  left_curve_scale<0 ? 0 : left_curve_scale;
-}
-void Drive::r_increase() {
-  right_curve_scale += 0.1;
-}
-void Drive::r_decrease() {
-  right_curve_scale -= 0.1;
-  right_curve_scale =  right_curve_scale<0 ? 0 : right_curve_scale;
-}
-
-
-void Drive::button_press(button_ *input_name, int button, std::function<void()> changeCurve, std::function<void()> save) {
-  // If button is pressed, increase the curve and set toggles.
-  if (button && !input_name->lock) {
-    changeCurve();
-    input_name->lock = true;
-    input_name->release_reset = true;
-  }
-
-  // If the button is still held, check if it's held for 500ms.
-  // Then, increase the curve every 100ms by 0.1
-  else if (button && input_name->lock) {
-    input_name->hold_timer+=ez::util::DELAY_TIME;
-    if (input_name->hold_timer > 500.0) {
-      input_name->increase+=ez::util::DELAY_TIME;
-      if (input_name->increase > 100.0) {
-        changeCurve();
-        input_name->increase = 0;
-      }
-    }
-  }
-
-  // When button is released for 250ms, save the new curve value to the SD card
-  else if (!button) {
-    input_name->lock = false;
-    input_name->hold_timer = 0;
-
-    if (input_name->release_reset) {
-      input_name->release_timer+=ez::util::DELAY_TIME;
-      if (input_name->release_timer > 250.0) {
-        save();
-        input_name->release_timer = 0;
-        input_name->release_reset = false;
-      }
-    }
-  }
-}
-void Drive::modify_curve_with_controller() {
-  if (DISABLE_CONTROLLER) return;
-
-  button_press(&l_increase_, master.get_digital(pros::E_CONTROLLER_DIGITAL_RIGHT), ([this]{ this->l_increase(); }), ([this]{ this->save_l_curve_sd(); }));
-  button_press(&l_decrease_, master.get_digital(pros::E_CONTROLLER_DIGITAL_LEFT), ([this]{ this->l_decrease(); }), ([this]{ this->save_l_curve_sd(); }));
-  if (!is_tank) {
-    button_press(&r_increase_, master.get_digital(pros::E_CONTROLLER_DIGITAL_A), ([this]{ this->r_increase(); }), ([this]{ this->save_r_curve_sd(); }));
-    button_press(&r_decrease_, master.get_digital(pros::E_CONTROLLER_DIGITAL_Y), ([this]{ this->r_decrease(); }), ([this]{ this->save_r_curve_sd(); }));
-  }
-
-  auto sr = std::to_string(right_curve_scale);
-  auto sl = std::to_string(left_curve_scale);
-  if (!is_tank)
-    master.set_text(2, 0, sl+"   "+sr);
-  else
-    master.set_text(2, 0, sl);
-}
-
-
-double Drive::left_curve_function(double x) {
-  if (left_curve_scale != 0) {
-    //if (CURVE_TYPE)
-      return (powf(2.718, -(left_curve_scale/10)) + powf(2.718, (fabs(x)-127)/10) * (1-powf(2.718, -(left_curve_scale/10))))*x;
-    //else
-      //return powf(2.718, ((abs(x)-127)*RIGHT_CURVE_SCALE)/100)*x;
-  }
-  return x;
-}
-double Drive::right_curve_function(double x) {
-  if (right_curve_scale != 0) {
-    //if (CURVE_TYPE)
-      return (powf(2.718, -(right_curve_scale/10)) + powf(2.718, (fabs(x)-127)/10) * (1-powf(2.718, -(right_curve_scale/10))))*x;
-    //else
-      //return powf(2.718, ((abs(x)-127)*RIGHT_CURVE_SCALE)/100)*x;
-  }
-  return x;
-}
-
-
-void Drive::chassis_tank()
-{
-  is_tank = true;
-
-  // Toggle for controller curve
-  modify_curve_with_controller();
-
-  // Put the joysticks through the curve function
-  int l_stick = left_curve_function(master.get_analog(ANALOG_LEFT_Y));
-  int r_stick = left_curve_function(master.get_analog(ANALOG_RIGHT_Y));
-
-  // Threshold if joysticks don't come back to perfect 0
-  if (abs(l_stick)>5 || abs(r_stick)>5) {
-    set_tank(l_stick, r_stick);
-    reset_drive_sensor();
-  }
-  // When joys are released, run active brake (P) on drive
-  else {
-    set_tank((0-left_sensor())*ACTIVE_BRAKE_KP, (0-right_sensor())*ACTIVE_BRAKE_KP);
-  }
-}
-
-void Drive::chassis_arcade_standard(e_type t) {
-  is_tank = false;
-
-  // Toggle for controller curve
-  modify_curve_with_controller();
-
-  int l_stick, r_stick;
-  // Check arcade type (split vs single, normal vs flipped)
-  if (t == k_split) {
-    // Put the joysticks through the curve function
-    l_stick = left_curve_function(master.get_analog(ANALOG_LEFT_Y));
-    r_stick = right_curve_function(master.get_analog(ANALOG_RIGHT_X));
-  }
-  else if (t == k_single) {
-    // Put the joysticks through the curve function
-    l_stick = left_curve_function(master.get_analog(ANALOG_LEFT_Y));
-    r_stick = right_curve_function(master.get_analog(ANALOG_LEFT_X));
-  }
-
-  // Threshold if joysticks don't come back to perfect 0
-  if (abs(l_stick)>5 || abs(r_stick)>5) {
-    set_tank(l_stick+r_stick, l_stick-r_stick);
-    reset_drive_sensor();
-  }
-  // When joys are released, run active brake (P) on drive
-  else {
-    set_tank((0-left_sensor())*ACTIVE_BRAKE_KP, (0-right_sensor())*ACTIVE_BRAKE_KP);
-  }
-}
-
-// Arcade control standard
-void Drive::chassis_arcade_flipped(e_type t) {
-  is_tank = false;
-
-  // Toggle for controller curve
-  modify_curve_with_controller();
-
-  int l_stick, r_stick;
-  // Check arcade type (split vs single, normal vs flipped)
-  if (t == k_split) {
-    // Put the joysticks through the curve function
-    r_stick = right_curve_function(master.get_analog(ANALOG_RIGHT_Y));
-    l_stick = left_curve_function(master.get_analog(ANALOG_LEFT_X));
-  }
-  else if (t == k_single) {
-    // Put the joysticks through the curve function
-    r_stick = right_curve_function(master.get_analog(ANALOG_RIGHT_Y));
-    l_stick = left_curve_function(master.get_analog(ANALOG_RIGHT_X));
-  }
-
-  // Threshold if joysticks don't come back to perfect 0
-  if (abs(l_stick)>5 || abs(r_stick)>5) {
-    set_tank(r_stick+l_stick, r_stick-l_stick);
-    reset_drive_sensor();
-  }
-  // When joys are released, run active brake (P) on drive
-  else {
-    set_tank((0-left_sensor())*ACTIVE_BRAKE_KP, (0-right_sensor())*ACTIVE_BRAKE_KP);
   }
 }
 
@@ -335,26 +121,6 @@ Drive::set_max_speed(int speed) {
   max_speed = speed;
 }
 
-
-
-
-
-
-//!Joystick
-
-//bool is_tank;
-
-///
-// Input Curve
-///
-
-
-
-// ! Auton
-
-///
-// Adjust Constants
-///
 void
 Drive::set_slew_min_power(int fwd, int rev) {
   SLEW_MIN_POWER[0] = fwd;
@@ -384,22 +150,24 @@ Drive::set_drive_pid(double target, int speed, bool slew_on, bool toggle_heading
     r_start = right_sensor();
     l_target_encoder = l_start + (target*TICK_PER_INCH);
     r_target_encoder = r_start + (target*TICK_PER_INCH);
-    if (target<l_start && target<r_start) {
-      isBackwards = true;
+    if (l_target_encoder<l_start && r_target_encoder<r_start) {
       auto consts = backwardDrivePID.GetConstants();
       leftPID.SetConstants(consts.kP, consts.kI, consts.kD, consts.StartI);
       rightPID.SetConstants(consts.kP, consts.kI, consts.kD, consts.StartI);
-
+      isBackwards = true;
     } else {
       auto consts = forwardDrivePID.GetConstants();
       leftPID.SetConstants(consts.kP, consts.kI, consts.kD, consts.StartI);
       rightPID.SetConstants(consts.kP, consts.kI, consts.kD, consts.StartI);
-      forwardDrivePID.SetTarget(target);
+      //forwardDrivePID.SetTarget(target);
       isBackwards = false;
     }
 
-    leftPID.SetTarget(l_target_encoder);
+    leftPID. SetTarget(l_target_encoder);
     rightPID.SetTarget(r_target_encoder);
+    printf("%f  ", leftPID.GetTarget());
+    printf("%f", rightPID.GetTarget());
+    printf("\n");
 
     l.sign = ez::util::sgn(l_target_encoder-left_sensor());
     r.sign = ez::util::sgn(r_target_encoder-right_sensor());
@@ -437,41 +205,6 @@ void Drive::set_swing_pid(double target, int speed)
   set_max_speed(abs(speed));
   //swing_sign = sgn(target-get_gyro());
 }
-///
-// Reset to default constants
-///
-
-
-
-// "Enumerator" for drive type
-
-// Drive PID with active straight code
-// - it makes sure the angle of the robot is what it should be all the way through the movements,
-// - turning if needed to keep it going straight
-void
-Drive::drive_pid_task() {
-  while (true) {
-
-    pros::delay(10);
-  }
-}
-
-void
-Drive::turn_pid_task() {
-  while (true) {
-
-    pros::delay(10);
-  }
-}
-
-void
-Drive::swing_pid_task() {
-  while (true) {
-
-    pros::delay(10);
-  }
-}
-
 
 void Drive::set_exit_condition(exit_condition_ type, int p_small_exit_time, int p_small_error, int p_big_exit_time, int p_big_error, int p_velocity_exit_time) {
   type.small_exit_time = p_small_exit_time;
@@ -631,21 +364,21 @@ void Drive::wait_drive() {
   int delay_time = ez::util::DELAY_TIME;
   pros::delay(delay_time);
 
-  // if (drive task running) {
+  if (drive_pid.get_state() == pros::E_TASK_STATE_RUNNING) {
     while (drive_exit_condition(leftPID.GetTarget(), rightPID.GetTarget())) {
       pros::delay(delay_time);
     }
-  // }
-  // else if (turn task running) {
+  }
+  else if (turn_pid.get_state() == pros::E_TASK_STATE_RUNNING) {
     while (turn_exit_condition(turnPID.GetTarget())) {
       pros::delay(delay_time);
     }
-  // }
-  // else if (swing task running) {
+  }
+  else if (swing_pid.get_state() == pros::E_TASK_STATE_RUNNING) {
     while (swing_exit_condition(swingPID.GetTarget())) {
       pros::delay(delay_time);
     }
-  // }
+  }
 }
 // Function to wait until a certain position is reached
 void Drive::wait_until(double target) {

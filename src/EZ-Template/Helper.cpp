@@ -4,7 +4,6 @@ License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-#include "EZ-Template/Helper.hpp"
 #include "main.h"
 
 namespace ez{
@@ -15,7 +14,7 @@ bool isReversed(double input) {
   return false;
 }
 
-int sgn (int input) {
+int sgn (double input) {
   if (input > 0)
     return 1;
   else if (input < 0)

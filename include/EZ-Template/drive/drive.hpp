@@ -192,6 +192,8 @@ class Drive {
         void set_curve_default(int left, int right);
         void init_curve_sd();
 
+        void set_active_brake(double kp);
+
         typedef struct {
           int small_exit_time;
           int small_error;
@@ -205,7 +207,12 @@ class Drive {
         exit_condition_ drive_exit;
 
         void set_exit_condition(exit_condition_ type, int p_small_exit_time, int p_small_error, int p_big_exit_time, int p_big_error, int p_velocity_exit_time);
+
+        void toggle_controller_curve_modifier(bool input);
+
     private:  // !Auton
+
+    double active_brake_kp = 0;
 
     slew_ l;
     slew_ r;
@@ -244,7 +251,7 @@ class Drive {
       double r_start = 0;
 
 
-      bool  DISABLE_CONTROLLER = false; // If false, allows controller to modify CURVE_SCALE.
+      bool disable_controller = true; // If false, allows controller to modify CURVE_SCALE.
       bool is_tank;
 
       double left_curve_function(double x);

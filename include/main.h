@@ -41,14 +41,11 @@
  */
 //#include "okapi/api.hpp"
 //#include "pros/api_legacy.h"
-#include "EZ-Template/util.hpp"
-#include "EZ-Template/drive.hpp"
+#include "EZ-Template/api.hpp"
+
 // More includes here...
 #include "autons.hpp"
-#include "EZ-Template/Helper.hpp"
-//#include "autons.hpp"
 
-//#include "EZ-Template/SDcard.hpp"
 /**
  * If you find doing pros::Motor() to be tedious and you'd prefer just to do
  * Motor, you can use the namespace with the following commented out line.
