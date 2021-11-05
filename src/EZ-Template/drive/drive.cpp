@@ -388,7 +388,6 @@ void Drive::wait_drive() {
 }
 // Function to wait until a certain position is reached
 void Drive::wait_until(double target) {
-  const int delay_time = ez::util::DELAY_TIME;
 
   // If robot is driving...
   if (drive_pid.get_state() != pros::E_TASK_STATE_SUSPENDED) {
@@ -400,24 +399,23 @@ void Drive::wait_until(double target) {
     int r_error = r_tar   - right_sensor();
     int l_sgn   = ez::util::sgn(l_error);
     int r_sgn   = ez::util::sgn(r_error);
-    bool run    = true;
 
-    while (run) {
+    while (true) {
       l_error = l_tar - left_sensor();
       r_error = r_tar - right_sensor();
 
       // Break the loop once target is passed
       if (ez::util::sgn(l_error)==l_sgn && ez::util::sgn(r_error)==r_sgn) {
-        run = true; // this makes sure that the following else if is rnu after the sgn is flipped
+        // this makes sure that the following else if is rnu after the sgn is flipped
       }
       else if (ez::util::sgn(l_error)!=l_sgn && ez::util::sgn(r_error)!=r_sgn) {
-        run = false;
+        return;
       }
       else if (!drive_exit_condition(l_tar, r_tar)) {
-        run = false;
+        return;
       }
 
-      pros::delay(delay_time);
+      pros::delay(ez::util::DELAY_TIME);
     }
   }
 
@@ -428,21 +426,21 @@ void Drive::wait_until(double target) {
     int g_sgn   = ez::util::sgn(g_error);
     bool run    = true;
 
-    while (run) {
+    while (true) {
       g_error = target - get_gyro();
 
       // Break the loop once target is passed
       if (ez::util::sgn(g_error)==g_sgn) {
-        run = true; // this makes sure that the following else if is rnu after the sgn is flipped
+        // this makes sure that the following else if is rnu after the sgn is flipped
       }
       else if (ez::util::sgn(g_error)!=g_sgn) {
-        run = false;
+        return;
       }
       else if (!turn_exit_condition(target)) {
-        run = false;
+        return;
       }
 
-      pros::delay(delay_time);
+      pros::delay(ez::util::DELAY_TIME);
     }
   }
 }

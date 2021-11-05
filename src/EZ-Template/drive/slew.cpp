@@ -21,15 +21,19 @@ void Drive::set_slew_distance(int fwd, int rev) {
 
 // Slew calculation
 double Drive::slew_calculate(slew_ &input, double current) {
+  // Is lsew still on?
   if (input.enabled) {
+    // Error is distance away from completed slew
     input.error = input.x_intercept - current;
 
-    if (ez::util::sgn(input.error) != input.sign) {
+    // When the sign of error flips, slew is completed
+    if (ez::util::sgn(input.error) != input.sign)
       input.enabled = false;
-    }
 
-    if (ez::util::sgn(input.error) == input.sign)
+    // Return y=mx+b
+    else if (ez::util::sgn(input.error) == input.sign)
       return (input.slope * input.error) + input.y_intercept;
   }
+  // When slew is completed, return max speed
   return input.max_speed;
 }

@@ -89,10 +89,10 @@ void Drive::button_press(button_ *input_name, int button, std::function<void()> 
   else if (button && input_name->lock) {
     input_name->hold_timer+=ez::util::DELAY_TIME;
     if (input_name->hold_timer > 500.0) {
-      input_name->increase+=ez::util::DELAY_TIME;
-      if (input_name->increase > 100.0) {
+      input_name->increase_timer+=ez::util::DELAY_TIME;
+      if (input_name->increase_timer > 100.0) {
         changeCurve();
-        input_name->increase = 0;
+        input_name->increase_timer = 0;
       }
     }
   }
