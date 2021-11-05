@@ -136,8 +136,10 @@ void autonomous()
   chassis.reset_drive_sensor();
   chassis.set_drive_brake(MOTOR_BRAKE_HOLD);
 
-  chassis.set_drive_pid(0, 110);
+  chassis.set_drive_pid(12, 110);
   chassis.wait_drive();
+
+  //chassis.set_swing_pid(chassis.l_swing, 45, 90);
 
   //autoSelector.CallSelectedAuto();
 }

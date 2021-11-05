@@ -59,6 +59,7 @@ void PID::Compute(double current)
       integral = 0;
   }
 
+
   output = (error*constants.kP) + (integral*constants.kI) + (derivative*constants.kD);
 
   prev_error = error;

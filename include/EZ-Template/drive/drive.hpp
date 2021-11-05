@@ -10,7 +10,6 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "EZ-Template/Helper.hpp"
 #include "EZ-Template/PID.hpp"
-#include "EZ-Template/slew.hpp"
 
 #include <iostream>
 #include <functional>
@@ -18,6 +17,9 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 class Drive {
     public:
         enum e_type{ k_single=0, k_split=1 };
+        enum e_swing{ l_swing=0, r_swing=1 };
+
+        e_swing current_swing;
 
         std::vector<pros::Motor> LeftMotors;
         std::vector<pros::Motor> RightMotors;
@@ -170,7 +172,7 @@ class Drive {
          * \param speed
          *        0 to 127, max speed during motion
         */
-        void set_swing_pid(double target, int speed);
+        void set_swing_pid(e_swing type, double target, int speed);
 
         /**
          * Lock the code in a while loop until the robot has settled.
@@ -194,19 +196,19 @@ class Drive {
 
         void set_active_brake(double kp);
 
-        typedef struct {
+         struct exit_condition_{
           int small_exit_time;
           int small_error;
           int big_exit_time;
           int big_error;
           int velocity_exit_time;
-        }exit_condition_;
+        };
 
         exit_condition_ turn_exit;
         exit_condition_ swing_exit;
         exit_condition_ drive_exit;
 
-        void set_exit_condition(exit_condition_ type, int p_small_exit_time, int p_small_error, int p_big_exit_time, int p_big_error, int p_velocity_exit_time);
+        void set_exit_condition(exit_condition_ &type, int p_small_exit_time, int p_small_error, int p_big_exit_time, int p_big_error, int p_velocity_exit_time);
 
         void toggle_controller_curve_modifier(bool input);
 
@@ -214,8 +216,22 @@ class Drive {
 
     double active_brake_kp = 0;
 
+
+    struct slew_{
+      int sign = 0;
+      double error = 0;
+      double x_intercept = 0;
+      double y_intercept = 0;
+      double slope = 0;
+      double output = 0;
+      bool enabled = false;
+      double max_speed = 0;
+    };
+
     slew_ l;
     slew_ r;
+
+    double slew_calculate(slew_ &input, double current);
 
 
 

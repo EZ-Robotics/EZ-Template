@@ -9,7 +9,6 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include "EZ-Template/SDcard.hpp"
 #include "EZ-Template/AutonSelector.hpp"
 #include "EZ-Template/PID.hpp"
-#include "EZ-Template/slew.hpp"
 #include "EZ-Template/util.hpp"
 
 #include "EZ-Template/drive/drive.hpp"

@@ -7,6 +7,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include "main.h"
 #include <list>
 
+
 // !Util
 
 Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double motor_cartridge, double ratio)
@@ -34,12 +35,16 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 
   // PID Constants
   headingPID = {11, 0, 20, 0};
-  forwardDrivePID = {.45, 0, 5, 0};
-  backwardDrivePID = {.45, 0, 5, 0};
+  forwardDrivePID = {0.45, 0, 5, 0};
+  backwardDrivePID = {0.45, 0, 5, 0};
   turnPID = {5, 0.003, 35, 15};
   swingPID = {12, 0, 35, 0};
-  leftPID = {.45, 0, 5, 0};
-  rightPID = {.45, 0, 5, 0};
+  leftPID = {0.45, 0, 5, 0};
+  rightPID = {0.45, 0, 5, 0};
+
+  // Slew constants
+  set_slew_min_power(80, 80);
+  set_slew_distance(7, 7);
 
   // Exit condition constants
   set_exit_condition(turn_exit,  100, 3,  500, 7,   500);
@@ -122,25 +127,16 @@ Drive::set_max_speed(int speed) {
 }
 
 void
-Drive::set_slew_min_power(int fwd, int rev) {
-  SLEW_MIN_POWER[0] = fwd;
-  SLEW_MIN_POWER[1] = rev;
-}
-
-void
-Drive::set_slew_distance(int fwd, int rev) {
-  SLEW_DISTANCE[0] = fwd;
-  SLEW_DISTANCE[1] = rev;
-}
-
-void
 Drive::set_drive_pid(double target, int speed, bool slew_on, bool toggle_heading) {
   turn_pid.suspend();
   swing_pid.suspend();
 
   // Global setup
   set_max_speed(abs(speed));
-  bool slew = slew_on;
+  l.enabled = slew_on;
+  r.enabled = slew_on;
+  l.max_speed = abs(speed);
+  r.max_speed = abs(speed);
   HEADING_ON = toggle_heading;
   bool isBackwards = false;
 
@@ -199,12 +195,13 @@ void Drive::set_turn_pid(double target, int speed)
   //gyro_sign = sgn(target - get_gyro());
 }
 
-void Drive::set_swing_pid(double target, int speed)
+void Drive::set_swing_pid(e_swing type, double target, int speed)
 {
   drive_pid.suspend();
   turn_pid.suspend();
 
   printf("Swing Started... Target Value: %f\n", target);
+  current_swing = type;
   swingPID.SetTarget(target);
   headingPID.SetTarget(target);
   set_max_speed(abs(speed));
@@ -213,7 +210,7 @@ void Drive::set_swing_pid(double target, int speed)
   //swing_sign = sgn(target-get_gyro());
 }
 
-void Drive::set_exit_condition(exit_condition_ type, int p_small_exit_time, int p_small_error, int p_big_exit_time, int p_big_error, int p_velocity_exit_time) {
+void Drive::set_exit_condition(exit_condition_ &type, int p_small_exit_time, int p_small_error, int p_big_exit_time, int p_big_error, int p_velocity_exit_time) {
   type.small_exit_time = p_small_exit_time;
   type.small_error = p_small_error;
   type.big_exit_time = p_big_exit_time;
@@ -371,17 +368,19 @@ void Drive::wait_drive() {
   int delay_time = ez::util::DELAY_TIME;
   pros::delay(delay_time);
 
-  if (drive_pid.get_state() == pros::E_TASK_STATE_RUNNING) {
+  if (drive_pid.get_state() != pros::E_TASK_STATE_SUSPENDED) {
+    int i = 0;
     while (drive_exit_condition(leftPID.GetTarget(), rightPID.GetTarget())) {
+      i+=delay_time;
       pros::delay(delay_time);
     }
   }
-  else if (turn_pid.get_state() == pros::E_TASK_STATE_RUNNING) {
+  else if (turn_pid.get_state() != pros::E_TASK_STATE_SUSPENDED) {
     while (turn_exit_condition(turnPID.GetTarget())) {
       pros::delay(delay_time);
     }
   }
-  else if (swing_pid.get_state() == pros::E_TASK_STATE_RUNNING) {
+  else if (swing_pid.get_state() != pros::E_TASK_STATE_SUSPENDED) {
     while (swing_exit_condition(swingPID.GetTarget())) {
       pros::delay(delay_time);
     }
@@ -392,7 +391,7 @@ void Drive::wait_until(double target) {
   const int delay_time = ez::util::DELAY_TIME;
 
   // If robot is driving...
-  if (true/*drive task running*/) { // CHANGE THIS TO DETECT IF TASK IS RUNNING
+  if (drive_pid.get_state() != pros::E_TASK_STATE_SUSPENDED) {
     // If robot is driving...
     // Calculate error between current and target (target needs to be an inbetween position)
     int l_tar   = l_start + (target*TICK_PER_INCH);
@@ -412,7 +411,6 @@ void Drive::wait_until(double target) {
         run = true; // this makes sure that the following else if is rnu after the sgn is flipped
       }
       else if (ez::util::sgn(l_error)!=l_sgn && ez::util::sgn(r_error)!=r_sgn) {
-        printf("Drive Wait Until Completed- Error Sgn Flipped\n");
         run = false;
       }
       else if (!drive_exit_condition(l_tar, r_tar)) {
@@ -424,7 +422,7 @@ void Drive::wait_until(double target) {
   }
 
   // If robot is turning...
-  else if (true /*turning or swinging is running*/) { // CHANGE THIS TO CHECK FOR TASK RUNNING!
+  else if (turn_pid.get_state()!=pros::E_TASK_STATE_SUSPENDED || swing_pid.get_state()!=pros::E_TASK_STATE_SUSPENDED) {
     // Calculate error between current and target (target needs to be an inbetween position)
     int g_error = target - get_gyro();
     int g_sgn   = ez::util::sgn(g_error);
