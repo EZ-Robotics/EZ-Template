@@ -137,7 +137,7 @@ Drive::set_drive_pid(double target, int speed, bool slew_on, bool toggle_heading
   r.enabled = slew_on;
   l.max_speed = abs(speed);
   r.max_speed = abs(speed);
-  HEADING_ON = toggle_heading;
+  heading_on = toggle_heading;
   bool isBackwards = false;
 
   double l_target_encoder, r_target_encoder;

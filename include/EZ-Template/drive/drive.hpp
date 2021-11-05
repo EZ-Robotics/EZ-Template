@@ -188,9 +188,6 @@ class Drive {
          *        when driving, this is inches.  when turning, this is degrees.
         */
         void wait_until(double target);
-        //void wait_until_drive(double input, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, int delay_time = 10, bool wait_until = true);
-        //void wait_until_swing(double input, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, int delay_time = 10, bool wait_until = true);
-        //void wait_until_turn(double input, int small_timeout, int start_small_counter_within, int big_timeout, int start_big_counter_within, int velocity_timeout, int delay_time = 10, bool wait_until = true);
         void set_curve_default(int left, int right);
         void init_curve_sd();
 
@@ -234,8 +231,6 @@ class Drive {
     double slew_calculate(slew_ &input, double current);
 
 
-
-      double HEADING_ON = true;
 
       double TICK_PER_REV;
       double CIRCUMFERENCE;
@@ -287,12 +282,7 @@ class Drive {
       button_ l_increase_;
       button_ l_decrease_;
       button_ r_increase_;
-      button_ r_decrease_;  ///
-        // Active Brake Constants
-        //  -when both sticks are let go, run a p loop on the drive to make sure opponents can't push you
-        //  -if you don't like active brake, set ACTIVE_BRAKE_KP to 0
-        ///
-        float ACTIVE_BRAKE_KP = 0; // Constant for activebrake (increase this to make it more aggressive, 0.1 is recommended)
+      button_ r_decrease_;
 
 
 
@@ -313,6 +303,8 @@ class Drive {
          *        minimum distance for backwards drive pd
         */
         void set_slew_distance (int fwd, int rev);
+
+        bool heading_on = true;
 
 
         //IDK WHAT TO DO WITH THIS YET

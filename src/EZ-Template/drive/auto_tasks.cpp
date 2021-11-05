@@ -15,13 +15,13 @@ void Drive::drive_pid_task() {
     rightPID.Compute(right_sensor());
     headingPID.Compute(get_gyro());
 
-    printf("l %f %i   r %f %i\n", slew_calculate(l, left_sensor()), l.enabled, slew_calculate(r, right_sensor()), r.enabled);
-
     double l_drive_out = ez::util::clip_num(leftPID. output, slew_calculate(l, left_sensor ()), -slew_calculate(l, left_sensor ()));
     double r_drive_out = ez::util::clip_num(rightPID.output, slew_calculate(r, right_sensor()), -slew_calculate(r, right_sensor()));
 
-    double l_out = l_drive_out + headingPID.output;
-    double r_out = r_drive_out - headingPID.output;
+    double gyro_out = heading_on ? headingPID.output : 0;
+
+    double l_out = l_drive_out + gyro_out;
+    double r_out = r_drive_out - gyro_out;
 
     set_tank(l_out, r_out);
 
