@@ -50,7 +50,11 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
   set_exit_condition(drive_exit, 80,  50, 300, 150, 500);
 
   // Modify joystick curve on controller (defaults to disabled)
-  toggle_controller_curve_modifier(false);
+  toggle_controller_curve_modifier(true);
+
+  // Left / Right modify buttons
+  left_curve_modify_buttons (pros::E_CONTROLLER_DIGITAL_LEFT, pros::E_CONTROLLER_DIGITAL_RIGHT);
+  right_curve_modify_buttons(pros::E_CONTROLLER_DIGITAL_Y,    pros::E_CONTROLLER_DIGITAL_A);
 }
 
 void Drive::SetPIDConstants(PID pid, double kP, double kI, double kD, double startI)

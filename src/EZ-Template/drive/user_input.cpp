@@ -59,6 +59,15 @@ void Drive::save_r_curve_sd() {
   fclose(usd_file_write);
 }
 
+void Drive::left_curve_modify_buttons(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase) {
+  l_increase_.button = increase;
+  l_decrease_.button = decrease;
+}
+void Drive::right_curve_modify_buttons(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase) {
+  r_increase_.button = increase;
+  r_decrease_.button = decrease;
+}
+
 // Increase / decrease left and right curves
 void Drive::l_increase() {
   left_curve_scale += 0.1;
@@ -120,13 +129,20 @@ void Drive::toggle_controller_curve_modifier(bool toggle) {
 
 // Modify curves with button presses and display them to contrller
 void Drive::modify_curve_with_controller() {
-  if (disable_controller) return;
-
+  if (!disable_controller) return; // True enables, false disables.
+/*
   button_press(&l_increase_, master.get_digital(pros::E_CONTROLLER_DIGITAL_RIGHT), ([this]{ this->l_increase(); }), ([this]{ this->save_l_curve_sd(); }));
   button_press(&l_decrease_, master.get_digital(pros::E_CONTROLLER_DIGITAL_LEFT), ([this]{ this->l_decrease(); }), ([this]{ this->save_l_curve_sd(); }));
   if (!is_tank) {
     button_press(&r_increase_, master.get_digital(pros::E_CONTROLLER_DIGITAL_A), ([this]{ this->r_increase(); }), ([this]{ this->save_r_curve_sd(); }));
     button_press(&r_decrease_, master.get_digital(pros::E_CONTROLLER_DIGITAL_Y), ([this]{ this->r_decrease(); }), ([this]{ this->save_r_curve_sd(); }));
+  }
+*/
+  button_press(&l_increase_, master.get_digital(l_increase_.button), ([this]{ this->l_increase(); }), ([this]{ this->save_l_curve_sd(); }));
+  button_press(&l_decrease_, master.get_digital(l_decrease_.button), ([this]{ this->l_decrease(); }), ([this]{ this->save_l_curve_sd(); }));
+  if (!is_tank) {
+    button_press(&r_increase_, master.get_digital(r_increase_.button), ([this]{ this->r_increase(); }), ([this]{ this->save_r_curve_sd(); }));
+    button_press(&r_decrease_, master.get_digital(r_decrease_.button), ([this]{ this->r_decrease(); }), ([this]{ this->save_r_curve_sd(); }));
   }
 
   auto sr = std::to_string(right_curve_scale);

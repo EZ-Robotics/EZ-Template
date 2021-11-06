@@ -75,6 +75,10 @@ void initialize()
   chassis.toggle_controller_curve_modifier(true);
   chassis.set_active_brake(0.1);
 
+  // These are already defaulted to these buttons, but you can change the left/right curve buttons here!
+  // chassis.left_curve_modify_buttons (pros::E_CONTROLLER_DIGITAL_LEFT, pros::E_CONTROLLER_DIGITAL_RIGHT);
+  // chassis.right_curve_modify_buttons(pros::E_CONTROLLER_DIGITAL_Y,    pros::E_CONTROLLER_DIGITAL_A);
+
   /*
   ez::sd::init_auton_selector(autoSelector);
 
@@ -169,10 +173,10 @@ void opcontrol()
   while (true) {
 
     chassis.chassis_tank(); // Tank control
-    // chassis.chassis_arcade_standard(chassis.k_split);
-    // chassis.chassis_arcade_standard(chassis.k_single);
-    // chassis.chassis_arcade_flipped(chassis.k_split);
-    // chassis.chassis_arcade_flipped(chassis.k_single);
+    // chassis.chassis_arcade_standard(chassis.k_split); // Standard split arcade
+    // chassis.chassis_arcade_standard(chassis.k_single); // Standard single arcade
+    // chassis.chassis_arcade_flipped(chassis.k_split); // Flipped split arcade
+    // chassis.chassis_arcade_flipped(chassis.k_single); // Flipped single arcade
 
     pros::delay(ez::util::DELAY_TIME); // Don't hog the CPU!  This is used for timer calculations
   }

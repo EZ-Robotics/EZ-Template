@@ -133,11 +133,29 @@ class Drive {
     void set_active_brake(double kp);
 
     /**
-     * Enables/disables modifying the joystick input curves with the controller.
+     * Enables/disables modifying the joystick input curves with the controller.  True enables, false disables.
      * \param input
      *        bool input
     */
     void toggle_controller_curve_modifier(bool toggle);
+
+    /**
+     * Sets buttons for modifying the left joystick curve.
+     * \param decrease
+     *        a pros button enumerator
+     * \param increase
+     *        a pros button enumerator
+    */
+    void left_curve_modify_buttons(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase);
+
+    /**
+     * Sets buttons for modifying the right joystick curve.
+     * \param decrease
+     *        a pros button enumerator
+     * \param increase
+     *        a pros button enumerator
+    */
+    void right_curve_modify_buttons(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase);
 
     /**
      * Outputs a curve from 5225A In the Zone.  This gives more control over the robot at lower speeds.  https://www.desmos.com/calculator/rcfjjg83zx
@@ -410,7 +428,7 @@ class Drive {
     double r_start = 0;
 
     // Enable/disable modifying controller curve with controller.
-    bool disable_controller = true; // If false, allows controller to modify CURVE_SCALE.
+    bool disable_controller = true; // True enables, false disables.
 
     // Is tank drive running?
     bool is_tank;
@@ -425,7 +443,8 @@ class Drive {
       bool release_reset = false;
       int release_timer = 0;
       int hold_timer = 0;
-      double increase_timer;
+      int increase_timer;
+      pros::controller_digital_e_t button;
     };
 
     button_ l_increase_;
