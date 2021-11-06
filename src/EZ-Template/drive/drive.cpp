@@ -8,10 +8,8 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include <list>
 
 
-// !Util
-
 Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double motor_cartridge, double ratio)
- : gyro (imu_port), master(pros::E_CONTROLLER_MASTER),
+ : imu (imu_port), master(pros::E_CONTROLLER_MASTER),
  drive_pid([this]{ this->drive_pid_task(); }),
  turn_pid([this]{ this->turn_pid_task(); }),
  swing_pid([this]{ this->swing_pid_task(); })
@@ -60,22 +58,20 @@ void Drive::SetPIDConstants(PID pid, double kP, double kI, double kD, double sta
   pid.SetConstants(kP, kI, kD, startI);
 }
 
-void
-Drive::set_tank(int l, int r) {
+void Drive::set_tank(int left, int right) {
   if (pros::millis() < 1500) return;
 
   for (auto i : LeftMotors) {
-    i.move_voltage(l*(12000.0/127.0));
+    i.move_voltage(left*(12000.0/127.0));
   }
   for (auto i : RightMotors) {
-    i.move_voltage(r*(12000.0/127.0));
+    i.move_voltage(right*(12000.0/127.0));
   }
 }
 
 
 // Motor telemetry
-void
-Drive::reset_drive_sensor() {
+void Drive::reset_drive_sensor() {
   LeftMotors.front().tare_position();
   RightMotors.front().tare_position();
 }
@@ -87,20 +83,20 @@ int Drive::left_sensor()    { return LeftMotors.front().get_position(); }
 int Drive::left_velocity()  { return LeftMotors.front().get_actual_velocity(); }
 
 
-void  Drive::tare_gyro() { gyro.set_rotation(0); }
-float Drive::get_gyro()  { return gyro.get_rotation(); }
+void  Drive::reset_gyro(double new_heading) { imu.set_rotation(new_heading); }
+double Drive::get_gyro()  { return imu.get_rotation(); }
 
-bool
-Drive::imu_calibrate() {
-  gyro.reset();
+bool Drive::imu_calibrate() {
+  imu.reset();
   int time = pros::millis();
   int iter = 0;
   int delay = 10;
-  while (gyro.get_status() & pros::c::E_IMU_STATUS_CALIBRATING) {
+  while (imu.get_status() & pros::c::E_IMU_STATUS_CALIBRATING) {
     iter += delay;
 
     if (iter > 2990) {
       printf("No IMU plugged in, (took %d ms to realize that)\n", iter);
+      master.rumble(".");
       return false;
     }
     pros::delay(delay);
@@ -111,16 +107,16 @@ Drive::imu_calibrate() {
 }
 
 // Brake modes
-void
-Drive::set_drive_brake(pros::motor_brake_mode_e_t input) {
+void Drive::set_drive_brake(pros::motor_brake_mode_e_t brake) {
   for (auto i : LeftMotors) {
-    i.set_brake_mode(input);
+    i.set_brake_mode(brake);
   }
   for (auto i : RightMotors) {
-    i.set_brake_mode(input);
+    i.set_brake_mode(brake);
   }
 }
 
+// PID
 void
 Drive::set_max_speed(int speed) {
   max_speed = speed;
@@ -144,40 +140,40 @@ Drive::set_drive_pid(double target, int speed, bool slew_on, bool toggle_heading
 
   // If drive or line, set targets to drive
 
-    printf("Drive Started... Target Value: %f\n", target);
-    l_start = left_sensor();
-    r_start = right_sensor();
-    l_target_encoder = l_start + (target*TICK_PER_INCH);
-    r_target_encoder = r_start + (target*TICK_PER_INCH);
-    if (l_target_encoder<l_start && r_target_encoder<r_start) {
-      auto consts = backwardDrivePID.GetConstants();
-      leftPID.SetConstants(consts.kP, consts.kI, consts.kD, consts.StartI);
-      rightPID.SetConstants(consts.kP, consts.kI, consts.kD, consts.StartI);
-      isBackwards = true;
-    } else {
-      auto consts = forwardDrivePID.GetConstants();
-      leftPID.SetConstants(consts.kP, consts.kI, consts.kD, consts.StartI);
-      rightPID.SetConstants(consts.kP, consts.kI, consts.kD, consts.StartI);
-      //forwardDrivePID.SetTarget(target);
-      isBackwards = false;
-    }
+  printf("Drive Started... Target Value: %f\n", target);
+  l_start = left_sensor();
+  r_start = right_sensor();
+  l_target_encoder = l_start + (target*TICK_PER_INCH);
+  r_target_encoder = r_start + (target*TICK_PER_INCH);
+  if (l_target_encoder<l_start && r_target_encoder<r_start) {
+    auto consts = backwardDrivePID.GetConstants();
+    leftPID.SetConstants(consts.kP, consts.kI, consts.kD, consts.StartI);
+    rightPID.SetConstants(consts.kP, consts.kI, consts.kD, consts.StartI);
+    isBackwards = true;
+  } else {
+    auto consts = forwardDrivePID.GetConstants();
+    leftPID.SetConstants(consts.kP, consts.kI, consts.kD, consts.StartI);
+    rightPID.SetConstants(consts.kP, consts.kI, consts.kD, consts.StartI);
+    //forwardDrivePID.SetTarget(target);
+    isBackwards = false;
+  }
 
-    leftPID. SetTarget(l_target_encoder);
-    rightPID.SetTarget(r_target_encoder);
+  leftPID. SetTarget(l_target_encoder);
+  rightPID.SetTarget(r_target_encoder);
 
-    l.sign = ez::util::sgn(l_target_encoder-left_sensor());
-    r.sign = ez::util::sgn(r_target_encoder-right_sensor());
+  l.sign = ez::util::sgn(l_target_encoder-left_sensor());
+  r.sign = ez::util::sgn(r_target_encoder-right_sensor());
 
-    l.x_intercept = l_start + (SLEW_DISTANCE[isBackwards]*TICK_PER_INCH);
-    r.x_intercept = r_start + (SLEW_DISTANCE[isBackwards]*TICK_PER_INCH);
+  l.x_intercept = l_start + (SLEW_DISTANCE[isBackwards]*TICK_PER_INCH);
+  r.x_intercept = r_start + (SLEW_DISTANCE[isBackwards]*TICK_PER_INCH);
 
-    l.y_intercept = abs(speed) * l.sign;
-    r.y_intercept = abs(speed) * r.sign;
+  l.y_intercept = abs(speed) * l.sign;
+  r.y_intercept = abs(speed) * r.sign;
 
-    l.slope = (SLEW_MIN_POWER[isBackwards]-abs(speed)) / ((l_start+(SLEW_DISTANCE[isBackwards]*TICK_PER_INCH))-0);
-    r.slope = (SLEW_MIN_POWER[isBackwards]-abs(speed)) / ((l_start+(SLEW_DISTANCE[isBackwards]*TICK_PER_INCH))-0);
+  l.slope = (SLEW_MIN_POWER[isBackwards]-abs(speed)) / ((l_start+(SLEW_DISTANCE[isBackwards]*TICK_PER_INCH))-0);
+  r.slope = (SLEW_MIN_POWER[isBackwards]-abs(speed)) / ((l_start+(SLEW_DISTANCE[isBackwards]*TICK_PER_INCH))-0);
 
-    drive_pid.resume();
+  drive_pid.resume();
 }
 
 void Drive::set_turn_pid(double target, int speed)
@@ -191,8 +187,6 @@ void Drive::set_turn_pid(double target, int speed)
   set_max_speed(abs(speed));
 
   turn_pid.resume();
-
-  //gyro_sign = sgn(target - get_gyro());
 }
 
 void Drive::set_swing_pid(e_swing type, double target, int speed)
@@ -207,9 +201,10 @@ void Drive::set_swing_pid(e_swing type, double target, int speed)
   set_max_speed(abs(speed));
 
   swing_pid.resume();
-  //swing_sign = sgn(target-get_gyro());
 }
 
+
+// Exit conditions
 void Drive::set_exit_condition(exit_condition_ &type, int p_small_exit_time, int p_small_error, int p_big_exit_time, int p_big_error, int p_velocity_exit_time) {
   type.small_exit_time = p_small_exit_time;
   type.small_error = p_small_error;
@@ -217,8 +212,6 @@ void Drive::set_exit_condition(exit_condition_ &type, int p_small_exit_time, int
   type.big_error = p_big_error;
   type.velocity_exit_time = p_velocity_exit_time;
 }
-
-
 
 bool Drive::drive_exit_condition(double l_target, double r_target) {
   static int i = 0, j = 0, k = 0;

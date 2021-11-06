@@ -114,8 +114,8 @@ void Drive::button_press(button_ *input_name, int button, std::function<void()> 
 }
 
 // Toggle modifying curves with controller
-void Drive::toggle_controller_curve_modifier(bool input) {
-  disable_controller = input;
+void Drive::toggle_controller_curve_modifier(bool toggle) {
+  disable_controller = toggle;
 }
 
 // Modify curves with button presses and display them to contrller

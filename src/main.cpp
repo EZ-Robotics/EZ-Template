@@ -132,7 +132,7 @@ void competition_initialize()
 void autonomous()
 {
   //Auton temp {"Name", x};
-  chassis.tare_gyro();
+  chassis.reset_gyro();
   chassis.reset_drive_sensor();
   chassis.set_drive_brake(MOTOR_BRAKE_HOLD);
 
