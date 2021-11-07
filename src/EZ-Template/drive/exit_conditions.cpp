@@ -6,6 +6,8 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "main.h"
 
+using namespace ez;
+
 
 // Set exit condition timeouts
 void Drive::set_exit_condition(exit_condition_ &type, int p_small_exit_time, int p_small_error, int p_big_exit_time, int p_big_error, int p_velocity_exit_time) {
@@ -22,7 +24,7 @@ bool Drive::exit_condition(tuple<double, std::optional<double>> targets, exit_co
 {
 
   static int i = 0, j = 0, k = 0;
-  int delay_time = ez::util::DELAY_TIME;
+  int delay_time = util::DELAY_TIME;
   bool isDrive = std::get<1>(targets).has_value();
 
   // If the robot gets within the target, make sure it's there for small_timeout amount of time
@@ -76,7 +78,7 @@ bool Drive::exit_condition(tuple<double, std::optional<double>> targets, exit_co
 
 // User wrapper for exit condition
 void Drive::wait_drive() {
-  int delay_time = ez::util::DELAY_TIME;
+  int delay_time = util::DELAY_TIME;
   pros::delay(delay_time);
 
   if (drive_pid.get_state() != pros::E_TASK_STATE_SUSPENDED) {
@@ -109,25 +111,25 @@ void Drive::wait_until(double target) {
     int r_tar   = r_start + (target*TICK_PER_INCH);
     int l_error = l_tar   - left_sensor();
     int r_error = r_tar   - right_sensor();
-    int l_sgn   = ez::util::sgn(l_error);
-    int r_sgn   = ez::util::sgn(r_error);
+    int l_sgn   = util::sgn(l_error);
+    int r_sgn   = util::sgn(r_error);
 
     while (true) {
       l_error = l_tar - left_sensor();
       r_error = r_tar - right_sensor();
 
       // Break the loop once target is passed
-      if (ez::util::sgn(l_error)==l_sgn && ez::util::sgn(r_error)==r_sgn) {
+      if (util::sgn(l_error)==l_sgn && util::sgn(r_error)==r_sgn) {
         // this makes sure that the following else if is rnu after the sgn is flipped
       }
-      else if (ez::util::sgn(l_error)!=l_sgn && ez::util::sgn(r_error)!=r_sgn) {
+      else if (util::sgn(l_error)!=l_sgn && util::sgn(r_error)!=r_sgn) {
         return;
       }
       else if (!exit_condition(tuple{l_tar, r_tar}, drive_exit)) {
         return;
       }
 
-      pros::delay(ez::util::DELAY_TIME);
+      pros::delay(util::DELAY_TIME);
     }
   }
 
@@ -135,24 +137,24 @@ void Drive::wait_until(double target) {
   else if (turn_pid.get_state()!=pros::E_TASK_STATE_SUSPENDED || swing_pid.get_state()!=pros::E_TASK_STATE_SUSPENDED) {
     // Calculate error between current and target (target needs to be an inbetween position)
     int g_error = target - get_gyro();
-    int g_sgn   = ez::util::sgn(g_error);
+    int g_sgn   = util::sgn(g_error);
     bool run    = true;
 
     while (true) {
       g_error = target - get_gyro();
 
       // Break the loop once target is passed
-      if (ez::util::sgn(g_error)==g_sgn) {
+      if (util::sgn(g_error)==g_sgn) {
         // this makes sure that the following else if is rnu after the sgn is flipped
       }
-      else if (ez::util::sgn(g_error)!=g_sgn) {
+      else if (util::sgn(g_error)!=g_sgn) {
         return;
       }
       else if (!exit_condition(tuple{target, std::nullopt}, turn_exit)) {
         return;
       }
 
-      pros::delay(ez::util::DELAY_TIME);
+      pros::delay(util::DELAY_TIME);
     }
   }
 }

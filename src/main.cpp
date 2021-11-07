@@ -64,7 +64,7 @@ AutonSelector autoSelector {};
  */
 void initialize()
 {
-  print_ez_template();
+  ez::print_ez_template();
   pros::delay(500);
 
   if (!ez::sd::IS_SD_CARD) printf("No SD Card Found!\n");
@@ -140,13 +140,8 @@ void autonomous()
   chassis.reset_drive_sensor();
   chassis.set_drive_brake(MOTOR_BRAKE_HOLD);
 
-  chassis.set_swing_pid(Drive::l_swing, 45, 90);
+  chassis.set_turn_pid(15, 90);
   chassis.wait_drive();
-
-  //chassis.set_swing_pid(Drive::l_swing, 0, 90);
-  //chassis.wait_drive();
-
-  //chassis.set_swing_pid(chassis.l_swing, 45, 90);
 
   //autoSelector.CallSelectedAuto();
 }
@@ -175,11 +170,11 @@ void opcontrol()
 
   while (true) {
 
-    chassis.chassis_tank(); // Tank control
-    // chassis.chassis_arcade_standard(chassis.k_split); // Standard split arcade
-    // chassis.chassis_arcade_standard(chassis.k_single); // Standard single arcade
-    // chassis.chassis_arcade_flipped(chassis.k_split); // Flipped split arcade
-    // chassis.chassis_arcade_flipped(chassis.k_single); // Flipped single arcade
+    // chassis.chassis_tank(); // Tank control
+    // chassis.chassis_arcade_standard(ez::SPLIT); // Standard split arcade
+    // chassis.chassis_arcade_standard(ez::SINGLE); // Standard single arcade
+    // chassis.chassis_arcade_flipped(ez::SPLIT); // Flipped split arcade
+    // chassis.chassis_arcade_flipped(ez::SINGLE); // Flipped single arcade
 
     pros::delay(ez::util::DELAY_TIME); // Don't hog the CPU!  This is used for timer calculations
   }

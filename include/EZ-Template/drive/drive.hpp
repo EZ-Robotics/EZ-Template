@@ -6,31 +6,17 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #pragma once
 
-#include "main.h"
-
 #include "EZ-Template/Helper.hpp"
 #include "EZ-Template/PID.hpp"
 
 #include <iostream>
 #include <functional>
+#include <tuple>
+
+using namespace ez;
+
 class Drive {
   public:
-
-    /////
-    //
-    // Public Variables
-    //
-    /////
-
-    /**
-     * Enum for split and single stick arcade.
-    */
-    enum e_type{ k_single=0, k_split=1 };
-
-    /**
-     * Enum for split and single stick arcade.
-    */
-    enum e_swing{ l_swing=0, r_swing=1 };
 
     /**
      * Current swing type.

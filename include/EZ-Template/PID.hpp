@@ -27,11 +27,10 @@ public:
 
   double output;
   double error;
-private:
-  void ResetVariables();
   Constants constants;
   double target;
-
+private:
+  void ResetVariables();
 
   double prev_error;
   double integral;

@@ -212,12 +212,12 @@ void Drive::chassis_arcade_standard(e_type t) {
 
   int l_stick, r_stick;
   // Check arcade type (split vs single, normal vs flipped)
-  if (t == k_split) {
+  if (t == SPLIT) {
     // Put the joysticks through the curve function
     l_stick = left_curve_function(master.get_analog(ANALOG_LEFT_Y));
     r_stick = right_curve_function(master.get_analog(ANALOG_RIGHT_X));
   }
-  else if (t == k_single) {
+  else if (t == SINGLE) {
     // Put the joysticks through the curve function
     l_stick = left_curve_function(master.get_analog(ANALOG_LEFT_Y));
     r_stick = right_curve_function(master.get_analog(ANALOG_LEFT_X));
@@ -243,12 +243,12 @@ void Drive::chassis_arcade_flipped(e_type t) {
 
   int l_stick, r_stick;
   // Check arcade type (split vs single, normal vs flipped)
-  if (t == k_split) {
+  if (t == SPLIT) {
     // Put the joysticks through the curve function
     r_stick = right_curve_function(master.get_analog(ANALOG_RIGHT_Y));
     l_stick = left_curve_function(master.get_analog(ANALOG_LEFT_X));
   }
-  else if (t == k_single) {
+  else if (t == SINGLE) {
     // Put the joysticks through the curve function
     r_stick = right_curve_function(master.get_analog(ANALOG_RIGHT_Y));
     l_stick = left_curve_function(master.get_analog(ANALOG_RIGHT_X));

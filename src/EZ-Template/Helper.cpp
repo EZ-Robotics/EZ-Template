@@ -7,7 +7,26 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include "main.h"
 
 namespace ez{
-  namespace util{
+
+void print_ez_template() {
+  std::cout << R"(
+
+
+    _____ ______   _____                    _       _
+   |  ___|___  /  |_   _|                  | |     | |
+   | |__    / /_____| | ___ _ __ ___  _ __ | | __ _| |_ ___
+   |  __|  / /______| |/ _ \ '_ ` _ \| '_ \| |/ _` | __/ _ \
+   | |___./ /___    | |  __/ | | | | | |_) | | (_| | ||  __/
+   \____/\_____/    \_/\___|_| |_| |_| .__/|_|\__,_|\__\___|
+                                     | |
+                                     |_|
+)" << '\n';
+
+  printf("Version: 2.0.0\n");
+}
+
+namespace util{
+
 bool isReversed(double input) {
   if (input < 0)
     return true;
@@ -29,5 +48,7 @@ double clip_num(double input, double max, double min) {
     return min;
   return input;
 }
+
+
 } // util namespace
 } // ez namespace

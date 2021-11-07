@@ -7,6 +7,8 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include "main.h"
 #include <list>
 
+using namespace ez;
+
 
 Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double motor_cartridge, double ratio)
  : imu (imu_port), master(pros::E_CONTROLLER_MASTER),
@@ -17,12 +19,12 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
   // Set ports to a global vector
   for(auto i : left_motor_ports)
   {
-    pros::Motor temp(abs(i), ez::util::isReversed(i));
+    pros::Motor temp(abs(i), util::isReversed(i));
     LeftMotors.push_back(temp);
   }
   for(auto i : right_motor_ports)
   {
-    pros::Motor temp(abs(i), ez::util::isReversed(i));
+    pros::Motor temp(abs(i), util::isReversed(i));
     RightMotors.push_back(temp);
   }
 
@@ -36,7 +38,7 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
   forwardDrivePID = {0.45, 0, 5, 0};
   backwardDrivePID = {0.45, 0, 5, 0};
   turnPID = {5, 0.003, 35, 15};
-  swingPID = {12, 0, 35, 0};
+  swingPID = {7, 0, 45, 0};
   leftPID = {0.45, 0, 5, 0};
   rightPID = {0.45, 0, 5, 0};
 
@@ -121,13 +123,11 @@ void Drive::set_drive_brake(pros::motor_brake_mode_e_t brake) {
 }
 
 // PID
-void
-Drive::set_max_speed(int speed) {
+void Drive::set_max_speed(int speed) {
   max_speed = speed;
 }
 
-void
-Drive::set_drive_pid(double target, int speed, bool slew_on, bool toggle_heading) {
+void Drive::set_drive_pid(double target, int speed, bool slew_on, bool toggle_heading) {
   turn_pid.suspend();
   swing_pid.suspend();
 
@@ -165,8 +165,8 @@ Drive::set_drive_pid(double target, int speed, bool slew_on, bool toggle_heading
   leftPID. SetTarget(l_target_encoder);
   rightPID.SetTarget(r_target_encoder);
 
-  l.sign = ez::util::sgn(l_target_encoder-left_sensor());
-  r.sign = ez::util::sgn(r_target_encoder-right_sensor());
+  l.sign = util::sgn(l_target_encoder-left_sensor());
+  r.sign = util::sgn(r_target_encoder-right_sensor());
 
   l.x_intercept = l_start + (SLEW_DISTANCE[isBackwards]*TICK_PER_INCH);
   r.x_intercept = r_start + (SLEW_DISTANCE[isBackwards]*TICK_PER_INCH);

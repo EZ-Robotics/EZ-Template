@@ -6,6 +6,8 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "main.h"
 
+using namespace ez;
+
 void PID::ResetVariables()
 {
   output = 0;
@@ -55,10 +57,9 @@ void PID::Compute(double current)
     if(fabs(error) < constants.StartI)
       integral += error;
 
-    if(ez::util::sgn(error) != ez::util::sgn(prev_error))
+    if(util::sgn(error) != util::sgn(prev_error))
       integral = 0;
   }
-
 
   output = (error*constants.kP) + (integral*constants.kI) + (derivative*constants.kD);
 

@@ -8,7 +8,30 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "api.h"
 
+
 namespace ez {
+
+  /**
+   * Prints our branding all over your pros terminal
+  */
+  void print_ez_template();
+
+  /////
+  //
+  // Public Variables
+  //
+  /////
+
+  /**
+   * Enum for split and single stick arcade.
+  */
+  enum e_type{ SINGLE=0, SPLIT=1 };
+
+  /**
+   * Enum for split and single stick arcade.
+  */
+  enum e_swing{ LEFT_SWING=0, RIGHT_SWING=1 };
+
   namespace util{
 
     /**
