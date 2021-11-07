@@ -13,7 +13,6 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include <iostream>
 #include <functional>
-
 class Drive {
   public:
 
@@ -407,10 +406,10 @@ class Drive {
     int max_speed;
 
     // Exit conditions
-    bool drive_exit_condition(double l_target, double r_target);
+  /*  bool drive_exit_condition(double l_target, double r_target);
     bool turn_exit_condition(double target);
-    bool swing_exit_condition(double target);
-
+    bool swing_exit_condition(double target);*/
+    bool exit_condition(tuple<double, std::optional<double>> targets, exit_condition_ exitConditions);
     // Tasks
     void drive_pid_task();
     void swing_pid_task();

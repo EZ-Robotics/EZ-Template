@@ -209,16 +209,72 @@ void Drive::set_swing_pid(e_swing type, double target, int speed)
 
 
 // Exit conditions
-void Drive::set_exit_condition(exit_condition_ &type, int p_small_exit_time, int p_small_error, int p_big_exit_time, int p_big_error, int p_velocity_exit_time) {
-  type.small_exit_time = p_small_exit_time;
-  type.small_error = p_small_error;
-  type.big_exit_time = p_big_exit_time;
-  type.big_error = p_big_error;
-  type.velocity_exit_time = p_velocity_exit_time;
-}
+  void Drive::set_exit_condition(exit_condition_ &type, int p_small_exit_time, int p_small_error, int p_big_exit_time, int p_big_error, int p_velocity_exit_time) {
+    type.small_exit_time = p_small_exit_time;
+    type.small_error = p_small_error;
+    type.big_exit_time = p_big_exit_time;
+    type.big_error = p_big_error;
+    type.velocity_exit_time = p_velocity_exit_time;
+  }
 
+
+bool Drive::exit_condition(tuple<double, std::optional<double>> targets, exit_condition_ exitConditions)
+{
+
+  int i = 0, j = 0, k = 0;
+  int delay_time = ez::util::DELAY_TIME;
+  bool isDrive = std::get<1>(targets).has_value();
+  // If the robot gets within the target, make sure it's there for small_timeout amount of time
+  if (fabs(std::get<0>(targets)-(isDrive ? left_sensor() : get_gyro()))<exitConditions.small_error) {
+    if(!isDrive || fabs(*std::get<1>(targets)-right_sensor())<exitConditions.small_error) {
+      j+=delay_time;
+      //printf("\nJ: %i", j/10);
+
+      if (j>exitConditions.small_exit_time) {
+        i=0;k=0;j=0;
+        return false;
+      }
+    }
+  }
+  else {
+    j = 0;
+  }
+
+  // If the robot is close to the target, start a timer.  If the robot doesn't get closer within
+  // a certain amount of time, exit and continue.
+  if (fabs(std::get<0>(targets)-(isDrive ? left_sensor() : get_gyro()))<exitConditions.big_error) {
+    if(!isDrive || fabs(*std::get<1>(targets)-right_sensor())<exitConditions.big_error) {
+      i+=delay_time;
+      //printf("\nI: %i", i/10);
+
+      if (i>exitConditions.big_exit_time) {
+        i=0;k=0;j=0;
+        return false;
+      }
+    }
+  }
+  else {
+    i = 0;
+  }
+
+  if (right_velocity()==0 && left_velocity()==0) {
+    k+=delay_time;
+    //printf("\nI: %i", i/10);
+
+    if (k>exitConditions.velocity_exit_time) {
+      i=0;k=0;j=0;
+      return false;
+    }
+  }
+  else {
+    k = 0;
+  }
+
+  return true;
+}
+/*
 bool Drive::drive_exit_condition(double l_target, double r_target) {
-  static int i = 0, j = 0, k = 0;
+  int i = 0, j = 0, k = 0;
   int delay_time = ez::util::DELAY_TIME;
 
   // If the robot gets within the target, make sure it's there for small_timeout amount of time
@@ -359,7 +415,7 @@ bool Drive::swing_exit_condition(double target) {
   }
   return true;
 }
-
+*/
 //Wait for drive
 void Drive::wait_drive() {
   int delay_time = ez::util::DELAY_TIME;
@@ -367,18 +423,19 @@ void Drive::wait_drive() {
 
   if (drive_pid.get_state() != pros::E_TASK_STATE_SUSPENDED) {
     int i = 0;
-    while (drive_exit_condition(leftPID.GetTarget(), rightPID.GetTarget())) {
+
+    while (exit_condition(tuple{leftPID.GetTarget(), rightPID.GetTarget()}, drive_exit)) {
       i+=delay_time;
       pros::delay(delay_time);
     }
   }
   else if (turn_pid.get_state() != pros::E_TASK_STATE_SUSPENDED) {
-    while (turn_exit_condition(turnPID.GetTarget())) {
+    while (exit_condition(tuple{turnPID.GetTarget(), std::nullopt}, turn_exit)) {
       pros::delay(delay_time);
     }
   }
   else if (swing_pid.get_state() != pros::E_TASK_STATE_SUSPENDED) {
-    while (swing_exit_condition(swingPID.GetTarget())) {
+    while (exit_condition(tuple{swingPID.GetTarget(), std::nullopt}, swing_exit)) {
       pros::delay(delay_time);
     }
   }
@@ -408,7 +465,7 @@ void Drive::wait_until(double target) {
       else if (ez::util::sgn(l_error)!=l_sgn && ez::util::sgn(r_error)!=r_sgn) {
         return;
       }
-      else if (!drive_exit_condition(l_tar, r_tar)) {
+      else if (!exit_condition(tuple{l_tar, r_tar}, drive_exit)) {
         return;
       }
 
@@ -433,7 +490,7 @@ void Drive::wait_until(double target) {
       else if (ez::util::sgn(g_error)!=g_sgn) {
         return;
       }
-      else if (!turn_exit_condition(target)) {
+      else if (!exit_condition(tuple{target, std::nullopt}, turn_exit)) {
         return;
       }
 
