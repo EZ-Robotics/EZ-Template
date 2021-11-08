@@ -59,6 +59,44 @@ two_mogo_constants() {
 // the first parameter is the type of motion (drive, turn, r_swing, l_swing)
 // below are example codes using each type
 
+void tug (int attempts) {
+  for (int i=0; i<attempts-1; i++) {
+    // Attempt to drive backwards
+    printf("i - %i", i);
+    chassis.set_drive_pid(-12, 127);
+    chassis.wait_drive();
+
+    // If failsafed...
+    if (chassis.interfered) {
+      chassis.reset_drive_sensor();
+      chassis.set_drive_pid(-2, 20);
+      pros::delay(1000);
+    }
+    // If robot succesfully drove back, return
+    else {
+      return;
+    }
+  }
+}
+
+void auto1() {
+ chassis.set_drive_pid(24, 110, true);
+ chassis.wait_drive();
+
+ if (chassis.interfered) {
+   tug(3);
+   return;
+ }
+
+ chassis.set_turn_pid(90, 90);
+ chassis.wait_drive();
+}
+void auto2() {}
+void auto3() {
+ chassis.set_turn_pid(-90, 90);
+ chassis.wait_drive();
+}
+
 
 ///
 // Drive Example

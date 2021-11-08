@@ -35,14 +35,24 @@ void AutonSelector::CallSelectedAuto()
 {
   Autons[CurrentAutonPage].CallAuton();
 }
-
 void AutonSelector::AddAutons(std::vector<tuple<std::string, std::function<void()>>> autons) {
   AutonCount += autons.size();
   CurrentAutonPage = 0;
-  //Autons();
-  for(auto i : autons)
-  {
-    Auton temp(get<0>(i), get<1>(i));
-    Autons.push_back(temp);
+  for(auto i : autons) {
+    //Auton temp(get<0>(i), get<1>(i));
+    //Autons.push_back(temp);
+    Autons.emplace_back(get<0>(i), get<1>(i));
   }
 }
+
+
+
+/*
+void AutonSelector::AddAutons(std::vector<Auton> autons) {
+  AutonCount += autons.size();
+  CurrentAutonPage = 0;
+  for(auto i : autons) {
+    Autons.emplace_back(autons);
+  }
+}
+*/

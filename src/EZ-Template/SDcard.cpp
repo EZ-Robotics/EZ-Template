@@ -8,9 +8,9 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 namespace ez
 {
-  namespace sd
+  const bool IS_SD_CARD = pros::usd::is_installed();
+  namespace as
   {
-    const bool IS_SD_CARD = pros::usd::is_installed();
     AutonSelector autoSelector{};
 
 
@@ -43,8 +43,7 @@ namespace ez
       fclose(usd_file_write);
     }
 
-    void page_up()
-    {
+    void page_up() {
 
       if (autoSelector.CurrentAutonPage == autoSelector.AutonCount - 1)
         autoSelector.CurrentAutonPage = 0;
@@ -54,8 +53,7 @@ namespace ez
       autoSelector.PrintSelectedAuto();
     }
 
-    void page_down()
-    {
+    void page_down() {
       if (autoSelector.CurrentAutonPage == 0)
         autoSelector.CurrentAutonPage = autoSelector.AutonCount - 1;
       else

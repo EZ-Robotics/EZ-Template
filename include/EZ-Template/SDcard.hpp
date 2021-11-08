@@ -6,15 +6,15 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #pragma once
 
-
 #include  "EZ-Template/AutonSelector.hpp"
+
 
 namespace ez
 {
-  namespace sd
+  extern const bool IS_SD_CARD;
+  namespace as
   {
     extern AutonSelector autoSelector;
-    extern const bool IS_SD_CARD;
     void init_auton_selector();
     void update_auto_sd();
     void page_up();

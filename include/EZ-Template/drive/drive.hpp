@@ -20,6 +20,11 @@ class drive {
   public:
 
     /**
+     * Joysticks will return 0 when they are within this number.  Set with set_joystick_threshold()
+    */
+    int JOYSTICK_THRESHOLD;
+
+    /**
      * Current swing type.
     */
     e_swing current_swing;
@@ -62,12 +67,12 @@ class drive {
 
 
     /**
-     * Creates A Controller.
+     * Creates a controller.
+     *
      * Give Sensor Ports, Motor Ports (give a negative port if motor is reversed), Drive Measurements
      * Set PID Constants
     */
     drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double motor_cartridge, double ratio);
-    //~Drive(); // deconstructor (DELETE POINTERS HERE) (DONT LEEK MEMORY) (I DONT THINK WE NEED THIS)
 
 
 
@@ -81,23 +86,25 @@ class drive {
      * Sets the chassis to controller joysticks using tank control.  Run is usercontrol.
      * This passes the controller through the curve functions, but is disabled by default.  Use toggle_controller_curve_modifier() to enable it.
     */
-    void chassis_tank();
+    void tank();
 
     /**
      * Sets the chassis to controller joysticks using standard arcade control.  Run is usercontrol.
      * This passes the controller through the curve functions, but is disabled by default.  Use toggle_controller_curve_modifier() to enable it.
-     * \param t
-     *        enum e_type, k_single or k_split control
+     *
+     * \param stick_type
+     *        ez::SINGLE or ez::SPLIT control
     */
-    void chassis_arcade_standard(e_type stick_type);
+    void arcade_standard(e_type stick_type);
 
     /**
      * Sets the chassis to controller joysticks using flipped arcade control.  Run is usercontrol.
      * This passes the controller through the curve functions, but is disabled by default.  Use toggle_controller_curve_modifier() to enable it.
-     * \param t
-     *        enum e_type, k_single or k_split control
+     *
+     * \param stick_type
+     *        ez::SINGLE or ez::SPLIT control
     */
-    void chassis_arcade_flipped(e_type stick_type);
+    void arcade_flipped(e_type stick_type);
 
     /**
      * Initializes left and right curves with the SD card, reccomended to run in initialize().
@@ -105,46 +112,54 @@ class drive {
     void init_curve_sd();
 
     /**
-     * Sets the chassis to controller joysticks using flipped arcade control.
-     * \param t
-     *        enum e_type, k_single or k_split control
+     * Sets the default joystick curves.
+     *
+     * \param left
+     *        Left default curve.
+     * \param right
+     *        Right default curve.
     */
-    void set_curve_default(int left, int right);
+    void set_curve_default(double left, double right);
 
     /**
      * Runs a P loop on the drive when the joysticks are released.
+     *
      * \param kp
-     *        double kp, constant for the p loop
+     *        Constant for the p loop.
     */
     void set_active_brake(double kp);
 
     /**
      * Enables/disables modifying the joystick input curves with the controller.  True enables, false disables.
+     *
      * \param input
      *        bool input
     */
-    void toggle_controller_curve_modifier(bool toggle);
+    void toggle_modify_curve_with_controllerr(bool toggle);
 
     /**
      * Sets buttons for modifying the left joystick curve.
+     *
      * \param decrease
      *        a pros button enumerator
      * \param increase
      *        a pros button enumerator
     */
-    void left_curve_modify_buttons(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase);
+    void set_left_curve_buttons(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase);
 
     /**
      * Sets buttons for modifying the right joystick curve.
+     *
      * \param decrease
      *        a pros button enumerator
      * \param increase
      *        a pros button enumerator
     */
-    void right_curve_modify_buttons(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase);
+    void set_right_curve_buttons(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase);
 
     /**
      * Outputs a curve from 5225A In the Zone.  This gives more control over the robot at lower speeds.  https://www.desmos.com/calculator/rcfjjg83zx
+     *
      * \param x
      *        joystick input
     */
@@ -152,10 +167,19 @@ class drive {
 
     /**
      * Outputs a curve from 5225A In the Zone.  This gives more control over the robot at lower speeds.  https://www.desmos.com/calculator/rcfjjg83zx
+     *
      * \param x
      *        joystick input
     */
     double right_curve_function(double x);
+
+    /**
+     * Sets a new threshold for the joystick.  The joysticks wil not return a value if they are within this.
+     *
+     * \param threshold
+     *        new threshold
+    */
+    void set_joystick_threshold(int threshold);
 
 
 
@@ -167,16 +191,18 @@ class drive {
 
     /**
      * Sets the chassis to voltage
-     * \param input_l
+     *
+     * \param left
      *        voltage for left side, -127 to 127
-     * \param input_r
+     * \param right
      *        voltage for right side, -127 to 127
     */
     void set_tank(int left, int right);
 
     /**
      * Changes the way the drive behaves when it is not under active user control
-     * \param input
+     *
+     * \param brake_type
      *        the 'brake mode' of the motor e.g. 'pros::E_MOTOR_BRAKE_COAST' 'pros::E_MOTOR_BRAKE_BRAKE' 'pros::E_MOTOR_BRAKE_HOLD'
     */
     void set_drive_brake(pros::motor_brake_mode_e_t brake_type);
@@ -226,8 +252,9 @@ class drive {
 
     /**
      * Reets the current gyro value.  Defaults to 0, reccomended to run at the start of your autonomous routine.
+     *
      * \param new_heading
-     *        double new_heading, new heading value.
+     *        New heading value.
     */
     void reset_gyro(double new_heading = 0);
 
@@ -255,7 +282,8 @@ class drive {
     /////
 
     /**
-     * Changes max speed during a drive motion.
+     * Sets the robot to move forward using PID.
+     *
      * \param target
      *        target value in inches
      * \param speed
@@ -268,7 +296,8 @@ class drive {
     void set_drive_pid(double target, int speed, bool slew_on = false, bool toggle_heading = true);
 
     /**
-     * Changes max speed during a drive motion.
+     * Sets the robot to turn using PID.
+     *
      * \param target
      *        target value in degrees
      * \param speed
@@ -278,12 +307,13 @@ class drive {
 
     /**
      * Turn using only the left or right side.
+     *
      * \param type
-     *        e_swing type, l_swing or r_swing
+     *        L_SWING or R_SWING
      * \param target
-     *        double target, value in degrees
+     *        target value in degrees
      * \param speed
-     *        int speed, 0 to 127, max speed during motion
+     *        0 to 127, max speed during motion
     */
     void set_swing_pid(e_swing type, double target, int speed);
 
@@ -294,13 +324,15 @@ class drive {
 
     /**
      * Lock the code in a while loop until this position has passed.
-     * \param input
+     *
+     * \param target
      *        when driving, this is inches.  when turning, this is degrees.
     */
     void wait_until(double target);
 
     /**
      * Changes max speed during a drive motion.
+     *
      * \param speed
      *        new clipped speed
     */
@@ -314,15 +346,17 @@ class drive {
 
     /**
      * Sets minimum slew speed constants.
-     * \param fw
+     *
+     * \param fwd
      *        minimum power for forward drive pd
-     * \param bw
+     * \param rev
      *        minimum power for backwards drive pd
     */
     void set_slew_min_power(int fwd, int rev);
 
     /**
      * Sets minimum slew distance constants.
+     *
      * \param fw
      *        minimum distance for forward drive pd
      * \param bw
@@ -349,30 +383,31 @@ class drive {
     exit_condition_ turn_exit;
 
     /**
-     * Exit condition for swinging. .
+     * Exit condition for swinging.
     */
     exit_condition_ swing_exit;
 
     /**
-     * Exit condition for driving. .
+     * Exit condition for driving.
     */
     exit_condition_ drive_exit;
 
 
     /**
      * Set's constants for exit conditions.
+     *
      * \param &type
      *        turn_exit, swing_exit, or drive_exit
      * \param p_small_exit_time
-     *        sets small_exit_time.  time for to exit within smalL_error.
+     *        Sets small_exit_time.  Timer for to exit within smalL_error.
      * \param p_small_error
-     *        sets smalL_error. timer will start when error is within this.
+     *        Sets smalL_error. Timer will start when error is within this.
      * \param p_big_exit_time
-     *        sets big_exit_time.  time for to exit within big_error.
+     *        Sets big_exit_time.  Timer for to exit within big_error.
      * \param p_big_error
-     *        sets big_error. timer will start when error is within this.
+     *        Sets big_error. Timer will start when error is within this.
      * \param p_velocity_exit_time
-     *        sets velocity_exit_time.  timer will start when velocity is 0.
+     *        Sets velocity_exit_time.  Timer will start when velocity is 0.
     */
     void set_exit_condition(exit_condition_ &type, int p_small_exit_time, int p_small_error, int p_big_exit_time, int p_big_error, int p_velocity_exit_timeint, int p_mA_thresh, int p_mA_timeout);
 

@@ -56,11 +56,11 @@ drive::drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
   set_exit_condition(drive_exit, 80,  50, 300, 150, 500, 2250, 500);
 
   // Modify joystick curve on controller (defaults to disabled)
-  toggle_controller_curve_modifier(true);
+  toggle_modify_curve_with_controllerr(true);
 
   // Left / Right modify buttons
-  left_curve_modify_buttons (pros::E_CONTROLLER_DIGITAL_LEFT, pros::E_CONTROLLER_DIGITAL_RIGHT);
-  right_curve_modify_buttons(pros::E_CONTROLLER_DIGITAL_Y,    pros::E_CONTROLLER_DIGITAL_A);
+  set_left_curve_buttons (pros::E_CONTROLLER_DIGITAL_LEFT, pros::E_CONTROLLER_DIGITAL_RIGHT);
+  set_right_curve_buttons(pros::E_CONTROLLER_DIGITAL_Y,    pros::E_CONTROLLER_DIGITAL_A);
 }
 
 double drive::get_tick_per_inch() {
@@ -115,7 +115,6 @@ bool drive::imu_calibrate() {
 
     if (iter > 2990) {
       printf("No IMU plugged in, (took %d ms to realize that)\n", iter);
-      master.rumble(".");
       return false;
     }
     pros::delay(delay);

@@ -8,8 +8,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 
 // Set curve defaults
-void drive::set_curve_default(int left, int right)
-{
+void drive::set_curve_default(double left, double right) {
   left_curve_scale = left;
   right_curve_scale = right;
 }
@@ -59,36 +58,32 @@ void drive::save_r_curve_sd() {
   fclose(usd_file_write);
 }
 
-void drive::left_curve_modify_buttons(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase) {
+void drive::set_left_curve_buttons(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase) {
   l_increase_.button = increase;
   l_decrease_.button = decrease;
 }
-void drive::right_curve_modify_buttons(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase) {
+void drive::set_right_curve_buttons(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase) {
   r_increase_.button = increase;
   r_decrease_.button = decrease;
 }
 
 // Increase / decrease left and right curves
-void drive::l_increase() {
-  left_curve_scale += 0.1;
-}
- void drive::l_decrease() {
+void drive::l_increase() { left_curve_scale += 0.1; }
+void drive::l_decrease() {
   left_curve_scale -= 0.1;
   left_curve_scale =  left_curve_scale<0 ? 0 : left_curve_scale;
 }
-void drive::r_increase() {
-  right_curve_scale += 0.1;
-}
+void drive::r_increase() { right_curve_scale += 0.1; }
 void drive::r_decrease() {
   right_curve_scale -= 0.1;
   right_curve_scale =  right_curve_scale<0 ? 0 : right_curve_scale;
 }
 
 // Button press logic for increase/decrease curves
-void drive::button_press(button_ *input_name, int button, std::function<void()> changeCurve, std::function<void()> save) {
+void drive::button_press(button_ *input_name, int button, std::function<void()> change_curve, std::function<void()> save) {
   // If button is pressed, increase the curve and set toggles.
   if (button && !input_name->lock) {
-    changeCurve();
+    change_curve();
     input_name->lock = true;
     input_name->release_reset = true;
   }
@@ -100,7 +95,7 @@ void drive::button_press(button_ *input_name, int button, std::function<void()> 
     if (input_name->hold_timer > 500.0) {
       input_name->increase_timer+=ez::util::DELAY_TIME;
       if (input_name->increase_timer > 100.0) {
-        changeCurve();
+        change_curve();
         input_name->increase_timer = 0;
       }
     }
@@ -123,21 +118,12 @@ void drive::button_press(button_ *input_name, int button, std::function<void()> 
 }
 
 // Toggle modifying curves with controller
-void drive::toggle_controller_curve_modifier(bool toggle) {
-  disable_controller = toggle;
-}
+void drive::toggle_modify_curve_with_controllerr(bool toggle) { disable_controller = toggle; }
 
 // Modify curves with button presses and display them to contrller
 void drive::modify_curve_with_controller() {
   if (!disable_controller) return; // True enables, false disables.
-/*
-  button_press(&l_increase_, master.get_digital(pros::E_CONTROLLER_DIGITAL_RIGHT), ([this]{ this->l_increase(); }), ([this]{ this->save_l_curve_sd(); }));
-  button_press(&l_decrease_, master.get_digital(pros::E_CONTROLLER_DIGITAL_LEFT), ([this]{ this->l_decrease(); }), ([this]{ this->save_l_curve_sd(); }));
-  if (!is_tank) {
-    button_press(&r_increase_, master.get_digital(pros::E_CONTROLLER_DIGITAL_A), ([this]{ this->r_increase(); }), ([this]{ this->save_r_curve_sd(); }));
-    button_press(&r_decrease_, master.get_digital(pros::E_CONTROLLER_DIGITAL_Y), ([this]{ this->r_decrease(); }), ([this]{ this->save_r_curve_sd(); }));
-  }
-*/
+
   button_press(&l_increase_, master.get_digital(l_increase_.button), ([this]{ this->l_increase(); }), ([this]{ this->save_l_curve_sd(); }));
   button_press(&l_decrease_, master.get_digital(l_decrease_.button), ([this]{ this->l_decrease(); }), ([this]{ this->save_l_curve_sd(); }));
   if (!is_tank) {
@@ -176,12 +162,13 @@ double drive::right_curve_function(double x) {
 }
 
 // Set active brake constant
-void drive::set_active_brake(double kp) {
-  active_brake_kp = kp;
-}
+void drive::set_active_brake(double kp) { active_brake_kp = kp; }
+
+// Set joystick threshold
+void drive::set_joystick_threshold(int threshold) { JOYSTICK_THRESHOLD = abs(threshold); }
 
 // Tank control
-void drive::chassis_tank()
+void drive::tank()
 {
   is_tank = true;
 
@@ -193,7 +180,7 @@ void drive::chassis_tank()
   int r_stick = left_curve_function(master.get_analog(ANALOG_RIGHT_Y));
 
   // Threshold if joysticks don't come back to perfect 0
-  if (abs(l_stick)>5 || abs(r_stick)>5) {
+  if (abs(l_stick)>JOYSTICK_THRESHOLD || abs(r_stick)>JOYSTICK_THRESHOLD) {
     set_tank(l_stick, r_stick);
     reset_drive_sensor();
   }
@@ -204,7 +191,7 @@ void drive::chassis_tank()
 }
 
 // Arcade standard
-void drive::chassis_arcade_standard(e_type stick_type) {
+void drive::arcade_standard(e_type stick_type) {
   is_tank = false;
 
   // Toggle for controller curve
@@ -224,7 +211,7 @@ void drive::chassis_arcade_standard(e_type stick_type) {
   }
 
   // Threshold if joysticks don't come back to perfect 0
-  if (abs(l_stick)>5 || abs(r_stick)>5) {
+  if (abs(l_stick)>JOYSTICK_THRESHOLD || abs(r_stick)>JOYSTICK_THRESHOLD) {
     set_tank(l_stick+r_stick, l_stick-r_stick);
     reset_drive_sensor();
   }
@@ -235,7 +222,7 @@ void drive::chassis_arcade_standard(e_type stick_type) {
 }
 
 // Arcade control flipped
-void drive::chassis_arcade_flipped(e_type stick_type) {
+void drive::arcade_flipped(e_type stick_type) {
   is_tank = false;
 
   // Toggle for controller curve
@@ -255,7 +242,7 @@ void drive::chassis_arcade_flipped(e_type stick_type) {
   }
 
   // Threshold if joysticks don't come back to perfect 0
-  if (abs(l_stick)>5 || abs(r_stick)>5) {
+  if (abs(l_stick)>JOYSTICK_THRESHOLD || abs(r_stick)>JOYSTICK_THRESHOLD) {
     set_tank(r_stick+l_stick, r_stick-l_stick);
     reset_drive_sensor();
   }

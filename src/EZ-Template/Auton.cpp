@@ -16,5 +16,5 @@ Auton::Auton(std::string name, std::function<void()> callback)
 void Auton::CallAuton()
 {
 
-  AutonCall();
+  //AutonCall();
 }
