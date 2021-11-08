@@ -16,6 +16,9 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
  turn_pid([this]{ this->turn_pid_task(); }),
  swing_pid([this]{ this->swing_pid_task(); })
 {
+  // Print EZ-Template
+  ez::print_ez_template();
+
   // Set ports to a global vector
   for(auto i : left_motor_ports)
   {
@@ -28,11 +31,11 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
     RightMotors.push_back(temp);
   }
 
-  // Tick per inch calculation
-  TICK_PER_REV  = (50.0*(3600.0/motor_cartridge)) * ratio; // with no cart, the encoder reads 50 counts per rotation
-  CIRCUMFERENCE = wheel_diameter*M_PI;
-  TICK_PER_INCH = (TICK_PER_REV/CIRCUMFERENCE);
-  printf("%f  - %f  %f  %f", TICK_PER_INCH, motor_cartridge, ratio, wheel_diameter);
+  // Set constants for tick_per_inch caluclation
+  WHEEL_DIAMETER = wheel_diameter;
+  RATIO = ratio;
+  CARTRIDGE = motor_cartridge;
+  TICK_PER_INCH = get_tick_per_inch();
 
   // PID Constants
   headingPID = {11, 0, 20, 0};
@@ -58,6 +61,13 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
   // Left / Right modify buttons
   left_curve_modify_buttons (pros::E_CONTROLLER_DIGITAL_LEFT, pros::E_CONTROLLER_DIGITAL_RIGHT);
   right_curve_modify_buttons(pros::E_CONTROLLER_DIGITAL_Y,    pros::E_CONTROLLER_DIGITAL_A);
+}
+
+double Drive::get_tick_per_inch() {
+  TICK_PER_REV  = (50.0*(3600.0/CARTRIDGE)) * RATIO; // with no cart, the encoder reads 50 counts per rotation
+  CIRCUMFERENCE = WHEEL_DIAMETER*M_PI;
+  TICK_PER_INCH = (TICK_PER_REV/CIRCUMFERENCE);
+  return TICK_PER_INCH;
 }
 
 void Drive::SetPIDConstants(PID pid, double kP, double kI, double kD, double startI)
@@ -123,89 +133,4 @@ void Drive::set_drive_brake(pros::motor_brake_mode_e_t brake) {
   for (auto i : RightMotors) {
     i.set_brake_mode(brake);
   }
-}
-
-// PID
-void Drive::set_max_speed(int speed) {
-  max_speed = speed;
-}
-
-void Drive::set_drive_pid(double target, int speed, bool slew_on, bool toggle_heading) {
-  printf("Drive Started... Target Value: %f  target*TICK_PER_INCH %f    target*48 %f   TICK_PER_INCH %f\n", target, target*TICK_PER_INCH,   target*48, TICK_PER_INCH);
-
-  turn_pid.suspend();
-  swing_pid.suspend();
-
-  // Global setup
-  set_max_speed(abs(speed));
-  l.enabled = slew_on;
-  r.enabled = slew_on;
-  l.max_speed = abs(speed);
-  r.max_speed = abs(speed);
-  heading_on = toggle_heading;
-  bool isBackwards = false;
-
-  double l_target_encoder, r_target_encoder;
-
-  // If drive or line, set targets to drive
-
-  l_start = left_sensor();
-  r_start = right_sensor();
-  l_target_encoder = l_start + (target*TICK_PER_INCH);
-  r_target_encoder = r_start + (target*TICK_PER_INCH);
-  if (l_target_encoder<l_start && r_target_encoder<r_start) {
-    auto consts = backwardDrivePID.GetConstants();
-    leftPID.SetConstants(consts.kP, consts.kI, consts.kD, consts.StartI);
-    rightPID.SetConstants(consts.kP, consts.kI, consts.kD, consts.StartI);
-    isBackwards = true;
-  } else {
-    auto consts = forwardDrivePID.GetConstants();
-    leftPID.SetConstants(consts.kP, consts.kI, consts.kD, consts.StartI);
-    rightPID.SetConstants(consts.kP, consts.kI, consts.kD, consts.StartI);
-    //forwardDrivePID.SetTarget(target);
-    isBackwards = false;
-  }
-
-  leftPID. SetTarget(l_target_encoder);
-  rightPID.SetTarget(r_target_encoder);
-
-  l.sign = util::sgn(l_target_encoder-left_sensor());
-  r.sign = util::sgn(r_target_encoder-right_sensor());
-
-  l.x_intercept = l_start + (SLEW_DISTANCE[isBackwards]*TICK_PER_INCH);
-  r.x_intercept = r_start + (SLEW_DISTANCE[isBackwards]*TICK_PER_INCH);
-
-  l.y_intercept = abs(speed) * l.sign;
-  r.y_intercept = abs(speed) * r.sign;
-
-  l.slope = (SLEW_MIN_POWER[isBackwards]-abs(speed)) / ((l_start+(SLEW_DISTANCE[isBackwards]*TICK_PER_INCH))-0);
-  r.slope = (SLEW_MIN_POWER[isBackwards]-abs(speed)) / ((l_start+(SLEW_DISTANCE[isBackwards]*TICK_PER_INCH))-0);
-
-
-  drive_pid.resume();
-}
-
-void Drive::set_turn_pid(double target, int speed) {
-  swing_pid.suspend();
-  drive_pid.suspend();
-
-  printf("Turn Started... Target Value: %f\n", target);
-  turnPID.SetTarget(target);
-  headingPID.SetTarget(target);
-  set_max_speed(abs(speed));
-
-  turn_pid.resume();
-}
-
-void Drive::set_swing_pid(e_swing type, double target, int speed) {
-  drive_pid.suspend();
-  turn_pid.suspend();
-
-  printf("Swing Started... Target Value: %f\n", target);
-  current_swing = type;
-  swingPID.SetTarget(target);
-  headingPID.SetTarget(target);
-  set_max_speed(abs(speed));
-
-  swing_pid.resume();
 }

@@ -1,7 +1,7 @@
 #include "main.h"
 
 #include <iostream>
-using namespace std;
+#include <tuple>
 
 Drive chassis (
   // Left Chassis Ports
@@ -37,20 +37,6 @@ void disable_all_tasks()
 }
 
 
-/**
- * Autonomous selector using LLEMU.
- *
- * When this function is called, display the current selected auton to the brain.
- * When is_auton is true, the autonomous mode will run.  Otherwise, it will only
- * print to brain.
- */
-
-
-
-// Page up/down
-AutonSelector autoSelector {};
-
-
 
 /**
  * Store the last page to the micro SD card
@@ -61,16 +47,63 @@ AutonSelector autoSelector {};
  */
 
 
+ void tug (int attempts) {
+   for (int i=0; i<attempts-1; i++) {
+     // Attempt to drive backwards
+     printf("i - %i", i);
+     chassis.set_drive_pid(-12, 127);
+     chassis.wait_drive();
+
+     // If failsafed...
+     if (chassis.interfered) {
+       chassis.reset_drive_sensor();
+       chassis.set_drive_pid(-2, 20);
+       pros::delay(1000);
+     }
+     // If robot succesfully drove back, return
+     else {
+       return;
+     }
+   }
+ }
+
+void auto1() {
+  chassis.set_drive_pid(24, 110, true);
+  chassis.wait_drive();
+
+  if (chassis.interfered) {
+    tug(3);
+    return;
+  }
+
+  chassis.set_turn_pid(90, 90);
+  chassis.wait_drive();
+}
+void auto2() {}
+void auto3() {
+  chassis.set_turn_pid(-90, 90);
+  chassis.wait_drive();
+}
+
 /**
  * Runs initialization code. This occurs as soon as the program is started.
  *
  * All other competition modes are blocked by initialize; it is recommended
  * to keep execution time for this mode under a few seconds.
  */
+
+//AutonSelector as{ { tuple("name", EZauto_1) }};
+
+
 void initialize()
 {
-  ez::print_ez_template();
   pros::delay(500);
+
+  ez::sd::autoSelector.AddAutons({
+    tuple("name1", auto1),
+    tuple("name2", auto2),
+    tuple("name3", auto3),
+  });
 
   if (!ez::sd::IS_SD_CARD) printf("No SD Card Found!\n");
 
@@ -84,14 +117,14 @@ void initialize()
   // chassis.left_curve_modify_buttons (pros::E_CONTROLLER_DIGITAL_LEFT, pros::E_CONTROLLER_DIGITAL_RIGHT);
   // chassis.right_curve_modify_buttons(pros::E_CONTROLLER_DIGITAL_Y,    pros::E_CONTROLLER_DIGITAL_A);
 
-  /*
-  ez::sd::init_auton_selector(autoSelector);
+
+  ez::sd::init_auton_selector();
 
   pros::lcd::initialize();
-  autoSelector.PrintSelectedAuto();
+  ez::sd::autoSelector.PrintSelectedAuto();
   pros::lcd::register_btn0_cb(ez::sd::page_down);
   pros::lcd::register_btn2_cb(ez::sd::page_up);
-  */
+
   if (!chassis.imu_calibrate())
   {
     pros::lcd::set_text(7, "IMU failed to calibrate!");
@@ -136,24 +169,13 @@ void competition_initialize()
  * will be stopped. Re-enabling the robot will restart the task, not re-start it
  * from where it left off.
  */
- void x()
-{}
-
-
 void autonomous()
 {
-  //Auton temp {"Name", x};
   chassis.reset_gyro();
   chassis.reset_drive_sensor();
   chassis.set_drive_brake(MOTOR_BRAKE_HOLD);
 
-
-  //steal();
-
-  chassis.set_drive_pid(12, 110);
-  chassis.wait_drive();
-
-  //autoSelector.CallSelectedAuto();
+  ez::sd::autoSelector.CallSelectedAuto();
 }
 
 

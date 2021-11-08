@@ -21,4 +21,5 @@ public:
   AutonSelector(std::vector<tuple<std::string, std::function<void()>>>);
   void CallSelectedAuto();
   void PrintSelectedAuto();
+  void AddAutons(std::vector<tuple<std::string, std::function<void()>>>);
 };

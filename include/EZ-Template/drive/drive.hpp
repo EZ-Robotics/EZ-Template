@@ -397,15 +397,24 @@ class Drive {
       double max_speed = 0;
     };
 
-    slew_ l;
-    slew_ r;
+    slew_ left_slew;
+    slew_ right_slew;
 
-    double slew_calculate(slew_ &input, double current);
+    double slew_calculate (slew_ &input, double current);
+    void   slew_initialize(slew_ &input, bool slew_on, double max_speed, double target, double current, double start, bool backwards);
 
     // Tick per inch calculation
-    double TICK_PER_REV = 0;
-    double CIRCUMFERENCE = 0;
-    double TICK_PER_INCH = 0;
+    double TICK_PER_REV;
+    double TICK_PER_INCH;
+    double CIRCUMFERENCE;
+
+    double get_tick_per_inch();
+
+    double CARTRIDGE;
+    double RATIO;
+    double WHEEL_DIAMETER;
+
+    // auto max speed
     int max_speed;
 
     // Exit conditions

@@ -22,17 +22,17 @@ void Drive::set_exit_condition(exit_condition_ &type, int p_small_exit_time, int
 
 
 // Exit condition
-bool Drive::exit_condition(tuple<double, std::optional<double>> targets, exit_condition_ exitConditions, bool wait_until)
+bool Drive::exit_condition(std::tuple<double, std::optional<double>> targets, exit_condition_ input_struct, bool wait_until)
 {
-
   static int i = 0, j = 0, k = 0, l = 0;
-  bool isDrive = std::get<1>(targets).has_value();
+  bool is_drive = std::get<1>(targets).has_value();
 
   // If the robot gets within the target, make sure it's there for small_timeout amount of time
-  if (fabs(std::get<0>(targets)-(isDrive ? left_sensor() : get_gyro())) < exitConditions.small_error) {
-    if(!isDrive || fabs(*std::get<1>(targets)-right_sensor()) < exitConditions.small_error) {
+  if (fabs(std::get<0>(targets)-(is_drive ? left_sensor() : get_gyro())) < input_struct.small_error) {
+    if(!is_drive || fabs(*std::get<1>(targets)-right_sensor()) < input_struct.small_error) {
       j+=util::DELAY_TIME;
-      if (j>exitConditions.small_exit_time) {
+      i = 0; // While this is running, don't run big thresh
+      if (j>input_struct.small_exit_time) {
         if (!wait_until) printf(" Timed Out");
         else             printf(" Wait Until Timed Out");
         printf(" - Small Thresh\n");
@@ -45,34 +45,13 @@ bool Drive::exit_condition(tuple<double, std::optional<double>> targets, exit_co
   else {
     j = 0;
   }
-
-/*
-  // If the robot gets within the target, make sure it's there for small_timeout amount of time
-  if (fabs(std::get<0>(targets)-(isDrive ? left_sensor() : get_gyro())) < exitConditions.small_error) {
-    if(!isDrive || fabs(*std::get<1>(targets)-right_sensor()) < exitConditions.small_error) {
-      j+=util::DELAY_TIME;
-      i=0; // While this timeout is running, big timeout cannot
-      if (j>exitConditions.small_exit_time) {
-        if (!wait_until) printf(" Timed Out");
-        else             printf(" Wait Until Timed Out");
-        printf(" - Small Thresh\n");
-
-        l=0;i=0;k=0;j=0;
-        return false;
-      }
-    }
-  }
-  else {
-    j = 0;
-  }
-  */
 
   // If the robot is close to the target, start a timer.  If the robot doesn't get closer within
   // a certain amount of time, exit and continue.  This does not run while small_timeout is running
-  if (fabs(std::get<0>(targets)-(isDrive ? left_sensor() : get_gyro()))<exitConditions.big_error) {
-    if(!isDrive || fabs(*std::get<1>(targets)-right_sensor())<exitConditions.big_error) {
+  if (fabs(std::get<0>(targets)-(is_drive ? left_sensor() : get_gyro()))<input_struct.big_error) {
+    if(!is_drive || fabs(*std::get<1>(targets)-right_sensor())<input_struct.big_error) {
       i+=util::DELAY_TIME;
-      if (i>exitConditions.big_exit_time) {
+      if (i>input_struct.big_exit_time) {
         if (!wait_until) printf(" Timed Out");
         else             printf(" Wait Until Timed Out");
         printf(" - Big Thresh\n");
@@ -87,9 +66,9 @@ bool Drive::exit_condition(tuple<double, std::optional<double>> targets, exit_co
   }
 
   // If the motors are pulling too many mA, the code will timeout and set interfered to true.
-  if (right_mA()>=exitConditions.mA_thresh || left_mA()>=exitConditions.mA_thresh) {
+  if (right_mA()>=input_struct.mA_thresh || left_mA()>=input_struct.mA_thresh) {
     l+=util::DELAY_TIME;
-    if (l>exitConditions.mA_timeout) {
+    if (l>input_struct.mA_timeout) {
       if (!wait_until) printf(" Timed Out");
       else             printf(" Wait Until Timed Out");
       printf(" - mA\n");
@@ -105,12 +84,13 @@ bool Drive::exit_condition(tuple<double, std::optional<double>> targets, exit_co
 
   if (right_velocity()==0 && left_velocity()==0) {
     k+=util::DELAY_TIME;
-    if (k>exitConditions.velocity_exit_time) {
+    if (k>input_struct.velocity_exit_time) {
       if (!wait_until) printf(" Timed Out");
       else             printf(" Wait Until Timed Out");
       printf(" - Velocity\n");
 
       l=0;i=0;k=0;j=0;
+      interfered = true;
       return false;
     }
   }
@@ -118,7 +98,7 @@ bool Drive::exit_condition(tuple<double, std::optional<double>> targets, exit_co
     k = 0;
   }
 
-  //interfered = false;
+  interfered = false;
   return true;
 }
 

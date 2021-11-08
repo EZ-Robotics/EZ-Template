@@ -19,8 +19,8 @@ void Drive::drive_pid_task() {
     headingPID.Compute(get_gyro());
 
     // Compute slew
-    double l_slew_out = slew_calculate(l, left_sensor ());
-    double r_slew_out = slew_calculate(l, right_sensor());
+    double l_slew_out = slew_calculate(left_slew,  left_sensor ());
+    double r_slew_out = slew_calculate(right_slew, right_sensor());
 
     // Clip leftPID and rightPID to slew (if slew is disabled, it returns max_speed)
     double l_drive_out = util::clip_num(leftPID. output, l_slew_out, -l_slew_out);

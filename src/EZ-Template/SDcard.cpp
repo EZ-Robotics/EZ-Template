@@ -11,9 +11,10 @@ namespace ez
   namespace sd
   {
     const bool IS_SD_CARD = pros::usd::is_installed();
+    AutonSelector autoSelector{};
 
 
-    void init_auton_selector(AutonSelector selector) {
+    void init_auton_selector() {
       // If no SD card, return
       if (!IS_SD_CARD)  return;
 
@@ -21,17 +22,17 @@ namespace ez
       FILE* usd_file_read = fopen("/usd/auto.txt", "r");
       char buf[5];
       fread(buf, 1, 5, usd_file_read);
-      selector.CurrentAutonPage = std::stoi(buf);
+      autoSelector.CurrentAutonPage = std::stoi(buf);
       fclose(usd_file_read);
 
-      if(selector.CurrentAutonPage>selector.AutonCount-1 || selector.CurrentAutonPage<0)
+      if(autoSelector.CurrentAutonPage>autoSelector.AutonCount-1 || autoSelector.CurrentAutonPage<0)
       {
-        selector.CurrentAutonPage=0;
-        update_auto_sd(selector);
+        autoSelector.CurrentAutonPage=0;
+        update_auto_sd();
       }
     }
 
-    void update_auto_sd(AutonSelector autoSelector) {
+    void update_auto_sd() {
       // If no SD card, return
       if (!IS_SD_CARD) return;
 
@@ -42,24 +43,24 @@ namespace ez
       fclose(usd_file_write);
     }
 
-    void page_up(AutonSelector autoSelector)
+    void page_up()
     {
 
       if (autoSelector.CurrentAutonPage == autoSelector.AutonCount - 1)
         autoSelector.CurrentAutonPage = 0;
       else
         autoSelector.CurrentAutonPage++;
-      update_auto_sd(autoSelector);
+      update_auto_sd();
       autoSelector.PrintSelectedAuto();
     }
 
-    void page_down(AutonSelector autoSelector)
+    void page_down()
     {
       if (autoSelector.CurrentAutonPage == 0)
         autoSelector.CurrentAutonPage = autoSelector.AutonCount - 1;
       else
         autoSelector.CurrentAutonPage--;
-      update_auto_sd(autoSelector);
+      update_auto_sd();
       autoSelector.PrintSelectedAuto();
     }
   } // sd namespace
