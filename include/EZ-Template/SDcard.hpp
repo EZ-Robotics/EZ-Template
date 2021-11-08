@@ -17,8 +17,8 @@ namespace ez
     //extern AutonSelector autoSelector;
     extern const bool IS_SD_CARD;
     void init_auton_selector(AutonSelector selector);
-    void update_auto_sd();
-    void page_up();
-    void page_down();
+    void update_auto_sd(AutonSelector selector);
+    void page_up(AutonSelector selector);
+    void page_down(AutonSelector selector);
   } // sd namespace
 } // ez namespace

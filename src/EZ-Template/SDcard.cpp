@@ -10,10 +10,8 @@ namespace ez
 {
   namespace sd
   {
-    //AutonSelector autonSelector{};
     const bool IS_SD_CARD = pros::usd::is_installed();
 
-    AutonSelector temp;
 
     void init_auton_selector(AutonSelector selector) {
       // If no SD card, return
@@ -23,46 +21,46 @@ namespace ez
       FILE* usd_file_read = fopen("/usd/auto.txt", "r");
       char buf[5];
       fread(buf, 1, 5, usd_file_read);
-      temp.CurrentAutonPage = std::stoi(buf);
+      selector.CurrentAutonPage = std::stoi(buf);
       fclose(usd_file_read);
 
-      if(temp.CurrentAutonPage>temp.AutonCount-1 || temp.CurrentAutonPage<0)
+      if(selector.CurrentAutonPage>selector.AutonCount-1 || selector.CurrentAutonPage<0)
       {
-        temp.CurrentAutonPage=0;
-        update_auto_sd();
+        selector.CurrentAutonPage=0;
+        update_auto_sd(selector);
       }
     }
 
-    void update_auto_sd() {
+    void update_auto_sd(AutonSelector autoSelector) {
       // If no SD card, return
       if (!IS_SD_CARD) return;
 
       FILE* usd_file_write = fopen("/usd/auto.txt", "w");
-      std::string cp_str = std::to_string(temp.CurrentAutonPage);
+      std::string cp_str = std::to_string(autoSelector.CurrentAutonPage);
       char const *cp_c = cp_str.c_str();
       fputs(cp_c, usd_file_write);
       fclose(usd_file_write);
     }
 
-    void page_up()
+    void page_up(AutonSelector autoSelector)
     {
 
-      if (temp.CurrentAutonPage == temp.AutonCount - 1)
-        temp.CurrentAutonPage = 0;
+      if (autoSelector.CurrentAutonPage == autoSelector.AutonCount - 1)
+        autoSelector.CurrentAutonPage = 0;
       else
-        temp.CurrentAutonPage++;
-      update_auto_sd();
-      temp.PrintSelectedAuto();
+        autoSelector.CurrentAutonPage++;
+      update_auto_sd(autoSelector);
+      autoSelector.PrintSelectedAuto();
     }
 
-    void page_down()
+    void page_down(AutonSelector autoSelector)
     {
-      if (temp.CurrentAutonPage == 0)
-        temp.CurrentAutonPage = temp.AutonCount - 1;
+      if (autoSelector.CurrentAutonPage == 0)
+        autoSelector.CurrentAutonPage = autoSelector.AutonCount - 1;
       else
-        temp.CurrentAutonPage--;
-      update_auto_sd();
-      temp.PrintSelectedAuto();
+        autoSelector.CurrentAutonPage--;
+      update_auto_sd(autoSelector);
+      autoSelector.PrintSelectedAuto();
     }
   } // sd namespace
 } // ez namespace
