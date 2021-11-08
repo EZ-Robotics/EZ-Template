@@ -6,14 +6,19 @@ using namespace std;
 Drive chassis (
   // Left Chassis Ports
   {-11, -5, -7},
+
   // Right Chassis Ports
   {3, 2, 17},
+
   // IMU Port
   18,
+
   // Wheel Diameter (Remember, 4" wheels are actually 4.125!)
   3.25,
+
   // Cartridge RPM
   600,
+
   // External Gear Ratio
   1.66666666667
 );
@@ -133,6 +138,8 @@ void competition_initialize()
  */
  void x()
 {}
+
+
 void autonomous()
 {
   //Auton temp {"Name", x};
@@ -140,7 +147,10 @@ void autonomous()
   chassis.reset_drive_sensor();
   chassis.set_drive_brake(MOTOR_BRAKE_HOLD);
 
-  chassis.set_turn_pid(15, 90);
+
+  //steal();
+
+  chassis.set_drive_pid(12, 110);
   chassis.wait_drive();
 
   //autoSelector.CallSelectedAuto();
@@ -170,7 +180,7 @@ void opcontrol()
 
   while (true) {
 
-    // chassis.chassis_tank(); // Tank control
+    chassis.chassis_tank(); // Tank control
     // chassis.chassis_arcade_standard(ez::SPLIT); // Standard split arcade
     // chassis.chassis_arcade_standard(ez::SINGLE); // Standard single arcade
     // chassis.chassis_arcade_flipped(ez::SPLIT); // Flipped split arcade

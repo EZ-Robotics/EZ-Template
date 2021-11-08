@@ -32,6 +32,7 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
   TICK_PER_REV  = (50.0*(3600.0/motor_cartridge)) * ratio; // with no cart, the encoder reads 50 counts per rotation
   CIRCUMFERENCE = wheel_diameter*M_PI;
   TICK_PER_INCH = (TICK_PER_REV/CIRCUMFERENCE);
+  printf("%f  - %f  %f  %f", TICK_PER_INCH, motor_cartridge, ratio, wheel_diameter);
 
   // PID Constants
   headingPID = {11, 0, 20, 0};
@@ -47,9 +48,9 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
   set_slew_distance(7, 7);
 
   // Exit condition constants
-  set_exit_condition(turn_exit,  100, 3,  500, 7,   500);
-  set_exit_condition(swing_exit, 100, 3,  500, 7,   500);
-  set_exit_condition(drive_exit, 80,  50, 300, 150, 500);
+  set_exit_condition(turn_exit,  100, 3,  500, 7,   500, 2250, 500);
+  set_exit_condition(swing_exit, 100, 3,  500, 7,   500, 2250, 500);
+  set_exit_condition(drive_exit, 80,  50, 300, 150, 500, 2250, 500);
 
   // Modify joystick curve on controller (defaults to disabled)
   toggle_controller_curve_modifier(true);
@@ -84,9 +85,11 @@ void Drive::reset_drive_sensor() {
 
 int Drive::right_sensor()   { return RightMotors.front().get_position(); }
 int Drive::right_velocity() { return RightMotors.front().get_actual_velocity(); }
+double Drive::right_mA() { return RightMotors.front().get_current_draw(); }
 
-int Drive::left_sensor()    { return LeftMotors.front().get_position(); }
-int Drive::left_velocity()  { return LeftMotors.front().get_actual_velocity(); }
+int Drive::left_sensor()   { return LeftMotors.front().get_position(); }
+int Drive::left_velocity() { return LeftMotors.front().get_actual_velocity(); }
+double Drive::left_mA() { return LeftMotors.front().get_current_draw(); }
 
 
 void  Drive::reset_gyro(double new_heading) { imu.set_rotation(new_heading); }
@@ -128,6 +131,8 @@ void Drive::set_max_speed(int speed) {
 }
 
 void Drive::set_drive_pid(double target, int speed, bool slew_on, bool toggle_heading) {
+  printf("Drive Started... Target Value: %f  target*TICK_PER_INCH %f    target*48 %f   TICK_PER_INCH %f\n", target, target*TICK_PER_INCH,   target*48, TICK_PER_INCH);
+
   turn_pid.suspend();
   swing_pid.suspend();
 
@@ -144,7 +149,6 @@ void Drive::set_drive_pid(double target, int speed, bool slew_on, bool toggle_he
 
   // If drive or line, set targets to drive
 
-  printf("Drive Started... Target Value: %f\n", target);
   l_start = left_sensor();
   r_start = right_sensor();
   l_target_encoder = l_start + (target*TICK_PER_INCH);
@@ -177,11 +181,11 @@ void Drive::set_drive_pid(double target, int speed, bool slew_on, bool toggle_he
   l.slope = (SLEW_MIN_POWER[isBackwards]-abs(speed)) / ((l_start+(SLEW_DISTANCE[isBackwards]*TICK_PER_INCH))-0);
   r.slope = (SLEW_MIN_POWER[isBackwards]-abs(speed)) / ((l_start+(SLEW_DISTANCE[isBackwards]*TICK_PER_INCH))-0);
 
+
   drive_pid.resume();
 }
 
-void Drive::set_turn_pid(double target, int speed)
-{
+void Drive::set_turn_pid(double target, int speed) {
   swing_pid.suspend();
   drive_pid.suspend();
 
@@ -193,8 +197,7 @@ void Drive::set_turn_pid(double target, int speed)
   turn_pid.resume();
 }
 
-void Drive::set_swing_pid(e_swing type, double target, int speed)
-{
+void Drive::set_swing_pid(e_swing type, double target, int speed) {
   drive_pid.suspend();
   turn_pid.suspend();
 

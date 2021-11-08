@@ -199,6 +199,11 @@ class Drive {
     int right_velocity();
 
     /**
+     * The watts of the right motor.
+    */
+    double right_mA();
+
+    /**
      * The position of the left motor.
     */
     int left_sensor();
@@ -207,6 +212,11 @@ class Drive {
      * The velocity of the left motor.
     */
     int left_velocity();
+
+    /**
+     * The watts of the left motor.
+    */
+    double left_mA();
 
     /**
      * Reset all the chassis motors, reccomended to run at the start of your autonomous routine.
@@ -229,6 +239,11 @@ class Drive {
      * Calibrates the IMU, reccomended to run in initialize().
     */
     bool imu_calibrate();
+
+    /**
+     * Autonomous interference detection.  Returns true when interfered, and false when nothing happened.
+    */
+    bool interfered = false;
 
 
 
@@ -323,6 +338,8 @@ class Drive {
       int big_exit_time = 0;
       int big_error = 0;
       int velocity_exit_time = 0;
+      int mA_thresh = 0;
+      int mA_timeout = 0;
     };
 
     /**
@@ -356,7 +373,7 @@ class Drive {
      * \param p_velocity_exit_time
      *        sets velocity_exit_time.  timer will start when velocity is 0.
     */
-    void set_exit_condition(exit_condition_ &type, int p_small_exit_time, int p_small_error, int p_big_exit_time, int p_big_error, int p_velocity_exit_time);
+    void set_exit_condition(exit_condition_ &type, int p_small_exit_time, int p_small_error, int p_big_exit_time, int p_big_error, int p_velocity_exit_timeint, int p_mA_thresh, int p_mA_timeout);
 
 
 
@@ -386,16 +403,16 @@ class Drive {
     double slew_calculate(slew_ &input, double current);
 
     // Tick per inch calculation
-    double TICK_PER_REV;
-    double CIRCUMFERENCE;
-    double TICK_PER_INCH;
+    double TICK_PER_REV = 0;
+    double CIRCUMFERENCE = 0;
+    double TICK_PER_INCH = 0;
     int max_speed;
 
     // Exit conditions
   /*  bool drive_exit_condition(double l_target, double r_target);
     bool turn_exit_condition(double target);
     bool swing_exit_condition(double target);*/
-    bool exit_condition(tuple<double, std::optional<double>> targets, exit_condition_ exitConditions);
+    bool exit_condition(std::tuple<double, std::optional<double>> targets, exit_condition_ exitConditions, bool wait_until = false);
     // Tasks
     void drive_pid_task();
     void swing_pid_task();
