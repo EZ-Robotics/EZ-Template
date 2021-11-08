@@ -8,12 +8,12 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 
 // Updates max speed
-void Drive::set_max_speed(int speed) {
+void drive::set_max_speed(int speed) {
   max_speed = abs(speed);
 }
 
 // Set drive PID
-void Drive::set_drive_pid(double target, int speed, bool slew_on, bool toggle_heading) {
+void drive::set_drive_pid(double target, int speed, bool slew_on, bool toggle_heading) {
   // Disable tasks
   turn_pid.suspend();
   swing_pid.suspend();
@@ -40,20 +40,20 @@ void Drive::set_drive_pid(double target, int speed, bool slew_on, bool toggle_he
 
   // Figure out if going forward or backward
   if (l_target_encoder<l_start && r_target_encoder<r_start) {
-    auto consts = backwardDrivePID.GetConstants();
-    leftPID.SetConstants(consts.kP, consts.kI, consts.kD, consts.StartI);
-    rightPID.SetConstants(consts.kP, consts.kI, consts.kD, consts.StartI);
+    auto consts = backward_drivePID.get_constants();
+    leftPID.set_constants(consts.kp, consts.ki, consts.kd, consts.start_i);
+    rightPID.set_constants(consts.kp, consts.ki, consts.kd, consts.start_i);
     is_backwards = true;
   } else {
-    auto consts = forwardDrivePID.GetConstants();
-    leftPID.SetConstants(consts.kP, consts.kI, consts.kD, consts.StartI);
-    rightPID.SetConstants(consts.kP, consts.kI, consts.kD, consts.StartI);
+    auto consts = forward_drivePID.get_constants();
+    leftPID.set_constants(consts.kp, consts.ki, consts.kd, consts.start_i);
+    rightPID.set_constants(consts.kp, consts.ki, consts.kd, consts.start_i);
     is_backwards = false;
   }
 
   // Set PID targets
-  leftPID. SetTarget(l_target_encoder);
-  rightPID.SetTarget(r_target_encoder);
+  leftPID. set_target(l_target_encoder);
+  rightPID.set_target(r_target_encoder);
 
   // Initialize slew
   slew_initialize(left_slew,  slew_on, max_speed, l_target_encoder, left_sensor (), l_start, is_backwards);
@@ -64,7 +64,7 @@ void Drive::set_drive_pid(double target, int speed, bool slew_on, bool toggle_he
 }
 
 // Set turn PID
-void Drive::set_turn_pid(double target, int speed) {
+void drive::set_turn_pid(double target, int speed) {
   // Disable tasks
   swing_pid.suspend();
   drive_pid.suspend();
@@ -73,8 +73,8 @@ void Drive::set_turn_pid(double target, int speed) {
   printf("Turn Started... Target Value: %f\n", target);
 
   // Set PID targets
-  turnPID.SetTarget(target);
-  headingPID.SetTarget(target); // Update heading target for next drive motion
+  turnPID.set_target(target);
+  headingPID.set_target(target); // Update heading target for next drive motion
   set_max_speed(speed);
 
   // Run task
@@ -82,7 +82,7 @@ void Drive::set_turn_pid(double target, int speed) {
 }
 
 // Set swing PID
-void Drive::set_swing_pid(e_swing type, double target, int speed) {
+void drive::set_swing_pid(e_swing type, double target, int speed) {
   // Disable tasks
   drive_pid.suspend();
   turn_pid.suspend();
@@ -92,8 +92,8 @@ void Drive::set_swing_pid(e_swing type, double target, int speed) {
   current_swing = type;
 
   // Set PID targets
-  swingPID.SetTarget(target);
-  headingPID.SetTarget(target); // Update heading target for next drive motion
+  swingPID.set_target(target);
+  headingPID.set_target(target); // Update heading target for next drive motion
   set_max_speed(speed);
 
   // Run task

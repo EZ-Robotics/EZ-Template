@@ -12,25 +12,25 @@ class PID
 public:
   struct Constants
   {
-    double kP;
-    double kI;
-    double kD;
-    double StartI;
+    double kp;
+    double ki;
+    double kd;
+    double start_i;
   };
   PID();
-  PID(double p, double i, double d, double startI);
-  void SetConstants(double p, double i, double d, double starI);
-  void SetTarget(double input);
-  void Compute(double current);
-  double GetTarget();
-  Constants GetConstants();
+  PID(double p, double i, double d, double start_i);
+  void set_constants(double p, double i, double d, double p_start_i);
+  void set_target(double input);
+  void compute(double current);
+  double get_target();
+  Constants get_constants();
 
   double output;
   double error;
   Constants constants;
   double target;
 private:
-  void ResetVariables();
+  void reset_variables();
 
   double prev_error;
   double integral;

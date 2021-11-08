@@ -10,13 +10,13 @@ using namespace ez;
 
 
 // Drive PID task
-void Drive::drive_pid_task() {
+void drive::drive_pid_task() {
   while (true) {
 
     // Compute PID
-    leftPID. Compute(left_sensor());
-    rightPID.Compute(right_sensor());
-    headingPID.Compute(get_gyro());
+    leftPID.compute(left_sensor());
+    rightPID.compute(right_sensor());
+    headingPID.compute(get_gyro());
 
     // Compute slew
     double l_slew_out = slew_calculate(left_slew,  left_sensor ());
@@ -42,17 +42,17 @@ void Drive::drive_pid_task() {
 }
 
 // Turn PID task
-void Drive::turn_pid_task() {
+void drive::turn_pid_task() {
   while (true) {
 
     // Compute PID
-    turnPID.Compute(get_gyro());
+    turnPID.compute(get_gyro());
 
     // Clip gyroPID to max speed
     double gyro_out = util::clip_num(turnPID.output, max_speed, -max_speed);
 
     // Clip the speed of the turn when the robot is within StartI, only do this when target is larger then StartI
-    if (turnPID.constants.kI!=0 && (fabs(turnPID.GetTarget())>turnPID.constants.StartI && fabs(turnPID.error)<turnPID.constants.StartI)) {
+    if (turnPID.constants.ki!=0 && (fabs(turnPID.get_target())>turnPID.constants.start_i && fabs(turnPID.error)<turnPID.constants.start_i)) {
       gyro_out = util::clip_num(gyro_out, 30, -30);
     }
 
@@ -65,17 +65,17 @@ void Drive::turn_pid_task() {
 }
 
 // Swing PID task
-void Drive::swing_pid_task() {
+void drive::swing_pid_task() {
   while (true) {
 
     // Compute PID
-    swingPID.Compute(get_gyro());
+    swingPID.compute(get_gyro());
 
     // Clip swingPID to max speed
     double swing_out = util::clip_num(swingPID.output, max_speed, -max_speed);
 
     // Clip the speed of the turn when the robot is within StartI, only do this when target is larger then StartI
-    if (swingPID.constants.kI!=0 && (fabs(turnPID.GetTarget())>swingPID.constants.StartI && fabs(turnPID.error)<swingPID.constants.StartI)) {
+    if (swingPID.constants.ki!=0 && (fabs(turnPID.get_target())>swingPID.constants.start_i && fabs(turnPID.error)<swingPID.constants.start_i)) {
       swing_out = util::clip_num(swing_out, 30, -30);
     }
 

@@ -8,8 +8,8 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 using namespace ez;
 
-void PID::ResetVariables()
-{
+
+void PID::reset_variables() {
   output = 0;
   target = 0;
   error = 0;
@@ -21,47 +21,44 @@ void PID::ResetVariables()
 
 PID::PID()
 {
-  ResetVariables();
-  SetConstants(0, 0, 0, 0);
+  reset_variables();
+  set_constants(0, 0, 0, 0);
 }
-PID::Constants PID::GetConstants()
-{
-  return constants;
+
+PID::Constants PID::get_constants() { return constants; }
+
+PID::PID(double p, double i, double d, double start_i)  {
+  reset_variables();
+  set_constants(p, i, d, start_i);
 }
-PID::PID(double KP, double KI, double KD, double startI)
-{
-  ResetVariables();
-  SetConstants(KP, KI, KD, startI);
+
+void PID::set_constants(double p, double i, double d, double p_start_i) {
+  constants.kp = p;
+  constants.ki = i;
+  constants.kd = d;
+  constants.start_i = p_start_i;
 }
-void PID::SetConstants(double p, double i, double d, double startI)
-{
-  constants.kP = p;
-  constants.kI = i;
-  constants.kD = d;
-  constants.StartI = startI;
-}
-void PID::SetTarget(double input)
-{
+
+void PID::set_target(double input) {
   target = input;
 }
-double PID::GetTarget() {
+double PID::get_target() {
   return target;
 }
 
-void PID::Compute(double current)
-{
+void PID::compute(double current) {
   error = target - current;
   derivative = error - prev_error;
 
-  if (constants.kI!=0) {
-    if(fabs(error) < constants.StartI)
+  if (constants.ki!=0) {
+    if(fabs(error) < constants.start_i)
       integral += error;
 
     if(util::sgn(error) != util::sgn(prev_error))
       integral = 0;
   }
 
-  output = (error*constants.kP) + (integral*constants.kI) + (derivative*constants.kD);
+  output = (error*constants.kp) + (integral*constants.ki) + (derivative*constants.kd);
 
   prev_error = error;
 }

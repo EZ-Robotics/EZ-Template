@@ -10,7 +10,7 @@ using namespace ez;
 
 
 // Set exit condition timeouts
-void Drive::set_exit_condition(exit_condition_ &type, int p_small_exit_time, int p_small_error, int p_big_exit_time, int p_big_error, int p_velocity_exit_time, int p_mA_thresh, int p_mA_timeout) {
+void drive::set_exit_condition(exit_condition_ &type, int p_small_exit_time, int p_small_error, int p_big_exit_time, int p_big_error, int p_velocity_exit_time, int p_mA_thresh, int p_mA_timeout) {
   type.small_exit_time = p_small_exit_time;
   type.small_error = p_small_error;
   type.big_exit_time = p_big_exit_time;
@@ -20,9 +20,8 @@ void Drive::set_exit_condition(exit_condition_ &type, int p_small_exit_time, int
   type.mA_timeout = p_mA_timeout;
 }
 
-
 // Exit condition
-bool Drive::exit_condition(std::tuple<double, std::optional<double>> targets, exit_condition_ input_struct, bool wait_until)
+bool drive::exit_condition(std::tuple<double, std::optional<double>> targets, exit_condition_ input_struct, bool wait_until)
 {
   static int i = 0, j = 0, k = 0, l = 0;
   bool is_drive = std::get<1>(targets).has_value();
@@ -103,29 +102,29 @@ bool Drive::exit_condition(std::tuple<double, std::optional<double>> targets, ex
 }
 
 // User wrapper for exit condition
-void Drive::wait_drive() {
+void drive::wait_drive() {
   pros::delay(util::DELAY_TIME);
 
   if (drive_pid.get_state() != pros::E_TASK_STATE_SUSPENDED) {
 
-    while (exit_condition(tuple{leftPID.GetTarget(), rightPID.GetTarget()}, drive_exit)) {
+    while (exit_condition(tuple{leftPID.get_target(), rightPID.get_target()}, drive_exit)) {
       pros::delay(util::DELAY_TIME);
     }
   }
   else if (turn_pid.get_state() != pros::E_TASK_STATE_SUSPENDED) {
-    while (exit_condition(tuple{turnPID.GetTarget(), std::nullopt}, turn_exit)) {
+    while (exit_condition(tuple{turnPID.get_target(), std::nullopt}, turn_exit)) {
       pros::delay(util::DELAY_TIME);
     }
   }
   else if (swing_pid.get_state() != pros::E_TASK_STATE_SUSPENDED) {
-    while (exit_condition(tuple{swingPID.GetTarget(), std::nullopt}, swing_exit)) {
+    while (exit_condition(tuple{swingPID.get_target(), std::nullopt}, swing_exit)) {
       pros::delay(util::DELAY_TIME);
     }
   }
 }
 
 // Function to wait until a certain position is reached.  Wrapper for exit condition.
-void Drive::wait_until(double target) {
+void drive::wait_until(double target) {
 
   // If robot is driving...
   if (drive_pid.get_state() != pros::E_TASK_STATE_SUSPENDED) {

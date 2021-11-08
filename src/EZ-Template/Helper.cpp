@@ -6,7 +6,8 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "main.h"
 
-namespace ez{
+
+namespace ez {
 
 void print_ez_template() {
   std::cout << R"(
@@ -25,9 +26,9 @@ void print_ez_template() {
   printf("Version: 2.0.0\n");
 }
 
-namespace util{
+namespace util {
 
-bool isReversed(double input) {
+bool is_reversed(double input) {
   if (input < 0)
     return true;
   return false;

@@ -15,7 +15,8 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 using namespace ez;
 
-class Drive {
+
+class drive {
   public:
 
     /**
@@ -27,8 +28,8 @@ class Drive {
     /**
      * Vector of pros motors for the left and right chassis.
     */
-    std::vector<pros::Motor> LeftMotors;
-    std::vector<pros::Motor> RightMotors;
+    std::vector<pros::Motor> left_motors;
+    std::vector<pros::Motor> right_motors;
 
     /**
      * Inertial sensor.
@@ -45,10 +46,10 @@ class Drive {
     */
     PID headingPID;
     PID turnPID;
-    PID forwardDrivePID;
+    PID forward_drivePID;
     PID leftPID;
     PID rightPID;
-    PID backwardDrivePID;
+    PID backward_drivePID;
     PID swingPID;
 
     /**
@@ -65,7 +66,7 @@ class Drive {
      * Give Sensor Ports, Motor Ports (give a negative port if motor is reversed), Drive Measurements
      * Set PID Constants
     */
-    Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double motor_cartridge, double ratio);
+    drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double motor_cartridge, double ratio);
     //~Drive(); // deconstructor (DELETE POINTERS HERE) (DONT LEEK MEMORY) (I DONT THINK WE NEED THIS)
 
 
@@ -88,7 +89,7 @@ class Drive {
      * \param t
      *        enum e_type, k_single or k_split control
     */
-    void chassis_arcade_standard(e_type t);
+    void chassis_arcade_standard(e_type stick_type);
 
     /**
      * Sets the chassis to controller joysticks using flipped arcade control.  Run is usercontrol.
@@ -96,7 +97,7 @@ class Drive {
      * \param t
      *        enum e_type, k_single or k_split control
     */
-    void chassis_arcade_flipped(e_type t);
+    void chassis_arcade_flipped(e_type stick_type);
 
     /**
      * Initializes left and right curves with the SD card, reccomended to run in initialize().
@@ -178,7 +179,7 @@ class Drive {
      * \param input
      *        the 'brake mode' of the motor e.g. 'pros::E_MOTOR_BRAKE_COAST' 'pros::E_MOTOR_BRAKE_BRAKE' 'pros::E_MOTOR_BRAKE_HOLD'
     */
-    void set_drive_brake(pros::motor_brake_mode_e_t brake);
+    void set_drive_brake(pros::motor_brake_mode_e_t brake_type);
 
 
 
@@ -309,7 +310,7 @@ class Drive {
      * Set Either the headingPID, turnPID, forwardPID, backwardPID, activeBrakePID, or swingPID
      * IF NOT DONE PID WILL DEFAULT TO 0!
     */
-    void SetPIDConstants(PID pid, double kP, double kI, double kD, double startI);
+    void set_pid_constants(PID pid, double p, double i, double d, double p_start_i);
 
     /**
      * Sets minimum slew speed constants.

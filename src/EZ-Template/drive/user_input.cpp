@@ -8,14 +8,14 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 
 // Set curve defaults
-void Drive::set_curve_default(int left, int right)
+void drive::set_curve_default(int left, int right)
 {
   left_curve_scale = left;
   right_curve_scale = right;
 }
 
 // Initialize curve SD card
-void Drive::init_curve_sd() {
+void drive::init_curve_sd() {
   // If no SD card, return
   if (!ez::util::IS_SD_CARD) return;
 
@@ -36,7 +36,7 @@ void Drive::init_curve_sd() {
 }
 
 // Save new left curve to SD card
-void Drive::save_l_curve_sd() {
+void drive::save_l_curve_sd() {
   // If no SD card, return
   if (!ez::util::IS_SD_CARD) return;
 
@@ -48,7 +48,7 @@ void Drive::save_l_curve_sd() {
 }
 
 // Save new right curve to SD card
-void Drive::save_r_curve_sd() {
+void drive::save_r_curve_sd() {
   // If no SD card, return
   if (!ez::util::IS_SD_CARD) return;
 
@@ -59,33 +59,33 @@ void Drive::save_r_curve_sd() {
   fclose(usd_file_write);
 }
 
-void Drive::left_curve_modify_buttons(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase) {
+void drive::left_curve_modify_buttons(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase) {
   l_increase_.button = increase;
   l_decrease_.button = decrease;
 }
-void Drive::right_curve_modify_buttons(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase) {
+void drive::right_curve_modify_buttons(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase) {
   r_increase_.button = increase;
   r_decrease_.button = decrease;
 }
 
 // Increase / decrease left and right curves
-void Drive::l_increase() {
+void drive::l_increase() {
   left_curve_scale += 0.1;
 }
- void Drive::l_decrease() {
+ void drive::l_decrease() {
   left_curve_scale -= 0.1;
   left_curve_scale =  left_curve_scale<0 ? 0 : left_curve_scale;
 }
-void Drive::r_increase() {
+void drive::r_increase() {
   right_curve_scale += 0.1;
 }
-void Drive::r_decrease() {
+void drive::r_decrease() {
   right_curve_scale -= 0.1;
   right_curve_scale =  right_curve_scale<0 ? 0 : right_curve_scale;
 }
 
 // Button press logic for increase/decrease curves
-void Drive::button_press(button_ *input_name, int button, std::function<void()> changeCurve, std::function<void()> save) {
+void drive::button_press(button_ *input_name, int button, std::function<void()> changeCurve, std::function<void()> save) {
   // If button is pressed, increase the curve and set toggles.
   if (button && !input_name->lock) {
     changeCurve();
@@ -123,12 +123,12 @@ void Drive::button_press(button_ *input_name, int button, std::function<void()> 
 }
 
 // Toggle modifying curves with controller
-void Drive::toggle_controller_curve_modifier(bool toggle) {
+void drive::toggle_controller_curve_modifier(bool toggle) {
   disable_controller = toggle;
 }
 
 // Modify curves with button presses and display them to contrller
-void Drive::modify_curve_with_controller() {
+void drive::modify_curve_with_controller() {
   if (!disable_controller) return; // True enables, false disables.
 /*
   button_press(&l_increase_, master.get_digital(pros::E_CONTROLLER_DIGITAL_RIGHT), ([this]{ this->l_increase(); }), ([this]{ this->save_l_curve_sd(); }));
@@ -154,7 +154,7 @@ void Drive::modify_curve_with_controller() {
 }
 
 // Left curve function
-double Drive::left_curve_function(double x) {
+double drive::left_curve_function(double x) {
   if (left_curve_scale != 0) {
     //if (CURVE_TYPE)
       return (powf(2.718, -(left_curve_scale/10)) + powf(2.718, (fabs(x)-127)/10) * (1-powf(2.718, -(left_curve_scale/10))))*x;
@@ -165,7 +165,7 @@ double Drive::left_curve_function(double x) {
 }
 
 // Right curve fnuction
-double Drive::right_curve_function(double x) {
+double drive::right_curve_function(double x) {
   if (right_curve_scale != 0) {
     //if (CURVE_TYPE)
       return (powf(2.718, -(right_curve_scale/10)) + powf(2.718, (fabs(x)-127)/10) * (1-powf(2.718, -(right_curve_scale/10))))*x;
@@ -176,12 +176,12 @@ double Drive::right_curve_function(double x) {
 }
 
 // Set active brake constant
-void Drive::set_active_brake(double kp) {
+void drive::set_active_brake(double kp) {
   active_brake_kp = kp;
 }
 
 // Tank control
-void Drive::chassis_tank()
+void drive::chassis_tank()
 {
   is_tank = true;
 
@@ -204,7 +204,7 @@ void Drive::chassis_tank()
 }
 
 // Arcade standard
-void Drive::chassis_arcade_standard(e_type t) {
+void drive::chassis_arcade_standard(e_type stick_type) {
   is_tank = false;
 
   // Toggle for controller curve
@@ -212,12 +212,12 @@ void Drive::chassis_arcade_standard(e_type t) {
 
   int l_stick, r_stick;
   // Check arcade type (split vs single, normal vs flipped)
-  if (t == SPLIT) {
+  if (stick_type == SPLIT) {
     // Put the joysticks through the curve function
     l_stick = left_curve_function(master.get_analog(ANALOG_LEFT_Y));
     r_stick = right_curve_function(master.get_analog(ANALOG_RIGHT_X));
   }
-  else if (t == SINGLE) {
+  else if (stick_type == SINGLE) {
     // Put the joysticks through the curve function
     l_stick = left_curve_function(master.get_analog(ANALOG_LEFT_Y));
     r_stick = right_curve_function(master.get_analog(ANALOG_LEFT_X));
@@ -235,7 +235,7 @@ void Drive::chassis_arcade_standard(e_type t) {
 }
 
 // Arcade control flipped
-void Drive::chassis_arcade_flipped(e_type t) {
+void drive::chassis_arcade_flipped(e_type stick_type) {
   is_tank = false;
 
   // Toggle for controller curve
@@ -243,12 +243,12 @@ void Drive::chassis_arcade_flipped(e_type t) {
 
   int l_stick, r_stick;
   // Check arcade type (split vs single, normal vs flipped)
-  if (t == SPLIT) {
+  if (stick_type == SPLIT) {
     // Put the joysticks through the curve function
     r_stick = right_curve_function(master.get_analog(ANALOG_RIGHT_Y));
     l_stick = left_curve_function(master.get_analog(ANALOG_LEFT_X));
   }
-  else if (t == SINGLE) {
+  else if (stick_type == SINGLE) {
     // Put the joysticks through the curve function
     r_stick = right_curve_function(master.get_analog(ANALOG_RIGHT_Y));
     l_stick = left_curve_function(master.get_analog(ANALOG_RIGHT_X));

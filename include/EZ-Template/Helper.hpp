@@ -41,7 +41,7 @@ namespace ez {
     /**
      * Returns true if the input is < 0
     */
-     bool isReversed(double input);
+     bool is_reversed(double input);
     /**
      * Returns input restricted to min-max threshold
     */

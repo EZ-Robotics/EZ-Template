@@ -10,7 +10,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 using namespace ez;
 
 
-Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double motor_cartridge, double ratio)
+drive::drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double motor_cartridge, double ratio)
  : imu (imu_port), master(pros::E_CONTROLLER_MASTER),
  drive_pid([this]{ this->drive_pid_task(); }),
  turn_pid([this]{ this->turn_pid_task(); }),
@@ -22,13 +22,13 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
   // Set ports to a global vector
   for(auto i : left_motor_ports)
   {
-    pros::Motor temp(abs(i), util::isReversed(i));
-    LeftMotors.push_back(temp);
+    pros::Motor temp(abs(i), util::is_reversed(i));
+    left_motors.push_back(temp);
   }
   for(auto i : right_motor_ports)
   {
-    pros::Motor temp(abs(i), util::isReversed(i));
-    RightMotors.push_back(temp);
+    pros::Motor temp(abs(i), util::is_reversed(i));
+    right_motors.push_back(temp);
   }
 
   // Set constants for tick_per_inch caluclation
@@ -39,8 +39,8 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 
   // PID Constants
   headingPID = {11, 0, 20, 0};
-  forwardDrivePID = {0.45, 0, 5, 0};
-  backwardDrivePID = {0.45, 0, 5, 0};
+  forward_drivePID = {0.45, 0, 5, 0};
+  backward_drivePID = {0.45, 0, 5, 0};
   turnPID = {5, 0.003, 35, 15};
   swingPID = {7, 0, 45, 0};
   leftPID = {0.45, 0, 5, 0};
@@ -63,49 +63,49 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
   right_curve_modify_buttons(pros::E_CONTROLLER_DIGITAL_Y,    pros::E_CONTROLLER_DIGITAL_A);
 }
 
-double Drive::get_tick_per_inch() {
+double drive::get_tick_per_inch() {
   TICK_PER_REV  = (50.0*(3600.0/CARTRIDGE)) * RATIO; // with no cart, the encoder reads 50 counts per rotation
   CIRCUMFERENCE = WHEEL_DIAMETER*M_PI;
   TICK_PER_INCH = (TICK_PER_REV/CIRCUMFERENCE);
   return TICK_PER_INCH;
 }
 
-void Drive::SetPIDConstants(PID pid, double kP, double kI, double kD, double startI)
+void drive::set_pid_constants(PID pid, double p, double i, double d, double p_start_i)
 {
-  pid.SetConstants(kP, kI, kD, startI);
+  pid.set_constants(p, i, d, p_start_i);
 }
 
-void Drive::set_tank(int left, int right) {
+void drive::set_tank(int left, int right) {
   if (pros::millis() < 1500) return;
 
-  for (auto i : LeftMotors) {
+  for (auto i : left_motors) {
     i.move_voltage(left*(12000.0/127.0));
   }
-  for (auto i : RightMotors) {
+  for (auto i : right_motors) {
     i.move_voltage(right*(12000.0/127.0));
   }
 }
 
 
 // Motor telemetry
-void Drive::reset_drive_sensor() {
-  LeftMotors.front().tare_position();
-  RightMotors.front().tare_position();
+void drive::reset_drive_sensor() {
+  left_motors.front().tare_position();
+  right_motors.front().tare_position();
 }
 
-int Drive::right_sensor()   { return RightMotors.front().get_position(); }
-int Drive::right_velocity() { return RightMotors.front().get_actual_velocity(); }
-double Drive::right_mA() { return RightMotors.front().get_current_draw(); }
+int drive::right_sensor()   { return right_motors.front().get_position(); }
+int drive::right_velocity() { return right_motors.front().get_actual_velocity(); }
+double drive::right_mA()    { return right_motors.front().get_current_draw(); }
 
-int Drive::left_sensor()   { return LeftMotors.front().get_position(); }
-int Drive::left_velocity() { return LeftMotors.front().get_actual_velocity(); }
-double Drive::left_mA() { return LeftMotors.front().get_current_draw(); }
+int drive::left_sensor()   { return left_motors.front().get_position(); }
+int drive::left_velocity() { return left_motors.front().get_actual_velocity(); }
+double drive::left_mA()    { return left_motors.front().get_current_draw(); }
 
 
-void  Drive::reset_gyro(double new_heading) { imu.set_rotation(new_heading); }
-double Drive::get_gyro()  { return imu.get_rotation(); }
+void  drive::reset_gyro(double new_heading) { imu.set_rotation(new_heading); }
+double drive::get_gyro()  { return imu.get_rotation(); }
 
-bool Drive::imu_calibrate() {
+bool drive::imu_calibrate() {
   imu.reset();
   int time = pros::millis();
   int iter = 0;
@@ -126,11 +126,11 @@ bool Drive::imu_calibrate() {
 }
 
 // Brake modes
-void Drive::set_drive_brake(pros::motor_brake_mode_e_t brake) {
-  for (auto i : LeftMotors) {
-    i.set_brake_mode(brake);
+void drive::set_drive_brake(pros::motor_brake_mode_e_t brake_type) {
+  for (auto i : left_motors) {
+    i.set_brake_mode(brake_type);
   }
-  for (auto i : RightMotors) {
-    i.set_brake_mode(brake);
+  for (auto i : right_motors) {
+    i.set_brake_mode(brake_type);
   }
 }
