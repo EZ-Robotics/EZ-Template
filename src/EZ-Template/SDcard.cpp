@@ -25,7 +25,7 @@ namespace ez
       autoSelector.CurrentAutonPage = std::stoi(buf);
       fclose(usd_file_read);
 
-      if(autoSelector.CurrentAutonPage>autoSelector.AutonCount-1 || autoSelector.CurrentAutonPage<0)
+      if(autoSelector.CurrentAutonPage>autoSelector.AutonCount || autoSelector.CurrentAutonPage<0)
       {
         autoSelector.CurrentAutonPage=0;
         update_auto_sd();

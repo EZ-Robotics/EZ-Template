@@ -16,11 +16,11 @@ AutonSelector::AutonSelector()
 
 AutonSelector::AutonSelector(std::vector<Auton> autons)
 {
-  
-//  AutonCount = autons.size();
+
+  AutonCount = autons.size();
   CurrentAutonPage = 0;
   Autons = {};
-//  Autons.assign(autons.begin(), autons.end());
+  Autons.assign(autons.begin(), autons.end());
 
 }
 void AutonSelector::PrintSelectedAuto()
