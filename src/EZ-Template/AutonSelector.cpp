@@ -18,19 +18,15 @@ AutonSelector::AutonSelector(std::vector<Auton> autons)
 {
   AutonCount = autons.size();
   CurrentAutonPage = 0;
-  //Autons();
   Autons = {};
   Autons.assign(autons.begin(), autons.end());
-/*  for(auto i : autons) {
-    //Auton temp(get<0>(i), get<1>(i));
-    //Autons.push_back(temp);
-    Autons.emplace_back(i);
-  }*/
+
 }
 void AutonSelector::PrintSelectedAuto()
 {
   if (AutonCount == 0) return;
   pros::lcd::clear_line(0);
+  pros::lcd::clear_line(1);
   pros::lcd::set_text(0, "Page "+std::to_string(CurrentAutonPage+1));
   pros::lcd::set_text(1, Autons[CurrentAutonPage].Name);
 }
@@ -44,15 +40,3 @@ void AutonSelector::AddAutons(std::vector<Auton> autons) {
   CurrentAutonPage = 0;
   Autons.assign(autons.begin(), autons.end());
 }
-
-
-
-/*
-void AutonSelector::AddAutons(std::vector<Auton> autons) {
-  AutonCount += autons.size();
-  CurrentAutonPage = 0;
-  for(auto i : autons) {
-    Autons.emplace_back(autons);
-  }
-}
-*/

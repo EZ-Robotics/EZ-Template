@@ -50,7 +50,7 @@ void disable_all_tasks()
 void initialize() {
 
   ez::print_ez_template(); // Print our branding over your terminal :D
-
+  pros::lcd::initialize();
   pros::delay(500); // Stop the user from doing anything while legacy ports configure.
 
   // Disable tasks
@@ -74,13 +74,13 @@ void initialize() {
     Auton("Autonomous 2", auto2),
     Auton("Autonomous 3", auto3),
   });
-
+  pros::delay(100);
   //printf("\n");
 
   // Initialize auto selector and LLEMU
   ez::as::init_auton_selector();
   printf("autoselector init\n");
-  pros::lcd::initialize();
+
 
   // Callbacks for auto selector
   ez::as::autoSelector.PrintSelectedAuto();
