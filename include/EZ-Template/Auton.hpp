@@ -13,9 +13,9 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 class Auton
 {
 public:
+  Auton();
   Auton(std::string, std::function<void()>);
   std::string Name;
-  void CallAuton();
-private:
   std::function<void()> AutonCall;
+private:
 };

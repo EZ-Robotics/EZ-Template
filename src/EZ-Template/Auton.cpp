@@ -6,14 +6,13 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "main.h"
 
-
+Auton::Auton()
+{
+  Name = "";
+  AutonCall = nullptr;
+}
 Auton::Auton(std::string name, std::function<void()> callback)
 {
   Name = name;
   AutonCall = callback;
-}
-
-void Auton::CallAuton()
-{
-  AutonCall();
 }

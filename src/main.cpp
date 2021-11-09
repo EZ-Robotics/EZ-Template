@@ -74,7 +74,9 @@ void initialize() {
     Auton("Autonomous 2", auto2),
     Auton("Autonomous 3", auto3),
   });
-  pros::delay(100);
+
+  //pros::delay(100);
+
   //printf("\n");
 
   // Initialize auto selector and LLEMU
