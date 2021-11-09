@@ -16,9 +16,9 @@ drive::drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
  turn_pid([this]{ this->turn_pid_task(); }),
  swing_pid([this]{ this->swing_pid_task(); })
 {
-  // Print EZ-Template
-  ez::print_ez_template();
-
+  drive_pid.suspend();
+  turn_pid.suspend();
+  swing_pid.suspend();
   // Set ports to a global vector
   for(auto i : left_motor_ports)
   {
