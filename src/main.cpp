@@ -70,9 +70,9 @@ void initialize() {
 
   // Autonomous Selector using LLEMMU
   ez::as::autoSelector.AddAutons({
-    tuple("Autonomous 1", auto1),
-    tuple("Autonomous 2", auto2),
-    tuple("Autonomous 3", auto3),
+    Auton("Autonomous 1", auto1),
+    Auton("Autonomous 2", auto2),
+    Auton("Autonomous 3", auto3),
   });
 
   //printf("\n");

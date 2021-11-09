@@ -18,9 +18,9 @@ public:
   int CurrentAutonPage;
   int AutonCount;
   AutonSelector();
-  AutonSelector(std::vector<tuple<std::string, std::function<void()>>>);
+  AutonSelector(std::vector<Auton> autons);
   void CallSelectedAuto();
   void PrintSelectedAuto();
-  void AddAutons(std::vector<tuple<std::string, std::function<void()>>> autons);
+  void AddAutons(std::vector<Auton> autons);
   //void AddAutons(std::vector<Auton> autons);
 };
