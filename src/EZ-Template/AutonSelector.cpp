@@ -29,12 +29,14 @@ AutonSelector::AutonSelector(std::vector<Auton> autons)
 }
 void AutonSelector::PrintSelectedAuto()
 {
+  if (AutonCount == 0) return;
   pros::lcd::clear_line(0);
   pros::lcd::set_text(0, "Page "+std::to_string(CurrentAutonPage+1));
   pros::lcd::set_text(1, Autons[CurrentAutonPage].Name);
 }
 void AutonSelector::CallSelectedAuto()
 {
+  if (AutonCount == 0) return;
   Autons[CurrentAutonPage].CallAuton();
 }
 void AutonSelector::AddAutons(std::vector<Auton> autons) {
