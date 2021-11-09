@@ -19,11 +19,13 @@ AutonSelector::AutonSelector(std::vector<Auton> autons)
   AutonCount = autons.size();
   CurrentAutonPage = 0;
   //Autons();
-  for(auto i : autons) {
+  Autons = {};
+  Autons.assign(autons.begin(), autons.end());
+/*  for(auto i : autons) {
     //Auton temp(get<0>(i), get<1>(i));
     //Autons.push_back(temp);
     Autons.emplace_back(i);
-  }
+  }*/
 }
 void AutonSelector::PrintSelectedAuto()
 {
@@ -38,11 +40,7 @@ void AutonSelector::CallSelectedAuto()
 void AutonSelector::AddAutons(std::vector<Auton> autons) {
   AutonCount += autons.size();
   CurrentAutonPage = 0;
-  for(auto i : autons) {
-    //Auton temp(get<0>(i), get<1>(i));
-    //Autons.push_back(temp);
-    Autons.emplace_back(i);
-  }
+  Autons.assign(autons.begin(), autons.end());
 }
 
 
