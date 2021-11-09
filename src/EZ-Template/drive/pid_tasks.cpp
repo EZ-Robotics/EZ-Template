@@ -13,6 +13,8 @@ using namespace ez;
 void drive::drive_pid_task() {
   while (true) {
 
+    printf("drive running\n");
+
     // Compute PID
     leftPID.compute(left_sensor());
     rightPID.compute(right_sensor());

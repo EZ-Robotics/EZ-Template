@@ -34,9 +34,11 @@ drive chassis (
 
 void disable_all_tasks()
 {
+  /*
   chassis.drive_pid.suspend();
   chassis.turn_pid. suspend();
   chassis.swing_pid.suspend();
+  */
 }
 
 
@@ -50,11 +52,11 @@ void disable_all_tasks()
 void initialize() {
 
   ez::print_ez_template(); // Print our branding over your terminal :D
-  pros::lcd::initialize();
+
   pros::delay(500); // Stop the user from doing anything while legacy ports configure.
 
   // Disable tasks
-  disable_all_tasks();
+  //disable_all_tasks();
 
   // Check if SD card is pluged in
   if (!ez::IS_SD_CARD) printf("No SD Card Found!\n");
@@ -75,14 +77,12 @@ void initialize() {
     Auton("Autonomous 3", auto3),
   });
 
-  //pros::delay(100);
-
   //printf("\n");
 
   // Initialize auto selector and LLEMU
   ez::as::init_auton_selector();
   printf("autoselector init\n");
-
+  pros::lcd::initialize();
 
   // Callbacks for auto selector
   ez::as::autoSelector.PrintSelectedAuto();

@@ -19,17 +19,25 @@ namespace ez
       if (!IS_SD_CARD)  return;
 
       // Auton Selector
+      /*
       FILE* usd_file_read = fopen("/usd/auto.txt", "r");
       char buf[5];
       fread(buf, 1, 5, usd_file_read);
       autoSelector.CurrentAutonPage = std::stoi(buf);
       fclose(usd_file_read);
+      */
+      FILE* as_usd_file_read = fopen("/usd/auto.txt", "r");
+      char buf[5];
+      fread(buf, 1, 5, as_usd_file_read);
+      autoSelector.CurrentAutonPage = std::stoi(buf);
+      fclose(as_usd_file_read);
+
 
       if(autoSelector.CurrentAutonPage>autoSelector.AutonCount || autoSelector.CurrentAutonPage<0)
       {
         autoSelector.CurrentAutonPage=0;
-        update_auto_sd();
       }
+      update_auto_sd();
     }
 
     void update_auto_sd() {
@@ -45,7 +53,7 @@ namespace ez
 
     void page_up() {
 
-      if (autoSelector.CurrentAutonPage == autoSelector.AutonCount - 1)
+      if (autoSelector.CurrentAutonPage == autoSelector.AutonCount)
         autoSelector.CurrentAutonPage = 0;
       else
         autoSelector.CurrentAutonPage++;
