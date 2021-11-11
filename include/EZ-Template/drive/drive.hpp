@@ -13,8 +13,8 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include <functional>
 #include <tuple>
 
-using namespace ez;
 
+using namespace ez;
 
 class drive {
   public:
@@ -60,9 +60,10 @@ class drive {
     /**
      * Tasks for autonomous.
     */
-    pros::Task drive_pid;
-    pros::Task turn_pid;
-    pros::Task swing_pid;
+    //pros::Task drive_pid;
+    //pros::Task turn_pid;
+    //pros::Task swing_pid;
+    pros::Task ez_auto;
 
 
 
@@ -462,6 +463,7 @@ class drive {
     void drive_pid_task();
     void swing_pid_task();
     void turn_pid_task();
+    void ez_auto_task();
 
     // ?
     float unction(int x);

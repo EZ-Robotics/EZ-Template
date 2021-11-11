@@ -105,18 +105,20 @@ bool drive::exit_condition(std::tuple<double, std::optional<double>> targets, ex
 void drive::wait_drive() {
   pros::delay(util::DELAY_TIME);
 
-  if (drive_pid.get_state() != pros::E_TASK_STATE_SUSPENDED) {
-
+  // if (drive_pid.get_state() != pros::E_TASK_STATE_SUSPENDED) {
+  if (mode == DRIVE) {
     while (exit_condition(tuple{leftPID.get_target(), rightPID.get_target()}, drive_exit)) {
       pros::delay(util::DELAY_TIME);
     }
   }
-  else if (turn_pid.get_state() != pros::E_TASK_STATE_SUSPENDED) {
+  // else if (turn_pid.get_state() != pros::E_TASK_STATE_SUSPENDED) {
+  else if (mode == TURN) {
     while (exit_condition(tuple{turnPID.get_target(), std::nullopt}, turn_exit)) {
       pros::delay(util::DELAY_TIME);
     }
   }
-  else if (swing_pid.get_state() != pros::E_TASK_STATE_SUSPENDED) {
+  // else if (swing_pid.get_state() != pros::E_TASK_STATE_SUSPENDED) {
+  else if (mode == SWING) {
     while (exit_condition(tuple{swingPID.get_target(), std::nullopt}, swing_exit)) {
       pros::delay(util::DELAY_TIME);
     }
@@ -127,7 +129,8 @@ void drive::wait_drive() {
 void drive::wait_until(double target) {
 
   // If robot is driving...
-  if (drive_pid.get_state() != pros::E_TASK_STATE_SUSPENDED) {
+  // if (drive_pid.get_state() != pros::E_TASK_STATE_SUSPENDED) {
+  if (mode == DRIVE) {
     // If robot is driving...
     // Calculate error between current and target (target needs to be an inbetween position)
     int l_tar   = l_start + (target*TICK_PER_INCH);
@@ -157,7 +160,8 @@ void drive::wait_until(double target) {
   }
 
   // If robot is turning...
-  else if (turn_pid.get_state()!=pros::E_TASK_STATE_SUSPENDED || swing_pid.get_state()!=pros::E_TASK_STATE_SUSPENDED) {
+  // else if (turn_pid.get_state()!=pros::E_TASK_STATE_SUSPENDED || swing_pid.get_state()!=pros::E_TASK_STATE_SUSPENDED) {
+  else if (mode == TURN || mode == SWING) {
     // Calculate error between current and target (target needs to be an inbetween position)
     int g_error = target - get_gyro();
     int g_sgn   = util::sgn(g_error);
@@ -165,7 +169,8 @@ void drive::wait_until(double target) {
 
     // Change exit condition constants from turn to swing
     exit_condition_ current_exit;
-    if (turn_pid.get_state()!=pros::E_TASK_STATE_SUSPENDED)
+    // if (turn_pid.get_state()!=pros::E_TASK_STATE_SUSPENDED)
+    if (mode == TURN)
       current_exit = turn_exit;
     else
       current_exit = swing_exit;

@@ -9,11 +9,24 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 using namespace ez;
 
 
-// Drive PID task
-void drive::drive_pid_task() {
+void drive::ez_auto_task() {
   while (true) {
 
-    printf("drive running\n");
+    if (mode == DRIVE)
+      drive_pid_task();
+    else if (mode == TURN)
+      turn_pid_task();
+    else if (mode == SWING)
+      swing_pid_task();
+    else if (mode == DISABLE)
+      pros::delay(util::DELAY_TIME);
+
+  }
+}
+
+// Drive PID task
+void drive::drive_pid_task() {
+  //while (true) {
 
     // Compute PID
     leftPID.compute(left_sensor());
@@ -40,12 +53,12 @@ void drive::drive_pid_task() {
 
     pros::delay(ez::util::DELAY_TIME);
 
-  }
+  //}
 }
 
 // Turn PID task
 void drive::turn_pid_task() {
-  while (true) {
+  //while (true) {
 
     // Compute PID
     turnPID.compute(get_gyro());
@@ -63,12 +76,12 @@ void drive::turn_pid_task() {
 
     pros::delay(ez::util::DELAY_TIME);
 
-  }
+  //}
 }
 
 // Swing PID task
 void drive::swing_pid_task() {
-  while (true) {
+  //while (true) {
 
     // Compute PID
     swingPID.compute(get_gyro());
@@ -89,5 +102,5 @@ void drive::swing_pid_task() {
 
     pros::delay(ez::util::DELAY_TIME);
 
-  }
+  //}
 }

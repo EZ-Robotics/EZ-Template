@@ -11,14 +11,17 @@ using namespace ez;
 
 
 drive::drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double motor_cartridge, double ratio)
- : imu (imu_port), master(pros::E_CONTROLLER_MASTER),
- drive_pid([this]{ this->drive_pid_task(); }),
- turn_pid([this]{ this->turn_pid_task(); }),
- swing_pid([this]{ this->swing_pid_task(); })
+ : imu (imu_port),
+ master(pros::E_CONTROLLER_MASTER),
+ ez_auto([this]{ this->ez_auto_task(); })
+ //drive_pid([this]{ this->drive_pid_task(); }),
+ //turn_pid([this]{ this->turn_pid_task(); }),
+ //swing_pid([this]{ this->swing_pid_task(); })
 {
-  drive_pid.suspend();
-  turn_pid.suspend();
-  swing_pid.suspend();
+  //drive_pid.suspend();
+  //turn_pid.suspend();
+  //swing_pid.suspend();
+
   // Set ports to a global vector
   for(auto i : left_motor_ports)
   {

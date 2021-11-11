@@ -11,6 +11,13 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 namespace ez {
 
+  #define DISABLE 0
+  #define SWING 1
+  #define TURN 2
+  #define DRIVE 3
+
+  extern int mode;
+
   /**
    * Prints our branding all over your pros terminal
   */

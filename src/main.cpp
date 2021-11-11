@@ -80,8 +80,25 @@ void initialize() {
   //printf("\n");
 
   // Initialize auto selector and LLEMU
+/*
+  if (ez::IS_SD_CARD) {
+  FILE* as_usd_file_read = fopen("/usd/auto.txt", "r");
+  char buf[5];
+  fread(buf, 1, 5, as_usd_file_read);
+  ez::as::autoSelector.CurrentAutonPage = std::stoi(buf);
+  fclose(as_usd_file_read);
+
+  if(ez::as::autoSelector.CurrentAutonPage>ez::as::autoSelector.AutonCount || ez::as::autoSelector.CurrentAutonPage<0)
+  {
+    ez::as::autoSelector.CurrentAutonPage=0;
+  }
+  ez::as::update_auto_sd();
+  }
+  */
+
+
   ez::as::init_auton_selector();
-  printf("autoselector init\n");
+  //printf("autoselector init\n");
   pros::lcd::initialize();
 
   // Callbacks for auto selector
@@ -103,7 +120,7 @@ void initialize() {
  * the robot is enabled, this task will exit.
  */
 void disabled() {
-  disable_all_tasks();
+  //disable_all_tasks();
 }
 
 
@@ -158,7 +175,7 @@ void autonomous() {
  * task, not resume it from where it left off.
  */
 void opcontrol() {
-  disable_all_tasks();
+  //disable_all_tasks();
   chassis.reset_drive_sensor();
 
   // This is preference to what you like to drive on.
