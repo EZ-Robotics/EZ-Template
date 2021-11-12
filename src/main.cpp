@@ -27,39 +27,19 @@ drive chassis (
 
 
 /**
- * Disables all tasks.
- *
- * This runs during disabled and initialize to turn off all user created tasks.
- */
-
-void disable_all_tasks()
-{
-  /*
-  chassis.drive_pid.suspend();
-  chassis.turn_pid. suspend();
-  chassis.swing_pid.suspend();
-  */
-}
-
-
-
-/**
  * Runs initialization code. This occurs as soon as the program is started.
  *
  * All other competition modes are blocked by initialize; it is recommended
  * to keep execution time for this mode under a few seconds.
  */
 void initialize() {
-
-  ez::print_ez_template(); // Print our branding over your terminal :D
+  // Print our branding over your terminal :D
+  ez::print_ez_template();
 
   pros::delay(500); // Stop the user from doing anything while legacy ports configure.
 
-  // Disable tasks
-  //disable_all_tasks();
-
   // Check if SD card is pluged in
-  if (!ez::IS_SD_CARD) printf("No SD Card Found!\n");
+  if (!ez::util::IS_SD_CARD) printf("No SD Card Found!\n");
 
   // Configure your chassis controls
   chassis.init_curve_sd();
@@ -71,39 +51,18 @@ void initialize() {
   // chassis.set_right_curve_buttons(pros::E_CONTROLLER_DIGITAL_Y,    pros::E_CONTROLLER_DIGITAL_A);
 
   // Autonomous Selector using LLEMMU
-  ez::as::autoSelector.AddAutons({
+ ez::as::autoSelector.AddAutons({
     Auton("Autonomous 1", auto1),
     Auton("Autonomous 2", auto2),
     Auton("Autonomous 3", auto3),
   });
 
-  //printf("\n");
-
   // Initialize auto selector and LLEMU
-/*
-  if (ez::IS_SD_CARD) {
-  FILE* as_usd_file_read = fopen("/usd/auto.txt", "r");
-  char buf[5];
-  fread(buf, 1, 5, as_usd_file_read);
-  ez::as::autoSelector.CurrentAutonPage = std::stoi(buf);
-  fclose(as_usd_file_read);
-
-  if(ez::as::autoSelector.CurrentAutonPage>ez::as::autoSelector.AutonCount || ez::as::autoSelector.CurrentAutonPage<0)
-  {
-    ez::as::autoSelector.CurrentAutonPage=0;
-  }
-  ez::as::update_auto_sd();
-  }
-  */
-
-
-  ez::as::init_auton_selector();
-  //printf("autoselector init\n");
   pros::lcd::initialize();
+  ez::as::init_auton_selector();
 
   // Callbacks for auto selector
   ez::as::autoSelector.PrintSelectedAuto();
-  printf("autoselector printed\n");
   pros::lcd::register_btn0_cb(ez::as::page_down);
   pros::lcd::register_btn2_cb(ez::as::page_up);
 
@@ -120,7 +79,7 @@ void initialize() {
  * the robot is enabled, this task will exit.
  */
 void disabled() {
-  //disable_all_tasks();
+  // . . .
 }
 
 
@@ -135,7 +94,7 @@ void disabled() {
  * starts.
  */
 void competition_initialize() {
-  disable_all_tasks();
+  // . . .
 }
 
 
@@ -175,7 +134,6 @@ void autonomous() {
  * task, not resume it from where it left off.
  */
 void opcontrol() {
-  //disable_all_tasks();
   chassis.reset_drive_sensor();
 
   // This is preference to what you like to drive on.

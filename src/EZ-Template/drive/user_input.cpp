@@ -170,7 +170,6 @@ void drive::set_joystick_threshold(int threshold) { JOYSTICK_THRESHOLD = abs(thr
 // Tank control
 void drive::tank() {
   mode = DISABLE;
-
   is_tank = true;
 
   // Toggle for controller curve
@@ -194,7 +193,6 @@ void drive::tank() {
 // Arcade standard
 void drive::arcade_standard(e_type stick_type) {
   mode = DISABLE;
-
   is_tank = false;
 
   // Toggle for controller curve
@@ -227,7 +225,6 @@ void drive::arcade_standard(e_type stick_type) {
 // Arcade control flipped
 void drive::arcade_flipped(e_type stick_type) {
   mode = DISABLE;
-
   is_tank = false;
 
   // Toggle for controller curve

@@ -9,15 +9,12 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include  "EZ-Template/AutonSelector.hpp"
 
 
-namespace ez
-{
-  extern const bool IS_SD_CARD;
-  namespace as
-  {
+namespace ez {
+  namespace as {
     extern AutonSelector autoSelector;
     void init_auton_selector();
     void update_auto_sd();
     void page_up();
     void page_down();
-  } // sd namespace
-} // ez namespace
+  }
+} // ez::as namespace

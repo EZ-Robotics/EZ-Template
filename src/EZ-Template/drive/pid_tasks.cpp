@@ -12,95 +12,78 @@ using namespace ez;
 void drive::ez_auto_task() {
   while (true) {
 
+    // Autonomous PID
     if (mode == DRIVE)
       drive_pid_task();
     else if (mode == TURN)
       turn_pid_task();
     else if (mode == SWING)
       swing_pid_task();
-    else if (mode == DISABLE)
-      pros::delay(util::DELAY_TIME);
+
+    pros::delay(util::DELAY_TIME);
 
   }
 }
 
 // Drive PID task
 void drive::drive_pid_task() {
-  //while (true) {
+  // Compute PID
+  leftPID.compute(left_sensor());
+  rightPID.compute(right_sensor());
+  headingPID.compute(get_gyro());
 
-    // Compute PID
-    leftPID.compute(left_sensor());
-    rightPID.compute(right_sensor());
-    headingPID.compute(get_gyro());
+  // Compute slew
+  double l_slew_out = slew_calculate(left_slew,  left_sensor ());
+  double r_slew_out = slew_calculate(right_slew, right_sensor());
 
-    // Compute slew
-    double l_slew_out = slew_calculate(left_slew,  left_sensor ());
-    double r_slew_out = slew_calculate(right_slew, right_sensor());
+  // Clip leftPID and rightPID to slew (if slew is disabled, it returns max_speed)
+  double l_drive_out = util::clip_num(leftPID. output, l_slew_out, -l_slew_out);
+  double r_drive_out = util::clip_num(rightPID.output, r_slew_out, -r_slew_out);
 
-    // Clip leftPID and rightPID to slew (if slew is disabled, it returns max_speed)
-    double l_drive_out = util::clip_num(leftPID. output, l_slew_out, -l_slew_out);
-    double r_drive_out = util::clip_num(rightPID.output, r_slew_out, -r_slew_out);
+  // Toggle heading
+  double gyro_out = heading_on ? headingPID.output : 0;
 
-    // Toggle heading
-    double gyro_out = heading_on ? headingPID.output : 0;
+  // Combine heading and drive
+  double l_out = l_drive_out + gyro_out;
+  double r_out = r_drive_out - gyro_out;
 
-    // Combine heading and drive
-    double l_out = l_drive_out + gyro_out;
-    double r_out = r_drive_out - gyro_out;
-
-    // Set motors
-    set_tank(l_out, r_out);
-
-    pros::delay(ez::util::DELAY_TIME);
-
-  //}
+  // Set motors
+  set_tank(l_out, r_out);
 }
 
 // Turn PID task
 void drive::turn_pid_task() {
-  //while (true) {
+  // Compute PID
+  turnPID.compute(get_gyro());
 
-    // Compute PID
-    turnPID.compute(get_gyro());
+  // Clip gyroPID to max speed
+  double gyro_out = util::clip_num(turnPID.output, max_speed, -max_speed);
 
-    // Clip gyroPID to max speed
-    double gyro_out = util::clip_num(turnPID.output, max_speed, -max_speed);
+  // Clip the speed of the turn when the robot is within StartI, only do this when target is larger then StartI
+  if (turnPID.constants.ki!=0 && (fabs(turnPID.get_target())>turnPID.constants.start_i && fabs(turnPID.error)<turnPID.constants.start_i)) {
+    gyro_out = util::clip_num(gyro_out, 30, -30);
+  }
 
-    // Clip the speed of the turn when the robot is within StartI, only do this when target is larger then StartI
-    if (turnPID.constants.ki!=0 && (fabs(turnPID.get_target())>turnPID.constants.start_i && fabs(turnPID.error)<turnPID.constants.start_i)) {
-      gyro_out = util::clip_num(gyro_out, 30, -30);
-    }
-
-    // Set motors
-    set_tank(gyro_out, -gyro_out);
-
-    pros::delay(ez::util::DELAY_TIME);
-
-  //}
+  // Set motors
+  set_tank(gyro_out, -gyro_out);
 }
 
 // Swing PID task
 void drive::swing_pid_task() {
-  //while (true) {
+  // Compute PID
+  swingPID.compute(get_gyro());
 
-    // Compute PID
-    swingPID.compute(get_gyro());
+  // Clip swingPID to max speed
+  double swing_out = util::clip_num(swingPID.output, max_speed, -max_speed);
 
-    // Clip swingPID to max speed
-    double swing_out = util::clip_num(swingPID.output, max_speed, -max_speed);
+  // Clip the speed of the turn when the robot is within StartI, only do this when target is larger then StartI
+  if (swingPID.constants.ki!=0 && (fabs(turnPID.get_target())>swingPID.constants.start_i && fabs(turnPID.error)<swingPID.constants.start_i)) {
+    swing_out = util::clip_num(swing_out, 30, -30);
+  }
 
-    // Clip the speed of the turn when the robot is within StartI, only do this when target is larger then StartI
-    if (swingPID.constants.ki!=0 && (fabs(turnPID.get_target())>swingPID.constants.start_i && fabs(turnPID.error)<swingPID.constants.start_i)) {
-      swing_out = util::clip_num(swing_out, 30, -30);
-    }
-
-    // Check if left or right swing, then set motors accordingly
-    if (current_swing == LEFT_SWING)
-      set_tank(swing_out, 0);
-    else if (current_swing == RIGHT_SWING)
-      set_tank(0, -swing_out);
-
-    pros::delay(ez::util::DELAY_TIME);
-
-  //}
+  // Check if left or right swing, then set motors accordingly
+  if (current_swing == LEFT_SWING)
+    set_tank(swing_out, 0);
+  else if (current_swing == RIGHT_SWING)
+    set_tank(0, -swing_out);
 }

@@ -60,9 +60,6 @@ class drive {
     /**
      * Tasks for autonomous.
     */
-    //pros::Task drive_pid;
-    //pros::Task turn_pid;
-    //pros::Task swing_pid;
     pros::Task ez_auto;
 
 
@@ -455,9 +452,6 @@ class drive {
     int max_speed;
 
     // Exit conditions
-  /*  bool drive_exit_condition(double l_target, double r_target);
-    bool turn_exit_condition(double target);
-    bool swing_exit_condition(double target);*/
     bool exit_condition(std::tuple<double, std::optional<double>> targets, exit_condition_ exitConditions, bool wait_until = false);
     // Tasks
     void drive_pid_task();
@@ -465,8 +459,6 @@ class drive {
     void turn_pid_task();
     void ez_auto_task();
 
-    // ?
-    float unction(int x);
 
     // Slew constants
     double SLEW_DISTANCE [2];

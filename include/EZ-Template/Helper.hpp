@@ -39,7 +39,7 @@ namespace ez {
   */
   enum e_swing{ LEFT_SWING=0, RIGHT_SWING=1 };
 
-  namespace util{
+  namespace util {
 
     /**
      * Returns 1 if input is positive and -1 if input is negative
@@ -57,6 +57,7 @@ namespace ez {
      * DriverType
     */
     const bool IS_SD_CARD = pros::usd::is_installed();
+    bool is_sd_card();
 
     /**
      * Delay time for tasks

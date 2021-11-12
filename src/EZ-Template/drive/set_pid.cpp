@@ -14,10 +14,6 @@ void drive::set_max_speed(int speed) {
 
 // Set drive PID
 void drive::set_drive_pid(double target, int speed, bool slew_on, bool toggle_heading) {
-  // Disable tasks
-  // turn_pid.suspend();
-  // swing_pid.suspend();
-
   TICK_PER_INCH = get_tick_per_inch();
 
   // Print targets
@@ -60,16 +56,11 @@ void drive::set_drive_pid(double target, int speed, bool slew_on, bool toggle_he
   slew_initialize(right_slew, slew_on, max_speed, r_target_encoder, right_sensor(), r_start, is_backwards);
 
   // Run task
-  // drive_pid.resume();
   mode = DRIVE;
 }
 
 // Set turn PID
 void drive::set_turn_pid(double target, int speed) {
-  // Disable tasks
-  // swing_pid.suspend();
-  // drive_pid.suspend();
-
   // Print targets
   printf("Turn Started... Target Value: %f\n", target);
 
@@ -79,16 +70,11 @@ void drive::set_turn_pid(double target, int speed) {
   set_max_speed(speed);
 
   // Run task
-  // turn_pid.resume();
   mode = TURN;
 }
 
 // Set swing PID
 void drive::set_swing_pid(e_swing type, double target, int speed) {
-  // Disable tasks
-  // drive_pid.suspend();
-  // turn_pid.suspend();
-
   // Print targets
   printf("Swing Started... Target Value: %f\n", target);
   current_swing = type;
@@ -99,6 +85,5 @@ void drive::set_swing_pid(e_swing type, double target, int speed) {
   set_max_speed(speed);
 
   // Run task
-  // swing_pid.resume();
   mode = SWING;
 }
