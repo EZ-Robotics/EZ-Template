@@ -229,6 +229,11 @@ class drive {
     double right_mA();
 
     /**
+     * Return TRUE when the motor is over current.
+    */
+    bool right_over_current();
+
+    /**
      * The position of the left motor.
     */
     int left_sensor();
@@ -242,6 +247,11 @@ class drive {
      * The watts of the left motor.
     */
     double left_mA();
+
+    /**
+     * Return TRUE when the motor is over current.
+    */
+    bool left_over_current();
 
     /**
      * Reset all the chassis motors, reccomended to run at the start of your autonomous routine.
@@ -371,7 +381,6 @@ class drive {
       int big_exit_time = 0;
       int big_error = 0;
       int velocity_exit_time = 0;
-      int mA_thresh = 0;
       int mA_timeout = 0;
     };
 
@@ -407,7 +416,7 @@ class drive {
      * \param p_velocity_exit_time
      *        Sets velocity_exit_time.  Timer will start when velocity is 0.
     */
-    void set_exit_condition(exit_condition_ &type, int p_small_exit_time, int p_small_error, int p_big_exit_time, int p_big_error, int p_velocity_exit_timeint, int p_mA_thresh, int p_mA_timeout);
+    void set_exit_condition(exit_condition_ &type, int p_small_exit_time, int p_small_error, int p_big_exit_time, int p_big_error, int p_velocity_exit_timeint, int p_mA_timeout);
 
 
 

@@ -177,7 +177,7 @@ void drive::reset_drive_sensors_opcontrol() {
 // Tank control
 void drive::tank() {
   mode = DISABLE;
-  is_tank = true
+  is_tank = true;
   reset_drive_sensors_opcontrol();
 
   // Toggle for controller curve

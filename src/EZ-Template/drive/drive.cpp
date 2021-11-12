@@ -48,9 +48,9 @@ drive::drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
   set_slew_distance(7, 7);
 
   // Exit condition constants
-  set_exit_condition(turn_exit,  100, 3,  500, 7,   500, 2250, 500);
-  set_exit_condition(swing_exit, 100, 3,  500, 7,   500, 2250, 500);
-  set_exit_condition(drive_exit, 80,  50, 300, 150, 500, 2250, 500);
+  set_exit_condition(turn_exit,  100, 3,  500, 7,   500, 500);
+  set_exit_condition(swing_exit, 100, 3,  500, 7,   500, 500);
+  set_exit_condition(drive_exit, 80,  50, 300, 150, 500, 500);
 
   // Modify joystick curve on controller (defaults to disabled)
   toggle_modify_curve_with_controllerr(true);
@@ -93,10 +93,12 @@ void drive::reset_drive_sensor() {
 int drive::right_sensor()   { return right_motors.front().get_position(); }
 int drive::right_velocity() { return right_motors.front().get_actual_velocity(); }
 double drive::right_mA()    { return right_motors.front().get_current_draw(); }
+bool drive::right_over_current() { return right_motors.front().is_over_current(); }
 
 int drive::left_sensor()   { return left_motors.front().get_position(); }
 int drive::left_velocity() { return left_motors.front().get_actual_velocity(); }
 double drive::left_mA()    { return left_motors.front().get_current_draw(); }
+bool drive::left_over_current() { return left_motors.front().is_over_current(); }
 
 
 void  drive::reset_gyro(double new_heading) { imu.set_rotation(new_heading); }

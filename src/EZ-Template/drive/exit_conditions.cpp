@@ -10,13 +10,12 @@ using namespace ez;
 
 
 // Set exit condition timeouts
-void drive::set_exit_condition(exit_condition_ &type, int p_small_exit_time, int p_small_error, int p_big_exit_time, int p_big_error, int p_velocity_exit_time, int p_mA_thresh, int p_mA_timeout) {
+void drive::set_exit_condition(exit_condition_ &type, int p_small_exit_time, int p_small_error, int p_big_exit_time, int p_big_error, int p_velocity_exit_time, int p_mA_timeout) {
   type.small_exit_time = p_small_exit_time;
   type.small_error = p_small_error;
   type.big_exit_time = p_big_exit_time;
   type.big_error = p_big_error;
   type.velocity_exit_time = p_velocity_exit_time;
-  type.mA_thresh = p_mA_thresh;
   type.mA_timeout = p_mA_timeout;
 }
 
@@ -65,7 +64,7 @@ bool drive::exit_condition(std::tuple<double, std::optional<double>> targets, ex
   }
 
   // If the motors are pulling too many mA, the code will timeout and set interfered to true.
-  if (right_mA()>=input_struct.mA_thresh || left_mA()>=input_struct.mA_thresh) {
+  if (right_over_current() || left_over_current()) {
     l+=util::DELAY_TIME;
     if (l>input_struct.mA_timeout) {
       if (!wait_until) printf(" Timed Out");
