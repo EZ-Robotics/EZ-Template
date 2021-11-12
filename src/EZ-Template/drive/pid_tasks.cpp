@@ -20,6 +20,9 @@ void drive::ez_auto_task() {
     else if (mode == SWING)
       swing_pid_task();
 
+    if (pros::competition::is_autonomous() && !util::AUTON_RAN)
+      util::AUTON_RAN = true;
+
     pros::delay(util::DELAY_TIME);
 
   }

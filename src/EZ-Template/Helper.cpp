@@ -28,6 +28,7 @@ void print_ez_template() {
 }
 
 namespace util {
+  bool AUTON_RAN = true;
 
 bool is_reversed(double input) {
   if (input < 0)

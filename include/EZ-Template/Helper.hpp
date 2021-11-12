@@ -18,6 +18,8 @@ namespace ez {
 
   extern int mode;
 
+
+
   /**
    * Prints our branding all over your pros terminal
   */
@@ -40,6 +42,7 @@ namespace ez {
   enum e_swing{ LEFT_SWING=0, RIGHT_SWING=1 };
 
   namespace util {
+    extern bool AUTON_RAN;
 
     /**
      * Returns 1 if input is positive and -1 if input is negative
