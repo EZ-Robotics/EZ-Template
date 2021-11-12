@@ -91,7 +91,7 @@ Download the latest released [here](https://github.com/Unionjackjz1/EZ-Template/
 6) To test the test autonomous modes, plug into a competition switch and select the autonomous mode on the brain screen by pressing the left and right buttons!  The current page will be the autonomous that runs.  For making new autonomous routines, check `src/autons.cpp` for examples on how to use the drive functions.
 
 ## Additing Autonomous Routines
-[Check out the tutorial on adding new autonomous routines here!](Adding-Autonomous-Routines.MD)
+[Check out the tutorial on adding new autonomous routines here!](docs/Adding-Autonomous-Routines.md)
 
 ## License
 
