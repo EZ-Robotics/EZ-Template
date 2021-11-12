@@ -1,6 +1,6 @@
 # Additing Autonomous Routines
 
-### 1) Read through `src/auton.cpp` ([click here](src/autons.cpp)) and learn how to use the autonomous functions by reading through the example routines!
+### 1) Read through `src/auton.cpp` ([click here](https://github.com/EZ-Robotics/EZ-Template/blob/main/src/autons.cpp)) and learn how to use the autonomous functions by reading through the example routines!
 
 ### 2) Make a new function in `src/auton.cpp` and name it something that says what the autonomous will do.
 ```C++
