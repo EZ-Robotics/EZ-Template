@@ -167,14 +167,18 @@ void drive::set_active_brake(double kp) { active_brake_kp = kp; }
 // Set joystick threshold
 void drive::set_joystick_threshold(int threshold) { JOYSTICK_THRESHOLD = abs(threshold); }
 
-// Tank control
-void drive::tank() {
-  mode = DISABLE;
-  is_tank = true;
+void drive::reset_drive_sensors_opcontrol() {
   if (util::AUTON_RAN) {
     reset_drive_sensor();
     util::AUTON_RAN = false;
   }
+}
+
+// Tank control
+void drive::tank() {
+  mode = DISABLE;
+  is_tank = true
+  reset_drive_sensors_opcontrol();
 
   // Toggle for controller curve
   modify_curve_with_controller();
@@ -198,10 +202,7 @@ void drive::tank() {
 void drive::arcade_standard(e_type stick_type) {
   mode = DISABLE;
   is_tank = false;
-  if (util::AUTON_RAN) {
-    reset_drive_sensor();
-    util::AUTON_RAN = false;
-  }
+  reset_drive_sensors_opcontrol();
 
   // Toggle for controller curve
   modify_curve_with_controller();
@@ -234,10 +235,7 @@ void drive::arcade_standard(e_type stick_type) {
 void drive::arcade_flipped(e_type stick_type) {
   mode = DISABLE;
   is_tank = false;
-  if (util::AUTON_RAN) {
-    reset_drive_sensor();
-    util::AUTON_RAN = false;
-  }
+  reset_drive_sensors_opcontrol();
 
   // Toggle for controller curve
   modify_curve_with_controller();

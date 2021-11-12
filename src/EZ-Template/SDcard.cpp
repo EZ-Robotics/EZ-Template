@@ -10,25 +10,6 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include "EZ-Template/SDcard.hpp"
 
 
-void poopy() {
-  // Auton Selector
-  if (!ez::util::IS_SD_CARD)  return;
-
-
-  FILE* as_usd_file_read = fopen("/usd/auto.txt", "r");
-  char buf[5];
-  fread(buf, 1, 5, as_usd_file_read);
-  ez::as::autoSelector.CurrentAutonPage = std::stoi(buf);
-  fclose(as_usd_file_read);
-
-  if(ez::as::autoSelector.CurrentAutonPage>ez::as::autoSelector.AutonCount || ez::as::autoSelector.CurrentAutonPage<0) {
-    ez::as::autoSelector.CurrentAutonPage=0;
-  }
-  ez::as::update_auto_sd();
-}
-
-
-
 namespace ez {
   namespace as {
     AutonSelector autoSelector{};
@@ -47,13 +28,12 @@ namespace ez {
 
     void init_auton_selector() {
       // If no SD card, return
-      //if (!ez::util::IS_SD_CARD)  return;
-      if (!pros::usd::is_installed()) return;
+      if (!ez::util::IS_SD_CARD)  return;
 
       FILE* as_usd_file_read = fopen("/usd/auto.txt", "r");
-      char buf[5];
-      fread(buf, 1, 5, as_usd_file_read);
-      ez::as::autoSelector.CurrentAutonPage = std::stoi(buf);
+      char l_buf[5];
+      fread(l_buf, 1, 5, as_usd_file_read);
+      ez::as::autoSelector.CurrentAutonPage = std::stof(l_buf);
       fclose(as_usd_file_read);
 
       if(ez::as::autoSelector.CurrentAutonPage>ez::as::autoSelector.AutonCount || ez::as::autoSelector.CurrentAutonPage<0) {

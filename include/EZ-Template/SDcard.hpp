@@ -9,7 +9,6 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include  "EZ-Template/AutonSelector.hpp"
 
 
-void poopy();
 namespace ez {
   namespace as {
     extern AutonSelector autoSelector;

@@ -413,6 +413,9 @@ class drive {
 
   private:  // !Auton
 
+
+  void reset_drive_sensors_opcontrol();
+
     // Heading toggle
     bool heading_on = true;
 

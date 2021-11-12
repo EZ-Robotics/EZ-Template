@@ -52,9 +52,5 @@ double clip_num(double input, double max, double min) {
   return input;
 }
 
-bool is_sd_card() {
-  return pros::usd::is_installed();
-}
-
 } // util namespace
 } // ez namespace

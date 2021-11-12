@@ -57,10 +57,9 @@ namespace ez {
     */
      double clip_num(double input, double min, double max);
     /**
-     * DriverType
+     * Is the SD card plugged in?
     */
     const bool IS_SD_CARD = pros::usd::is_installed();
-    bool is_sd_card();
 
     /**
      * Delay time for tasks
