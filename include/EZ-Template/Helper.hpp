@@ -7,8 +7,9 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #pragma once
 
 #include "api.h"
-
-
+#include <stdio.h>
+#include <string.h>
+#include <bits/stdc++.h>
 namespace ez {
 
   #define DISABLE 0
@@ -25,6 +26,12 @@ namespace ez {
   */
   void print_ez_template();
 
+
+
+  /**
+  * Prints to the line given as a parameter and handles \n and if text is too long
+  */
+  void print_to_screen(std::string text, int line = 0);
   /////
   //
   // Public Variables
