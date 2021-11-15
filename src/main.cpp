@@ -51,10 +51,10 @@ void initialize() {
   // chassis.set_right_curve_buttons(pros::E_CONTROLLER_DIGITAL_Y,    pros::E_CONTROLLER_DIGITAL_A);
 
   // Autonomous Selector using LLEMMU
- ez::as::autoSelector.AddAutons({
-    Auton("Autonomous 1", auto1),
-    Auton("Autonomous 2", auto2),
-    Auton("Autonomous 3", auto3),
+  ez::as::autoSelector.AddAutons({
+    Auton("Autonomous 1\nDoes Something", auto1),
+    Auton("Autonomous 2\nDoes Something Else", auto2),
+    Auton("Autonomous 3\nDoes Something More", auto3),
   });
 
   // Initialize auto selector and LLEMU

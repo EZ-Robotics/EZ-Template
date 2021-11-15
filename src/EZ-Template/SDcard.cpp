@@ -36,7 +36,7 @@ namespace ez {
       ez::as::autoSelector.CurrentAutonPage = std::stof(l_buf);
       fclose(as_usd_file_read);
 
-      if(ez::as::autoSelector.CurrentAutonPage>ez::as::autoSelector.AutonCount || ez::as::autoSelector.CurrentAutonPage<0) {
+      if(ez::as::autoSelector.CurrentAutonPage>ez::as::autoSelector.AutonCount-1 || ez::as::autoSelector.CurrentAutonPage<0) {
         ez::as::autoSelector.CurrentAutonPage=0;
         ez::as::update_auto_sd();
       }
@@ -44,7 +44,7 @@ namespace ez {
 
     void page_up() {
 
-      if (autoSelector.CurrentAutonPage == autoSelector.AutonCount)
+      if (autoSelector.CurrentAutonPage == autoSelector.AutonCount -1)
         autoSelector.CurrentAutonPage = 0;
       else
         autoSelector.CurrentAutonPage++;
