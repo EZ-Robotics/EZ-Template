@@ -26,12 +26,16 @@ namespace ez {
   */
   void print_ez_template();
 
-
-
   /**
-  * Prints to the line given as a parameter and handles \n and if text is too long
+   * Prints to the brain screen in one string.  Splits input between lines with \n or when text is too long. 
+   *
+   * \param text
+   *        Input string.  Use \n for a new line 
+   * \param line
+   *        Starting line to print on, defaults to 0
   */
   void print_to_screen(std::string text, int line = 0);
+
   /////
   //
   // Public Variables

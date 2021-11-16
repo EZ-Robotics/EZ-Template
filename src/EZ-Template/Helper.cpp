@@ -27,39 +27,30 @@ void print_ez_template() {
 
   printf("Version: 2.0.0\n");
 }
-std::string get_last_word(std::string& text)
-{
+std::string get_last_word(std::string text) {
   std::string word = "";
-  for(int i = text.length() - 1; i > 0; i--)
-  {
-    if(text[i] != ' ')
-    {
+  for(int i = text.length() - 1; i >= 0; i--) {
+    if(text[i] != ' ') {
       word+=text[i];
     }
-    else
-    {
+    else {
+      std::reverse(word.begin(), word.end());
       return word;
     }
-    text.erase(i, 1);
   }
+  std::reverse(word.begin(), word.end());
   return word;
 }
-std::string get_rest_of_the_word(std::string text, int& position)
-{
+std::string get_rest_of_the_word(std::string text, int position) {
   std::string word = "";
-  for(int i = position; i < text.length(); i++)
-  {
-    if(text[i] != ' ')
-    {
+  for(int i = position; i < text.length(); i++) {
+    if(text[i] != ' ') {
       word+=text[i];
     }
-    else
-    {
-      position = i;
+    else {
       return word;
     }
   }
-  position = text.length();
   return word;
 }
 void print_to_screen(std::string text, int line)
@@ -68,38 +59,46 @@ void print_to_screen(std::string text, int line)
   std::vector<string> texts = {};
   std::string temp = "";
 
-  for(int i = 0; i < text.length(); i++)
-  {
-    if(temp.length() == 20)//change 20 to correct number
-    {
+  for(int i = 0; i < text.length(); i++) {
+    if(text[i] != '\n' && temp.length()+1 > 32) {
       auto last_word = get_last_word(temp);
-      last_word += get_rest_of_the_word(temp, i);
-      texts.push_back(temp);
-      temp = last_word;
+      if(last_word == temp) {
+        texts.push_back(temp);
+        temp = text[i];
+      }
+      else {
+        int size = last_word.length();
+    
+        auto rest_of_word = get_rest_of_the_word(text, i);
+        temp.erase(temp.length()-size, size);
+        texts.push_back(temp);
+        last_word += rest_of_word;
+        i += rest_of_word.length();
+        temp = last_word;
+        if(i >= text.length()-1) {
+          texts.push_back(temp);
+          break;
+        }
+      }
     }
-    else if(text[i] == '\n')
-    {
-      if(temp != "")
-      {
+    if(i >= text.length()-1) {
+      temp += text[i];
+      texts.push_back(temp);
+      temp = "";
+      break;
+    }
+    else if(text[i] == '\n') {
+      if(temp != "") {
         texts.push_back(temp);
       }
       temp = "";
     }
-    else if(i == text.length() - 1)
-    {
-      temp += text[i];
-      texts.push_back(temp);
-      temp = "";
-    }
-    else
-    {
+    else  {
       temp += text[i];
     }
   }
-  for(auto i : texts)
-  {
-    if(CurrAutoLine>7)
-    {
+  for(auto i : texts) {
+    if(CurrAutoLine>7) {
       pros::lcd::clear();
       pros::lcd::set_text(0, "Out of Bounds. Print Line is too far down");
       return;

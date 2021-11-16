@@ -24,8 +24,7 @@ void AutonSelector::PrintSelectedAuto() {
   if (AutonCount == 0) return;
   pros::lcd::clear_line(0);
   pros::lcd::clear_line(1);
-  pros::lcd::set_text(0, "Page "+std::to_string(CurrentAutonPage+1));
-  ez::print_to_screen(Autons[CurrentAutonPage].Name, 1);
+  ez::print_to_screen("Page " + std::to_string(CurrentAutonPage+1) + "\n" + Autons[CurrentAutonPage].Name);
 }
 
 void AutonSelector::CallSelectedAuto() {
