@@ -100,7 +100,7 @@ void print_to_screen(std::string text, int line)
   for(auto i : texts) {
     if(CurrAutoLine>7) {
       pros::lcd::clear();
-      pros::lcd::set_text(0, "Out of Bounds. Print Line is too far down");
+      pros::lcd::set_text(line, "Out of Bounds. Print Line is too far down");
       return;
     }
     pros::lcd::clear_line(CurrAutoLine);
