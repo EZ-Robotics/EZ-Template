@@ -83,7 +83,6 @@ void print_to_screen(std::string text, int line)
       {
         texts.push_back(temp);
       }
-      texts.emplace_back("");
       temp = "";
     }
     else if(i == text.length() - 1)
