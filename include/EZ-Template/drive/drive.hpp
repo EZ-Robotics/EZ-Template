@@ -46,6 +46,9 @@ class drive {
     */
     pros::Controller master;
 
+    pros::ADIEncoder left_tracker;
+    pros::ADIEncoder right_tracker;
+
     /**
      * PID objects.
     */
@@ -65,12 +68,74 @@ class drive {
 
 
     /**
-     * Creates a controller.
-     *
-     * Give Sensor Ports, Motor Ports (give a negative port if motor is reversed), Drive Measurements
-     * Set PID Constants
+     * Creates a Drive Controller using internal encoders.
+     * 
+     * \param left_motor_ports
+     *        Input {1, -2...}.  Make ports negative if reversed!
+     * \param right_motor_ports
+     *        Input {-3, 4...}.  Make ports negative if reversed!
+     * \param imu_port
+     *        Port the IMU is plugged into. 
+     * \param wheel_diameter
+     *        Diameter of your drive wheels.  Remember 4" is 4.125"!
+     * \param ticks
+     *        Motor cartidge RPM
+     * \param ratio
+     *        External gear ratio, wheel gear / motor gear.
     */
-    drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double motor_cartridge, double ratio);
+    drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks, double ratio);
+
+    /**
+     * Creates a Drive Controller using encoders plugged into the brain.
+     * 
+     * \param left_motor_ports
+     *        Input {1, -2...}.  Make ports negative if reversed!
+     * \param right_motor_ports
+     *        Input {-3, 4...}.  Make ports negative if reversed!
+     * \param imu_port
+     *        Port the IMU is plugged into. 
+     * \param wheel_diameter
+     *        Diameter of your sensored wheels.  Remember 4" is 4.125"!
+     * \param ticks
+     *        Ticks per revolution of your encoder.
+     * \param ratio
+     *        External gear ratio, wheel gear / sensor gear.
+     * \param left_tracker_ports
+     *        Input {1, 2}.  Make ports negative if reversed!
+     * \param right_tracker_ports
+     *        Input {3, 4}.  Make ports negative if reversed!
+    */
+    drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks, double ratio, std::vector<int> left_tracker_ports, std::vector<int> right_tracker_ports);
+
+
+    /**
+     * Creates a Drive Controller using encoders plugged into a 3 wire expander. 
+     * 
+     * \param left_motor_ports
+     *        Input {1, -2...}.  Make ports negative if reversed!
+     * \param right_motor_ports
+     *        Input {-3, 4...}.  Make ports negative if reversed!
+     * \param imu_port
+     *        Port the IMU is plugged into. 
+     * \param wheel_diameter
+     *        Diameter of your sensored wheels.  Remember 4" is 4.125"!
+     * \param ticks
+     *        Ticks per revolution of your encoder.
+     * \param ratio
+     *        External gear ratio, wheel gear / sensor gear.
+     * \param left_tracker_ports
+     *        Input {1, 2}.  Make ports negative if reversed!
+     * \param right_tracker_ports
+     *        Input {3, 4}.  Make ports negative if reversed!
+     * \param expander_smart_port
+     *        Port the expander is plugged into. 
+    */
+    drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks, double ratio, std::vector<int> left_tracker_ports, std::vector<int> right_tracker_ports, int expander_smart_port);
+
+    /**
+     * Sets drive defaults. 
+    */
+    void set_defaults();
 
 
 
@@ -419,7 +484,6 @@ class drive {
     void set_exit_condition(exit_condition_ &type, int p_small_exit_time, int p_small_error, int p_big_exit_time, int p_big_error, int p_velocity_exit_timeint, int p_mA_timeout);
 
 
-
   private:  // !Auton
 
 
@@ -485,6 +549,9 @@ class drive {
 
     // Is tank drive running?
     bool is_tank;
+
+    // Is tracker?
+    bool is_tracker = false;
 
     // Save input curve to SD card
     void save_l_curve_sd();

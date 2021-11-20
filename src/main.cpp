@@ -8,22 +8,38 @@
 // Chassis constructor
 drive chassis (
   // Left Chassis Ports (negative port will reverse it!)
-  {-11, -5, -7},
+  {-11, -5, -7}
 
   // Right Chassis Ports (negative port will reverse it!)
-  {3, 2, 17},
+  ,{3, 2, 17}
 
   // IMU Port
-  18,
+  ,18
 
   // Wheel Diameter (Remember, 4" wheels are actually 4.125!)
-  3.25,
+  //    (or tracking wheel diameter)
+  ,3.25
 
   // Cartridge RPM
-  600,
+  //   (pr tick per rotation if using tracking wheels)
+  ,600
 
-  // External Gear Ratio
-  1.66666666667
+  // External Gear Ratio 
+  //    (or gear ratio of tracking wheel)
+  ,1.66666666667
+
+  // Uncomment if using tracking wheels
+  /*
+  // Left Tracking Wheel Ports
+  ,{1, 2}
+
+  // Right Tracking Wheel Ports
+  ,{3, 4}
+  */
+
+  // Uncomment if tracking wheels are plugged into a 3 wire expander
+  // 3 Wire Port Expander Smart Port
+  // ,1
 );
 
 

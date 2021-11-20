@@ -10,12 +10,18 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 using namespace ez;
 
 
-drive::drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double motor_cartridge, double ratio)
- :
- imu (imu_port),
- master(pros::E_CONTROLLER_MASTER),
- ez_auto([this]{ this->ez_auto_task(); })
+// Constructor for integrated encoders
+drive::drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, 
+    int imu_port, double wheel_diameter, double ticks, double ratio)
+  :
+  imu (imu_port),
+  master(pros::E_CONTROLLER_MASTER),
+  left_tracker  (-1, -1, false), // Default value
+  right_tracker (-1, -1, false), // Default value
+  ez_auto([this]{ this->ez_auto_task(); })
 {
+  is_tracker = false;
+
   // Set ports to a global vector
   for(auto i : left_motor_ports)
   {
@@ -31,9 +37,81 @@ drive::drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
   // Set constants for tick_per_inch caluclation
   WHEEL_DIAMETER = wheel_diameter;
   RATIO = ratio;
-  CARTRIDGE = motor_cartridge;
+  CARTRIDGE = ticks;
   TICK_PER_INCH = get_tick_per_inch();
 
+  set_defaults();
+}
+
+// Constructor for tracking wheels plugged into the brain
+drive::drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, 
+    int imu_port, double wheel_diameter, double ticks, double ratio, 
+    std::vector<int> left_tracker_ports, std::vector<int> right_tracker_ports)
+  :
+  imu (imu_port),
+  master(pros::E_CONTROLLER_MASTER),
+  left_tracker (abs(left_tracker_ports[0]),  abs(left_tracker_ports[1]),  util::is_reversed(left_tracker_ports[0])),
+  right_tracker(abs(right_tracker_ports[0]), abs(right_tracker_ports[1]), util::is_reversed(right_tracker_ports[0])),
+  ez_auto([this]{ this->ez_auto_task(); })
+{
+  is_tracker = true;
+
+  // Set ports to a global vector
+  for(auto i : left_motor_ports)
+  {
+    pros::Motor temp(abs(i), util::is_reversed(i));
+    left_motors.push_back(temp);
+  }
+  for(auto i : right_motor_ports)
+  {
+    pros::Motor temp(abs(i), util::is_reversed(i));
+    right_motors.push_back(temp);
+  }
+
+  // Set constants for tick_per_inch caluclation
+  WHEEL_DIAMETER = wheel_diameter;
+  RATIO = ratio;
+  CARTRIDGE = ticks;
+  TICK_PER_INCH = get_tick_per_inch();
+
+  set_defaults();
+}
+
+// Constructor for tracking wheels plugged into a 3 wire expander
+drive::drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, 
+    int imu_port, double wheel_diameter, double ticks, double ratio, 
+    std::vector<int> left_tracker_ports, std::vector<int> right_tracker_ports, int expander_smart_port)
+  :
+  imu (imu_port),
+  master(pros::E_CONTROLLER_MASTER),
+  left_tracker ({ expander_smart_port, abs(left_tracker_ports[0]),  abs(left_tracker_ports[1]) }, util::is_reversed(left_tracker_ports[0])),
+  right_tracker({ expander_smart_port, abs(right_tracker_ports[0]), abs(right_tracker_ports[1])}, util::is_reversed(right_tracker_ports[0])),
+  ez_auto([this]{ this->ez_auto_task(); })
+{
+  is_tracker = true;
+
+  // Set ports to a global vector
+  for(auto i : left_motor_ports)
+  {
+    pros::Motor temp(abs(i), util::is_reversed(i));
+    left_motors.push_back(temp);
+  }
+  for(auto i : right_motor_ports)
+  {
+    pros::Motor temp(abs(i), util::is_reversed(i));
+    right_motors.push_back(temp);
+  }
+
+  // Set constants for tick_per_inch caluclation
+  WHEEL_DIAMETER = wheel_diameter;
+  RATIO = ratio;
+  CARTRIDGE = ticks;
+  TICK_PER_INCH = get_tick_per_inch();
+
+  set_defaults();
+}
+
+void drive::set_defaults() {
   // PID Constants
   headingPID = {11, 0, 20, 0};
   forward_drivePID = {0.45, 0, 5, 0};
@@ -61,8 +139,13 @@ drive::drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 }
 
 double drive::get_tick_per_inch() {
-  TICK_PER_REV  = (50.0*(3600.0/CARTRIDGE)) * RATIO; // with no cart, the encoder reads 50 counts per rotation
-  CIRCUMFERENCE = WHEEL_DIAMETER*M_PI;
+  CIRCUMFERENCE = WHEEL_DIAMETER*M_PI; 
+
+  if (is_tracker) 
+    TICK_PER_REV = CARTRIDGE * RATIO;
+  else 
+    TICK_PER_REV  = (50.0*(3600.0/CARTRIDGE)) * RATIO; // with no cart, the encoder reads 50 counts per rotation
+  
   TICK_PER_INCH = (TICK_PER_REV/CIRCUMFERENCE);
   return TICK_PER_INCH;
 }
@@ -86,16 +169,29 @@ void drive::set_tank(int left, int right) {
 
 // Motor telemetry
 void drive::reset_drive_sensor() {
-  left_motors.front().tare_position();
+  if (is_tracker) {
+    left_tracker. reset();
+    right_tracker.reset();
+    return;
+  }
+  left_motors.front(). tare_position();
   right_motors.front().tare_position();
 }
 
-int drive::right_sensor()   { return right_motors.front().get_position(); }
+int drive::right_sensor() { 
+  if (is_tracker)
+    return right_tracker.get_value();
+  return right_motors.front().get_position(); 
+}
 int drive::right_velocity() { return right_motors.front().get_actual_velocity(); }
 double drive::right_mA()    { return right_motors.front().get_current_draw(); }
 bool drive::right_over_current() { return right_motors.front().is_over_current(); }
 
-int drive::left_sensor()   { return left_motors.front().get_position(); }
+int drive::left_sensor() { 
+    if (is_tracker)
+    return left_tracker.get_value();
+  return left_motors.front().get_position(); 
+}
 int drive::left_velocity() { return left_motors.front().get_actual_velocity(); }
 double drive::left_mA()    { return left_motors.front().get_current_draw(); }
 bool drive::left_over_current() { return left_motors.front().is_over_current(); }
