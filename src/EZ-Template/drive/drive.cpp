@@ -169,13 +169,13 @@ void drive::set_tank(int left, int right) {
 
 // Motor telemetry
 void drive::reset_drive_sensor() {
+  left_motors.front(). tare_position();
+  right_motors.front().tare_position();
   if (is_tracker) {
     left_tracker. reset();
     right_tracker.reset();
     return;
   }
-  left_motors.front(). tare_position();
-  right_motors.front().tare_position();
 }
 
 int drive::right_sensor() { 
