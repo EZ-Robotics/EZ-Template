@@ -30,10 +30,10 @@ drive chassis (
 
   // Uncomment if using tracking wheels
   /*
-  // Left Tracking Wheel Ports
+  // Left Tracking Wheel Ports (negative port will reverse it!)
   ,{1, 2}
 
-  // Right Tracking Wheel Ports
+  // Right Tracking Wheel Ports (negative port will reverse it!)
   ,{3, 4}
   */
 
