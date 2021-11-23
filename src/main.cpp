@@ -60,9 +60,9 @@ void initialize() {
   if (!ez::util::IS_SD_CARD) printf("No SD Card Found!\n");
 
   // Configure your chassis controls
-  chassis.init_curve_sd();
-  chassis.toggle_modify_curve_with_controllerr(true);
-  chassis.set_active_brake(0.1);
+  chassis.init_curve_sd(); // Initialize the input curves with what's on the SD card (this does nothing if there's no SD card)
+  chassis.toggle_modify_curve_with_controllerr(true); // Enables modifying the controller curve with buttons on the joysticks
+  chassis.set_active_brake(0.1); // Sets the active brake KP. 
 
   // These are already defaulted to these buttons, but you can change the left/right curve buttons here!
   // chassis.set_left_curve_buttons (pros::E_CONTROLLER_DIGITAL_LEFT, pros::E_CONTROLLER_DIGITAL_RIGHT);
@@ -129,11 +129,11 @@ void competition_initialize() {
  * from where it left off.
  */
 void autonomous() {
-  chassis.reset_gyro();
-  chassis.reset_drive_sensor();
-  chassis.set_drive_brake(MOTOR_BRAKE_HOLD);
+  chassis.reset_gyro(); // Reset gyro position to 0
+  chassis.reset_drive_sensor(); // Reset drive sensors to 0
+  chassis.set_drive_brake(MOTOR_BRAKE_HOLD); // Set motors to hold.  This helps autonomous consistency. 
 
-  ez::as::autoSelector.CallSelectedAuto();
+  ez::as::autoSelector.CallSelectedAuto(); // Calls selected auton from autonomous selector. 
 }
 
 
