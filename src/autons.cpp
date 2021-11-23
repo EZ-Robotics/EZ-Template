@@ -91,7 +91,20 @@ void auto1() {
  chassis.set_turn_pid(90, 90);
  chassis.wait_drive();
 }
-void auto2() {}
+void auto2() {
+  chassis.set_drive_pid(12, DRIVE_SPEED, true);
+  chassis.wait_drive();
+
+  chassis.set_turn_pid(90, TURN_SPEED);
+  chassis.wait_drive();
+  chassis.set_turn_pid(0,  TURN_SPEED);
+  chassis.wait_drive();
+
+  chassis.set_swing_pid(ez::LEFT_SWING,  45, SWING_SPEED);
+  chassis.wait_drive();
+  chassis.set_swing_pid(ez::RIGHT_SWING, 0,  SWING_SPEED);
+  chassis.wait_drive();
+}
 void auto3() {
  chassis.set_turn_pid(-90, 90);
  chassis.wait_drive();
