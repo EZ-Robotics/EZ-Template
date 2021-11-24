@@ -1,7 +1,8 @@
 ---
 layout: default
 title: EZ-Template
-nav_exclude: true
+nav_order: 1
+has_toc: false
 ---
 
 # EZ-Template

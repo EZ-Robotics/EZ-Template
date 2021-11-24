@@ -1,7 +1,8 @@
 ---
 layout: default
 title: Auton
-nav_exclude: true
+nav_order: 2
+has_toc: false
 ---
 
 # Additing Autonomous Routines
