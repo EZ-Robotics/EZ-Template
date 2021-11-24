@@ -1,3 +1,7 @@
+---
+nav_order: 1
+---
+
 # Additing Autonomous Routines
 
 ### 1) Read through `src/auton.cpp` ([click here](https://github.com/EZ-Robotics/EZ-Template/blob/main/src/autons.cpp)) and learn how to use the autonomous functions by reading through the example routines!
