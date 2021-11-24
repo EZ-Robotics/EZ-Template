@@ -169,7 +169,7 @@ void drive::set_tank(int left, int right) {
 
 void drive::set_drive_current_limit(int mA) {
   if (abs(mA) > 2500) {
-    mA = 2500
+    mA = 2500;
   }
   for (auto i : left_motors) {
     i.set_current_limit(abs(mA));
