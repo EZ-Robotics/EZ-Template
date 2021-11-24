@@ -1,8 +1,5 @@
 #include "main.h"
 
-#include <iostream>
-#include <tuple>
-
 
 
 // Chassis constructor
