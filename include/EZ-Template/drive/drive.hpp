@@ -269,6 +269,14 @@ class drive {
      *        the 'brake mode' of the motor e.g. 'pros::E_MOTOR_BRAKE_COAST' 'pros::E_MOTOR_BRAKE_BRAKE' 'pros::E_MOTOR_BRAKE_HOLD'
     */
     void set_drive_brake(pros::motor_brake_mode_e_t brake_type);
+    
+    /**
+     * Sets the limit for the current on the drive.
+     *
+     * \param mA
+     *        input in milliamps
+    */
+    void set_drive_current_limit(int mA);
 
 
 
