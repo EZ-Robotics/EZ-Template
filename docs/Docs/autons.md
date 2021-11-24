@@ -1,10 +1,3 @@
----
-layout: default
-title: Auton
-nav_order: 2
-has_toc: false
----
-
 # Additing Autonomous Routines
 
 ### 1) Read through `src/auton.cpp` ([click here](https://github.com/EZ-Robotics/EZ-Template/blob/main/src/autons.cpp)) and learn how to use the autonomous functions by reading through the example routines!
