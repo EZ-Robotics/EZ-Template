@@ -1,6 +1,6 @@
 ---
 layout: default
-title: 404
+title: EZ-Template
 nav_exclude: true
 ---
 

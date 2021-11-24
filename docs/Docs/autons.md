@@ -1,6 +1,6 @@
 ---
 layout: default
-title: 404
+title: Auton
 nav_exclude: true
 ---
 
