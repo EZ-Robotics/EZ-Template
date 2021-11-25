@@ -15,71 +15,73 @@ nav_order: 1
 1. TOC
 {:toc}
 
+
 ---
+
 
 ## Integrated Encoders
 Prototype
 ```cpp
-drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter,
-double ticks, double ratio);
+drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, 
+double wheel_diameter, double ticks, double ratio);
 ```
 Example  
 ```cpp
 // Chassis constructor
 drive chassis (
   // Left Chassis Ports (negative port will reverse it!)
-  {-11, -5, -7}
+  {1, 2}
 
   // Right Chassis Ports (negative port will reverse it!)
-  ,{3, 2, 17}
+  ,{-3, -4}
 
   // IMU Port
   ,18
 
   // Wheel Diameter (Remember, 4" wheels are actually 4.125!)
-  //    (or tracking wheel diameter)
   ,3.25
 
   // Cartridge RPM
-  //   (or tick per rotation if using tracking wheels)
   ,600
 
   // External Gear Ratio 
-  //    (or gear ratio of tracking wheel)
   ,1.66666666667
 );
 ```
 
+
+---
+
+
 ## Tracking Wheels (brain)
+> **_NOTE:_**  Currently only supports parallel trackers!
+> 
 Prototype
 ```cpp
-drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter,
-double ticks, double ratio, std::vector<int> left_tracker_ports, std::vector<int> right_tracker_ports);
+drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, 
+double wheel_diameter, double ticks, double ratio, std::vector<int> left_tracker_ports, std::vector<int> right_tracker_ports);
 ```
 Example
 ```cpp
 // Chassis constructor
 drive chassis (
   // Left Chassis Ports (negative port will reverse it!)
-  {-11, -5, -7}
+  {1, 2}
 
   // Right Chassis Ports (negative port will reverse it!)
-  ,{3, 2, 17}
+  ,{-3, -4}
 
   // IMU Port
   ,18
 
-  // Wheel Diameter (Remember, 4" wheels are actually 4.125!)
-  //    (or tracking wheel diameter)
-  ,3.25
+  // Wheel Diameter of Tracking Wheels (Remember, 4" wheels are actually 4.125!)
+  ,2.75
 
-  // Cartridge RPM
-  //   (or tick per rotation if using tracking wheels)
-  ,600
+  // Ticks per Rotation of Your Encoder
+  ,360
 
-  // External Gear Ratio 
-  //    (or gear ratio of tracking wheel)
-  ,1.66666666667
+  // External Gear Ratio Between Wheel and Encoder
+  ,1
 
   // Left Tracking Wheel Ports (negative port will reverse it!)
   ,{1, 2}
@@ -89,36 +91,39 @@ drive chassis (
 );
 ```
 
+
+---
+
+
 ## Tracking Wheels (3 wire expander)
+> **_NOTE:_**  Currently only supports parallel trackers!
+> 
 Prototype
 ```cpp
-drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter,
-double ticks, double ratio, std::vector<int> left_tracker_ports, std::vector<int> right_tracker_ports, int expander_smart_port);
+drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, 
+double wheel_diameter, double ticks, double ratio, std::vector<int> left_tracker_ports, std::vector<int> right_tracker_ports, int expander_smart_port);
 ```
 Example
 ```cpp
 // Chassis constructor
 drive chassis (
   // Left Chassis Ports (negative port will reverse it!)
-  {-11, -5, -7}
+  {1, 2}
 
   // Right Chassis Ports (negative port will reverse it!)
-  ,{3, 2, 17}
+  ,{-3, -4}
 
   // IMU Port
   ,18
 
-  // Wheel Diameter (Remember, 4" wheels are actually 4.125!)
-  //    (or tracking wheel diameter)
-  ,3.25
+  // Wheel Diameter of Tracking Wheels (Remember, 4" wheels are actually 4.125!)
+  ,2.75
 
-  // Cartridge RPM
-  //   (or tick per rotation if using tracking wheels)
-  ,600
+  // Ticks per Rotation of Your Encoder
+  ,360
 
-  // External Gear Ratio 
-  //    (or gear ratio of tracking wheel)
-  ,1.66666666667
+  // External Gear Ratio Between Wheel and Encoder
+  ,1
 
   // Left Tracking Wheel Ports (negative port will reverse it!)
   ,{1, 2}
@@ -127,6 +132,6 @@ drive chassis (
   ,{3, 4}
 
   // 3 Wire Port Expander Smart Port
-  ,1
+  ,5
 );
 ```
