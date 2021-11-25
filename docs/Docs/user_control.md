@@ -20,13 +20,13 @@ nav_order: 2
 
 
 ## tank()
-Sets the drive to the left and right y axis. 
-### Prototype
+Sets the drive to the left and right y axis.  
+**Prototype**
 ```cpp
 void tank();
 ```
 
-<details closed> <summary> <h3>Example </summary> <br>
+<details closed> <summary> <b>Example</b> </summary> <br>
 
 ```cpp
 // Chassis constructor
