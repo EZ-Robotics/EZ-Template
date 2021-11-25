@@ -21,14 +21,14 @@ nav_order: 2
 
 ## tank()
 Sets the drive to the left and right y axis.  
-**Protottype**
+**Prototype**
 ```cpp
 void tank();
 ```
 
 <details closed> <summary> <b>Example</b> </summary> <br>
 
-
+Code Snippet:
 ```cpp
 // Chassis constructor
 drive chassis (
@@ -66,8 +66,8 @@ void opcontrol() {
 ---
 
 
-### arcade_standard()
-**Protottype**
+## arcade_standard()
+**Prototype**
 ```cpp
 void arcade_standard(e_type stick_type);
 ```
@@ -81,8 +81,8 @@ Example
 ---
 
 
-### arcade_flipped()
-**Protottype**
+## arcade_flipped()
+**Prototype**
 ```cpp
 void arcade_flipped(e_type stick_type);
 ```
@@ -96,8 +96,8 @@ Example
 ---
 
 
-### init_curve_sd()
-**Protottype**
+## init_curve_sd()
+**Prototype**
 ```cpp
 void init_curve_sd();
 ```
@@ -111,8 +111,8 @@ Example
 ---
 
 
-### set_curve_defaults()
-**Protottype**
+## set_curve_defaults()
+**Prototype**
 ```cpp
 void set_curve_default(double left, double right);
 ```
@@ -126,8 +126,8 @@ Example
 ---
 
 
-### set_active_brake()
-**Protottype**
+## set_active_brake()
+**Prototype**
 ```cpp
 void set_active_brake(double kp);
 ```
@@ -141,8 +141,8 @@ Example
 ---
 
 
-### toggle_modify_curve_with_controller()
-**Protottype**
+## toggle_modify_curve_with_controller()
+**Prototype**
 ```cpp
 void toggle_modify_curve_with_controller(bool toggle);
 ```
@@ -156,8 +156,8 @@ Example
 ---
 
 
-### set_left_curve_buttons()
-**Protottype**
+## set_left_curve_buttons()
+**Prototype**
 ```cpp
 void set_left_curve_buttons(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase);
 ```
@@ -171,8 +171,8 @@ Example
 ---
 
 
-### set_right_curve_buttons()
-**Protottype**
+## set_right_curve_buttons()
+**Prototype**
 ```cpp
 void set_right_curve_buttons(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase);
 ```
@@ -186,8 +186,8 @@ Example
 ---
 
 
-### left_curve_function()
-**Protottype**
+## left_curve_function()
+**Prototype**
 ```cpp
 double left_curve_function(double x);
 ```
@@ -201,8 +201,8 @@ Example
 ---
 
 
-### right_curve_function()
-**Protottype**
+## right_curve_function()
+**Prototype**
 ```cpp
 double right_curve_function(double x);
 ```
@@ -216,8 +216,8 @@ Example
 ---
 
 
-### set_joystick_threshold()
-**Protottype**
+## set_joystick_threshold()
+**Prototype**
 ```cpp
 void set_joystick_threshold(int threshold);
 ```
