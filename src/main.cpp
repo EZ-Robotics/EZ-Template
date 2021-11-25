@@ -58,7 +58,7 @@ void initialize() {
 
   // Configure your chassis controls
   chassis.init_curve_sd(); // Initialize the input curves with what's on the SD card (this does nothing if there's no SD card)
-  chassis.toggle_modify_curve_with_controllerr(true); // Enables modifying the controller curve with buttons on the joysticks
+  chassis.toggle_modify_curve_with_controller(true); // Enables modifying the controller curve with buttons on the joysticks
   chassis.set_active_brake(0.1); // Sets the active brake KP. 
 
   // These are already defaulted to these buttons, but you can change the left/right curve buttons here!

@@ -131,7 +131,7 @@ void drive::set_defaults() {
   set_exit_condition(drive_exit, 80,  50, 300, 150, 500, 500);
 
   // Modify joystick curve on controller (defaults to disabled)
-  toggle_modify_curve_with_controllerr(true);
+  toggle_modify_curve_with_controller(true);
 
   // Left / Right modify buttons
   set_left_curve_buttons (pros::E_CONTROLLER_DIGITAL_LEFT, pros::E_CONTROLLER_DIGITAL_RIGHT);

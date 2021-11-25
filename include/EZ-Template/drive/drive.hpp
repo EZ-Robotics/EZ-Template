@@ -198,7 +198,7 @@ class drive {
      * \param input
      *        bool input
     */
-    void toggle_modify_curve_with_controllerr(bool toggle);
+    void toggle_modify_curve_with_controller(bool toggle);
 
     /**
      * Sets buttons for modifying the left joystick curve.
