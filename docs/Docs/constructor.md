@@ -6,7 +6,7 @@ nav_order: 1
 ---
 
 
-# Drive Constructors
+# **Drive Constructors**
 {: .no_toc }
 
 ## Table of contents
@@ -19,11 +19,11 @@ nav_order: 1
 
 ## Integrated Encoders
 Prototype
-```C++
-drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks, double ratio);
+```cpp
+drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter,
+double ticks, double ratio);
 ```
 Example  
-{% highlight markdown %}
 ```cpp
 // Chassis constructor
 drive chassis (
@@ -49,12 +49,12 @@ drive chassis (
   ,1.66666666667
 );
 ```
-{% endhighlight %}
 
 ## Tracking Wheels (brain)
 Prototype
-```C++
-drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks, double ratio, std::vector<int> left_tracker_ports, std::vector<int> right_tracker_ports);
+```cpp
+drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter,
+double ticks, double ratio, std::vector<int> left_tracker_ports, std::vector<int> right_tracker_ports);
 ```
 Example
 ```cpp
@@ -91,11 +91,12 @@ drive chassis (
 
 ## Tracking Wheels (3 wire expander)
 Prototype
-```C++
-drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks, double ratio, std::vector<int> left_tracker_ports, std::vector<int> right_tracker_ports, int expander_smart_port);
+```cpp
+drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter,
+double ticks, double ratio, std::vector<int> left_tracker_ports, std::vector<int> right_tracker_ports, int expander_smart_port);
 ```
 Example
-```C++
+```cpp
 // Chassis constructor
 drive chassis (
   // Left Chassis Ports (negative port will reverse it!)
