@@ -25,7 +25,7 @@ nav_order: 1
 drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, 
 double wheel_diameter, double ticks, double ratio);
 ```
-Example  
+**Example**  
 ```cpp
 // Chassis constructor
 drive chassis (
@@ -61,7 +61,7 @@ drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int
 double wheel_diameter, double ticks, double ratio, std::vector<int> left_tracker_ports,
 std::vector<int> right_tracker_ports);
 ```
-Example
+**Example**
 ```cpp
 // Chassis constructor
 drive chassis (
@@ -103,7 +103,7 @@ drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int
 double wheel_diameter, double ticks, double ratio, std::vector<int> left_tracker_ports, 
 std::vector<int> right_tracker_ports, int expander_smart_port);
 ```
-Example
+**Example**
 ```cpp
 // Chassis constructor
 drive chassis (

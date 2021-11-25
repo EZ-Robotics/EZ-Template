@@ -18,17 +18,10 @@ nav_order: 2
 
 ---
 
+## Assumed Constructor
 
-## tank()
-Sets the drive to the left and right y axis.  
-**Prototype**
-```cpp
-void tank();
-```
+All code below assumes this constructor is used.  As long as the name of the constructor is `chassis`, any of the constructors can be used. 
 
-<details closed> <summary> <b>Example</b> </summary> <br>
-
-Code Snippet:
 ```cpp
 // Chassis constructor
 drive chassis (
@@ -51,6 +44,20 @@ drive chassis (
   ,1.66666666667
 );
 
+```
+
+---
+
+
+## tank()
+Sets the drive to the left and right y axis.  
+**Prototype**
+```cpp
+void tank();
+```
+
+**Example**
+```cpp
 void opcontrol() {
   while (true) {
     chassis.tank();
@@ -60,21 +67,27 @@ void opcontrol() {
 }
 ```
 
-</details>
-
 
 ---
 
 
 ## arcade_standard()
+Sets the drive to standard arcade.  Left stick is fwd/rev.  
 **Prototype**
 ```cpp
 void arcade_standard(e_type stick_type);
 ```
-
-Example 
+Takes `EZ::SPLIT` or `EZ::SINGLE` as parameters.  
+**Example** 
 ```cpp
-
+void opcontrol() {
+  while (true) {
+    chassis.arcade_standard(EZ::SPIT); // For split arcade
+    // chassis.arcade_standard(EZ::SINGLE); // For single arcade
+    
+    pros::delay(ez::util::DELAY_TIME);
+  }
+}
 ```
 
 
@@ -82,14 +95,22 @@ Example
 
 
 ## arcade_flipped()
+Sets the drive to flipped arcade.  Right stick is fwd/rev.  
 **Prototype**
 ```cpp
 void arcade_flipped(e_type stick_type);
 ```
-
-Example 
+Takes `EZ::SPLIT` or `EZ::SINGLE` as parameters.  
+**Example** 
 ```cpp
-
+void opcontrol() {
+  while (true) {
+    chassis.arcade_flipped(EZ::SPIT); // For split arcade
+    // chassis.arcade_flipped(EZ::SINGLE); // For single arcade
+    
+    pros::delay(ez::util::DELAY_TIME);
+  }
+}
 ```
 
 
@@ -97,14 +118,17 @@ Example
 
 
 ## init_curve_sd()
+Sets the left/right curve constants to what's on the SD card.  
 **Prototype**
 ```cpp
 void init_curve_sd();
 ```
 
-Example 
+**Example** 
 ```cpp
-
+void initialize() {
+  chassis.init_curve_sd();
+}
 ```
 
 
@@ -112,14 +136,17 @@ Example
 
 
 ## set_curve_defaults()
+Sets the left/right curve defaults and saves new values to the sd card.  
 **Prototype**
 ```cpp
 void set_curve_default(double left, double right);
 ```
 
-Example 
+**Example** 
 ```cpp
-
+void initialize() {
+  chassis.set_curve_defaults(2, 2);
+}
 ```
 
 
@@ -127,14 +154,17 @@ Example
 
 
 ## set_active_brake()
+Active brake runs a P loop on the drive when joysticks are within their threshold. 
 **Prototype**
 ```cpp
 void set_active_brake(double kp);
 ```
 
-Example 
+**Example** 
 ```cpp
-
+void initialize() {
+  chassis.set_active_brake(0.1);
+}
 ```
 
 
@@ -142,14 +172,17 @@ Example
 
 
 ## toggle_modify_curve_with_controller()
+Enables/disables buttons used for modifying the controller curve with the joystick.  True enables, false disables.  
 **Prototype**
 ```cpp
 void toggle_modify_curve_with_controller(bool toggle);
 ```
 
-Example 
+**Example** 
 ```cpp
-
+void initialize() {
+  chassis.toggle_modify_curve_with_controller(true);
+}
 ```
 
 
@@ -157,14 +190,17 @@ Example
 
 
 ## set_left_curve_buttons()
+Sets the buttons that are used to modify the left input curve.  The example is the default.  
 **Prototype**
 ```cpp
 void set_left_curve_buttons(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase);
 ```
 
-Example 
+**Example** 
 ```cpp
-
+void initialize() {
+  chassis.set_left_curve_buttons (pros::E_CONTROLLER_DIGITAL_LEFT, pros::E_CONTROLLER_DIGITAL_RIGHT);
+}
 ```
 
 
@@ -172,14 +208,17 @@ Example
 
 
 ## set_right_curve_buttons()
+Sets the buttons that are used to modify the right input curve.  The example is the default.  
 **Prototype**
 ```cpp
 void set_right_curve_buttons(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase);
 ```
 
-Example 
+**Example** 
 ```cpp
-
+void initialize() {
+  chassis.set_right_curve_buttons(pros::E_CONTROLLER_DIGITAL_Y,    pros::E_CONTROLLER_DIGITAL_A);
+}
 ```
 
 
@@ -187,14 +226,24 @@ Example
 
 
 ## left_curve_function()
+Returns the input times the red curve [here](https://www.desmos.com/calculator/rcfjjg83zx).  `tank()`, `arcade_standard()`, and `arcade_flipped()` all handle this for you.  
 **Prototype**
 ```cpp
 double left_curve_function(double x);
 ```
 
-Example 
+**Example** 
 ```cpp
-
+void opcontrol() {
+  while (true) {
+    int l_stick = left_curve_function(master.get_analog(ANALOG_LEFT_Y));
+    int r_stick = left_curve_function(master.get_analog(ANALOG_RIGHT_Y));
+    
+    chassis.set_tank(l_stick, r_stick);
+    
+    pros::delay(ez::util::DELAY_TIME);
+  }
+}
 ```
 
 
@@ -202,14 +251,24 @@ Example
 
 
 ## right_curve_function()
+Returns the input times the red curve [here](https://www.desmos.com/calculator/rcfjjg83zx).  `tank()`, `arcade_standard()`, and `arcade_flipped()` all handle this for you.  
 **Prototype**
 ```cpp
 double right_curve_function(double x);
 ```
 
-Example 
+**Example** 
 ```cpp
-
+void opcontrol() {
+  while (true) {
+    int l_stick = left_curve_function(master.get_analog(ANALOG_LEFT_Y));
+    int r_stick = left_curve_function(master.get_analog(ANALOG_RIGHT_Y));
+    
+    chassis.set_tank(l_stick, r_stick);
+    
+    pros::delay(ez::util::DELAY_TIME);
+  }
+}
 ```
 
 
@@ -217,12 +276,15 @@ Example
 
 
 ## set_joystick_threshold()
+Threshold the joystick will return 0 within.  
 **Prototype**
 ```cpp
 void set_joystick_threshold(int threshold);
 ```
 
-Example 
+**Example** 
 ```cpp
-
+void initialize() {
+  chassis.set_joystick_threshold(5);
+}
 ```
