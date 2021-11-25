@@ -22,7 +22,8 @@ Prototype
 ```C++
 drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks, double ratio);
 ```
-Example
+Example  
+{% highlight markdown %}
 ```C++
 // Chassis constructor
 drive chassis (
@@ -48,6 +49,7 @@ drive chassis (
   ,1.66666666667
 );
 ```
+{% endhighlight %}
 
 ## Tracking Wheels (brain)
 Prototype
