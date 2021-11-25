@@ -9,7 +9,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 using namespace ez;
 
 
-void drive::ez_auto_task() {
+void Drive::ez_auto_task() {
   while (true) {
 
     // Autonomous PID
@@ -29,7 +29,7 @@ void drive::ez_auto_task() {
 }
 
 // Drive PID task
-void drive::drive_pid_task() {
+void Drive::drive_pid_task() {
   // Compute PID
   leftPID.compute(left_sensor());
   rightPID.compute(right_sensor());
@@ -55,7 +55,7 @@ void drive::drive_pid_task() {
 }
 
 // Turn PID task
-void drive::turn_pid_task() {
+void Drive::turn_pid_task() {
   // Compute PID
   turnPID.compute(get_gyro());
 
@@ -72,7 +72,7 @@ void drive::turn_pid_task() {
 }
 
 // Swing PID task
-void drive::swing_pid_task() {
+void Drive::swing_pid_task() {
   // Compute PID
   swingPID.compute(get_gyro());
 

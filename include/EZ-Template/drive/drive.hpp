@@ -16,7 +16,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 using namespace ez;
 
-class drive {
+class Drive {
   public:
 
     /**
@@ -83,7 +83,7 @@ class drive {
      * \param ratio
      *        External gear ratio, wheel gear / motor gear.
     */
-    drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks, double ratio);
+    Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks, double ratio);
 
     /**
      * Creates a Drive Controller using encoders plugged into the brain.
@@ -105,7 +105,7 @@ class drive {
      * \param right_tracker_ports
      *        Input {3, 4}.  Make ports negative if reversed!
     */
-    drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks, double ratio, std::vector<int> left_tracker_ports, std::vector<int> right_tracker_ports);
+    Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks, double ratio, std::vector<int> left_tracker_ports, std::vector<int> right_tracker_ports);
 
 
     /**
@@ -130,7 +130,7 @@ class drive {
      * \param expander_smart_port
      *        Port the expander is plugged into. 
     */
-    drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks, double ratio, std::vector<int> left_tracker_ports, std::vector<int> right_tracker_ports, int expander_smart_port);
+    Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks, double ratio, std::vector<int> left_tracker_ports, std::vector<int> right_tracker_ports, int expander_smart_port);
 
     /**
      * Sets drive defaults. 

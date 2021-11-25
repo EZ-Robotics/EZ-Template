@@ -11,7 +11,7 @@ using namespace ez;
 
 
 // Constructor for integrated encoders
-drive::drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, 
+Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, 
     int imu_port, double wheel_diameter, double ticks, double ratio)
   :
   imu (imu_port),
@@ -44,7 +44,7 @@ drive::drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 }
 
 // Constructor for tracking wheels plugged into the brain
-drive::drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, 
+Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, 
     int imu_port, double wheel_diameter, double ticks, double ratio, 
     std::vector<int> left_tracker_ports, std::vector<int> right_tracker_ports)
   :
@@ -78,7 +78,7 @@ drive::drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 }
 
 // Constructor for tracking wheels plugged into a 3 wire expander
-drive::drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, 
+Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, 
     int imu_port, double wheel_diameter, double ticks, double ratio, 
     std::vector<int> left_tracker_ports, std::vector<int> right_tracker_ports, int expander_smart_port)
   :
@@ -111,7 +111,7 @@ drive::drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
   set_defaults();
 }
 
-void drive::set_defaults() {
+void Drive::set_defaults() {
   // PID Constants
   headingPID = {11, 0, 20, 0};
   forward_drivePID = {0.45, 0, 5, 0};
@@ -138,7 +138,7 @@ void drive::set_defaults() {
   set_right_curve_buttons(pros::E_CONTROLLER_DIGITAL_Y,    pros::E_CONTROLLER_DIGITAL_A);
 }
 
-double drive::get_tick_per_inch() {
+double Drive::get_tick_per_inch() {
   CIRCUMFERENCE = WHEEL_DIAMETER*M_PI; 
 
   if (is_tracker) 
@@ -150,12 +150,12 @@ double drive::get_tick_per_inch() {
   return TICK_PER_INCH;
 }
 
-void drive::set_pid_constants(PID pid, double p, double i, double d, double p_start_i)
+void Drive::set_pid_constants(PID pid, double p, double i, double d, double p_start_i)
 {
   pid.set_constants(p, i, d, p_start_i);
 }
 
-void drive::set_tank(int left, int right) {
+void Drive::set_tank(int left, int right) {
   if (pros::millis() < 1500) return;
 
   for (auto i : left_motors) {
@@ -167,7 +167,7 @@ void drive::set_tank(int left, int right) {
 }
 
 
-void drive::set_drive_current_limit(int mA) {
+void Drive::set_drive_current_limit(int mA) {
   if (abs(mA) > 2500) {
     mA = 2500;
   }
@@ -180,7 +180,7 @@ void drive::set_drive_current_limit(int mA) {
 }
 
 // Motor telemetry
-void drive::reset_drive_sensor() {
+void Drive::reset_drive_sensor() {
   left_motors.front(). tare_position();
   right_motors.front().tare_position();
   if (is_tracker) {
@@ -190,29 +190,29 @@ void drive::reset_drive_sensor() {
   }
 }
 
-int drive::right_sensor() { 
+int Drive::right_sensor() { 
   if (is_tracker)
     return right_tracker.get_value();
   return right_motors.front().get_position(); 
 }
-int drive::right_velocity() { return right_motors.front().get_actual_velocity(); }
-double drive::right_mA()    { return right_motors.front().get_current_draw(); }
-bool drive::right_over_current() { return right_motors.front().is_over_current(); }
+int Drive::right_velocity() { return right_motors.front().get_actual_velocity(); }
+double Drive::right_mA()    { return right_motors.front().get_current_draw(); }
+bool Drive::right_over_current() { return right_motors.front().is_over_current(); }
 
-int drive::left_sensor() { 
+int Drive::left_sensor() { 
     if (is_tracker)
     return left_tracker.get_value();
   return left_motors.front().get_position(); 
 }
-int drive::left_velocity() { return left_motors.front().get_actual_velocity(); }
-double drive::left_mA()    { return left_motors.front().get_current_draw(); }
-bool drive::left_over_current() { return left_motors.front().is_over_current(); }
+int Drive::left_velocity() { return left_motors.front().get_actual_velocity(); }
+double Drive::left_mA()    { return left_motors.front().get_current_draw(); }
+bool Drive::left_over_current() { return left_motors.front().is_over_current(); }
 
 
-void  drive::reset_gyro(double new_heading) { imu.set_rotation(new_heading); }
-double drive::get_gyro()  { return imu.get_rotation(); }
+void  Drive::reset_gyro(double new_heading) { imu.set_rotation(new_heading); }
+double Drive::get_gyro()  { return imu.get_rotation(); }
 
-bool drive::imu_calibrate() {
+bool Drive::imu_calibrate() {
   imu.reset();
   int time = pros::millis();
   int iter = 0;
@@ -232,7 +232,7 @@ bool drive::imu_calibrate() {
 }
 
 // Brake modes
-void drive::set_drive_brake(pros::motor_brake_mode_e_t brake_type) {
+void Drive::set_drive_brake(pros::motor_brake_mode_e_t brake_type) {
   for (auto i : left_motors) {
     i.set_brake_mode(brake_type);
   }

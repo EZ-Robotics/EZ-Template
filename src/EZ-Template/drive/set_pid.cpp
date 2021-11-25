@@ -8,12 +8,12 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 
 // Updates max speed
-void drive::set_max_speed(int speed) {
+void Drive::set_max_speed(int speed) {
   max_speed = abs(speed);
 }
 
 // Set drive PID
-void drive::set_drive_pid(double target, int speed, bool slew_on, bool toggle_heading) {
+void Drive::set_drive_pid(double target, int speed, bool slew_on, bool toggle_heading) {
   TICK_PER_INCH = get_tick_per_inch();
 
   // Print targets
@@ -60,7 +60,7 @@ void drive::set_drive_pid(double target, int speed, bool slew_on, bool toggle_he
 }
 
 // Set turn PID
-void drive::set_turn_pid(double target, int speed) {
+void Drive::set_turn_pid(double target, int speed) {
   // Print targets
   printf("Turn Started... Target Value: %f\n", target);
 
@@ -74,7 +74,7 @@ void drive::set_turn_pid(double target, int speed) {
 }
 
 // Set swing PID
-void drive::set_swing_pid(e_swing type, double target, int speed) {
+void Drive::set_swing_pid(e_swing type, double target, int speed) {
   // Print targets
   printf("Swing Started... Target Value: %f\n", target);
   current_swing = type;

@@ -10,7 +10,7 @@ using namespace ez;
 
 
 // Set exit condition timeouts
-void drive::set_exit_condition(exit_condition_ &type, int p_small_exit_time, int p_small_error, int p_big_exit_time, int p_big_error, int p_velocity_exit_time, int p_mA_timeout) {
+void Drive::set_exit_condition(exit_condition_ &type, int p_small_exit_time, int p_small_error, int p_big_exit_time, int p_big_error, int p_velocity_exit_time, int p_mA_timeout) {
   type.small_exit_time = p_small_exit_time;
   type.small_error = p_small_error;
   type.big_exit_time = p_big_exit_time;
@@ -20,7 +20,7 @@ void drive::set_exit_condition(exit_condition_ &type, int p_small_exit_time, int
 }
 
 // Exit condition
-bool drive::exit_condition(std::tuple<double, std::optional<double>> targets, exit_condition_ input_struct, bool wait_until)
+bool Drive::exit_condition(std::tuple<double, std::optional<double>> targets, exit_condition_ input_struct, bool wait_until)
 {
   static int i = 0, j = 0, k = 0, l = 0;
   bool is_drive = std::get<1>(targets).has_value();
@@ -101,7 +101,7 @@ bool drive::exit_condition(std::tuple<double, std::optional<double>> targets, ex
 }
 
 // User wrapper for exit condition
-void drive::wait_drive() {
+void Drive::wait_drive() {
   pros::delay(util::DELAY_TIME);
 
   if (mode == DRIVE) {
@@ -122,7 +122,7 @@ void drive::wait_drive() {
 }
 
 // Function to wait until a certain position is reached.  Wrapper for exit condition.
-void drive::wait_until(double target) {
+void Drive::wait_until(double target) {
 
   // If robot is driving...
   if (mode == DRIVE) {

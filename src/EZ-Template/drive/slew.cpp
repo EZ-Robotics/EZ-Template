@@ -10,19 +10,19 @@ using namespace ez;
 
 
 // Set minimum power
-void drive::set_slew_min_power(int fwd, int rev) {
+void Drive::set_slew_min_power(int fwd, int rev) {
   SLEW_MIN_POWER[0] = fwd;
   SLEW_MIN_POWER[1] = rev;
 }
 
 // Set distance to slew for
-void drive::set_slew_distance(int fwd, int rev) {
+void Drive::set_slew_distance(int fwd, int rev) {
   SLEW_DISTANCE[0] = fwd;
   SLEW_DISTANCE[1] = rev;
 }
 
 // Initialize slew
-void drive::slew_initialize(slew_ &input, bool slew_on, double max_speed, double target, double current, double start, bool backwards) {
+void Drive::slew_initialize(slew_ &input, bool slew_on, double max_speed, double target, double current, double start, bool backwards) {
   input.enabled = slew_on;
   input.max_speed = max_speed;
 
@@ -33,7 +33,7 @@ void drive::slew_initialize(slew_ &input, bool slew_on, double max_speed, double
 }
 
 // Slew calculation
-double drive::slew_calculate(slew_ &input, double current) {
+double Drive::slew_calculate(slew_ &input, double current) {
   // Is lsew still on?
   if (input.enabled) {
     // Error is distance away from completed slew
