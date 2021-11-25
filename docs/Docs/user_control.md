@@ -21,12 +21,13 @@ nav_order: 2
 
 ## tank()
 Sets the drive to the left and right y axis.  
-**Prototype**
+**Protottype**
 ```cpp
 void tank();
 ```
 
 <details closed> <summary> <b>Example</b> </summary> <br>
+
 
 ```cpp
 // Chassis constructor
@@ -64,8 +65,9 @@ void opcontrol() {
 
 ---
 
+
 ### arcade_standard()
-Prototype
+**Protottype**
 ```cpp
 void arcade_standard(e_type stick_type);
 ```
@@ -80,7 +82,7 @@ Example
 
 
 ### arcade_flipped()
-Prototype
+**Protottype**
 ```cpp
 void arcade_flipped(e_type stick_type);
 ```
@@ -95,7 +97,7 @@ Example
 
 
 ### init_curve_sd()
-Prototype
+**Protottype**
 ```cpp
 void init_curve_sd();
 ```
@@ -110,7 +112,7 @@ Example
 
 
 ### set_curve_defaults()
-Prototype
+**Protottype**
 ```cpp
 void set_curve_default(double left, double right);
 ```
@@ -125,7 +127,7 @@ Example
 
 
 ### set_active_brake()
-Prototype
+**Protottype**
 ```cpp
 void set_active_brake(double kp);
 ```
@@ -140,7 +142,7 @@ Example
 
 
 ### toggle_modify_curve_with_controller()
-Prototype
+**Protottype**
 ```cpp
 void toggle_modify_curve_with_controller(bool toggle);
 ```
@@ -155,7 +157,7 @@ Example
 
 
 ### set_left_curve_buttons()
-Prototype
+**Protottype**
 ```cpp
 void set_left_curve_buttons(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase);
 ```
@@ -170,7 +172,7 @@ Example
 
 
 ### set_right_curve_buttons()
-Prototype
+**Protottype**
 ```cpp
 void set_right_curve_buttons(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase);
 ```
@@ -185,7 +187,7 @@ Example
 
 
 ### left_curve_function()
-Prototype
+**Protottype**
 ```cpp
 double left_curve_function(double x);
 ```
@@ -200,7 +202,7 @@ Example
 
 
 ### right_curve_function()
-Prototype
+**Protottype**
 ```cpp
 double right_curve_function(double x);
 ```
@@ -215,7 +217,7 @@ Example
 
 
 ### set_joystick_threshold()
-Prototype
+**Protottype**
 ```cpp
 void set_joystick_threshold(int threshold);
 ```
