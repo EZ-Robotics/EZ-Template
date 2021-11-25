@@ -6,7 +6,7 @@ nav_order: 4
 ---
 
 
-# **Autonomous Functions**
+# Autonomous Functions
 {: .no_toc }
 
 ## Table of contents

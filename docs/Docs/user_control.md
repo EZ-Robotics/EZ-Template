@@ -18,7 +18,7 @@ nav_order: 2
 
 ---
 
-## **Assumed Constructor**
+## Assumed Constructor
 
 All code below assumes this constructor is used.  As long as the name of the constructor is `chassis`, any of the constructors can be used. 
 
