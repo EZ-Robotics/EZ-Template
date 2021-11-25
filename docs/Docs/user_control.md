@@ -24,7 +24,7 @@ All code below assumes this constructor is used.  As long as the name of the con
 
 ```cpp
 // Chassis constructor
-drive chassis (
+Drive chassis (
   // Left Chassis Ports (negative port will reverse it!)
   {-11, -5, -7}
 

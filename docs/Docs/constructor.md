@@ -22,13 +22,13 @@ nav_order: 1
 ## Integrated Encoders
 **Prototype**
 ```cpp
-drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, 
+Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, 
 double wheel_diameter, double ticks, double ratio);
 ```
 **Example**  
 ```cpp
 // Chassis constructor
-drive chassis (
+Drive chassis (
   // Left Chassis Ports (negative port will reverse it!)
   {1, 2}
 
@@ -57,14 +57,14 @@ drive chassis (
 Currently only supports parallel trackers!  
 **Prototype**
 ```cpp
-drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, 
+Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, 
 double wheel_diameter, double ticks, double ratio, std::vector<int> left_tracker_ports,
 std::vector<int> right_tracker_ports);
 ```
 **Example**
 ```cpp
 // Chassis constructor
-drive chassis (
+Drive chassis (
   // Left Chassis Ports (negative port will reverse it!)
   {1, 2}
 
@@ -99,14 +99,14 @@ drive chassis (
 Currently only supports parallel trackers!  
 **Prototype**
 ```cpp
-drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, 
+Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, 
 double wheel_diameter, double ticks, double ratio, std::vector<int> left_tracker_ports, 
 std::vector<int> right_tracker_ports, int expander_smart_port);
 ```
 **Example**
 ```cpp
 // Chassis constructor
-drive chassis (
+Drive chassis (
   // Left Chassis Ports (negative port will reverse it!)
   {1, 2}
 
