@@ -349,11 +349,6 @@ class Drive {
     */
     bool imu_calibrate();
 
-    /**
-     * Autonomous interference detection.  Returns true when interfered, and false when nothing happened.
-    */
-    bool interfered = false;
-
 
 
     /////
@@ -410,6 +405,11 @@ class Drive {
      *        when driving, this is inches.  when turning, this is degrees.
     */
     void wait_until(double target);
+
+    /**
+     * Autonomous interference detection.  Returns true when interfered, and false when nothing happened.
+    */
+    bool interfered = false;
 
     /**
      * Changes max speed during a drive motion.
