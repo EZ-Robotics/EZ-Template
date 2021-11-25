@@ -24,7 +24,7 @@ drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int
 ```
 Example  
 {% highlight markdown %}
-```C++
+```cpp
 // Chassis constructor
 drive chassis (
   // Left Chassis Ports (negative port will reverse it!)
@@ -57,7 +57,7 @@ Prototype
 drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks, double ratio, std::vector<int> left_tracker_ports, std::vector<int> right_tracker_ports);
 ```
 Example
-```C++
+```cpp
 // Chassis constructor
 drive chassis (
   // Left Chassis Ports (negative port will reverse it!)
