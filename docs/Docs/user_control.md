@@ -18,7 +18,7 @@ nav_order: 2
 
 ---
 
-## Assumed Constructor
+## **Assumed Constructor**
 
 All code below assumes this constructor is used.  As long as the name of the constructor is `chassis`, any of the constructors can be used. 
 
@@ -73,11 +73,11 @@ void opcontrol() {
 
 ## arcade_standard()
 Sets the drive to standard arcade.  Left stick is fwd/rev.  
+`stick_type` is either `EZ::SPLIT` or `EZ::SINGLE`.
 **Prototype**
 ```cpp
 void arcade_standard(e_type stick_type);
-```
-Takes `EZ::SPLIT` or `EZ::SINGLE` as parameters.  
+``` 
 **Example** 
 ```cpp
 void opcontrol() {
@@ -96,11 +96,12 @@ void opcontrol() {
 
 ## arcade_flipped()
 Sets the drive to flipped arcade.  Right stick is fwd/rev.  
+`stick_type` is either `EZ::SPLIT` or `EZ::SINGLE`.  
 **Prototype**
 ```cpp
 void arcade_flipped(e_type stick_type);
 ```
-Takes `EZ::SPLIT` or `EZ::SINGLE` as parameters.  
+ 
 **Example** 
 ```cpp
 void opcontrol() {
@@ -118,7 +119,7 @@ void opcontrol() {
 
 
 ## init_curve_sd()
-Sets the left/right curve constants to what's on the SD card.  
+Sets the left/right curve constants to what's on the sd card.  
 **Prototype**
 ```cpp
 void init_curve_sd();
@@ -137,6 +138,8 @@ void initialize() {
 
 ## set_curve_defaults()
 Sets the left/right curve defaults and saves new values to the sd card.  
+`left` left input curve.  
+`right` right input curve.  
 **Prototype**
 ```cpp
 void set_curve_default(double left, double right);
@@ -154,7 +157,8 @@ void initialize() {
 
 
 ## set_active_brake()
-Active brake runs a P loop on the drive when joysticks are within their threshold. 
+Active brake runs a P loop on the drive when joysticks are within their threshold.  
+`kp` proportional constant for drive.  
 **Prototype**
 ```cpp
 void set_active_brake(double kp);
@@ -172,7 +176,8 @@ void initialize() {
 
 
 ## toggle_modify_curve_with_controller()
-Enables/disables buttons used for modifying the controller curve with the joystick.  True enables, false disables.  
+Enables/disables buttons used for modifying the controller curve with the joystick.   
+`toggle` true enables, false disables.  
 **Prototype**
 ```cpp
 void toggle_modify_curve_with_controller(bool toggle);
@@ -190,7 +195,9 @@ void initialize() {
 
 
 ## set_left_curve_buttons()
-Sets the buttons that are used to modify the left input curve.  The example is the default.  
+Sets the buttons that are used to modify the left input curve.  The example is the default.   
+`decrease` a pros button.  
+`increase` a pros button.  
 **Prototype**
 ```cpp
 void set_left_curve_buttons(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase);
@@ -209,6 +216,8 @@ void initialize() {
 
 ## set_right_curve_buttons()
 Sets the buttons that are used to modify the right input curve.  The example is the default.  
+`decrease` a pros button.  
+`increase` a pros button.  
 **Prototype**
 ```cpp
 void set_right_curve_buttons(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase);
@@ -227,6 +236,7 @@ void initialize() {
 
 ## left_curve_function()
 Returns the input times the red curve [here](https://www.desmos.com/calculator/rcfjjg83zx).  `tank()`, `arcade_standard()`, and `arcade_flipped()` all handle this for you.  
+`x` input value.  
 **Prototype**
 ```cpp
 double left_curve_function(double x);
@@ -252,6 +262,7 @@ void opcontrol() {
 
 ## right_curve_function()
 Returns the input times the red curve [here](https://www.desmos.com/calculator/rcfjjg83zx).  `tank()`, `arcade_standard()`, and `arcade_flipped()` all handle this for you.  
+`x` input value.  
 **Prototype**
 ```cpp
 double right_curve_function(double x);
@@ -276,7 +287,8 @@ void opcontrol() {
 
 
 ## set_joystick_threshold()
-Threshold the joystick will return 0 within.  
+Threshold the joystick will return 0 within.   
+`threshold` an integer, recommended to be less then 5.
 **Prototype**
 ```cpp
 void set_joystick_threshold(int threshold);

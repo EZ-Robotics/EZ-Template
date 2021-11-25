@@ -5,7 +5,7 @@ parent: Docs
 nav_order: 3
 ---
 
-# Set Drive and Telemetry
+# **Set Drive and Telemetry**
 {: .no_toc }
 
 ## Table of contents
@@ -17,7 +17,7 @@ nav_order: 3
 
 ---
 
-## Assumed Constructor
+## **Assumed Constructor**
 
 All code below assumes this constructor is used.  As long as the name of the constructor is `chassis`, any of the constructors can be used. 
 
@@ -47,10 +47,12 @@ Drive chassis (
 
 ---
 
-# Set Drive
+# **Set Drive**
 
 ## set_tank()
-Sets the drive to voltage.  Input is -127 to 127.  
+Sets the drive to voltage.  
+`left` an integer between -127 and 127.  
+`right` an integer between -127 and 127.  
 **Prototype**
 ```cpp
 void set_tank(int left, int right);
@@ -70,7 +72,8 @@ void autonomous() {
 
 
 ## set_drive_brake()
-Sets brake mode for all drive motors. Takes `MOTOR_BRAKE_COAST`, `MOTOR_BRAKE_BRAKE`, and `MOTOR_BRAKE_HOLD` as parameters.   
+Sets brake mode for all drive motors.  
+`brake_type`  takes either `MOTOR_BRAKE_COAST`, `MOTOR_BRAKE_BRAKE`, and `MOTOR_BRAKE_HOLD` as parameters.   
 **Prototype**
 ```cpp
 void set_drive_brake(pros::motor_brake_mode_e_t brake_type);
@@ -89,6 +92,7 @@ void initialize() {
 
 ## set_drive_current_limit()
 Sets mA limit to the drive.  Default is 2500.    
+`mA`input miliamps.  
 **Prototype**
 ```cpp
 void set_drive_current_limit(int mA);
@@ -105,7 +109,7 @@ void initialize() {
 ---
 
 
-# Telemetry
+# **Telemetry**
 
 ## right_sensor()
 Returns right sensor, either integrated encoder or external encoder.   
