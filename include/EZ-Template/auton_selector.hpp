@@ -6,7 +6,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #pragma once
 //#include <list>
-#include "EZ-Template/Auton.hpp"
+#include "EZ-Template/auton.hpp"
 
 #include <tuple>
 
@@ -15,12 +15,11 @@ class AutonSelector
 {
 public:
   std::vector<Auton> Autons;
-  int CurrentAutonPage;
-  int AutonCount;
+  int current_auton_page;
+  int auton_count;
   AutonSelector();
   AutonSelector(std::vector<Auton> autons);
-  void CallSelectedAuto();
-  void PrintSelectedAuto();
-  void AddAutons(std::vector<Auton> autons);
-  //void AddAutons(std::vector<Auton> autons);
+  void call_selected_auton();
+  void print_selected_auton();
+  void add_autons(std::vector<Auton> autons);
 };

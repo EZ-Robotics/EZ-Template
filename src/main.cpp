@@ -66,7 +66,7 @@ void initialize() {
   // chassis.set_right_curve_buttons(pros::E_CONTROLLER_DIGITAL_Y,    pros::E_CONTROLLER_DIGITAL_A);
 
   // Autonomous Selector using LLEMMU
-  ez::as::autoSelector.AddAutons({
+  ez::as::autoSelector.add_autons({
     Auton("Autonomous 1\nDoes Something", auto1),
     Auton("Autonomous 2\nDoes Something Else", auto2),
     Auton("Autonomous 3\nDoes Something More", auto3),
@@ -77,7 +77,7 @@ void initialize() {
   ez::as::init_auton_selector();
 
   // Callbacks for auto selector
-  ez::as::autoSelector.PrintSelectedAuto();
+  ez::as::autoSelector.print_selected_auton();
   pros::lcd::register_btn0_cb(ez::as::page_down);
   pros::lcd::register_btn2_cb(ez::as::page_up);
 
@@ -130,7 +130,7 @@ void autonomous() {
   chassis.reset_drive_sensor(); // Reset drive sensors to 0
   chassis.set_drive_brake(MOTOR_BRAKE_HOLD); // Set motors to hold.  This helps autonomous consistency. 
 
-  ez::as::autoSelector.CallSelectedAuto(); // Calls selected auton from autonomous selector. 
+  ez::as::autoSelector.call_selected_auton(); // Calls selected auton from autonomous selector. 
 }
 
 

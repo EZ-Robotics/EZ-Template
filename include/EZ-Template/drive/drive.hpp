@@ -6,7 +6,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #pragma once
 
-#include "EZ-Template/Helper.hpp"
+#include "EZ-Template/util.hpp"
 #include "EZ-Template/PID.hpp"
 
 #include <iostream>
@@ -31,9 +31,13 @@ class Drive {
 
 
     /**
-     * Vector of pros motors for the left and right chassis.
+     * Vector of pros motors for the left chassis. 
     */
     std::vector<pros::Motor> left_motors;
+
+    /**
+     * Vector of pros motors for the right chassis. 
+    */
     std::vector<pros::Motor> right_motors;
 
     /**
@@ -46,7 +50,15 @@ class Drive {
     */
     pros::Controller master;
 
+
+    /**
+     * Left tracking wheel. 
+    */
     pros::ADIEncoder left_tracker;
+
+    /**
+     * Right tracking wheel. 
+    */
     pros::ADIEncoder right_tracker;
 
     /**

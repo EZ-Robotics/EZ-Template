@@ -4,10 +4,7 @@ License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-#include "EZ-Template/Auton.hpp"
-#include "EZ-Template/AutonSelector.hpp"
-#include "EZ-Template/Helper.hpp"
-#include "EZ-Template/SDcard.hpp"
+#include "main.h"
 
 
 namespace ez {
@@ -20,7 +17,7 @@ namespace ez {
       if (!ez::util::IS_SD_CARD) return;
 
       FILE* usd_file_write = fopen("/usd/auto.txt", "w");
-      std::string cp_str = std::to_string(autoSelector.CurrentAutonPage);
+      std::string cp_str = std::to_string(autoSelector.current_auton_page);
       char const *cp_c = cp_str.c_str();
       fputs(cp_c, usd_file_write);
       fclose(usd_file_write);
@@ -33,32 +30,32 @@ namespace ez {
       FILE* as_usd_file_read = fopen("/usd/auto.txt", "r");
       char l_buf[5];
       fread(l_buf, 1, 5, as_usd_file_read);
-      ez::as::autoSelector.CurrentAutonPage = std::stof(l_buf);
+      ez::as::autoSelector.current_auton_page = std::stof(l_buf);
       fclose(as_usd_file_read);
 
-      if(ez::as::autoSelector.CurrentAutonPage>ez::as::autoSelector.AutonCount-1 || ez::as::autoSelector.CurrentAutonPage<0) {
-        ez::as::autoSelector.CurrentAutonPage=0;
+      if(ez::as::autoSelector.current_auton_page>ez::as::autoSelector.auton_count-1 || ez::as::autoSelector.current_auton_page<0) {
+        ez::as::autoSelector.current_auton_page=0;
         ez::as::update_auto_sd();
       }
     }
 
     void page_up() {
 
-      if (autoSelector.CurrentAutonPage == autoSelector.AutonCount -1)
-        autoSelector.CurrentAutonPage = 0;
+      if (autoSelector.current_auton_page == autoSelector.auton_count - 1)
+        autoSelector.current_auton_page = 0;
       else
-        autoSelector.CurrentAutonPage++;
+        autoSelector.current_auton_page++;
       update_auto_sd();
-      autoSelector.PrintSelectedAuto();
+      autoSelector.print_selected_auton();
     }
 
     void page_down() {
-      if (autoSelector.CurrentAutonPage == 0)
-        autoSelector.CurrentAutonPage = autoSelector.AutonCount - 1;
+      if (autoSelector.current_auton_page == 0)
+        autoSelector.current_auton_page = autoSelector.auton_count - 1;
       else
-        autoSelector.CurrentAutonPage--;
+        autoSelector.current_auton_page--;
       update_auto_sd();
-      autoSelector.PrintSelectedAuto();
+      autoSelector.print_selected_auton();
     }
   } // sd namespace
 } // ez namespace

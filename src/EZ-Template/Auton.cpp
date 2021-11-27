@@ -9,10 +9,10 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 Auton::Auton()
 {
   Name = "";
-  AutonCall = nullptr;
+  auton_call = nullptr;
 }
 Auton::Auton(std::string name, std::function<void()> callback)
 {
   Name = name;
-  AutonCall = callback;
+  auton_call = callback;
 }

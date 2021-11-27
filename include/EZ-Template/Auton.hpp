@@ -16,6 +16,6 @@ public:
   Auton();
   Auton(std::string, std::function<void()>);
   std::string Name;
-  std::function<void()> AutonCall;
+  std::function<void()> auton_call;
 private:
 };
