@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Auton Selector
+title: Autonomous Selector
 parent: Docs
 nav_order: 5
 ---
@@ -20,7 +20,7 @@ nav_order: 5
 
 
 ## init_auton_selector() 
-InitializesMust the autonomous selector. You must initialize the pros lcd first!  
+Initializes the autonomous selector.  If an sd card is plugged in, the current page will set to what's on the sd card. You must initialize the pros lcd first!  
 **Prototype**
 ```cpp
 void init_auton_selector();
