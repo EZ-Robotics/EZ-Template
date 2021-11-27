@@ -20,7 +20,7 @@ nav_order: 5
 
 
 ## init_auton_selector() 
-Sets the drive to go forward using PID and heading correction.  
+InitializesMust the autonomous selector. You must initialize the pros lcd first!  
 **Prototype**
 ```cpp
 void init_auton_selector();
@@ -28,32 +28,69 @@ void init_auton_selector();
 
 **Example**
 ```cpp
-
+void initialize() {
+  pros::lcd::initialize();
+  ez::as::init_auton_selector();
+}
 ```
 
 
 ---
 
 
-## PrintSelectedAuto();
-Sets the drive to go forward using PID and heading correction.  
+## add_autons();
+Adds autonomous routines to the autonomous selector. Uses ez::print_to_screen() to display to the brain.  
 **Prototype**
 ```cpp
-void PrintSelectedAuto();
+void add_autons(std::vector<Auton> autons);
 ```
 
 **Example**
 ```cpp
+void auto1() {
+  // Do something
+}
+void auto2() {
+  // Do something
+}
+void auto3() {
+  // Do something
+}
 
+void initialize() {
+  ez::as::autoSelector.add_autons({
+    Auton("Autonomous 1\nDoes Something", auto1),
+    Auton("Autonomous 2\nDoes Something Else", auto2),
+    Auton("Autonomous 3\nDoes Something More", auto3),
+  });
+}
 ```
 
+
+---
+
+
+## print_selected_auton();
+Prints the current autonomous mode to the screen.    
+**Prototype**
+```cpp
+void print_selected_auton();
+```
+
+**Example**
+```cpp
+void initialize() {
+  ez::as::autoSelector.print_selected_auton(); 
+}
+```
+ 
 
 ---
 
 
 
 ## page_down()
-Sets the drive to go forward using PID and heading correction.  
+Decreases the page. Best used with the lcd callback functions.   
 **Prototype**
 ```cpp
 void page_down();
@@ -61,7 +98,10 @@ void page_down();
 
 **Example**
 ```cpp
-
+void initialize() {
+  pros::lcd::register_btn0_cb(ez::as::page_down);
+  pros::lcd::register_btn2_cb(ez::as::page_up);
+}
 ```
 
 
@@ -69,31 +109,40 @@ void page_down();
 
 
 ## page_up()
-Sets the drive to go forward using PID and heading correction.  
+Increases the page. Best used with the lcd callback functions  
 **Prototype**
 ```cpp
-void page_up();
+void page_down();
 ```
 
 **Example**
 ```cpp
-
+void initialize() {
+  pros::lcd::register_btn0_cb(ez::as::page_down);
+  pros::lcd::register_btn2_cb(ez::as::page_up);
+}
 ```
 
 
 ---
 
 
-## CallSelectedAuto()
-Sets the drive to go forward using PID and heading correction.  
+## call_selected_auton()
+Runs the current autonomous that's selected.    
 **Prototype**
 ```cpp
-void CallSelectedAuto();
+void call_selected_auton();
 ```
 
 **Example**
 ```cpp
+void autonomous() {
+  chassis.reset_gyro(); 
+  chassis.reset_drive_sensor(); 
+  chassis.set_drive_brake(MOTOR_BRAKE_HOLD); 
 
+  ez::as::autoSelector.call_selected_auton(); 
+}
 ```
 
 

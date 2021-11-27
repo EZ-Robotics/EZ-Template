@@ -288,7 +288,7 @@ void opcontrol() {
 
 ## set_joystick_threshold()
 Threshold the joystick will return 0 within.   
-`threshold` an integer, recommended to be less then 5.
+`threshold` an integer, recommended to be less then 5.  
 **Prototype**
 ```cpp
 void set_joystick_threshold(int threshold);
