@@ -6,15 +6,14 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #pragma once
 
-#include  "EZ-Template/auton_selector.hpp"
-
+#include "EZ-Template/auton_selector.hpp"
 
 namespace ez {
-  namespace as {
-    extern AutonSelector autoSelector;
-    void init_auton_selector();
-    void update_auto_sd();
-    void page_up();
-    void page_down();
-  }
-} // ez::as namespace
+namespace as {
+extern AutonSelector autoSelector;
+void init_auton_selector();
+void update_auto_sd();
+void page_up();
+void page_down();
+}  // namespace as
+}  // namespace ez

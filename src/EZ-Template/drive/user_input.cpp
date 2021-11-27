@@ -6,7 +6,6 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "main.h"
 
-
 // Set curve defaults
 void Drive::set_curve_default(double left, double right) {
   left_curve_scale = left;
@@ -44,7 +43,7 @@ void Drive::save_l_curve_sd() {
 
   FILE* usd_file_write = fopen("/usd/left_curve.txt", "w");
   std::string in_str = std::to_string(left_curve_scale);
-  char const *in_c = in_str.c_str();
+  char const* in_c = in_str.c_str();
   fputs(in_c, usd_file_write);
   fclose(usd_file_write);
 }
@@ -56,7 +55,7 @@ void Drive::save_r_curve_sd() {
 
   FILE* usd_file_write = fopen("/usd/right_curve.txt", "w");
   std::string in_str = std::to_string(right_curve_scale);
-  char const *in_c = in_str.c_str();
+  char const* in_c = in_str.c_str();
   fputs(in_c, usd_file_write);
   fclose(usd_file_write);
 }
@@ -74,16 +73,16 @@ void Drive::set_right_curve_buttons(pros::controller_digital_e_t decrease, pros:
 void Drive::l_increase() { left_curve_scale += 0.1; }
 void Drive::l_decrease() {
   left_curve_scale -= 0.1;
-  left_curve_scale =  left_curve_scale<0 ? 0 : left_curve_scale;
+  left_curve_scale = left_curve_scale < 0 ? 0 : left_curve_scale;
 }
 void Drive::r_increase() { right_curve_scale += 0.1; }
 void Drive::r_decrease() {
   right_curve_scale -= 0.1;
-  right_curve_scale =  right_curve_scale<0 ? 0 : right_curve_scale;
+  right_curve_scale = right_curve_scale < 0 ? 0 : right_curve_scale;
 }
 
 // Button press logic for increase/decrease curves
-void Drive::button_press(button_ *input_name, int button, std::function<void()> change_curve, std::function<void()> save) {
+void Drive::button_press(button_* input_name, int button, std::function<void()> change_curve, std::function<void()> save) {
   // If button is pressed, increase the curve and set toggles.
   if (button && !input_name->lock) {
     change_curve();
@@ -94,9 +93,9 @@ void Drive::button_press(button_ *input_name, int button, std::function<void()> 
   // If the button is still held, check if it's held for 500ms.
   // Then, increase the curve every 100ms by 0.1
   else if (button && input_name->lock) {
-    input_name->hold_timer+=ez::util::DELAY_TIME;
+    input_name->hold_timer += ez::util::DELAY_TIME;
     if (input_name->hold_timer > 500.0) {
-      input_name->increase_timer+=ez::util::DELAY_TIME;
+      input_name->increase_timer += ez::util::DELAY_TIME;
       if (input_name->increase_timer > 100.0) {
         change_curve();
         input_name->increase_timer = 0;
@@ -110,7 +109,7 @@ void Drive::button_press(button_ *input_name, int button, std::function<void()> 
     input_name->hold_timer = 0;
 
     if (input_name->release_reset) {
-      input_name->release_timer+=ez::util::DELAY_TIME;
+      input_name->release_timer += ez::util::DELAY_TIME;
       if (input_name->release_timer > 250.0) {
         save();
         input_name->release_timer = 0;
@@ -125,19 +124,19 @@ void Drive::toggle_modify_curve_with_controller(bool toggle) { disable_controlle
 
 // Modify curves with button presses and display them to contrller
 void Drive::modify_curve_with_controller() {
-  if (!disable_controller) return; // True enables, false disables.
+  if (!disable_controller) return;  // True enables, false disables.
 
-  button_press(&l_increase_, master.get_digital(l_increase_.button), ([this]{ this->l_increase(); }), ([this]{ this->save_l_curve_sd(); }));
-  button_press(&l_decrease_, master.get_digital(l_decrease_.button), ([this]{ this->l_decrease(); }), ([this]{ this->save_l_curve_sd(); }));
+  button_press(&l_increase_, master.get_digital(l_increase_.button), ([this] { this->l_increase(); }), ([this] { this->save_l_curve_sd(); }));
+  button_press(&l_decrease_, master.get_digital(l_decrease_.button), ([this] { this->l_decrease(); }), ([this] { this->save_l_curve_sd(); }));
   if (!is_tank) {
-    button_press(&r_increase_, master.get_digital(r_increase_.button), ([this]{ this->r_increase(); }), ([this]{ this->save_r_curve_sd(); }));
-    button_press(&r_decrease_, master.get_digital(r_decrease_.button), ([this]{ this->r_decrease(); }), ([this]{ this->save_r_curve_sd(); }));
+    button_press(&r_increase_, master.get_digital(r_increase_.button), ([this] { this->r_increase(); }), ([this] { this->save_r_curve_sd(); }));
+    button_press(&r_decrease_, master.get_digital(r_decrease_.button), ([this] { this->r_decrease(); }), ([this] { this->save_r_curve_sd(); }));
   }
 
   auto sr = std::to_string(right_curve_scale);
   auto sl = std::to_string(left_curve_scale);
   if (!is_tank)
-    master.set_text(2, 0, sl+"   "+sr);
+    master.set_text(2, 0, sl + "   " + sr);
   else
     master.set_text(2, 0, sl);
 }
@@ -146,9 +145,9 @@ void Drive::modify_curve_with_controller() {
 double Drive::left_curve_function(double x) {
   if (left_curve_scale != 0) {
     //if (CURVE_TYPE)
-      return (powf(2.718, -(left_curve_scale/10)) + powf(2.718, (fabs(x)-127)/10) * (1-powf(2.718, -(left_curve_scale/10))))*x;
+    return (powf(2.718, -(left_curve_scale / 10)) + powf(2.718, (fabs(x) - 127) / 10) * (1 - powf(2.718, -(left_curve_scale / 10)))) * x;
     //else
-      //return powf(2.718, ((abs(x)-127)*RIGHT_CURVE_SCALE)/100)*x;
+    //return powf(2.718, ((abs(x)-127)*RIGHT_CURVE_SCALE)/100)*x;
   }
   return x;
 }
@@ -157,9 +156,9 @@ double Drive::left_curve_function(double x) {
 double Drive::right_curve_function(double x) {
   if (right_curve_scale != 0) {
     //if (CURVE_TYPE)
-      return (powf(2.718, -(right_curve_scale/10)) + powf(2.718, (fabs(x)-127)/10) * (1-powf(2.718, -(right_curve_scale/10))))*x;
+    return (powf(2.718, -(right_curve_scale / 10)) + powf(2.718, (fabs(x) - 127) / 10) * (1 - powf(2.718, -(right_curve_scale / 10)))) * x;
     //else
-      //return powf(2.718, ((abs(x)-127)*RIGHT_CURVE_SCALE)/100)*x;
+    //return powf(2.718, ((abs(x)-127)*RIGHT_CURVE_SCALE)/100)*x;
   }
   return x;
 }
@@ -191,13 +190,13 @@ void Drive::tank() {
   int r_stick = left_curve_function(master.get_analog(ANALOG_RIGHT_Y));
 
   // Threshold if joysticks don't come back to perfect 0
-  if (abs(l_stick)>JOYSTICK_THRESHOLD || abs(r_stick)>JOYSTICK_THRESHOLD) {
+  if (abs(l_stick) > JOYSTICK_THRESHOLD || abs(r_stick) > JOYSTICK_THRESHOLD) {
     set_tank(l_stick, r_stick);
     reset_drive_sensor();
   }
   // When joys are released, run active brake (P) on drive
   else {
-    set_tank((0-left_sensor())*active_brake_kp, (0-right_sensor())*active_brake_kp);
+    set_tank((0 - left_sensor()) * active_brake_kp, (0 - right_sensor()) * active_brake_kp);
   }
 }
 
@@ -216,21 +215,20 @@ void Drive::arcade_standard(e_type stick_type) {
     // Put the joysticks through the curve function
     l_stick = left_curve_function(master.get_analog(ANALOG_LEFT_Y));
     r_stick = right_curve_function(master.get_analog(ANALOG_RIGHT_X));
-  }
-  else if (stick_type == SINGLE) {
+  } else if (stick_type == SINGLE) {
     // Put the joysticks through the curve function
     l_stick = left_curve_function(master.get_analog(ANALOG_LEFT_Y));
     r_stick = right_curve_function(master.get_analog(ANALOG_LEFT_X));
   }
 
   // Threshold if joysticks don't come back to perfect 0
-  if (abs(l_stick)>JOYSTICK_THRESHOLD || abs(r_stick)>JOYSTICK_THRESHOLD) {
-    set_tank(l_stick+r_stick, l_stick-r_stick);
+  if (abs(l_stick) > JOYSTICK_THRESHOLD || abs(r_stick) > JOYSTICK_THRESHOLD) {
+    set_tank(l_stick + r_stick, l_stick - r_stick);
     reset_drive_sensor();
   }
   // When joys are released, run active brake (P) on drive
   else {
-    set_tank((0-left_sensor())*active_brake_kp, (0-right_sensor())*active_brake_kp);
+    set_tank((0 - left_sensor()) * active_brake_kp, (0 - right_sensor()) * active_brake_kp);
   }
 }
 
@@ -249,20 +247,19 @@ void Drive::arcade_flipped(e_type stick_type) {
     // Put the joysticks through the curve function
     r_stick = right_curve_function(master.get_analog(ANALOG_RIGHT_Y));
     l_stick = left_curve_function(master.get_analog(ANALOG_LEFT_X));
-  }
-  else if (stick_type == SINGLE) {
+  } else if (stick_type == SINGLE) {
     // Put the joysticks through the curve function
     r_stick = right_curve_function(master.get_analog(ANALOG_RIGHT_Y));
     l_stick = left_curve_function(master.get_analog(ANALOG_RIGHT_X));
   }
 
   // Threshold if joysticks don't come back to perfect 0
-  if (abs(l_stick)>JOYSTICK_THRESHOLD || abs(r_stick)>JOYSTICK_THRESHOLD) {
-    set_tank(r_stick+l_stick, r_stick-l_stick);
+  if (abs(l_stick) > JOYSTICK_THRESHOLD || abs(r_stick) > JOYSTICK_THRESHOLD) {
+    set_tank(r_stick + l_stick, r_stick - l_stick);
     reset_drive_sensor();
   }
   // When joys are released, run active brake (P) on drive
   else {
-    set_tank((0-left_sensor())*active_brake_kp, (0-right_sensor())*active_brake_kp);
+    set_tank((0 - left_sensor()) * active_brake_kp, (0 - right_sensor()) * active_brake_kp);
   }
 }

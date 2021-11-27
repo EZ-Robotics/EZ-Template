@@ -8,7 +8,6 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 using namespace ez;
 
-
 // Set minimum power
 void Drive::set_slew_min_power(int fwd, int rev) {
   SLEW_MIN_POWER[0] = fwd;
@@ -27,9 +26,9 @@ void Drive::slew_initialize(slew_ &input, bool slew_on, double max_speed, double
   input.max_speed = max_speed;
 
   input.sign = util::sgn(target - current);
-  input.x_intercept = start + (SLEW_DISTANCE[backwards]*TICK_PER_INCH);
+  input.x_intercept = start + (SLEW_DISTANCE[backwards] * TICK_PER_INCH);
   input.y_intercept = max_speed * input.sign;
-  input.slope = (SLEW_MIN_POWER[backwards]-max_speed) / ((start+(SLEW_DISTANCE[backwards]*TICK_PER_INCH))-0);
+  input.slope = (SLEW_MIN_POWER[backwards] - max_speed) / ((start + (SLEW_DISTANCE[backwards] * TICK_PER_INCH)) - 0);
 }
 
 // Slew calculation

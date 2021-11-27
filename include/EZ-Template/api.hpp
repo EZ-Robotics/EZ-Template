@@ -6,10 +6,9 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #pragma once
 
-#include "EZ-Template/util.hpp"
-#include "EZ-Template/sdcard.hpp"
-#include "EZ-Template/auton_selector.hpp"
 #include "EZ-Template/PID.hpp"
 #include "EZ-Template/auton.hpp"
-
+#include "EZ-Template/auton_selector.hpp"
 #include "EZ-Template/drive/drive.hpp"
+#include "EZ-Template/sdcard.hpp"
+#include "EZ-Template/util.hpp"

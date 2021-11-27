@@ -8,10 +8,8 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 using namespace ez;
 
-
 void Drive::ez_auto_task() {
   while (true) {
-
     // Autonomous PID
     if (mode == DRIVE)
       drive_pid_task();
@@ -24,7 +22,6 @@ void Drive::ez_auto_task() {
       util::AUTON_RAN = true;
 
     pros::delay(util::DELAY_TIME);
-
   }
 }
 
@@ -36,11 +33,11 @@ void Drive::drive_pid_task() {
   headingPID.compute(get_gyro());
 
   // Compute slew
-  double l_slew_out = slew_calculate(left_slew,  left_sensor ());
+  double l_slew_out = slew_calculate(left_slew, left_sensor());
   double r_slew_out = slew_calculate(right_slew, right_sensor());
 
   // Clip leftPID and rightPID to slew (if slew is disabled, it returns max_speed)
-  double l_drive_out = util::clip_num(leftPID. output, l_slew_out, -l_slew_out);
+  double l_drive_out = util::clip_num(leftPID.output, l_slew_out, -l_slew_out);
   double r_drive_out = util::clip_num(rightPID.output, r_slew_out, -r_slew_out);
 
   // Toggle heading
@@ -63,7 +60,7 @@ void Drive::turn_pid_task() {
   double gyro_out = util::clip_num(turnPID.output, max_speed, -max_speed);
 
   // Clip the speed of the turn when the robot is within StartI, only do this when target is larger then StartI
-  if (turnPID.constants.ki!=0 && (fabs(turnPID.get_target())>turnPID.constants.start_i && fabs(turnPID.error)<turnPID.constants.start_i)) {
+  if (turnPID.constants.ki != 0 && (fabs(turnPID.get_target()) > turnPID.constants.start_i && fabs(turnPID.error) < turnPID.constants.start_i)) {
     gyro_out = util::clip_num(gyro_out, 30, -30);
   }
 
@@ -80,7 +77,7 @@ void Drive::swing_pid_task() {
   double swing_out = util::clip_num(swingPID.output, max_speed, -max_speed);
 
   // Clip the speed of the turn when the robot is within StartI, only do this when target is larger then StartI
-  if (swingPID.constants.ki!=0 && (fabs(turnPID.get_target())>swingPID.constants.start_i && fabs(turnPID.error)<swingPID.constants.start_i)) {
+  if (swingPID.constants.ki != 0 && (fabs(turnPID.get_target()) > swingPID.constants.start_i && fabs(turnPID.error) < swingPID.constants.start_i)) {
     swing_out = util::clip_num(swing_out, 30, -30);
   }
 

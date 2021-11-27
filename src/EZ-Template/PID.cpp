@@ -8,7 +8,6 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 using namespace ez;
 
-
 void PID::reset_variables() {
   output = 0;
   target = 0;
@@ -19,15 +18,14 @@ void PID::reset_variables() {
   prev_time = 0;
 }
 
-PID::PID()
-{
+PID::PID() {
   reset_variables();
   set_constants(0, 0, 0, 0);
 }
 
 PID::Constants PID::get_constants() { return constants; }
 
-PID::PID(double p, double i, double d, double start_i)  {
+PID::PID(double p, double i, double d, double start_i) {
   reset_variables();
   set_constants(p, i, d, start_i);
 }
@@ -50,15 +48,15 @@ void PID::compute(double current) {
   error = target - current;
   derivative = error - prev_error;
 
-  if (constants.ki!=0) {
-    if(fabs(error) < constants.start_i)
+  if (constants.ki != 0) {
+    if (fabs(error) < constants.start_i)
       integral += error;
 
-    if(util::sgn(error) != util::sgn(prev_error))
+    if (util::sgn(error) != util::sgn(prev_error))
       integral = 0;
   }
 
-  output = (error*constants.kp) + (integral*constants.ki) + (derivative*constants.kd);
+  output = (error * constants.kp) + (integral * constants.ki) + (derivative * constants.kd);
 
   prev_error = error;
 }

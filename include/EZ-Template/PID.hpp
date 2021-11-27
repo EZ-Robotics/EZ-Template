@@ -6,12 +6,9 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #pragma once
 
-
-class PID
-{
-public:
-  struct Constants
-  {
+class PID {
+ public:
+  struct Constants {
     double kp;
     double ki;
     double kd;
@@ -29,7 +26,8 @@ public:
   double error;
   Constants constants;
   double target;
-private:
+
+ private:
   void reset_variables();
 
   double prev_error;

@@ -5,15 +5,13 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
 #pragma once
-//#include <list>
-#include "EZ-Template/auton.hpp"
-
 #include <tuple>
 
+#include "EZ-Template/auton.hpp"
+
 using namespace std;
-class AutonSelector
-{
-public:
+class AutonSelector {
+ public:
   std::vector<Auton> Autons;
   int current_auton_page;
   int auton_count;

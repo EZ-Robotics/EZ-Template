@@ -5,17 +5,15 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
 #pragma once
-#include <iostream>
 #include <functional>
+#include <iostream>
 
-
-//hpp file
-class Auton
-{
-public:
+class Auton {
+ public:
   Auton();
   Auton(std::string, std::function<void()>);
   std::string Name;
   std::function<void()> auton_call;
-private:
+
+ private:
 };

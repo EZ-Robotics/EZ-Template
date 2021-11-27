@@ -6,7 +6,6 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "main.h"
 
-
 AutonSelector::AutonSelector() {
   auton_count = 0;
   current_auton_page = 0;
@@ -24,7 +23,8 @@ void AutonSelector::print_selected_auton() {
   if (auton_count == 0) return;
   pros::lcd::clear_line(0);
   pros::lcd::clear_line(1);
-  ez::print_to_screen("Page " + std::to_string(current_auton_page+1) + "\n" + Autons[current_auton_page].Name);
+  ez::print_to_screen("Page " + std::to_string(current_auton_page + 1) + "\n" +
+                      Autons[current_auton_page].Name);
 }
 
 void AutonSelector::call_selected_auton() {
