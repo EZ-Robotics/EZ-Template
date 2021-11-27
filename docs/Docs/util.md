@@ -61,7 +61,7 @@ void initialize() {
 Returns the sgn of the input.  Returns 1 if positive, -1 if negative, and 0 if 0.    
 **Prototype**
 ```cpp
-void sgn(double input);
+double sgn(double input);
 ```
 
 **Example**
@@ -83,7 +83,7 @@ void opcontrol() {
 Checks if `input` is within range of `max` and `min`.  If it's out, this returns `max` or `min` respectively.    
 **Prototype**
 ```cpp
-void clip_num(double input, double max, double min);
+double clip_num(double input, double max, double min);
 ```
 
 **Example**
