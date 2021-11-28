@@ -82,10 +82,9 @@ void print_to_screen(std::string text, int line) {
       texts.push_back(temp);
       temp = "";
       break;
-    } else if (text[i] == '\n') {
-      if (temp != "") {
-        texts.push_back(temp);
-      }
+    }
+    else if (text[i] == '\n') {
+      texts.push_back(temp);
       temp = "";
     } else {
       temp += text[i];
