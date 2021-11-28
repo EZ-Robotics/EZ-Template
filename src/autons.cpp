@@ -7,58 +7,188 @@ const int DRIVE_SPEED = 110; // This is 110/127 (around 87% of max speed).  We d
 const int TURN_SPEED  = 90;
 const int SWING_SPEED = 90;
 
+
+
 ///
 // Constants
 ///
 
-/*
-// Reset all constants to default (what's in setup.hpp is default)
-void
-reset_constants() {
-  reset_slew_min_power();
-  reset_slew_distance();
-  reset_fw_drive_constants();
-  reset_bw_drive_constants();
-  reset_turn_constants();
-
-  reset_turn_i_constants();
-  reset_swing_constants();
-}
-*/
-
-// Functions to change constants
 // It's best practice to tune constants when the robot is empty and with heavier game objects, or with lifts up vs down.
 // If the objects are light or the cog doesn't change much, then there isn't a concern here.
+
 /*
 void
 one_mogo_constants() {
-  set_slew_min_power(80, 80);
-  set_slew_distance(7, 7);
-  set_fw_drive_constants(0.45, 5);
-  set_bw_drive_constants(0.375, 4);
-  set_turn_constants(5, 0.003, 35);
-  set_turn_i_constants(15, 30);
-  set_swing_constants(12, 35);
+  chassis.set_slew_min_power(80, 80);
+  chassis.set_slew_min_distance(7, 7);
+  chassis.set_pid_constants(chassis.headingPID, 11, 0, 20, 0);
+  chassis.set_pid_constants(chassis.forward_drivePID, 0.45, 0, 5, 0);
+  chassis.set_pid_constants(chassis.backward_drivePID, 0.45, 0, 5, 0);
+  chassis.set_pid_constants(chassis.turnPID, 5, 0.003, 35, 15;
+  chassis.set_pid_constants(chassis.swingPID, 7, 0, 45, 0);
 }
 
 void
 two_mogo_constants() {
-  set_slew_min_power(80, 80);
-  set_slew_distance(7, 7);
-  set_fw_drive_constants(0.45, 5);
-  set_bw_drive_constants(0.375, 4);
-  set_turn_constants(5, 0.003, 35);
-  set_turn_i_constants(15, 30);
-  set_swing_constants(12, 35);
+  chassis.set_slew_min_power(80, 80);
+  chassis.set_slew_min_distance(7, 7);
+  chassis.set_pid_constants(chassis.headingPID, 11, 0, 20, 0);
+  chassis.set_pid_constants(chassis.forward_drivePID, 0.45, 0, 5, 0);
+  chassis.set_pid_constants(chassis.backward_drivePID, 0.45, 0, 5, 0);
+  chassis.set_pid_constants(chassis.turnPID, 5, 0.003, 35, 15;
+  chassis.set_pid_constants(chassis.swingPID, 7, 0, 45, 0);
 }
 */
 
 
 
-// All drive movements use the "set_drive_pid" function
-// the first parameter is the type of motion (drive, turn, r_swing, l_swing)
-// below are example codes using each type
+///
+// Drive Example
+///
+void
+drive_example() {
+  // The first parameter is target inches
+  // The second parameter is max speed the robot will drive at
+  // The third parameter is a boolean (true or false) for enabling/disabling a slew at the start of drive motions
+  // for slew, only enable it when the drive distance is greater then the slew distance + a few inches
 
+
+  chassis.set_drive_pid(24, DRIVE_SPEED, true);
+  chassis.wait_drive();
+
+  chassis.set_drive_pid(-12, DRIVE_SPEED);
+  chassis.wait_drive();
+
+  chassis.set_drive_pid(-12, DRIVE_SPEED);
+  chassis.wait_drive();
+}
+
+
+
+///
+// Turn Example
+///
+void
+turn_example() {
+  // The first parameter is target degrees
+  // The second parameter is max speed the robot will drive at
+
+
+  chassis.set_turn_pid(90, TURN_SPEED);
+  chassis.wait_drive();
+
+  chassis.set_turn_pid(45, TURN_SPEED);
+  chassis.wait_drive();
+
+  chassis.set_turn_pid(0, TURN_SPEED);
+  chassis.wait_drive();
+}
+
+
+
+///
+// Combining Turn + Drive
+///
+void
+drive_and_turn() {
+  chassis.set_drive_pid(24, DRIVE_SPEED, true);
+  chassis.wait_drive();
+
+  chassis.set_turn_pid(45, TURN_SPEED);
+  chassis.wait_drive();
+
+  chassis.set_turn_pid(-45, TURN_SPEED);
+  chassis.wait_drive();
+
+  chassis.set_turn_pid(0, TURN_SPEED);
+  chassis.wait_drive();
+
+  chassis.set_drive_pid(-24, DRIVE_SPEED, true);
+  chassis.wait_drive();
+}
+
+
+
+///
+// Wait Until and Changing Max Speed
+///
+void
+wait_until_change_speed() {
+  // wait_until will wait until the robot gets to a desired position
+
+
+  // When the robot gets to 12 inches, the robot will travel the remaining distance at a max speed of 40
+  chassis.set_drive_pid(24, DRIVE_SPEED, true);
+  chassis.wait_until(6);
+  chassis.set_max_speed(40); // After driving 12 inches at DRIVE_SPEED, the robot will go the remaining distance at 40 speed
+  chassis.wait_drive();
+
+  chassis.set_turn_pid(45, TURN_SPEED);
+  chassis.wait_drive();
+
+  chassis.set_turn_pid(-45, TURN_SPEED);
+  chassis.wait_drive();
+
+  chassis.set_turn_pid(0, TURN_SPEED);
+  chassis.wait_drive();
+
+  // When the robot gets to -12 inches, the robot will travel the remaining distance at a max speed of 40
+  chassis.set_drive_pid(-24, DRIVE_SPEED, true);
+  chassis.wait_until(-6);
+  chassis.set_max_speed(40); // After driving 12 inches at DRIVE_SPEED, the robot will go the remaining distance at 40 speed
+  chassis.wait_drive();
+}
+
+
+
+///
+// Swing Example
+///
+void
+swing_example() {
+  // The first parameter is ez::LEFT_SWING or ez::RIGHT_SWING
+  // The second parameter is target degrees
+  // The third parameter is speed of the moving side of the drive
+
+
+  chassis.set_swing_pid(ez::LEFT_SWING, 45, SWING_SPEED);
+  chassis.wait_drive();
+
+  chassis.set_drive_pid(24, DRIVE_SPEED, true);
+  chassis.wait_until(12);
+
+  chassis.set_swing_pid(ez::RIGHT_SWING, 0, SWING_SPEED);
+  chassis.wait_drive();
+}
+
+
+
+///
+// Auto that tests everything
+///
+void
+combining_movements() {
+  chassis.set_drive_pid(24, DRIVE_SPEED, true);
+  chassis.wait_drive();
+
+  chassis.set_turn_pid(45, TURN_SPEED);
+  chassis.wait_drive();
+
+  chassis.set_drive_pid(ez::RIGHT_SWING, -45, TURN_SPEED);
+  chassis.wait_drive();
+
+  chassis.set_turn_pid(0, TURN_SPEED);
+  chassis.wait_drive();
+
+  chassis.set_drive_pid(-24, DRIVE_SPEED, true);
+  chassis.wait_drive();
+}
+
+
+
+///
+// Interference example
+///
 void tug (int attempts) {
   for (int i=0; i<attempts-1; i++) {
     // Attempt to drive backwards
@@ -79,8 +209,10 @@ void tug (int attempts) {
   }
 }
 
-void auto1() {
- chassis.set_drive_pid(24, 110, true);
+// If there is no interference, robot will drive forward and turn 90 degrees. 
+// If interfered, robot will drive forward and then attempt to drive backwards. 
+void interfered_example() {
+ chassis.set_drive_pid(24, DRIVE_SPEED, true);
  chassis.wait_drive();
 
  if (chassis.interfered) {
@@ -88,213 +220,12 @@ void auto1() {
    return;
  }
 
- chassis.set_turn_pid(90, 90);
- chassis.wait_drive();
-}
-void auto2() {
-  chassis.set_drive_pid(12, DRIVE_SPEED, true);
-  chassis.wait_drive();
-
-  chassis.set_turn_pid(90, TURN_SPEED);
-  chassis.wait_drive();
-  chassis.set_turn_pid(0,  TURN_SPEED);
-  chassis.wait_drive();
-
-  chassis.set_swing_pid(ez::LEFT_SWING,  45, SWING_SPEED);
-  chassis.wait_drive();
-  chassis.set_swing_pid(ez::RIGHT_SWING, 0,  SWING_SPEED);
-  chassis.wait_drive();
-}
-void auto3() {
- chassis.set_turn_pid(-90, 90);
+ chassis.set_turn_pid(90, TURN_SPEED);
  chassis.wait_drive();
 }
 
 
-///
-// Drive Example
-///
-void
-auto_1() {
-  /*
-  // The second parameter is target inches
-  // The third parameter is max speed the robot will drive at
-  // The fourth parameter is a boolean (true or false) for enabling/disabling a slew at the start of drive motions
-  // for slew, only enable it when the drive distance is greater then the slew distance + a few inches
 
-
-  set_drive_pid(drive, 24, DRIVE_SPEED, true);
-  wait_drive();
-
-  set_drive_pid(drive, -12, DRIVE_SPEED);
-  wait_drive();
-
-  set_drive_pid(drive, -12, DRIVE_SPEED);
-  wait_drive();
-  */
-}
-
-
-
-///
-// Turn Example
-///
-void
-auto_2() {
-  /*
-  // The second parameter is target degrees
-  // The third parameter is max speed the robot will drive at
-
-
-  set_drive_pid(turn, 90, TURN_SPEED);
-  wait_drive();
-
-  set_drive_pid(turn, 45, TURN_SPEED);
-  wait_drive();
-
-  set_drive_pid(turn, 0, TURN_SPEED);
-  wait_drive();
-  */
-}
-
-
-
-///
-// Combining Turn + Drive
-///
-void
-auto_3() {
-  /*
-  set_drive_pid(drive, 24, DRIVE_SPEED, true);
-  wait_drive();
-
-  set_drive_pid(turn, 45, TURN_SPEED);
-  wait_drive();
-
-  set_drive_pid(turn, -45, TURN_SPEED);
-  wait_drive();
-
-  set_drive_pid(turn, 0, TURN_SPEED);
-  wait_drive();
-
-  set_drive_pid(drive, -24, DRIVE_SPEED, true);
-  wait_drive();
-  */
-}
-
-
-
-///
-// Wait Until and Changing Max Speed
-///
-void
-auto_4() {
-  /*
-  // wait_until will wait until the robot gets to a desired position
-
-
-  // When the robot gets to 12 inches, the robot will travel the remaining distance at a max speed of 40
-  set_drive_pid(drive, 24, DRIVE_SPEED, true);
-  wait_until(12);
-  set_max_speed(40); // After driving 12 inches at DRIVE_SPEED, the robot will go the remaining distance at 40 speed
-  wait_drive();
-
-  set_drive_pid(turn, 45, TURN_SPEED);
-  wait_drive();
-
-  set_drive_pid(turn, -45, TURN_SPEED);
-  wait_drive();
-
-  set_drive_pid(turn, 0, TURN_SPEED);
-  wait_drive();
-
-  // When the robot gets to -12 inches, the robot will travel the remaining distance at a max speed of 40
-  set_drive_pid(drive, -24, DRIVE_SPEED, true);
-  wait_until(-12);
-  set_max_speed(40); // After driving 12 inches at DRIVE_SPEED, the robot will go the remaining distance at 40 speed
-  wait_drive();
-  */
-}
-
-
-
-///
-// Swing Example
-///
-void
-auto_5() {
-  /*
-  // The second parameter is target degrees
-  // The third parameter is speed of the moving side of the drive
-
-  set_drive_pid(l_swing, 45, SWING_SPEED);
-  wait_drive();
-
-  set_drive_pid(drive, 24, DRIVE_SPEED, true);
-  wait_until(12);
-
-  set_drive_pid(r_swing, 0, SWING_SPEED);
-  wait_drive();
-  */
-}
-
-
-
-///
-// Auto that tests everything
-///
-void
-test_auton() {
-  /*
-  set_drive_pid(drive, 24, DRIVE_SPEED, true);
-  wait_drive();
-
-  set_drive_pid(turn, 45, TURN_SPEED);
-  wait_drive();
-
-  set_drive_pid(r_swing, -45, TURN_SPEED);
-  wait_drive();
-
-  set_drive_pid(turn, 0, TURN_SPEED);
-  wait_drive();
-
-  set_drive_pid(drive, -24, DRIVE_SPEED, true);
-  wait_drive();
-  */
-}
-
-
+// . . .
 // Make your own autonomous functions here!
-
-void
-auto_6() {
-
-}
-
-
-
-void
-auto_7() {
-
-}
-
-
-
-void
-auto_8() {
-
-}
-
-
-
-void
-auto_9() {
-
-}
-
-
-
-void
-auto_10() {
-
-}
+// . . .

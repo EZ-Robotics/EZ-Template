@@ -18,7 +18,7 @@ Drive chassis (
   ,3.25
 
   // Cartridge RPM
-  //   (pr tick per rotation if using tracking wheels)
+  //   (or tick per rotation if using tracking wheels)
   ,600
 
   // External Gear Ratio 
@@ -67,9 +67,13 @@ void initialize() {
 
   // Autonomous Selector using LLEMMU
   ez::as::autoSelector.add_autons({
-    Auton("Autonomous 1\nDoes Something", auto1),
-    Auton("Autonomous 2\nDoes Something Else", auto2),
-    Auton("Autonomous 3\nDoes Something More", auto3),
+    Auton("Example Drive\n\nDrive forward and come back.", drive_example),
+    Auton("Example Turn\n\nTurn 3 times.", turn_example),
+    Auton("Drive and Turn\n\nDrive forward, turn, come back. ", drive_and_turn),
+    Auton("Drive and Turn\n\nSlow down during drive.", wait_until_change_speed),
+    Auton("Swing Example\n\nSwing, drive, swing.", swing_example),
+    Auton("Combine all 3 movements", combining_movements),
+    Auton("Interference\n\nAfter driving forward, robot performs differently if interfered or not.", interfered_example),
   });
 
   // Initialize auto selector and LLEMU
