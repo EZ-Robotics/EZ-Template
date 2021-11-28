@@ -246,7 +246,7 @@ void set_slew_min_power(int fwd, int rev);
 **Example**
 ```cpp
 void initialize() {
-  set_slew_min_power(80, 80);
+  chassis.set_slew_min_power(80, 80);
 }
 ```
 
@@ -266,7 +266,7 @@ void set_slew_distance (int fwd, int rev);
 **Example**
 ```cpp
 void initialize() {
-  set_slew_min_distance(7, 7);
+  chassis.set_slew_min_distance(7, 7);
 }
 ```
 
@@ -292,9 +292,9 @@ void set_exit_condition(exit_condition_ &type, int p_small_exit_time, int p_smal
 **Example**
 ```cpp
 void initialize() {
-  set_exit_condition(turn_exit,  100, 3,  500, 7,   500, 500);
-  set_exit_condition(swing_exit, 100, 3,  500, 7,   500, 500);
-  set_exit_condition(drive_exit, 80,  50, 300, 150, 500, 500);
+  chassis.set_exit_condition(turn_exit,  100, 3,  500, 7,   500, 500);
+  chassis.set_exit_condition(swing_exit, 100, 3,  500, 7,   500, 500);
+  chassis.set_exit_condition(drive_exit, 80,  50, 300, 150, 500, 500);
 }
 ```
 
