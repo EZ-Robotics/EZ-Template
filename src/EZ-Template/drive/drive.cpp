@@ -14,7 +14,6 @@ using namespace ez;
 Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports,
              int imu_port, double wheel_diameter, double ticks, double ratio)
     : imu(imu_port),
-      master(pros::E_CONTROLLER_MASTER),
       left_tracker(-1, -1, false),   // Default value
       right_tracker(-1, -1, false),  // Default value
       ez_auto([this] { this->ez_auto_task(); }) {
@@ -44,7 +43,6 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
              int imu_port, double wheel_diameter, double ticks, double ratio,
              std::vector<int> left_tracker_ports, std::vector<int> right_tracker_ports)
     : imu(imu_port),
-      master(pros::E_CONTROLLER_MASTER),
       left_tracker(abs(left_tracker_ports[0]), abs(left_tracker_ports[1]), util::is_reversed(left_tracker_ports[0])),
       right_tracker(abs(right_tracker_ports[0]), abs(right_tracker_ports[1]), util::is_reversed(right_tracker_ports[0])),
       ez_auto([this] { this->ez_auto_task(); }) {
@@ -74,7 +72,6 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
              int imu_port, double wheel_diameter, double ticks, double ratio,
              std::vector<int> left_tracker_ports, std::vector<int> right_tracker_ports, int expander_smart_port)
     : imu(imu_port),
-      master(pros::E_CONTROLLER_MASTER),
       left_tracker({expander_smart_port, abs(left_tracker_ports[0]), abs(left_tracker_ports[1])}, util::is_reversed(left_tracker_ports[0])),
       right_tracker({expander_smart_port, abs(right_tracker_ports[0]), abs(right_tracker_ports[1])}, util::is_reversed(right_tracker_ports[0])),
       ez_auto([this] { this->ez_auto_task(); }) {

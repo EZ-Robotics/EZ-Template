@@ -11,6 +11,12 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include <string.h>
 
 #include "api.h"
+
+/**
+  * Controller.
+  */
+extern pros::Controller master;
+
 namespace ez {
 
 #define DISABLE 0

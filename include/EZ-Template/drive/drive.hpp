@@ -43,11 +43,6 @@ class Drive {
   pros::Imu imu;
 
   /**
-    * Controller.
-    */
-  pros::Controller master;
-
-  /**
     * Left tracking wheel. 
     */
   pros::ADIEncoder left_tracker;

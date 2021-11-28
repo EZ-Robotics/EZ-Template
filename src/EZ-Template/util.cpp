@@ -6,6 +6,8 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "main.h"
 
+pros::Controller master(pros::E_CONTROLLER_MASTER);
+
 namespace ez {
 int mode = DISABLE;
 
