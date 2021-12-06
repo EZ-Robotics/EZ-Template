@@ -8,6 +8,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "main.h"
 #include "pros/llemu.hpp"
+#include "pros/screen.hpp"
 
 using namespace ez;
 
@@ -195,31 +196,46 @@ bool Drive::left_over_current() { return left_motors.front().is_over_current(); 
 void Drive::reset_gyro(double new_heading) { imu.set_rotation(new_heading); }
 double Drive::get_gyro() { return imu.get_rotation(); }
 
-void Drive::imu_loading_display() {
+void Drive::imu_loading_display(int iter) {
+  // If the lcd is already initialized, don't run this function
   if (pros::lcd::is_initialized()) return;
-  /*Create a style for the Preloader*/
-  static lv_style_t style;
-  lv_style_copy(&style, &lv_style_plain);
-  style.line.width = 10; /*10 px thick arc*/
-  style.line.color = LV_COLOR_HEX3(0xF6C); /*Blueish arc color*/
-  style.body.border.color = LV_COLOR_HEX3(0xBBB); /*Gray background color*/
-  style.body.border.width = 10;
-  style.body.padding.hor = 0;
-  /*Create a Preloader object*/
-  lv_obj_t * preload = lv_preload_create(lv_scr_act(), NULL);
-  lv_obj_set_size(preload, 100, 100);
-  lv_obj_align(preload, NULL, LV_ALIGN_CENTER, 0, 0);
-  lv_preload_set_style(preload, LV_PRELOAD_STYLE_MAIN, &style);
+
+  // Boarder
+  int boarder = 50;
+
+  // Create the boarder
+  pros::screen::set_pen(COLOR_WHITE);
+  for (int i = 1; i<3;i++) {
+    pros::screen::draw_rect(boarder+i, boarder+i, 480-boarder-i, 240-boarder-i);
+  }
+
+  // While IMU is loading
+  if (iter < 1440) {
+    static int last_x1 = boarder;
+    pros::screen::set_pen(0x00FF6EC7); // EZ Pink
+    int x1 = (iter*((480-(boarder*2))/1440.0)) + boarder;
+    pros::screen::fill_rect(last_x1, boarder, x1, 240-boarder);
+    last_x1 = x1;
+  }
+  // Failsafe time
+  else {
+    static int last_x1 = boarder;
+    pros::screen::set_pen(COLOR_RED); 
+    int x1 = ((iter-1440)*((480-(boarder*2))/1560.0)) + boarder;
+    pros::screen::fill_rect(last_x1, boarder, x1, 240-boarder);
+    last_x1 = x1;
+  }
 }
 
 bool Drive::imu_calibrate() {
-  imu_loading_display();
   imu.reset();
   int time = pros::millis();
   int iter = 0;
   int delay = 10;
   while (imu.get_status() & pros::c::E_IMU_STATUS_CALIBRATING) {
     iter += delay;
+
+    imu_loading_display(iter);
 
     if (iter > 2990) {
       printf("No IMU plugged in, (took %d ms to realize that)\n", iter);

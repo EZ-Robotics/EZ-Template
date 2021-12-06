@@ -57,10 +57,6 @@ void initialize() {
 
   pros::delay(500); // Stop the user from doing anything while legacy ports configure.
 
-  // Initialize chassis and auton selector
-  chassis.initialize();
-  ez::as::initialize();
-
   // Configure your chassis controls
   chassis.toggle_modify_curve_with_controller(true); // Enables modifying the controller curve with buttons on the joysticks
   chassis.set_active_brake(0); // Sets the active brake kP. We recommend 0.1.
@@ -81,6 +77,10 @@ void initialize() {
     Auton("Combine all 3 movements", combining_movements),
     Auton("Interference\n\nAfter driving forward, robot performs differently if interfered or not.", interfered_example),
   });
+
+  // Initialize chassis and auton selector
+  chassis.initialize();
+  ez::as::initialize();
 }
 
 

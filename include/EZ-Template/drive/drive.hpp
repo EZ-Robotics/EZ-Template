@@ -352,7 +352,7 @@ class Drive {
   /**
     * Loading display whlie the IMU calibrates. 
     */
-  void imu_loading_display();
+  void imu_loading_display(int iter);
 
   /////
   //
