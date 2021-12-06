@@ -349,6 +349,11 @@ class Drive {
     */
   bool imu_calibrate();
 
+  /**
+    * Loading display whlie the IMU calibrates. 
+    */
+  void imu_loading_display();
+
   /////
   //
   // Autonomous Functions
