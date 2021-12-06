@@ -6,23 +6,22 @@
 Drive chassis (
   // Left Chassis Ports (negative port will reverse it!)
   //   the first port is the sensored port (when trackers are not used!)
-  {1, 2}
+  {-11, -5, -7}
 
   // Right Chassis Ports (negative port will reverse it!)
   //   the first port is the sensored port (when trackers are not used!)
-  ,{-3, -4}
+  ,{3, 2, 17}
 
   // IMU Port
-  ,5
+  ,18
 
   // Wheel Diameter (Remember, 4" wheels are actually 4.125!)
   //    (or tracking wheel diameter)
-  ,4.125
+  ,3.25
 
   // Cartridge RPM
   //   (or tick per rotation if using tracking wheels)
   ,600
-
 
   // External Gear Ratio (MUST BE DECIMAL)
   //    (or gear ratio of tracking wheel)
@@ -57,22 +56,22 @@ void initialize() {
 
   pros::delay(500); // Stop the user from doing anything while legacy ports configure.
 
-  // Check if SD card is pluged in
-  if (!ez::util::IS_SD_CARD) printf("No SD Card Found!\n");
+  // Initialize chassis and auton selector
+  chassis.initialize();
+  ez::as::initialize();
 
   // Configure your chassis controls
-  chassis.init_curve_sd(); // Initialize the input curves with what's on the SD card (this does nothing if there's no SD card)
   chassis.toggle_modify_curve_with_controller(true); // Enables modifying the controller curve with buttons on the joysticks
   chassis.set_active_brake(0); // Sets the active brake kP. We recommend 0.1.
   chassis.set_curve_default(0, 0); // Defaults for curve
-  // default_constants(); // Set the drive to your own constants!
+  // default_constants(); // Set the drive to your own constants from autons.cpp!
 
   // These are already defaulted to these buttons, but you can change the left/right curve buttons here!
   // chassis.set_left_curve_buttons (pros::E_CONTROLLER_DIGITAL_LEFT, pros::E_CONTROLLER_DIGITAL_RIGHT);
   // chassis.set_right_curve_buttons(pros::E_CONTROLLER_DIGITAL_Y,    pros::E_CONTROLLER_DIGITAL_A);
 
   // Autonomous Selector using LLEMMU
-  ez::as::autoSelector.add_autons({
+  ez::as::auton_selector.add_autons({
     Auton("Example Drive\n\nDrive forward and come back.", drive_example),
     Auton("Example Turn\n\nTurn 3 times.", turn_example),
     Auton("Drive and Turn\n\nDrive forward, turn, come back. ", drive_and_turn),
@@ -81,19 +80,6 @@ void initialize() {
     Auton("Combine all 3 movements", combining_movements),
     Auton("Interference\n\nAfter driving forward, robot performs differently if interfered or not.", interfered_example),
   });
-
-  // Initialize auto selector and LLEMU
-  pros::lcd::initialize();
-  ez::as::init_auton_selector();
-
-  // Callbacks for auto selector
-  ez::as::autoSelector.print_selected_auton();
-  pros::lcd::register_btn0_cb(ez::as::page_down);
-  pros::lcd::register_btn2_cb(ez::as::page_up);
-
-  // Calibrate IMU
-  if (!chassis.imu_calibrate())
-    pros::lcd::set_text(7, "IMU failed to calibrate!");
 }
 
 
@@ -140,7 +126,7 @@ void autonomous() {
   chassis.reset_drive_sensor(); // Reset drive sensors to 0
   chassis.set_drive_brake(MOTOR_BRAKE_HOLD); // Set motors to hold.  This helps autonomous consistency. 
 
-  ez::as::autoSelector.call_selected_auton(); // Calls selected auton from autonomous selector. 
+  ez::as::auton_selector.call_selected_auton(); // Calls selected auton from autonomous selector. 
 }
 
 

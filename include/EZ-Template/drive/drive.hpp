@@ -63,6 +63,12 @@ class Drive {
   PID backward_drivePID;
   PID swingPID;
 
+   
+  /**
+    * Calibrates imu and initializes sd card to curve. 
+    */
+  void initialize();
+
   /**
     * Tasks for autonomous.
     */
