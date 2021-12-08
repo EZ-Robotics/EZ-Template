@@ -4,7 +4,9 @@ License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
+#include <filesystem>
 #include "main.h"
+#include "filesystem"
 
 namespace ez {
 namespace as {
@@ -21,15 +23,29 @@ void update_auto_sd() {
   fclose(usd_file_write);
 }
 
+bool is_file_exist(const char *fileName)
+{
+    std::ifstream infile(fileName);
+    return infile.good();
+}
+
 void init_auton_selector() {
   // If no SD card, return
   if (!ez::util::IS_SD_CARD) return;
 
-  FILE* as_usd_file_read = fopen("/usd/auto.txt", "r");
-  char l_buf[5];
-  fread(l_buf, 1, 5, as_usd_file_read);
-  ez::as::auton_selector.current_auton_page = std::stof(l_buf);
-  fclose(as_usd_file_read);
+  FILE* as_usd_file_read;
+  // If file exists...
+  if ((as_usd_file_read = fopen("/usd/auto.txt", "r"))) {
+    char l_buf[5];
+    fread(l_buf, 1, 5, as_usd_file_read);
+    ez::as::auton_selector.current_auton_page = std::stof(l_buf);
+    fclose(as_usd_file_read);
+  } 
+  // If file doesn't exist, create file
+  else {
+    update_auto_sd(); // Writing to a file that doesn't exist creates the file
+    printf("Created auto.txt\n");
+  }
 
   if (ez::as::auton_selector.current_auton_page > ez::as::auton_selector.auton_count - 1 || ez::as::auton_selector.current_auton_page < 0) {
     ez::as::auton_selector.current_auton_page = 0;

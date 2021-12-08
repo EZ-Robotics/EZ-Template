@@ -20,20 +20,33 @@ void Drive::init_curve_sd() {
   // If no SD card, return
   if (!ez::util::IS_SD_CARD) return;
 
-  // Set Starting Curve to SD Card
-  // Left Curve
-  FILE* l_usd_file_read = fopen("/usd/left_curve.txt", "r");
-  char l_buf[5];
-  fread(l_buf, 1, 5, l_usd_file_read);
-  left_curve_scale = std::stof(l_buf);
-  fclose(l_usd_file_read);
+  FILE* l_usd_file_read;
+  // If file exists...
+  if ((l_usd_file_read = fopen("/usd/left_curve.txt", "r"))) {
+    char l_buf[5];
+    fread(l_buf, 1, 5, l_usd_file_read);
+    left_curve_scale = std::stof(l_buf);
+    fclose(l_usd_file_read);
+  } 
+  // If file doesn't exist, create file
+  else {
+    save_l_curve_sd(); // Writing to a file that doesn't exist creates the file
+    printf("Created left_curve.txt\n");
+  }
 
-  // Right Curve
-  FILE* r_usd_file_read = fopen("/usd/right_curve.txt", "r");
-  char r_buf[5];
-  fread(r_buf, 1, 5, r_usd_file_read);
-  right_curve_scale = std::stof(r_buf);
-  fclose(r_usd_file_read);
+  FILE* r_usd_file_read;
+  // If file exists...
+  if ((r_usd_file_read = fopen("/usd/right_curve.txt", "r"))) {
+    char l_buf[5];
+    fread(l_buf, 1, 5, r_usd_file_read);
+    right_curve_scale = std::stof(l_buf);
+    fclose(r_usd_file_read);
+  } 
+  // If file doesn't exist, create file
+  else {
+    save_r_curve_sd(); // Writing to a file that doesn't exist creates the file
+    printf("Created right_curve.txt\n");
+  }
 }
 
 // Save new left curve to SD card
