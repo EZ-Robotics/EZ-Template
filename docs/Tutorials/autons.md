@@ -2,10 +2,22 @@
 layout: default
 title: Adding Autonomous Routines
 parent: Tutorials
-nav_order: 1
+nav_order: 2
 ---
 
-# Additing Autonomous Routines
+
+# **Adding Autonomous Routines**
+{: .no_toc }
+
+## Table of contents
+{: .no_toc .text-delta }
+
+1. TOC
+{:toc}
+
+
+---
+
 
 ## Step 1  
 Read through `src/autons.cpp` ([click here](https://github.com/EZ-Robotics/EZ-Template-Example/blob/main/src/autons.cpp)) and learn how to use the autonomous functions by reading through the example routines!  
