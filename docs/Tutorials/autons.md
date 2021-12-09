@@ -2,7 +2,7 @@
 layout: default
 title: Adding Autonomous Routines
 parent: Tutorials
-nav_order: 2
+nav_order: 1
 ---
 
 
