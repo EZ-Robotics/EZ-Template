@@ -18,19 +18,39 @@ nav_order: 5
 
 ---
 
-
-## init_auton_selector() 
-Initializes the autonomous selector.  If an sd card is plugged in, the current page will set to what's on the sd card. You must initialize the pros lcd first!  
+## initialize() 
+Initializes the autonomous selector.  If an sd card is plugged in, the current page will set to what's on the sd card.  
 **Prototype**
 ```cpp
-void init_auton_selector();
+void initialize();
 ```
 
 **Example**
 ```cpp
 void initialize() {
-  pros::lcd::initialize();
-  ez::as::init_auton_selector();
+  ez::as::initialize();
+}
+```
+
+
+---
+
+
+## shutdown() 
+Wrapper for `pros::lcd::shutdown()`.    
+**Prototype**
+```cpp
+void shutdown();
+```
+
+**Example**
+```cpp
+void initialize() {
+  ez::as::initialize();
+
+  // Do something
+
+  ez::as::shutdown();
 }
 ```
 
@@ -39,7 +59,7 @@ void initialize() {
 
 
 ## add_autons();
-Adds autonomous routines to the autonomous selector. Uses ez::print_to_screen() to display to the brain.  
+Adds autonomous routines to the autonomous selector. Uses `ez::print_to_screen()` to display to the brain.  
 **Prototype**
 ```cpp
 void add_autons(std::vector<Auton> autons);
@@ -58,7 +78,7 @@ void auto3() {
 }
 
 void initialize() {
-  ez::as::autoSelector.add_autons({
+  ez::as::auton_selector.add_autons({
     Auton("Autonomous 1\nDoes Something", auto1),
     Auton("Autonomous 2\nDoes Something Else", auto2),
     Auton("Autonomous 3\nDoes Something More", auto3),
@@ -80,7 +100,7 @@ void print_selected_auton();
 **Example**
 ```cpp
 void initialize() {
-  ez::as::autoSelector.print_selected_auton(); 
+  ez::as::auton_selector.print_selected_auton(); 
 }
 ```
  
@@ -141,7 +161,7 @@ void autonomous() {
   chassis.reset_drive_sensor(); 
   chassis.set_drive_brake(MOTOR_BRAKE_HOLD); 
 
-  ez::as::autoSelector.call_selected_auton(); 
+  ez::as::auton_selector.call_selected_auton(); 
 }
 ```
 

@@ -26,13 +26,13 @@ All code below assumes this constructor is used.  As long as the name of the con
 // Chassis constructor
 Drive chassis (
   // Left Chassis Ports (negative port will reverse it!)
-  {-11, -5, -7}
+  {1, -2}
 
   // Right Chassis Ports (negative port will reverse it!)
-  ,{3, 2, 17}
+  ,{-3, 4}
 
   // IMU Port
-  ,18
+  ,5
 
   // Wheel Diameter (Remember, 4" wheels are actually 4.125!)
   ,3.25
@@ -118,8 +118,26 @@ void opcontrol() {
 ---
 
 
+## initialize()
+Runs `init_curve_sd()` and `imu_calibrate()`.    
+**Prototype**
+```cpp
+void Drive::initialize();
+```
+
+**Example** 
+```cpp
+void initialize() {
+  chassis.initialize();
+}
+```
+
+
+---
+
+
 ## init_curve_sd()
-Sets the left/right curve constants to what's on the sd card.  
+Sets the left/right curve constants to what's on the sd card.  If the sd card is empty, creates needed files.  
 **Prototype**
 ```cpp
 void init_curve_sd();
