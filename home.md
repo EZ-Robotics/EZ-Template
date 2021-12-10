@@ -1,14 +1,12 @@
 ---
 layout: default
-title: 404
-nav_exclude: true
+title: EZ-Template
+nav_order: 1
+permalink: /
 ---
 
 # EZ-Template
-
-[![License: MPL 2.0](https://img.shields.io/badge/License-MPL%202.0-brightgreen.svg)](https://opensource.org/licenses/MPL-2.0)
-Simple plug-and-play PROS template that handles drive base functions for VEX robots.  
-
+EZ-Template is a simple plug-and-play PROS template that handles drive base functions for VEX robots.  
 
 [EZ-Template Version](https://github.com/EZ-Robotics/EZ-Template): 2.0.0  
 [Example Project Version](https://github.com/EZ-Robotics/EZ-Template-Example): 1.0.0
@@ -44,11 +42,3 @@ Note* this only works for 2.0.0 and beyond.  You cannot upgrade from 1.X.X to 2.
 [Read the docs here!](https://ez-robotics.github.io/EZ-Template/docs)
 
 
-## Additing Autonomous Routines
-[Check out the tutorial on adding new autonomous routines here!](/docs/autons.md)
-
-
-## License
-
-This project is licensed under the Mozilla Public License, version 2.0 - see the [LICENSE](LICENSE)
-file for the full license.

@@ -1,0 +1,4 @@
+title: EZ-Template
+description: Simple plug-and-play PROS template that handles drive base functions for VEX robots.
+remote_theme: pmarsceill/just-the-docs
+color_scheme: dark
