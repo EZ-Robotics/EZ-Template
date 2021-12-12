@@ -1,16 +1,15 @@
 #pragma once
 
-void reset_constants();
+#include "EZ-Template/drive/drive.hpp"
 
-void auto_1();
-void auto_2();
-void auto_3();
-void auto_4();
-void auto_5();
-void auto_6();
-void auto_7();
-void auto_8();
-void auto_9();
-void auto_10();
+extern Drive chassis;
 
-void test_auton();
+void drive_example();
+void turn_example();
+void drive_and_turn();
+void wait_until_change_speed();
+void swing_example();
+void combining_movements();
+void interfered_example();
+
+void default_constants();

@@ -41,10 +41,8 @@
  */
 //#include "okapi/api.hpp"
 //#include "pros/api_legacy.h"
-#include "EZ-Template/setup.hpp"
-#include "EZ-Template/util.hpp"
-#include "EZ-Template/joystick_control.hpp"
-#include "EZ-Template/auton_drive_functions.hpp"
+#include "EZ-Template/api.hpp"
+
 // More includes here...
 #include "autons.hpp"
 
@@ -59,12 +57,14 @@
 // using namespace pros;
 // using namespace pros::literals;
 // using namespace okapi;
+// using namespace ez;
 
 /**
  * Prototypes for the competition control tasks are redefined here to ensure
  * that they can be called from user code (i.e. calling autonomous from a
  * button press in opcontrol() for testing purposes).
  */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
