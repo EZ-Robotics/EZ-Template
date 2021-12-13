@@ -2,7 +2,7 @@
 layout: default
 title: Joystick Curve
 parent: Tutorials
-nav_order: 3
+nav_order: 4
 ---
 
 

@@ -6,7 +6,7 @@ nav_order: 2
 ---
 
 
-# **Adding Autonomous Routines**
+# **Example Autonomous Routines**
 {: .no_toc }
 
 ## Table of contents
@@ -196,7 +196,7 @@ void tug (int attempts) {
       chassis.set_drive_pid(-2, 20);
       pros::delay(1000);
     }
-    // If robot succesfully drove back, return
+    // If robot successfully drove back, return
     else {
       return;
     }
