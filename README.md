@@ -1,12 +1,13 @@
 ---
 layout: default
-title: 404
-nav_exclude: true
+title: EZ-Template
+nav_order: 1
+permalink: /
 ---
 
-# EZ-Template
+[![License: MPL 2.0](https://img.shields.io/badge/License-MPL%202.0-brightgreen.svg)](https://opensource.org/licenses/MPL-2.0)  
 
-[![License: MPL 2.0](https://img.shields.io/badge/License-MPL%202.0-brightgreen.svg)](https://opensource.org/licenses/MPL-2.0)
+# EZ-Template
 Simple plug-and-play PROS template that handles drive base functions for VEX robots.  
 
 
@@ -15,13 +16,8 @@ Simple plug-and-play PROS template that handles drive base functions for VEX rob
 
 [Autonomous routines that used EZ-Template](https://photos.app.goo.gl/yRwuvmq7hDoM4f6EA)
 
-## Downloading
-
-Download the latest example project [here](https://github.com/EZ-Robotics/EZ-Template-Example/releases/latest) and open it as a new project in PROS.
-
-
-## Setup
-1) Download the latest example project [here](https://github.com/EZ-Robotics/EZ-Template-Example/releases/latest).  Extract it, and open it in PROS.   
+## Download and Installation  
+1) Download the latest example project [here](https://github.com/EZ-Robotics/EZ-Template-Example/releases/latest).  Extract the zip, and open it in PROS.   
 2) In `src/main.cpp`, configure drive and IMU ports to what they are on your robot.  Be sure to read the comments!    
 3) Configure your wheel size and cartrige.  Remember that 4" omni wheels are actually 4.125!    
 4) In `src/main.cpp`, at the bottom in `void opcontrol()`, decide how you'd like to control your robot!  Any flavor of arcade or tank!    
@@ -29,8 +25,8 @@ Download the latest example project [here](https://github.com/EZ-Robotics/EZ-Tem
 6) To test the test autonomous modes, plug into a competition switch and select the autonomous mode on the brain screen by pressing the left and right buttons!  The current page will be the autonomous that runs.  For making new autonomous routines, check `src/autons.cpp` for examples on how to use the drive functions.  
 
 ## Upgrading  
-Note* this only works for 2.0.0 and beyond.  You cannot upgrade from 1.X.X to 2.X.X.  
-1) Download the most recent [EZ-Template here](https://github.com/EZ-Robotics/EZ-Template/releases/latest).  
+*Note: this only works for 2.0.0 and beyond.  You cannot upgrade from 1.X.X to 2.X.X.*  
+1) Download the most recent EZ-Template [here](https://github.com/EZ-Robotics/EZ-Template/releases/latest).  
 2) In your terminal, `cd` into the directory you downloaded the file.    
 3) Run this command from terminal `prosv5 c fetch EZ-Template@2.0.0.zip`.  
 4) `cd` into your pros project directory in your terminal.  
@@ -45,7 +41,7 @@ Note* this only works for 2.0.0 and beyond.  You cannot upgrade from 1.X.X to 2.
 
 
 ## Additing Autonomous Routines
-[Check out the tutorial on adding new autonomous routines here!](/docs/autons.md)
+[Check out the tutorial on adding new autonomous routines here!]([/docs](https://ez-robotics.github.io/EZ-Template/docs/Tutorials/autons.html)
 
 
 ## License

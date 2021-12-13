@@ -6,7 +6,6 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include <filesystem>
 #include "main.h"
-#include "filesystem"
 
 namespace ez {
 namespace as {
@@ -21,12 +20,6 @@ void update_auto_sd() {
   char const* cp_c = cp_str.c_str();
   fputs(cp_c, usd_file_write);
   fclose(usd_file_write);
-}
-
-bool is_file_exist(const char *fileName)
-{
-    std::ifstream infile(fileName);
-    return infile.good();
 }
 
 void init_auton_selector() {

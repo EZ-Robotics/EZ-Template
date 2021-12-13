@@ -1,8 +1,7 @@
 ---
 layout: default
-title: EZ-Template
-nav_order: 1
-permalink: /
+title: 404
+nav_exclude: true
 ---
 
 # EZ-Template
