@@ -18,6 +18,7 @@ nav_order: 1
 
 ---
 
+*Note: smart encoders are not supported as of 2.0.0*
 
 ## Integrated Encoders
 **Prototype**

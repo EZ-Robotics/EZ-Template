@@ -107,10 +107,10 @@ void wait_until_change_speed() {
   // wait_until will wait until the robot gets to a desired position
 
 
-  // When the robot gets to 12 inches, the robot will travel the remaining distance at a max speed of 40
+  // When the robot gets to 6 inches, the robot will travel the remaining distance at a max speed of 40
   chassis.set_drive_pid(24, DRIVE_SPEED, true);
   chassis.wait_until(6);
-  chassis.set_max_speed(40); // After driving 12 inches at DRIVE_SPEED, the robot will go the remaining distance at 40 speed
+  chassis.set_max_speed(40); // After driving 6 inches at DRIVE_SPEED, the robot will go the remaining distance at 40 speed
   chassis.wait_drive();
 
   chassis.set_turn_pid(45, TURN_SPEED);
@@ -122,10 +122,10 @@ void wait_until_change_speed() {
   chassis.set_turn_pid(0, TURN_SPEED);
   chassis.wait_drive();
 
-  // When the robot gets to -12 inches, the robot will travel the remaining distance at a max speed of 40
+  // When the robot gets to -6 inches, the robot will travel the remaining distance at a max speed of 40
   chassis.set_drive_pid(-24, DRIVE_SPEED, true);
   chassis.wait_until(-6);
-  chassis.set_max_speed(40); // After driving 12 inches at DRIVE_SPEED, the robot will go the remaining distance at 40 speed
+  chassis.set_max_speed(40); // After driving 6 inches at DRIVE_SPEED, the robot will go the remaining distance at 40 speed
   chassis.wait_drive();
 }
 ```
