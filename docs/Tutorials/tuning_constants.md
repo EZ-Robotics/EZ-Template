@@ -37,7 +37,7 @@ void initialize() {
 ### Step 2 - Running the Autonomous  
 You can run one of the example autonomous routines to tune your constants.  When you're tuning drive constants, run `drive_example()`.  When you're tuning turn constants, run `turn_example()`.
 
-Look at our Using Auton Selector tutorial for how to select autonomous routines!
+Look at our [Using Auton Selector tutorial](https://ez-robotics.github.io/EZ-Template/docs/Tutorials/using_auton_selector.html) for how to select autonomous routines!
 
 
 ### Step 3 - Modifying Constants  
