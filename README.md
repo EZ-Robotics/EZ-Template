@@ -28,7 +28,7 @@ Simple plug-and-play PROS template that handles drive base functions for VEX rob
 *Note: this only works for 2.0.0 and beyond.  You cannot upgrade from 1.X.X to 2.X.X.*  
 1) Download the most recent EZ-Template [here](https://github.com/EZ-Robotics/EZ-Template/releases/latest).  
 2) In your terminal, `cd` into the directory you downloaded the file.    
-3) Run this command from terminal `prosv5 c fetch EZ-Template@2.0.0.zip`.  
+3) Run this command from terminal `prosv5 c fetch EZ-Template@2.0.1.zip`.  
 4) `cd` into your pros project directory in your terminal.  
 5) Apply the library to the project `prosv5 c apply EZ-Template`.  
 6) Put `#include "EZ-Template/api.hpp"` in your `include/main.h`.  

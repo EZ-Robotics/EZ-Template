@@ -46,11 +46,11 @@ In `src/autons.cpp`, there is a function called `default_constants()`.  This fun
 void default_constants() {
   chassis.set_slew_min_power(80, 80);
   chassis.set_slew_distance(7, 7);
-  chassis.set_pid_constants(chassis.headingPID, 11, 0, 20, 0);
-  chassis.set_pid_constants(chassis.forward_drivePID, 0.45, 0, 5, 0);
-  chassis.set_pid_constants(chassis.backward_drivePID, 0.45, 0, 5, 0);
-  chassis.set_pid_constants(chassis.turnPID, 5, 0.003, 35, 15);
-  chassis.set_pid_constants(chassis.swingPID, 7, 0, 45, 0);
+  chassis.set_pid_constants(&chassis.headingPID, 11, 0, 20, 0);
+  chassis.set_pid_constants(&chassis.forward_drivePID, 0.45, 0, 5, 0);
+  chassis.set_pid_constants(&chassis.backward_drivePID, 0.45, 0, 5, 0);
+  chassis.set_pid_constants(&chassis.turnPID, 5, 0.003, 35, 15);
+  chassis.set_pid_constants(&chassis.swingPID, 7, 0, 45, 0);
 }
 ```
 
@@ -100,8 +100,8 @@ Using the steps above, modify your kP, kD, and if you chose to, kI.
 
 If you see the robot acting differently going forwards and backwards, you can have different constants for each.  This is usually only needed when something is off balance on your robot mechanically.
 ```cpp
-  chassis.set_pid_constants(chassis.forward_drivePID, 0.45, 0, 5, 0);
-  chassis.set_pid_constants(chassis.backward_drivePID, 0.45, 0, 5, 0);
+  chassis.set_pid_constants(&chassis.forward_drivePID, 0.45, 0, 5, 0);
+  chassis.set_pid_constants(&chassis.backward_drivePID, 0.45, 0, 5, 0);
 ```
 
 
@@ -111,7 +111,7 @@ Heading correction tries to keep your robot facing an angle while driving forwar
 The same steps above can be used to tune the heading constants.  Increase kP until there's a little oscillation, increase kD until it goes away, repeat. 
 
 ```cpp
-  chassis.set_pid_constants(chassis.headingPID, 11, 0, 20, 0);
+  chassis.set_pid_constants(&chassis.headingPID, 11, 0, 20, 0);
 ```
 
 
@@ -141,8 +141,8 @@ Increase kD until the oscillation is gone.
 
 Repeat until kD cannot fix the oscillation.  
 ```cpp
-  chassis.set_pid_constants(chassis.turnPID, 5, 0.003, 35, 15);
-  chassis.set_pid_constants(chassis.swingPID, 7, 0, 45, 0);
+  chassis.set_pid_constants(&chassis.turnPID, 5, 0.003, 35, 15);
+  chassis.set_pid_constants(&chassis.swingPID, 7, 0, 45, 0);
 ```
 
 
@@ -154,5 +154,5 @@ Sometimes you need a little extra power to get your robot all the way there.  In
 Increase kI until any minor disturbances are accounted for.  You might need to adjust kD while tuning kI.   
 
 ```cpp
-  chassis.set_pid_constants(chassis.turnPID, 5, 0.003, 35, 15);
+  chassis.set_pid_constants(&chassis.turnPID, 5, 0.003, 35, 15);
 ```

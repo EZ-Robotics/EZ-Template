@@ -208,25 +208,26 @@ void autonomous() {
 
 
 ## set_pid_constants()
+*Note: this function was changed with 2.0.1*  
 Set PID constants.  Below are the defaults.  
-`pid` either `chassis.headingPID`, `chassis.forward_drivePID`, `chassis.backward_drivePID`, `chassis.turnPID`, or `chassis.swingPID`.   
+`pid` either `&chassis.headingPID`, `&chassis.forward_drivePID`, `&chassis.backward_drivePID`, `&chassis.turnPID`, or `&chassis.swingPID`.   
 `p` proportion constant.  
 `i` integral constant.  
 `d` derivative constant.  
 `p_start_i` error needs to be within this for i to start.      
 **Prototype**
 ```cpp
-void set_pid_constants(PID pid, double p, double i, double d, double p_start_i);
+void set_pid_constants(PID* pid, double p, double i, double d, double p_start_i);
 ```
 
 **Example**
 ```cpp
 void initialize() {
-  chassis.set_pid_constants(chassis.headingPID, 11, 0, 20, 0);
-  chassis.set_pid_constants(chassis.forward_drivePID, 0.45, 0, 5, 0);
-  chassis.set_pid_constants(chassis.backward_drivePID, 0.45, 0, 5, 0);
-  chassis.set_pid_constants(chassis.turnPID, 5, 0.003, 35, 15;
-  chassis.set_pid_constants(chassis.swingPID, 7, 0, 45, 0);
+  chassis.set_pid_constants(&chassis.headingPID, 11, 0, 20, 0);
+  chassis.set_pid_constants(&chassis.forward_drivePID, 0.45, 0, 5, 0);
+  chassis.set_pid_constants(&chassis.backward_drivePID, 0.45, 0, 5, 0);
+  chassis.set_pid_constants(&chassis.turnPID, 5, 0.003, 35, 15;
+  chassis.set_pid_constants(&chassis.swingPID, 7, 0, 45, 0);
 }
 ```
 
