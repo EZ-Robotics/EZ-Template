@@ -1,17 +1,17 @@
 ---
 layout: default
-title: Template 2.0.0
+title: Example Project 1.0.0
 nav_order: 1
 has_children: true
-parent: template
-grand_parent: releases
+parent: Example Project Releases
+grand_parent: Releases
 ---
 
-# EZ-Template 2.0.0 Release
-This update of EZ-Template is a complete rewrite to allow us to update in the future, and allow users to update without starting a new project.  
+# Example Project 1.0.0 Release
+With the release of [EZ-Template 2.0.0](https://github.com/EZ-Robotics/EZ-Template/releases/tag/v2.0.0), a separate example project was needed.  
 
 # Changelog   
-See our [release page](https://github.com/EZ-Robotics/EZ-Template/releases/tag/v2.0.0) for a changelog. 
+See our [release page](https://github.com/EZ-Robotics/EZ-Template-Example/releases/tag/v1.0.0) for a changelog. 
 
 # Download and Installation  
  *Note: upgrading only works for 2.0.0 and beyond. You cannot upgrade from 1.X.X to 2.X.X.*  

@@ -3,7 +3,7 @@ layout: default
 title: Example Project Releases
 nav_order: 2
 has_children: true
-parent: releases
+parent: Releases
 ---
 
 # Example Project Release Notes
