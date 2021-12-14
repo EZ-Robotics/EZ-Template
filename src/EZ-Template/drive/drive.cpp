@@ -137,8 +137,8 @@ double Drive::get_tick_per_inch() {
   return TICK_PER_INCH;
 }
 
-void Drive::set_pid_constants(PID pid, double p, double i, double d, double p_start_i) {
-  pid.set_constants(p, i, d, p_start_i);
+void Drive::set_pid_constants(PID* pid, double p, double i, double d, double p_start_i) {
+  pid->set_constants(p, i, d, p_start_i);
 }
 
 void Drive::set_tank(int left, int right) {

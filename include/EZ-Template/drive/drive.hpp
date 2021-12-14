@@ -426,7 +426,7 @@ class Drive {
     * Set Either the headingPID, turnPID, forwardPID, backwardPID, activeBrakePID, or swingPID
     * IF NOT DONE PID WILL DEFAULT TO 0!
     */
-  void set_pid_constants(PID pid, double p, double i, double d, double p_start_i);
+  void set_pid_constants(PID* pid, double p, double i, double d, double p_start_i);
 
   /**
     * Sets minimum slew speed constants.

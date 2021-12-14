@@ -13,3 +13,5 @@ void combining_movements();
 void interfered_example();
 
 void default_constants();
+void one_mogo_constants();
+void two_mogo_constants();
