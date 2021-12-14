@@ -1,13 +1,13 @@
 ---
 layout: default
-title: Docs
+title: Releases
 nav_order: 4
 has_children: true
 permalink: releases
 ---
 
 # Release Notes
-Releases and their changelogs. 
+Template and example project releases, with their change logs and how to upgrade.
 {: .no_toc }
 
 {: .fs-6 .fw-300 }
