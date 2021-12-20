@@ -28,25 +28,28 @@ double wheel_diameter, double ticks, double ratio);
 ```
 **Example**  
 ```cpp
-// Chassis constructor
 Drive chassis (
   // Left Chassis Ports (negative port will reverse it!)
-  {1, 2}
+  //   the first port is the sensored port (when trackers are not used!)
+  {1, -2, 3}
 
   // Right Chassis Ports (negative port will reverse it!)
-  ,{-3, -4}
+  //   the first port is the sensored port (when trackers are not used!)
+  ,{-4, 5, -6}
 
   // IMU Port
-  ,18
+  ,7
 
   // Wheel Diameter (Remember, 4" wheels are actually 4.125!)
-  ,3.25
+  ,4.125
 
   // Cartridge RPM
   ,600
 
-  // External Gear Ratio 
-  ,1.66666666667
+  // External Gear Ratio (MUST BE DECIMAL)
+  // eg. if your drive is 84:36 where the 36t is powered, your RATIO would be 2.333.
+  // eg. if your drive is 36:60 where the 60t is powered, your RATIO would be 0.6.
+  ,2.333
 );
 ```
 
@@ -67,21 +70,24 @@ std::vector<int> right_tracker_ports);
 // Chassis constructor
 Drive chassis (
   // Left Chassis Ports (negative port will reverse it!)
-  {1, 2}
+  {1, -2, 3}
 
   // Right Chassis Ports (negative port will reverse it!)
-  ,{-3, -4}
+  ,{-4, 5, -6}
 
   // IMU Port
-  ,18
+  ,7
 
-  // Wheel Diameter of Tracking Wheels (Remember, 4" wheels are actually 4.125!)
-  ,2.75
+  // Tracking Wheel Diameter (Remember, 4" wheels are actually 4.125!)
+  ,4.125
 
-  // Ticks per Rotation of Your Encoder
-  ,360
+  // Ticks per Rotation of Encoder
+  ,600
 
-  // External Gear Ratio Between Wheel and Encoder
+  // External Gear Ratio of Tracking Wheel(MUST BE DECIMAL)
+  //    (or gear ratio of tracking wheel)
+  // eg. if your drive is 84:36 where the 36t is sensored, your RATIO would be 2.333.
+  // eg. if your drive is 36:60 where the 60t is sensored, your RATIO would be 0.6.
   ,1
 
   // Left Tracking Wheel Ports (negative port will reverse it!)
@@ -109,21 +115,24 @@ std::vector<int> right_tracker_ports, int expander_smart_port);
 // Chassis constructor
 Drive chassis (
   // Left Chassis Ports (negative port will reverse it!)
-  {1, 2}
+  {1, -2, 3}
 
   // Right Chassis Ports (negative port will reverse it!)
-  ,{-3, -4}
+  ,{-4, 5, -6}
 
   // IMU Port
-  ,18
+  ,7
 
-  // Wheel Diameter of Tracking Wheels (Remember, 4" wheels are actually 4.125!)
-  ,2.75
+  // Tracking Wheel Diameter (Remember, 4" wheels are actually 4.125!)
+  ,4.125
 
-  // Ticks per Rotation of Your Encoder
-  ,360
+  // Ticks per Rotation of Encoder
+  ,600
 
-  // External Gear Ratio Between Wheel and Encoder
+  // External Gear Ratio of Tracking Wheel(MUST BE DECIMAL)
+  //    (or gear ratio of tracking wheel)
+  // eg. if your drive is 84:36 where the 36t is sensored, your RATIO would be 2.333.
+  // eg. if your drive is 36:60 where the 60t is sensored, your RATIO would be 0.6.
   ,1
 
   // Left Tracking Wheel Ports (negative port will reverse it!)
@@ -131,8 +140,8 @@ Drive chassis (
 
   // Right Tracking Wheel Ports (negative port will reverse it!)
   ,{3, 4}
-
+  
   // 3 Wire Port Expander Smart Port
-  ,5
+  ,9
 );
 ```

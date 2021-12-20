@@ -25,22 +25,42 @@ All code below assumes this constructor is used.  As long as the name of the con
 // Chassis constructor
 Drive chassis (
   // Left Chassis Ports (negative port will reverse it!)
-  {-11, -5, -7}
+  //   the first port is the sensored port (when trackers are not used!)
+  {1, -2, 3}
 
   // Right Chassis Ports (negative port will reverse it!)
-  ,{3, 2, 17}
+  //   the first port is the sensored port (when trackers are not used!)
+  ,{-4, 5, -6}
 
   // IMU Port
-  ,18
+  ,7
 
   // Wheel Diameter (Remember, 4" wheels are actually 4.125!)
-  ,3.25
+  //    (or tracking wheel diameter)
+  ,4.125
 
   // Cartridge RPM
+  //   (or tick per rotation if using tracking wheels)
   ,600
 
-  // External Gear Ratio 
-  ,1.66666666667
+  // External Gear Ratio (MUST BE DECIMAL)
+  //    (or gear ratio of tracking wheel)
+  // eg. if your drive is 84:36 where the 36t is powered, your RATIO would be 2.333.
+  // eg. if your drive is 36:60 where the 60t is powered, your RATIO would be 0.6.
+  ,2.333
+
+  // Uncomment if using tracking wheels
+  /*
+  // Left Tracking Wheel Ports (negative port will reverse it!)
+  ,{1, 2}
+
+  // Right Tracking Wheel Ports (negative port will reverse it!)
+  ,{3, 4}
+  */
+
+  // Uncomment if tracking wheels are plugged into a 3 wire expander
+  // 3 Wire Port Expander Smart Port
+  // ,9
 );
 
 ```
