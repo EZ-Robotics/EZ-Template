@@ -84,8 +84,7 @@ Drive chassis (
   // Ticks per Rotation of Encoder
   ,600
 
-  // External Gear Ratio of Tracking Wheel(MUST BE DECIMAL)
-  //    (or gear ratio of tracking wheel)
+  // External Gear Ratio of Tracking Wheel (MUST BE DECIMAL)
   // eg. if your drive is 84:36 where the 36t is sensored, your RATIO would be 2.333.
   // eg. if your drive is 36:60 where the 60t is sensored, your RATIO would be 0.6.
   ,1
@@ -130,7 +129,6 @@ Drive chassis (
   ,600
 
   // External Gear Ratio of Tracking Wheel(MUST BE DECIMAL)
-  //    (or gear ratio of tracking wheel)
   // eg. if your drive is 84:36 where the 36t is sensored, your RATIO would be 2.333.
   // eg. if your drive is 36:60 where the 60t is sensored, your RATIO would be 0.6.
   ,1
