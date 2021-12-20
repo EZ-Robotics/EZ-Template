@@ -293,9 +293,9 @@ void set_exit_condition(exit_condition_ &type, int p_small_exit_time, int p_smal
 **Example**
 ```cpp
 void initialize() {
-  chassis.set_exit_condition(turn_exit,  100, 3,  500, 7,   500, 500);
-  chassis.set_exit_condition(swing_exit, 100, 3,  500, 7,   500, 500);
-  chassis.set_exit_condition(drive_exit, 80,  50, 300, 150, 500, 500);
+  chassis.set_exit_condition(chassis.turn_exit,  100, 3,  500, 7,   500, 500);
+  chassis.set_exit_condition(chassis.swing_exit, 100, 3,  500, 7,   500, 500);
+  chassis.set_exit_condition(chassis.drive_exit, 80,  50, 300, 150, 500, 500);
 }
 ```
 
@@ -325,7 +325,7 @@ bool interfered = false;
        chassis.set_drive_pid(-2, 20);
        pros::delay(1000);
      }
-     // If robot succesfully drove back, return
+     // If robot successfully drove back, return
      else {
        return;
      }
