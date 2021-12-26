@@ -53,6 +53,16 @@ class Drive {
   pros::ADIEncoder right_tracker;
 
   /**
+    * Left rotation tracker. 
+    */
+  pros::Rotation left_rotation;
+
+  /**
+    * Right rotation tracker. 
+    */
+  pros::Rotation right_rotation;
+
+  /**
     * PID objects.
     */
   PID headingPID;
@@ -116,6 +126,26 @@ class Drive {
 
   /**
     * Creates a Drive Controller using encoders plugged into a 3 wire expander. 
+    * 
+    * \param left_motor_ports
+    *        Input {1, -2...}.  Make ports negative if reversed!
+    * \param right_motor_ports
+    *        Input {-3, 4...}.  Make ports negative if reversed!
+    * \param imu_port
+    *        Port the IMU is plugged into. 
+    * \param wheel_diameter
+    *        Diameter of your sensored wheels.  Remember 4" is 4.125"!
+    * \param ratio
+    *        External gear ratio, wheel gear / sensor gear.
+    * \param left_tracker_ports
+    *        Input {1, 2}.  Make ports negative if reversed!
+    * \param right_tracker_ports
+    *        Input {3, 4}.  Make ports negative if reversed!
+    */
+  Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ratio, int left_tracker_ports, int right_tracker_ports);
+
+  /**
+    * Creates a Drive Controller using rotation sensors. 
     * 
     * \param left_motor_ports
     *        Input {1, -2...}.  Make ports negative if reversed!
@@ -556,8 +586,12 @@ class Drive {
   // Is tank drive running?
   bool is_tank;
 
+  #define DRIVE_INTEGRATED 1
+  #define DRIVE_ADI_ENCODER 2
+  #define DRIVE_ROTATION 3
+
   // Is tracker?
-  bool is_tracker = false;
+  int is_tracker = DRIVE_INTEGRATED;
 
   // Save input curve to SD card
   void save_l_curve_sd();
