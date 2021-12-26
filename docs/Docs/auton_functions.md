@@ -306,7 +306,7 @@ Sets the exit condition constants. Below is the defaults.
 `p_mA_timeout` time, in ms, for `is_over_current` to be true       
 **Prototype**
 ```cpp
-void set_exit_condition(exit_condition_ &type, int p_small_exit_time, int p_small_error, int p_big_exit_time, int p_big_error, int p_velocity_exit_time, int p_mA_timeout);
+void set_exit_condition(exit_condition_ &type, int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout);
 
 ```
 

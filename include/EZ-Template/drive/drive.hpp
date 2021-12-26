@@ -453,9 +453,9 @@ class Drive {
     */
   struct exit_condition_ {
     int small_exit_time = 0;
-    int small_error = 0;
+    double small_error = 0;
     int big_exit_time = 0;
-    int big_error = 0;
+    double big_error = 0;
     int velocity_exit_time = 0;
     int mA_timeout = 0;
   };
@@ -491,7 +491,7 @@ class Drive {
     * \param p_velocity_exit_time
     *        Sets velocity_exit_time.  Timer will start when velocity is 0.
     */
-  void set_exit_condition(exit_condition_ &type, int p_small_exit_time, int p_small_error, int p_big_exit_time, int p_big_error, int p_velocity_exit_timeint, int p_mA_timeout);
+  void set_exit_condition(exit_condition_ &type, int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_timeint, int p_mA_timeout);
 
  private:  // !Auton
   void reset_drive_sensors_opcontrol();
