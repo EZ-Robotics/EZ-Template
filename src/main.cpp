@@ -1,6 +1,6 @@
 #include "main.h"
 
-/*
+
 // Chassis constructor
 Drive chassis (
   // Left Chassis Ports (negative port will reverse it!)
@@ -27,7 +27,7 @@ Drive chassis (
   // eg. if your drive is 84:36 where the 36t is powered, your RATIO would be 2.333.
   // eg. if your drive is 36:60 where the 60t is powered, your RATIO would be 0.6.
   ,2
-  */
+  
 
   // Uncomment if using tracking wheels
   /*
@@ -41,8 +41,8 @@ Drive chassis (
   // Uncomment if tracking wheels are plugged into a 3 wire expander
   // 3 Wire Port Expander Smart Port
   // ,1
-//);
-
+);
+/*
 // Chassis constructor with rotation sensor
 Drive chassis (
   // Left Chassis Ports (negative port will reverse it!)
@@ -72,6 +72,7 @@ Drive chassis (
   // Left Rotation Port (negative port will reverse it!)
   ,7
 );
+*/
 
 
 

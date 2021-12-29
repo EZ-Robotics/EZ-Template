@@ -525,6 +525,7 @@ class Drive {
 
  private:  // !Auton
   void reset_drive_sensors_opcontrol();
+  void joy_thresh_opcontrol(int l_stick, int r_stick);
 
   // Heading toggle
   bool heading_on = true;
