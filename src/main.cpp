@@ -32,10 +32,12 @@ Drive chassis (
   // Uncomment if using tracking wheels
   /*
   // Left Tracking Wheel Ports (negative port will reverse it!)
-  ,{1, 2}
+  // ,{1, 2} // 3 wire encoder
+  // ,8 // Rotation sensor
 
   // Right Tracking Wheel Ports (negative port will reverse it!)
-  ,{3, 4}
+  // ,{-3, -4} // 3 wire encoder
+  // ,-9 // Rotation sensor
   */
 
   // Uncomment if tracking wheels are plugged into a 3 wire expander

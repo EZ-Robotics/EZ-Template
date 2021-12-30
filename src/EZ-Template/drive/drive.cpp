@@ -109,16 +109,16 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 // Constructor for rotation sensors
 Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports,
              int imu_port, double wheel_diameter, double ratio,
-             int left_tracker_ports, int right_tracker_ports)
+             int left_rotation_port, int right_rotation_port)
     : imu(imu_port),
       left_tracker(-1, -1, false),   // Default value
       right_tracker(-1, -1, false),  // Default value
-      left_rotation(abs(left_tracker_ports)),
-      right_rotation(abs(right_tracker_ports)),
+      left_rotation(abs(left_rotation_port)),
+      right_rotation(abs(right_rotation_port)),
       ez_auto([this] { this->ez_auto_task(); }) {
   is_tracker = DRIVE_ROTATION;
-  left_rotation.set_reversed(util::is_reversed(left_tracker_ports));
-  right_rotation.set_reversed(util::is_reversed(right_tracker_ports));
+  left_rotation.set_reversed(util::is_reversed(left_rotation_port));
+  right_rotation.set_reversed(util::is_reversed(right_rotation_port));
 
   // Set ports to a global vector
   for (auto i : left_motor_ports) {
@@ -219,8 +219,8 @@ void Drive::reset_drive_sensor() {
     right_tracker.reset();
     return;
   } else if (is_tracker == DRIVE_ROTATION) {
-    left_rotation.reset();
-    right_rotation.reset();
+    left_rotation.reset_position();
+    right_rotation.reset_position();
     return;
   }
 }
@@ -317,6 +317,6 @@ void Drive::set_drive_brake(pros::motor_brake_mode_e_t brake_type) {
 
 void Drive::initialize() {
   init_curve_sd();
-
   imu_calibrate();
+  reset_drive_sensor();
 }
