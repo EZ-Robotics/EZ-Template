@@ -577,7 +577,19 @@ class Drive {
    * \param p_velocity_exit_time
    *        Sets velocity_exit_time.  Timer will start when velocity is 0.
    */
-  void set_exit_condition(exit_condition_ &type, int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_timeint, int p_mA_timeout);
+  void set_exit_condition(exit_condition_ &type, int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout);
+
+  /**
+   * Iterative exit condition. 
+   *
+   * \param targets
+   *        leftPID, rightPID, turnPID or swingPID
+   * \param exitConditions
+   *        turn_exit, swing_exit, or drive_exit
+   * \param wait_until = false
+   *        changes print statements
+   */
+  bool exit_condition(std::tuple<double, std::optional<double>> targets, exit_condition_ exitConditions, bool wait_until = false);
 
  private:  // !Auton
 
@@ -670,11 +682,6 @@ class Drive {
    * Max speed for autonomous. 
    */
   int max_speed;
-
-  /**
-   * Exit conditions
-   */
-  bool exit_condition(std::tuple<double, std::optional<double>> targets, exit_condition_ exitConditions, bool wait_until = false);
   
   /**
    * Tasks
