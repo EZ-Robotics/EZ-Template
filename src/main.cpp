@@ -5,11 +5,11 @@
 Drive chassis (
   // Left Chassis Ports (negative port will reverse it!)
   //   the first port is the sensored port (when trackers are not used!)
-  {-15, -16}
+  {-15, -16, 5, 6}
 
   // Right Chassis Ports (negative port will reverse it!)
   //   the first port is the sensored port (when trackers are not used!)
-  ,{5, 6}
+  ,{12, 13, 11}
 
   // IMU Port
   ,20
@@ -42,37 +42,6 @@ Drive chassis (
   // 3 Wire Port Expander Smart Port
   // ,1
 );
-/*
-// Chassis constructor with rotation sensor
-Drive chassis (
-  // Left Chassis Ports (negative port will reverse it!)
-  //   the first port is the sensored port (when trackers are not used!)
-  {1, 2}
-
-  // Right Chassis Ports (negative port will reverse it!)
-  //   the first port is the sensored port (when trackers are not used!)
-  ,{-3, -4}
-
-  // IMU Port
-  ,5
-
-  // Wheel Diameter (Remember, 4" wheels are actually 4.125!)
-  //    (or tracking wheel diameter)
-  ,2.75
-
-  // External Gear Ratio (MUST BE DECIMAL)
-  //    (or gear ratio of tracking wheel)
-  // eg. if your drive is 84:36 where the 36t is powered, your RATIO would be 2.333.
-  // eg. if your drive is 36:60 where the 60t is powered, your RATIO would be 0.6.
-  ,1
-
-  // Left Rotation Port (negative port will reverse it!)
-  ,-6
-
-  // Left Rotation Port (negative port will reverse it!)
-  ,7
-);
-*/
 
 
 
@@ -181,7 +150,7 @@ void opcontrol() {
   chassis.set_drive_brake(MOTOR_BRAKE_COAST);
 
   while (true) {
-
+    
     chassis.tank(); // Tank control
     // chassis.arcade_standard(ez::SPLIT); // Standard split arcade
     // chassis.arcade_standard(ez::SINGLE); // Standard single arcade

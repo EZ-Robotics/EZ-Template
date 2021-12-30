@@ -4,9 +4,10 @@ License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
+#include "drive.hpp"
+
 #include <list>
 
-#include "drive.hpp"
 #include "main.h"
 #include "pros/llemu.hpp"
 #include "pros/screen.hpp"
@@ -185,9 +186,11 @@ void Drive::set_tank(int left, int right) {
   if (pros::millis() < 1500) return;
 
   for (auto i : left_motors) {
+    if (pto_check(i)) break;  // If the motor is in the pto list, don't do anything to the motor.
     i.move_voltage(left * (12000.0 / 127.0));
   }
   for (auto i : right_motors) {
+    if (pto_check(i)) break;  // If the motor is in the pto list, don't do anything to the motor.
     i.move_voltage(right * (12000.0 / 127.0));
   }
 }
@@ -196,10 +199,13 @@ void Drive::set_drive_current_limit(int mA) {
   if (abs(mA) > 2500) {
     mA = 2500;
   }
+  CURRENT_MA = mA;
   for (auto i : left_motors) {
+    if (pto_check(i)) break;  // If the motor is in the pto list, don't do anything to the motor.
     i.set_current_limit(abs(mA));
   }
   for (auto i : right_motors) {
+    if (pto_check(i)) break;  // If the motor is in the pto list, don't do anything to the motor.
     i.set_current_limit(abs(mA));
   }
 }
@@ -212,8 +218,7 @@ void Drive::reset_drive_sensor() {
     left_tracker.reset();
     right_tracker.reset();
     return;
-  }
-  else if (is_tracker == DRIVE_ROTATION) {
+  } else if (is_tracker == DRIVE_ROTATION) {
     left_rotation.reset();
     right_rotation.reset();
     return;
@@ -254,24 +259,24 @@ void Drive::imu_loading_display(int iter) {
 
   // Create the boarder
   pros::screen::set_pen(COLOR_WHITE);
-  for (int i = 1; i<3;i++) {
-    pros::screen::draw_rect(boarder+i, boarder+i, 480-boarder-i, 240-boarder-i);
+  for (int i = 1; i < 3; i++) {
+    pros::screen::draw_rect(boarder + i, boarder + i, 480 - boarder - i, 240 - boarder - i);
   }
 
   // While IMU is loading
   if (iter < 1440) {
     static int last_x1 = boarder;
-    pros::screen::set_pen(0x00FF6EC7); // EZ Pink
-    int x1 = (iter*((480-(boarder*2))/1440.0)) + boarder;
-    pros::screen::fill_rect(last_x1, boarder, x1, 240-boarder);
+    pros::screen::set_pen(0x00FF6EC7);  // EZ Pink
+    int x1 = (iter * ((480 - (boarder * 2)) / 1440.0)) + boarder;
+    pros::screen::fill_rect(last_x1, boarder, x1, 240 - boarder);
     last_x1 = x1;
   }
   // Failsafe time
   else {
     static int last_x1 = boarder;
-    pros::screen::set_pen(COLOR_RED); 
-    int x1 = ((iter-1440)*((480-(boarder*2))/1560.0)) + boarder;
-    pros::screen::fill_rect(last_x1, boarder, x1, 240-boarder);
+    pros::screen::set_pen(COLOR_RED);
+    int x1 = ((iter - 1440) * ((480 - (boarder * 2)) / 1560.0)) + boarder;
+    pros::screen::fill_rect(last_x1, boarder, x1, 240 - boarder);
     last_x1 = x1;
   }
 }
@@ -299,10 +304,13 @@ bool Drive::imu_calibrate() {
 
 // Brake modes
 void Drive::set_drive_brake(pros::motor_brake_mode_e_t brake_type) {
+  CURRENT_BRAKE = brake_type;
   for (auto i : left_motors) {
+    if (pto_check(i)) break;  // If the motor is in the pto list, don't do anything to the motor.
     i.set_brake_mode(brake_type);
   }
   for (auto i : right_motors) {
+    if (pto_check(i)) break;  // If the motor is in the pto list, don't do anything to the motor.
     i.set_brake_mode(brake_type);
   }
 }

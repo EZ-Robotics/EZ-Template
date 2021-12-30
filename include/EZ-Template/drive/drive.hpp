@@ -12,6 +12,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "EZ-Template/PID.hpp"
 #include "EZ-Template/util.hpp"
+#include "pros/motors.h"
 
 using namespace ez;
 
@@ -21,6 +22,16 @@ class Drive {
    * Joysticks will return 0 when they are within this number.  Set with set_joystick_threshold()
    */
   int JOYSTICK_THRESHOLD;
+
+  /**
+   * Global current brake mode. 
+   */
+  pros::motor_brake_mode_e_t CURRENT_BRAKE = pros::E_MOTOR_BRAKE_COAST;
+
+  /**
+   * Global current mA. 
+   */
+  int CURRENT_MA = 2500;
 
   /**
    * Current swing type.
@@ -36,6 +47,11 @@ class Drive {
    * Vector of pros motors for the right chassis. 
    */
   std::vector<pros::Motor> right_motors;
+
+  /**
+   * Vector of pros motors that are disconnected from the drive. 
+   */
+  std::vector<int> pto_active;
 
   /**
    * Inertial sensor.
@@ -277,6 +293,46 @@ class Drive {
    *        new threshold
    */
   void set_joystick_threshold(int threshold);
+
+  /////
+  //
+  // PTO 
+  //
+  /////
+
+  /**
+   * Checks if the motor is currently in pto_list.  Returns true if it's already in pto_list. 
+   *
+   * \param check_if_pto
+   *        motor to check. 
+   */
+  bool pto_check(pros::Motor check_if_pto);
+
+  /**
+   * Adds motors to the pto list, removing them from the drive. 
+   *
+   * \param pto_list
+   *        list of motors to remove from the drive. 
+   */
+  void pto_add(std::vector<pros::Motor> pto_list);
+
+  /**
+   * Removes motors from the pto list, adding them to the drive.  You cannot use the first index in a pto.
+   *
+   * \param pto_list
+   *        list of motors to add to the drive. 
+   */
+  void pto_remove(std::vector<pros::Motor> pto_list);
+
+  /**
+   * Adds/removes motors from drive.  You cannot use the first index in a pto.
+   *
+   * \param pto_list
+   *        list of motors to add/remove from the drive. 
+   * \param toggle
+   *        if true, adds to list.  if false, removes from list. 
+   */
+  void pto_toggle(std::vector<pros::Motor> pto_list, bool toggle);
 
   /////
   //
