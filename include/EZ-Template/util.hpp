@@ -13,8 +13,8 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include "api.h"
 
 /**
-  * Controller.
-  */
+ * Controller.
+ */
 extern pros::Controller master;
 
 namespace ez {
@@ -59,6 +59,15 @@ enum e_type { SINGLE = 0,
  */
 enum e_swing { LEFT_SWING = 0,
                RIGHT_SWING = 1 };
+
+/**
+ * Enum for PID::exit_condition outputs.
+ */
+enum exit_output { RUNNING = 1,
+                   SMALL_EXIT = 2,
+                   BIG_EXIT = 3,
+                   VELOCITY_EXIT = 4,
+                   mA_EXIT = 5 };
 
 namespace util {
 extern bool AUTON_RAN;

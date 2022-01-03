@@ -5,11 +5,11 @@
 Drive chassis (
   // Left Chassis Ports (negative port will reverse it!)
   //   the first port is the sensored port (when trackers are not used!)
-  {-15, -16, 5, 6}
+  {-15, -16}
 
   // Right Chassis Ports (negative port will reverse it!)
   //   the first port is the sensored port (when trackers are not used!)
-  ,{12, 13, 11}
+  ,{1, 2}
 
   // IMU Port
   ,20
@@ -132,7 +132,13 @@ void autonomous() {
   ez::as::auton_selector.call_selected_auton(); // Calls selected auton from autonomous selector. 
 }
 
-
+pros::Motor leftm(6);
+pros::Motor rightm(5);
+PID intakePID(0.4, 0, 5);
+void set_intake(int input) {
+  leftm = input;
+  rightm = input;
+}
 
 /**
  * Runs the operator control code. This function will be started in its own task
@@ -151,9 +157,24 @@ void opcontrol() {
   // This is preference to what you like to drive on.
   chassis.set_drive_brake(MOTOR_BRAKE_COAST);
 
+  intakePID.set_exit_condition(80, 50, 300, 150, 500, 500);
+  intakePID.set_target(1000);
+  while (intakePID.exit_condition(true) == ez::RUNNING) {
+    set_intake( intakePID.compute(leftm.get_position()) );
+    pros::delay(ez::util::DELAY_TIME);
+  }
+
+  intakePID.set_target(0);
+  while (intakePID.exit_condition({leftm}, true) == ez::RUNNING) {
+    set_intake( intakePID.compute(leftm.get_position()) );
+    pros::delay(ez::util::DELAY_TIME);
+  }
+
+  set_intake(0);
+
   while (true) {
     
-    chassis.tank(); // Tank control
+    // chassis.tank(); // Tank control
     // chassis.arcade_standard(ez::SPLIT); // Standard split arcade
     // chassis.arcade_standard(ez::SINGLE); // Standard single arcade
     // chassis.arcade_flipped(ez::SPLIT); // Flipped split arcade

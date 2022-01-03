@@ -117,8 +117,22 @@ bool Drive::exit_condition(std::tuple<double, std::optional<double>> targets, ex
 // User wrapper for exit condition
 void Drive::wait_drive() {
   pros::delay(util::DELAY_TIME);
-
+/*
   if (mode == DRIVE) {
+    while (exit_condition(tuple{leftPID.get_target(), rightPID.get_target()}, drive_exit)) {
+      pros::delay(util::DELAY_TIME);
+    }
+  } else if (mode == TURN) {
+    while (exit_condition(tuple{turnPID.get_target(), std::nullopt}, turn_exit)) {
+      pros::delay(util::DELAY_TIME);
+    }
+  } else if (mode == SWING) {
+    while (exit_condition(tuple{swingPID.get_target(), std::nullopt}, swing_exit)) {
+      pros::delay(util::DELAY_TIME);
+    }
+  }
+  */
+    if (mode == DRIVE) {
     while (exit_condition(tuple{leftPID.get_target(), rightPID.get_target()}, drive_exit)) {
       pros::delay(util::DELAY_TIME);
     }

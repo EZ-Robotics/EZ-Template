@@ -5,6 +5,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
 #include "main.h"
+#include "util.hpp"
 
 using namespace ez;
 
@@ -25,11 +26,13 @@ PID::PID() {
 
 PID::Constants PID::get_constants() { return constants; }
 
+// PID constructor with constants
 PID::PID(double p, double i, double d, double start_i) {
   reset_variables();
   set_constants(p, i, d, start_i);
 }
 
+// Set PID constants
 void PID::set_constants(double p, double i, double d, double p_start_i) {
   constants.kp = p;
   constants.ki = i;
@@ -37,14 +40,20 @@ void PID::set_constants(double p, double i, double d, double p_start_i) {
   constants.start_i = p_start_i;
 }
 
-void PID::set_target(double input) {
-  target = input;
-}
-double PID::get_target() {
-  return target;
+// Set exit condition timeouts
+void PID::set_exit_condition(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout) {
+  exit.small_exit_time = p_small_exit_time;
+  exit.small_error = p_small_error;
+  exit.big_exit_time = p_big_exit_time;
+  exit.big_error = p_big_error;
+  exit.velocity_exit_time = p_velocity_exit_time;
+  exit.mA_timeout = p_mA_timeout;
 }
 
-void PID::compute(double current) {
+void PID::set_target(double input) { target = input; }
+double PID::get_target() { return target; }
+
+double PID::compute(double current) {
   error = target - current;
   derivative = error - prev_error;
 
@@ -59,4 +68,89 @@ void PID::compute(double current) {
   output = (error * constants.kp) + (integral * constants.ki) + (derivative * constants.kd);
 
   prev_error = error;
+
+  return output;
+}
+
+void PID::reset_timers() {
+  i = 0;
+  k = 0;
+  j = 0;
+  l = 0;
+  is_mA = false;
+}
+
+exit_output PID::exit_condition(bool print) {
+  // If the robot gets within the target, make sure it's there for small_timeout amount of time
+  if (abs(error) < exit.small_error) {
+    j += util::DELAY_TIME;
+    i = 0;  // While this is running, don't run big thresh
+    if (j > exit.small_exit_time) {
+      reset_timers();
+      if (print) printf(" Small Exit\n");
+      return SMALL_EXIT;
+    }
+  } else {
+    j = 0;
+  }
+
+  // If the robot is close to the target, start a timer.  If the robot doesn't get closer within
+  // a certain amount of time, exit and continue.  This does not run while small_timeout is running
+  if (exit.big_error != 0 && exit.big_exit_time != 0) {  // Check if this condition is enabled
+    if (abs(error) < exit.big_error) {
+      i += util::DELAY_TIME;
+      if (i > exit.big_exit_time) {
+        reset_timers();
+        if (print) printf(" Big Exit\n");
+        return BIG_EXIT;
+      }
+    } else {
+      i = 0;
+    }
+  }
+
+  // If the motor velocity is 0,the code will timeout and set interfered to true.
+  if (exit.velocity_exit_time != 0) {  // Check if this condition is enabled
+    if (derivative == 0) {
+      k += util::DELAY_TIME;
+      if (k > exit.velocity_exit_time) {
+        reset_timers();
+        if (print) printf(" Velocity Exit\n");
+        return VELOCITY_EXIT;
+      }
+    } else {
+      k = 0;
+    }
+  }
+
+  return RUNNING;
+}
+
+exit_output PID::exit_condition(std::vector<pros::Motor> sensor, bool print) {
+  // If the motors are pulling too many mA, the code will timeout and set interfered to true.
+  if (exit.mA_timeout != 0) {  // Check if this condition is enabled
+    for (auto i : sensor) {
+      // Check if the motor isn't drawing too many mA.  If 1 of the motors isn't, break.
+      if (!i.is_over_current()) {
+        is_mA = false;
+        break;
+      }
+      // If all of the motors are drawing too many mA, keep the bool true
+      else {
+        is_mA = true;
+      }
+    }
+    if (is_mA) {
+      l += util::DELAY_TIME;
+      if (l > exit.mA_timeout) {
+        reset_timers();
+        if (print) printf(" mA Exit\n");
+        return mA_EXIT;
+      }
+    } else {
+      l = 0;
+    }
+  }
+
+  return exit_condition(print);
 }
