@@ -48,7 +48,8 @@ void Drive::drive_pid_task() {
   double r_out = r_drive_out - gyro_out;
 
   // Set motors
-  set_tank(l_out, r_out);
+  if (drive_toggle)
+    set_tank(l_out, r_out);
 }
 
 // Turn PID task
@@ -65,7 +66,8 @@ void Drive::turn_pid_task() {
   }
 
   // Set motors
-  set_tank(gyro_out, -gyro_out);
+  if (drive_toggle)
+    set_tank(gyro_out, -gyro_out);
 }
 
 // Swing PID task
@@ -81,9 +83,11 @@ void Drive::swing_pid_task() {
     swing_out = util::clip_num(swing_out, 30, -30);
   }
 
-  // Check if left or right swing, then set motors accordingly
-  if (current_swing == LEFT_SWING)
-    set_tank(swing_out, 0);
-  else if (current_swing == RIGHT_SWING)
-    set_tank(0, -swing_out);
+  if (drive_toggle) {
+    // Check if left or right swing, then set motors accordingly
+    if (current_swing == LEFT_SWING)
+      set_tank(swing_out, 0);
+    else if (current_swing == RIGHT_SWING)
+      set_tank(0, -swing_out);
+  }
 }

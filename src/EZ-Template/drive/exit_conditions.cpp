@@ -38,7 +38,7 @@ void Drive::wait_drive() {
       right_exit = right_exit != RUNNING ? right_exit : rightPID.exit_condition(right_motors[0]);
       pros::delay(util::DELAY_TIME);
     }
-    std::cout << "  Left: " << exit_to_string(left_exit) << " Exit.   Right: " << exit_to_string(right_exit) << " Exit.\n";
+    if (print_toggle) std::cout << "  Left: " << exit_to_string(left_exit) << " Exit.   Right: " << exit_to_string(right_exit) << " Exit.\n";
 
     if (left_exit == mA_EXIT || left_exit == VELOCITY_EXIT || right_exit == mA_EXIT || right_exit == VELOCITY_EXIT) {
       interfered = true;
@@ -52,7 +52,7 @@ void Drive::wait_drive() {
       turn_exit = turn_exit != RUNNING ? turn_exit : turnPID.exit_condition({left_motors[0], right_motors[0]});
       pros::delay(util::DELAY_TIME);
     }
-    std::cout << "  Turn: " << exit_to_string(turn_exit) << " Exit.\n";
+    if (print_toggle) std::cout << "  Turn: " << exit_to_string(turn_exit) << " Exit.\n";
 
     if (turn_exit == mA_EXIT || turn_exit == VELOCITY_EXIT) {
       interfered = true;
@@ -67,7 +67,7 @@ void Drive::wait_drive() {
       swing_exit = swing_exit != RUNNING ? swing_exit : swingPID.exit_condition(sensor);
       pros::delay(util::DELAY_TIME);
     }
-    std::cout << "  Swing: " << exit_to_string(swing_exit) << " Exit.\n";
+    if (print_toggle) std::cout << "  Swing: " << exit_to_string(swing_exit) << " Exit.\n";
 
     if (swing_exit == mA_EXIT || swing_exit == VELOCITY_EXIT) {
       interfered = true;
@@ -101,7 +101,7 @@ void Drive::wait_until(double target) {
           right_exit = right_exit != RUNNING ? right_exit : rightPID.exit_condition(right_motors[0]);
           pros::delay(util::DELAY_TIME);
         } else {
-          std::cout << "  Left: " << exit_to_string(left_exit) << " Wait Until Exit.   Right: " << exit_to_string(right_exit) << " Wait Until Exit.\n";
+          if (print_toggle) std::cout << "  Left: " << exit_to_string(left_exit) << " Wait Until Exit.   Right: " << exit_to_string(right_exit) << " Wait Until Exit.\n";
 
           if (left_exit == mA_EXIT || left_exit == VELOCITY_EXIT || right_exit == mA_EXIT || right_exit == VELOCITY_EXIT) {
             interfered = true;
@@ -111,7 +111,7 @@ void Drive::wait_until(double target) {
       }
       // Once we've past target, return
       else if (util::sgn(l_error) != l_sgn || util::sgn(r_error) != r_sgn) {
-        std::cout << "  Drive Wait Until Exit.\n";
+        if (print_toggle) std::cout << "  Drive Wait Until Exit.\n";
         return;
       }
 
@@ -141,7 +141,7 @@ void Drive::wait_until(double target) {
             turn_exit = turn_exit != RUNNING ? turn_exit : turnPID.exit_condition({left_motors[0], right_motors[0]});
             pros::delay(util::DELAY_TIME);
           } else {
-            std::cout << "  Turn: " << exit_to_string(turn_exit) << " Wait Until Exit.\n";
+            if (print_toggle) std::cout << "  Turn: " << exit_to_string(turn_exit) << " Wait Until Exit.\n";
 
             if (turn_exit == mA_EXIT || turn_exit == VELOCITY_EXIT) {
               interfered = true;
@@ -151,7 +151,7 @@ void Drive::wait_until(double target) {
         }
         // Once we've past target, return
         else if (util::sgn(g_error) != g_sgn) {
-          std::cout << "  Turn Wait Until Exit.\n";
+          if (print_toggle) std::cout << "  Turn Wait Until Exit.\n";
           return;
         }
       }
@@ -164,7 +164,7 @@ void Drive::wait_until(double target) {
             swing_exit = swing_exit != RUNNING ? swing_exit : swingPID.exit_condition(sensor);
             pros::delay(util::DELAY_TIME);
           } else {
-            std::cout << "  Swing: " << exit_to_string(swing_exit) << " Wait Until Exit.\n";
+            if (print_toggle) std::cout << "  Swing: " << exit_to_string(swing_exit) << " Wait Until Exit.\n";
 
             if (swing_exit == mA_EXIT || swing_exit == VELOCITY_EXIT) {
               interfered = true;
@@ -174,7 +174,7 @@ void Drive::wait_until(double target) {
         }
         // Once we've past target, return
         else if (util::sgn(g_error) != g_sgn) {
-          std::cout << "  Swing Wait Until Exit.\n";
+          if (print_toggle) std::cout << "  Swing Wait Until Exit.\n";
           return;
         }
       }

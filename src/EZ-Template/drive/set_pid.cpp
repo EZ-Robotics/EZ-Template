@@ -16,9 +16,9 @@ void Drive::set_drive_pid(double target, int speed, bool slew_on, bool toggle_he
   TICK_PER_INCH = get_tick_per_inch();
 
   // Print targets
-  printf("Drive Started... Target Value: %f (%f ticks)", target, target * TICK_PER_INCH);
-  if (slew_on) printf(" with slew");
-  printf("\n");
+  if (print_toggle) printf("Drive Started... Target Value: %f (%f ticks)", target, target * TICK_PER_INCH);
+  if (slew_on && print_toggle) printf(" with slew");
+  if (print_toggle) printf("\n");
 
   // Global setup
   set_max_speed(speed);
@@ -61,7 +61,7 @@ void Drive::set_drive_pid(double target, int speed, bool slew_on, bool toggle_he
 // Set turn PID
 void Drive::set_turn_pid(double target, int speed) {
   // Print targets
-  printf("Turn Started... Target Value: %f\n", target);
+  if (print_toggle) printf("Turn Started... Target Value: %f\n", target);
 
   // Set PID targets
   turnPID.set_target(target);
@@ -75,7 +75,7 @@ void Drive::set_turn_pid(double target, int speed) {
 // Set swing PID
 void Drive::set_swing_pid(e_swing type, double target, int speed) {
   // Print targets
-  printf("Swing Started... Target Value: %f\n", target);
+  if (print_toggle) printf("Swing Started... Target Value: %f\n", target);
   current_swing = type;
 
   // Set PID targets

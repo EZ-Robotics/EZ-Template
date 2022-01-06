@@ -24,12 +24,12 @@ class Drive {
   int JOYSTICK_THRESHOLD;
 
   /**
-   * Global current brake mode. 
+   * Global current brake mode.
    */
   pros::motor_brake_mode_e_t CURRENT_BRAKE = pros::E_MOTOR_BRAKE_COAST;
 
   /**
-   * Global current mA. 
+   * Global current mA.
    */
   int CURRENT_MA = 2500;
 
@@ -39,17 +39,17 @@ class Drive {
   e_swing current_swing;
 
   /**
-   * Vector of pros motors for the left chassis. 
+   * Vector of pros motors for the left chassis.
    */
   std::vector<pros::Motor> left_motors;
 
   /**
-   * Vector of pros motors for the right chassis. 
+   * Vector of pros motors for the right chassis.
    */
   std::vector<pros::Motor> right_motors;
 
   /**
-   * Vector of pros motors that are disconnected from the drive. 
+   * Vector of pros motors that are disconnected from the drive.
    */
   std::vector<int> pto_active;
 
@@ -59,22 +59,22 @@ class Drive {
   pros::Imu imu;
 
   /**
-   * Left tracking wheel. 
+   * Left tracking wheel.
    */
   pros::ADIEncoder left_tracker;
 
   /**
-   * Right tracking wheel. 
+   * Right tracking wheel.
    */
   pros::ADIEncoder right_tracker;
 
   /**
-   * Left rotation tracker. 
+   * Left rotation tracker.
    */
   pros::Rotation left_rotation;
 
   /**
-   * Right rotation tracker. 
+   * Right rotation tracker.
    */
   pros::Rotation right_rotation;
 
@@ -89,9 +89,8 @@ class Drive {
   PID backward_drivePID;
   PID swingPID;
 
-   
   /**
-   * Calibrates imu and initializes sd card to curve. 
+   * Calibrates imu and initializes sd card to curve.
    */
   void initialize();
 
@@ -102,13 +101,13 @@ class Drive {
 
   /**
    * Creates a Drive Controller using internal encoders.
-   * 
+   *
    * \param left_motor_ports
    *        Input {1, -2...}.  Make ports negative if reversed!
    * \param right_motor_ports
    *        Input {-3, 4...}.  Make ports negative if reversed!
    * \param imu_port
-   *        Port the IMU is plugged into. 
+   *        Port the IMU is plugged into.
    * \param wheel_diameter
    *        Diameter of your drive wheels.  Remember 4" is 4.125"!
    * \param ticks
@@ -120,13 +119,13 @@ class Drive {
 
   /**
    * Creates a Drive Controller using encoders plugged into the brain.
-   * 
+   *
    * \param left_motor_ports
    *        Input {1, -2...}.  Make ports negative if reversed!
    * \param right_motor_ports
    *        Input {-3, 4...}.  Make ports negative if reversed!
    * \param imu_port
-   *        Port the IMU is plugged into. 
+   *        Port the IMU is plugged into.
    * \param wheel_diameter
    *        Diameter of your sensored wheels.  Remember 4" is 4.125"!
    * \param ticks
@@ -141,14 +140,14 @@ class Drive {
   Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks, double ratio, std::vector<int> left_tracker_ports, std::vector<int> right_tracker_ports);
 
   /**
-   * Creates a Drive Controller using encoders plugged into a 3 wire expander. 
-   * 
+   * Creates a Drive Controller using encoders plugged into a 3 wire expander.
+   *
    * \param left_motor_ports
    *        Input {1, -2...}.  Make ports negative if reversed!
    * \param right_motor_ports
    *        Input {-3, 4...}.  Make ports negative if reversed!
    * \param imu_port
-   *        Port the IMU is plugged into. 
+   *        Port the IMU is plugged into.
    * \param wheel_diameter
    *        Diameter of your sensored wheels.  Remember 4" is 4.125"!
    * \param ticks
@@ -160,19 +159,19 @@ class Drive {
    * \param right_tracker_ports
    *        Input {3, 4}.  Make ports negative if reversed!
    * \param expander_smart_port
-   *        Port the expander is plugged into. 
+   *        Port the expander is plugged into.
    */
   Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks, double ratio, std::vector<int> left_tracker_ports, std::vector<int> right_tracker_ports, int expander_smart_port);
 
   /**
-   * Creates a Drive Controller using rotation sensors. 
-   * 
+   * Creates a Drive Controller using rotation sensors.
+   *
    * \param left_motor_ports
    *        Input {1, -2...}.  Make ports negative if reversed!
    * \param right_motor_ports
    *        Input {-3, 4...}.  Make ports negative if reversed!
    * \param imu_port
-   *        Port the IMU is plugged into. 
+   *        Port the IMU is plugged into.
    * \param wheel_diameter
    *        Diameter of your sensored wheels.  Remember 4" is 4.125"!
    * \param ratio
@@ -185,7 +184,7 @@ class Drive {
   Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ratio, int left_rotation_port, int right_rotation_port);
 
   /**
-   * Sets drive defaults. 
+   * Sets drive defaults.
    */
   void set_defaults();
 
@@ -296,23 +295,23 @@ class Drive {
 
   /////
   //
-  // PTO 
+  // PTO
   //
   /////
 
   /**
-   * Checks if the motor is currently in pto_list.  Returns true if it's already in pto_list. 
+   * Checks if the motor is currently in pto_list.  Returns true if it's already in pto_list.
    *
    * \param check_if_pto
-   *        motor to check. 
+   *        motor to check.
    */
   bool pto_check(pros::Motor check_if_pto);
 
   /**
-   * Adds motors to the pto list, removing them from the drive. 
+   * Adds motors to the pto list, removing them from the drive.
    *
    * \param pto_list
-   *        list of motors to remove from the drive. 
+   *        list of motors to remove from the drive.
    */
   void pto_add(std::vector<pros::Motor> pto_list);
 
@@ -320,7 +319,7 @@ class Drive {
    * Removes motors from the pto list, adding them to the drive.  You cannot use the first index in a pto.
    *
    * \param pto_list
-   *        list of motors to add to the drive. 
+   *        list of motors to add to the drive.
    */
   void pto_remove(std::vector<pros::Motor> pto_list);
 
@@ -328,9 +327,9 @@ class Drive {
    * Adds/removes motors from drive.  You cannot use the first index in a pto.
    *
    * \param pto_list
-   *        list of motors to add/remove from the drive. 
+   *        list of motors to add/remove from the drive.
    * \param toggle
-   *        if true, adds to list.  if false, removes from list. 
+   *        if true, adds to list.  if false, removes from list.
    */
   void pto_toggle(std::vector<pros::Motor> pto_list, bool toggle);
 
@@ -365,6 +364,16 @@ class Drive {
    *        input in milliamps
    */
   void set_drive_current_limit(int mA);
+
+  /**
+   * Toggles set drive in autonomous. True enables, false disables.
+   */
+  void toggle_auto_drive(bool toggle);
+
+  /**
+   * Toggles printing in autonomous. True enables, false disables.
+   */
+  void toggle_auto_print(bool toggle);
 
   /////
   //
@@ -418,7 +427,7 @@ class Drive {
   void reset_drive_sensor();
 
   /**
-  * Resets the current gyro value.  Defaults to 0, reccomended to run at the start of your autonomous routine.
+   * Resets the current gyro value.  Defaults to 0, reccomended to run at the start of your autonomous routine.
    *
    * \param new_heading
    *        New heading value.
@@ -436,7 +445,7 @@ class Drive {
   bool imu_calibrate();
 
   /**
-   * Loading display while the IMU calibrates. 
+   * Loading display while the IMU calibrates.
    */
   void imu_loading_display(int iter);
 
@@ -512,7 +521,7 @@ class Drive {
    * Set Either the headingPID, turnPID, forwardPID, backwardPID, activeBrakePID, or swingPID
    * IF NOT DONE PID WILL DEFAULT TO 0!
    */
-  void set_pid_constants(PID* pid, double p, double i, double d, double p_start_i);
+  void set_pid_constants(PID *pid, double p, double i, double d, double p_start_i);
 
   /**
    * Sets minimum slew speed constants.
@@ -568,6 +577,8 @@ class Drive {
   const int drive_exit = 3;
 
  private:  // !Auton
+  bool drive_toggle = true;
+  bool print_toggle = true;
 
   /**
    * Resets drive sensors at the start of opcontrol.
@@ -590,7 +601,7 @@ class Drive {
   bool heading_on = true;
 
   /**
-   * Active brake kp constant. 
+   * Active brake kp constant.
    */
   double active_brake_kp = 0;
 
@@ -617,9 +628,9 @@ class Drive {
    * \param input
    *        slew_ enum
    * \param slew_on
-   *        is slew on?  
+   *        is slew on?
    * \param max_speed
-   *        target speed during the slew 
+   *        target speed during the slew
    * \param target
    *        target sensor value
    * \param current
@@ -632,7 +643,7 @@ class Drive {
   void slew_initialize(slew_ &input, bool slew_on, double max_speed, double target, double current, double start, bool backwards);
 
   /**
-   * Calculate slew. 
+   * Calculate slew.
    *
    * \param input
    *        slew_ enum
@@ -655,10 +666,10 @@ class Drive {
   double WHEEL_DIAMETER;
 
   /**
-   * Max speed for autonomous. 
+   * Max speed for autonomous.
    */
   int max_speed;
-  
+
   /**
    * Tasks
    */
@@ -689,9 +700,9 @@ class Drive {
    */
   bool is_tank;
 
-  #define DRIVE_INTEGRATED 1
-  #define DRIVE_ADI_ENCODER 2
-  #define DRIVE_ROTATION 3
+#define DRIVE_INTEGRATED 1
+#define DRIVE_ADI_ENCODER 2
+#define DRIVE_ROTATION 3
 
   /**
    * Is tracking?

@@ -90,7 +90,7 @@ bool is_reversed(double input);
 /**
  * Returns input restricted to min-max threshold
  */
-double clip_num(double input, double min, double max);
+double clip_num(double input, double max, double min);
 
 /**
  * Is the SD card plugged in?

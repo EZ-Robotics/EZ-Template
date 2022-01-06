@@ -164,6 +164,10 @@ void Drive::set_defaults() {
   // Left / Right modify buttons
   set_left_curve_buttons(pros::E_CONTROLLER_DIGITAL_LEFT, pros::E_CONTROLLER_DIGITAL_RIGHT);
   set_right_curve_buttons(pros::E_CONTROLLER_DIGITAL_Y, pros::E_CONTROLLER_DIGITAL_A);
+
+  // Enable auto printing and drive motors moving
+  toggle_auto_drive(true);
+  toggle_auto_print(true);
 }
 
 double Drive::get_tick_per_inch() {
@@ -314,3 +318,6 @@ void Drive::initialize() {
   imu_calibrate();
   reset_drive_sensor();
 }
+
+void Drive::toggle_auto_drive(bool toggle) { drive_toggle = toggle; }
+void Drive::toggle_auto_print(bool toggle) { print_toggle = toggle; }
