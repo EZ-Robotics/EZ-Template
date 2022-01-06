@@ -82,16 +82,18 @@ void PID::reset_timers() {
 
 exit_output PID::exit_condition(bool print) {
   // If the robot gets within the target, make sure it's there for small_timeout amount of time
-  if (abs(error) < exit.small_error) {
-    j += util::DELAY_TIME;
-    i = 0;  // While this is running, don't run big thresh
-    if (j > exit.small_exit_time) {
-      reset_timers();
-      if (print) printf(" Small Exit\n");
-      return SMALL_EXIT;
+  if (exit.small_error != 0) {
+    if (abs(error) < exit.small_error) {
+      j += util::DELAY_TIME;
+      i = 0;  // While this is running, don't run big thresh
+      if (j > exit.small_exit_time) {
+        reset_timers();
+        if (print) printf(" Small Exit\n");
+        return SMALL_EXIT;
+      }
+    } else {
+      j = 0;
     }
-  } else {
-    j = 0;
   }
 
   // If the robot is close to the target, start a timer.  If the robot doesn't get closer within
@@ -111,7 +113,7 @@ exit_output PID::exit_condition(bool print) {
 
   // If the motor velocity is 0,the code will timeout and set interfered to true.
   if (exit.velocity_exit_time != 0) {  // Check if this condition is enabled
-    if (derivative == 0) {
+    if (abs(derivative) <= 0.05) {
       k += util::DELAY_TIME;
       if (k > exit.velocity_exit_time) {
         reset_timers();
@@ -124,6 +126,24 @@ exit_output PID::exit_condition(bool print) {
   }
 
   return RUNNING;
+}
+
+exit_output PID::exit_condition(pros::Motor sensor, bool print) {
+  // If the motors are pulling too many mA, the code will timeout and set interfered to true.
+  if (exit.mA_timeout != 0) {  // Check if this condition is enabled
+    if (sensor.is_over_current()) {
+      l += util::DELAY_TIME;
+      if (l > exit.mA_timeout) {
+        reset_timers();
+        if (print) printf(" mA Exit\n");
+        return mA_EXIT;
+      }
+    } else {
+      l = 0;
+    }
+  }
+
+  return exit_condition(print);
 }
 
 exit_output PID::exit_condition(std::vector<pros::Motor> sensor, bool print) {

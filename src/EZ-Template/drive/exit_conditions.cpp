@@ -4,145 +4,73 @@ License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
+#include "EZ-Template/util.hpp"
 #include "main.h"
 
 using namespace ez;
 
 // Set exit condition timeouts
-void Drive::set_exit_condition(exit_condition_ &type, int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout) {
-  type.small_exit_time = p_small_exit_time;
-  type.small_error = p_small_error;
-  type.big_exit_time = p_big_exit_time;
-  type.big_error = p_big_error;
-  type.velocity_exit_time = p_velocity_exit_time;
-  type.mA_timeout = p_mA_timeout;
-}
-
-// Exit condition
-bool Drive::exit_condition(std::tuple<double, std::optional<double>> targets, exit_condition_ input_struct, bool wait_until) {
-  static int i = 0, j = 0, k = 0, l = 0;
-  bool is_drive = std::get<1>(targets).has_value();
-
-  // If the robot gets within the target, make sure it's there for small_timeout amount of time
-  if (fabs(std::get<0>(targets) - (is_drive ? left_sensor() : get_gyro())) < input_struct.small_error) {
-    if (!is_drive || fabs(*std::get<1>(targets) - right_sensor()) < input_struct.small_error) {
-      j += util::DELAY_TIME;
-      i = 0;  // While this is running, don't run big thresh
-      if (j > input_struct.small_exit_time) {
-        if (!wait_until)
-          printf(" Timed Out");
-        else
-          printf(" Wait Until Timed Out");
-        printf(" - Small Thresh\n");
-
-        l = 0;
-        i = 0;
-        k = 0;
-        j = 0;
-        return false;
-      }
-    }
-  } else {
-    j = 0;
+void Drive::set_exit_condition(int type, int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout) {
+  if (type == drive_exit) {
+    leftPID.set_exit_condition(p_small_exit_time, p_small_error, p_big_exit_time, p_big_error, p_velocity_exit_time, p_mA_timeout);
+    rightPID.set_exit_condition(p_small_exit_time, p_small_error, p_big_exit_time, p_big_error, p_velocity_exit_time, p_mA_timeout);
   }
 
-  // If the robot is close to the target, start a timer.  If the robot doesn't get closer within
-  // a certain amount of time, exit and continue.  This does not run while small_timeout is running
-  if (fabs(std::get<0>(targets) - (is_drive ? left_sensor() : get_gyro())) < input_struct.big_error) {
-    if (!is_drive || fabs(*std::get<1>(targets) - right_sensor()) < input_struct.big_error) {
-      i += util::DELAY_TIME;
-      if (i > input_struct.big_exit_time) {
-        if (!wait_until)
-          printf(" Timed Out");
-        else
-          printf(" Wait Until Timed Out");
-        printf(" - Big Thresh\n");
-
-        l = 0;
-        i = 0;
-        k = 0;
-        j = 0;
-        return false;
-      }
-    }
-  } else {
-    i = 0;
+  if (type == turn_exit) {
+    turnPID.set_exit_condition(p_small_exit_time, p_small_error, p_big_exit_time, p_big_error, p_velocity_exit_time, p_mA_timeout);
   }
 
-  // If the motors are pulling too many mA, the code will timeout and set interfered to true.
-  if (right_over_current() || left_over_current()) {
-    l += util::DELAY_TIME;
-    if (l > input_struct.mA_timeout) {
-      if (!wait_until)
-        printf(" Timed Out");
-      else
-        printf(" Wait Until Timed Out");
-      printf(" - mA\n");
-
-      l = 0;
-      i = 0;
-      k = 0;
-      j = 0;
-      interfered = true;
-      return false;
-    }
-  } else {
-    l = 0;
+  if (type == swing_exit) {
+    swingPID.set_exit_condition(p_small_exit_time, p_small_error, p_big_exit_time, p_big_error, p_velocity_exit_time, p_mA_timeout);
   }
-
-  if (right_velocity() == 0 && left_velocity() == 0) {
-    k += util::DELAY_TIME;
-    if (k > input_struct.velocity_exit_time) {
-      if (!wait_until)
-        printf(" Timed Out");
-      else
-        printf(" Wait Until Timed Out");
-      printf(" - Velocity\n");
-
-      l = 0;
-      i = 0;
-      k = 0;
-      j = 0;
-      interfered = true;
-      return false;
-    }
-  } else {
-    k = 0;
-  }
-
-  interfered = false;
-  return true;
 }
 
 // User wrapper for exit condition
 void Drive::wait_drive() {
+  // Let the PID run at least 1 iteration
   pros::delay(util::DELAY_TIME);
-/*
+
   if (mode == DRIVE) {
-    while (exit_condition(tuple{leftPID.get_target(), rightPID.get_target()}, drive_exit)) {
+    exit_output left_exit = RUNNING;
+    exit_output right_exit = RUNNING;
+    while (left_exit == RUNNING || right_exit == RUNNING) {
+      left_exit = left_exit != RUNNING ? left_exit : leftPID.exit_condition(left_motors[0]);
+      right_exit = right_exit != RUNNING ? right_exit : rightPID.exit_condition(right_motors[0]);
       pros::delay(util::DELAY_TIME);
     }
-  } else if (mode == TURN) {
-    while (exit_condition(tuple{turnPID.get_target(), std::nullopt}, turn_exit)) {
-      pros::delay(util::DELAY_TIME);
-    }
-  } else if (mode == SWING) {
-    while (exit_condition(tuple{swingPID.get_target(), std::nullopt}, swing_exit)) {
-      pros::delay(util::DELAY_TIME);
+    std::cout << "  Left: " << exit_to_string(left_exit) << " Exit.   Right: " << exit_to_string(right_exit) << " Exit.\n";
+
+    if (left_exit == mA_EXIT || left_exit == VELOCITY_EXIT || right_exit == mA_EXIT || right_exit == VELOCITY_EXIT) {
+      interfered = true;
     }
   }
-  */
-    if (mode == DRIVE) {
-    while (exit_condition(tuple{leftPID.get_target(), rightPID.get_target()}, drive_exit)) {
+
+  // Turn Exit
+  else if (mode == TURN) {
+    exit_output turn_exit = RUNNING;
+    while (turn_exit == RUNNING) {
+      turn_exit = turn_exit != RUNNING ? turn_exit : turnPID.exit_condition({left_motors[0], right_motors[0]});
       pros::delay(util::DELAY_TIME);
     }
-  } else if (mode == TURN) {
-    while (exit_condition(tuple{turnPID.get_target(), std::nullopt}, turn_exit)) {
+    std::cout << "  Turn: " << exit_to_string(turn_exit) << " Exit.\n";
+
+    if (turn_exit == mA_EXIT || turn_exit == VELOCITY_EXIT) {
+      interfered = true;
+    }
+  }
+
+  // Swing Exit
+  else if (mode == SWING) {
+    exit_output swing_exit = RUNNING;
+    pros::Motor& sensor = current_swing == ez::LEFT_SWING ? left_motors[0] : right_motors[0];
+    while (swing_exit == RUNNING) {
+      swing_exit = swing_exit != RUNNING ? swing_exit : swingPID.exit_condition(sensor);
       pros::delay(util::DELAY_TIME);
     }
-  } else if (mode == SWING) {
-    while (exit_condition(tuple{swingPID.get_target(), std::nullopt}, swing_exit)) {
-      pros::delay(util::DELAY_TIME);
+    std::cout << "  Swing: " << exit_to_string(swing_exit) << " Exit.\n";
+
+    if (swing_exit == mA_EXIT || swing_exit == VELOCITY_EXIT) {
+      interfered = true;
     }
   }
 }
@@ -151,8 +79,7 @@ void Drive::wait_drive() {
 void Drive::wait_until(double target) {
   // If robot is driving...
   if (mode == DRIVE) {
-    // If robot is driving...
-    // Calculate error between current and target (target needs to be an inbetween position)
+    // Calculate error between current and target (target needs to be an in between position)
     int l_tar = l_start + (target * TICK_PER_INCH);
     int r_tar = r_start + (target * TICK_PER_INCH);
     int l_error = l_tar - left_sensor();
@@ -160,16 +87,31 @@ void Drive::wait_until(double target) {
     int l_sgn = util::sgn(l_error);
     int r_sgn = util::sgn(r_error);
 
+    exit_output left_exit = RUNNING;
+    exit_output right_exit = RUNNING;
+
     while (true) {
       l_error = l_tar - left_sensor();
       r_error = r_tar - right_sensor();
 
-      // Break the loop once target is passed
-      if (util::sgn(l_error) == l_sgn && util::sgn(r_error) == r_sgn) {
-        // this makes sure that the following else if is rnu after the sgn is flipped
-      } else if (util::sgn(l_error) != l_sgn && util::sgn(r_error) != r_sgn) {
-        return;
-      } else if (!exit_condition(tuple{l_tar, r_tar}, drive_exit, true)) {
+      // Before robot has reached target, use the exit conditions to avoid getting stuck in this while loop
+      if (util::sgn(l_error) == l_sgn || util::sgn(r_error) == r_sgn) {
+        if (left_exit == RUNNING || right_exit == RUNNING) {
+          left_exit = left_exit != RUNNING ? left_exit : leftPID.exit_condition(left_motors[0]);
+          right_exit = right_exit != RUNNING ? right_exit : rightPID.exit_condition(right_motors[0]);
+          pros::delay(util::DELAY_TIME);
+        } else {
+          std::cout << "  Left: " << exit_to_string(left_exit) << " Wait Until Exit.   Right: " << exit_to_string(right_exit) << " Wait Until Exit.\n";
+
+          if (left_exit == mA_EXIT || left_exit == VELOCITY_EXIT || right_exit == mA_EXIT || right_exit == VELOCITY_EXIT) {
+            interfered = true;
+          }
+          return;
+        }
+      }
+      // Once we've past target, return
+      else if (util::sgn(l_error) != l_sgn || util::sgn(r_error) != r_sgn) {
+        std::cout << "  Drive Wait Until Exit.\n";
         return;
       }
 
@@ -177,30 +119,64 @@ void Drive::wait_until(double target) {
     }
   }
 
-  // If robot is turning...
+  // If robot is turning or swinging...
   else if (mode == TURN || mode == SWING) {
-    // Calculate error between current and target (target needs to be an inbetween position)
+    // Calculate error between current and target (target needs to be an in between position)
     int g_error = target - get_gyro();
     int g_sgn = util::sgn(g_error);
-    bool run = true;
 
-    // Change exit condition constants from turn to swing
-    exit_condition_ current_exit;
-    if (mode == TURN)
-      current_exit = turn_exit;
-    else
-      current_exit = swing_exit;
+    exit_output turn_exit = RUNNING;
+    exit_output swing_exit = RUNNING;
+
+    pros::Motor& sensor = current_swing == ez::LEFT_SWING ? left_motors[0] : right_motors[0];
 
     while (true) {
       g_error = target - get_gyro();
 
-      // Break the loop once target is passed
-      if (util::sgn(g_error) == g_sgn) {
-        // this makes sure that the following else if is rnu after the sgn is flipped
-      } else if (util::sgn(g_error) != g_sgn) {
-        return;
-      } else if (!exit_condition(tuple{target, std::nullopt}, current_exit, true)) {
-        return;
+      // If turning...
+      if (mode == TURN) {
+        // Before robot has reached target, use the exit conditions to avoid getting stuck in this while loop
+        if (util::sgn(g_error) == g_sgn) {
+          if (turn_exit == RUNNING) {
+            turn_exit = turn_exit != RUNNING ? turn_exit : turnPID.exit_condition({left_motors[0], right_motors[0]});
+            pros::delay(util::DELAY_TIME);
+          } else {
+            std::cout << "  Turn: " << exit_to_string(turn_exit) << " Wait Until Exit.\n";
+
+            if (turn_exit == mA_EXIT || turn_exit == VELOCITY_EXIT) {
+              interfered = true;
+            }
+            return;
+          }
+        }
+        // Once we've past target, return
+        else if (util::sgn(g_error) != g_sgn) {
+          std::cout << "  Turn Wait Until Exit.\n";
+          return;
+        }
+      }
+
+      // If swinging...
+      else {
+        // Before robot has reached target, use the exit conditions to avoid getting stuck in this while loop
+        if (util::sgn(g_error) == g_sgn) {
+          if (swing_exit == RUNNING) {
+            swing_exit = swing_exit != RUNNING ? swing_exit : swingPID.exit_condition(sensor);
+            pros::delay(util::DELAY_TIME);
+          } else {
+            std::cout << "  Swing: " << exit_to_string(swing_exit) << " Wait Until Exit.\n";
+
+            if (swing_exit == mA_EXIT || swing_exit == VELOCITY_EXIT) {
+              interfered = true;
+            }
+            return;
+          }
+        }
+        // Once we've past target, return
+        else if (util::sgn(g_error) != g_sgn) {
+          std::cout << "  Swing Wait Until Exit.\n";
+          return;
+        }
       }
 
       pros::delay(util::DELAY_TIME);

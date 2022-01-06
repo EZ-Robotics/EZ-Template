@@ -186,12 +186,10 @@ void Drive::set_tank(int left, int right) {
   if (pros::millis() < 1500) return;
 
   for (auto i : left_motors) {
-    if (pto_check(i)) break;  // If the motor is in the pto list, don't do anything to the motor.
-    i.move_voltage(left * (12000.0 / 127.0));
+    if (!pto_check(i)) i.move_voltage(left * (12000.0 / 127.0));  // If the motor is in the pto list, don't do anything to the motor.
   }
   for (auto i : right_motors) {
-    if (pto_check(i)) break;  // If the motor is in the pto list, don't do anything to the motor.
-    i.move_voltage(right * (12000.0 / 127.0));
+    if (!pto_check(i)) i.move_voltage(right * (12000.0 / 127.0));  // If the motor is in the pto list, don't do anything to the motor.
   }
 }
 
@@ -201,12 +199,10 @@ void Drive::set_drive_current_limit(int mA) {
   }
   CURRENT_MA = mA;
   for (auto i : left_motors) {
-    if (pto_check(i)) break;  // If the motor is in the pto list, don't do anything to the motor.
-    i.set_current_limit(abs(mA));
+    if (!pto_check(i)) i.set_current_limit(abs(mA));  // If the motor is in the pto list, don't do anything to the motor.
   }
   for (auto i : right_motors) {
-    if (pto_check(i)) break;  // If the motor is in the pto list, don't do anything to the motor.
-    i.set_current_limit(abs(mA));
+    if (!pto_check(i)) i.set_current_limit(abs(mA));  // If the motor is in the pto list, don't do anything to the motor.
   }
 }
 
@@ -306,12 +302,10 @@ bool Drive::imu_calibrate() {
 void Drive::set_drive_brake(pros::motor_brake_mode_e_t brake_type) {
   CURRENT_BRAKE = brake_type;
   for (auto i : left_motors) {
-    if (pto_check(i)) break;  // If the motor is in the pto list, don't do anything to the motor.
-    i.set_brake_mode(brake_type);
+    if (!pto_check(i)) i.set_brake_mode(brake_type);  // If the motor is in the pto list, don't do anything to the motor.
   }
   for (auto i : right_motors) {
-    if (pto_check(i)) break;  // If the motor is in the pto list, don't do anything to the motor.
-    i.set_brake_mode(brake_type);
+    if (!pto_check(i)) i.set_brake_mode(brake_type);  // If the motor is in the pto list, don't do anything to the motor.
   }
 }
 

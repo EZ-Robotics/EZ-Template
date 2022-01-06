@@ -69,6 +69,11 @@ enum exit_output { RUNNING = 1,
                    VELOCITY_EXIT = 4,
                    mA_EXIT = 5 };
 
+/**
+ * Outputs string for exit_condition enum.
+ */
+std::string exit_to_string(exit_output input);
+
 namespace util {
 extern bool AUTON_RAN;
 
@@ -76,14 +81,17 @@ extern bool AUTON_RAN;
  * Returns 1 if input is positive and -1 if input is negative
  */
 int sgn(double input);
+
 /**
  * Returns true if the input is < 0
  */
 bool is_reversed(double input);
+
 /**
  * Returns input restricted to min-max threshold
  */
 double clip_num(double input, double min, double max);
+
 /**
  * Is the SD card plugged in?
  */

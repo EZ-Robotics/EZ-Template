@@ -82,8 +82,7 @@ void print_to_screen(std::string text, int line) {
       texts.push_back(temp);
       temp = "";
       break;
-    }
-    else if (text[i] == '\n') {
+    } else if (text[i] == '\n') {
       texts.push_back(temp);
       temp = "";
     } else {
@@ -100,6 +99,25 @@ void print_to_screen(std::string text, int line) {
     pros::lcd::set_text(CurrAutoLine, i);
     CurrAutoLine++;
   }
+}
+
+std::string exit_to_string(exit_output input) {
+  switch ((int)input) {
+    case RUNNING:
+      return "Running";
+    case SMALL_EXIT:
+      return "Small";
+    case BIG_EXIT:
+      return "Big";
+    case VELOCITY_EXIT:
+      return "Velocity";
+    case mA_EXIT:
+      return "mA";
+    default:
+      return "Error: Out of bounds!";
+  }
+
+  return "Error: Out of bounds!";
 }
 namespace util {
 bool AUTON_RAN = true;

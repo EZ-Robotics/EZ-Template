@@ -11,12 +11,39 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 class PID {
  public:
+  /**
+   * Default constructor.
+   */
+  PID();
+
+  /**
+   * Constructor with constants.
+   *
+   * \param p
+   *        kP
+   * \param i
+   *        ki
+   * \param d
+   *        kD
+   * \param p_start_i
+   *        error value that i starts within
+   */
+  PID(double p, double i, double d, double start_i = 0);
+  void set_constants(double p, double i, double d, double p_start_i = 0);
+
+  /**
+   * Struct for constants.
+   */
   struct Constants {
     double kp;
     double ki;
     double kd;
     double start_i;
   };
+
+  /**
+   * Struct for exit condition.
+   */
   struct exit_condition_ {
     int small_exit_time = 0;
     double small_error = 0;
@@ -26,9 +53,6 @@ class PID {
     int mA_timeout = 0;
   };
 
-  PID();
-  PID(double p, double i, double d, double start_i = 0);
-  void set_constants(double p, double i, double d, double p_start_i = 0);
   /**
    * Set's constants for exit conditions.
    *
@@ -45,22 +69,80 @@ class PID {
    */
   void set_exit_condition(int p_small_exit_time, double p_small_error, int p_big_exit_time = 0, double p_big_error = 0, int p_velocity_exit_time = 0, int p_mA_timeout = 0);
 
-  int i = 0, j = 0, k = 0, l = 0;
-  bool is_mA = false;
-  void reset_timers();
-
+  /**
+   * Set's target.
+   *
+   * \param target
+   *        Target for PID.
+   */
   void set_target(double input);
+
+  /**
+   * Computes PID.
+   *
+   * \param current
+   *        Current sensor library.
+   */
   double compute(double current);
+
+  /**
+   * Returns target value.
+   */
   double get_target();
+
+  /**
+   * Returns constants.
+   */
   Constants get_constants();
+
+  /**
+   * Resets all variables to 0.  This does not reset constants.
+   */
   void reset_variables();
+
+  /**
+   * Constants
+   */
   Constants constants;
+
+  /**
+   * Exit
+   */
   exit_condition_ exit;
 
-  ez::exit_output exit_condition(std::vector<pros::Motor>, bool print = false);
+  /**
+   * Iterative exit condition for PID.
+   *
+   * \param print = false
+   *        if true, prints when complete.
+   */
   ez::exit_output exit_condition(bool print = false);
 
+  /**
+   * Iterative exit condition for PID.
+   *
+   * \param sensor
+   *        A pros motor on your mechanism.
+   * \param print = false
+   *        if true, prints when complete.
+   */
+  ez::exit_output exit_condition(pros::Motor sensor, bool print = false);
+
+  /**
+   * Iterative exit condition for PID.
+   *
+   * \param sensor
+   *        Pros motors on your mechanism.
+   * \param print = false
+   *        if true, prints when complete.
+   */
+  ez::exit_output exit_condition(std::vector<pros::Motor> sensor, bool print = false);
+
+  /**
+   * PID variables. 
+   */
   double output;
+  double cur;
   double error;
   double target;
   double prev_error;
@@ -68,4 +150,9 @@ class PID {
   double derivative;
   long time;
   long prev_time;
+
+ private:
+  int i = 0, j = 0, k = 0, l = 0;
+  bool is_mA = false;
+  void reset_timers();
 };

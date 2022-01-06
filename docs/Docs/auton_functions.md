@@ -202,36 +202,6 @@ void autonomous() {
 ---
 
 
-## exit_condition()
-Iterative bool that checks if the robot has settled.  This is used in `wait_drive()` and `wait_until()`.   
-`targets` is a tuple of PID objects.  
-`exitConditions` is either `swing_exit`, `drive_exit`, or `turn_exit`.  
-`wait_until` is a bool that changes the printfs.  
-**Prototype**
-```cpp
-bool exit_condition(std::tuple<double, std::optional<double>> targets, exit_condition_ exitConditions, bool wait_until = false);
-```
-
-**Example**
-```cpp
-void autonomous() {
-  chassis.set_drive_pid(24, DRIVE_SPEED, true);
-  while (chassis.exit_condition(tuple{chassis.leftPID.get_target(), chassis.rightPID.get_target()}, chassis.drive_exit)) {
-    printf("Left Error: %f   Right Error: %f\n", chassis.leftPID.error, chassis.rightPID.error);
-    pros::delay(ez::util::DELAY_TIME);
-  }
-
-  chassis.set_turn_pid(90, TURN_SPEED);
-  while (chassis.exit_condition(tuple{chassis.swingPID.get_target(), std::nullopt}, chassis.swing_exit)) {
-    printf("Turn Error: %f", chassis.turnPID.error);
-    pros::delay(util::DELAY_TIME);
-  }
-}
-```
-
-
----
-
 
 ## set_max_speed()
 Sets the max speed of the drive. 

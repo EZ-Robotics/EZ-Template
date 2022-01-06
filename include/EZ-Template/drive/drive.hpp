@@ -535,33 +535,6 @@ class Drive {
   void set_slew_distance(int fwd, int rev);
 
   /**
-   * Exit condition struct.
-   */
-  struct exit_condition_ {
-    int small_exit_time = 0;
-    double small_error = 0;
-    int big_exit_time = 0;
-    double big_error = 0;
-    int velocity_exit_time = 0;
-    int mA_timeout = 0;
-  };
-
-  /**
-   * Exit condition for turning.
-   */
-  exit_condition_ turn_exit;
-
-  /**
-   * Exit condition for swinging.
-   */
-  exit_condition_ swing_exit;
-
-  /**
-   * Exit condition for driving.
-   */
-  exit_condition_ drive_exit;
-
-  /**
    * Set's constants for exit conditions.
    *
    * \param &type
@@ -577,19 +550,22 @@ class Drive {
    * \param p_velocity_exit_time
    *        Sets velocity_exit_time.  Timer will start when velocity is 0.
    */
-  void set_exit_condition(exit_condition_ &type, int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout);
+  void set_exit_condition(int type, int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout);
 
   /**
-   * Iterative exit condition. 
-   *
-   * \param targets
-   *        leftPID, rightPID, turnPID or swingPID
-   * \param exitConditions
-   *        turn_exit, swing_exit, or drive_exit
-   * \param wait_until = false
-   *        changes print statements
+   * Exit condition for turning.
    */
-  bool exit_condition(std::tuple<double, std::optional<double>> targets, exit_condition_ exitConditions, bool wait_until = false);
+  const int turn_exit = 1;
+
+  /**
+   * Exit condition for swinging.
+   */
+  const int swing_exit = 2;
+
+  /**
+   * Exit condition for driving.
+   */
+  const int drive_exit = 3;
 
  private:  // !Auton
 

@@ -47,5 +47,5 @@ double Drive::slew_calculate(slew_ &input, double current) {
       return (input.slope * input.error) + input.y_intercept;
   }
   // When slew is completed, return max speed
-  return input.max_speed;
+  return max_speed;
 }
