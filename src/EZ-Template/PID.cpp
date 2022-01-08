@@ -150,14 +150,14 @@ exit_output PID::exit_condition(std::vector<pros::Motor> sensor, bool print) {
   // If the motors are pulling too many mA, the code will timeout and set interfered to true.
   if (exit.mA_timeout != 0) {  // Check if this condition is enabled
     for (auto i : sensor) {
-      // Check if the motor isn't drawing too many mA.  If 1 of the motors isn't, break.
-      if (!i.is_over_current()) {
-        is_mA = false;
+      // Check if 1 motor is pulling too many mA
+      if (i.is_over_current()) {
+        is_mA = true;
         break;
       }
-      // If all of the motors are drawing too many mA, keep the bool true
+      // If all of the motors aren't drawing too many mA, keep bool false
       else {
-        is_mA = true;
+        is_mA = false;
       }
     }
     if (is_mA) {

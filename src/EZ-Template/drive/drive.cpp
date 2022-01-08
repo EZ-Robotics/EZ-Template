@@ -168,6 +168,9 @@ void Drive::set_defaults() {
   // Enable auto printing and drive motors moving
   toggle_auto_drive(true);
   toggle_auto_print(true);
+
+  // Disables limit switch for auto selector
+  as::limit_switch_lcd_initialize(nullptr, nullptr); 
 }
 
 double Drive::get_tick_per_inch() {
