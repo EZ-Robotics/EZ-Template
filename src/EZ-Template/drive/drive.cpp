@@ -148,6 +148,8 @@ void Drive::set_defaults() {
   swingPID = {7, 0, 45, 0};
   leftPID = {0.45, 0, 5, 0};
   rightPID = {0.45, 0, 5, 0};
+  set_turn_min(30);
+  set_swing_min(30);
 
   // Slew constants
   set_slew_min_power(80, 80);

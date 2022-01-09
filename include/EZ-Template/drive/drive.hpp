@@ -95,12 +95,12 @@ class Drive {
   e_mode mode;
 
   /**
-   * Sets current mode of drive. 
+   * Sets current mode of drive.
    */
   void set_mode(e_mode p_mode);
 
   /**
-   * Returns current mode of drive. 
+   * Returns current mode of drive.
    */
   e_mode get_mode();
 
@@ -455,7 +455,7 @@ class Drive {
   double get_gyro();
 
   /**
-   * Calibrates the IMU, reccomended to run in initialize(). 
+   * Calibrates the IMU, reccomended to run in initialize().
    *
    * \param run_loading_animation
    *        bool for running loading animation
@@ -510,14 +510,14 @@ class Drive {
   void set_swing_pid(e_swing type, double target, int speed);
 
   /**
-   * Resets all PID targets to 0. 
+   * Resets all PID targets to 0.
    */
   void reset_pid_targets();
 
   /**
-   * Resets all PID targets to 0. 
+   * Resets all PID targets to 0.
    */
-  void set_angle (double angle);
+  void set_angle(double angle);
 
   /**
    * Lock the code in a while loop until the robot has settled.
@@ -547,9 +547,34 @@ class Drive {
 
   /**
    * Set Either the headingPID, turnPID, forwardPID, backwardPID, activeBrakePID, or swingPID
-   * IF NOT DONE PID WILL DEFAULT TO 0!
    */
   void set_pid_constants(PID *pid, double p, double i, double d, double p_start_i);
+
+  /**
+   * Sets minimum power for swings when kI and startI are enabled.
+   *
+   * \param min
+   *        new clipped speed
+   */
+  void set_swing_min(int min);
+
+  /**
+   * The minimum power for turns when kI and startI are enabled.
+   *
+   * \param min
+   *        new clipped speed
+   */
+  void set_turn_min(int min);
+
+  /**
+   * Returns minimum power for swings when kI and startI are enabled.
+   */
+  int get_swing_min();
+
+  /**
+   * Returns minimum power for turns when kI and startI are enabled.
+   */
+  int get_turn_min();
 
   /**
    * Sets minimum slew speed constants.
@@ -607,6 +632,8 @@ class Drive {
  private:  // !Auton
   bool drive_toggle = true;
   bool print_toggle = true;
+  int swing_min = 0;
+  int turn_min = 0;
 
   /**
    * Resets drive sensors at the start of opcontrol.

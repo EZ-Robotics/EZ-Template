@@ -29,6 +29,12 @@ void Drive::set_mode(e_mode p_mode) {
   mode = p_mode;
 }
 
+void Drive::set_turn_min(int min) { turn_min = abs(min); }
+int Drive::get_turn_min() { return turn_min; }
+
+void Drive::set_swing_min(int min) { swing_min = abs(min); }
+int Drive::get_swing_min() { return swing_min; }
+
 e_mode Drive::get_mode() { return mode; }
 
 // Set drive PID

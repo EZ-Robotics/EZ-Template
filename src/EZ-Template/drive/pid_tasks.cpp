@@ -65,7 +65,8 @@ void Drive::turn_pid_task() {
 
   // Clip the speed of the turn when the robot is within StartI, only do this when target is larger then StartI
   if (turnPID.constants.ki != 0 && (fabs(turnPID.get_target()) > turnPID.constants.start_i && fabs(turnPID.error) < turnPID.constants.start_i)) {
-    gyro_out = util::clip_num(gyro_out, 30, -30);
+    if (get_turn_min() != 0)
+      gyro_out = util::clip_num(gyro_out, get_turn_min(), -get_turn_min());
   }
 
   // Set motors
@@ -82,8 +83,9 @@ void Drive::swing_pid_task() {
   double swing_out = util::clip_num(swingPID.output, max_speed, -max_speed);
 
   // Clip the speed of the turn when the robot is within StartI, only do this when target is larger then StartI
-  if (swingPID.constants.ki != 0 && (fabs(turnPID.get_target()) > swingPID.constants.start_i && fabs(turnPID.error) < swingPID.constants.start_i)) {
-    swing_out = util::clip_num(swing_out, 30, -30);
+  if (swingPID.constants.ki != 0 && (fabs(swingPID.get_target()) > swingPID.constants.start_i && fabs(swingPID.error) < swingPID.constants.start_i)) {
+    if (get_swing_min() != 0)
+      swing_out = util::clip_num(swing_out, get_swing_min(), -get_swing_min());
   }
 
   if (drive_toggle) {
