@@ -203,7 +203,6 @@ void Drive::joy_thresh_opcontrol(int l_stick, int r_stick) {
 
 // Tank control
 void Drive::tank() {
-  mode = DISABLE;
   is_tank = true;
   reset_drive_sensors_opcontrol();
 
@@ -220,7 +219,6 @@ void Drive::tank() {
 
 // Arcade standard
 void Drive::arcade_standard(e_type stick_type) {
-  mode = DISABLE;
   is_tank = false;
   reset_drive_sensors_opcontrol();
 
@@ -245,7 +243,6 @@ void Drive::arcade_standard(e_type stick_type) {
 
 // Arcade control flipped
 void Drive::arcade_flipped(e_type stick_type) {
-  mode = DISABLE;
   is_tank = false;
   reset_drive_sensors_opcontrol();
 

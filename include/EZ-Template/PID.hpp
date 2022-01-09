@@ -27,9 +27,24 @@ class PID {
    *        kD
    * \param p_start_i
    *        error value that i starts within
+    * \param name
+   *        std::string of name that prints 
    */
-  PID(double p, double i, double d, double start_i = 0);
-  void set_constants(double p, double i, double d, double p_start_i = 0);
+  PID(double p, double i = 0, double d = 0, double start_i = 0, std::string name = "");
+
+  /**
+   * Set constants for PID.
+   *
+   * \param p
+   *        kP
+   * \param i
+   *        ki
+   * \param d
+   *        kD
+   * \param p_start_i
+   *        error value that i starts within
+   */
+  void set_constants(double p, double i = 0, double d = 0, double p_start_i = 0);
 
   /**
    * Struct for constants.
@@ -139,6 +154,14 @@ class PID {
   ez::exit_output exit_condition(std::vector<pros::Motor> sensor, bool print = false);
 
   /**
+   * Sets the name of the PID that prints during exit conditions. 
+   *
+   * \param name
+   *        a string that is the name you want to print
+   */
+  void set_name(std::string name);
+
+  /**
    * PID variables. 
    */
   double output;
@@ -155,4 +178,7 @@ class PID {
   int i = 0, j = 0, k = 0, l = 0;
   bool is_mA = false;
   void reset_timers();
+  std::string name;
+  bool is_name = false;
+  void print_exit(ez::exit_output exit_type);
 };

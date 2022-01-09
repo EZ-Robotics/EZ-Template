@@ -19,13 +19,6 @@ extern pros::Controller master;
 
 namespace ez {
 
-#define DISABLE 0
-#define SWING 1
-#define TURN 2
-#define DRIVE 3
-
-extern int mode;
-
 /**
  * Prints our branding all over your pros terminal
  */
@@ -67,7 +60,16 @@ enum exit_output { RUNNING = 1,
                    SMALL_EXIT = 2,
                    BIG_EXIT = 3,
                    VELOCITY_EXIT = 4,
-                   mA_EXIT = 5 };
+                   mA_EXIT = 5,
+                   ERROR_NO_CONSTANTS = 6 };
+
+/**
+ * Enum for split and single stick arcade.
+ */
+enum e_mode { DISABLE = 0,
+              SWING = 1,
+              TURN = 2,
+              DRIVE = 3 };
 
 /**
  * Outputs string for exit_condition enum.

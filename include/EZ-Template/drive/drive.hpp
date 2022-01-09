@@ -90,6 +90,21 @@ class Drive {
   PID swingPID;
 
   /**
+   * Current mode of the drive.
+   */
+  e_mode mode;
+
+  /**
+   * Sets current mode of drive. 
+   */
+  void set_mode(e_mode p_mode);
+
+  /**
+   * Returns current mode of drive. 
+   */
+  e_mode get_mode();
+
+  /**
    * Calibrates imu and initializes sd card to curve.
    */
   void initialize();
@@ -231,7 +246,7 @@ class Drive {
    * \param right
    *        Right default curve.
    */
-  void set_curve_default(double left, double right);
+  void set_curve_default(double left, double right = 0);
 
   /**
    * Runs a P loop on the drive when the joysticks are released.
@@ -490,6 +505,16 @@ class Drive {
    *        0 to 127, max speed during motion
    */
   void set_swing_pid(e_swing type, double target, int speed);
+
+  /**
+   * Resets all PID targets to 0. 
+   */
+  void reset_pid_targets();
+
+  /**
+   * Resets all PID targets to 0. 
+   */
+  void set_angle (double angle);
 
   /**
    * Lock the code in a while loop until the robot has settled.

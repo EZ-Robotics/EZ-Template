@@ -5,21 +5,24 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
 #include "main.h"
+#include "pros/misc.hpp"
 
 using namespace ez;
 
 void Drive::ez_auto_task() {
   while (true) {
     // Autonomous PID
-    if (mode == DRIVE)
+    if (get_mode() == DRIVE)
       drive_pid_task();
-    else if (mode == TURN)
+    else if (get_mode() == TURN)
       turn_pid_task();
-    else if (mode == SWING)
+    else if (get_mode() == SWING)
       swing_pid_task();
 
     if (pros::competition::is_autonomous() && !util::AUTON_RAN)
       util::AUTON_RAN = true;
+    else if (!pros::competition::is_autonomous())
+      set_mode(DISABLE);
 
     pros::delay(util::DELAY_TIME);
   }

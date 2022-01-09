@@ -27,9 +27,10 @@ PID::PID() {
 PID::Constants PID::get_constants() { return constants; }
 
 // PID constructor with constants
-PID::PID(double p, double i, double d, double start_i) {
+PID::PID(double p, double i, double d, double start_i, std::string name) {
   reset_variables();
   set_constants(p, i, d, start_i);
+  set_name(name);
 }
 
 // Set PID constants
@@ -80,7 +81,26 @@ void PID::reset_timers() {
   is_mA = false;
 }
 
+void PID::set_name(std::string p_name) {
+  name = p_name;
+  is_name = name == "" ? false : true;
+}
+
+void PID::print_exit(ez::exit_output exit_type) {
+  std::cout << " ";
+  if (is_name)
+    std::cout << name << " PID " << exit_to_string(exit_type) << " Exit.\n";
+  else
+    std::cout << exit_to_string(exit_type) << " Exit.\n";
+}
+
 exit_output PID::exit_condition(bool print) {
+  // If this function is called while all exit constants are 0, print an error
+  if (!(exit.small_error && exit.small_exit_time && exit.big_error && exit.big_exit_time && exit.velocity_exit_time && exit.mA_timeout)) {
+    print_exit(ERROR_NO_CONSTANTS);
+    return ERROR_NO_CONSTANTS;
+  }
+
   // If the robot gets within the target, make sure it's there for small_timeout amount of time
   if (exit.small_error != 0) {
     if (abs(error) < exit.small_error) {
@@ -88,7 +108,7 @@ exit_output PID::exit_condition(bool print) {
       i = 0;  // While this is running, don't run big thresh
       if (j > exit.small_exit_time) {
         reset_timers();
-        if (print) printf(" Small Exit\n");
+        if (print) print_exit(SMALL_EXIT);
         return SMALL_EXIT;
       }
     } else {
@@ -103,7 +123,7 @@ exit_output PID::exit_condition(bool print) {
       i += util::DELAY_TIME;
       if (i > exit.big_exit_time) {
         reset_timers();
-        if (print) printf(" Big Exit\n");
+        if (print) print_exit(BIG_EXIT);
         return BIG_EXIT;
       }
     } else {
@@ -117,7 +137,7 @@ exit_output PID::exit_condition(bool print) {
       k += util::DELAY_TIME;
       if (k > exit.velocity_exit_time) {
         reset_timers();
-        if (print) printf(" Velocity Exit\n");
+        if (print) print_exit(VELOCITY_EXIT);
         return VELOCITY_EXIT;
       }
     } else {
@@ -135,7 +155,7 @@ exit_output PID::exit_condition(pros::Motor sensor, bool print) {
       l += util::DELAY_TIME;
       if (l > exit.mA_timeout) {
         reset_timers();
-        if (print) printf(" mA Exit\n");
+        if (print) print_exit(mA_EXIT);
         return mA_EXIT;
       }
     } else {
@@ -164,7 +184,7 @@ exit_output PID::exit_condition(std::vector<pros::Motor> sensor, bool print) {
       l += util::DELAY_TIME;
       if (l > exit.mA_timeout) {
         reset_timers();
-        if (print) printf(" mA Exit\n");
+        if (print) print_exit(mA_EXIT);
         return mA_EXIT;
       }
     } else {

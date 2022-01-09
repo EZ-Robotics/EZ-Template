@@ -170,7 +170,7 @@ void Drive::set_defaults() {
   toggle_auto_print(true);
 
   // Disables limit switch for auto selector
-  as::limit_switch_lcd_initialize(nullptr, nullptr); 
+  as::limit_switch_lcd_initialize(nullptr, nullptr);
 }
 
 double Drive::get_tick_per_inch() {

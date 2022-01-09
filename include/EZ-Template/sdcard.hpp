@@ -42,6 +42,8 @@ void initialize();
  */
 void shutdown();
 
+extern bool turn_off;
+
 extern pros::ADIDigitalIn* left_limit_switch;
 extern pros::ADIDigitalIn* right_limit_switch;
 /**

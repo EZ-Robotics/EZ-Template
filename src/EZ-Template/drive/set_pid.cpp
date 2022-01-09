@@ -11,6 +11,26 @@ void Drive::set_max_speed(int speed) {
   max_speed = abs(speed);
 }
 
+void Drive::reset_pid_targets() {
+  headingPID.set_target(0);
+  leftPID.set_target(0);
+  rightPID.set_target(0);
+  forward_drivePID.set_target(0);
+  backward_drivePID.set_target(0);
+  turnPID.set_target(0);
+}
+
+void Drive::set_angle(double angle) {
+  headingPID.set_target(angle);
+  reset_gyro(angle);
+}
+
+void Drive::set_mode(e_mode p_mode) {
+  mode = p_mode;
+}
+
+e_mode Drive::get_mode() { return mode; }
+
 // Set drive PID
 void Drive::set_drive_pid(double target, int speed, bool slew_on, bool toggle_heading) {
   TICK_PER_INCH = get_tick_per_inch();
@@ -55,7 +75,7 @@ void Drive::set_drive_pid(double target, int speed, bool slew_on, bool toggle_he
   slew_initialize(right_slew, slew_on, max_speed, r_target_encoder, right_sensor(), r_start, is_backwards);
 
   // Run task
-  mode = DRIVE;
+  set_mode(DRIVE);
 }
 
 // Set turn PID
@@ -69,7 +89,7 @@ void Drive::set_turn_pid(double target, int speed) {
   set_max_speed(speed);
 
   // Run task
-  mode = TURN;
+  set_mode(TURN);
 }
 
 // Set swing PID
@@ -84,5 +104,5 @@ void Drive::set_swing_pid(e_swing type, double target, int speed) {
   set_max_speed(speed);
 
   // Run task
-  mode = SWING;
+  set_mode(SWING);
 }

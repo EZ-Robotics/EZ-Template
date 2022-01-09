@@ -25,7 +25,7 @@ void print_ez_template() {
                                      |_|
 )" << '\n';
 
-  printf("Version: 2.1.0-RC2\n");
+  printf("Version: 2.1.0-RC3\n");
 }
 std::string get_last_word(std::string text) {
   std::string word = "";
@@ -113,6 +113,8 @@ std::string exit_to_string(exit_output input) {
       return "Velocity";
     case mA_EXIT:
       return "mA";
+    case ERROR_NO_CONSTANTS:
+      return "Error: Exit condition constants not set!";
     default:
       return "Error: Out of bounds!";
   }

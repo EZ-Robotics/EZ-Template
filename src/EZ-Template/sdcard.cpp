@@ -8,7 +8,6 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "main.h"
 
-
 namespace ez::as {
 AutonSelector auton_selector{};
 
@@ -80,6 +79,8 @@ void shutdown() {
   pros::lcd::shutdown();
 }
 
+bool turn_off = false;
+
 // Using a button to control the lcd
 pros::ADIDigitalIn* left_limit_switch = nullptr;
 pros::ADIDigitalIn* right_limit_switch = nullptr;
@@ -88,9 +89,11 @@ void limit_switch_lcd_initialize(pros::ADIDigitalIn* right_limit, pros::ADIDigit
   if (!left_limit && !right_limit) {
     delete left_limit_switch;
     delete right_limit_switch;
+    if (pros::millis() <= 100)
+      turn_off = true;
     return;
   }
-
+  turn_off = false;
   right_limit_switch = right_limit;
   left_limit_switch = left_limit;
   limit_switch_task.resume();
@@ -102,6 +105,9 @@ void limitSwitchTask() {
       page_up();
     else if (left_limit_switch && left_limit_switch->get_new_press())
       page_down();
+
+    if (pros::millis() >= 500 && turn_off)
+      limit_switch_task.suspend();
 
     pros::delay(50);
   }

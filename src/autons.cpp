@@ -189,7 +189,7 @@ void combining_movements() {
   chassis.set_turn_pid(45, TURN_SPEED);
   chassis.wait_drive();
 
-  chassis.set_drive_pid(ez::RIGHT_SWING, -45, TURN_SPEED);
+  chassis.set_swing_pid(ez::RIGHT_SWING, -45, TURN_SPEED);
   chassis.wait_drive();
 
   chassis.set_turn_pid(0, TURN_SPEED);
