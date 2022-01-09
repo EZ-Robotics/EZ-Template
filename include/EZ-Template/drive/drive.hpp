@@ -455,9 +455,12 @@ class Drive {
   double get_gyro();
 
   /**
-   * Calibrates the IMU, reccomended to run in initialize().
+   * Calibrates the IMU, reccomended to run in initialize(). 
+   *
+   * \param run_loading_animation
+   *        bool for running loading animation
    */
-  bool imu_calibrate();
+  bool imu_calibrate(bool run_loading_animation = true);
 
   /**
    * Loading display while the IMU calibrates.

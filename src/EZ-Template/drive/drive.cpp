@@ -267,10 +267,10 @@ void Drive::imu_loading_display(int iter) {
   }
 
   // While IMU is loading
-  if (iter < 1440) {
+  if (iter < 2000) {
     static int last_x1 = boarder;
     pros::screen::set_pen(0x00FF6EC7);  // EZ Pink
-    int x1 = (iter * ((480 - (boarder * 2)) / 1440.0)) + boarder;
+    int x1 = (iter * ((480 - (boarder * 2)) / 2000.0)) + boarder;
     pros::screen::fill_rect(last_x1, boarder, x1, 240 - boarder);
     last_x1 = x1;
   }
@@ -278,27 +278,30 @@ void Drive::imu_loading_display(int iter) {
   else {
     static int last_x1 = boarder;
     pros::screen::set_pen(COLOR_RED);
-    int x1 = ((iter - 1440) * ((480 - (boarder * 2)) / 1560.0)) + boarder;
+    int x1 = ((iter - 2000) * ((480 - (boarder * 2)) / 1000.0)) + boarder;
     pros::screen::fill_rect(last_x1, boarder, x1, 240 - boarder);
     last_x1 = x1;
   }
 }
 
-bool Drive::imu_calibrate() {
+bool Drive::imu_calibrate(bool run_loading_animation) {
   imu.reset();
-  int time = pros::millis();
   int iter = 0;
-  int delay = 10;
-  while (imu.get_status() & pros::c::E_IMU_STATUS_CALIBRATING) {
-    iter += delay;
+  while (true) {
+    iter += util::DELAY_TIME;
 
-    imu_loading_display(iter);
+    if (run_loading_animation) imu_loading_display(iter);
 
-    if (iter > 2990) {
-      printf("No IMU plugged in, (took %d ms to realize that)\n", iter);
-      return false;
+    if (iter >= 2000) {
+      if (!(imu.get_status() & pros::c::E_IMU_STATUS_CALIBRATING)) {
+        break;
+      }
+      if (iter >= 3000) {
+        printf("No IMU plugged in, (took %d ms to realize that)\n", iter);
+        return false;
+      }
     }
-    pros::delay(delay);
+    pros::delay(util::DELAY_TIME);
   }
   master.rumble(".");
   printf("IMU is done calibrating (took %d ms)\n", iter);
