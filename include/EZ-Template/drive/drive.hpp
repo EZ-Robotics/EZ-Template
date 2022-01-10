@@ -308,6 +308,21 @@ class Drive {
    */
   void set_joystick_threshold(int threshold);
 
+  /**
+   * Resets drive sensors at the start of opcontrol.
+   */
+  void reset_drive_sensors_opcontrol();
+
+  /**
+   * Sets minimum slew distance constants.
+   *
+   * \param l_stick
+   *        input for left joystick
+   * \param r_stick
+   *        input for right joystick
+   */
+  void joy_thresh_opcontrol(int l_stick, int r_stick);
+
   /////
   //
   // PTO
@@ -629,40 +644,17 @@ class Drive {
    */
   const int drive_exit = 3;
 
- private:  // !Auton
-  bool drive_toggle = true;
-  bool print_toggle = true;
-  int swing_min = 0;
-  int turn_min = 0;
+  /**
+   * Returns current tick_per_inch()
+   */
+  double get_tick_per_inch();
 
   /**
-   * Resets drive sensors at the start of opcontrol.
+   * Returns current tick_per_inch()
    */
-  void reset_drive_sensors_opcontrol();
+  void modify_curve_with_controller();
 
-  /**
-   * Sets minimum slew distance constants.
-   *
-   * \param l_stick
-   *        input for left joystick
-   * \param r_stick
-   *        input for right joystick
-   */
-  void joy_thresh_opcontrol(int l_stick, int r_stick);
-
-  /**
-   * Heading bool.
-   */
-  bool heading_on = true;
-
-  /**
-   * Active brake kp constant.
-   */
-  double active_brake_kp = 0;
-
-  /**
-   * Slew enum.
-   */
+  // Slew
   struct slew_ {
     int sign = 0;
     double error = 0;
@@ -707,14 +699,28 @@ class Drive {
    */
   double slew_calculate(slew_ &input, double current);
 
+ private:  // !Auton
+  bool drive_toggle = true;
+  bool print_toggle = true;
+  int swing_min = 0;
+  int turn_min = 0;
+
+  /**
+   * Heading bool.
+   */
+  bool heading_on = true;
+
+  /**
+   * Active brake kp constant.
+   */
+  double active_brake_kp = 0;
+
   /**
    * Tick per inch calculation.
    */
   double TICK_PER_REV;
   double TICK_PER_INCH;
   double CIRCUMFERENCE;
-
-  double get_tick_per_inch();
 
   double CARTRIDGE;
   double RATIO;
@@ -786,11 +792,6 @@ class Drive {
   button_ l_decrease_;
   button_ r_increase_;
   button_ r_decrease_;
-
-  /**
-   * Uses button presses to modify controller curve.
-   */
-  void modify_curve_with_controller();
 
   /**
    * Function for button presses.
