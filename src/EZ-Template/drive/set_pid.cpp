@@ -8,7 +8,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 // Updates max speed
 void Drive::set_max_speed(int speed) {
-  max_speed = abs(speed);
+  max_speed = util::clip_num(abs(speed), 127, -127);
 }
 
 void Drive::reset_pid_targets() {
