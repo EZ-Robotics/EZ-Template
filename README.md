@@ -11,7 +11,7 @@ permalink: /
 Simple plug-and-play PROS template that handles drive base functions for VEX robots.  
 
 
-[EZ-Template Version](https://github.com/EZ-Robotics/EZ-Template): 2.1.0-RC5  
+[EZ-Template Version](https://github.com/EZ-Robotics/EZ-Template): 2.1.0  
 [Example Project Version](https://github.com/EZ-Robotics/EZ-Template-Example): 1.1.0
 
 [Autonomous routines that used EZ-Template](https://photos.app.goo.gl/yRwuvmq7hDoM4f6EA)
