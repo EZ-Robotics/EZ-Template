@@ -12,12 +12,11 @@ Simple plug-and-play PROS template that handles drive base functions for VEX rob
 
 
 [EZ-Template Version](https://github.com/EZ-Robotics/EZ-Template): 2.1.0  
-[Example Project Version](https://github.com/EZ-Robotics/EZ-Template-Example): 1.1.0
 
 [Autonomous routines that used EZ-Template](https://photos.app.goo.gl/yRwuvmq7hDoM4f6EA)
 
 ## Download and Installation  
-1) Download the latest example project [here](https://github.com/EZ-Robotics/EZ-Template-Example/releases/latest).  Extract the zip, and open it in PROS.   
+1) Download the latest example project [here](https://github.com/EZ-Robotics/EZ-Template/releases/latest).  Extract the zip, and open it in PROS.   
 2) In `src/main.cpp`, configure drive and IMU ports to what they are on your robot.  Be sure to read the comments!    
 3) Configure your wheel size and cartrige.  Remember that 4" omni wheels are actually 4.125!    
 4) In `src/main.cpp`, at the bottom in `void opcontrol()`, decide how you'd like to control your robot!  Any flavor of arcade or tank!    
