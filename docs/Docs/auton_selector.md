@@ -36,6 +36,31 @@ void initialize() {
 ---
 
 
+---
+
+## limit_switch_lcd_initialize() 
+Sets external buttons to increase/decrease the current autonomous page.    
+**Prototype**
+```cpp
+void limit_switch_lcd_initialize(pros::ADIDigitalIn* right_limit, pros::ADIDigitalIn* left_limit = nullptr);
+```
+
+**Example**
+```cpp
+pros::ADIDigitalIn increase('A');
+pros::ADIDigitalIn decrease('B');
+void initialize() {
+  ez::as::initialize();
+  ez::as::limit_switch_lcd_initialize(&increase, &decrease);
+  // . . .
+}
+```
+
+
+---
+
+
+
 ## shutdown() 
 Wrapper for `pros::lcd::shutdown()`.    
 **Prototype**

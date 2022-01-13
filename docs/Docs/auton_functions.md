@@ -151,7 +151,7 @@ void autonomous() {
 
 
 ## wait_drive()
-Locks the code in place until the drive has settled.    
+Locks the code in place until the drive has settled.  This uses the exit conditions from the PID class.      
 **Prototype**
 ```cpp
 void wait_drive();
@@ -178,7 +178,7 @@ void autonomous() {
 
 
 ## wait_until()
-Locks the code in place until the drive has passed the input parameter.       
+Locks the code in place until the drive has passed the input parameter.  This uses the exit conditions from the PID class.           
 **Prototype**
 ```cpp
 void wait_until(double target);
@@ -194,6 +194,57 @@ void autonomous() {
   chassis.set_drive_pid(48, 110);
   chassis.wait_until(24);
   chassis.set_max_speed(40);
+  chassis.wait_drive();
+}
+```
+
+
+---
+
+
+
+## reset_pid_targets()
+Resets all drive PID targets to 0.       
+**Prototype**
+```cpp
+void reset_pid_targets();
+```
+
+**Example**
+```cpp
+void autonomous() {
+  chassis.reset_pid_targets(); // Resets PID targets to 0
+  chassis.reset_gyro(); // Reset gyro position to 0
+  chassis.reset_drive_sensor(); // Reset drive sensors to 0
+  chassis.set_drive_brake(MOTOR_BRAKE_HOLD); // Set motors to hold.  This helps autonomous consistency.
+
+  ez::as::auton_selector.call_selected_auton(); // Calls selected auton from autonomous selector.
+}
+```
+
+
+---
+
+
+
+## set_angle()
+Sets the angle of the robot.  This is useful when your robot is setup in at an unconventional angle and you want 0 to be when you're square with the field.         
+**Prototype**
+```cpp
+void set_angle(double angle);
+```
+
+**Example**
+```cpp
+void autonomous() {
+  chassis.reset_pid_targets(); // Resets PID targets to 0
+  chassis.reset_gyro(); // Reset gyro position to 0
+  chassis.reset_drive_sensor(); // Reset drive sensors to 0
+  chassis.set_drive_brake(MOTOR_BRAKE_HOLD); // Set motors to hold.  This helps autonomous consistency.
+
+  chassis.set_angle(45);
+
+  chassis.set_turn_pid(0, TURN_SPEED);
   chassis.wait_drive();
 }
 ```
@@ -298,7 +349,7 @@ void initialize() {
 
 
 ## set_exit_condition()
-Sets the exit condition constants. Below is the defaults.  
+Sets the exit condition constants. This uses the exit conditions from the PID class.  Below is the defaults.  
 `type` either `chassis.turn_exit`, `chassis.swing_exit`, or `chassis.drive_exit`  
 `p_small_exit_time` time, in ms, before exiting `p_small_error`  
 `p_small_error` small error threshold  
@@ -318,6 +369,92 @@ void initialize() {
   chassis.set_exit_condition(chassis.turn_exit,  100, 3,  500, 7,   500, 500);
   chassis.set_exit_condition(chassis.swing_exit, 100, 3,  500, 7,   500, 500);
   chassis.set_exit_condition(chassis.drive_exit, 80,  50, 300, 150, 500, 500);
+}
+```
+
+
+---
+
+
+## set_swing_min()
+Sets the max power of the drive when the robot is within `start_i`.  This only enalbes when `i` is enabled, and when the movement is greater then `start_i`.        
+**Prototype**
+```cpp
+void set_swing_min(int min);
+
+```
+
+**Example**
+```cpp
+void autonomous() {
+  chassis.set_swing_min(30);
+
+  chassis.set_swing_pid(45, 110);
+  chassis.wait_drive();
+}
+```
+
+
+---
+
+
+## set_turn_min()
+Sets the max power of the drive when the robot is within `start_i`.  This only enalbes when `i` is enabled, and when the movement is greater then `start_i`.        
+**Prototype**
+```cpp
+void set_turn_min(int min);
+
+```
+
+**Example**
+```cpp
+void autonomous() {
+  chassis.set_turn_min(30);
+
+  chassis.set_turn_pid(45, 110);
+  chassis.wait_drive();
+}
+```
+
+
+---
+
+
+## get_swing_min()
+Returns swing min.         
+**Prototype**
+```cpp
+int get_swing_min();
+
+```
+
+**Example**
+```cpp
+void autonomous() {
+  chassis.set_swing_min(30);
+
+  printf("Swing Min: %i", chassis.get_swing_min());
+}
+```
+
+
+---
+
+
+## get_turn_min()
+Returns turn min.         
+**Prototype**
+```cpp
+int get_turn_min();
+
+```
+
+**Example**
+```cpp
+void autonomous() {
+  chassis.set_turn_min(30);
+
+  printf("Turn Min: %i", chassis.get_turn_min());
 }
 ```
 
@@ -370,3 +507,127 @@ void auto1() {
 
 
 ---
+
+
+## set_mode()
+Sets the current mode of the drive.  Accepts `ez::DISABLE`, `ez::SWING`, `ez::TURN`, `ez::DRIVE`.           
+**Prototype**
+```cpp
+void set_mode(e_mode p_mode);
+```
+
+**Example**
+```cpp
+void autonomous() {
+  chassis.set_drive_pid(12, DRIVE_SPEED);
+  chassis.wait_drive();
+
+  chassis.set_mode(ez::DISABLE); // Disable drive
+
+  chassis.set_tank(-127, -127); // Run drive motors myself
+  pros::delay(2000);
+  chassis.set_tank(0, 0);
+}
+```
+
+
+---
+
+
+## get_mode()
+Returns the current drive mode.  Returns `ez::DISABLE`, `ez::SWING`, `ez::TURN`, `ez::DRIVE`.           
+**Prototype**
+```cpp
+e_mode get_mode();
+```
+
+**Example**
+```cpp
+void autonomous() {
+  chassis.set_drive_pid(12, DRIVE_SPEED);
+  chassis.wait_drive();
+
+  if (chassis.interfered)
+    chassis.set_mode(ez::DISABLE);
+  
+  if (chassis.get_mode() == ez::DISABLE) {
+    chassis.set_tank(-127, -127); // Run drive motors myself
+    pros::delay(2000);
+    chassis.set_tank(0, 0);
+  }
+}
+```
+
+
+---
+
+
+## toggle_auto_drive()
+Enables/disables the drive from moving in autonomous.  This is useful for debugging and checking PID variables.  True enables, false disables.         
+**Prototype**
+```cpp
+void toggle_auto_drive(bool toggle);
+```
+
+**Example**
+```cpp
+void autonomous() {
+  chassis.set_drive_pid(12, DRIVE_SPEED);
+  chassis.wait_drive();
+
+  toggle_auto_drive(false); // Disable drive
+
+  chassis.set_drive_pid(-12, DRIVE_SPEED);
+  while (true) {
+    printf(" Left Error: %f  Right Error: %f\n", chassis.leftPID.error, chassis.rightPID.error);
+    pros::delay(ez::util::DELAY_TIME);
+  }
+}
+```
+
+
+---
+
+
+## toggle_auto_print()
+Enables/disables the drive functions printing every drive motion.  This is useful when you're debugging something and don't want terminal cluttered.  True enables, false disables.          
+**Prototype**
+```cpp
+void toggle_auto_print(bool toggle);
+```
+
+**Example**
+```cpp
+void autonomous() {
+  chassis.set_drive_pid(12, DRIVE_SPEED); // This will print
+  chassis.wait_drive(); // This will print
+
+  toggle_auto_print(false); // Disable prints
+
+  chassis.set_drive_pid(-12, DRIVE_SPEED); // This won't print
+  chassis.wait_drive(); // This won't print
+}
+```
+
+
+---
+
+
+
+## get_tick_per_inch()
+Returns current tick per inch.           
+**Prototype**
+```cpp
+double get_tick_per_inch();
+```
+
+**Example**
+```cpp
+void initialize() {
+  printf("Tick Per Inch: %f\n", chassis.get_tick_per_inch());
+}
+```
+
+
+---
+

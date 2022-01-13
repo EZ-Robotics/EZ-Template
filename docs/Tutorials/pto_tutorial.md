@@ -2,7 +2,7 @@
 layout: default
 title: PTO Tutorial
 parent: Tutorials
-nav_order: 6
+nav_order: 7
 ---
 
 
@@ -21,10 +21,8 @@ nav_order: 6
 ## Introduction  
 PTO (power take off) is used to share power between two mechanisms, usually between the drive and something else.  For example, a 6 motor drive could pneumatically shift to a 4 motor drive and a 2 motor intake.  
 
-## Example .cpp  
+## Example  
 ```cpp
-#include "main.h"
-
 pros::Motor& intake_l = chassis.left_motors[1];
 pros::Motor& intake_r = chassis.right_motors[1];
 pros::ADIDigitalOut pto_intake_piston('A');
@@ -62,4 +60,19 @@ void intake_control() {
   else
     set_intake(0);
 }
+
+void opcontrol() {
+  // This is preference to what you like to drive on.
+  chassis.set_drive_brake(MOTOR_BRAKE_COAST);
+
+  while (true) {
+
+    chassis.tank(); // Tank control
+
+    intake_control();
+
+    pros::delay(ez::util::DELAY_TIME); // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
+  }
+}
+
 ```

@@ -273,7 +273,7 @@ void initialize() {
 
 
 ## left_curve_function()
-Returns the input times the red curve [here](https://www.desmos.com/calculator/rcfjjg83zx).  `tank()`, `arcade_standard()`, and `arcade_flipped()` all handle this for you.  
+Returns the input times the red curve [here](https://www.desmos.com/calculator/rcfjjg83zx).  `tank()`, `arcade_standard()`, and `arcade_flipped()` all handle this for you.  When tank is enabled, only this curve is used.  
 `x` input value.  
 **Prototype**
 ```cpp
@@ -338,3 +338,52 @@ void initialize() {
   chassis.set_joystick_threshold(5);
 }
 ```
+
+
+---
+
+
+## joy_thresh_opcontrol()
+Runs the joystick control.  Sets the left drive to `l_stick`, and right drive to `r_stick`.  Runs active brake and joystick thresholds.    
+**Prototype**
+```cpp
+void joy_thresh_opcontrol(int l_stick, int r_stick);
+```
+
+**Example** 
+```cpp
+void opcontrol() {
+  while (true) {
+    chassis.joy_thresh_opcontroL(master.get_analog(ANALOG_LEFT_Y), master.get_analog(ANALOG_RIGHT_Y));
+
+    pros::delay(ez::util::DELAY_TIME);
+  }
+  chassis.set_joystick_threshold(5);
+}
+```
+
+
+---
+## modify_curve_with_controller()
+Allows the user to modify the curve with the controller.      
+**Prototype**
+```cpp
+void modify_curve_with_controller();
+```
+
+**Example** 
+```cpp
+void opcontrol() {
+  while (true) {
+    chassis.joy_thresh_opcontroL(master.get_analog(ANALOG_LEFT_Y), master.get_analog(ANALOG_RIGHT_Y));
+
+    chassis.modify_curve_with_controller();
+
+    pros::delay(ez::util::DELAY_TIME);
+  }
+  chassis.set_joystick_threshold(5);
+}
+```
+
+
+---

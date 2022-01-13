@@ -2,7 +2,7 @@
 layout: default
 title: Joystick Curve
 parent: Tutorials
-nav_order: 4
+nav_order: 5
 ---
 
 
@@ -27,7 +27,7 @@ Normally, pushing the joystick half way means the robot goes half speed. With an
 When the robot is on, tapping/holding the left/right arrows will increase/decrease how large the curve is. When arcade is enabled, each stick will have it's own curve. The y/a buttons will increase/decrease the curve for the right stick.
 
 ## Enabling   
-After you find values you like, in `src/main.cpp` set `chassis.set_curve_defaults(0, 0)` to whatever you liked! The first parameter is left stick, second is right stick.  
+After you find values you like, in `src/main.cpp` set `chassis.set_curve_defaults(0, 0)` to whatever you liked! The first parameter is left stick, second is right stick.  When using tank, only the left stick value is used.    
 
 In `src/main.cpp`, in `void initialize()`, if `chassis.toggle_modify_curve_with_controller(true)` is enabled, by pressing the left/right (or y/a if arcade is enabled), you can live adjust your curve and it will display to your controller!   
 
