@@ -27,10 +27,10 @@ void Drive::init_curve_sd() {
     fread(l_buf, 1, 5, l_usd_file_read);
     left_curve_scale = std::stof(l_buf);
     fclose(l_usd_file_read);
-  } 
+  }
   // If file doesn't exist, create file
   else {
-    save_l_curve_sd(); // Writing to a file that doesn't exist creates the file
+    save_l_curve_sd();  // Writing to a file that doesn't exist creates the file
     printf("Created left_curve.txt\n");
   }
 
@@ -41,10 +41,10 @@ void Drive::init_curve_sd() {
     fread(l_buf, 1, 5, r_usd_file_read);
     right_curve_scale = std::stof(l_buf);
     fclose(r_usd_file_read);
-  } 
+  }
   // If file doesn't exist, create file
   else {
-    save_r_curve_sd(); // Writing to a file that doesn't exist creates the file
+    save_r_curve_sd();  // Writing to a file that doesn't exist creates the file
     printf("Created right_curve.txt\n");
   }
 }
@@ -157,10 +157,10 @@ void Drive::modify_curve_with_controller() {
 // Left curve function
 double Drive::left_curve_function(double x) {
   if (left_curve_scale != 0) {
-    //if (CURVE_TYPE)
+    // if (CURVE_TYPE)
     return (powf(2.718, -(left_curve_scale / 10)) + powf(2.718, (fabs(x) - 127) / 10) * (1 - powf(2.718, -(left_curve_scale / 10)))) * x;
-    //else
-    //return powf(2.718, ((abs(x)-127)*RIGHT_CURVE_SCALE)/100)*x;
+    // else
+    // return powf(2.718, ((abs(x)-127)*RIGHT_CURVE_SCALE)/100)*x;
   }
   return x;
 }
@@ -168,10 +168,10 @@ double Drive::left_curve_function(double x) {
 // Right curve fnuction
 double Drive::right_curve_function(double x) {
   if (right_curve_scale != 0) {
-    //if (CURVE_TYPE)
+    // if (CURVE_TYPE)
     return (powf(2.718, -(right_curve_scale / 10)) + powf(2.718, (fabs(x) - 127) / 10) * (1 - powf(2.718, -(right_curve_scale / 10)))) * x;
-    //else
-    //return powf(2.718, ((abs(x)-127)*RIGHT_CURVE_SCALE)/100)*x;
+    // else
+    // return powf(2.718, ((abs(x)-127)*RIGHT_CURVE_SCALE)/100)*x;
   }
   return x;
 }
@@ -225,20 +225,20 @@ void Drive::arcade_standard(e_type stick_type) {
   // Toggle for controller curve
   modify_curve_with_controller();
 
-  int l_stick, r_stick;
+  int fwd_stick, turn_stick;
   // Check arcade type (split vs single, normal vs flipped)
   if (stick_type == SPLIT) {
     // Put the joysticks through the curve function
-    l_stick = left_curve_function(master.get_analog(ANALOG_LEFT_Y));
-    r_stick = right_curve_function(master.get_analog(ANALOG_RIGHT_X));
+    fwd_stick = left_curve_function(master.get_analog(ANALOG_LEFT_Y));
+    turn_stick = right_curve_function(master.get_analog(ANALOG_RIGHT_X));
   } else if (stick_type == SINGLE) {
     // Put the joysticks through the curve function
-    l_stick = left_curve_function(master.get_analog(ANALOG_LEFT_Y));
-    r_stick = right_curve_function(master.get_analog(ANALOG_LEFT_X));
+    fwd_stick = left_curve_function(master.get_analog(ANALOG_LEFT_Y));
+    turn_stick = right_curve_function(master.get_analog(ANALOG_LEFT_X));
   }
 
   // Set robot to l_stick and r_stick, check joystick threshold, set active brake
-  joy_thresh_opcontrol(l_stick, r_stick);
+  joy_thresh_opcontrol(fwd_stick + turn_stick, fwd_stick - turn_stick);
 }
 
 // Arcade control flipped
@@ -249,18 +249,18 @@ void Drive::arcade_flipped(e_type stick_type) {
   // Toggle for controller curve
   modify_curve_with_controller();
 
-  int l_stick, r_stick;
+  int turn_stick, fwd_stick;
   // Check arcade type (split vs single, normal vs flipped)
   if (stick_type == SPLIT) {
     // Put the joysticks through the curve function
-    r_stick = right_curve_function(master.get_analog(ANALOG_RIGHT_Y));
-    l_stick = left_curve_function(master.get_analog(ANALOG_LEFT_X));
+    fwd_stick = right_curve_function(master.get_analog(ANALOG_RIGHT_Y));
+    turn_stick = left_curve_function(master.get_analog(ANALOG_LEFT_X));
   } else if (stick_type == SINGLE) {
     // Put the joysticks through the curve function
-    r_stick = right_curve_function(master.get_analog(ANALOG_RIGHT_Y));
-    l_stick = left_curve_function(master.get_analog(ANALOG_RIGHT_X));
+    fwd_stick = right_curve_function(master.get_analog(ANALOG_RIGHT_Y));
+    turn_stick = left_curve_function(master.get_analog(ANALOG_RIGHT_X));
   }
 
   // Set robot to l_stick and r_stick, check joystick threshold, set active brake
-  joy_thresh_opcontrol(l_stick, r_stick);
+  joy_thresh_opcontrol(fwd_stick + turn_stick, fwd_stick - turn_stick);
 }
