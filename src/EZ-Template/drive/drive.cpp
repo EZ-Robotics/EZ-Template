@@ -133,7 +133,7 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
   // Set constants for tick_per_inch calculation
   WHEEL_DIAMETER = wheel_diameter;
   RATIO = ratio;
-  CARTRIDGE = 4096;
+  CARTRIDGE = 36000;
   TICK_PER_INCH = get_tick_per_inch();
 
   set_defaults();
