@@ -31,8 +31,13 @@ void Drive::ez_auto_task() {
 // Drive PID task
 void Drive::drive_pid_task() {
   // Compute PID
-  leftPID.compute(left_sensor());
-  rightPID.compute(right_sensor());
+  if (!using_inches) {
+    leftPID.compute(left_sensor());
+    rightPID.compute(right_sensor());
+  } else {
+    leftPID.compute(left_sensor() / TICK_PER_INCH);
+    rightPID.compute(right_sensor() / TICK_PER_INCH);
+  }
   headingPID.compute(get_gyro());
 
   // Compute slew

@@ -56,8 +56,15 @@ void Drive::set_drive_pid(double target, int speed, bool slew_on, bool toggle_he
   double l_target_encoder, r_target_encoder;
 
   // Figure actual target value
-  l_target_encoder = l_start + (target * TICK_PER_INCH);
-  r_target_encoder = r_start + (target * TICK_PER_INCH);
+  if (!using_inches) {
+    l_target_encoder = l_start + (target * TICK_PER_INCH);
+    r_target_encoder = r_start + (target * TICK_PER_INCH);
+  } else {
+    l_target_encoder = (l_start / TICK_PER_INCH) + target;
+    r_target_encoder = (r_start / TICK_PER_INCH) + target;
+  }
+
+  printf("\nltar %f  rtar %f", l_target_encoder, r_target_encoder);
 
   // Figure out if going forward or backward
   if (l_target_encoder < l_start && r_target_encoder < r_start) {

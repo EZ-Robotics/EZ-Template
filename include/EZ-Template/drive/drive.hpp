@@ -699,6 +699,8 @@ class Drive {
    */
   double slew_calculate(slew_ &input, double current);
 
+  bool using_inches = false;
+
  private:  // !Auton
   bool drive_toggle = true;
   bool print_toggle = true;
