@@ -563,7 +563,7 @@ class Drive {
   /**
    * Set Either the headingPID, turnPID, forwardPID, backwardPID, activeBrakePID, or swingPID
    */
-  static void set_pid_constants(PID *pid, double p, double i, double d, double p_start_i);
+  void set_pid_constants(PID *pid, double p, double i, double d, double p_start_i);
 
   /**
    * Sets minimum power for swings when kI and startI are enabled.
