@@ -30,7 +30,7 @@ void Piston::button_toggle(int toggle) {
 }
 
 // Two button control for piston
-void Piston::button(int active, int deactive) {
+void Piston::buttons(int active, int deactive) {
   if (active && !get())
     set(true);
   else if (deactive && get())

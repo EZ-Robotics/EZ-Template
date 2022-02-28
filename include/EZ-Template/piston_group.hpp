@@ -10,10 +10,55 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 class PistonGroup {
  public:
-  std::vector<Piston> pistons;
+  /**
+   * Group of ADI Digital Outs.
+   */
+  std::vector<pros::ADIDigitalOut> pistons;
+
+  /**
+   * PistonGroup constructor.  This class keeps track of piston state and allows
+   * multiple pistons to set at once.  The starting position of your piston is FALSE.
+   *
+   * \param input_ports
+   *        The ports of your pistons.
+   * \param default_state
+   *        Starting state of your piston.
+   */
   PistonGroup(std::vector<int> input_ports, bool default_state = false);
+
+  /**
+   * Sets the pistons to the input.
+   *
+   * \param input
+   *        True or false.  True sets to the opposite of the starting position.
+   */
   void set(bool input);
+
+  /**
+   * Returns current piston state.
+   */
   bool get();
-  void button_toggle(int toggle);
-  void button(int active, int deactive);
+
+  /**
+   * One button toggle for the pistons.
+   *
+   * \param toggle
+   *        An input button.
+   */
+  void button_toggle(bool toggle);
+
+  /**
+   * Two buttons trigger the piston.  Active is enabled, deactive is disabled.
+   *
+   * \param active
+   *        Sets pistons to true.
+   * \param active
+   *        Sets pistons to false.
+   */
+  void buttons(bool active, bool deactive);
+
+ private:
+  bool reversed = false;
+  bool current = false;
+  bool last_press = 0;
 };
