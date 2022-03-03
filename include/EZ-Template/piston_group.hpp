@@ -27,6 +27,17 @@ class PistonGroup {
   PistonGroup(std::vector<int> input_ports, bool default_state = false);
 
   /**
+   * PistonGroup constructor in 3 wire expander.  This class keeps track of piston state and allows
+   * multiple pistons to set at once.  The starting position of your piston is FALSE.
+   *
+   * \param input_ports
+   *        The ports of your pistons.
+   * \param default_state
+   *        Starting state of your piston.
+   */
+  PistonGroup(std::vector<int> input_ports, int expander_smart_port, bool default_state = false);
+
+  /**
    * Sets the pistons to the input.
    *
    * \param input

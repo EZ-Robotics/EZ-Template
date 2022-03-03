@@ -12,6 +12,12 @@ Piston::Piston(int input_port, bool default_state)
   reversed = default_state;
 }
 
+// Constructor for one piston plugged into expander
+Piston::Piston(int input_port, int expander_smart_port, bool default_state)
+    : piston({expander_smart_port, input_port}, default_state) {
+  reversed = default_state;
+}
+
 // Set piston
 void Piston::set(bool input) {
   piston.set_value(reversed ? !input : input);

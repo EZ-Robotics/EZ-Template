@@ -26,6 +26,16 @@ class Piston {
   Piston(int input_port, bool default_state = false);
 
   /**
+   * Piston constructor in 3 wire expander.  The starting position of your piston is FALSE.
+   *
+   * \param input_ports
+   *        The ports of your pistons.
+   * \param default_state
+   *        Starting state of your piston.
+   */
+  Piston(int input_port, int expander_smart_port, bool default_state = false);
+
+  /**
    * Sets the piston to the input.
    *
    * \param input

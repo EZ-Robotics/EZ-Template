@@ -191,7 +191,7 @@ void Drive::set_pid_constants(PID* pid, double p, double i, double d, double p_s
   pid->set_constants(p, i, d, p_start_i);
 }
 
-void Drive::set_tank(int left, int right) {
+void Drive::private_set_tank(int left, int right) {
   if (pros::millis() < 1500) return;
 
   for (auto i : left_motors) {
@@ -200,6 +200,11 @@ void Drive::set_tank(int left, int right) {
   for (auto i : right_motors) {
     if (!pto_check(i)) i.move_voltage(right * (12000.0 / 127.0));  // If the motor is in the pto list, don't do anything to the motor.
   }
+}
+
+void Drive::set_tank(int left, int right) {
+  set_mode(DISABLE);
+  private_set_tank(left, right);
 }
 
 void Drive::set_drive_current_limit(int mA) {

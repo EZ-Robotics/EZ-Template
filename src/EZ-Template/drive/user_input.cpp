@@ -177,7 +177,10 @@ double Drive::right_curve_function(double x) {
 }
 
 // Set active brake constant
-void Drive::set_active_brake(double kp) { active_brake_kp = kp; }
+void Drive::set_active_brake(double kp) {
+  active_brake_kp = kp;
+  reset_drive_sensor();
+}
 
 // Set joystick threshold
 void Drive::set_joystick_threshold(int threshold) { JOYSTICK_THRESHOLD = abs(threshold); }
@@ -190,8 +193,8 @@ void Drive::reset_drive_sensors_opcontrol() {
 }
 
 void Drive::joy_thresh_opcontrol(int l_stick, int r_stick) {
-  // Threshold if joysticks don't come back to perfect 0
-  if (abs(l_stick) > JOYSTICK_THRESHOLD || abs(r_stick) > JOYSTICK_THRESHOLD) {
+  // Check the motors are being set to power
+  if (abs(l_stick) > 0 || abs(r_stick) > 0) {
     set_tank(l_stick, r_stick);
     if (active_brake_kp != 0) reset_drive_sensor();
   }
@@ -200,6 +203,9 @@ void Drive::joy_thresh_opcontrol(int l_stick, int r_stick) {
     set_tank((0 - left_sensor()) * active_brake_kp, (0 - right_sensor()) * active_brake_kp);
   }
 }
+
+// Clip joysticks based on joystick threshold
+int Drive::clipped_joystick(int joystick) { return abs(joystick) < JOYSTICK_THRESHOLD ? 0 : joystick; }
 
 // Tank control
 void Drive::tank() {
@@ -210,8 +216,8 @@ void Drive::tank() {
   modify_curve_with_controller();
 
   // Put the joysticks through the curve function
-  int l_stick = left_curve_function(master.get_analog(ANALOG_LEFT_Y));
-  int r_stick = left_curve_function(master.get_analog(ANALOG_RIGHT_Y));
+  int l_stick = left_curve_function(clipped_joystick(master.get_analog(ANALOG_LEFT_Y)));
+  int r_stick = left_curve_function(clipped_joystick(master.get_analog(ANALOG_RIGHT_Y)));
 
   // Set robot to l_stick and r_stick, check joystick threshold, set active brake
   joy_thresh_opcontrol(l_stick, r_stick);
@@ -229,12 +235,12 @@ void Drive::arcade_standard(e_type stick_type) {
   // Check arcade type (split vs single, normal vs flipped)
   if (stick_type == SPLIT) {
     // Put the joysticks through the curve function
-    fwd_stick = left_curve_function(master.get_analog(ANALOG_LEFT_Y));
-    turn_stick = right_curve_function(master.get_analog(ANALOG_RIGHT_X));
+    fwd_stick = left_curve_function(clipped_joystick(master.get_analog(ANALOG_LEFT_Y)));
+    turn_stick = right_curve_function(clipped_joystick(master.get_analog(ANALOG_RIGHT_X)));
   } else if (stick_type == SINGLE) {
     // Put the joysticks through the curve function
-    fwd_stick = left_curve_function(master.get_analog(ANALOG_LEFT_Y));
-    turn_stick = right_curve_function(master.get_analog(ANALOG_LEFT_X));
+    fwd_stick = left_curve_function(clipped_joystick(master.get_analog(ANALOG_LEFT_Y)));
+    turn_stick = right_curve_function(clipped_joystick(master.get_analog(ANALOG_LEFT_X)));
   }
 
   // Set robot to l_stick and r_stick, check joystick threshold, set active brake
@@ -253,12 +259,12 @@ void Drive::arcade_flipped(e_type stick_type) {
   // Check arcade type (split vs single, normal vs flipped)
   if (stick_type == SPLIT) {
     // Put the joysticks through the curve function
-    fwd_stick = right_curve_function(master.get_analog(ANALOG_RIGHT_Y));
-    turn_stick = left_curve_function(master.get_analog(ANALOG_LEFT_X));
+    fwd_stick = right_curve_function(clipped_joystick(master.get_analog(ANALOG_RIGHT_Y)));
+    turn_stick = left_curve_function(clipped_joystick(master.get_analog(ANALOG_LEFT_X)));
   } else if (stick_type == SINGLE) {
     // Put the joysticks through the curve function
-    fwd_stick = right_curve_function(master.get_analog(ANALOG_RIGHT_Y));
-    turn_stick = left_curve_function(master.get_analog(ANALOG_RIGHT_X));
+    fwd_stick = right_curve_function(clipped_joystick(master.get_analog(ANALOG_RIGHT_Y)));
+    turn_stick = left_curve_function(clipped_joystick(master.get_analog(ANALOG_RIGHT_X)));
   }
 
   // Set robot to l_stick and r_stick, check joystick threshold, set active brake

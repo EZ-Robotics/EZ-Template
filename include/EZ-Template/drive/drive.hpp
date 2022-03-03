@@ -370,7 +370,7 @@ class Drive {
   /////
 
   /**
-   * Sets the chassis to voltage
+   * Sets the chassis to voltage.  Disables PID when called.
    *
    * \param left
    *        voltage for left side, -127 to 127
@@ -706,6 +706,21 @@ class Drive {
   bool print_toggle = true;
   int swing_min = 0;
   int turn_min = 0;
+
+  /**
+   * Sets the chassis to voltage.
+   *
+   * \param left
+   *        voltage for left side, -127 to 127
+   * \param right
+   *        voltage for right side, -127 to 127
+   */
+  void private_set_tank(int left, int right);
+
+  /**
+   * Returns joystick value clipped to JOYSTICK_THRESH
+   */
+  int clipped_joystick(int joystick);
 
   /**
    * Heading bool.

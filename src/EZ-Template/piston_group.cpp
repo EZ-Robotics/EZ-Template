@@ -56,6 +56,15 @@ PistonGroup::PistonGroup(std::vector<int> input_ports, bool default_state) {
   reversed = default_state;
 }
 
+// Constructor for one piston in expander
+PistonGroup::PistonGroup(std::vector<int> input_ports, int expander_smart_port, bool default_state) {
+  for (auto i : input_ports) {
+    pros::ADIDigitalOut temp({expander_smart_port, i}, default_state);
+    pistons.push_back(temp);
+  }
+  reversed = default_state;
+}
+
 // Set piston
 void PistonGroup::set(bool input) {
   for (auto i : pistons) {

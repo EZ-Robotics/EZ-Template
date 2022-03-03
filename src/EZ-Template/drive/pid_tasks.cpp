@@ -4,7 +4,7 @@ License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-#include "main.h"
+#include "EZ-Template/api.hpp"
 #include "pros/misc.hpp"
 
 using namespace ez;
@@ -19,10 +19,14 @@ void Drive::ez_auto_task() {
     else if (get_mode() == SWING)
       swing_pid_task();
 
+    util::AUTON_RAN = get_mode() != DISABLE ? true : false;
+
+    /*
     if (pros::competition::is_autonomous() && !util::AUTON_RAN)
       util::AUTON_RAN = true;
     else if (!pros::competition::is_autonomous())
       set_mode(DISABLE);
+    */
 
     pros::delay(util::DELAY_TIME);
   }
@@ -57,7 +61,7 @@ void Drive::drive_pid_task() {
 
   // Set motors
   if (drive_toggle)
-    set_tank(l_out, r_out);
+    private_set_tank(l_out, r_out);
 }
 
 // Turn PID task
@@ -76,7 +80,7 @@ void Drive::turn_pid_task() {
 
   // Set motors
   if (drive_toggle)
-    set_tank(gyro_out, -gyro_out);
+    private_set_tank(gyro_out, -gyro_out);
 }
 
 // Swing PID task
@@ -96,8 +100,8 @@ void Drive::swing_pid_task() {
   if (drive_toggle) {
     // Check if left or right swing, then set motors accordingly
     if (current_swing == LEFT_SWING)
-      set_tank(swing_out, 0);
+      private_set_tank(swing_out, 0);
     else if (current_swing == RIGHT_SWING)
-      set_tank(0, -swing_out);
+      private_set_tank(0, -swing_out);
   }
 }
