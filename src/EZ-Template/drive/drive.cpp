@@ -156,9 +156,9 @@ void Drive::set_defaults() {
   set_slew_distance(7, 7);
 
   // Exit condition constants
-  set_exit_condition(turn_exit, 100, 3, 500, 7, 500, 500);
-  set_exit_condition(swing_exit, 100, 3, 500, 7, 500, 500);
-  set_exit_condition(drive_exit, 80, 50, 300, 150, 500, 500);
+  set_turn_exit_condition(100, 3, 500, 7, 500, 500);
+  set_swing_exit_condition(100, 3, 500, 7, 500, 500);
+  set_drive_exit_condition(80, 50, 300, 150, 500, 500);
 
   // Modify joystick curve on controller (defaults to disabled)
   toggle_modify_curve_with_controller(true);
@@ -187,9 +187,31 @@ double Drive::get_tick_per_inch() {
   return TICK_PER_INCH;
 }
 
-void Drive::set_pid_constants(PID* pid, double p, double i, double d, double p_start_i) {
-  pid->set_constants(p, i, d, p_start_i);
+void Drive::set_drive_pid_constants(double p, double i, double d, double p_start_i){
+  set_driving_forward_pid_constants(p, i, d, p_start_i);
+  set_driving_backwards_pid_constants(p, i, d, p_start_i);
 }
+
+void Drive::set_driving_forward_pid_constants(double p, double i, double d, double p_start_i){
+  forward_drivePID.set_constants(p, i, d, p_start_i);
+}
+
+void Drive::set_driving_backwards_pid_constants(double p, double i, double d, double p_start_i){
+  backward_drivePID.set_constants(p, i, d, p_start_i);
+}
+
+void Drive::set_turn_pid_constants(double p, double i, double d, double p_start_i) {
+  turnPID.set_constants(p, i, d, p_start_i);
+}
+
+void Drive::set_swing_pid_constants(double p, double i, double d, double p_start_i){
+  swingPID.set_constants(p, i, d, p_start_i);
+}
+
+void Drive::set_heading_pid_constants(double p, double i, double d, double p_start_i){
+  headingPID.set_constants(p, i, d, p_start_i);
+}
+
 
 void Drive::private_set_tank(int left, int right) {
   if (pros::millis() < 1500) return;

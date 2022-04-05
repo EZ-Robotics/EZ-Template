@@ -561,10 +561,65 @@ class Drive {
   void set_max_speed(int speed);
 
   /**
-   * Set Either the headingPID, turnPID, forwardPID, backwardPID, activeBrakePID, or swingPID
+   * @brief Set the drive pid constants object
+   * 
+   * @param p           kP
+   * @param i           kI
+   * @param d           kD
+   * @param p_start_i   start_I
    */
-  void set_pid_constants(PID *pid, double p, double i, double d, double p_start_i);
+  void set_drive_pid_constants(double p, double i, double d, double p_start_i);
 
+  /**
+   * @brief Set the turn pid constants object
+   * 
+   * @param p           kP
+   * @param i           kI
+   * @param d           kD
+   * @param p_start_i   start_I
+   */
+  void set_turn_pid_constants(double p, double i, double d, double p_start_i);
+
+  /**
+   * @brief Set the swing pid constants object
+   * 
+   * @param p           kP
+   * @param i           kI
+   * @param d           kD
+   * @param p_start_i   start_I
+   */
+  void set_swing_pid_constants(double p, double i, double d, double p_start_i);
+
+  /**
+   * @brief Set the heading pid constants object
+   * 
+   * @param p           kP
+   * @param i           kI
+   * @param d           kD
+   * @param p_start_i   start_I
+   */
+  void set_heading_pid_constants(double p, double i, double d, double p_start_i);
+
+  /**
+   * @brief Set the forward pid constants object
+   * 
+   * @param p           kP
+   * @param i           kI
+   * @param d           kD
+   * @param p_start_i   start_I
+   */
+  void set_driving_forward_pid_constants(double p, double i, double d, double p_start_i);
+
+  /**
+   * @brief Set the backwards pid constants object
+   * 
+   * @param p           kP
+   * @param i           kI
+   * @param d           kD
+   * @param p_start_i   start_I
+   */
+  void set_driving_backwards_pid_constants(double p, double i, double d, double p_start_i);
+  
   /**
    * Sets minimum power for swings when kI and startI are enabled.
    *
@@ -612,10 +667,8 @@ class Drive {
   void set_slew_distance(int fwd, int rev);
 
   /**
-   * Set's constants for exit conditions.
+   * Set's constants for drive exit conditions.
    *
-   * \param &type
-   *        turn_exit, swing_exit, or drive_exit
    * \param p_small_exit_time
    *        Sets small_exit_time.  Timer for to exit within smalL_error.
    * \param p_small_error
@@ -627,23 +680,40 @@ class Drive {
    * \param p_velocity_exit_time
    *        Sets velocity_exit_time.  Timer will start when velocity is 0.
    */
-  void set_exit_condition(int type, int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout);
-
+  void set_drive_exit_condition(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout);
+  
   /**
-   * Exit condition for turning.
+   * Set's constants for turn exit conditions.
+   *
+   * \param p_small_exit_time
+   *        Sets small_exit_time.  Timer for to exit within smalL_error.
+   * \param p_small_error
+   *        Sets smalL_error. Timer will start when error is within this.
+   * \param p_big_exit_time
+   *        Sets big_exit_time.  Timer for to exit within big_error.
+   * \param p_big_error
+   *        Sets big_error. Timer will start when error is within this.
+   * \param p_velocity_exit_time
+   *        Sets velocity_exit_time.  Timer will start when velocity is 0.
    */
-  const int turn_exit = 1;
-
+  void set_turn_exit_condition(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout);
+  
   /**
-   * Exit condition for swinging.
+   * Set's constants for swing exit conditions.
+   *
+   * \param p_small_exit_time
+   *        Sets small_exit_time.  Timer for to exit within smalL_error.
+   * \param p_small_error
+   *        Sets smalL_error. Timer will start when error is within this.
+   * \param p_big_exit_time
+   *        Sets big_exit_time.  Timer for to exit within big_error.
+   * \param p_big_error
+   *        Sets big_error. Timer will start when error is within this.
+   * \param p_velocity_exit_time
+   *        Sets velocity_exit_time.  Timer will start when velocity is 0.
    */
-  const int swing_exit = 2;
-
-  /**
-   * Exit condition for driving.
-   */
-  const int drive_exit = 3;
-
+  void set_swing_exit_condition(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout);
+  
   /**
    * Returns current tick_per_inch()
    */
