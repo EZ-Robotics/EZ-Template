@@ -138,7 +138,10 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 
   set_defaults();
 }
-
+void Drive::set_ratio(double ratio)
+{
+  RATIO = ratio;
+}
 void Drive::set_defaults() {
   // PID Constants
   headingPID = {11, 0, 20, 0};

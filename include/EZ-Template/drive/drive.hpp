@@ -553,6 +553,13 @@ class Drive {
   bool interfered = false;
 
   /**
+   * @brief Set the ratio of the robot
+   * 
+   * @param ratio 
+   *        ratio of the gears
+   */
+  void set_ratio(double ratio);
+  /**
    * Changes max speed during a drive motion.
    *
    * \param speed
