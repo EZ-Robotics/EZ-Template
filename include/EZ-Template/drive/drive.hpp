@@ -482,6 +482,13 @@ class Drive {
    */
   void imu_loading_display(int iter);
 
+
+  /**
+   * Practice mode for driver practice that shuts off the drive if you go max speed.
+   * 
+   * @param toggle True if you want this mode enables and False if you want it disabled.
+   */
+  void toggle_practice_mode(bool toggle);
   /////
   //
   // Autonomous Functions
@@ -783,7 +790,7 @@ class Drive {
   bool print_toggle = true;
   int swing_min = 0;
   int turn_min = 0;
-
+  bool practice_mode_is_on = false;
   /**
    * Sets the chassis to voltage.
    *

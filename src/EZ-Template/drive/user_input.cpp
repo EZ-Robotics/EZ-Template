@@ -215,9 +215,15 @@ void Drive::tank() {
   // Toggle for controller curve
   modify_curve_with_controller();
 
+  auto analog_left_value = master.get_analog(ANALOG_LEFT_Y);
+  auto analog_right_value = master.get_analog(ANALOG_RIGHT_Y);
+  if(practice_mode_is_on && abs(analog_left_value) >= 110 || abs(analog_right_value) >= 110)
+  {
+    set_tank(0, 0);
+  }
   // Put the joysticks through the curve function
-  int l_stick = left_curve_function(clipped_joystick(master.get_analog(ANALOG_LEFT_Y)));
-  int r_stick = left_curve_function(clipped_joystick(master.get_analog(ANALOG_RIGHT_Y)));
+  int l_stick = left_curve_function(clipped_joystick(analog_left_value));
+  int r_stick = left_curve_function(clipped_joystick(analog_right_value));
 
   // Set robot to l_stick and r_stick, check joystick threshold, set active brake
   joy_thresh_opcontrol(l_stick, r_stick);
