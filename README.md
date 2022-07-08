@@ -41,6 +41,17 @@ Simple plug-and-play PROS template that handles drive base functions for VEX rob
 ## Additing Autonomous Routines
 [Check out the tutorial on adding new autonomous routines here!](https://ez-robotics.github.io/EZ-Template/docs/Tutorials/autons.html)
 
+## Running the docs locally
+
+Install [node](https://nodejs.org/en/download/) & yarn ```npm install --global yarn```
+
+then within the website directory run
+```
+yarn
+yarn build
+yarn serve
+```
+
 
 ## License
 This project is licensed under the Mozilla Public License, version 2.0 - see the [LICENSE](LICENSE)
