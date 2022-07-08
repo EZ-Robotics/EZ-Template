@@ -1,0 +1,8 @@
+{
+  "label": "Releases",
+  "position": 4,
+  "link": {
+    "type": "generated-index",
+    "description": "Template and example project releases, with their change logs and how to upgrade."
+  }
+}

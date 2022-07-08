@@ -1,0 +1,8 @@
+{
+  "label": "Tutorials",
+  "position": 1,
+  "link": {
+    "type": "generated-index",
+    "description": "Tutorials for how to use EZ-Template."
+  }
+}
