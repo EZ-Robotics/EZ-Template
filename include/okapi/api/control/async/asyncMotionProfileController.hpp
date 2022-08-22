@@ -14,11 +14,10 @@
 #include "okapi/api/util/logging.hpp"
 #include "okapi/api/util/timeUtil.hpp"
 #include <atomic>
+#include <iostream>
 #include <map>
 
-extern "C" {
-#include "okapi/pathfinder/include/pathfinder.h"
-}
+#include "squiggles.hpp"
 
 namespace okapi {
 class AsyncMotionProfileController : public AsyncPositionController<std::string, PathfinderPoint> {
@@ -67,6 +66,10 @@ class AsyncMotionProfileController : public AsyncPositionController<std::string,
    * If the waypoints form a path which is impossible to achieve, an instance of
    * `std::runtime_error` is thrown (and an error is logged) which describes the waypoints. If there
    * are no waypoints, no path is generated.
+   *
+   * NOTE: The waypoints are expected to be in the
+   * okapi::State::FRAME_TRANSFORMATION format where +x is forward, +y is right,
+   * and 0 theta is measured from the +x axis to the +y axis.
    *
    * @param iwaypoints The waypoints to hit on the path.
    * @param ipathId A unique identifier to save the path with.
@@ -235,17 +238,17 @@ class AsyncMotionProfileController : public AsyncPositionController<std::string,
   CrossplatformThread *getThread() const;
 
   /**
-   * Saves a generated path to files. Paths are stored as `<ipathId>.<left/right>.csv`. An SD card
+   * Saves a generated path to a file. Paths are stored as `<ipathId>.csv`. An SD card
    * must be inserted into the brain and the directory must exist. `idirectory` can be prefixed with
    * `/usd/`, but it this is not required.
    *
-   * @param idirectory The directory to store the path files in
+   * @param idirectory The directory to store the path file in
    * @param ipathId The path ID of the generated path
    */
   void storePath(const std::string &idirectory, const std::string &ipathId);
 
   /**
-   * Loads a path from a directory on the SD card containing path CSV files. `/usd/` is
+   * Loads a path from a directory on the SD card containing a path CSV file. `/usd/` is
    * automatically prepended to `idirectory` if it is not specified.
    *
    * @param idirectory The directory that the path files are stored in
@@ -262,17 +265,8 @@ class AsyncMotionProfileController : public AsyncPositionController<std::string,
   void forceRemovePath(const std::string &ipathId);
 
   protected:
-  using TrajectoryPtr = std::unique_ptr<TrajectoryCandidate, void (*)(TrajectoryCandidate *)>;
-  using SegmentPtr = std::unique_ptr<Segment, void (*)(void *)>;
-
-  struct TrajectoryPair {
-    SegmentPtr left;
-    SegmentPtr right;
-    int length;
-  };
-
   std::shared_ptr<Logger> logger;
-  std::map<std::string, TrajectoryPair> paths{};
+  std::map<std::string, std::vector<squiggles::ProfilePoint>> paths{};
   PathfinderLimits limits;
   std::shared_ptr<ChassisModel> model;
   ChassisScales scales;
@@ -296,7 +290,8 @@ class AsyncMotionProfileController : public AsyncPositionController<std::string,
   /**
    * Follow the supplied path. Must follow the disabled lifecycle.
    */
-  virtual void executeSinglePath(const TrajectoryPair &path, std::unique_ptr<AbstractRate> rate);
+  virtual void executeSinglePath(const std::vector<squiggles::ProfilePoint> &path,
+                                 std::unique_ptr<AbstractRate> rate);
 
   /**
    * Converts linear chassis speed to rotational motor speed.
@@ -306,8 +301,9 @@ class AsyncMotionProfileController : public AsyncPositionController<std::string,
    */
   QAngularSpeed convertLinearToRotational(QSpeed linear) const;
 
-  std::string
-  getPathErrorMessage(const std::vector<Waypoint> &points, const std::string &ipathId, int length);
+  std::string getPathErrorMessage(const std::vector<PathfinderPoint> &points,
+                                  const std::string &ipathId,
+                                  int length);
 
   /**
    * Joins and escapes a directory and file name
@@ -319,15 +315,12 @@ class AsyncMotionProfileController : public AsyncPositionController<std::string,
    */
   static std::string makeFilePath(const std::string &directory, const std::string &filename);
 
-  void internalStorePath(FILE *leftPathFile, FILE *rightPathFile, const std::string &ipathId);
-  void internalLoadPath(FILE *leftPathFile, FILE *rightPathFile, const std::string &ipathId);
+  void internalStorePath(std::ostream &file, const std::string &ipathId);
+  void internalLoadPath(std::istream &file, const std::string &ipathId);
+  void internalLoadPathfinderPath(std::istream &leftFile,
+                                  std::istream &rightFile,
+                                  const std::string &ipathId);
 
-  /**
-   * Reads the length of the path in a thread-safe manner.
-   *
-   * @param path The path to read from.
-   * @return The length of the path.
-   */
-  int getPathLength(const TrajectoryPair &path);
+  static constexpr double DT = 0.01;
 };
 } // namespace okapi

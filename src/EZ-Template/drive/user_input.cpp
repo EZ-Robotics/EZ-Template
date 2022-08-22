@@ -192,10 +192,15 @@ void Drive::reset_drive_sensors_opcontrol() {
   }
 }
 
+void Drive::toggle_practice_mode(bool toggle) { practice_mode_is_on = toggle; }
+
 void Drive::joy_thresh_opcontrol(int l_stick, int r_stick) {
   // Check the motors are being set to power
   if (abs(l_stick) > 0 || abs(r_stick) > 0) {
-    set_tank(l_stick, r_stick);
+    if (practice_mode_is_on && (abs(l_stick) > 120 || abs(r_stick) > 120))
+      set_tank(0, 0);
+    else
+      set_tank(l_stick, r_stick);
     if (active_brake_kp != 0) reset_drive_sensor();
   }
   // When joys are released, run active brake (P) on drive
@@ -217,13 +222,10 @@ void Drive::tank() {
 
   auto analog_left_value = master.get_analog(ANALOG_LEFT_Y);
   auto analog_right_value = master.get_analog(ANALOG_RIGHT_Y);
-  if(practice_mode_is_on && abs(analog_left_value) >= 110 || abs(analog_right_value) >= 110)
-  {
-    set_tank(0, 0);
-  }
+
   // Put the joysticks through the curve function
-  int l_stick = left_curve_function(clipped_joystick(analog_left_value));
-  int r_stick = left_curve_function(clipped_joystick(analog_right_value));
+  int l_stick = left_curve_function(clipped_joystick(master.get_analog(ANALOG_LEFT_Y)));
+  int r_stick = left_curve_function(clipped_joystick(master.get_analog(ANALOG_RIGHT_Y)));
 
   // Set robot to l_stick and r_stick, check joystick threshold, set active brake
   joy_thresh_opcontrol(l_stick, r_stick);

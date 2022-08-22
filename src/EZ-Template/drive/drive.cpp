@@ -138,10 +138,7 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 
   set_defaults();
 }
-void Drive::set_ratio(double ratio)
-{
-  RATIO = ratio;
-}
+
 void Drive::set_defaults() {
   // PID Constants
   headingPID = {11, 0, 20, 0};
@@ -190,16 +187,18 @@ double Drive::get_tick_per_inch() {
   return TICK_PER_INCH;
 }
 
-void Drive::set_drive_pid_constants(double p, double i, double d, double p_start_i){
-  set_driving_forward_pid_constants(p, i, d, p_start_i);
-  set_driving_backwards_pid_constants(p, i, d, p_start_i);
+void Drive::set_ratio(double ratio) { RATIO = ratio; }
+
+void Drive::set_drive_pid_constants(double p, double i, double d, double p_start_i) {
+  set_drive_forward_pid_constants(p, i, d, p_start_i);
+  set_drive_backwards_pid_constants(p, i, d, p_start_i);
 }
 
-void Drive::set_driving_forward_pid_constants(double p, double i, double d, double p_start_i){
+void Drive::set_drive_forward_pid_constants(double p, double i, double d, double p_start_i) {
   forward_drivePID.set_constants(p, i, d, p_start_i);
 }
 
-void Drive::set_driving_backwards_pid_constants(double p, double i, double d, double p_start_i){
+void Drive::set_drive_backwards_pid_constants(double p, double i, double d, double p_start_i) {
   backward_drivePID.set_constants(p, i, d, p_start_i);
 }
 
@@ -207,14 +206,13 @@ void Drive::set_turn_pid_constants(double p, double i, double d, double p_start_
   turnPID.set_constants(p, i, d, p_start_i);
 }
 
-void Drive::set_swing_pid_constants(double p, double i, double d, double p_start_i){
+void Drive::set_swing_pid_constants(double p, double i, double d, double p_start_i) {
   swingPID.set_constants(p, i, d, p_start_i);
 }
 
-void Drive::set_heading_pid_constants(double p, double i, double d, double p_start_i){
+void Drive::set_heading_pid_constants(double p, double i, double d, double p_start_i) {
   headingPID.set_constants(p, i, d, p_start_i);
 }
-
 
 void Drive::private_set_tank(int left, int right) {
   if (pros::millis() < 1500) return;
@@ -285,11 +283,6 @@ bool Drive::left_over_current() { return left_motors.front().is_over_current(); 
 void Drive::reset_gyro(double new_heading) { imu.set_rotation(new_heading); }
 double Drive::get_gyro() { return imu.get_rotation(); }
 
-
-void Drive::toggle_practice_mode(bool toggle)
-{
-  practice_mode_is_on  = toggle;
-}
 void Drive::imu_loading_display(int iter) {
   // If the lcd is already initialized, don't run this function
   if (pros::lcd::is_initialized()) return;

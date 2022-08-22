@@ -234,7 +234,7 @@ class Drive {
   void arcade_flipped(e_type stick_type);
 
   /**
-   * Initializes left and right curves with the SD card, reccomended to run in initialize().
+   * Initializes left and right curves with the SD card, recommended to run in initialize().
    */
   void init_curve_sd();
 
@@ -452,12 +452,12 @@ class Drive {
   bool left_over_current();
 
   /**
-   * Reset all the chassis motors, reccomended to run at the start of your autonomous routine.
+   * Reset all the chassis motors, recommended to run at the start of your autonomous routine.
    */
   void reset_drive_sensor();
 
   /**
-   * Resets the current gyro value.  Defaults to 0, reccomended to run at the start of your autonomous routine.
+   * Resets the current gyro value.  Defaults to 0, recommended to run at the start of your autonomous routine.
    *
    * \param new_heading
    *        New heading value.
@@ -470,7 +470,7 @@ class Drive {
   double get_gyro();
 
   /**
-   * Calibrates the IMU, reccomended to run in initialize().
+   * Calibrates the IMU, recommended to run in initialize().
    *
    * \param run_loading_animation
    *        bool for running loading animation
@@ -482,13 +482,13 @@ class Drive {
    */
   void imu_loading_display(int iter);
 
-
   /**
    * Practice mode for driver practice that shuts off the drive if you go max speed.
-   * 
+   *
    * @param toggle True if you want this mode enables and False if you want it disabled.
    */
   void toggle_practice_mode(bool toggle);
+
   /////
   //
   // Autonomous Functions
@@ -561,8 +561,8 @@ class Drive {
 
   /**
    * @brief Set the ratio of the robot
-   * 
-   * @param ratio 
+   *
+   * @param ratio
    *        ratio of the gears
    */
   void set_ratio(double ratio);
@@ -576,64 +576,64 @@ class Drive {
 
   /**
    * @brief Set the drive pid constants object
-   * 
+   *
    * @param p           kP
    * @param i           kI
    * @param d           kD
    * @param p_start_i   start_I
    */
-  void set_drive_pid_constants(double p, double i, double d, double p_start_i);
+  void set_drive_pid_constants(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
   /**
    * @brief Set the turn pid constants object
-   * 
+   *
    * @param p           kP
    * @param i           kI
    * @param d           kD
    * @param p_start_i   start_I
    */
-  void set_turn_pid_constants(double p, double i, double d, double p_start_i);
+  void set_turn_pid_constants(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
   /**
    * @brief Set the swing pid constants object
-   * 
+   *
    * @param p           kP
    * @param i           kI
    * @param d           kD
    * @param p_start_i   start_I
    */
-  void set_swing_pid_constants(double p, double i, double d, double p_start_i);
+  void set_swing_pid_constants(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
   /**
    * @brief Set the heading pid constants object
-   * 
+   *
    * @param p           kP
    * @param i           kI
    * @param d           kD
    * @param p_start_i   start_I
    */
-  void set_heading_pid_constants(double p, double i, double d, double p_start_i);
+  void set_heading_pid_constants(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
   /**
    * @brief Set the forward pid constants object
-   * 
+   *
    * @param p           kP
    * @param i           kI
    * @param d           kD
    * @param p_start_i   start_I
    */
-  void set_driving_forward_pid_constants(double p, double i, double d, double p_start_i);
+  void set_drive_forward_pid_constants(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
   /**
    * @brief Set the backwards pid constants object
-   * 
+   *
    * @param p           kP
    * @param i           kI
    * @param d           kD
    * @param p_start_i   start_I
    */
-  void set_driving_backwards_pid_constants(double p, double i, double d, double p_start_i);
-  
+  void set_drive_backwards_pid_constants(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
+
   /**
    * Sets minimum power for swings when kI and startI are enabled.
    *
@@ -695,7 +695,7 @@ class Drive {
    *        Sets velocity_exit_time.  Timer will start when velocity is 0.
    */
   void set_drive_exit_condition(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout);
-  
+
   /**
    * Set's constants for turn exit conditions.
    *
@@ -711,7 +711,7 @@ class Drive {
    *        Sets velocity_exit_time.  Timer will start when velocity is 0.
    */
   void set_turn_exit_condition(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout);
-  
+
   /**
    * Set's constants for swing exit conditions.
    *
@@ -727,7 +727,7 @@ class Drive {
    *        Sets velocity_exit_time.  Timer will start when velocity is 0.
    */
   void set_swing_exit_condition(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout);
-  
+
   /**
    * Returns current tick_per_inch()
    */

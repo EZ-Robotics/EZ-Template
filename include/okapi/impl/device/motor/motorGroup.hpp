@@ -373,6 +373,13 @@ class MotorGroup : public AbstractMotor {
   void controllerSet(double ivalue) override;
 
   /**
+   * Gets the number of motors in the motor group.
+   *
+   * @return size_t
+   */
+  size_t getSize();
+
+  /**
    * Get the encoder associated with the first motor in this group.
    *
    * @return The encoder for the motor at index `0`.
