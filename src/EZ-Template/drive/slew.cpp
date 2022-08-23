@@ -4,7 +4,7 @@ License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-#include "main.h"
+#include "EZ-Template/api.hpp"
 
 using namespace ez;
 
@@ -15,9 +15,9 @@ void Drive::set_slew_min_power(int fwd, int rev) {
 }
 
 // Set distance to slew for
-void Drive::set_slew_distance(int fwd, int rev) {
-  SLEW_DISTANCE[0] = abs(fwd);
-  SLEW_DISTANCE[1] = abs(rev);
+void Drive::set_slew_distance(okapi::QLength fwd, okapi::QLength rev) {
+  SLEW_DISTANCE[0] = fabs(fwd.convert(okapi::inch));
+  SLEW_DISTANCE[1] = fabs(rev.convert(okapi::inch));
 }
 
 // Initialize slew
@@ -26,7 +26,7 @@ void Drive::slew_initialize(slew_ &input, bool slew_on, double max_speed, double
   input.max_speed = max_speed;
 
   input.sign = util::sgn(target - current);
-  input.x_intercept = start + ((SLEW_DISTANCE[backwards] * input.sign) * TICK_PER_INCH);
+  input.x_intercept = start + ((SLEW_DISTANCE[backwards] * input.sign));
   input.y_intercept = max_speed * input.sign;
   input.slope = ((input.sign * SLEW_MIN_POWER[backwards]) - input.y_intercept) / (input.x_intercept - 0 - start);  // y2-y1 / x2-x1
 }

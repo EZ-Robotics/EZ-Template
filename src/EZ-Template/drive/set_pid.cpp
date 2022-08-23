@@ -6,6 +6,32 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "main.h"
 
+// Set PID constants
+void Drive::set_drive_pid_constants(double p, double i, double d, double p_start_i) {
+  set_drive_forward_pid_constants(p, i, d, p_start_i);
+  set_drive_backwards_pid_constants(p, i, d, p_start_i);
+}
+
+void Drive::set_drive_forward_pid_constants(double p, double i, double d, double p_start_i) {
+  forward_drivePID.set_constants(p, i, d, p_start_i);
+}
+
+void Drive::set_drive_backwards_pid_constants(double p, double i, double d, double p_start_i) {
+  backward_drivePID.set_constants(p, i, d, p_start_i);
+}
+
+void Drive::set_turn_pid_constants(double p, double i, double d, double p_start_i) {
+  turnPID.set_constants(p, i, d, p_start_i);
+}
+
+void Drive::set_swing_pid_constants(double p, double i, double d, double p_start_i) {
+  swingPID.set_constants(p, i, d, p_start_i);
+}
+
+void Drive::set_heading_pid_constants(double p, double i, double d, double p_start_i) {
+  headingPID.set_constants(p, i, d, p_start_i);
+}
+
 // Updates max speed
 void Drive::set_max_speed(int speed) {
   max_speed = util::clip_num(abs(speed), 127, -127);
@@ -25,9 +51,7 @@ void Drive::set_angle(double angle) {
   reset_gyro(angle);
 }
 
-void Drive::set_mode(e_mode p_mode) {
-  mode = p_mode;
-}
+void Drive::set_mode(e_mode p_mode) { mode = p_mode; }
 
 void Drive::set_turn_min(int min) { turn_min = abs(min); }
 int Drive::get_turn_min() { return turn_min; }
@@ -38,11 +62,11 @@ int Drive::get_swing_min() { return swing_min; }
 e_mode Drive::get_mode() { return mode; }
 
 // Set drive PID
-void Drive::set_drive_pid(double target, int speed, bool slew_on, bool toggle_heading) {
-  TICK_PER_INCH = get_tick_per_inch();
+void Drive::set_drive_pid(okapi::QLength p_target, int speed, bool slew_on, bool toggle_heading) {
+  double target = p_target.convert(okapi::inch);
 
   // Print targets
-  if (print_toggle) printf("Drive Started... Target Value: %f (%f ticks)", target, target * TICK_PER_INCH);
+  if (print_toggle) printf("Drive Started... Target Value: %f in", target);
   if (slew_on && print_toggle) printf(" with slew");
   if (print_toggle) printf("\n");
 
@@ -56,15 +80,8 @@ void Drive::set_drive_pid(double target, int speed, bool slew_on, bool toggle_he
   double l_target_encoder, r_target_encoder;
 
   // Figure actual target value
-  if (!using_inches) {
-    l_target_encoder = l_start + (target * TICK_PER_INCH);
-    r_target_encoder = r_start + (target * TICK_PER_INCH);
-  } else {
-    l_target_encoder = (l_start / TICK_PER_INCH) + target;
-    r_target_encoder = (r_start / TICK_PER_INCH) + target;
-  }
-
-  printf("\nltar %f  rtar %f", l_target_encoder, r_target_encoder);
+  l_target_encoder = l_start + target;
+  r_target_encoder = r_start + target;
 
   // Figure out if going forward or backward
   if (l_target_encoder < l_start && r_target_encoder < r_start) {
