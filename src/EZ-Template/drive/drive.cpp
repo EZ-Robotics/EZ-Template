@@ -141,24 +141,21 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 
 void Drive::set_defaults() {
   // PID Constants
-  headingPID = {11, 0, 20, 0};
-  forward_drivePID = {0.45, 0, 5, 0};
-  backward_drivePID = {0.45, 0, 5, 0};
-  turnPID = {5, 0.003, 35, 15};
-  swingPID = {7, 0, 45, 0};
-  leftPID = {0.45, 0, 5, 0};
-  rightPID = {0.45, 0, 5, 0};
+  set_heading_pid_constants(3, 0, 20, 0);
+  set_drive_pid_constants(15, 0, 150);
+  set_turn_pid_constants(3, 0, 20, 0);
+  set_swing_pid_constants(5, 0, 30, 0);
   set_turn_min(30);
   set_swing_min(30);
 
   // Slew constants
   set_slew_min_power(80, 80);
-  set_slew_distance(7, 7);
+  set_slew_distance(7_in, 7_in);
 
   // Exit condition constants
-  set_turn_exit_condition(100, 3, 500, 7, 500, 500);
-  set_swing_exit_condition(100, 3, 500, 7, 500, 500);
-  set_drive_exit_condition(80, 50, 300, 150, 500, 500);
+  set_turn_exit_condition(200, 3, 500, 7, 750, 750);
+  set_swing_exit_condition(200, 3, 500, 7, 750, 750);
+  set_drive_exit_condition(200, 1_in, 500, 3_in, 750, 750);
 
   // Modify joystick curve on controller (defaults to disabled)
   toggle_modify_curve_with_controller(true);
@@ -188,31 +185,6 @@ double Drive::get_tick_per_inch() {
 }
 
 void Drive::set_ratio(double ratio) { RATIO = ratio; }
-
-void Drive::set_drive_pid_constants(double p, double i, double d, double p_start_i) {
-  set_drive_forward_pid_constants(p, i, d, p_start_i);
-  set_drive_backwards_pid_constants(p, i, d, p_start_i);
-}
-
-void Drive::set_drive_forward_pid_constants(double p, double i, double d, double p_start_i) {
-  forward_drivePID.set_constants(p, i, d, p_start_i);
-}
-
-void Drive::set_drive_backwards_pid_constants(double p, double i, double d, double p_start_i) {
-  backward_drivePID.set_constants(p, i, d, p_start_i);
-}
-
-void Drive::set_turn_pid_constants(double p, double i, double d, double p_start_i) {
-  turnPID.set_constants(p, i, d, p_start_i);
-}
-
-void Drive::set_swing_pid_constants(double p, double i, double d, double p_start_i) {
-  swingPID.set_constants(p, i, d, p_start_i);
-}
-
-void Drive::set_heading_pid_constants(double p, double i, double d, double p_start_i) {
-  headingPID.set_constants(p, i, d, p_start_i);
-}
 
 void Drive::private_set_tank(int left, int right) {
   if (pros::millis() < 1500) return;
@@ -258,24 +230,26 @@ void Drive::reset_drive_sensor() {
   }
 }
 
-int Drive::right_sensor() {
+int Drive::raw_right_sensor() {
   if (is_tracker == DRIVE_ADI_ENCODER)
     return right_tracker.get_value();
   else if (is_tracker == DRIVE_ROTATION)
     return right_rotation.get_position();
   return right_motors.front().get_position();
 }
+double Drive::right_sensor() { return raw_right_sensor() / get_tick_per_inch(); }
 int Drive::right_velocity() { return right_motors.front().get_actual_velocity(); }
 double Drive::right_mA() { return right_motors.front().get_current_draw(); }
 bool Drive::right_over_current() { return right_motors.front().is_over_current(); }
 
-int Drive::left_sensor() {
+int Drive::raw_left_sensor() {
   if (is_tracker == DRIVE_ADI_ENCODER)
     return left_tracker.get_value();
   else if (is_tracker == DRIVE_ROTATION)
     return left_rotation.get_position();
   return left_motors.front().get_position();
 }
+double Drive::left_sensor() { return raw_left_sensor() / get_tick_per_inch(); }
 int Drive::left_velocity() { return left_motors.front().get_actual_velocity(); }
 double Drive::left_mA() { return left_motors.front().get_current_draw(); }
 bool Drive::left_over_current() { return left_motors.front().is_over_current(); }

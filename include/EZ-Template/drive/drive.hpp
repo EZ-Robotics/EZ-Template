@@ -12,6 +12,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "EZ-Template/PID.hpp"
 #include "EZ-Template/util.hpp"
+#include "okapi/api/units/QLength.hpp"
 #include "pros/motors.h"
 
 using namespace ez;
@@ -414,7 +415,12 @@ class Drive {
   /**
    * The position of the right motor.
    */
-  int right_sensor();
+  double right_sensor();
+
+  /**
+   * The position of the right motor.
+   */
+  int raw_right_sensor();
 
   /**
    * The velocity of the right motor.
@@ -434,7 +440,12 @@ class Drive {
   /**
    * The position of the left motor.
    */
-  int left_sensor();
+  double left_sensor();
+
+  /**
+   * The position of the left motor.
+   */
+  int raw_left_sensor();
 
   /**
    * The velocity of the left motor.
@@ -507,7 +518,7 @@ class Drive {
    * \param toggle_heading
    *        toggle for heading correction
    */
-  void set_drive_pid(double target, int speed, bool slew_on = false, bool toggle_heading = true);
+  void set_drive_pid(okapi::QLength p_target, int speed, bool slew_on = false, bool toggle_heading = true);
 
   /**
    * Sets the robot to turn using PID.
@@ -553,6 +564,14 @@ class Drive {
    *        when driving, this is inches.  when turning, this is degrees.
    */
   void wait_until(double target);
+
+  /**
+   * Lock the code in a while loop until this position has passed for driving with okapi units.
+   *
+   * \param target
+   *        for driving, using okapi units
+   */
+  void wait_until(okapi::QLength target);
 
   /**
    * Autonomous interference detection.  Returns true when interfered, and false when nothing happened.
@@ -673,12 +692,12 @@ class Drive {
   /**
    * Sets minimum slew distance constants.
    *
-   * \param fw
-   *        minimum distance for forward drive pd
-   * \param bw
-   *        minimum distance for backwards drive pd
+   * \param fwd
+   *        minimum distance for forward drive pd, okapi unit
+   * \param rev
+   *        minimum distance for backwards drive pd, okapi unit
    */
-  void set_slew_distance(int fwd, int rev);
+  void set_slew_distance(okapi::QLength fwd, okapi::QLength rev);
 
   /**
    * Set's constants for drive exit conditions.
@@ -686,15 +705,15 @@ class Drive {
    * \param p_small_exit_time
    *        Sets small_exit_time.  Timer for to exit within smalL_error.
    * \param p_small_error
-   *        Sets smalL_error. Timer will start when error is within this.
+   *        Sets smalL_error. Timer will start when error is within this.  Okapi unit.
    * \param p_big_exit_time
    *        Sets big_exit_time.  Timer for to exit within big_error.
    * \param p_big_error
-   *        Sets big_error. Timer will start when error is within this.
+   *        Sets big_error. Timer will start when error is within this. Okapi unit.
    * \param p_velocity_exit_time
    *        Sets velocity_exit_time.  Timer will start when velocity is 0.
    */
-  void set_drive_exit_condition(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout);
+  void set_drive_exit_condition(int p_small_exit_time, okapi::QLength p_small_error, int p_big_exit_time, okapi::QLength p_big_error, int p_velocity_exit_time, int p_mA_timeout);
 
   /**
    * Set's constants for turn exit conditions.
@@ -783,14 +802,18 @@ class Drive {
    */
   double slew_calculate(slew_ &input, double current);
 
-  bool using_inches = false;
-
  private:  // !Auton
   bool drive_toggle = true;
   bool print_toggle = true;
   int swing_min = 0;
   int turn_min = 0;
   bool practice_mode_is_on = false;
+
+  /**
+   * Private wait until for drive
+   */
+  void wait_until_drive(double target);
+
   /**
    * Sets the chassis to voltage.
    *
