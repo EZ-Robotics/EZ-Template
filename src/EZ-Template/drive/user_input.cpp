@@ -278,3 +278,89 @@ void Drive::arcade_flipped(e_type stick_type) {
   // Set robot to l_stick and r_stick, check joystick threshold, set active brake
   joy_thresh_opcontrol(fwd_stick + turn_stick, fwd_stick - turn_stick);
 }
+
+void Drive::curvature(const double iforwardSpeed,
+                      const double icurvature,
+                      const double ithreshold){
+  
+  double forwardSpeed = std::clamp(iforwardSpeed, -1.0, 1.0);
+  if (std::abs(forwardSpeed) < ithreshold) {
+    forwardSpeed = 0;
+  }
+
+  double curvature = std::clamp(icurvature, -1.0, 1.0);
+  if (std::abs(curvature) < ithreshold) {
+    curvature = 0;
+  }
+
+  // the algorithm switches to arcade when forward speed is 0 to allow point turns.
+  if (forwardSpeed == 0) {
+    arcade(forwardSpeed, curvature, ithreshold);
+    return;
+  }
+
+  double leftSpeed = forwardSpeed + std::abs(forwardSpeed) * curvature;
+  double rightSpeed = forwardSpeed - std::abs(forwardSpeed) * curvature;
+  double maxSpeed = std::max(leftSpeed, rightSpeed);
+
+  // normalizes output
+  if (maxSpeed > 1.0) {
+    leftSpeed /= maxSpeed;
+    rightSpeed /= maxSpeed;
+  }
+
+  leftSideMotor->moveVoltage(static_cast<int16_t>(leftSpeed * maxVoltage));
+  rightSideMotor->moveVoltage(static_cast<int16_t>(rightSpeed * maxVoltage));
+}
+
+// Curvature arcade control standard
+void Drive::arcade_curvature_standard(e_type stick_type) {
+  is_tank = false;
+  reset_drive_sensors_opcontrol();
+
+  // Toggle for controller curve
+  modify_curve_with_controller();
+
+  int fwd_stick, turn_stick;
+  // Check arcade type (split vs single, normal vs flipped)
+  if (stick_type == SPLIT) {
+    //Sets the Joysticks to the driver's curve setting
+    fwd_stick = left_curve_function(master.get_analog(ANALOG_LEFT_Y));
+    turn_stick = right_curve_function(master.get_analog(ANALOG_RIGHT_X)); 
+  } else if (stick_type == SINGLE) {
+    //Sets the Joysticks to the driver's curve setting
+    fwd_stick = left_curve_function(master.get_analog(ANALOG_LEFT_Y));
+    turn_stick = right_curve_function(master.get_analog(ANALOG_LEFT_X));
+  }
+
+  // Set robot to l_stick and r_stick, check joystick threshold, set active brake
+  joy_thresh_opcontrol(fwd_stick + turn_stick, fwd_stick - turn_stick);
+  
+  curvature(fwd_stick, turn_stick, JOYSTICK_THRESHOLD);
+}
+
+// Curvature arcade control flipped
+void Drive::arcade_curvature_flipped(e_type stick_type) {
+  is_tank = false;
+  reset_drive_sensors_opcontrol();
+
+  // Toggle for controller curve
+  modify_curve_with_controller();
+
+  int turn_stick, fwd_stick;
+  // Check arcade type (split vs single, normal vs flipped)
+  if (stick_type == SPLIT) {
+    //Sets the Joysticks to the driver's curve setting
+    fwd_stick = left_curve_function(master.get_analog(ANALOG_RIGHT_Y));
+    turn_stick = right_curve_function(master.get_analog(ANALOG_LEFT_X)); 
+  } else if (stick_type == SINGLE) {
+    //Sets the Joysticks to the driver's curve setting
+    fwd_stick = left_curve_function(master.get_analog(ANALOG_RIGHT_Y));
+    turn_stick = right_curve_function(master.get_analog(ANALOG_RIGHT_X));
+  }
+
+  // Set robot to l_stick and r_stick, check joystick threshold, set active brake
+  joy_thresh_opcontrol(fwd_stick + turn_stick, fwd_stick - turn_stick);
+  
+  curvature(fwd_stick, turn_stick, JOYSTICK_THRESHOLD);
+}
