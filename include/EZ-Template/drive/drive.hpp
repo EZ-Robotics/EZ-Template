@@ -236,16 +236,26 @@ class Drive {
   /**
    * Initializes left and right curves with the SD card, recommended to run in initialize().
    */
-  void init_curve_sd();
+ 
+  void curvature(const double, const double, const double);
 
   /**
-   * Sets the default joystick curves.
-   *
-   * \param left
-   *        Left default curve.
-   * \param right
-   *        Right default curve.
-   */
+  * Calculates the power output to the motors for CheezyDrive.
+  */
+ 
+  void arcade_curvature_standard(e_type stick_type);
+  void arcade_curvature_flipped(e_type stick_type);
+ 
+  void init_curve_sd();
+
+   /**
+    * Sets the default joystick curves.
+    *
+    * \param left
+    *        Left default curve.
+    * \param right
+    *        Right default curve.
+    */
   void set_curve_default(double left, double right = 0);
 
   /**
