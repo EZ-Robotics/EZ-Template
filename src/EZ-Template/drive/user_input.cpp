@@ -283,20 +283,23 @@ void Drive::curvature(const double iforwardSpeed,
                       const double icurvature,
                       const double ithreshold){
   
-  double forwardSpeed = std::clamp(iforwardSpeed, -1.0, 1.0);
+  double forwardSpeed = iforwardSpeed;
   if (std::abs(forwardSpeed) < ithreshold) {
     forwardSpeed = 0;
   }
 
-  double curvature = std::clamp(icurvature, -1.0, 1.0);
+  double curvature = icurvature;
   if (std::abs(curvature) < ithreshold) {
     curvature = 0;
   }
 
   // the algorithm switches to arcade when forward speed is 0 to allow point turns.
   if (forwardSpeed == 0) {
-    arcade(forwardSpeed, curvature, ithreshold);
-    return;
+    if(stick_type == SPLIT){
+        chassis.arcade_standard(ez::SPLIT);
+    } else if( stick_type == SINGLE){
+        chassis.arcade_standard(ez::SINGLE);
+    } return;
   }
 
   double leftSpeed = forwardSpeed + std::abs(forwardSpeed) * curvature;
@@ -309,8 +312,7 @@ void Drive::curvature(const double iforwardSpeed,
     rightSpeed /= maxSpeed;
   }
 
-  leftSideMotor->moveVoltage(static_cast<int16_t>(leftSpeed * maxVoltage));
-  rightSideMotor->moveVoltage(static_cast<int16_t>(rightSpeed * maxVoltage));
+  joy_thresh_opcontrol(leftSpeed + rightSpeed, leftSpeed - rightSpeed);
 }
 
 // Curvature arcade control standard
@@ -333,10 +335,10 @@ void Drive::arcade_curvature_standard(e_type stick_type) {
     turn_stick = right_curve_function(master.get_analog(ANALOG_LEFT_X));
   }
 
+  curvature(fwd_stick, turn_stick, JOYSTICK_THRESHOLD);
   // Set robot to l_stick and r_stick, check joystick threshold, set active brake
   joy_thresh_opcontrol(fwd_stick + turn_stick, fwd_stick - turn_stick);
   
-  curvature(fwd_stick, turn_stick, JOYSTICK_THRESHOLD);
 }
 
 // Curvature arcade control flipped
@@ -360,7 +362,7 @@ void Drive::arcade_curvature_flipped(e_type stick_type) {
   }
 
   // Set robot to l_stick and r_stick, check joystick threshold, set active brake
-  joy_thresh_opcontrol(fwd_stick + turn_stick, fwd_stick - turn_stick);
-  
   curvature(fwd_stick, turn_stick, JOYSTICK_THRESHOLD);
+
+  joy_thresh_opcontrol(fwd_stick + turn_stick, fwd_stick - turn_stick);
 }
