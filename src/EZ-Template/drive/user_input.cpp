@@ -286,16 +286,37 @@ void Drive::curvature(double forward_stick, double turn_stick) {
     return;
   }
 
-  double left_speed = forward_stick + std::abs(forward_stick) * turn_stick;
-  double right_speed = forward_stick - std::abs(forward_stick) * turn_stick;
-  double max_speed = std::max(left_speed, right_speed);
+  // Scale joysticks between -1.0 and 1.0
+  forward_stick = forward_stick == 0 ? 0 : forward_stick / 127.0;
+  turn_stick = turn_stick == 0 ? 0 : turn_stick / 127.0;
 
-  // normalizes output
+  // Curvature math
+  double left_speed = forward_stick + fabs(forward_stick) * turn_stick;
+  double right_speed = forward_stick - fabs(forward_stick) * turn_stick;
+  double max_speed = std::max(fabs(left_speed), fabs(right_speed));
+
+  // Normalizes output to 1
   if (max_speed > 127.0) {
     left_speed /= max_speed;
     right_speed /= max_speed;
   }
-  joy_thresh_opcontrol(left_speed, right_speed);
+
+  // Scales output to -1 to 1 if above fails to
+  double max = 1.0;
+  if (fabs(left_speed) > max || fabs(right_speed) > max) {
+    if (fabs(left_speed) > fabs(right_speed)) {
+      double scale = max / fabs(left_speed);
+      left_speed = util::clip_num(left_speed, max, -max);
+      right_speed = right_speed * scale;
+    } else {
+      double scale = max / fabs(right_speed);
+      left_speed = left_speed * scale;
+      right_speed = util::clip_num(right_speed, max, -max);
+    }
+  }
+
+  // Set to drive motors
+  joy_thresh_opcontrol(left_speed * 127, right_speed * 127);
 }
 
 // Curvature arcade control standard
