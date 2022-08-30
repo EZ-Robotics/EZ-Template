@@ -295,11 +295,8 @@ void Drive::curvature(const double iforwardSpeed,
 
   // the algorithm switches to arcade when forward speed is 0 to allow point turns.
   if (forwardSpeed == 0) {
-    if(stick_type == SPLIT){
-        chassis.arcade_standard(ez::SPLIT);
-    } else if( stick_type == SINGLE){
-        chassis.arcade_standard(ez::SINGLE);
-    } return;
+    joy_thresh_opcontrol(forwardSpeed + curvature, forwardSpeed - curvature);
+    return;
   }
 
   double leftSpeed = forwardSpeed + std::abs(forwardSpeed) * curvature;
@@ -311,8 +308,7 @@ void Drive::curvature(const double iforwardSpeed,
     leftSpeed /= maxSpeed;
     rightSpeed /= maxSpeed;
   }
-
-  joy_thresh_opcontrol(leftSpeed + rightSpeed, leftSpeed - rightSpeed);
+  joy_thresh_opcontrol(leftSpeed, rightSpeed);
 }
 
 // Curvature arcade control standard
@@ -336,9 +332,6 @@ void Drive::arcade_curvature_standard(e_type stick_type) {
   }
 
   curvature(fwd_stick, turn_stick, JOYSTICK_THRESHOLD);
-  // Set robot to l_stick and r_stick, check joystick threshold, set active brake
-  joy_thresh_opcontrol(fwd_stick + turn_stick, fwd_stick - turn_stick);
-  
 }
 
 // Curvature arcade control flipped
@@ -363,6 +356,4 @@ void Drive::arcade_curvature_flipped(e_type stick_type) {
 
   // Set robot to l_stick and r_stick, check joystick threshold, set active brake
   curvature(fwd_stick, turn_stick, JOYSTICK_THRESHOLD);
-
-  joy_thresh_opcontrol(fwd_stick + turn_stick, fwd_stick - turn_stick);
 }
