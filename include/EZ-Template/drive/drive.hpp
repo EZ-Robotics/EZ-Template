@@ -234,28 +234,38 @@ class Drive {
   void arcade_flipped(e_type stick_type);
 
   /**
-   * Initializes left and right curves with the SD card, recommended to run in initialize().
+   * Sets the chassis to controller joysticks using standard arcade control with cheezy drive.  Run is usercontrol.
+   * This passes the controller through the curve functions, but is disabled by default.  Use toggle_controller_curve_modifier() to enable it.
+   * Cheezy drive makes the turn stick a "steering" stick where it controls the radius the robot turns at.
+   *
+   * \param stick_type
+   *        ez::SINGLE or ez::SPLIT control
    */
- 
-  void curvature(const double, const double, const double);
+  void arcade_curvature_standard(e_type stick_type);
 
   /**
-  * Calculates the power output to the motors for CheezyDrive.
-  */
- 
-  void arcade_curvature_standard(e_type stick_type);
+   * Sets the chassis to controller joysticks using flipped arcade control with cheezy drive.  Run is usercontrol.
+   * This passes the controller through the curve functions, but is disabled by default.  Use toggle_controller_curve_modifier() to enable it.
+   * Cheezy drive makes the turn stick a "steering" stick where it controls the radius the robot turns at.
+   *
+   * \param stick_type
+   *        ez::SINGLE or ez::SPLIT control
+   */
   void arcade_curvature_flipped(e_type stick_type);
- 
+
+  /**
+   * Initializes left and right curves with the SD card, recommended to run in initialize().
+   */
   void init_curve_sd();
 
-   /**
-    * Sets the default joystick curves.
-    *
-    * \param left
-    *        Left default curve.
-    * \param right
-    *        Right default curve.
-    */
+  /**
+   * Sets the default joystick curves.
+   *
+   * \param left
+   *        Left default curve.
+   * \param right
+   *        Right default curve.
+   */
   void set_curve_default(double left, double right = 0);
 
   /**
@@ -796,6 +806,11 @@ class Drive {
   bool using_inches = false;
 
  private:  // !Auton
+  /**
+   * Runs curvature math for user control
+   */
+  void curvature(double forward_stick, double turn_stick);
+
   bool drive_toggle = true;
   bool print_toggle = true;
   int swing_min = 0;
