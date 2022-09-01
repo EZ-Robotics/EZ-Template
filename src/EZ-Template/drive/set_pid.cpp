@@ -124,14 +124,14 @@ void Drive::set_turn_pid(double target, int speed) {
 
 void Drive::set_relative_turn_pid(double target, int speed) {
   // Compute absolute target by adding to current heading
-  double absoluteTarget = get_gyro() + target;
+  double absolute_target = turnPID.get_target() + target;
   
   // Print targets
-  if (print_toggle) printf("Turn Started... Target Value: %f\n", absoluteTarget);
+  if (print_toggle) printf("Turn Started... Target Value: %f\n", absolute_target);
 
   // Set PID targets
-  turnPID.set_target(absoluteTarget);
-  headingPID.set_target(absoluteTarget);
+  turnPID.set_target(absolute_target);
+  headingPID.set_target(absolute_target);
   set_max_speed(speed);
 
   // Run task
