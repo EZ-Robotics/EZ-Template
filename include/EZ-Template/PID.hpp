@@ -85,7 +85,7 @@ class PID {
   void set_exit_condition(int p_small_exit_time, double p_small_error, int p_big_exit_time = 0, double p_big_error = 0, int p_velocity_exit_time = 0, int p_mA_timeout = 0);
 
   /**
-   * Set's target.
+   * Sets target.
    *
    * \param target
    *        Target for PID.
