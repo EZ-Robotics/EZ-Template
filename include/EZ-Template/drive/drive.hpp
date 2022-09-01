@@ -476,7 +476,7 @@ class Drive {
   void reset_gyro(double new_heading = 0);
 
   /**
-   * Resets the imu so that where the drive is pointing is zero in set_drive_pid(turn)
+   * Returns the current gyro value.
    */
   double get_gyro();
 
@@ -531,6 +531,16 @@ class Drive {
   void set_turn_pid(double target, int speed);
 
   /**
+  * Sets the robot to turn relative to current heading using PID.
+  * 
+  * \param target
+  *        target in degrees relative to current heading
+  * \param speed
+  *        0 to 127, max speed during motion
+  */
+  void set_relative_turn_pid(double target, int speed);
+
+  /**
    * Turn using only the left or right side.
    *
    * \param type
@@ -548,7 +558,7 @@ class Drive {
   void reset_pid_targets();
 
   /**
-   * Resets all PID targets to 0.
+   * Sets heading of gyro and target of PID.
    */
   void set_angle(double angle);
 
