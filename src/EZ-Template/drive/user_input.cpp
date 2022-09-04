@@ -280,10 +280,16 @@ void Drive::arcade_flipped(e_type stick_type) {
 }
 
 void Drive::curvature(double forward_stick, double turn_stick) {
-  // Switches to arcade when forward speed is 0 to allow point turns.
+  // Switches to arcade when forward speed is 0 for a predetermined time, to allow point turns.
   if (forward_stick == 0) {
-    joy_thresh_opcontrol(forward_stick + turn_stick, forward_stick - turn_stick);
-    return;
+    if(iters_at_zero >= time_at_zero){                                             // iters_at_zero - Cycles in a row that fwd joy has been reading 0
+      joy_thresh_opcontrol(forward_stick + turn_stick, forward_stick - turn_stick);// time_at_zero - predetermined time that fwd_joy has to be at to
+      return;                                                                      // initiate arcade control s
+    }
+    iters_at_zero++;
+  }
+  else{
+    iters_at_zero = 0;
   }
 
   // Scale joysticks between -1.0 and 1.0

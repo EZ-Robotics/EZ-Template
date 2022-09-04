@@ -815,6 +815,8 @@ class Drive {
   bool print_toggle = true;
   int swing_min = 0;
   int turn_min = 0;
+  int iters_at_zero = 0;
+  int time_at_zero = 0;
   bool practice_mode_is_on = false;
   /**
    * Sets the chassis to voltage.

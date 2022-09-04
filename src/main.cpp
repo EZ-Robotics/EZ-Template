@@ -5,29 +5,29 @@
 Drive chassis (
   // Left Chassis Ports (negative port will reverse it!)
   //   the first port is the sensored port (when trackers are not used!)
-  {-11, -12, -13, -14}
+  {-6, -7, 8, -9}
 
   // Right Chassis Ports (negative port will reverse it!)
   //   the first port is the sensored port (when trackers are not used!)
-  ,{20, 19, 18, 17}
+  ,{14, 4, -3, 2}
 
   // IMU Port
-  ,2
+  ,15
 
   // Wheel Diameter (Remember, 4" wheels are actually 4.125!)
   //    (or tracking wheel diameter)
-  ,4.125
+  ,3.25
 
   // Cartridge RPM
   //   (or tick per rotation if using tracking wheels)
-  ,600
+  , 1200
 
 
   // External Gear Ratio (MUST BE DECIMAL)
   //    (or gear ratio of tracking wheel)
   // eg. if your drive is 84:36 where the 36t is powered, your RATIO would be 2.333.
   // eg. if your drive is 36:60 where the 60t is powered, your RATIO would be 0.6.
-  ,1.875
+  ,(double)38 / (double)16
 
   // Uncomment if using tracking wheels
   /*
@@ -52,14 +52,14 @@ Drive chassis (
  */
 void initialize() {
   // Print our branding over your terminal :D
-  ez::print_ez_template();
+  // ez::print_ez_template();
   
   pros::delay(500); // Stop the user from doing anything while legacy ports configure.
 
   // Configure your chassis controls
   chassis.toggle_modify_curve_with_controller(true); // Enables modifying the controller curve with buttons on the joysticks
   chassis.set_active_brake(0); // Sets the active brake kP. We recommend 0.1.
-  chassis.set_curve_default(0, 0); // Defaults for curve. If using tank, only the first parameter is used. (Comment this line out if you have an SD card!)  
+  chassis.set_curve_default(4, 4); // Defaults for curve. If using tank, only the first parameter is used. (Comment this line out if you have an SD card!)  
   default_constants(); // Set the drive to your own constants from autons.cpp!
 
   // These are already defaulted to these buttons, but you can change the left/right curve buttons here!
@@ -158,6 +158,7 @@ void opcontrol() {
     // chassis.arcade_flipped(ez::SINGLE); // Flipped single arcade
 
     chassis.arcade_curvature_standard(ez::SPLIT);
+    // chassis.arcade_curvature_flipped(ez::SPLIT);
 
     // . . .
     // Put more user control code here!
