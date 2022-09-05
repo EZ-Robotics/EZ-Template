@@ -302,7 +302,7 @@ void Drive::curvature(double forward_stick, double turn_stick) {
   double max_speed = std::max(fabs(left_speed), fabs(right_speed));
 
   // Normalizes output to 1
-  if (max_speed > 127.0) {
+  if (max_speed > 1.0) {
     left_speed /= max_speed;
     right_speed /= max_speed;
   }
