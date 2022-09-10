@@ -807,6 +807,20 @@ class Drive {
 
  private:  // !Auton
  
+  /**
+  * Vector of all of the previous fwd_stick values
+  */ 
+  std::vector<double> fwd_stick_values;
+
+  /*
+  * Assists in Curvature so there is no douple input to the motors
+  */ 
+  bool activate_point_turn = false; 
+  /**
+  * Vector of all of the previous turn_stick values
+  */ 
+  std::vector<double> turn_stick_values;
+
    bool joystick_vals_created = false;
   /**
   * Keeps a record of the fwdstick vals for testing
