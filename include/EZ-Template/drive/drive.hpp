@@ -818,6 +818,10 @@ class Drive {
   */
   void predict_point_turn(double fwd_stick, double turn_stick);
  
+   bool write_switch = false;
+   double SLOPE_TRIGGER = 0;
+   double HEIGHT_TRIGGER = 0;
+ 
   /**
    * Runs curvature math for user control
    */
@@ -829,6 +833,8 @@ class Drive {
   int turn_min = 0;
   int iters_at_zero = 0;
   int time_at_zero = 0;
+  int prev_millis = 0;
+  int cycle_time = 0;
   bool practice_mode_is_on = false;
   /**
    * Sets the chassis to voltage.
