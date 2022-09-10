@@ -279,6 +279,110 @@ void Drive::arcade_flipped(e_type stick_type) {
   joy_thresh_opcontrol(fwd_stick + turn_stick, fwd_stick - turn_stick);
 }
 
+void Drive::predict_point_turn(double fwd_stick, double turn_stick){
+
+  cycle_time = (int)pros::millis - prev_millis; 
+  prev_millis = (int)pros::millis;
+  
+  double fwd_slope, turn_slope;
+  // This makes sure that there are enough values in the vector to calculate slope
+  if(fwd_stick_values.size() >= 2){
+    fwd_slope = fwd_stick - fwd_stick_values.back(); 
+    turn_slope = turn_stick - turn_stick_values.back();
+  }
+  // Adds stick values to vectors
+  turn_stick_values.push_back(turn_stick);
+  fwd_stick_values.push_back(fwd_stick);
+  
+
+  // Switches to arcade when forward speed is 0 for a predetermined time, to allow point turns.
+  if (fwd_stick == 0) {
+    iters_at_zero += cycle_time;
+    if(iters_at_zero >= time_at_zero){ // iters_at_zero - Cycles in a row that fwd joy has been reading 0 
+                                       // time_at_zero - predetermined time that fwd_joy has to be at to initiate arcade control
+      //Writes the change of the Drive state to joystick_vals
+      if(!write_switch){
+        write_switch = true;
+        // Write to SD Card
+        if(!ez::util::IS_SD_CARD){ }
+        
+        else{
+        if(joystick_vals_created == true){ // If file has been made already, append
+          FILE* usd_file_write;
+          usd_file_write = fopen("/usd\\joystick_vals.txt", "a");
+          std::string in_str = "Switch to Point Turn\n";
+          char const* in_c = in_str.c_str();
+          fputs(in_c, usd_file_write);
+          fclose(usd_file_write);
+        }
+        else{ // If not made or old, rewrite
+          joystick_vals_created = true;
+          FILE* usd_file_write;
+          usd_file_write = fopen("/usd/joystick_vals.txt", "w");
+          std::string in_str = "Switch to Point Turn\n";
+          char const* in_c = in_str.c_str();
+          fputs("(fwd_stick, turn_stick)\n", usd_file_write);
+          fputs(in_c, usd_file_write);
+          fclose(usd_file_write);
+        }     
+      }
+      }
+      activate_point_turn = true;
+      joy_thresh_opcontrol(fwd_stick + turn_stick, fwd_stick - turn_stick);
+      return;                                                                      
+    }
+  }
+  else{
+    activate_point_turn = false;
+    if(write_switch){
+      write_switch = false;
+      // Write to SD Card
+      if(!ez::util::IS_SD_CARD){ }
+      
+      else{ 
+        if(joystick_vals_created == true){ // If File has already been made, append
+
+          FILE* usd_file_write;
+          usd_file_write = fopen("/usd/joystick_vals.txt", "a");
+          std::string in_str = "Switch to Cheezy Turn\n";
+          char const* in_c = in_str.c_str();
+          fputs(in_c, usd_file_write);
+          fclose(usd_file_write);
+        }
+        else{ // If file is old, rewrite
+          joystick_vals_created = true;
+          FILE* usd_file_write;
+          usd_file_write = fopen("/usd/joystick_vals.txt", "w");
+          std::string in_str = "Switch to Cheezy Turn\n";
+          char const* in_c = in_str.c_str();
+          fputs("(fwd_stick, turn_stick)\n", usd_file_write);
+          fputs(in_c, usd_file_write);
+          fclose(usd_file_write);
+        }     
+      }
+    }
+    iters_at_zero = 0;
+  }
+
+}
+
+void Drive::record_joystick_vals(double fwd_stick, double turn_stick){
+
+  // Write to SD Card
+  if(!ez::util::IS_SD_CARD){ }
+  else{
+    FILE* usd_file_write;
+    usd_file_write = fopen("/usd/joystick_vals.txt", "a");
+    std::string in_str = "(" + std::to_string((int)fwd_stick) + ", " + std::to_string((int)turn_stick) + ")\n";
+    char const* in_c = in_str.c_str();
+    fputs(in_c, usd_file_write);
+    fclose(usd_file_write);
+
+  }
+
+
+}
+
 void Drive::curvature(double forward_stick, double turn_stick) {
   // Switches to arcade when forward speed is 0 for a predetermined time, to allow point turns.
   if (forward_stick == 0) {
