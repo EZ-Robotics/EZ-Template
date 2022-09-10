@@ -806,6 +806,18 @@ class Drive {
   bool using_inches = false;
 
  private:  // !Auton
+ 
+   bool joystick_vals_created = false;
+  /**
+  * Keeps a record of the fwdstick vals for testing
+  */
+  void record_joystick_vals(double fwd_stick, double turn_stick);
+ 
+   /**
+  * For predicting when joystick will reach 0 to save time when changing drive style
+  */
+  void predict_point_turn(double fwd_stick, double turn_stick);
+ 
   /**
    * Runs curvature math for user control
    */
