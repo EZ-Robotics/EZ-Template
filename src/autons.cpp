@@ -37,31 +37,6 @@ void default_constants() {
 
 }
 
-void one_mogo_constants() {
-  chassis.set_turn_exit_condition(200, 3, 500, 7, 750, 750);
-  chassis.set_swing_exit_condition(200, 3, 500, 7, 750, 750);
-  chassis.set_drive_exit_condition(200, 1_in, 500, 3_in, 750, 750);
-
-  chassis.set_slew_min_power(80, 80);
-  chassis.set_slew_distance(7_in, 7_in);
-  chassis.set_heading_pid_constants(3, 0, 20, 0);
-  chassis.set_drive_pid_constants(15, 0, 150);
-  chassis.set_turn_pid_constants(3, 0, 20, 0);
-  chassis.set_swing_pid_constants(5, 0, 30, 0);
-}
-
-void two_mogo_constants() {
-  chassis.set_turn_exit_condition(200, 3, 500, 7, 750, 750);
-  chassis.set_swing_exit_condition(200, 3, 500, 7, 750, 750);
-  chassis.set_drive_exit_condition(200, 1_in, 500, 3_in, 750, 750);
-
-  chassis.set_slew_min_power(80, 80);
-  chassis.set_slew_distance(7_in, 7_in);
-  chassis.set_heading_pid_constants(3, 0, 20, 0);
-  chassis.set_drive_pid_constants(15, 0, 150);
-  chassis.set_turn_pid_constants(3, 0, 20, 0);
-  chassis.set_swing_pid_constants(5, 0, 30, 0);
-}
 
 
 
