@@ -34,7 +34,6 @@ void default_constants() {
   chassis.set_drive_pid_constants(15, 0, 150);
   chassis.set_turn_pid_constants(3, 0, 20, 0);
   chassis.set_swing_pid_constants(5, 0, 30, 0);
-
 }
 
 void one_mogo_constants() {
