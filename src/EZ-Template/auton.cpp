@@ -7,10 +7,10 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include "main.h"
 
 Auton::Auton() {
-  Name = "";
+  name = "";
   auton_call = nullptr;
 }
 Auton::Auton(std::string name, std::function<void()> callback) {
-  Name = name;
+  name = name;
   auton_call = callback;
 }

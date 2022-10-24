@@ -23,7 +23,7 @@ void AutonSelector::print_selected_auton() {
   if (auton_count == 0) return;
   for (int i = 0; i < 8; i++)
     pros::lcd::clear_line(i);
-  ez::screen_print("Page " + std::to_string(current_auton_page + 1) + "\n" + Autons[current_auton_page].Name);
+  ez::screen_print("Page " + std::to_string(current_auton_page + 1) + "\n" + Autons[current_auton_page].name);
 }
 
 void AutonSelector::call_selected_auton() {
