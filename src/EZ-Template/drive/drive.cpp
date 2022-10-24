@@ -27,11 +27,11 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 
   // Set ports to a global vector
   for (auto i : left_motor_ports) {
-    pros::Motor temp(abs(i), util::is_reversed(i));
+    pros::Motor temp(abs(i), util::reversed_active(i));
     left_motors.push_back(temp);
   }
   for (auto i : right_motor_ports) {
-    pros::Motor temp(abs(i), util::is_reversed(i));
+    pros::Motor temp(abs(i), util::reversed_active(i));
     right_motors.push_back(temp);
   }
 
@@ -49,8 +49,8 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
              int imu_port, double wheel_diameter, double ticks, double ratio,
              std::vector<int> left_tracker_ports, std::vector<int> right_tracker_ports)
     : imu(imu_port),
-      left_tracker(abs(left_tracker_ports[0]), abs(left_tracker_ports[1]), util::is_reversed(left_tracker_ports[0])),
-      right_tracker(abs(right_tracker_ports[0]), abs(right_tracker_ports[1]), util::is_reversed(right_tracker_ports[0])),
+      left_tracker(abs(left_tracker_ports[0]), abs(left_tracker_ports[1]), util::reversed_active(left_tracker_ports[0])),
+      right_tracker(abs(right_tracker_ports[0]), abs(right_tracker_ports[1]), util::reversed_active(right_tracker_ports[0])),
       left_rotation(-1),
       right_rotation(-1),
       ez_auto([this] { this->ez_auto_task(); }) {
@@ -58,11 +58,11 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 
   // Set ports to a global vector
   for (auto i : left_motor_ports) {
-    pros::Motor temp(abs(i), util::is_reversed(i));
+    pros::Motor temp(abs(i), util::reversed_active(i));
     left_motors.push_back(temp);
   }
   for (auto i : right_motor_ports) {
-    pros::Motor temp(abs(i), util::is_reversed(i));
+    pros::Motor temp(abs(i), util::reversed_active(i));
     right_motors.push_back(temp);
   }
 
@@ -80,8 +80,8 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
              int imu_port, double wheel_diameter, double ticks, double ratio,
              std::vector<int> left_tracker_ports, std::vector<int> right_tracker_ports, int expander_smart_port)
     : imu(imu_port),
-      left_tracker({expander_smart_port, abs(left_tracker_ports[0]), abs(left_tracker_ports[1])}, util::is_reversed(left_tracker_ports[0])),
-      right_tracker({expander_smart_port, abs(right_tracker_ports[0]), abs(right_tracker_ports[1])}, util::is_reversed(right_tracker_ports[0])),
+      left_tracker({expander_smart_port, abs(left_tracker_ports[0]), abs(left_tracker_ports[1])}, util::reversed_active(left_tracker_ports[0])),
+      right_tracker({expander_smart_port, abs(right_tracker_ports[0]), abs(right_tracker_ports[1])}, util::reversed_active(right_tracker_ports[0])),
       left_rotation(-1),
       right_rotation(-1),
       ez_auto([this] { this->ez_auto_task(); }) {
@@ -89,11 +89,11 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 
   // Set ports to a global vector
   for (auto i : left_motor_ports) {
-    pros::Motor temp(abs(i), util::is_reversed(i));
+    pros::Motor temp(abs(i), util::reversed_active(i));
     left_motors.push_back(temp);
   }
   for (auto i : right_motor_ports) {
-    pros::Motor temp(abs(i), util::is_reversed(i));
+    pros::Motor temp(abs(i), util::reversed_active(i));
     right_motors.push_back(temp);
   }
 
@@ -117,16 +117,16 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
       right_rotation(abs(right_rotation_port)),
       ez_auto([this] { this->ez_auto_task(); }) {
   is_tracker = DRIVE_ROTATION;
-  left_rotation.set_reversed(util::is_reversed(left_rotation_port));
-  right_rotation.set_reversed(util::is_reversed(right_rotation_port));
+  left_rotation.set_reversed(util::reversed_active(left_rotation_port));
+  right_rotation.set_reversed(util::reversed_active(right_rotation_port));
 
   // Set ports to a global vector
   for (auto i : left_motor_ports) {
-    pros::Motor temp(abs(i), util::is_reversed(i));
+    pros::Motor temp(abs(i), util::reversed_active(i));
     left_motors.push_back(temp);
   }
   for (auto i : right_motor_ports) {
-    pros::Motor temp(abs(i), util::is_reversed(i));
+    pros::Motor temp(abs(i), util::reversed_active(i));
     right_motors.push_back(temp);
   }
 

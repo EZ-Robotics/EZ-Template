@@ -193,10 +193,10 @@ void opcontrol() {
 # Exit Conditions
 
 ## No Motor
-Outputs one of the `exit_output` states.  This exit condition checks `small_error`, `big_error` and `velocity` if they are enabled.    
+Outputs one of the `e_exit_output` states.  This exit condition checks `small_error`, `big_error` and `velocity` if they are enabled.    
 **Prototype**
 ```cpp
-ez::exit_output exit_condition(bool print = false);
+ez::e_exit_output exit_condition(bool print = false);
 ```
 
 **Example** 
@@ -229,10 +229,10 @@ void autonomous() {
 
 
 ## One Motor
-Outputs one of the `exit_output` states.  This exit condition checks `small_error`, `big_error`, `velocity` and `mA` if they are enabled.    
+Outputs one of the `e_exit_output` states.  This exit condition checks `small_error`, `big_error`, `velocity` and `mA` if they are enabled.    
 **Prototype**
 ```cpp
-ez::exit_output exit_condition(pros::Motor sensor, bool print = false);
+ez::e_exit_output exit_condition(pros::Motor sensor, bool print = false);
 ```
 
 **Example** 
@@ -265,10 +265,10 @@ void autonomous() {
 
 
 ## Multiple Motors
-Outputs one of the `exit_output` states.  This exit condition checks `small_error`, `big_error`, `velocity` and `mA` if they are enabled.  When any of the motors trip `mA`, it returns `mA_EXIT`.    
+Outputs one of the `e_exit_output` states.  This exit condition checks `small_error`, `big_error`, `velocity` and `mA` if they are enabled.  When any of the motors trip `mA`, it returns `mA_EXIT`.    
 **Prototype**
 ```cpp
-ez::exit_output exit_condition(std::vector<pros::Motor> sensor, bool print = false);
+ez::e_exit_output exit_condition(std::vector<pros::Motor> sensor, bool print = false);
 ```
 
 **Example** 

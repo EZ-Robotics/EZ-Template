@@ -25,7 +25,7 @@ void Drive::slew_initialize(slew_ &input, bool slew_on, double max_speed, double
   input.enabled = slew_on;
   input.max_speed = max_speed;
 
-  input.sign = util::sgn(target - current);
+  input.sign = util::sign(target - current);
   input.x_intercept = start + ((SLEW_DISTANCE[backwards] * input.sign));
   input.y_intercept = max_speed * input.sign;
   input.slope = ((input.sign * SLEW_MIN_POWER[backwards]) - input.y_intercept) / (input.x_intercept - 0 - start);  // y2-y1 / x2-x1
@@ -39,11 +39,11 @@ double Drive::slew_calculate(slew_ &input, double current) {
     input.error = input.x_intercept - current;
 
     // When the sign of error flips, slew is completed
-    if (util::sgn(input.error) != input.sign)
+    if (util::sign(input.error) != input.sign)
       input.enabled = false;
 
     // Return y=mx+b
-    else if (util::sgn(input.error) == input.sign)
+    else if (util::sign(input.error) == input.sign)
       return ((input.slope * input.error) + input.y_intercept) * input.sign;
   }
   // When slew is completed, return max speed

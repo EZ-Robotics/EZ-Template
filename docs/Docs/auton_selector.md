@@ -84,7 +84,7 @@ void initialize() {
 
 
 ## add_autons();
-Adds autonomous routines to the autonomous selector. Uses `ez::print_to_screen()` to display to the brain.  
+Adds autonomous routines to the autonomous selector. Uses `ez::screen_print()` to display to the brain.  
 **Prototype**
 ```cpp
 void add_autons(std::vector<Auton> autons);

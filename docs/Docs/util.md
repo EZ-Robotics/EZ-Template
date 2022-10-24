@@ -44,13 +44,13 @@ void opcontrol() {
 ---
 
 
-## print_to_screen() 
+## screen_print() 
 Prints to the LLEMU.  This function handles text that's too long for a line by finding the last word and starting it on a new line, and takes `\n` to set a new line.   
 `text` input string.  
 `line` starting line.  
 **Prototype**
 ```cpp
-void print_to_screen(, std::string text, int line)
+void screen_print(, std::string text, int line)
 ```
 
 **Example 1**  
@@ -59,7 +59,7 @@ hello, this is line 0
 this is line 1
 ```cpp
 void initialize() {
-  ez::print_to_screen("hello, this is line 0\nthis is line 1");
+  ez::screen_print("hello, this is line 0\nthis is line 1");
 }
 ```
 
@@ -70,7 +70,7 @@ hello
 ```cpp
 void initialize() {
   std::string 32char = 01234567890123456789012345678901;
-  ez::print_to_screen(32char + "hello");
+  ez::screen_print(32char + "hello");
 }
 ```
 
@@ -78,17 +78,17 @@ void initialize() {
 ---
 
 
-## print_ez_template() 
+## ez_template_print() 
 Prints our branding on your terimnal :D.   
 **Prototype**
 ```cpp
-void print_ez_template();
+void ez_template_print();
 ```
 
 **Example**
 ```cpp
 void initialize() {
-  print_ez_template();
+  ez_template_print();
 }
 ```
 
@@ -96,18 +96,18 @@ void initialize() {
 ---
 
 
-## sgn() 
-Returns the sgn of the input.  Returns 1 if positive, -1 if negative, and 0 if 0.    
+## sign() 
+Returns the sign of the input.  Returns 1 if positive, -1 if negative, and 0 if 0.    
 **Prototype**
 ```cpp
-double sgn(double input);
+double sign(double input);
 ```
 
 **Example**
 ```cpp
 void opcontrol() {
   while (true) {
-    printf("Sgn of Controller: %i \n", sgn(master.get_analog(ANALOG_LEFT_Y)));
+    printf("Sign of Controller: %i \n", sign(master.get_analog(ANALOG_LEFT_Y)));
 
     pros::delay(ez::util::DELAY_TIME);
   }
@@ -118,11 +118,11 @@ void opcontrol() {
 ---
 
 
-## clip_num() 
+## clamp_number() 
 Checks if `input` is within range of `max` and `min`.  If it's out, this returns `max` or `min` respectively.    
 **Prototype**
 ```cpp
-double clip_num(double input, double max, double min);
+double clamp_number(double input, double max, double min);
 ```
 
 **Example**
@@ -133,7 +133,7 @@ void opcontrol() {
 
     // When the joystick is between 100 and 127
     // (or -100 and -127) this will print 100 (or -100).
-    printf("Clipped Controller: %i \n", clip_num(joy, 100, -100)); 
+    printf("Clipped Controller: %i \n", clamp_number(joy, 100, -100)); 
   }
 }
 ```

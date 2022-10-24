@@ -34,7 +34,7 @@ void Drive::set_heading_pid_constants(double p, double i, double d, double p_sta
 
 // Updates max speed
 void Drive::set_max_speed(int speed) {
-  max_speed = util::clip_num(abs(speed), 127, -127);
+  max_speed = util::clamp_number(abs(speed), 127, -127);
 }
 
 void Drive::reset_pid_targets() {
@@ -125,7 +125,7 @@ void Drive::set_turn_pid(double target, int speed) {
 void Drive::set_relative_turn_pid(double target, int speed) {
   // Compute absolute target by adding to current heading
   double absolute_target = turnPID.get_target() + target;
-  
+
   // Print targets
   if (print_toggle) printf("Turn Started... Target Value: %f\n", absolute_target);
 

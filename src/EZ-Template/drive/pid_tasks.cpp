@@ -45,8 +45,8 @@ void Drive::drive_pid_task() {
   double r_slew_out = slew_calculate(right_slew, right_sensor());
 
   // Clip leftPID and rightPID to slew (if slew is disabled, it returns max_speed)
-  double l_drive_out = util::clip_num(leftPID.output, l_slew_out, -l_slew_out);
-  double r_drive_out = util::clip_num(rightPID.output, r_slew_out, -r_slew_out);
+  double l_drive_out = util::clamp_number(leftPID.output, l_slew_out, -l_slew_out);
+  double r_drive_out = util::clamp_number(rightPID.output, r_slew_out, -r_slew_out);
 
   // Toggle heading
   double gyro_out = heading_on ? headingPID.output : 0;
@@ -66,12 +66,12 @@ void Drive::turn_pid_task() {
   turnPID.compute(get_gyro());
 
   // Clip gyroPID to max speed
-  double gyro_out = util::clip_num(turnPID.output, max_speed, -max_speed);
+  double gyro_out = util::clamp_number(turnPID.output, max_speed, -max_speed);
 
   // Clip the speed of the turn when the robot is within StartI, only do this when target is larger then StartI
   if (turnPID.constants.ki != 0 && (fabs(turnPID.get_target()) > turnPID.constants.start_i && fabs(turnPID.error) < turnPID.constants.start_i)) {
     if (get_turn_min() != 0)
-      gyro_out = util::clip_num(gyro_out, get_turn_min(), -get_turn_min());
+      gyro_out = util::clamp_number(gyro_out, get_turn_min(), -get_turn_min());
   }
 
   // Set motors
@@ -85,12 +85,12 @@ void Drive::swing_pid_task() {
   swingPID.compute(get_gyro());
 
   // Clip swingPID to max speed
-  double swing_out = util::clip_num(swingPID.output, max_speed, -max_speed);
+  double swing_out = util::clamp_number(swingPID.output, max_speed, -max_speed);
 
   // Clip the speed of the turn when the robot is within StartI, only do this when target is larger then StartI
   if (swingPID.constants.ki != 0 && (fabs(swingPID.get_target()) > swingPID.constants.start_i && fabs(swingPID.error) < swingPID.constants.start_i)) {
     if (get_swing_min() != 0)
-      swing_out = util::clip_num(swing_out, get_swing_min(), -get_swing_min());
+      swing_out = util::clamp_number(swing_out, get_swing_min(), -get_swing_min());
   }
 
   if (drive_toggle) {

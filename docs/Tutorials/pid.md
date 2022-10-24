@@ -34,7 +34,7 @@ PID liftPID{0.45, 0, 0, 0, "Lift"};
 
 void lift_auto(double target) {
   liftPID.set_target(target);
-  ez::exit_output exit = ez::RUNNING;
+  ez::e_exit_output exit = ez::RUNNING;
   while (liftPID.exit_condition({l_lift, r_lift}, true) == ez::RUNNING) {
     double output = liftPID.compute(l_lift.get_position());
     set_lift(output);

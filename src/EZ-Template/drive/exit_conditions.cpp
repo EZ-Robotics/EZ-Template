@@ -27,8 +27,8 @@ void Drive::wait_drive() {
   pros::delay(util::DELAY_TIME);
 
   if (mode == DRIVE) {
-    exit_output left_exit = RUNNING;
-    exit_output right_exit = RUNNING;
+    e_exit_output left_exit = RUNNING;
+    e_exit_output right_exit = RUNNING;
     while (left_exit == RUNNING || right_exit == RUNNING) {
       left_exit = left_exit != RUNNING ? left_exit : leftPID.exit_condition(left_motors[0]);
       right_exit = right_exit != RUNNING ? right_exit : rightPID.exit_condition(right_motors[0]);
@@ -43,7 +43,7 @@ void Drive::wait_drive() {
 
   // Turn Exit
   else if (mode == TURN) {
-    exit_output turn_exit = RUNNING;
+    e_exit_output turn_exit = RUNNING;
     while (turn_exit == RUNNING) {
       turn_exit = turn_exit != RUNNING ? turn_exit : turnPID.exit_condition({left_motors[0], right_motors[0]});
       pros::delay(util::DELAY_TIME);
@@ -57,7 +57,7 @@ void Drive::wait_drive() {
 
   // Swing Exit
   else if (mode == SWING) {
-    exit_output swing_exit = RUNNING;
+    e_exit_output swing_exit = RUNNING;
     pros::Motor& sensor = current_swing == ez::LEFT_SWING ? left_motors[0] : right_motors[0];
     while (swing_exit == RUNNING) {
       swing_exit = swing_exit != RUNNING ? swing_exit : swingPID.exit_condition(sensor);
@@ -79,18 +79,18 @@ void Drive::wait_until_drive(double target) {
     int r_tar = r_start + target;
     int l_error = l_tar - left_sensor();
     int r_error = r_tar - right_sensor();
-    int l_sgn = util::sgn(l_error);
-    int r_sgn = util::sgn(r_error);
+    int l_sgn = util::sign(l_error);
+    int r_sgn = util::sign(r_error);
 
-    exit_output left_exit = RUNNING;
-    exit_output right_exit = RUNNING;
+    e_exit_output left_exit = RUNNING;
+    e_exit_output right_exit = RUNNING;
 
     while (true) {
       l_error = l_tar - left_sensor();
       r_error = r_tar - right_sensor();
 
       // Before robot has reached target, use the exit conditions to avoid getting stuck in this while loop
-      if (util::sgn(l_error) == l_sgn || util::sgn(r_error) == r_sgn) {
+      if (util::sign(l_error) == l_sgn || util::sign(r_error) == r_sgn) {
         if (left_exit == RUNNING || right_exit == RUNNING) {
           left_exit = left_exit != RUNNING ? left_exit : leftPID.exit_condition(left_motors[0]);
           right_exit = right_exit != RUNNING ? right_exit : rightPID.exit_condition(right_motors[0]);
@@ -105,7 +105,7 @@ void Drive::wait_until_drive(double target) {
         }
       }
       // Once we've past target, return
-      else if (util::sgn(l_error) != l_sgn || util::sgn(r_error) != r_sgn) {
+      else if (util::sign(l_error) != l_sgn || util::sign(r_error) != r_sgn) {
         if (print_toggle) std::cout << "  Drive Wait Until Exit.\n";
         return;
       }
@@ -135,10 +135,10 @@ void Drive::wait_until(double target) {
   else if (mode == TURN || mode == SWING) {
     // Calculate error between current and target (target needs to be an in between position)
     int g_error = target - get_gyro();
-    int g_sgn = util::sgn(g_error);
+    int g_sgn = util::sign(g_error);
 
-    exit_output turn_exit = RUNNING;
-    exit_output swing_exit = RUNNING;
+    e_exit_output turn_exit = RUNNING;
+    e_exit_output swing_exit = RUNNING;
 
     pros::Motor& sensor = current_swing == ez::LEFT_SWING ? left_motors[0] : right_motors[0];
 
@@ -148,7 +148,7 @@ void Drive::wait_until(double target) {
       // If turning...
       if (mode == TURN) {
         // Before robot has reached target, use the exit conditions to avoid getting stuck in this while loop
-        if (util::sgn(g_error) == g_sgn) {
+        if (util::sign(g_error) == g_sgn) {
           if (turn_exit == RUNNING) {
             turn_exit = turn_exit != RUNNING ? turn_exit : turnPID.exit_condition({left_motors[0], right_motors[0]});
             pros::delay(util::DELAY_TIME);
@@ -162,7 +162,7 @@ void Drive::wait_until(double target) {
           }
         }
         // Once we've past target, return
-        else if (util::sgn(g_error) != g_sgn) {
+        else if (util::sign(g_error) != g_sgn) {
           if (print_toggle) std::cout << "  Turn Wait Until Exit.\n";
           return;
         }
@@ -171,7 +171,7 @@ void Drive::wait_until(double target) {
       // If swinging...
       else {
         // Before robot has reached target, use the exit conditions to avoid getting stuck in this while loop
-        if (util::sgn(g_error) == g_sgn) {
+        if (util::sign(g_error) == g_sgn) {
           if (swing_exit == RUNNING) {
             swing_exit = swing_exit != RUNNING ? swing_exit : swingPID.exit_condition(sensor);
             pros::delay(util::DELAY_TIME);
@@ -185,7 +185,7 @@ void Drive::wait_until(double target) {
           }
         }
         // Once we've past target, return
-        else if (util::sgn(g_error) != g_sgn) {
+        else if (util::sign(g_error) != g_sgn) {
           if (print_toggle) std::cout << "  Swing Wait Until Exit.\n";
           return;
         }

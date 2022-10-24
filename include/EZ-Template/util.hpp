@@ -22,7 +22,7 @@ namespace ez {
 /**
  * Prints our branding all over your pros terminal
  */
-void print_ez_template();
+void ez_template_print();
 
 /**
  * Prints to the brain screen in one string.  Splits input between lines with
@@ -33,7 +33,7 @@ void print_ez_template();
  * @param line
  *        Starting line to print on, defaults to 0
  */
-void print_to_screen(std::string text, int line = 0);
+void screen_print(std::string text, int line = 0);
 
 /////
 //
@@ -56,12 +56,12 @@ enum e_swing { LEFT_SWING = 0,
 /**
  * Enum for PID::exit_condition outputs.
  */
-enum exit_output { RUNNING = 1,
-                   SMALL_EXIT = 2,
-                   BIG_EXIT = 3,
-                   VELOCITY_EXIT = 4,
-                   mA_EXIT = 5,
-                   ERROR_NO_CONSTANTS = 6 };
+enum e_exit_output { RUNNING = 1,
+                     SMALL_EXIT = 2,
+                     BIG_EXIT = 3,
+                     VELOCITY_EXIT = 4,
+                     mA_EXIT = 5,
+                     ERROR_NO_CONSTANTS = 6 };
 
 /**
  * Enum for split and single stick arcade.
@@ -74,7 +74,7 @@ enum e_mode { DISABLE = 0,
 /**
  * Outputs string for exit_condition enum.
  */
-std::string exit_to_string(exit_output input);
+std::string exit_to_string(e_exit_output input);
 
 namespace util {
 extern bool AUTON_RAN;
@@ -82,17 +82,17 @@ extern bool AUTON_RAN;
 /**
  * Returns 1 if input is positive and -1 if input is negative
  */
-int sgn(double input);
+int sign(double input);
 
 /**
  * Returns true if the input is < 0
  */
-bool is_reversed(double input);
+bool reversed_active(double input);
 
 /**
  * Returns input restricted to min-max threshold
  */
-double clip_num(double input, double max, double min);
+double clamp_number(double input, double max, double min);
 
 /**
  * Is the SD card plugged in?

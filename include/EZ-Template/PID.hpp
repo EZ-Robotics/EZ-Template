@@ -27,8 +27,8 @@ class PID {
    *        kD
    * \param p_start_i
    *        error value that i starts within
-    * \param name
-   *        std::string of name that prints 
+   * \param name
+   *        std::string of name that prints
    */
   PID(double p, double i = 0, double d = 0, double start_i = 0, std::string name = "");
 
@@ -131,7 +131,7 @@ class PID {
    * \param print = false
    *        if true, prints when complete.
    */
-  ez::exit_output exit_condition(bool print = false);
+  ez::e_exit_output exit_condition(bool print = false);
 
   /**
    * Iterative exit condition for PID.
@@ -141,7 +141,7 @@ class PID {
    * \param print = false
    *        if true, prints when complete.
    */
-  ez::exit_output exit_condition(pros::Motor sensor, bool print = false);
+  ez::e_exit_output exit_condition(pros::Motor sensor, bool print = false);
 
   /**
    * Iterative exit condition for PID.
@@ -151,10 +151,10 @@ class PID {
    * \param print = false
    *        if true, prints when complete.
    */
-  ez::exit_output exit_condition(std::vector<pros::Motor> sensor, bool print = false);
+  ez::e_exit_output exit_condition(std::vector<pros::Motor> sensor, bool print = false);
 
   /**
-   * Sets the name of the PID that prints during exit conditions. 
+   * Sets the name of the PID that prints during exit conditions.
    *
    * \param name
    *        a string that is the name you want to print
@@ -162,7 +162,7 @@ class PID {
   void set_name(std::string name);
 
   /**
-   * PID variables. 
+   * PID variables.
    */
   double output;
   double cur;
@@ -180,5 +180,5 @@ class PID {
   void reset_timers();
   std::string name;
   bool is_name = false;
-  void print_exit(ez::exit_output exit_type);
+  void print_exit(ez::e_exit_output exit_type);
 };

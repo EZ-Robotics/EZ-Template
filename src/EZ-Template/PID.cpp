@@ -62,7 +62,7 @@ double PID::compute(double current) {
     if (fabs(error) < constants.start_i)
       integral += error;
 
-    if (util::sgn(error) != util::sgn(prev_error))
+    if (util::sign(error) != util::sign(prev_error))
       integral = 0;
   }
 
@@ -86,7 +86,7 @@ void PID::set_name(std::string p_name) {
   is_name = name == "" ? false : true;
 }
 
-void PID::print_exit(ez::exit_output exit_type) {
+void PID::print_exit(ez::e_exit_output exit_type) {
   std::cout << " ";
   if (is_name)
     std::cout << name << " PID " << exit_to_string(exit_type) << " Exit.\n";
@@ -94,7 +94,7 @@ void PID::print_exit(ez::exit_output exit_type) {
     std::cout << exit_to_string(exit_type) << " Exit.\n";
 }
 
-exit_output PID::exit_condition(bool print) {
+e_exit_output PID::exit_condition(bool print) {
   // If this function is called while all exit constants are 0, print an error
   if (!(exit.small_error && exit.small_exit_time && exit.big_error && exit.big_exit_time && exit.velocity_exit_time && exit.mA_timeout)) {
     print_exit(ERROR_NO_CONSTANTS);
@@ -148,7 +148,7 @@ exit_output PID::exit_condition(bool print) {
   return RUNNING;
 }
 
-exit_output PID::exit_condition(pros::Motor sensor, bool print) {
+e_exit_output PID::exit_condition(pros::Motor sensor, bool print) {
   // If the motors are pulling too many mA, the code will timeout and set interfered to true.
   if (exit.mA_timeout != 0) {  // Check if this condition is enabled
     if (sensor.is_over_current()) {
@@ -166,7 +166,7 @@ exit_output PID::exit_condition(pros::Motor sensor, bool print) {
   return exit_condition(print);
 }
 
-exit_output PID::exit_condition(std::vector<pros::Motor> sensor, bool print) {
+e_exit_output PID::exit_condition(std::vector<pros::Motor> sensor, bool print) {
   // If the motors are pulling too many mA, the code will timeout and set interfered to true.
   if (exit.mA_timeout != 0) {  // Check if this condition is enabled
     for (auto i : sensor) {

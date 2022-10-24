@@ -11,7 +11,7 @@ pros::Controller master(pros::E_CONTROLLER_MASTER);
 namespace ez {
 int mode = DISABLE;
 
-void print_ez_template() {
+void ez_template_print() {
   std::cout << R"(
 
 
@@ -51,8 +51,8 @@ std::string get_rest_of_the_word(std::string text, int position) {
   }
   return word;
 }
-//All iance\n\nWE WIN THESE!!!!! 
-void print_to_screen(std::string text, int line) {
+// All iance\n\nWE WIN THESE!!!!!
+void screen_print(std::string text, int line) {
   int CurrAutoLine = line;
   std::vector<string> texts = {};
   std::string temp = "";
@@ -64,9 +64,9 @@ void print_to_screen(std::string text, int line) {
         texts.push_back(temp);
         temp = text[i];
       } else {
-        int size = last_word.length(); 
+        int size = last_word.length();
 
-        auto rest_of_word = get_rest_of_the_word(text, i); 
+        auto rest_of_word = get_rest_of_the_word(text, i);
         temp.erase(temp.length() - size, size);
         texts.push_back(temp);
         last_word += rest_of_word;
@@ -76,7 +76,6 @@ void print_to_screen(std::string text, int line) {
           texts.push_back(temp);
           break;
         }
-        
       }
     }
     if (i >= text.length() - 1) {
@@ -103,7 +102,7 @@ void print_to_screen(std::string text, int line) {
   }
 }
 
-std::string exit_to_string(exit_output input) {
+std::string exit_to_string(e_exit_output input) {
   switch ((int)input) {
     case RUNNING:
       return "Running";
@@ -126,12 +125,12 @@ std::string exit_to_string(exit_output input) {
 namespace util {
 bool AUTON_RAN = true;
 
-bool is_reversed(double input) {
+bool reversed_active(double input) {
   if (input < 0) return true;
   return false;
 }
 
-int sgn(double input) {
+int sign(double input) {
   if (input > 0)
     return 1;
   else if (input < 0)
@@ -139,7 +138,7 @@ int sgn(double input) {
   return 0;
 }
 
-double clip_num(double input, double max, double min) {
+double clamp_number(double input, double max, double min) {
   if (input > max)
     return max;
   else if (input < min)
