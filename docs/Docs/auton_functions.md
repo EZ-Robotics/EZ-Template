@@ -348,7 +348,7 @@ void initialize() {
 ---
 
 
-## set_exit_condition()
+## exit_condition_set()
 Sets the exit condition constants. This uses the exit conditions from the PID class.  Below is the defaults.  
 `type` either `chassis.turn_exit`, `chassis.swing_exit`, or `chassis.drive_exit`  
 `p_small_exit_time` time, in ms, before exiting `p_small_error`  
@@ -359,16 +359,16 @@ Sets the exit condition constants. This uses the exit conditions from the PID cl
 `p_mA_timeout` time, in ms, for `is_over_current` to be true       
 **Prototype**
 ```cpp
-void set_exit_condition(exit_condition_ &type, int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout);
+void exit_condition_set(exit_condition_ &type, int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout);
 
 ```
 
 **Example**
 ```cpp
 void initialize() {
-  chassis.set_exit_condition(chassis.turn_exit,  100, 3,  500, 7,   500, 500);
-  chassis.set_exit_condition(chassis.swing_exit, 100, 3,  500, 7,   500, 500);
-  chassis.set_exit_condition(chassis.drive_exit, 80,  50, 300, 150, 500, 500);
+  chassis.exit_condition_set(chassis.turn_exit,  100, 3,  500, 7,   500, 500);
+  chassis.exit_condition_set(chassis.swing_exit, 100, 3,  500, 7,   500, 500);
+  chassis.exit_condition_set(chassis.drive_exit, 80,  50, 300, 150, 500, 500);
 }
 ```
 

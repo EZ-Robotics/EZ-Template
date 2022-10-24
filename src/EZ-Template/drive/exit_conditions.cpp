@@ -10,15 +10,15 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 using namespace ez;
 
 void Drive::set_drive_exit_condition(int p_small_exit_time, okapi::QLength p_small_error, int p_big_exit_time, okapi::QLength p_big_error, int p_velocity_exit_time, int p_mA_timeout) {
-  leftPID.set_exit_condition(p_small_exit_time, p_small_error.convert(okapi::inch), p_big_exit_time, p_big_error.convert(okapi::inch), p_velocity_exit_time, p_mA_timeout);
-  rightPID.set_exit_condition(p_small_exit_time, p_small_error.convert(okapi::inch), p_big_exit_time, p_big_error.convert(okapi::inch), p_velocity_exit_time, p_mA_timeout);
+  leftPID.exit_condition_set(p_small_exit_time, p_small_error.convert(okapi::inch), p_big_exit_time, p_big_error.convert(okapi::inch), p_velocity_exit_time, p_mA_timeout);
+  rightPID.exit_condition_set(p_small_exit_time, p_small_error.convert(okapi::inch), p_big_exit_time, p_big_error.convert(okapi::inch), p_velocity_exit_time, p_mA_timeout);
 }
 
 void Drive::set_turn_exit_condition(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout) {
-  turnPID.set_exit_condition(p_small_exit_time, p_small_error, p_big_exit_time, p_big_error, p_velocity_exit_time, p_mA_timeout);
+  turnPID.exit_condition_set(p_small_exit_time, p_small_error, p_big_exit_time, p_big_error, p_velocity_exit_time, p_mA_timeout);
 }
 void Drive::set_swing_exit_condition(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout) {
-  swingPID.set_exit_condition(p_small_exit_time, p_small_error, p_big_exit_time, p_big_error, p_velocity_exit_time, p_mA_timeout);
+  swingPID.exit_condition_set(p_small_exit_time, p_small_error, p_big_exit_time, p_big_error, p_velocity_exit_time, p_mA_timeout);
 }
 
 // User wrapper for exit condition

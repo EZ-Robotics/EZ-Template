@@ -55,7 +55,7 @@ PID liftPID{1, 0.003, 4, 100, "Lift"};
 
 # Functions
 
-## set_constants()
+## constants_set()
 Sets PID constants.  
 `p` kP
 `i` kI
@@ -63,14 +63,14 @@ Sets PID constants.
 `p_start_i` i will start when error is within this    
 **Prototype**
 ```cpp
-void set_constants(double p, double i = 0, double d = 0, double p_start_i = 0);
+void constants_set(double p, double i = 0, double d = 0, double p_start_i = 0);
 ```
 
 **Example** 
 ```cpp
 PID liftPID;
 void initialize() {
-  liftPID.set_constants(1, 0, 4);
+  liftPID.constants_set(1, 0, 4);
 }
 ```
 
@@ -80,11 +80,11 @@ void initialize() {
 
 
 
-## set_target()
+## target_set()
 Sets PID target.   
 **Prototype**
 ```cpp
-void set_target(double input);
+void target_set(double input);
 ```
 
 **Example** 
@@ -94,10 +94,10 @@ pros::Motor lift_motor(1);
 void opcontrol() {
   while (true) {
     if (master.get_digital(DIGITAL_L1)) {
-      liftPID.set_target(500);
+      liftPID.target_set(500);
     }
     else if (master.get_digital(DIGITAL_L2)) {
-      liftPID.set_target(0);
+      liftPID.target_set(0);
     }
     lift_motor = liftPID.compute(lift_motor.get_position());
 
@@ -111,7 +111,7 @@ void opcontrol() {
 
 
 
-## set_exit_condition()
+## exit_condition_set()
 Sets the exit condition constants.  To disable one of the conditions, set the constants relating to it to `0`.    
 `p_small_exit_time` time, in ms, before exiting `p_small_error`  
 `p_small_error` small error threshold  
@@ -121,7 +121,7 @@ Sets the exit condition constants.  To disable one of the conditions, set the co
 `p_mA_timeout` time, in ms, for `is_over_current` to be true       
 **Prototype**
 ```cpp
-void set_exit_condition(int p_small_exit_time, double p_small_error, int p_big_exit_time = 0, double p_big_error = 0, int p_velocity_exit_time = 0, int p_mA_timeout = 0);
+void exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time = 0, double p_big_error = 0, int p_velocity_exit_time = 0, int p_mA_timeout = 0);
 
 ```
 
@@ -129,7 +129,7 @@ void set_exit_condition(int p_small_exit_time, double p_small_error, int p_big_e
 ```cpp
 PID liftPID{1, 0.003, 4, 100, "Lift"};  
 void initialize() {
-  liftPID.set_exit_condition(100, 3, 500, 7, 500, 500);
+  liftPID.exit_condition_set(100, 3, 500, 7, 500, 500);
 }
 ```
 
@@ -139,18 +139,18 @@ void initialize() {
 
 
 
-## set_name()
+## name_set()
 A string that prints when exit conditions are met.  When you have multiple mechanisms using exit conditions and you're debugging, seeing which exit condition is doing what can be useful.     
 **Prototype**
 ```cpp
-void set_name(std::string name);
+void name_set(std::string name);
 ```
 
 **Example** 
 ```cpp
 PID liftPID{1, 0.003, 4, 100};
 void initialize() {
-  liftPID.set_name("Lift");
+  liftPID.name_set("Lift");
 }  
 ```
 
@@ -173,10 +173,10 @@ pros::Motor lift_motor(1);
 void opcontrol() {
   while (true) {
     if (master.get_digital(DIGITAL_L1)) {
-      liftPID.set_target(500);
+      liftPID.target_set(500);
     }
     else if (master.get_digital(DIGITAL_L2)) {
-      liftPID.set_target(0);
+      liftPID.target_set(0);
     }
     lift_motor = liftPID.compute(lift_motor.get_position());
 
@@ -205,17 +205,17 @@ PID liftPID{1, 0.003, 4, 100, "Lift"};
 pros::Motor lift_motor(1);
 
 void initialize() {
-  liftPID.set_exit_condition(100, 3, 500, 7, 500, 500);
+  liftPID.exit_condition_set(100, 3, 500, 7, 500, 500);
 }
 
 void autonomous() {
-  liftPID.set_target(500);
+  liftPID.target_set(500);
   while (liftPID.exit_condition(true) == ez::RUNNING) {
     lift_motor = liftPID.compute(lift_motor.get_position());
     pros::delay(ez::util::DELAY_TIME);
   }
 
-  liftPID.set_target(0);
+  liftPID.target_set(0);
   while (liftPID.exit_condition(true) == ez::RUNNING) {
     lift_motor = liftPID.compute(lift_motor.get_position());
     pros::delay(ez::util::DELAY_TIME);
@@ -241,17 +241,17 @@ PID liftPID{1, 0.003, 4, 100, "Lift"};
 pros::Motor lift_motor(1);
 
 void initialize() {
-  liftPID.set_exit_condition(100, 3, 500, 7, 500, 500);
+  liftPID.exit_condition_set(100, 3, 500, 7, 500, 500);
 }
 
 void autonomous() {
-  liftPID.set_target(500);
+  liftPID.target_set(500);
   while (liftPID.exit_condition(lift_motor, true) == ez::RUNNING) {
     lift_motor = liftPID.compute(lift_motor.get_position());
     pros::delay(ez::util::DELAY_TIME);
   }
 
-  liftPID.set_target(0);
+  liftPID.target_set(0);
   while (liftPID.exit_condition(lift_motor, true) == ez::RUNNING) {
     lift_motor = liftPID.compute(lift_motor.get_position());
     pros::delay(ez::util::DELAY_TIME);
@@ -283,17 +283,17 @@ void set_lift(int input) {
 }
 
 void initialize() {
-  liftPID.set_exit_condition(100, 3, 500, 7, 500, 500);
+  liftPID.exit_condition_set(100, 3, 500, 7, 500, 500);
 }
 
 void autonomous() {
-  liftPID.set_target(500);
+  liftPID.target_set(500);
   while (liftPID.exit_condition({r_lift_motor, l_lift_motor}, true) == ez::RUNNING) {
     set_lift(liftPID.compute(lift_motor.get_position()));
     pros::delay(ez::util::DELAY_TIME);
   }
 
-  liftPID.set_target(0);
+  liftPID.target_set(0);
   while (liftPID.exit_condition({r_lift_motor, l_lift_motor}, true) == ez::RUNNING) {
     set_lift(liftPID.compute(lift_motor.get_position()));
     pros::delay(ez::util::DELAY_TIME);

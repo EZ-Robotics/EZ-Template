@@ -33,7 +33,7 @@ PID liftPID{0.45, 0, 0, 0, "Lift"};
 
 
 void lift_auto(double target) {
-  liftPID.set_target(target);
+  liftPID.target_set(target);
   ez::e_exit_output exit = ez::RUNNING;
   while (liftPID.exit_condition({l_lift, r_lift}, true) == ez::RUNNING) {
     double output = liftPID.compute(l_lift.get_position());
@@ -44,7 +44,7 @@ void lift_auto(double target) {
 }
 
 void initialize() {
-  liftPID.set_exit_condition(80, 50, 300, 150, 500, 500);
+  liftPID.exit_condition_set(80, 50, 300, 150, 500, 500);
 }
 
 void autonomous() {
@@ -54,10 +54,10 @@ void autonomous() {
 void opcontrol() {
   while (true) {
     if (master.get_digital(DIGITAL_L1)) {
-      liftPID.set_target(500);
+      liftPID.target_set(500);
     }
     else if (master.get_digital(DIGITAL_L2)) {
-      liftPID.set_target(0);
+      liftPID.target_set(0);
     }
     set_lift(liftPID.compute(l_lift.get_position()));
 

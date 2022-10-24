@@ -44,12 +44,12 @@ class PID {
    * \param p_start_i
    *        error value that i starts within
    */
-  void set_constants(double p, double i = 0, double d = 0, double p_start_i = 0);
+  void constants_set(double p, double i = 0, double d = 0, double p_start_i = 0);
 
   /**
    * Struct for constants.
    */
-  struct Constants {
+  struct constants_ {
     double kp;
     double ki;
     double kd;
@@ -82,7 +82,7 @@ class PID {
    * \param p_velocity_exit_time
    *        Sets velocity_exit_time.  Timer will start when velocity is 0.
    */
-  void set_exit_condition(int p_small_exit_time, double p_small_error, int p_big_exit_time = 0, double p_big_error = 0, int p_velocity_exit_time = 0, int p_mA_timeout = 0);
+  void exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time = 0, double p_big_error = 0, int p_velocity_exit_time = 0, int p_mA_timeout = 0);
 
   /**
    * Sets target.
@@ -90,7 +90,7 @@ class PID {
    * \param target
    *        Target for PID.
    */
-  void set_target(double input);
+  void target_set(double input);
 
   /**
    * Computes PID.
@@ -103,22 +103,22 @@ class PID {
   /**
    * Returns target value.
    */
-  double get_target();
+  double target_get();
 
   /**
    * Returns constants.
    */
-  Constants get_constants();
+  constants_ constants_get();
 
   /**
    * Resets all variables to 0.  This does not reset constants.
    */
-  void reset_variables();
+  void variables_reset();
 
   /**
-   * Constants
+   * constants_
    */
-  Constants constants;
+  constants_ constants;
 
   /**
    * Exit
@@ -159,7 +159,7 @@ class PID {
    * \param name
    *        a string that is the name you want to print
    */
-  void set_name(std::string name);
+  void name_set(std::string name);
 
   /**
    * PID variables.
@@ -168,17 +168,17 @@ class PID {
   double cur;
   double error;
   double target;
-  double prev_error;
+  double error_prev;
   double integral;
   double derivative;
   long time;
-  long prev_time;
+  long time_prev;
 
  private:
   int i = 0, j = 0, k = 0, l = 0;
   bool is_mA = false;
-  void reset_timers();
+  void timers_reset();
   std::string name;
   bool is_name = false;
-  void print_exit(ez::e_exit_output exit_type);
+  void exit_print(ez::e_exit_output exit_type);
 };
