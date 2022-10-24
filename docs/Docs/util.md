@@ -164,17 +164,17 @@ void opcontrol() {
 ---
 
 
-## IS_SD_CARD
+## SD_CARD_ACTIVE
 Boolean that checks if an sd card is installed.  True if there is one, false if there isn't.    
 **Prototype**
 ```cpp
-const bool IS_SD_CARD = pros::usd::is_installed();
+const bool SD_CARD_ACTIVE = pros::usd::is_installed();
 ```
 
 **Example**
 ```cpp
 void initialize() {
-  if (!ez::util::IS_SD_CARD) 
+  if (!ez::util::SD_CARD_ACTIVE) 
     printf("No SD Card Found!\n");
 }
 ```

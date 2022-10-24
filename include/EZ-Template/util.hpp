@@ -97,7 +97,7 @@ double clamp_number(double input, double max, double min);
 /**
  * Is the SD card plugged in?
  */
-const bool IS_SD_CARD = pros::usd::is_installed();
+const bool SD_CARD_ACTIVE = pros::usd::is_installed();
 
 /**
  * Delay time for tasks

@@ -13,7 +13,7 @@ AutonSelector auton_selector{};
 
 void update_auto_sd() {
   // If no SD card, return
-  if (!ez::util::IS_SD_CARD) return;
+  if (!ez::util::SD_CARD_ACTIVE) return;
 
   FILE* usd_file_write = fopen("/usd/auto.txt", "w");
   std::string cp_str = std::to_string(auton_selector.current_auton_page);
@@ -24,7 +24,7 @@ void update_auto_sd() {
 
 void init_auton_selector() {
   // If no SD card, return
-  if (!ez::util::IS_SD_CARD) return;
+  if (!ez::util::SD_CARD_ACTIVE) return;
 
   FILE* as_usd_file_read;
   // If file exists...

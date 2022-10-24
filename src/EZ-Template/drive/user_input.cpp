@@ -18,7 +18,7 @@ void Drive::set_curve_default(double left, double right) {
 // Initialize curve SD card
 void Drive::init_curve_sd() {
   // If no SD card, return
-  if (!ez::util::IS_SD_CARD) return;
+  if (!ez::util::SD_CARD_ACTIVE) return;
 
   FILE* l_usd_file_read;
   // If file exists...
@@ -52,7 +52,7 @@ void Drive::init_curve_sd() {
 // Save new left curve to SD card
 void Drive::save_l_curve_sd() {
   // If no SD card, return
-  if (!ez::util::IS_SD_CARD) return;
+  if (!ez::util::SD_CARD_ACTIVE) return;
 
   FILE* usd_file_write = fopen("/usd/left_curve.txt", "w");
   std::string in_str = std::to_string(left_curve_scale);
@@ -64,7 +64,7 @@ void Drive::save_l_curve_sd() {
 // Save new right curve to SD card
 void Drive::save_r_curve_sd() {
   // If no SD card, return
-  if (!ez::util::IS_SD_CARD) return;
+  if (!ez::util::SD_CARD_ACTIVE) return;
 
   FILE* usd_file_write = fopen("/usd/right_curve.txt", "w");
   std::string in_str = std::to_string(right_curve_scale);
