@@ -8,31 +8,31 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 AutonSelector::AutonSelector() {
   auton_count = 0;
-  current_auton_page = 0;
-  Autons = {};
+  auton_page_current = 0;
+  autons = {};
 }
 
 AutonSelector::AutonSelector(std::vector<Auton> autons) {
   auton_count = autons.size();
-  current_auton_page = 0;
-  Autons = {};
-  Autons.assign(autons.begin(), autons.end());
+  auton_page_current = 0;
+  autons = {};
+  autons.assign(autons.begin(), autons.end());
 }
 
-void AutonSelector::print_selected_auton() {
+void AutonSelector::selected_auton_print() {
   if (auton_count == 0) return;
   for (int i = 0; i < 8; i++)
     pros::lcd::clear_line(i);
-  ez::screen_print("Page " + std::to_string(current_auton_page + 1) + "\n" + Autons[current_auton_page].name);
+  ez::screen_print("Page " + std::to_string(auton_page_current + 1) + "\n" + autons[auton_page_current].name);
 }
 
-void AutonSelector::call_selected_auton() {
+void AutonSelector::selected_auton_call() {
   if (auton_count == 0) return;
-  Autons[current_auton_page].auton_call();
+  autons[auton_page_current].auton_call();
 }
 
-void AutonSelector::add_autons(std::vector<Auton> autons) {
+void AutonSelector::autons_add(std::vector<Auton> autons) {
   auton_count += autons.size();
-  current_auton_page = 0;
-  Autons.assign(autons.begin(), autons.end());
+  auton_page_current = 0;
+  autons.assign(autons.begin(), autons.end());
 }

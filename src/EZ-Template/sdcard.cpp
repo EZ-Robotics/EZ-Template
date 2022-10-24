@@ -16,7 +16,7 @@ void auton_sd_update() {
   if (!ez::util::SD_CARD_ACTIVE) return;
 
   FILE* usd_file_write = fopen("/usd/auto.txt", "w");
-  std::string cp_str = std::to_string(auton_selector.current_auton_page);
+  std::string cp_str = std::to_string(auton_selector.auton_page_current);
   char const* cp_c = cp_str.c_str();
   fputs(cp_c, usd_file_write);
   fclose(usd_file_write);
@@ -31,7 +31,7 @@ void auton_selector_init() {
   if ((as_usd_file_read = fopen("/usd/auto.txt", "r"))) {
     char l_buf[5];
     fread(l_buf, 1, 5, as_usd_file_read);
-    ez::as::auton_selector.current_auton_page = std::stof(l_buf);
+    ez::as::auton_selector.auton_page_current = std::stof(l_buf);
     fclose(as_usd_file_read);
   }
   // If file doesn't exist, create file
@@ -40,28 +40,28 @@ void auton_selector_init() {
     printf("Created auto.txt\n");
   }
 
-  if (ez::as::auton_selector.current_auton_page > ez::as::auton_selector.auton_count - 1 || ez::as::auton_selector.current_auton_page < 0) {
-    ez::as::auton_selector.current_auton_page = 0;
+  if (ez::as::auton_selector.auton_page_current > ez::as::auton_selector.auton_count - 1 || ez::as::auton_selector.auton_page_current < 0) {
+    ez::as::auton_selector.auton_page_current = 0;
     ez::as::auton_sd_update();
   }
 }
 
 void page_up() {
-  if (auton_selector.current_auton_page == auton_selector.auton_count - 1)
-    auton_selector.current_auton_page = 0;
+  if (auton_selector.auton_page_current == auton_selector.auton_count - 1)
+    auton_selector.auton_page_current = 0;
   else
-    auton_selector.current_auton_page++;
+    auton_selector.auton_page_current++;
   auton_sd_update();
-  auton_selector.print_selected_auton();
+  auton_selector.selected_auton_print();
 }
 
 void page_down() {
-  if (auton_selector.current_auton_page == 0)
-    auton_selector.current_auton_page = auton_selector.auton_count - 1;
+  if (auton_selector.auton_page_current == 0)
+    auton_selector.auton_page_current = auton_selector.auton_count - 1;
   else
-    auton_selector.current_auton_page--;
+    auton_selector.auton_page_current--;
   auton_sd_update();
-  auton_selector.print_selected_auton();
+  auton_selector.selected_auton_print();
 }
 
 void initialize() {
@@ -70,7 +70,7 @@ void initialize() {
   ez::as::auton_selector_init();
 
   // Callbacks for auto selector
-  ez::as::auton_selector.print_selected_auton();
+  ez::as::auton_selector.selected_auton_print();
   pros::lcd::register_btn0_cb(ez::as::page_down);
   pros::lcd::register_btn2_cb(ez::as::page_up);
 }

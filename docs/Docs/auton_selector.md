@@ -83,11 +83,11 @@ void initialize() {
 ---
 
 
-## add_autons();
+## autons_add();
 Adds autonomous routines to the autonomous selector. Uses `ez::screen_print()` to display to the brain.  
 **Prototype**
 ```cpp
-void add_autons(std::vector<Auton> autons);
+void autons_add(std::vector<Auton> autons);
 ```
 
 **Example**
@@ -103,7 +103,7 @@ void auto3() {
 }
 
 void initialize() {
-  ez::as::auton_selector.add_autons({
+  ez::as::auton_selector.autons_add({
     Auton("Autonomous 1\nDoes Something", auto1),
     Auton("Autonomous 2\nDoes Something Else", auto2),
     Auton("Autonomous 3\nDoes Something More", auto3),
@@ -115,17 +115,17 @@ void initialize() {
 ---
 
 
-## print_selected_auton();
+## selected_auton_print();
 Prints the current autonomous mode to the screen.    
 **Prototype**
 ```cpp
-void print_selected_auton();
+void selected_auton_print();
 ```
 
 **Example**
 ```cpp
 void initialize() {
-  ez::as::auton_selector.print_selected_auton(); 
+  ez::as::auton_selector.selected_auton_print(); 
 }
 ```
  
@@ -172,11 +172,11 @@ void initialize() {
 ---
 
 
-## call_selected_auton()
+## selected_auton_call()
 Runs the current autonomous that's selected.    
 **Prototype**
 ```cpp
-void call_selected_auton();
+void selected_auton_call();
 ```
 
 **Example**
@@ -186,7 +186,7 @@ void autonomous() {
   chassis.reset_drive_sensor(); 
   chassis.set_drive_brake(MOTOR_BRAKE_HOLD); 
 
-  ez::as::auton_selector.call_selected_auton(); 
+  ez::as::auton_selector.selected_auton_call(); 
 }
 ```
 

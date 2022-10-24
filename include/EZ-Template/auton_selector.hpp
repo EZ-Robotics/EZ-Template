@@ -12,12 +12,12 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 using namespace std;
 class AutonSelector {
  public:
-  std::vector<Auton> Autons;
-  int current_auton_page;
+  std::vector<Auton> autons;
+  int auton_page_current;
   int auton_count;
   AutonSelector();
   AutonSelector(std::vector<Auton> autons);
-  void call_selected_auton();
-  void print_selected_auton();
-  void add_autons(std::vector<Auton> autons);
+  void selected_auton_call();
+  void selected_auton_print();
+  void autons_add(std::vector<Auton> autons);
 };
