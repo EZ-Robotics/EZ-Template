@@ -11,7 +11,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 namespace ez::as {
 AutonSelector auton_selector{};
 
-void update_auto_sd() {
+void auton_sd_update() {
   // If no SD card, return
   if (!ez::util::SD_CARD_ACTIVE) return;
 
@@ -22,7 +22,7 @@ void update_auto_sd() {
   fclose(usd_file_write);
 }
 
-void init_auton_selector() {
+void auton_selector_init() {
   // If no SD card, return
   if (!ez::util::SD_CARD_ACTIVE) return;
 
@@ -36,13 +36,13 @@ void init_auton_selector() {
   }
   // If file doesn't exist, create file
   else {
-    update_auto_sd();  // Writing to a file that doesn't exist creates the file
+    auton_sd_update();  // Writing to a file that doesn't exist creates the file
     printf("Created auto.txt\n");
   }
 
   if (ez::as::auton_selector.current_auton_page > ez::as::auton_selector.auton_count - 1 || ez::as::auton_selector.current_auton_page < 0) {
     ez::as::auton_selector.current_auton_page = 0;
-    ez::as::update_auto_sd();
+    ez::as::auton_sd_update();
   }
 }
 
@@ -51,7 +51,7 @@ void page_up() {
     auton_selector.current_auton_page = 0;
   else
     auton_selector.current_auton_page++;
-  update_auto_sd();
+  auton_sd_update();
   auton_selector.print_selected_auton();
 }
 
@@ -60,14 +60,14 @@ void page_down() {
     auton_selector.current_auton_page = auton_selector.auton_count - 1;
   else
     auton_selector.current_auton_page--;
-  update_auto_sd();
+  auton_sd_update();
   auton_selector.print_selected_auton();
 }
 
 void initialize() {
   // Initialize auto selector and LLEMU
   pros::lcd::initialize();
-  ez::as::init_auton_selector();
+  ez::as::auton_selector_init();
 
   // Callbacks for auto selector
   ez::as::auton_selector.print_selected_auton();
@@ -82,28 +82,28 @@ void shutdown() {
 bool turn_off = false;
 
 // Using a button to control the lcd
-pros::ADIDigitalIn* left_limit_switch = nullptr;
-pros::ADIDigitalIn* right_limit_switch = nullptr;
-pros::Task limit_switch_task(limitSwitchTask);
+pros::ADIDigitalIn* limit_switch_left = nullptr;
+pros::ADIDigitalIn* limit_switch_right = nullptr;
+pros::Task limit_switch_task(limit_switch_task);
 void limit_switch_lcd_initialize(pros::ADIDigitalIn* right_limit, pros::ADIDigitalIn* left_limit) {
   if (!left_limit && !right_limit) {
-    delete left_limit_switch;
-    delete right_limit_switch;
+    delete limit_switch_left;
+    delete limit_switch_right;
     if (pros::millis() <= 100)
       turn_off = true;
     return;
   }
   turn_off = false;
-  right_limit_switch = right_limit;
-  left_limit_switch = left_limit;
+  limit_switch_right = right_limit;
+  limit_switch_left = left_limit;
   limit_switch_task.resume();
 }
 
-void limitSwitchTask() {
+void limit_switch_task() {
   while (true) {
-    if (right_limit_switch && right_limit_switch->get_new_press())
+    if (limit_switch_right && limit_switch_right->get_new_press())
       page_up();
-    else if (left_limit_switch && left_limit_switch->get_new_press())
+    else if (limit_switch_left && limit_switch_left->get_new_press())
       page_down();
 
     if (pros::millis() >= 500 && turn_off)
