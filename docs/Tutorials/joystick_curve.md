@@ -29,11 +29,11 @@ When the robot is on, tapping/holding the left/right arrows will increase/decrea
 ## Enabling   
 After you find values you like, in `src/main.cpp` set `chassis.set_curve_defaults(0, 0)` to whatever you liked! The first parameter is left stick, second is right stick.  When using tank, only the left stick value is used.    
 
-In `src/main.cpp`, in `void initialize()`, if `chassis.toggle_modify_curve_with_controller(true)` is enabled, by pressing the left/right (or y/a if arcade is enabled), you can live adjust your curve and it will display to your controller!   
+In `src/main.cpp`, in `void initialize()`, if `chassis.curve_toggle_modify_with_controller(true)` is enabled, by pressing the left/right (or y/a if arcade is enabled), you can live adjust your curve and it will display to your controller!   
 
 If you have an sd card plugged in, after changing the number with your controller, the value will save to the sd card.  
 
 ## Disabling  
 To disable the joystick curve, in `src/main.cpp` make sure these are 0 `chassis.set_curve_defaults(0, 0)`.  
 
-To disable modifying the curve with the controller, make sure `chassis.toggle_modify_curve_with_controller(true)` is false.  
+To disable modifying the curve with the controller, make sure `chassis.curve_toggle_modify_with_controller(true)` is false.  

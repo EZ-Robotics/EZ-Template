@@ -23,8 +23,8 @@ PTO (power take off) is used to share power between two mechanisms, usually betw
 
 ## Example  
 ```cpp
-pros::Motor& intake_l = chassis.left_motors[1];
-pros::Motor& intake_r = chassis.right_motors[1];
+pros::Motor& intake_l = chassis.motors_left[1];
+pros::Motor& intake_r = chassis.motors_right[1];
 pros::ADIDigitalOut pto_intake_piston('A');
 bool pto_intake_enabled = false;
 
@@ -63,7 +63,7 @@ void intake_control() {
 
 void opcontrol() {
   // This is preference to what you like to drive on.
-  chassis.set_drive_brake(MOTOR_BRAKE_COAST);
+  chassis.drive_brake_set(MOTOR_BRAKE_COAST);
 
   while (true) {
 

@@ -23,7 +23,7 @@ void Drive::pto_add(std::vector<pros::Motor> pto_list) {
     if (pto_check(i)) return;
 
     // Return if the first index was used (this motor is used for velocity)
-    if (i.get_port() == left_motors[0].get_port() || i.get_port() == right_motors[0].get_port()) {
+    if (i.get_port() == motors_left[0].get_port() || i.get_port() == motors_right[0].get_port()) {
       printf("You cannot PTO the first index!\n");
       return;
     }

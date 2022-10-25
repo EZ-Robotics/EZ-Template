@@ -30,10 +30,10 @@ extern pros::Controller master();
 ```cpp
 void opcontrol() {
   while (true) {
-    int l_stick = left_curve_function(master.get_analog(ANALOG_LEFT_Y));
-    int r_stick = left_curve_function(master.get_analog(ANALOG_RIGHT_Y));
+    int l_stick = curve_left_function(master.get_analog(ANALOG_LEFT_Y));
+    int r_stick = curve_left_function(master.get_analog(ANALOG_RIGHT_Y));
     
-    chassis.set_tank(l_stick, r_stick);
+    chassis.tank_set(l_stick, r_stick);
     
     pros::delay(ez::util::DELAY_TIME);
   }

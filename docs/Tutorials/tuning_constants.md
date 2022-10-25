@@ -44,13 +44,13 @@ Look at our [Using Auton Selector tutorial](https://ez-robotics.github.io/EZ-Tem
 In `src/autons.cpp`, there is a function called `default_constants()`.  This function is where all of your modified PID constants can be set.  
 ```cpp
 void default_constants() {
-  chassis.set_slew_min_power(80, 80);
-  chassis.set_slew_distance(7, 7);
-  chassis.set_pid_constants(&chassis.headingPID, 11, 0, 20, 0);
-  chassis.set_pid_constants(&chassis.forward_drivePID, 0.45, 0, 5, 0);
-  chassis.set_pid_constants(&chassis.backward_drivePID, 0.45, 0, 5, 0);
-  chassis.set_pid_constants(&chassis.turnPID, 5, 0.003, 35, 15);
-  chassis.set_pid_constants(&chassis.swingPID, 7, 0, 45, 0);
+  chassis.slew_min_power_set(80, 80);
+  chassis.slew_distance_set(7, 7);
+  chassis.set_pid_constants(&chassis.pid_heading, 11, 0, 20, 0);
+  chassis.set_pid_constants(&chassis.pid_forward_drive, 0.45, 0, 5, 0);
+  chassis.set_pid_constants(&chassis.pid_backward_drive, 0.45, 0, 5, 0);
+  chassis.set_pid_constants(&chassis.pid_turn, 5, 0.003, 35, 15);
+  chassis.set_pid_constants(&chassis.pid_swing, 7, 0, 45, 0);
 }
 ```
 
@@ -59,12 +59,12 @@ void default_constants() {
 When your robot has huge weight shifts (grabbing a mobile goal, raising a lift, etc), you might want to have different constants for those states.  You can have multiple functions with constants for different states, and change constants during your autonomous routine.
 ```cpp
 void grab_mogo() {
-  chassis.set_drive_pid(40, 110, true);
-  chassis.wait_drive();
+  chassis.pid_drive_set(40, 110, true);
+  chassis.drive_wait_exit();
 
   one_mogo_constants();
-  chassis.set_drive_pid(-40, 110, true);
-  chassis.wait_drive();
+  chassis.pid_drive_set(-40, 110, true);
+  chassis.drive_wait_exit();
 }
 ```
 
@@ -100,8 +100,8 @@ Using the steps above, modify your kP, kD, and if you chose to, kI.
 
 If you see the robot acting differently going forwards and backwards, you can have different constants for each.  This is usually only needed when something is off balance on your robot mechanically.
 ```cpp
-  chassis.set_pid_constants(&chassis.forward_drivePID, 0.45, 0, 5, 0);
-  chassis.set_pid_constants(&chassis.backward_drivePID, 0.45, 0, 5, 0);
+  chassis.set_pid_constants(&chassis.pid_forward_drive, 0.45, 0, 5, 0);
+  chassis.set_pid_constants(&chassis.pid_backward_drive, 0.45, 0, 5, 0);
 ```
 
 
@@ -111,7 +111,7 @@ Heading correction tries to keep your robot facing an angle while driving forwar
 The same steps above can be used to tune the heading constants.  Increase kP until there's a little oscillation, increase kD until it goes away, repeat. 
 
 ```cpp
-  chassis.set_pid_constants(&chassis.headingPID, 11, 0, 20, 0);
+  chassis.set_pid_constants(&chassis.pid_heading, 11, 0, 20, 0);
 ```
 
 
@@ -123,8 +123,8 @@ Minimum power should be as high as it can be without causing the robot to wheeli
 Slew distance should be as small as it can be without causing the same. 
 
 ```cpp
-  chassis.set_slew_min_power(80, 80);
-  chassis.set_slew_distance(7, 7);
+  chassis.slew_min_power_set(80, 80);
+  chassis.slew_distance_set(7, 7);
 ```
 
 
@@ -141,8 +141,8 @@ Increase kD until the oscillation is gone.
 
 Repeat until kD cannot fix the oscillation.  
 ```cpp
-  chassis.set_pid_constants(&chassis.turnPID, 5, 0.003, 35, 15);
-  chassis.set_pid_constants(&chassis.swingPID, 7, 0, 45, 0);
+  chassis.set_pid_constants(&chassis.pid_turn, 5, 0.003, 35, 15);
+  chassis.set_pid_constants(&chassis.pid_swing, 7, 0, 45, 0);
 ```
 
 
@@ -154,5 +154,5 @@ Sometimes you need a little extra power to get your robot all the way there.  In
 Increase kI until any minor disturbances are accounted for.  You might need to adjust kD while tuning kI.   
 
 ```cpp
-  chassis.set_pid_constants(&chassis.turnPID, 5, 0.003, 35, 15);
+  chassis.set_pid_constants(&chassis.pid_turn, 5, 0.003, 35, 15);
 ```

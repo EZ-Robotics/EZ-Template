@@ -20,7 +20,7 @@ using namespace ez;
 class Drive {
  public:
   /**
-   * Joysticks will return 0 when they are within this number.  Set with set_joystick_threshold()
+   * Joysticks will return 0 when they are within this number.  Set with joystick_threshold_set()
    */
   int JOYSTICK_THRESHOLD;
 
@@ -37,17 +37,17 @@ class Drive {
   /**
    * Current swing type.
    */
-  e_swing current_swing;
+  e_swing swing_current;
 
   /**
    * Vector of pros motors for the left chassis.
    */
-  std::vector<pros::Motor> left_motors;
+  std::vector<pros::Motor> motors_left;
 
   /**
    * Vector of pros motors for the right chassis.
    */
-  std::vector<pros::Motor> right_motors;
+  std::vector<pros::Motor> motors_right;
 
   /**
    * Vector of pros motors that are disconnected from the drive.
@@ -62,33 +62,33 @@ class Drive {
   /**
    * Left tracking wheel.
    */
-  pros::ADIEncoder left_tracker;
+  pros::ADIEncoder tracker_left;
 
   /**
    * Right tracking wheel.
    */
-  pros::ADIEncoder right_tracker;
+  pros::ADIEncoder tracker_right;
 
   /**
    * Left rotation tracker.
    */
-  pros::Rotation left_rotation;
+  pros::Rotation rotation_left;
 
   /**
    * Right rotation tracker.
    */
-  pros::Rotation right_rotation;
+  pros::Rotation rotation_right;
 
   /**
    * PID objects.
    */
-  PID headingPID;
-  PID turnPID;
-  PID forward_drivePID;
-  PID leftPID;
-  PID rightPID;
-  PID backward_drivePID;
-  PID swingPID;
+  PID pid_heading;
+  PID pid_turn;
+  PID pid_forward_drive;
+  PID pid_left;
+  PID pid_right;
+  PID pid_backward_drive;
+  PID pid_swing;
 
   /**
    * Current mode of the drive.
@@ -98,12 +98,12 @@ class Drive {
   /**
    * Sets current mode of drive.
    */
-  void set_mode(e_mode p_mode);
+  void mode_set(e_mode p_mode);
 
   /**
    * Returns current mode of drive.
    */
-  e_mode get_mode();
+  e_mode mode_get();
 
   /**
    * Calibrates imu and initializes sd card to curve.
@@ -202,7 +202,7 @@ class Drive {
   /**
    * Sets drive defaults.
    */
-  void set_defaults();
+  void defaults_set();
 
   /////
   //
@@ -237,7 +237,7 @@ class Drive {
   /**
    * Initializes left and right curves with the SD card, recommended to run in initialize().
    */
-  void init_curve_sd();
+  void curve_init_sd();
 
   /**
    * Sets the default joystick curves.
@@ -247,7 +247,7 @@ class Drive {
    * \param right
    *        Right default curve.
    */
-  void set_curve_default(double left, double right = 0);
+  void curve_set_default(double left, double right = 0);
 
   /**
    * Runs a P loop on the drive when the joysticks are released.
@@ -255,7 +255,7 @@ class Drive {
    * \param kp
    *        Constant for the p loop.
    */
-  void set_active_brake(double kp);
+  void active_brake_set(double kp);
 
   /**
    * Enables/disables modifying the joystick input curves with the controller.  True enables, false disables.
@@ -263,7 +263,7 @@ class Drive {
    * \param input
    *        bool input
    */
-  void toggle_modify_curve_with_controller(bool toggle);
+  void curve_toggle_modify_with_controller(bool toggle);
 
   /**
    * Sets buttons for modifying the left joystick curve.
@@ -273,7 +273,7 @@ class Drive {
    * \param increase
    *        a pros button enumerator
    */
-  void set_left_curve_buttons(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase);
+  void curve_buttons_left_set(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase);
 
   /**
    * Sets buttons for modifying the right joystick curve.
@@ -283,7 +283,7 @@ class Drive {
    * \param increase
    *        a pros button enumerator
    */
-  void set_right_curve_buttons(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase);
+  void curve_buttons_right_set(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase);
 
   /**
    * Outputs a curve from 5225A In the Zone.  This gives more control over the robot at lower speeds.  https://www.desmos.com/calculator/rcfjjg83zx
@@ -291,7 +291,7 @@ class Drive {
    * \param x
    *        joystick input
    */
-  double left_curve_function(double x);
+  double curve_left_function(double x);
 
   /**
    * Outputs a curve from 5225A In the Zone.  This gives more control over the robot at lower speeds.  https://www.desmos.com/calculator/rcfjjg83zx
@@ -299,7 +299,7 @@ class Drive {
    * \param x
    *        joystick input
    */
-  double right_curve_function(double x);
+  double curve_right_function(double x);
 
   /**
    * Sets a new threshold for the joystick.  The joysticks wil not return a value if they are within this.
@@ -307,12 +307,12 @@ class Drive {
    * \param threshold
    *        new threshold
    */
-  void set_joystick_threshold(int threshold);
+  void joystick_threshold_set(int threshold);
 
   /**
    * Resets drive sensors at the start of opcontrol.
    */
-  void reset_drive_sensors_opcontrol();
+  void drive_sensors_reset_opcontrol();
 
   /**
    * Sets minimum slew distance constants.
@@ -322,7 +322,7 @@ class Drive {
    * \param r_stick
    *        input for right joystick
    */
-  void joy_thresh_opcontrol(int l_stick, int r_stick);
+  void joystick_threshold_opcontrol(int l_stick, int r_stick);
 
   /////
   //
@@ -378,7 +378,7 @@ class Drive {
    * \param right
    *        voltage for right side, -127 to 127
    */
-  void set_tank(int left, int right);
+  void tank_set(int left, int right);
 
   /**
    * Changes the way the drive behaves when it is not under active user control
@@ -386,7 +386,7 @@ class Drive {
    * \param brake_type
    *        the 'brake mode' of the motor e.g. 'pros::E_MOTOR_BRAKE_COAST' 'pros::E_MOTOR_BRAKE_BRAKE' 'pros::E_MOTOR_BRAKE_HOLD'
    */
-  void set_drive_brake(pros::motor_brake_mode_e_t brake_type);
+  void drive_brake_set(pros::motor_brake_mode_e_t brake_type);
 
   /**
    * Sets the limit for the current on the drive.
@@ -394,17 +394,17 @@ class Drive {
    * \param mA
    *        input in milliamps
    */
-  void set_drive_current_limit(int mA);
+  void drive_current_limit_set(int mA);
 
   /**
    * Toggles set drive in autonomous. True enables, false disables.
    */
-  void toggle_auto_drive(bool toggle);
+  void auto_drive_toggle(bool toggle);
 
   /**
    * Toggles printing in autonomous. True enables, false disables.
    */
-  void toggle_auto_print(bool toggle);
+  void auto_print_toggle(bool toggle);
 
   /////
   //
@@ -415,57 +415,57 @@ class Drive {
   /**
    * The position of the right motor.
    */
-  double right_sensor();
+  double sensor_right();
 
   /**
    * The position of the right motor.
    */
-  int raw_right_sensor();
+  int sensor_right_raw();
 
   /**
    * The velocity of the right motor.
    */
-  int right_velocity();
+  int velocity_right();
 
   /**
    * The watts of the right motor.
    */
-  double right_mA();
+  double mA_right();
 
   /**
    * Return TRUE when the motor is over current.
    */
-  bool right_over_current();
+  bool over_current_right();
 
   /**
    * The position of the left motor.
    */
-  double left_sensor();
+  double sensor_left();
 
   /**
    * The position of the left motor.
    */
-  int raw_left_sensor();
+  int sensor_left_raw();
 
   /**
    * The velocity of the left motor.
    */
-  int left_velocity();
+  int velocity_left();
 
   /**
    * The watts of the left motor.
    */
-  double left_mA();
+  double mA_left();
 
   /**
    * Return TRUE when the motor is over current.
    */
-  bool left_over_current();
+  bool over_current_left();
 
   /**
    * Reset all the chassis motors, recommended to run at the start of your autonomous routine.
    */
-  void reset_drive_sensor();
+  void drive_sensors_reset();
 
   /**
    * Resets the current gyro value.  Defaults to 0, recommended to run at the start of your autonomous routine.
@@ -473,12 +473,12 @@ class Drive {
    * \param new_heading
    *        New heading value.
    */
-  void reset_gyro(double new_heading = 0);
+  void imu_reset(double new_heading = 0);
 
   /**
    * Returns the current gyro value.
    */
-  double get_gyro();
+  double imu_get();
 
   /**
    * Calibrates the IMU, recommended to run in initialize().
@@ -498,7 +498,7 @@ class Drive {
    *
    * @param toggle True if you want this mode enables and False if you want it disabled.
    */
-  void toggle_practice_mode(bool toggle);
+  void practice_mode_toggle(bool toggle);
 
   /////
   //
@@ -518,7 +518,7 @@ class Drive {
    * \param toggle_heading
    *        toggle for heading correction
    */
-  void set_drive_pid(okapi::QLength p_target, int speed, bool slew_on = false, bool toggle_heading = true);
+  void pid_drive_set(okapi::QLength p_target, int speed, bool slew_on = false, bool toggle_heading = true);
 
   /**
    * Sets the robot to turn using PID.
@@ -528,17 +528,17 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    */
-  void set_turn_pid(double target, int speed);
+  void pid_turn_set(double target, int speed);
 
   /**
-  * Sets the robot to turn relative to current heading using PID.
-  * 
-  * \param target
-  *        target in degrees relative to current heading
-  * \param speed
-  *        0 to 127, max speed during motion
-  */
-  void set_relative_turn_pid(double target, int speed);
+   * Sets the robot to turn relative to current heading using PID.
+   *
+   * \param target
+   *        target in degrees relative to current heading
+   * \param speed
+   *        0 to 127, max speed during motion
+   */
+  void pid_relative_turn_set(double target, int speed);
 
   /**
    * Turn using only the left or right side.
@@ -550,22 +550,22 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    */
-  void set_swing_pid(e_swing type, double target, int speed);
+  void pid_swing_set(e_swing type, double target, int speed);
 
   /**
    * Resets all PID targets to 0.
    */
-  void reset_pid_targets();
+  void pid_targets_reset();
 
   /**
    * Sets heading of gyro and target of PID.
    */
-  void set_angle(double angle);
+  void angle_set(double angle);
 
   /**
    * Lock the code in a while loop until the robot has settled.
    */
-  void wait_drive();
+  void drive_wait_exit();
 
   /**
    * Lock the code in a while loop until this position has passed.
@@ -573,7 +573,7 @@ class Drive {
    * \param target
    *        when driving, this is inches.  when turning, this is degrees.
    */
-  void wait_until(double target);
+  void drive_wait_distance(double target);
 
   /**
    * Lock the code in a while loop until this position has passed for driving with okapi units.
@@ -581,7 +581,7 @@ class Drive {
    * \param target
    *        for driving, using okapi units
    */
-  void wait_until(okapi::QLength target);
+  void drive_wait_distance(okapi::QLength target);
 
   /**
    * Autonomous interference detection.  Returns true when interfered, and false when nothing happened.
@@ -594,14 +594,14 @@ class Drive {
    * @param ratio
    *        ratio of the gears
    */
-  void set_ratio(double ratio);
+  void ratio_set(double ratio);
   /**
    * Changes max speed during a drive motion.
    *
    * \param speed
    *        new clipped speed
    */
-  void set_max_speed(int speed);
+  void max_speed_set(int speed);
 
   /**
    * @brief Set the drive pid constants object
@@ -611,7 +611,7 @@ class Drive {
    * @param d           kD
    * @param p_start_i   start_I
    */
-  void set_drive_pid_constants(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
+  void pid_drive_constants_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
   /**
    * @brief Set the turn pid constants object
@@ -621,7 +621,7 @@ class Drive {
    * @param d           kD
    * @param p_start_i   start_I
    */
-  void set_turn_pid_constants(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
+  void pid_turn_constants_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
   /**
    * @brief Set the swing pid constants object
@@ -631,7 +631,7 @@ class Drive {
    * @param d           kD
    * @param p_start_i   start_I
    */
-  void set_swing_pid_constants(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
+  void pid_swing_constants_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
   /**
    * @brief Set the heading pid constants object
@@ -641,7 +641,7 @@ class Drive {
    * @param d           kD
    * @param p_start_i   start_I
    */
-  void set_heading_pid_constants(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
+  void pid_heading_constants_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
   /**
    * @brief Set the forward pid constants object
@@ -651,7 +651,7 @@ class Drive {
    * @param d           kD
    * @param p_start_i   start_I
    */
-  void set_drive_forward_pid_constants(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
+  void pid_drive_forward_constants_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
   /**
    * @brief Set the backwards pid constants object
@@ -661,7 +661,7 @@ class Drive {
    * @param d           kD
    * @param p_start_i   start_I
    */
-  void set_drive_backwards_pid_constants(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
+  void pid_drive_backwards_constants_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
   /**
    * Sets minimum power for swings when kI and startI are enabled.
@@ -669,7 +669,7 @@ class Drive {
    * \param min
    *        new clipped speed
    */
-  void set_swing_min(int min);
+  void swing_min_set(int min);
 
   /**
    * The minimum power for turns when kI and startI are enabled.
@@ -677,17 +677,17 @@ class Drive {
    * \param min
    *        new clipped speed
    */
-  void set_turn_min(int min);
+  void turn_min_set(int min);
 
   /**
    * Returns minimum power for swings when kI and startI are enabled.
    */
-  int get_swing_min();
+  int swing_min_get();
 
   /**
    * Returns minimum power for turns when kI and startI are enabled.
    */
-  int get_turn_min();
+  int turn_min_get();
 
   /**
    * Sets minimum slew speed constants.
@@ -697,7 +697,7 @@ class Drive {
    * \param rev
    *        minimum power for backwards drive pd
    */
-  void set_slew_min_power(int fwd, int rev);
+  void slew_min_power_set(int fwd, int rev);
 
   /**
    * Sets minimum slew distance constants.
@@ -707,7 +707,7 @@ class Drive {
    * \param rev
    *        minimum distance for backwards drive pd, okapi unit
    */
-  void set_slew_distance(okapi::QLength fwd, okapi::QLength rev);
+  void slew_distance_set(okapi::QLength fwd, okapi::QLength rev);
 
   /**
    * Set's constants for drive exit conditions.
@@ -723,7 +723,7 @@ class Drive {
    * \param p_velocity_exit_time
    *        Sets velocity_exit_time.  Timer will start when velocity is 0.
    */
-  void set_drive_exit_condition(int p_small_exit_time, okapi::QLength p_small_error, int p_big_exit_time, okapi::QLength p_big_error, int p_velocity_exit_time, int p_mA_timeout);
+  void drive_exit_condition_set(int p_small_exit_time, okapi::QLength p_small_error, int p_big_exit_time, okapi::QLength p_big_error, int p_velocity_exit_time, int p_mA_timeout);
 
   /**
    * Set's constants for turn exit conditions.
@@ -739,7 +739,7 @@ class Drive {
    * \param p_velocity_exit_time
    *        Sets velocity_exit_time.  Timer will start when velocity is 0.
    */
-  void set_turn_exit_condition(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout);
+  void turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout);
 
   /**
    * Set's constants for swing exit conditions.
@@ -755,17 +755,17 @@ class Drive {
    * \param p_velocity_exit_time
    *        Sets velocity_exit_time.  Timer will start when velocity is 0.
    */
-  void set_swing_exit_condition(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout);
+  void swing_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout);
 
   /**
    * Returns current tick_per_inch()
    */
-  double get_tick_per_inch();
+  double tick_per_inch_get();
 
   /**
    * Returns current tick_per_inch()
    */
-  void modify_curve_with_controller();
+  void curve_modify_with_controller();
 
   // Slew
   struct slew_ {
@@ -776,11 +776,11 @@ class Drive {
     double slope = 0;
     double output = 0;
     bool enabled = false;
-    double max_speed = 0;
+    double speed_max = 0;
   };
 
-  slew_ left_slew;
-  slew_ right_slew;
+  slew_ slew_left;
+  slew_ slew_right;
 
   /**
    * Initialize slew.
@@ -789,7 +789,7 @@ class Drive {
    *        slew_ enum
    * \param slew_on
    *        is slew on?
-   * \param max_speed
+   * \param speed_max
    *        target speed during the slew
    * \param target
    *        target sensor value
@@ -800,7 +800,7 @@ class Drive {
    * \param backwards
    *        slew direction for constants
    */
-  void slew_initialize(slew_ &input, bool slew_on, double max_speed, double target, double current, double start, bool backwards);
+  void slew_initialize(slew_ &input, bool slew_on, double speed_max, double target, double current, double start, bool backwards);
 
   /**
    * Calculate slew.
@@ -822,7 +822,7 @@ class Drive {
   /**
    * Private wait until for drive
    */
-  void wait_until_drive(double target);
+  void drive_wait_until(double target);
 
   /**
    * Sets the chassis to voltage.
@@ -832,12 +832,12 @@ class Drive {
    * \param right
    *        voltage for right side, -127 to 127
    */
-  void private_set_tank(int left, int right);
+  void tank_set_private(int left, int right);
 
   /**
    * Returns joystick value clipped to JOYSTICK_THRESH
    */
-  int clipped_joystick(int joystick);
+  int joystick_clamped(int joystick);
 
   /**
    * Heading bool.
@@ -863,14 +863,14 @@ class Drive {
   /**
    * Max speed for autonomous.
    */
-  int max_speed;
+  int speed_max;
 
   /**
    * Tasks
    */
-  void drive_pid_task();
-  void swing_pid_task();
-  void turn_pid_task();
+  void pid_drive_task();
+  void pid_swing_task();
+  void pid_turn_task();
   void ez_auto_task();
 
   /**
@@ -882,18 +882,18 @@ class Drive {
   /**
    * Starting value for left/right
    */
-  double l_start = 0;
-  double r_start = 0;
+  double start_left = 0;
+  double start_right = 0;
 
   /**
    * Enable/disable modifying controller curve with controller.
    */
-  bool disable_controller = true;  // True enables, false disables.
+  bool controller_disable = true;  // True enables, false disables.
 
   /**
    * Is tank drive running?
    */
-  bool is_tank;
+  bool tank_active;
 
 #define DRIVE_INTEGRATED 1
 #define DRIVE_ADI_ENCODER 2
@@ -902,13 +902,13 @@ class Drive {
   /**
    * Is tracking?
    */
-  int is_tracker = DRIVE_INTEGRATED;
+  int tracker_active = DRIVE_INTEGRATED;
 
   /**
    * Save input to sd card
    */
-  void save_l_curve_sd();
-  void save_r_curve_sd();
+  void curve_left_save_sd();
+  void curve_right_save_sd();
 
   /**
    * Struct for buttons for increasing/decreasing curve with controller
@@ -922,10 +922,10 @@ class Drive {
     pros::controller_digital_e_t button;
   };
 
-  button_ l_increase_;
-  button_ l_decrease_;
-  button_ r_increase_;
-  button_ r_decrease_;
+  button_ left_increase_;
+  button_ left_decrease_;
+  button_ right_increase_;
+  button_ right_decrease_;
 
   /**
    * Function for button presses.
@@ -935,14 +935,14 @@ class Drive {
   /**
    * The left and right curve scalers.
    */
-  double left_curve_scale;
-  double right_curve_scale;
+  double curve_left_scale;
+  double curve_right_scale;
 
   /**
    * Increase and decrease left and right curve scale.
    */
-  void l_decrease();
-  void l_increase();
-  void r_decrease();
-  void r_increase();
+  void curve_left_scale_decrease();
+  void curve_left_scale_increase();
+  void curve_right_scale_decrease();
+  void curve_right_scale_increase();
 };

@@ -139,7 +139,7 @@ void opcontrol() {
 
 
 ## initialize()
-Runs `init_curve_sd()` and `imu_calibrate()`.    
+Runs `curve_init_sd()` and `imu_calibrate()`.    
 **Prototype**
 ```cpp
 void Drive::initialize();
@@ -156,17 +156,17 @@ void initialize() {
 ---
 
 
-## init_curve_sd()
+## curve_init_sd()
 Sets the left/right curve constants to what's on the sd card.  If the sd card is empty, creates needed files.  
 **Prototype**
 ```cpp
-void init_curve_sd();
+void curve_init_sd();
 ```
 
 **Example** 
 ```cpp
 void initialize() {
-  chassis.init_curve_sd();
+  chassis.curve_init_sd();
 }
 ```
 
@@ -180,7 +180,7 @@ Sets the left/right curve defaults and saves new values to the sd card.
 `right` right input curve.  
 **Prototype**
 ```cpp
-void set_curve_default(double left, double right);
+void curve_set_default(double left, double right);
 ```
 
 **Example** 
@@ -194,18 +194,18 @@ void initialize() {
 ---
 
 
-## set_active_brake()
+## active_brake_set()
 Active brake runs a P loop on the drive when joysticks are within their threshold.  
 `kp` proportional constant for drive.  
 **Prototype**
 ```cpp
-void set_active_brake(double kp);
+void active_brake_set(double kp);
 ```
 
 **Example** 
 ```cpp
 void initialize() {
-  chassis.set_active_brake(0.1);
+  chassis.active_brake_set(0.1);
 }
 ```
 
@@ -213,18 +213,18 @@ void initialize() {
 ---
 
 
-## toggle_modify_curve_with_controller()
+## curve_toggle_modify_with_controller()
 Enables/disables buttons used for modifying the controller curve with the joystick.   
 `toggle` true enables, false disables.  
 **Prototype**
 ```cpp
-void toggle_modify_curve_with_controller(bool toggle);
+void curve_toggle_modify_with_controller(bool toggle);
 ```
 
 **Example** 
 ```cpp
 void initialize() {
-  chassis.toggle_modify_curve_with_controller(true);
+  chassis.curve_toggle_modify_with_controller(true);
 }
 ```
 
@@ -232,19 +232,19 @@ void initialize() {
 ---
 
 
-## set_left_curve_buttons()
+## curve_buttons_left_set()
 Sets the buttons that are used to modify the left input curve.  The example is the default.   
 `decrease` a pros button.  
 `increase` a pros button.  
 **Prototype**
 ```cpp
-void set_left_curve_buttons(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase);
+void curve_buttons_left_set(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase);
 ```
 
 **Example** 
 ```cpp
 void initialize() {
-  chassis.set_left_curve_buttons (pros::E_CONTROLLER_DIGITAL_LEFT, pros::E_CONTROLLER_DIGITAL_RIGHT);
+  chassis.curve_buttons_left_set (pros::E_CONTROLLER_DIGITAL_LEFT, pros::E_CONTROLLER_DIGITAL_RIGHT);
 }
 ```
 
@@ -252,19 +252,19 @@ void initialize() {
 ---
 
 
-## set_right_curve_buttons()
+## curve_buttons_right_set()
 Sets the buttons that are used to modify the right input curve.  The example is the default.  
 `decrease` a pros button.  
 `increase` a pros button.  
 **Prototype**
 ```cpp
-void set_right_curve_buttons(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase);
+void curve_buttons_right_set(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase);
 ```
 
 **Example** 
 ```cpp
 void initialize() {
-  chassis.set_right_curve_buttons(pros::E_CONTROLLER_DIGITAL_Y,    pros::E_CONTROLLER_DIGITAL_A);
+  chassis.curve_buttons_right_set(pros::E_CONTROLLER_DIGITAL_Y,    pros::E_CONTROLLER_DIGITAL_A);
 }
 ```
 
@@ -272,22 +272,22 @@ void initialize() {
 ---
 
 
-## left_curve_function()
+## curve_left_function()
 Returns the input times the red curve [here](https://www.desmos.com/calculator/rcfjjg83zx).  `tank()`, `arcade_standard()`, and `arcade_flipped()` all handle this for you.  When tank is enabled, only this curve is used.  
 `x` input value.  
 **Prototype**
 ```cpp
-double left_curve_function(double x);
+double curve_left_function(double x);
 ```
 
 **Example** 
 ```cpp
 void opcontrol() {
   while (true) {
-    int l_stick = left_curve_function(master.get_analog(ANALOG_LEFT_Y));
-    int r_stick = left_curve_function(master.get_analog(ANALOG_RIGHT_Y));
+    int l_stick = curve_left_function(master.get_analog(ANALOG_LEFT_Y));
+    int r_stick = curve_left_function(master.get_analog(ANALOG_RIGHT_Y));
     
-    chassis.set_tank(l_stick, r_stick);
+    chassis.tank_set(l_stick, r_stick);
     
     pros::delay(ez::util::DELAY_TIME);
   }
@@ -298,22 +298,22 @@ void opcontrol() {
 ---
 
 
-## right_curve_function()
+## curve_right_function()
 Returns the input times the red curve [here](https://www.desmos.com/calculator/rcfjjg83zx).  `tank()`, `arcade_standard()`, and `arcade_flipped()` all handle this for you.  
 `x` input value.  
 **Prototype**
 ```cpp
-double right_curve_function(double x);
+double curve_right_function(double x);
 ```
 
 **Example** 
 ```cpp
 void opcontrol() {
   while (true) {
-    int l_stick = left_curve_function(master.get_analog(ANALOG_LEFT_Y));
-    int r_stick = left_curve_function(master.get_analog(ANALOG_RIGHT_Y));
+    int l_stick = curve_left_function(master.get_analog(ANALOG_LEFT_Y));
+    int r_stick = curve_left_function(master.get_analog(ANALOG_RIGHT_Y));
     
-    chassis.set_tank(l_stick, r_stick);
+    chassis.tank_set(l_stick, r_stick);
     
     pros::delay(ez::util::DELAY_TIME);
   }
@@ -324,18 +324,18 @@ void opcontrol() {
 ---
 
 
-## set_joystick_threshold()
+## joystick_threshold_set()
 Threshold the joystick will return 0 within.   
 `threshold` an integer, recommended to be less then 5.  
 **Prototype**
 ```cpp
-void set_joystick_threshold(int threshold);
+void joystick_threshold_set(int threshold);
 ```
 
 **Example** 
 ```cpp
 void initialize() {
-  chassis.set_joystick_threshold(5);
+  chassis.joystick_threshold_set(5);
 }
 ```
 
@@ -343,11 +343,11 @@ void initialize() {
 ---
 
 
-## joy_thresh_opcontrol()
+## joystick_threshold_opcontrol()
 Runs the joystick control.  Sets the left drive to `l_stick`, and right drive to `r_stick`.  Runs active brake and joystick thresholds.    
 **Prototype**
 ```cpp
-void joy_thresh_opcontrol(int l_stick, int r_stick);
+void joystick_threshold_opcontrol(int l_stick, int r_stick);
 ```
 
 **Example** 
@@ -358,17 +358,17 @@ void opcontrol() {
 
     pros::delay(ez::util::DELAY_TIME);
   }
-  chassis.set_joystick_threshold(5);
+  chassis.joystick_threshold_set(5);
 }
 ```
 
 
 ---
-## modify_curve_with_controller()
+## curve_modify_with_controller()
 Allows the user to modify the curve with the controller.      
 **Prototype**
 ```cpp
-void modify_curve_with_controller();
+void curve_modify_with_controller();
 ```
 
 **Example** 
@@ -377,11 +377,11 @@ void opcontrol() {
   while (true) {
     chassis.joy_thresh_opcontroL(master.get_analog(ANALOG_LEFT_Y), master.get_analog(ANALOG_RIGHT_Y));
 
-    chassis.modify_curve_with_controller();
+    chassis.curve_modify_with_controller();
 
     pros::delay(ez::util::DELAY_TIME);
   }
-  chassis.set_joystick_threshold(5);
+  chassis.joystick_threshold_set(5);
 }
 ```
 

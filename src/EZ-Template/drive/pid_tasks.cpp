@@ -12,20 +12,20 @@ using namespace ez;
 void Drive::ez_auto_task() {
   while (true) {
     // Autonomous PID
-    if (get_mode() == DRIVE)
-      drive_pid_task();
-    else if (get_mode() == TURN)
-      turn_pid_task();
-    else if (get_mode() == SWING)
-      swing_pid_task();
+    if (mode_get() == DRIVE)
+      pid_drive_task();
+    else if (mode_get() == TURN)
+      pid_turn_task();
+    else if (mode_get() == SWING)
+      pid_swing_task();
 
-    util::AUTON_RAN = get_mode() != DISABLE ? true : false;
+    util::AUTON_RAN = mode_get() != DISABLE ? true : false;
 
     /*
     if (pros::competition::is_autonomous() && !util::AUTON_RAN)
       util::AUTON_RAN = true;
     else if (!pros::competition::is_autonomous())
-      set_mode(DISABLE);
+      mode_set(DISABLE);
     */
 
     pros::delay(util::DELAY_TIME);
@@ -33,23 +33,23 @@ void Drive::ez_auto_task() {
 }
 
 // Drive PID task
-void Drive::drive_pid_task() {
+void Drive::pid_drive_task() {
   // Compute PID
-  leftPID.compute(left_sensor());
-  rightPID.compute(right_sensor());
+  pid_left.compute(sensor_left());
+  pid_right.compute(sensor_right());
 
-  headingPID.compute(get_gyro());
+  pid_heading.compute(imu_get());
 
   // Compute slew
-  double l_slew_out = slew_calculate(left_slew, left_sensor());
-  double r_slew_out = slew_calculate(right_slew, right_sensor());
+  double l_slew_out = slew_calculate(slew_left, sensor_left());
+  double r_slew_out = slew_calculate(slew_right, sensor_right());
 
-  // Clip leftPID and rightPID to slew (if slew is disabled, it returns max_speed)
-  double l_drive_out = util::clamp_number(leftPID.output, l_slew_out, -l_slew_out);
-  double r_drive_out = util::clamp_number(rightPID.output, r_slew_out, -r_slew_out);
+  // Clip pid_left and pid_right to slew (if slew is disabled, it returns speed_max)
+  double l_drive_out = util::clamp_number(pid_left.output, l_slew_out, -l_slew_out);
+  double r_drive_out = util::clamp_number(pid_right.output, r_slew_out, -r_slew_out);
 
   // Toggle heading
-  double gyro_out = heading_on ? headingPID.output : 0;
+  double gyro_out = heading_on ? pid_heading.output : 0;
 
   // Combine heading and drive
   double l_out = l_drive_out + gyro_out;
@@ -57,47 +57,47 @@ void Drive::drive_pid_task() {
 
   // Set motors
   if (drive_toggle)
-    private_set_tank(l_out, r_out);
+    tank_set_private(l_out, r_out);
 }
 
 // Turn PID task
-void Drive::turn_pid_task() {
+void Drive::pid_turn_task() {
   // Compute PID
-  turnPID.compute(get_gyro());
+  pid_turn.compute(imu_get());
 
   // Clip gyroPID to max speed
-  double gyro_out = util::clamp_number(turnPID.output, max_speed, -max_speed);
+  double gyro_out = util::clamp_number(pid_turn.output, speed_max, -speed_max);
 
   // Clip the speed of the turn when the robot is within StartI, only do this when target is larger then StartI
-  if (turnPID.constants.ki != 0 && (fabs(turnPID.target_get()) > turnPID.constants.start_i && fabs(turnPID.error) < turnPID.constants.start_i)) {
-    if (get_turn_min() != 0)
-      gyro_out = util::clamp_number(gyro_out, get_turn_min(), -get_turn_min());
+  if (pid_turn.constants.ki != 0 && (fabs(pid_turn.target_get()) > pid_turn.constants.start_i && fabs(pid_turn.error) < pid_turn.constants.start_i)) {
+    if (turn_min_get() != 0)
+      gyro_out = util::clamp_number(gyro_out, turn_min_get(), -turn_min_get());
   }
 
   // Set motors
   if (drive_toggle)
-    private_set_tank(gyro_out, -gyro_out);
+    tank_set_private(gyro_out, -gyro_out);
 }
 
 // Swing PID task
-void Drive::swing_pid_task() {
+void Drive::pid_swing_task() {
   // Compute PID
-  swingPID.compute(get_gyro());
+  pid_swing.compute(imu_get());
 
-  // Clip swingPID to max speed
-  double swing_out = util::clamp_number(swingPID.output, max_speed, -max_speed);
+  // Clip pid_swing to max speed
+  double swing_out = util::clamp_number(pid_swing.output, speed_max, -speed_max);
 
   // Clip the speed of the turn when the robot is within StartI, only do this when target is larger then StartI
-  if (swingPID.constants.ki != 0 && (fabs(swingPID.target_get()) > swingPID.constants.start_i && fabs(swingPID.error) < swingPID.constants.start_i)) {
-    if (get_swing_min() != 0)
-      swing_out = util::clamp_number(swing_out, get_swing_min(), -get_swing_min());
+  if (pid_swing.constants.ki != 0 && (fabs(pid_swing.target_get()) > pid_swing.constants.start_i && fabs(pid_swing.error) < pid_swing.constants.start_i)) {
+    if (swing_min_get() != 0)
+      swing_out = util::clamp_number(swing_out, swing_min_get(), -swing_min_get());
   }
 
   if (drive_toggle) {
     // Check if left or right swing, then set motors accordingly
-    if (current_swing == LEFT_SWING)
-      private_set_tank(swing_out, 0);
-    else if (current_swing == RIGHT_SWING)
-      private_set_tank(0, -swing_out);
+    if (swing_current == LEFT_SWING)
+      tank_set_private(swing_out, 0);
+    else if (swing_current == RIGHT_SWING)
+      tank_set_private(0, -swing_out);
   }
 }

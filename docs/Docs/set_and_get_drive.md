@@ -69,21 +69,21 @@ Drive chassis (
 
 # Set Drive
 
-## set_tank()
+## tank_set()
 Sets the drive to voltage.  
 `left` an integer between -127 and 127.  
 `right` an integer between -127 and 127.  
 **Prototype**
 ```cpp
-void set_tank(int left, int right);
+void tank_set(int left, int right);
 ```
 
 **Example**
 ```cpp
 void autonomous() {
-  set_tank(127, 127);
+  tank_set(127, 127);
   pros::delay(1000); // Wait 1 second
-  set_tank(0, 0);
+  tank_set(0, 0);
 }
 ```
 
@@ -91,12 +91,12 @@ void autonomous() {
 ---
 
 
-## set_drive_brake()
+## drive_brake_set()
 Sets brake mode for all drive motors.  
 `brake_type`  takes either `MOTOR_BRAKE_COAST`, `MOTOR_BRAKE_BRAKE`, and `MOTOR_BRAKE_HOLD` as parameters.   
 **Prototype**
 ```cpp
-void set_drive_brake(pros::motor_brake_mode_e_t brake_type);
+void drive_brake_set(pros::motor_brake_mode_e_t brake_type);
 ```
 
 **Example**
@@ -110,12 +110,12 @@ void initialize() {
 ---
 
 
-## set_drive_current_limit()
+## drive_current_limit_set()
 Sets mA limit to the drive.  Default is 2500.    
 `mA`input miliamps.  
 **Prototype**
 ```cpp
-void set_drive_current_limit(int mA);
+void drive_current_limit_set(int mA);
 ```
 
 **Example**
@@ -131,11 +131,11 @@ void initialize() {
 
 # Telemetry
 
-## right_sensor()
+## sensor_right()
 Returns right sensor, either integrated encoder or external encoder.   
 **Prototype**
 ```cpp
-int right_sensor();
+int sensor_right();
 ```
 
 **Example**
@@ -144,7 +144,7 @@ void opcontrol() {
   while (true) {
     chassis.tank();
 
-    printf("Right Sensor: %i \n", chassis.right_sensor());
+    printf("Right Sensor: %i \n", chassis.sensor_right());
 
     pros::delay(ez::util::DELAY_TIME);
   }
@@ -155,11 +155,11 @@ void opcontrol() {
 ---
 
 
-## right_velocity()
+## velocity_right()
 Returns integrated encoder velocity.      
 **Prototype**
 ```cpp
-int right_velocity();
+int velocity_right();
 ```
 
 **Example**
@@ -168,7 +168,7 @@ void opcontrol() {
   while (true) {
     chassis.tank();
 
-    printf("Right Velocity: %i \n", chassis.right_velocity());
+    printf("Right Velocity: %i \n", chassis.velocity_right());
 
     pros::delay(ez::util::DELAY_TIME);
   }
@@ -179,11 +179,11 @@ void opcontrol() {
 ---
 
 
-## right_mA()
+## mA_right()
 Returns current mA being used.      
 **Prototype**
 ```cpp
-double right_mA();
+double mA_right();
 ```
 
 **Example**
@@ -192,7 +192,7 @@ void opcontrol() {
   while (true) {
     chassis.tank();
 
-    printf("Right mA: %i \n", chassis.right_mA());
+    printf("Right mA: %i \n", chassis.mA_right());
 
     pros::delay(ez::util::DELAY_TIME);
   }
@@ -203,11 +203,11 @@ void opcontrol() {
 ---
 
 
-## right_over_current()
+## over_current_right()
 Returns `true` when the motor is over current.     
 **Prototype**
 ```cpp
-bool right_over_current();
+bool over_current_right();
 ```
 
 **Example**
@@ -216,7 +216,7 @@ void opcontrol() {
   while (true) {
     chassis.tank();
 
-    printf("Right Over Current: %i \n", chassis.right_over_current());
+    printf("Right Over Current: %i \n", chassis.over_current_right());
 
     pros::delay(ez::util::DELAY_TIME);
   }
@@ -227,11 +227,11 @@ void opcontrol() {
 ---
 
 
-## left_sensor()
+## sensor_left()
 Returns left sensor, either integrated encoder or external encoder.   
 **Prototype**
 ```cpp
-int left_sensor();
+int sensor_left();
 ```
 
 **Example**
@@ -240,7 +240,7 @@ void opcontrol() {
   while (true) {
     chassis.tank();
 
-    printf("Left Sensor: %i \n", chassis.left_sensor());
+    printf("Left Sensor: %i \n", chassis.sensor_left());
 
     pros::delay(ez::util::DELAY_TIME);
   }
@@ -251,11 +251,11 @@ void opcontrol() {
 ---
 
 
-## left_velocity()
+## velocity_left()
 Returns integrated encoder velocity.      
 **Prototype**
 ```cpp
-int left_velocity();
+int velocity_left();
 ```
 
 **Example**
@@ -264,7 +264,7 @@ void opcontrol() {
   while (true) {
     chassis.tank();
 
-    printf("Left Velocity: %i \n", chassis.left_velocity());
+    printf("Left Velocity: %i \n", chassis.velocity_left());
 
     pros::delay(ez::util::DELAY_TIME);
   }
@@ -275,11 +275,11 @@ void opcontrol() {
 ---
 
 
-## left_mA()
+## mA_left()
 Returns current mA being used.      
 **Prototype**
 ```cpp
-double left_mA();
+double mA_left();
 ```
 
 **Example**
@@ -288,7 +288,7 @@ void opcontrol() {
   while (true) {
     chassis.tank();
 
-    printf("Left mA: %i \n", chassis.left_mA());
+    printf("Left mA: %i \n", chassis.mA_left());
 
     pros::delay(ez::util::DELAY_TIME);
   }
@@ -299,11 +299,11 @@ void opcontrol() {
 ---
 
 
-## left_over_current()
+## over_current_left()
 Returns `true` when the motor is over current.     
 **Prototype**
 ```cpp
-bool left_over_current();
+bool over_current_left();
 ```
 
 **Example**
@@ -312,7 +312,7 @@ void opcontrol() {
   while (true) {
     chassis.tank();
 
-    printf("Left Over Current: %i \n", chassis.left_over_current());
+    printf("Left Over Current: %i \n", chassis.over_current_left());
 
     pros::delay(ez::util::DELAY_TIME);
   }
@@ -322,17 +322,17 @@ void opcontrol() {
 
 ---
 
-## reset_drive_sensor()
+## drive_sensors_reset()
 Resets integrated encoders and trackers if applicable.   
 **Prototype**
 ```cpp
-void reset_drive_sensor();
+void drive_sensors_reset();
 ```
 
 **Example**
 ```cpp
 void initialize() {
-  chassis.reset_drive_sensor();
+  chassis.drive_sensors_reset();
 }
 ```
 
@@ -340,17 +340,17 @@ void initialize() {
 ---
 
 
-## reset_gyro()
+## imu_reset()
 Sets current gyro position to parameter, defaulted to 0.    
 **Prototype**
 ```cpp
-void reset_gyro(double new_heading = 0);
+void imu_reset(double new_heading = 0);
 ```
 
 **Example**
 ```cpp
 void initialize() {
-  chassis.reset_gyro();
+  chassis.imu_reset();
 }
 ```
 
@@ -358,11 +358,11 @@ void initialize() {
 ---
 
 
-## get_gyro()
+## imu_get()
 Gets IMU.    
 **Prototype**
 ```cpp
-double get_gyro();
+double imu_get();
 ```
 
 **Example**
@@ -371,7 +371,7 @@ void opcontrol() {
   while (true) {
     chassis.tank();
 
-    printf("Gyro: %f \n", chassis.get_gyro());
+    printf("Gyro: %f \n", chassis.imu_get());
 
     pros::delay(ez::util::DELAY_TIME);
   }

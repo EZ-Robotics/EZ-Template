@@ -78,8 +78,8 @@ bool pto_check(pros::Motor check_if_pto);
 
 **Example** 
 ```cpp
-pros::Motor& intake_l = chassis.left_motors[1];
-pros::Motor& intake_r = chassis.right_motors[1];
+pros::Motor& intake_l = chassis.motors_left[1];
+pros::Motor& intake_r = chassis.motors_right[1];
 
 void initialize() {
   printf("Check: %i %i\n", chassis.pto_check(intake_l), chassis.pto_check(intake_r))); // This prints 0 0
@@ -101,8 +101,8 @@ void pto_add(std::vector<pros::Motor> pto_list);
 
 **Example** 
 ```cpp
-pros::Motor& intake_l = chassis.left_motors[1];
-pros::Motor& intake_r = chassis.right_motors[1];
+pros::Motor& intake_l = chassis.motors_left[1];
+pros::Motor& intake_r = chassis.motors_right[1];
 
 void initialize() {
   printf("Check: %i %i\n", chassis.pto_check(intake_l), chassis.pto_check(intake_r))); // This prints 0 0
@@ -124,8 +124,8 @@ void pto_remove(std::vector<pros::Motor> pto_list);
 
 **Example** 
 ```cpp
-pros::Motor& intake_l = chassis.left_motors[1];
-pros::Motor& intake_r = chassis.right_motors[1];
+pros::Motor& intake_l = chassis.motors_left[1];
+pros::Motor& intake_r = chassis.motors_right[1];
 
 void initialize() {
   printf("Check: %i %i\n", chassis.pto_check(intake_l), chassis.pto_check(intake_r))); // This prints 0 0
@@ -149,8 +149,8 @@ void pto_toggle(std::vector<pros::Motor> pto_list, bool toggle);
 
 **Example** 
 ```cpp
-pros::Motor& intake_l = chassis.left_motors[1];
-pros::Motor& intake_r = chassis.right_motors[1];
+pros::Motor& intake_l = chassis.motors_left[1];
+pros::Motor& intake_r = chassis.motors_right[1];
 pros::ADIDigitalOut pto_intake_piston('A');
 bool pto_intake_enabled = false;
 

@@ -182,9 +182,9 @@ void selected_auton_call();
 **Example**
 ```cpp
 void autonomous() {
-  chassis.reset_gyro(); 
-  chassis.reset_drive_sensor(); 
-  chassis.set_drive_brake(MOTOR_BRAKE_HOLD); 
+  chassis.imu_reset(); 
+  chassis.drive_sensors_reset(); 
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD); 
 
   ez::as::auton_selector.selected_auton_call(); 
 }
