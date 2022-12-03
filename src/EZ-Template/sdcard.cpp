@@ -84,7 +84,7 @@ bool turn_off = false;
 // Using a button to control the lcd
 pros::ADIDigitalIn* limit_switch_left = nullptr;
 pros::ADIDigitalIn* limit_switch_right = nullptr;
-pros::Task limit_switch_task(limit_switch_task);
+pros::Task limit_switch_task(limit_switch_task_function);
 void limit_switch_lcd_initialize(pros::ADIDigitalIn* right_limit, pros::ADIDigitalIn* left_limit) {
   if (!left_limit && !right_limit) {
     delete limit_switch_left;
@@ -99,7 +99,7 @@ void limit_switch_lcd_initialize(pros::ADIDigitalIn* right_limit, pros::ADIDigit
   limit_switch_task.resume();
 }
 
-void limit_switch_task() {
+void limit_switch_task_function() {
   while (true) {
     if (limit_switch_right && limit_switch_right->get_new_press())
       page_up();

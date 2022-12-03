@@ -59,6 +59,6 @@ void limit_switch_lcd_initialize(pros::ADIDigitalIn* right_limit, pros::ADIDigit
 /**
  * pre_auto_task
  */
-void limit_switch_task();
+void limit_switch_task_function();
 }  // namespace as
 }  // namespace ez
