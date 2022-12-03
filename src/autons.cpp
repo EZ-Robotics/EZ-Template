@@ -92,11 +92,11 @@ void drive_and_turn() {
 // Wait Until and Changing Max Speed
 ///
 void wait_until_change_speed() {
-  // drive_wait_distance will wait until the robot gets to a desired position
+  // drive_wait_until will wait until the robot gets to a desired position
 
   // When the robot gets to 6 inches, the robot will travel the remaining distance at a max speed of 40
   chassis.pid_drive_set(24_in, DRIVE_SPEED, true);
-  chassis.drive_wait_distance(6_in);
+  chassis.drive_wait_until(6_in);
   chassis.max_speed_set(40);  // After driving 6 inches at DRIVE_SPEED, the robot will go the remaining distance at 40 speed
   chassis.drive_wait_exit();
 
@@ -111,7 +111,7 @@ void wait_until_change_speed() {
 
   // When the robot gets to -6 inches, the robot will travel the remaining distance at a max speed of 40
   chassis.pid_drive_set(-24_in, DRIVE_SPEED, true);
-  chassis.drive_wait_distance(-6_in);
+  chassis.drive_wait_until(-6_in);
   chassis.max_speed_set(40);  // After driving 6 inches at DRIVE_SPEED, the robot will go the remaining distance at 40 speed
   chassis.drive_wait_exit();
 }
@@ -128,7 +128,7 @@ void swing_example() {
   chassis.drive_wait_exit();
 
   chassis.pid_drive_set(24_in, DRIVE_SPEED, true);
-  chassis.drive_wait_distance(12);
+  chassis.drive_wait_until(12);
 
   chassis.pid_swing_set(ez::RIGHT_SWING, 0, SWING_SPEED);
   chassis.drive_wait_exit();

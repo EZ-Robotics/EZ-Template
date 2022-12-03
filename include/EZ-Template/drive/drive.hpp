@@ -573,7 +573,7 @@ class Drive {
    * \param target
    *        when driving, this is inches.  when turning, this is degrees.
    */
-  void drive_wait_distance(double target);
+  void drive_wait_until(double target);
 
   /**
    * Lock the code in a while loop until this position has passed for driving with okapi units.
@@ -581,7 +581,7 @@ class Drive {
    * \param target
    *        for driving, using okapi units
    */
-  void drive_wait_distance(okapi::QLength target);
+  void drive_wait_until(okapi::QLength target);
 
   /**
    * Autonomous interference detection.  Returns true when interfered, and false when nothing happened.
@@ -822,7 +822,7 @@ class Drive {
   /**
    * Private wait until for drive
    */
-  void drive_wait_until(double target);
+  void drive_wait_distance(double target);
 
   /**
    * Sets the chassis to voltage.

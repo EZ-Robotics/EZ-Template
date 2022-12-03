@@ -177,11 +177,11 @@ void autonomous() {
 
 
 
-## drive_wait_distance()
+## drive_wait_until()
 Locks the code in place until the drive has passed the input parameter.  This uses the exit conditions from the PID class.           
 **Prototype**
 ```cpp
-void drive_wait_distance(double target);
+void drive_wait_until(double target);
 ```
 
 **Example**
@@ -192,7 +192,7 @@ void autonomous() {
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD); 
 
   chassis.pid_drive_set(48, 110);
-  chassis.drive_wait_distance(24);
+  chassis.drive_wait_until(24);
   chassis.max_speed_set(40);
   chassis.drive_wait_exit();
 }
@@ -270,7 +270,7 @@ void autonomous() {
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD); 
 
   chassis.pid_drive_set(48, 110);
-  chassis.drive_wait_distance(24);
+  chassis.drive_wait_until(24);
   chassis.max_speed_set(40);
   chassis.drive_wait_exit();
 }
@@ -463,7 +463,7 @@ void autonomous() {
 
 
 ## interfered
-Boolean that returns true when `drive_wait_exit()` or `drive_wait_distance()` exit with velocity or is_over_current.      
+Boolean that returns true when `drive_wait_exit()` or `drive_wait_until()` exit with velocity or is_over_current.      
 **Prototype**
 ```cpp
 bool interfered = false;

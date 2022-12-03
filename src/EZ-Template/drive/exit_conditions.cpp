@@ -71,7 +71,7 @@ void Drive::drive_wait_exit() {
   }
 }
 
-void Drive::drive_wait_until(double target) {
+void Drive::drive_wait_distance(double target) {
   // If robot is driving...
   if (mode == DRIVE) {
     // Calculate error between current and target (target needs to be an in between position)
@@ -115,7 +115,7 @@ void Drive::drive_wait_until(double target) {
   }
 }
 
-void Drive::drive_wait_distance(okapi::QLength target) {
+void Drive::drive_wait_until(okapi::QLength target) {
   // If robot is driving...
   if (mode == DRIVE) {
     drive_wait_until(target.convert(okapi::inch));
@@ -125,7 +125,7 @@ void Drive::drive_wait_distance(okapi::QLength target) {
 }
 
 // Function to wait until a certain position is reached.  Wrapper for exit condition.
-void Drive::drive_wait_distance(double target) {
+void Drive::drive_wait_until(double target) {
   // If robot is driving...
   if (mode == DRIVE) {
     drive_wait_until(target);
