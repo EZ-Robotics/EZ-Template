@@ -9,7 +9,7 @@
  * This file should not be modified by users, since it gets replaced whenever
  * a kernel upgrade occurs.
  *
- * Copyright (c) 2017-2021, Purdue University ACM SIGBots.
+ * Copyright (c) 2017-2022, Purdue University ACM SIGBots.
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -21,7 +21,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include "api.h"
+#include "error.h"
 
 #define OPT_GESTURE_ERR (INT8_MAX)
 #define OPT_COUNT_ERR (INT16_MAX)
@@ -34,7 +34,14 @@ namespace c {
 #endif
 
 
-typedef enum optical_direction_e { NO_GESTURE = 0, UP = 1, DOWN = 2, RIGHT = 3, LEFT = 4, ERROR = PROS_ERR } optical_direction_e_t;
+typedef enum optical_direction_e { 
+	NO_GESTURE = 0, 
+	UP = 1, 
+	DOWN = 2, 
+	RIGHT = 3, 
+	LEFT = 4, 
+	ERROR = PROS_ERR 
+} optical_direction_e_t;
 
 typedef struct optical_rgb_s {
 	double red;
