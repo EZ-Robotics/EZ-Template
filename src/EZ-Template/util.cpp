@@ -5,6 +5,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
 #include "main.h"
+#include "pros/llemu.hpp"
 
 pros::Controller master(pros::E_CONTROLLER_MASTER);
 

@@ -9,8 +9,9 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include <list>
 
 #include "main.h"
-#include "pros/llemu.hpp"
 #include "pros/screen.hpp"
+#include "pros/colors.hpp"
+#include "pros/llemu.hpp"
 
 using namespace ez;
 
@@ -27,11 +28,11 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 
   // Set ports to a global vector
   for (auto i : left_motor_ports) {
-    pros::Motor temp(abs(i), util::is_reversed(i));
+    pros::Motor temp(i);
     left_motors.push_back(temp);
   }
   for (auto i : right_motor_ports) {
-    pros::Motor temp(abs(i), util::is_reversed(i));
+    pros::Motor temp(i);
     right_motors.push_back(temp);
   }
 
@@ -58,11 +59,11 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 
   // Set ports to a global vector
   for (auto i : left_motor_ports) {
-    pros::Motor temp(abs(i), util::is_reversed(i));
+    pros::Motor temp(i);
     left_motors.push_back(temp);
   }
   for (auto i : right_motor_ports) {
-    pros::Motor temp(abs(i), util::is_reversed(i));
+    pros::Motor temp(i);
     right_motors.push_back(temp);
   }
 
@@ -89,11 +90,11 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 
   // Set ports to a global vector
   for (auto i : left_motor_ports) {
-    pros::Motor temp(abs(i), util::is_reversed(i));
+    pros::Motor temp(i);
     left_motors.push_back(temp);
   }
   for (auto i : right_motor_ports) {
-    pros::Motor temp(abs(i), util::is_reversed(i));
+    pros::Motor temp(i);
     right_motors.push_back(temp);
   }
 
@@ -122,11 +123,11 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 
   // Set ports to a global vector
   for (auto i : left_motor_ports) {
-    pros::Motor temp(abs(i), util::is_reversed(i));
+    pros::Motor temp(i);
     left_motors.push_back(temp);
   }
   for (auto i : right_motor_ports) {
-    pros::Motor temp(abs(i), util::is_reversed(i));
+    pros::Motor temp(i);
     right_motors.push_back(temp);
   }
 
@@ -258,12 +259,11 @@ double Drive::get_gyro() { return imu.get_rotation(); }
 void Drive::imu_loading_display(int iter) {
   // If the lcd is already initialized, don't run this function
   if (pros::lcd::is_initialized()) return;
-
   // Boarder
   int boarder = 50;
 
   // Create the boarder
-  pros::screen::set_pen(COLOR_WHITE);
+  pros::screen::set_pen(pros::Color::white);
   for (int i = 1; i < 3; i++) {
     pros::screen::draw_rect(boarder + i, boarder + i, 480 - boarder - i, 240 - boarder - i);
   }
@@ -271,7 +271,9 @@ void Drive::imu_loading_display(int iter) {
   // While IMU is loading
   if (iter < 2000) {
     static int last_x1 = boarder;
-    pros::screen::set_pen(0x00FF6EC7);  // EZ Pink
+    pros::screen::set_pen(pros::Color::hot_pink);  // EZ Pink, the closest I could get
+    // TODO: Once PROS supports it again... change this to 0x00FF6EC7
+    // https://github.com/purduesigbots/pros/issues/548
     int x1 = (iter * ((480 - (boarder * 2)) / 2000.0)) + boarder;
     pros::screen::fill_rect(last_x1, boarder, x1, 240 - boarder);
     last_x1 = x1;
@@ -279,7 +281,7 @@ void Drive::imu_loading_display(int iter) {
   // Failsafe time
   else {
     static int last_x1 = boarder;
-    pros::screen::set_pen(COLOR_RED);
+    pros::screen::set_pen(pros::Color::red);
     int x1 = ((iter - 2000) * ((480 - (boarder * 2)) / 1000.0)) + boarder;
     pros::screen::fill_rect(last_x1, boarder, x1, 240 - boarder);
     last_x1 = x1;
@@ -295,7 +297,7 @@ bool Drive::imu_calibrate(bool run_loading_animation) {
     if (run_loading_animation) imu_loading_display(iter);
 
     if (iter >= 2000) {
-      if (!(imu.get_status() & pros::c::E_IMU_STATUS_CALIBRATING)) {
+      if (!imu.is_calibrating()) {
         break;
       }
       if (iter >= 3000) {

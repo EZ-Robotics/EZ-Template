@@ -1,5 +1,6 @@
 /**
  * \file pros/rotation.hpp
+ * \ingroup cpp-rotation
  *
  * Contains prototypes for functions related to the VEX Rotation Sensor.
  *
@@ -9,27 +10,38 @@
  * This file should not be modified by users, since it gets replaced whenever
  * a kernel upgrade occurs.
  *
- * Copyright (c) 2017-2022, Purdue University ACM SIGBots.
+ * \copyright (c) 2017-2023, Purdue University ACM SIGBots.
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * 
+ * \defgroup cpp-rotation VEX Rotation Sensor C++ API
  */
 #ifndef _PROS_ROTATION_HPP_
 #define _PROS_ROTATION_HPP_
 
 #include <cstdint>
+#include <iostream>
 
 #include "pros/rotation.h"
+#include "pros/device.hpp"
 
 namespace pros {
-class Rotation {
-	const std::uint8_t _port;
+inline namespace v5 {
+/**
+ * \addtogroup cpp-rotation
+ */
+class Rotation : public Device {
+	/**
+	 * \ingroup cpp-rotation
+	 *  @{
+	 */
 
 	public:
-	Rotation(const std::uint8_t port) : _port(port){};
+	explicit Rotation(const std::uint8_t port) : Device(port) {};
 
-	Rotation(const std::uint8_t port, const bool reverse_flag);
+	explicit Rotation(const std::uint8_t port, const bool reverse_flag);
 
 	/**
 	 * Reset the Rotation Sensor
@@ -83,7 +95,7 @@ class Rotation {
 	 * \return 1 if the operation was successful or PROS_ERR if the operation
 	 * failed, setting errno.
 	 */
-	virtual std::int32_t set_position(std::uint32_t position);
+	virtual std::int32_t set_position(std::uint32_t position) const;
 
 	/**
 	 * Reset the Rotation Sensor to a desired rotation value
@@ -98,7 +110,7 @@ class Rotation {
 	 * \return 1 if the operation was successful or PROS_ERR if the operation
 	 * failed, setting errno.
 	 */
-	virtual std::int32_t reset_position(void);
+	virtual std::int32_t reset_position(void) const;
 
 	/**
 	 * Get the Rotation Sensor's current position in centidegrees
@@ -111,7 +123,7 @@ class Rotation {
 	 * \return The position value or PROS_ERR if the operation failed, setting
 	 * errno.
 	 */
-	virtual std::int32_t get_position();
+	virtual std::int32_t get_position() const;
 
 	/**
 	 * Get the Rotation Sensor's current velocity in centidegrees per second
@@ -127,7 +139,7 @@ class Rotation {
 	 value or PROS_ERR_F if the operation failed, setting
 	 * errno.
 	 */
-	virtual std::int32_t get_velocity();
+	virtual std::int32_t get_velocity() const;
 
 	/**
 	 * Get the Rotation Sensor's current position in centidegrees
@@ -140,7 +152,7 @@ class Rotation {
 	 * \return The angle value or PROS_ERR if the operation failed, setting
 	 * errno.
 	 */
-	virtual std::int32_t get_angle();
+	virtual std::int32_t get_angle() const;
 
 	/**
 	 * Set the Rotation Sensor's direction reversed flag
@@ -157,7 +169,7 @@ class Rotation {
 	 * \return 1 if the operation was successful or PROS_ERR if the operation
 	 * failed, setting errno.
 	 */
-	virtual std::int32_t set_reversed(bool value);
+	virtual std::int32_t set_reversed(bool value) const;
 
 	/**
 	 * Reverse the Rotation Sensor's direction.
@@ -170,7 +182,7 @@ class Rotation {
 	 * \return 1 if the operation was successful or PROS_ERR if the operation
 	 * failed, setting errno.
 	 */
-	virtual std::int32_t reverse();
+	virtual std::int32_t reverse() const;
 
 	/**
 	 * Get the Rotation Sensor's reversed flag
@@ -183,8 +195,29 @@ class Rotation {
 	 * \return Reversed value or PROS_ERR if the operation failed, setting
 	 * errno.
 	 */
-	virtual std::int32_t get_reversed();
+	virtual std::int32_t get_reversed() const;
+	///@}
+
+	/**
+	 * This is the overload for the << operator for printing to streams
+	 * 
+	 * Prints in format(this below is all in one line with no new line):
+	 * Rotation [port: rotation._port, position: (rotation position), velocity: (rotation velocity), 
+	 * angle: (rotation angle), reversed: (reversed boolean)]
+	 */
+	friend std::ostream& operator<<(std::ostream& os, const pros::Rotation& rotation);
+
+	/**
+     * Returns the type of device
+     *
+	 */
+	pros::DeviceType get_type() const;
 };
+
+namespace literals {
+const pros::Rotation operator"" _rot(const unsigned long long int r);
+}  // namespace literals
+}
 }  // namespace pros
 
 #endif

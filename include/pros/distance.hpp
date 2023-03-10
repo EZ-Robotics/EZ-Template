@@ -1,5 +1,6 @@
 /**
  * \file pros/distance.hpp
+ * \ingroup cpp-distance
  *
  * Contains prototypes for the V5 Distance Sensor-related functions.
  *
@@ -9,22 +10,34 @@
  * This file should not be modified by users, since it gets replaced whenever
  * a kernel upgrade occurs.
  *
- * \copyright (c) 2017-2021, Purdue University ACM SIGBots.
+ * \copyright (c) 2017-2023, Purdue University ACM SIGBots.
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * 
+ * \defgroup cpp-distance VEX Distance Sensor C++ API
  */
 
 #ifndef _PROS_DISTANCE_HPP_
 #define _PROS_DISTANCE_HPP_
 
 #include <cstdint>
+#include <iostream>
 
+#include "pros/device.hpp"
 #include "pros/distance.h"
 
 namespace pros {
-class Distance {
+inline namespace v5 {
+/**
+ * \ingroup cpp-distance
+ */
+class Distance : public Device {
+	/**
+	 * \addtogroup cpp-distance
+	 *  @{
+ 	*/
 	public:
 	/**
 	 * Creates a Distance Sensor object for the given port.
@@ -99,16 +112,29 @@ class Distance {
 	 */
 	virtual double get_object_velocity();
 
+    /**
+     * This is the overload for the << operator for printing to streams
+     *
+     * Prints in format(this below is all in one line with no new line):
+     * Distance [port: (port number), distance: (distance), confidence: (confidence),
+     * object size: (object size), object velocity: (object velocity)]
+     */
+	friend std::ostream& operator<<(std::ostream& os, pros::Distance& distance);
+
 	/**
-	 * Gets the port number of the distance sensor.
-	 *
-	 * \return The distance sensor's port number.
+     * Returns the type of device
+     *
 	 */
-	std::uint8_t get_port();
+	pros::DeviceType get_type() const;
 
 	private:
-	const std::uint8_t _port;
+	///@}
 };
+
+namespace literals {
+const pros::Distance operator"" _dist(const unsigned long long int d);
+}  // namespace literals
+}
 }  // namespace pros
 
 #endif

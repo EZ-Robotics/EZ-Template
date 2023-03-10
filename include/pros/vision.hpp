@@ -1,5 +1,6 @@
 /**
  * \file pros/vision.hpp
+ * \ingroup cpp-vision
  *
  * Contains prototypes for the VEX Vision Sensor-related functions in C++.
  *
@@ -9,23 +10,34 @@
  * This file should not be modified by users, since it gets replaced whenever
  * a kernel upgrade occurs.
  *
- * Copyright (c) 2017-2022, Purdue University ACM SIGBots.
+ * \copyright (c) 2017-2023, Purdue University ACM SIGBots.
  * All rights reserved.
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * \defgroup cpp-vision Vision Sensor C++ API
+ * \note Additional example code for this module can be found in its [Tutorial.](@ref vision)
  */
 
 #ifndef _PROS_VISION_HPP_
 #define _PROS_VISION_HPP_
 
-#include "pros/vision.h"
-
 #include <cstdint>
 
+#include "pros/vision.h"
+
 namespace pros {
-class Vision {
+inline namespace v5 {
+/**
+ * \ingroup cpp-vision
+ */
+class Vision : public Device {
+	/**
+	 * \addtogroup cpp-vision
+	 *  @{
+	 */
 	public:
 	/**
 	 * Create a Vision Sensor object on the given port.
@@ -40,7 +52,7 @@ class Vision {
 	 * \param zero_point
 	 *        One of vision_zero_e_t to set the (0,0) coordinate for the FOV
 	 */
-	Vision(std::uint8_t port, vision_zero_e_t zero_point = E_VISION_ZERO_TOPLEFT);
+	explicit Vision(std::uint8_t port, vision_zero_e_t zero_point = E_VISION_ZERO_TOPLEFT);
 
 	/**
 	 * Clears the vision sensor LED color, reseting it back to its default
@@ -221,12 +233,6 @@ class Vision {
 	 */
 	std::int32_t get_white_balance(void) const;
 
-	/**
-	 * Gets the port number of the Vision Sensor.
-	 *
-	 * \return The vision sensor's port number.
-	 */
-	std::uint8_t get_port(void) const;
 
 	/**
 	 * Reads up to object_count object descriptors into object_arr.
@@ -438,8 +444,15 @@ class Vision {
 	 */
 	std::int32_t set_wifi_mode(const std::uint8_t enable) const;
 
+	/**
+	 * Returns the type of device
+	 *
+	 */
+	pros::DeviceType get_type() const;
+
 	private:
-	std::uint8_t _port;
+	///@}
 };
+}  // namespace v5
 }  // namespace pros
 #endif  // _PROS_VISION_HPP_

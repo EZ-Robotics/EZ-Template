@@ -7,6 +7,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include <filesystem>
 
 #include "main.h"
+#include "pros/llemu.hpp"
 
 namespace ez::as {
 AutonSelector auton_selector{};
@@ -82,10 +83,10 @@ void shutdown() {
 bool turn_off = false;
 
 // Using a button to control the lcd
-pros::ADIDigitalIn* left_limit_switch = nullptr;
-pros::ADIDigitalIn* right_limit_switch = nullptr;
+pros::adi::DigitalIn* left_limit_switch = nullptr;
+pros::adi::DigitalIn* right_limit_switch = nullptr;
 pros::Task limit_switch_task(limitSwitchTask);
-void limit_switch_lcd_initialize(pros::ADIDigitalIn* right_limit, pros::ADIDigitalIn* left_limit) {
+void limit_switch_lcd_initialize(pros::adi::DigitalIn* right_limit, pros::adi::DigitalIn* left_limit) {
   if (!left_limit && !right_limit) {
     delete left_limit_switch;
     delete right_limit_switch;

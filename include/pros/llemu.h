@@ -13,7 +13,7 @@
  * This file should not be modified by users, since it gets replaced whenever
  * a kernel upgrade occurs.
  *
- * Copyright (c) 2017-2022, Purdue University ACM SIGBots.
+ * Copyright (c) 2017-2020, Purdue University ACM SIGBots.
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -53,6 +53,12 @@ typedef struct lcd_s {
 	volatile uint8_t touch_bits;   // < 4 => left; 2 => center; 1 => right (no
 	                               // multitouch support)
 } lcd_s_t;
+
+typedef enum lcd_text_align_e {
+	LCD_TEXT_ALIGN_LEFT = 0,
+	LCD_TEXT_ALIGN_CENTER = 1,
+	LCD_TEXT_ALIGN_RIGHT = 2
+} text_align_e_t;
 
 #ifdef __cplusplus
 namespace c {
@@ -224,28 +230,18 @@ bool lcd_register_btn2_cb(lcd_btn_cb_fn_t cb);
  * \return The buttons pressed as a bit mask
  */
 uint8_t lcd_read_buttons(void);
-
 /**
- * Changes the color of the LCD background to a provided color expressed in
- * type lv_color_t.
+ * Changes the alignment of text on the LCD background
  * 
- * \param color
- *        A color of type lv_color_t
+ * \param alignment
+ * 		An enum specifying the alignment. Available alignments are:
+ * 			TEXT_ALIGN_LEFT
+ * 			TEXT_ALIGN_RIGHT
+ * 			TEXT_ALIGN_CENTER
  * 
  * \return void
  */
-void lcd_set_background_color(lv_color_t color);
-
-/**
- * Changes the text color of the LCD to a provided color expressed in
- * type lv_color_t.
- *
- * \param color
- *        A color of type lv_color_t
- *
- * \return void
- */
-void lcd_set_text_color(lv_color_t color);
+void lcd_set_text_align(text_align_e_t alignment);
 
 #ifdef __cplusplus
 }  // namespace c

@@ -61,8 +61,8 @@ Sets external buttons to increase/decrease the current autonomous page.
 <TabItem value="example">
 
 ```cpp
-pros::ADIDigitalIn increase('A');
-pros::ADIDigitalIn decrease('B');
+pros::adi::DigitalIn increase('A');
+pros::adi::DigitalIn decrease('B');
 void initialize() {
   ez::as::initialize();
   ez::as::limit_switch_lcd_initialize(&increase, &decrease);
@@ -77,7 +77,7 @@ void initialize() {
 
 
 ```cpp
-void limit_switch_lcd_initialize(pros::ADIDigitalIn* right_limit, pros::ADIDigitalIn* left_limit = nullptr);
+void limit_switch_lcd_initialize(pros::adi::DigitalIn* right_limit, pros::adi::DigitalIn* left_limit = nullptr);
 ```
 
 

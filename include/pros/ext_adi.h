@@ -1,5 +1,6 @@
 /**
  * \file pros/ext_adi.h
+ * \ingroup ext-adi
  *
  * Contains prototypes for interfacing with the 3-Wire Expander.
  *
@@ -8,11 +9,14 @@
  * This file should not be modified by users, since it gets replaced whenever
  * a kernel upgrade occurs.
  *
- * Copyright (c) 2017-2022, Purdue University ACM SIGBots.
+ * \copyright (c) 2017-2023, Purdue University ACM SIGBots.
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * 
+ * \defgroup ext-adi ADI Expander C API
+ * \note The internal ADI API can be found [here.](@ref c-adi)
  */
 
 #ifndef _PROS_EXT_ADI_H_
@@ -35,6 +39,15 @@ namespace pros {
 #ifdef __cplusplus
 namespace c {
 #endif
+
+/**
+ * \ingroup ext-adi
+ */
+
+/**
+ * \addtogroup ext-adi
+ *  @{
+ */
 
 /******************************************************************************/
 /**                         General ADI Use Functions                        **/
@@ -645,10 +658,8 @@ typedef int32_t ext_adi_potentiometer_t;
  * reached:
  * ENXIO - The given value is not within the range of ADI Ports
  * EADDRINUSE - The port is not configured as a potentiometer
- * 
- * \param smart_port
- *        The smart port with the adi expander (1-21)
- * \param adi_port
+ *
+ * \param port
  *        The ADI port to initialize as a gyro (from 1-8, 'a'-'h', 'A'-'H')
  * \param potentiometer_type
  *        An adi_potentiometer_type_e_t enum value specifying the potentiometer version type
@@ -677,7 +688,10 @@ ext_adi_potentiometer_t ext_adi_potentiometer_init(uint8_t smart_port, uint8_t a
 double ext_adi_potentiometer_get_angle(ext_adi_potentiometer_t potentiometer);
 
 /**
- * Reference type for an initialized addressable led, which stores its smart and adi port.
+ * Reference type for an initialized addressable led.
+ *
+ * This merely contains the port number for the led, unlike its use as an
+ * object to store led data in the C++ API.
  */
 typedef int32_t ext_adi_led_t;
 
@@ -697,6 +711,25 @@ typedef int32_t ext_adi_led_t;
  *
  * \return An ext_adi_led_t object containing the given port, or PROS_ERR if the
  * initialization failed.
+ * 
+ * \b Example:
+ * \code
+ * #define SMART_PORT 1
+ * #define ADI_PORT 'A'
+ * 
+ * void opcontrol() {
+ *   // Initialize a led on smart port 1 and adi port A
+ *   ext_adi_led_t led = ext_adi_led_init(SMART_PORT, ADI_PORT);
+ *   // Initialize a buffer with a single color of red
+ *   uint32_t buffer[1] = {0xFF0000};
+ * 
+ *   while (true) {
+ *    // Set the led to colors in the buffer
+ *    ext_adi_led_set(led, buffer, 1);
+ *    delay(5);
+ *   }
+ * }
+ * \endcode
  */
 ext_adi_led_t ext_adi_led_init(uint8_t smart_port, uint8_t adi_port);
 
@@ -713,6 +746,29 @@ ext_adi_led_t ext_adi_led_init(uint8_t smart_port, uint8_t adi_port);
  * @param buffer array of colors in format 0xRRGGBB, recommended that individual RGB value not to exceed 0x80 due to current draw
  * @param buffer_length length of buffer to clear
  * @return PROS_SUCCESS if successful, PROS_ERR if not
+ * 
+ * \b Example:
+ * \code
+ * #define SMART_PORT 1
+ * #define ADI_PORT 'A'
+ *  
+ * void opcontrol() {
+ *   // Initialize a led on smart port 1 and adi port A
+ *   ext_adi_led_t led = ext_adi_led_init(SMART_PORT, ADI_PORT);
+ *   // Initialize a buffer with a single color of red
+ *   uint32_t buffer[1] = {0xFF0000};
+ * 
+ *   while (true) {
+ *     // Set the led to colors in the buffer
+ *     ext_adi_led_set(led, buffer, 1);
+ *     delay(5);
+ *   
+ *     // Clear the led
+ *     ext_adi_led_clear_all(led, buffer, 1);
+ *     delay(5);
+ *   }
+ * }
+ * \endcode
  */
 int32_t ext_adi_led_clear_all(ext_adi_led_t led, uint32_t* buffer, uint32_t buffer_length);
 
@@ -729,6 +785,25 @@ int32_t ext_adi_led_clear_all(ext_adi_led_t led, uint32_t* buffer, uint32_t buff
  * @param buffer array of colors in format 0xRRGGBB, recommended that individual RGB value not to exceed 0x80 due to current draw
  * @param buffer_length length of buffer to clear
  * @return PROS_SUCCESS if successful, PROS_ERR if not
+ * 
+ * \b Example:
+ * \code
+ * #define SMART_PORT 1
+ * #define ADI_PORT 'A'
+ * 
+ * void opcontrol() {
+ *   // Initialize a led on smart port 1 and adi port A
+ *   ext_adi_led_t led = ext_adi_led_init(SMART_PORT, ADI_PORT);
+ *   // Initialize a buffer with a single color of red
+ *   uint32_t buffer[1] = {0xFF0000};
+ * 
+ *   while (true) {
+ *     // Set the led to colors in the buffer
+ *     ext_adi_led_set(led, buffer, 1);
+ *     delay(5);
+ *   }
+ * }
+ * \endcode
  */
 int32_t ext_adi_led_set(ext_adi_led_t led, uint32_t* buffer, uint32_t buffer_length);
 
@@ -746,6 +821,25 @@ int32_t ext_adi_led_set(ext_adi_led_t led, uint32_t* buffer, uint32_t buffer_len
  * @param buffer_length length of buffer to clear
  * @param color color to set all the led strip value to
  * @return PROS_SUCCESS if successful, PROS_ERR if not
+ *  
+ * \b Example:
+ * \code
+ * #define SMART_PORT 1
+ * #define ADI_PORT 'A'
+ *  
+ * void opcontrol() {
+ *   // Initialize a led on smart port 1 and adi port A
+ *   ext_adi_led_t led = ext_adi_led_init(SMART_PORT, ADI_PORT);
+ *   // Initialize a buffer with a single color of red
+ *   uint32_t buffer[1] = {0xFF0000};
+ *   
+ *   while (true) {
+ *     // Set the entire led strip to red
+ *     ext_adi_led_set_all(led, buffer, 1, 0xFF0000);
+ *     delay(5);
+ *   }
+ * }
+ * \endcode
  */
 int32_t ext_adi_led_set_all(ext_adi_led_t led, uint32_t* buffer, uint32_t buffer_length, uint32_t color);
 
@@ -764,6 +858,25 @@ int32_t ext_adi_led_set_all(ext_adi_led_t led, uint32_t* buffer, uint32_t buffer
  * @param color color to clear all the led strip to
  * @param pixel_position position of the pixel to clear (0 indexed)
  * @return PROS_SUCCESS if successful, PROS_ERR if not
+ * 
+ * \b Example:
+ * \code
+ * #define SMART_PORT 1
+ * #define ADI_PORT 'A'
+ * 
+ * void opcontrol() {
+ *   // Initialize a led on smart port 1 and adi port A
+ *   ext_adi_led_t led = ext_adi_led_init(SMART_PORT, ADI_PORT);
+ *   // Initialize a buffer with multiple colors
+ *   uint32_t buffer[3] = {0xFF0000, 0x00FF00, 0x0000FF};
+ * 
+ *   while (true) {
+ *     // Set the first pixel to red
+ *     ext_adi_led_set_pixel(led, buffer, 3, 0xFF0000, 0);
+ *     delay(5);
+ *   }
+ * }
+ * \endcode
  */
 int32_t ext_adi_led_set_pixel(ext_adi_led_t led, uint32_t* buffer, uint32_t buffer_length, uint32_t color, uint32_t pixel_position);
 
@@ -781,8 +894,33 @@ int32_t ext_adi_led_set_pixel(ext_adi_led_t led, uint32_t* buffer, uint32_t buff
  * @param buffer_length length of the input buffer
  * @param pixel_position position of the pixel to clear (0 indexed)
  * @return PROS_SUCCESS if successful, PROS_ERR if not
+ * 
+ * \b Example:
+ * \code
+ * #define SMART_PORT 1
+ * #define ADI_PORT 'A'
+ *  
+ * void opcontrol() {
+ *   // Initialize a led on smart port 1 and adi port A
+ *   ext_adi_led_t led = ext_adi_led_init(SMART_PORT, ADI_PORT);
+ *   // Initialize a buffer with multiple colors
+ *   uint32_t buffer[3] = {0xFF0000, 0x00FF00, 0x0000FF};
+ * 
+ *   while (true) {
+ *     // Set the first pixel to red
+ *     ext_adi_led_set_pixel(led, buffer, 3, 0xFF0000, 0);
+ *     delay(5);
+ * 
+ *     // Clear the first pixel
+ *     ext_adi_led_clear_pixel(led, buffer, 3, 0);
+ *     delay(5);
+ *   }
+ * }
+ * \endcode
  */
 int32_t ext_adi_led_clear_pixel(ext_adi_led_t led, uint32_t* buffer, uint32_t buffer_length, uint32_t pixel_position);
+
+///@}
 
 #ifdef __cplusplus
 }  // namespace c

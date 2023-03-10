@@ -1,5 +1,6 @@
 /**
  * \file pros/serial.hpp
+ * \ingroup cpp-serial
  *
  * Contains prototypes for the V5 Generic Serial related functions.
  *
@@ -9,11 +10,13 @@
  * This file should not be modified by users, since it gets replaced whenever
  * a kernel upgrade occurs.
  *
- * \copyright (c) 2017-2021, Purdue University ACM SIGBots.
+ * \copyright (c) 2017-2023, Purdue University ACM SIGBots.
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * 
+ * \defgroup cpp-serial Generic Serial C++ API
  */
 
 #ifndef _PROS_SERIAL_HPP_
@@ -21,9 +24,18 @@
 
 #include <cstdint>
 #include "pros/serial.h"
+#include "pros/device.hpp"
 
 namespace pros {
-class Serial {
+/**
+ * \ingroup cpp-serial
+ *  @{
+ */
+class Serial : public Device {
+	/**
+	 * \addtogroup cpp-serial
+	 *  @{
+	 */
 	public:
 	/**
 	 * Creates a Serial object for the given port and specifications.
@@ -120,13 +132,6 @@ class Serial {
 	virtual std::int32_t get_write_free() const;
 
 	/**
-	 * Gets the port number of the serial port.
-	 *
-	 * \return The serial port's port number.
-	 */
-	std::uint8_t get_port() const;
-
-	/**
 	 * Reads the next byte avaliable in the port's input buffer without removing it.
 	 *
 	 * This function uses the following values of errno when an error state is
@@ -217,8 +222,14 @@ class Serial {
 	 */
 	virtual std::int32_t write(std::uint8_t* buffer, std::int32_t length) const;
 
+	/**
+     * Returns the type of device
+     *
+	 */
+	pros::DeviceType get_type() const;
+
 	private:
-	const std::uint8_t _port;
+	///@}
 };
 
 namespace literals {

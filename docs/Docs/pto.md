@@ -151,7 +151,7 @@ void pto_toggle(std::vector<pros::Motor> pto_list, bool toggle);
 ```cpp
 pros::Motor& intake_l = chassis.left_motors[1];
 pros::Motor& intake_r = chassis.right_motors[1];
-pros::ADIDigitalOut pto_intake_piston('A');
+pros::adi::DigitalOut pto_intake_piston('A');
 bool pto_intake_enabled = false;
 
 void pto_intake(bool toggle) {

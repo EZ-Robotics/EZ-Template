@@ -13,7 +13,7 @@
  * This file should not be modified by users, since it gets replaced whenever
  * a kernel upgrade occurs.
  *
- * Copyright (c) 2017-2022, Purdue University ACM SIGBots.
+ * Copyright (c) 2017-2020, Purdue University ACM SIGBots.
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -30,6 +30,15 @@
 
 namespace pros {
 namespace lcd {
+/**
+ * @brief enum class to set text alignment
+ * 
+ */
+enum class Text_Align {
+	LEFT = 0,
+	CENTER = 1,
+	RIGHT = 2
+};
 /**
  * Checks whether the emulated three-button LCD has already been initialized.
  *
@@ -152,7 +161,7 @@ using lcd_btn_cb_fn_t = void (*)(void);
  * user-provided callback function will be invoked.
  *
  * \param cb
- *        A callback function of type lcd_btn_cb_fn_t(void (*cb)(void))
+ * A callback function of type lcd_btn_cb_fn_t(void (*cb)(void))
  */
 void register_btn0_cb(lcd_btn_cb_fn_t cb);
 
@@ -163,7 +172,7 @@ void register_btn0_cb(lcd_btn_cb_fn_t cb);
  * user-provided callback function will be invoked.
  *
  * \param cb
- *         A callback function of type lcd_btn_cb_fn_t(void (*cb)(void))
+ * A callback function of type lcd_btn_cb_fn_t(void (*cb)(void))
  */
 void register_btn1_cb(lcd_btn_cb_fn_t cb);
 
@@ -174,9 +183,22 @@ void register_btn1_cb(lcd_btn_cb_fn_t cb);
  * user-provided callback function will be invoked.
  *
  * \param cb
- *         A callback function of type lcd_btn_cb_fn_t(void (*cb)(void))
+ * A callback function of type lcd_btn_cb_fn_t(void (*cb)(void))
  */
 void register_btn2_cb(lcd_btn_cb_fn_t cb);
+
+/**
+ * Changes the alignment of text on the LCD background
+ * 
+ * \param alignment
+ * 		An enum specifying the alignment. Available alignments are:
+ * 			TEXT_ALIGN_LEFT
+ * 			TEXT_ALIGN_RIGHT
+ * 			TEXT_ALIGN_CENTER
+ * 
+ * \return void
+ */
+void set_text_align(Text_Align alignment);
 
 /**
  * Gets the button status from the emulated three-button LCD.
@@ -193,69 +215,6 @@ void register_btn2_cb(lcd_btn_cb_fn_t cb);
  * \return The buttons pressed as a bit mask
  */
 std::uint8_t read_buttons(void);
-
-/**
- * Changes the color of the LCD background to a provided color expressed in
- * type lv_color_t.
- *
- * \param color
- *         A color of type lv_color_t
- * 
- * \return void
- */
-void set_background_color(lv_color_t color);
-
-/**
- * Changes the color of the LCD background to a provided color expressed in RGB
- * form, with three values of type uint8_t.
- *
- * \param r
- *         A value of type uint8_t, with a range of 0 to 255, representing the
- *         red value of a color
- * 
- * \param g
- *         A value of type uint8_t, with a range of 0 to 255, representing the
- *         green value of a color
- * 
- * \param b
- *         A value of type uint8_t, with a range of 0 to 255, representing the
- *         blue value of a color
- * 
- * \return void
- */
-void set_background_color(std::uint8_t r, std::uint8_t g, std::uint8_t b);
-
-/**
- * Changes the text color of the LCD to a provided color expressed in
- * type lv_color_t.
- *
- * \param color
- *         A color of type lv_color_t
- *
- * \return void
- */
-void set_text_color(lv_color_t color);
-
-/**
- * Changes the text color of the LCD to a provided color expressed in RGB
- * form, with three values of type uint8_t.
- *
- * \param r
- *         A value of type uint8_t, with a range of 0 to 255, representing the
- *         red value of a color
- *
- * \param g
- *         A value of type uint8_t, with a range of 0 to 255, representing the
- *         green value of a color
- *
- * \param b
- *         A value of type uint8_t, with a range of 0 to 255, representing the
- *         blue value of a color
- *
- * \return void
- */
-void set_text_color(std::uint8_t r, std::uint8_t g, std::uint8_t b);
-
 }  // namespace lcd
 }  // namespace pros
 

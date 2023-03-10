@@ -217,7 +217,7 @@ Runs `pto_add` if `toggle` is true, and `pto_remove` if `toggle` is false.
 ```cpp
 pros::Motor& intake_l = chassis.left_motors[1];
 pros::Motor& intake_r = chassis.right_motors[1];
-pros::ADIDigitalOut pto_intake_piston('A');
+pros::adi::DigitalOut pto_intake_piston('A');
 bool pto_intake_enabled = false;
 
 void pto_intake(bool toggle) {

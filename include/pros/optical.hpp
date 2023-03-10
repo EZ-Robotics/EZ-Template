@@ -1,5 +1,6 @@
 /**
  * \file pros/optical.hpp
+ * \ingroup cpp-optical
  *
  * Contains prototypes for functions related to the VEX Optical sensor.
  *
@@ -9,11 +10,13 @@
  * This file should not be modified by users, since it gets replaced whenever
  * a kernel upgrade occurs.
  *
- * Copyright (c) 2017-2022, Purdue University ACM SIGBots.
+ * \copyright (c) 2017-2023, Purdue University ACM SIGBots.
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * 
+ * \defgroup cpp-optical VEX Optical Sensor C++ API
  */
 
 #ifndef _PROS_OPTICAL_HPP_
@@ -22,11 +25,21 @@
 #include <stdbool.h>
 
 #include <cstdint>
+#include <iostream>
 
 #include "pros/optical.h"
+#include "pros/device.hpp"
 
 namespace pros {
-class Optical {
+inline namespace v5 {
+/**
+ * \ingroup cpp-optical
+ */
+class Optical : public Device {
+	/**
+	 * \addtogroup cpp-optical
+	 *  @{
+	 */
 	public:
 	/**
 	 * Creates an Optical Sensor object for the given port.
@@ -219,16 +232,30 @@ class Optical {
 	 */
 	virtual std::int32_t disable_gesture();
 
+
 	/**
-	 * Gets the port number of the Optical Sensor.
-	 *
-	 * \return The Optical Sensor's port number.
+     * This is the overload for the << operator for printing to streams
+     *
+     * Prints in format(this below is all in one line with no new line):
+	 * Optical [port: (port number), hue: (hue), saturation: (saturation), 
+	 * brightness: (brightness), proximity: (proximity), rgb: {red, green, blue}]
 	 */
-	virtual std::uint8_t get_port();
+	friend std::ostream& operator<<(std::ostream& os, pros::Optical& optical);
+
+	/**
+     * Returns the type of device
+     *
+	 */
+	pros::DeviceType get_type() const;
 
 	private:
-	const std::uint8_t _port;
+	///@}
 };
+
+namespace literals {
+const pros::Optical operator"" _opt(const unsigned long long int o);
+}  // namespace literals
+}
 }  // namespace pros
 
 #endif

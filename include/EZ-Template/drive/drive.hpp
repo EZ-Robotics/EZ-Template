@@ -61,12 +61,12 @@ class Drive {
   /**
    * Left tracking wheel.
    */
-  pros::ADIEncoder left_tracker;
+  pros::adi::Encoder left_tracker;
 
   /**
    * Right tracking wheel.
    */
-  pros::ADIEncoder right_tracker;
+  pros::adi::Encoder right_tracker;
 
   /**
    * Left rotation tracker.
