@@ -141,21 +141,21 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 
 void Drive::set_defaults() {
   // PID Constants
-  set_heading_pid_constants(3, 0, 20, 0);
-  set_drive_pid_constants(15, 0, 150);
-  set_turn_pid_constants(3, 0, 20, 0);
-  set_swing_pid_constants(5, 0, 30, 0);
+  set_heading_pid_constants(3, 0, 0, 0);
+  set_drive_pid_constants(5, 0, 0, 0);
+  set_turn_pid_constants(1, 0, 22, 0);
+  set_swing_pid_constants(1, 0, 2, 0);
   set_turn_min(30);
   set_swing_min(30);
 
   // Slew constants
-  set_slew_min_power(80, 80);
-  set_slew_distance(7_in, 7_in);
+  set_slew_min_power(50, 50);
+  set_slew_distance(1_ft, 1_ft);
 
   // Exit condition constants
-  set_turn_exit_condition(200, 3, 500, 7, 750, 750);
-  set_swing_exit_condition(200, 3, 500, 7, 750, 750);
-  set_drive_exit_condition(200, 1_in, 500, 3_in, 750, 750);
+  set_turn_exit_condition(300_ms, 4_deg, 900_ms, 7_deg, 1.5_s, 1.5_s);
+  set_swing_exit_condition(300_ms, 4_deg, 900_ms, 7_deg, 1.5_s, 1.5_s);
+  set_drive_exit_condition(300_ms, 1_in, 900_ms, 3_in, 1.5_s, 1.5_s);
 
   // Modify joystick curve on controller (defaults to disabled)
   toggle_modify_curve_with_controller(true);

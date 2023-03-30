@@ -74,7 +74,6 @@ void initialize() {
     Auton("Drive and Turn\n\nSlow down during drive.", wait_until_change_speed),
     Auton("Swing Example\n\nSwing, drive, swing.", swing_example),
     Auton("Combine all 3 movements", combining_movements),
-    Auton("Interference\n\nAfter driving forward, robot performs differently if interfered or not.", interfered_example),
   });
 
   // Initialize chassis and auton selector
