@@ -2,14 +2,14 @@
 
 
 /////
-// For instalattion, upgrading, documentations and tutorials, check out website!
-// https://ez-robotics.github.io/EZ-Template/
+// For installation, upgrading, documentations and tutorials, check the GitHub!
+// https://github.com/EZ-Robotics/EZ-Template
 /////
 
 
-const int DRIVE_SPEED = 90; // This is 110/127 (around 87% of max speed).  We don't suggest making this 127.
+const int DRIVE_SPEED = 90;  // This is 90/127.  We don't suggest making this 127.
                              // If this is 127 and the robot tries to heading correct, it's only correcting by
-                             // making one side slower.  When this is 87%, it's correcting by making one side
+                             // making one side slower.  When this is slower, it's correcting by making one side
                              // faster and one side slower, giving better heading correction.
 const int TURN_SPEED  = 90;
 const int SWING_SPEED = 80;
