@@ -99,7 +99,10 @@ class DefaultOdomChassisController : public OdomChassisController {
   void moveRawAsync(double itarget) override;
 
   /**
-   * This delegates to the input ChassisController.
+   * Turns chassis to desired angle (turns in the direction of smallest angle)
+   * (ex. If current angle is 0 and target is 270, the chassis will turn -90 degrees)
+   * 
+   * @param idegTarget target angle
    */
   void turnAngle(QAngle idegTarget) override;
 
@@ -109,7 +112,10 @@ class DefaultOdomChassisController : public OdomChassisController {
   void turnRaw(double idegTarget) override;
 
   /**
-   * This delegates to the input ChassisController.
+   * Turns chassis to desired angle (turns in the direction of smallest angle)
+   * (ex. If current angle is 0 and target is 270, the chassis will turn -90 degrees)
+   * 
+   * @param idegTarget target angle 
    */
   void turnAngleAsync(QAngle idegTarget) override;
 

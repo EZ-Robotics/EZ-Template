@@ -42,7 +42,7 @@ namespace pros {
  * @brief Indicates IMU status.
  */
 
-enum class Imu_Status {
+enum class ImuStatus {
 	/** The IMU is calibrating */
 	calibrating = 0x01,
 	/** Used to indicate that an error state was reached in the imu_get_status function,\
@@ -62,7 +62,7 @@ class Imu : public Device {
 	
 
 	public:
-	explicit Imu(const std::uint8_t port) : Device(port) {};
+	explicit Imu(const std::uint8_t port) : Device(port, DeviceType::imu) {};
 
 	/**
 	 * Calibrate IMU
@@ -477,7 +477,7 @@ class Imu : public Device {
 	 * \return The Inertial Sensor's status code, or PROS_ERR if the operation
 	 * failed, setting errno.
 	 */
-	virtual pros::Imu_Status get_status() const;
+	virtual pros::ImuStatus get_status() const;
 	/**
 	 * Check whether the IMU is calibrating
 	 *
@@ -496,11 +496,6 @@ class Imu : public Device {
 	 */
 	friend std::ostream& operator<<(std::ostream& os, const pros::Imu& imu);
 
-	/**
-     * Returns the type of device
-     *
-	 */
-	pros::DeviceType get_type() const;
 	///@}
 };
 

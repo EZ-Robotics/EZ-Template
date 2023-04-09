@@ -72,7 +72,7 @@ class Port {
 	 * #define POTENTIOMETER_TYPE pros::E_ADI_POT_EDR
 	 * 
 	 * void opcontrol() {
-	 *   pros::adi::Potentiometer potentiometer (POTENTIOMETER_PORT, POTENTIOMETER_TYPE);
+	 *   pros::ADIPotentiometer potentiometer (POTENTIOMETER_PORT, POTENTIOMETER_TYPE);
 	 *   while (true) {
 	 *     // Get the potentiometer angle
 	 *     std::cout << "Angle: " << potnetiometer.get_angle();
@@ -223,7 +223,7 @@ class AnalogIn : protected Port {
 	 * #define ANALOG_SENSOR_PORT 1
 	 * 
 	 * void opcontrol() {
-	 *   pros::adi::AnalogIn sensor (ANALOG_SENSOR_PORT);
+	 *   pros::ADIAnalogIn sensor (ANALOG_SENSOR_PORT);
 	 *   while (true) {
 	 *     // Use the sensor
 	 *   }
@@ -252,7 +252,7 @@ class AnalogIn : protected Port {
 	 * #define ADI_PORT 'a'
 	 * 
 	 * void opcontrol() {
-	 *   pros::adi::AnalogIn sensor ({{EXT_ADI_SMART_PORT, ADI_PORT}});
+	 *   pros::ADIAnalogIn sensor ({{EXT_ADI_SMART_PORT, ADI_PORT}});
 	 *   while (true) {
 	 *     // Use the sensor
 	 *   }
@@ -1885,7 +1885,7 @@ private:
 /*
 Pros4 upgrade backwards compatibility for ADI api.
 
-Prints a deprecated warning when user uses old pros::adi::Device style API. 
+Prints a deprecated warning when user uses old pros::ADIDevice style API. 
 Remove when and if fully removing old API.
 */
 LEGACY_TYPEDEF(ADIPort, pros::adi::Port);

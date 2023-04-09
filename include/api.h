@@ -41,18 +41,19 @@
 
 #define PROS_VERSION_MAJOR 4
 #define PROS_VERSION_MINOR 0
-#define PROS_VERSION_PATCH 0
-// custom baked for ez-template porting for PROS 4, 3/10/2023
-#define PROS_VERSION_STRING "4.0.2-prerelease"
+#define PROS_VERSION_PATCH 3
+#define PROS_VERSION_STRING "4.0.3"
 
 #include "pros/adi.h"
 #include "pros/colors.h"
+#include "pros/device.h"
 #include "pros/distance.h"
 #include "pros/error.h"
 #include "pros/ext_adi.h"
 #include "pros/gps.h"
 #include "pros/imu.h"
 #include "pros/link.h"
+#include "pros/llemu.h"
 #include "pros/misc.h"
 #include "pros/motors.h"
 #include "pros/optical.h"
@@ -69,6 +70,7 @@
 #include "pros/gps.hpp"
 #include "pros/imu.hpp"
 #include "pros/link.hpp"
+#include "pros/llemu.hpp"
 #include "pros/misc.hpp"
 #include "pros/motor_group.hpp"
 #include "pros/motors.hpp"

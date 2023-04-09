@@ -120,12 +120,11 @@ static constexpr std::int8_t adiUpdateRate = 10;
  * @return `base^expo`.
  */
 constexpr double ipow(const double base, const int expo) {
-  return (expo == 0)
-           ? 1
-           : expo == 1 ? base
-                       : expo > 1 ? ((expo & 1) ? base * ipow(base, expo - 1)
-                                                : ipow(base, expo / 2) * ipow(base, expo / 2))
-                                  : 1 / ipow(base, -expo);
+  return (expo == 0) ? 1
+         : expo == 1 ? base
+         : expo > 1  ? ((expo & 1) ? base * ipow(base, expo - 1)
+                                   : ipow(base, expo / 2) * ipow(base, expo / 2))
+                     : 1 / ipow(base, -expo);
 }
 
 /**

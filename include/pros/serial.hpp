@@ -221,13 +221,7 @@ class Serial : public Device {
 	 * setting errno.
 	 */
 	virtual std::int32_t write(std::uint8_t* buffer, std::int32_t length) const;
-
-	/**
-     * Returns the type of device
-     *
-	 */
-	pros::DeviceType get_type() const;
-
+  
 	private:
 	///@}
 };

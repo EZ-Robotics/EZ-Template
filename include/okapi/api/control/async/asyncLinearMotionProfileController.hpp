@@ -15,9 +15,7 @@
 #include <atomic>
 #include <map>
 
-extern "C" {
-#include "okapi/pathfinder/include/pathfinder.h"
-}
+#include "squiggles.hpp"
 
 namespace okapi {
 class AsyncLinearMotionProfileController : public AsyncPositionController<std::string, double> {
@@ -250,16 +248,8 @@ class AsyncLinearMotionProfileController : public AsyncPositionController<std::s
   void forceRemovePath(const std::string &ipathId);
 
   protected:
-  using TrajectoryPtr = std::unique_ptr<TrajectoryCandidate, void (*)(TrajectoryCandidate *)>;
-  using SegmentPtr = std::unique_ptr<Segment, void (*)(void *)>;
-
-  struct TrajectoryPair {
-    SegmentPtr segment;
-    int length;
-  };
-
   std::shared_ptr<Logger> logger;
-  std::map<std::string, TrajectoryPair> paths{};
+  std::map<std::string, std::vector<squiggles::ProfilePoint>> paths{};
   PathfinderLimits limits;
   std::shared_ptr<ControllerOutput<double>> output;
   QLength diameter;
@@ -283,7 +273,8 @@ class AsyncLinearMotionProfileController : public AsyncPositionController<std::s
   /**
    * Follow the supplied path. Must follow the disabled lifecycle.
    */
-  virtual void executeSinglePath(const TrajectoryPair &path, std::unique_ptr<AbstractRate> rate);
+  virtual void executeSinglePath(const std::vector<squiggles::ProfilePoint> &path,
+                                 std::unique_ptr<AbstractRate> rate);
 
   /**
    * Converts linear "chassis" speed to rotational motor speed.
@@ -293,15 +284,8 @@ class AsyncLinearMotionProfileController : public AsyncPositionController<std::s
    */
   QAngularSpeed convertLinearToRotational(QSpeed linear) const;
 
-  std::string
-  getPathErrorMessage(const std::vector<Waypoint> &points, const std::string &ipathId, int length);
-
-  /**
-   * Reads the length of the path in a thread-safe manner.
-   *
-   * @param path The path to read from.
-   * @return The length of the path.
-   */
-  int getPathLength(const TrajectoryPair &path);
+  std::string getPathErrorMessage(const std::vector<PathfinderPoint> &points,
+                                  const std::string &ipathId,
+                                  int length);
 };
 } // namespace okapi

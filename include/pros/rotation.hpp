@@ -39,7 +39,7 @@ class Rotation : public Device {
 	 */
 
 	public:
-	explicit Rotation(const std::uint8_t port) : Device(port) {};
+	explicit Rotation(const std::uint8_t port) : Device(port, DeviceType::rotation) {};
 
 	explicit Rotation(const std::uint8_t port, const bool reverse_flag);
 
@@ -207,11 +207,6 @@ class Rotation : public Device {
 	 */
 	friend std::ostream& operator<<(std::ostream& os, const pros::Rotation& rotation);
 
-	/**
-     * Returns the type of device
-     *
-	 */
-	pros::DeviceType get_type() const;
 };
 
 namespace literals {

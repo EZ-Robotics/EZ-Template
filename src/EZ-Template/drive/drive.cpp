@@ -271,9 +271,7 @@ void Drive::imu_loading_display(int iter) {
   // While IMU is loading
   if (iter < 2000) {
     static int last_x1 = boarder;
-    pros::screen::set_pen(pros::Color::hot_pink);  // EZ Pink, the closest I could get
-    // TODO: Once PROS supports it again... change this to 0x00FF6EC7
-    // https://github.com/purduesigbots/pros/issues/548
+    pros::screen::set_pen(0x00FF6EC7); 
     int x1 = (iter * ((480 - (boarder * 2)) / 2000.0)) + boarder;
     pros::screen::fill_rect(last_x1, boarder, x1, 240 - boarder);
     last_x1 = x1;
