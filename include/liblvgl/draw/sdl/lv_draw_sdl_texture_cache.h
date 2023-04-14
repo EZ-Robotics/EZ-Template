@@ -14,7 +14,7 @@ extern "C" {
  *      INCLUDES
  *********************/
 
-#include "liblvgl/lv_conf_internal.h"
+#include "../../lv_conf_internal.h"
 
 #if LV_USE_GPU_SDL
 
@@ -50,6 +50,7 @@ typedef enum {
     LV_GPU_CACHE_KEY_MAGIC_RECT_BG = 0x31,
     LV_GPU_CACHE_KEY_MAGIC_RECT_SHADOW = 0x32,
     LV_GPU_CACHE_KEY_MAGIC_RECT_BORDER = 0x33,
+    LV_GPU_CACHE_KEY_MAGIC_RECT_GRAD = 0x34,
     LV_GPU_CACHE_KEY_MAGIC_FONT_GLYPH = 0x41,
     LV_GPU_CACHE_KEY_MAGIC_MASK = 0x51,
 } lv_sdl_cache_key_magic_t;

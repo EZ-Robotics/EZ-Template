@@ -13,13 +13,13 @@ extern "C" {
 /*********************
  *      INCLUDES
  *********************/
-#include "liblvgl/lv_conf_internal.h"
+#include "../lv_conf_internal.h"
 
 #if LV_USE_CANVAS != 0
 
-#include "liblvgl/core/lv_obj.h"
-#include "liblvgl/widgets/lv_img.h"
-#include "liblvgl/draw/lv_draw_img.h"
+#include "../core/lv_obj.h"
+#include "../widgets/lv_img.h"
+#include "../draw/lv_draw_img.h"
 
 /*********************
  *      DEFINES

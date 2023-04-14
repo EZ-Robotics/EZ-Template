@@ -13,7 +13,7 @@ extern "C" {
 /*********************
  *      INCLUDES
  *********************/
-#include "liblvgl/lv_conf_internal.h"
+#include "../lv_conf_internal.h"
 
 #if LV_USE_TABLE != 0
 
@@ -22,7 +22,7 @@ extern "C" {
 #error "lv_table: lv_label is required. Enable it in lv_conf.h (LV_USE_LABEL 1)"
 #endif
 
-#include "liblvgl/core/lv_obj.h"
+#include "../core/lv_obj.h"
 #include "lv_label.h"
 
 /*********************

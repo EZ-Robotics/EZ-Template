@@ -13,12 +13,12 @@ extern "C" {
 /*********************
  *      INCLUDES
  *********************/
-#include "liblvgl/lv_conf_internal.h"
+#include "../lv_conf_internal.h"
 
 #include <stdbool.h>
 #include <stdarg.h>
 #include "lv_area.h"
-#include "liblvgl/font/lv_font.h"
+#include "../font/lv_font.h"
 #include "lv_printf.h"
 #include "lv_types.h"
 

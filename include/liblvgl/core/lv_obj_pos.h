@@ -13,7 +13,7 @@ extern "C" {
 /*********************
  *      INCLUDES
  *********************/
-#include "liblvgl/misc/lv_area.h"
+#include "../misc/lv_area.h"
 
 /*********************
  *      DEFINES

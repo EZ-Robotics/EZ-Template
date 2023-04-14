@@ -13,10 +13,10 @@ extern "C" {
 /*********************
  *      INCLUDES
  *********************/
-#include "liblvgl/lv_conf_internal.h"
-#include "liblvgl/misc/lv_color.h"
-#include "liblvgl/misc/lv_area.h"
-#include "liblvgl/misc/lv_style.h"
+#include "../lv_conf_internal.h"
+#include "../misc/lv_color.h"
+#include "../misc/lv_area.h"
+#include "../misc/lv_style.h"
 
 /*********************
  *      DEFINES

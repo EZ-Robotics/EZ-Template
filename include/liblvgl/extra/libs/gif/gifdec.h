@@ -2,7 +2,7 @@
 #define GIFDEC_H
 
 #include <stdint.h>
-#include "liblvgl/misc/lv_fs.h"
+#include "../../../misc/lv_fs.h"
 
 #if LV_USE_GIF
 
@@ -29,7 +29,7 @@ typedef struct gd_GIF {
     int32_t anim_start;
     uint16_t width, height;
     uint16_t depth;
-    uint16_t loop_count;
+    int32_t loop_count;
     gd_GCE gce;
     gd_Palette *palette;
     gd_Palette lct, gct;

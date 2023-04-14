@@ -13,7 +13,7 @@ extern "C" {
 /*********************
  *      INCLUDES
  *********************/
-#include "liblvgl/core/lv_obj_pos.h"
+#include "../../core/lv_obj_pos.h"
 
 
 /*********************

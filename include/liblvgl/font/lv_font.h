@@ -271,6 +271,11 @@ LV_FONT_DECLARE(pros_font_dejavu_mono_40);
 LV_FONT_DECLARE(pros_font_dejavu_mono_40_latin_sup);
 #endif
 
+/*Declare the custom (user defined) fonts*/
+#ifdef LV_FONT_CUSTOM_DECLARE
+LV_FONT_CUSTOM_DECLARE
+#endif
+
 /**
  * Just a wrapper around LV_FONT_DEFAULT because it might be more convenient to use a function in some cases
  * @return  pointer to LV_FONT_DEFAULT

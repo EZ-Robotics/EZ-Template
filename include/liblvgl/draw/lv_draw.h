@@ -13,10 +13,10 @@ extern "C" {
 /*********************
  *      INCLUDES
  *********************/
-#include "liblvgl/lv_conf_internal.h"
+#include "../lv_conf_internal.h"
 
-#include "liblvgl/misc/lv_style.h"
-#include "liblvgl/misc/lv_txt.h"
+#include "../misc/lv_style.h"
+#include "../misc/lv_txt.h"
 #include "lv_img_decoder.h"
 #include "lv_img_cache.h"
 
@@ -72,6 +72,7 @@ typedef struct _lv_draw_ctx_t  {
      */
     const lv_area_t * clip_area;
 
+    void (*init_buf)(struct _lv_draw_ctx_t * draw_ctx);
 
     void (*draw_rect)(struct _lv_draw_ctx_t * draw_ctx, const lv_draw_rect_dsc_t * dsc, const lv_area_t * coords);
 

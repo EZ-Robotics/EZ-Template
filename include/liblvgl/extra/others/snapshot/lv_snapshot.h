@@ -16,8 +16,8 @@ extern "C" {
 #include <stdint.h>
 #include <stddef.h>
 
-#include "liblvgl/lv_conf_internal.h"
-#include "liblvgl/core/lv_obj.h"
+#include "../../../lv_conf_internal.h"
+#include "../../../core/lv_obj.h"
 
 /*********************
  *      DEFINES

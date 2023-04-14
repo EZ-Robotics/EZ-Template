@@ -28,7 +28,7 @@ freely, subject to the following restrictions:
 
 #include <string.h> /*for size_t*/
 
-#include "liblvgl/lvgl.h"
+#include "../../../lvgl.h"
 #if LV_USE_PNG
 extern const char* LODEPNG_VERSION_STRING;
 

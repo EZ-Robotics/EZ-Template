@@ -13,8 +13,8 @@ extern "C" {
 /*********************
  *      INCLUDES
  *********************/
-#include "liblvgl/misc/lv_color.h"
-#include "liblvgl/misc/lv_style.h"
+#include "../../misc/lv_color.h"
+#include "../../misc/lv_style.h"
 #include "lv_draw_sw_dither.h"
 
 /*********************

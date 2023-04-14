@@ -14,13 +14,13 @@ extern "C" {
  *      INCLUDES
  *********************/
 
-#include "liblvgl/lv_conf_internal.h"
+#include "../../lv_conf_internal.h"
 
 #include LV_GPU_SDL_INCLUDE_PATH
 
 #include "lv_draw_sdl.h"
-#include "liblvgl/misc/lv_area.h"
-#include "liblvgl/misc/lv_color.h"
+#include "../../misc/lv_area.h"
+#include "../../misc/lv_color.h"
 
 /*********************
  *      DEFINES
