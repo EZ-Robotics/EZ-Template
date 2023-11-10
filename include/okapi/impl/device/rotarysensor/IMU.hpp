@@ -63,6 +63,16 @@ class IMU : public ContinuousRotarySensor {
   std::int32_t reset() override;
 
   /**
+   * Resets rotation value to desired value
+   * For example, ``reset(0)`` will reset the sensor to zero.
+   * But ``reset(90)`` will reset the sensor to 90 degrees.
+   *
+   * @param inewAngle desired reset value
+   * @return ``1`` or ``PROS_ERR``.
+   */
+  std::int32_t reset(double inewAngle);
+
+  /**
    * Calibrate the IMU. Resets the rotation value to zero. Calibration is expected to take two
    * seconds, but is bounded to five seconds.
    *
