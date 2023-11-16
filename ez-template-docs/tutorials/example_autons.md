@@ -8,6 +8,7 @@ description: Some examples and test routines
 # **Example Autonomous Routines**
 
 ## Assumed Constants  
+These are default speeds that we can use throughout our autonomous routines to make it easier to modify them retroactively.
 ```cpp
 const int DRIVE_SPEED = 110; 
 const int TURN_SPEED  = 90;
@@ -16,6 +17,7 @@ const int SWING_SPEED = 90;
 
 
 ## Drive 
+This autonomous routine will have the robot go forwards for 24 inches with slew enabled, come back -12 inches, then come back another -12 inches to where it started.  It will do all of this at the predefined `DRIVE_SPEED`.
 ```cpp
 void drive_example() {
   // The first parameter is target inches
@@ -40,6 +42,7 @@ void drive_example() {
 
 
 ## Turn 
+This autonomous routine will turn 90 degrees, then back 45 degrees, and finally to 0 where it started.  It will do all of this at the predefined `TURN_SPEED`.
 ```cpp
 void turn_example() {
   // The first parameter is target degrees
@@ -62,6 +65,7 @@ void turn_example() {
 
 
 ## Drive and Turn
+This autonomous routine will combine driving and turning in a single function. 
 ```cpp
 void drive_and_turn() {
   chassis.set_drive_pid(24, DRIVE_SPEED, true);
@@ -86,6 +90,7 @@ void drive_and_turn() {
 
 
 ## Wait Until and Changing Speed
+Now we add `wait_until()`.  This new function will wait until a specified distance has been traveled and then allow the code to continue.  The robot will drive at `DRIVE_SPEED` until the robot has traveled 6 inches, then will lower the max speed to 40.  The same thing happens on the return back. 
 ```cpp
 void wait_until_change_speed() {
   // wait_until will wait until the robot gets to a desired position
@@ -119,6 +124,7 @@ void wait_until_change_speed() {
 
 
 ## Swing Turns
+Swing turns are turns that only use one side of the drive.  Left swings use the left side, and right swings use the right side.  This will turn the robot to 45 degrees using the left side, drive 24 inches, then turn to 0 degrees using the right side. 
 ```cpp
 void swing_example() {
   // The first parameter is ez::LEFT_SWING or ez::RIGHT_SWING
@@ -142,6 +148,7 @@ void swing_example() {
 
 
 ## Combining All Movements
+This combines all movements from above. 
 ```cpp
 void combining_movements() {
   chassis.set_drive_pid(24, DRIVE_SPEED, true);
@@ -166,6 +173,7 @@ void combining_movements() {
 
 
 ## Interference
+Interference checks if the drive exited in an unintentional way.  If the robot stops unintentionally or pulls too many amps this will trigger.  This allows you to add fail-safes that stop your robot from burning out.  The below function will attempt to "tug" an opponent mobile goal a couple times before giving up.
 ```cpp
 void tug (int attempts) {
   for (int i=0; i<attempts-1; i++) {

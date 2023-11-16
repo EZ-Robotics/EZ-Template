@@ -525,13 +525,6 @@ void set_exit_condition(exit_condition_ &type, int p_small_exit_time, double p_s
 </Tabs>
 
 
-**Prototype**
-
-
-
-**Example**
-
-
 
 
 ### set_swing_min()

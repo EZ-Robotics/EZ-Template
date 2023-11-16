@@ -11,26 +11,24 @@ description: Tuning the PID system to accurately rotate the desired amount
 ## Setup
 For more information on how PID controllers work, [reference this document made by George Gillard](http://georgegillard.com/documents/2-introduction-to-pid-controllers). 
 
-### Step 1 - Uncommenting Default Constants  
-In `src/main.cpp`, uncomment `default_constants()` in `void initialize()`.  
+### Uncommenting Default Constants  
+In `src/main.cpp`, make sure `default_constants()` is uncommented in `void initialize()`.  
 ```cpp
 void initialize() {
     . . .
-
     default_constants();
-
     . . .
 }
 ```
 
 
-### Step 2 - Running the Autonomous  
+### Running the Autonomous  
 You can run one of the example autonomous routines to tune your constants.  When you're tuning drive constants, run `drive_example()`.  When you're tuning turn constants, run `turn_example()`.
 
-Look at our [Using Auton Selector tutorial](https://ez-robotics.github.io/EZ-Template/docs/Tutorials/using_auton_selector.html) for how to select autonomous routines!
+Look at our [Using Auton Selector tutorial](https://ez-robotics.github.io/EZ-Template/tutorials/using_auton_selector) for how to select autonomous routines!
 
 
-### Step 3 - Modifying Constants  
+### Modifying Constants  
 In `src/autons.cpp`, there is a function called `default_constants()`.  This function is where all of your modified PID constants can be set.  
 ```cpp
 void default_constants() {
@@ -45,7 +43,7 @@ void default_constants() {
 ```
 
 
-### Step 4 - Different Constants
+### Different Constants
 When your robot has huge weight shifts (grabbing a mobile goal, raising a lift, etc), you might want to have different constants for those states.  You can have multiple functions with constants for different states, and change constants during your autonomous routine.
 ```cpp
 void grab_mogo() {
@@ -62,6 +60,9 @@ void grab_mogo() {
 
 
 ## Tuning PID
+
+This video is a good visual representation of what each constant does. 
+<iframe width="560" height="315" src="https://www.youtube.com/embed/qKy98Cbcltw?si=tC9FrdKh6DR1Imrp" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
 
 ### Step 1 - kP
 You'll start with kP.  Set it to some number, and run your example autonomous.  The robot will either undershoot the target (kP too low), or the robot is oscillate around the target (kP too high).  
@@ -85,7 +86,7 @@ Increase kI until any minor disturbances are accounted for.  You might need to a
 ## Tuning Forward/Backward Constants  
 
 
-### Step 1 - Forward/Backwards kP and kD
+### Step 1 - Forward/Backwards Constants
 Using the steps above, modify your kP, kD, and if you chose to, kI.  
 
 If you see the robot acting differently going forwards and backwards, you can have different constants for each.  This is usually only needed when something is off balance on your robot mechanically.
@@ -106,11 +107,11 @@ The same steps above can be used to tune the heading constants.  Increase kP unt
 
 
 ### Step 3 - Slew
-`slew_min_power()` is the starting power the robot will use when slewing.  `slew_distance()` is the distance the robot will increase from min power to the max power you set in your autonomous function.  
+Slew ramps the speed of the robot up from the start of the motion to avoid wheelies and wheel slip.  
+`slew_min_power()` is the starting power the robot will use when slewing.  
+`slew_distance()` is the distance the robot will increase from min power to the max power you set in your autonomous function.  
 
-Minimum power should be as high as it can be without causing the robot to wheelie or cause wheel slip.  
-
-Slew distance should be as small as it can be without causing the same. 
+Minimum power should be as high as it can be without causing the robot to wheelie or cause wheel slip.  Slew distance should be as small as it can be without causing the same. 
 
 ```cpp
   chassis.set_slew_min_power(80, 80);

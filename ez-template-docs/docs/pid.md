@@ -11,47 +11,10 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
 
-# Constructors 
-
-## PID()
-Creates a blank PID object.  
-
-<Tabs
-  groupId="ex1"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-
-<TabItem value="example">
-
-```cpp
-PID liftPID;
-```
-
-</TabItem>
+## Constructors 
 
 
-<TabItem value="proto">
-
-```cpp
-PID();
-```
-
-
-
-</TabItem>
-</Tabs>
-
-
-
- 
-
-
-
-## PID()
+### PID()
 Creates a PID object with constants.  Everything past kP has a default starting value, so you can juts put kP.  
 
 <Tabs
@@ -85,15 +48,14 @@ PID(double p, double i = 0, double d = 0, double start_i = 0, std::string name =
 
 
 
-# Functions
+## Functions
 
-## set_constants()
-Sets PID constants.  
-`p` kP
-`i` kI
-`d` kD
-`p_start_i` i will start when error is within this    
-
+### set_constants()
+Sets PID constants.    
+`p` kP  
+`i` kI  
+`d` kD  
+`p_start_i` i will start when error is within this
 <Tabs
   groupId="ex3"
   defaultValue="proto"
@@ -134,9 +96,9 @@ void set_constants(double p, double i = 0, double d = 0, double p_start_i = 0);
 
 
 
-## set_target()
+### set_target()
 Sets PID target.   
-
+`target` the goal position for your subsystem  
 <Tabs
   groupId="ex4"
   defaultValue="proto"
@@ -188,7 +150,7 @@ void set_target(double input);
 
 
 
-## set_exit_condition()
+### set_exit_condition()
 Sets the exit condition constants.  To disable one of the conditions, set the constants relating to it to `0`.    
 `p_small_exit_time` time, in ms, before exiting `p_small_error`  
 `p_small_error` small error threshold  
@@ -237,9 +199,9 @@ void set_exit_condition(int p_small_exit_time, double p_small_error, int p_big_e
 
 
 
-## set_name()
+### set_name()
 A string that prints when exit conditions are met.  When you have multiple mechanisms using exit conditions and you're debugging, seeing which exit condition is doing what can be useful.     
-
+`name` a string for the name of the PID
 <Tabs
   groupId="ex6"
   defaultValue="proto"
@@ -279,9 +241,9 @@ void set_name(std::string name);
 
 
 
-## compute()
+### compute()
 Computes PID.  
-
+`current` the current sensor value for the subsystem
 <Tabs
   groupId="ex7"
   defaultValue="proto"
@@ -332,10 +294,24 @@ double compute(double current);
 
 
 
-# Exit Conditions
+## Exit Conditions
+Exit conditions are a series of things that need to happen for you to know your subsystem has arrived at the desired target.  
 
-## No Motor
-Outputs one of the `exit_output` states.  This exit condition checks `small_error`, `big_error` and `velocity` if they are enabled.    
+### exit_output
+The `.exit_condition()` function can return any of the following variables depending on what triggered it to exit.  
+```cpp
+enum exit_output { RUNNING = 1,
+                   SMALL_EXIT = 2,
+                   BIG_EXIT = 3,
+                   VELOCITY_EXIT = 4,
+                   mA_EXIT = 5,
+                   ERROR_NO_CONSTANTS = 6 };
+```
+
+### No Motor
+Exit conditions without a motor will check if the error is small for X amount of time, if error is a little bigger for Y amount of time, or if velocity is 0 for Z amount of time, if you have constants enabled for them in [set_exit_condition()](https://ez-robotics.github.io/EZ-Template/docs/pid#set_exit_condition).
+
+Outputs one of the `exit_output` states.  This exit condition checks `small_error`, `big_error` and `velocity` if they are enabled. 
 
 <Tabs
   groupId="ex8"
@@ -392,7 +368,9 @@ ez::exit_output exit_condition(bool print = false);
 
 
 
-## One Motor
+### One Motor
+Exit conditions with a motor will check if the error is small for X amount of time, if error is a little bigger for Y amount of time, if velocity is 0 for Z amount of time, then they will check if the motor is pulling too many amps for A amount of time, only if you have constants enabled for them in [set_exit_condition()](https://ez-robotics.github.io/EZ-Template/docs/pid#set_exit_condition).
+
 Outputs one of the `exit_output` states.  This exit condition checks `small_error`, `big_error`, `velocity` and `mA` if they are enabled.    
 
 <Tabs
@@ -449,7 +427,9 @@ ez::exit_output exit_condition(pros::Motor sensor, bool print = false);
 
 
 
-## Multiple Motors
+### Multiple Motors
+This checks the same thing as one motor, except it will check through multiple motors instead of 1.  If any of the motors are pulling too many amps the function will start the timer for mA. 
+
 Outputs one of the `exit_output` states.  This exit condition checks `small_error`, `big_error`, `velocity` and `mA` if they are enabled.  When any of the motors trip `mA`, it returns `mA_EXIT`.    
 
 <Tabs
@@ -506,4 +486,3 @@ ez::exit_output exit_condition(std::vector<pros::Motor> sensor, bool print = fal
 
 </TabItem>
 </Tabs>
-

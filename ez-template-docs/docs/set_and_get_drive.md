@@ -59,9 +59,9 @@ Drive chassis (
 ```
 
 
-# Set Drive
+## Set Drive
 
-## set_tank()
+### set_tank()
 Sets the drive to voltage.  
 `left` an integer between -127 and 127.  
 `right` an integer between -127 and 127.  
@@ -104,7 +104,7 @@ void set_tank(int left, int right);
  
 
 
-## set_drive_brake()
+### set_drive_brake()
 Sets brake mode for all drive motors.  
 `brake_type`  takes either `MOTOR_BRAKE_COAST`, `MOTOR_BRAKE_BRAKE`, and `MOTOR_BRAKE_HOLD` as parameters.   
 
@@ -143,7 +143,7 @@ void set_drive_brake(pros::motor_brake_mode_e_t brake_type);
  
 
 
-## set_drive_current_limit()
+### set_drive_current_limit()
 Sets mA limit to the drive.  Default is 2500.    
 `mA`input miliamps.  
 
@@ -182,9 +182,9 @@ void set_drive_current_limit(int mA);
  
 
 
-# Telemetry
+## Telemetry
 
-## right_sensor()
+### right_sensor()
 Returns right sensor, either integrated encoder or external encoder.   
 
 <Tabs
@@ -228,7 +228,7 @@ int right_sensor();
  
 
 
-## right_velocity()
+### right_velocity()
 Returns integrated encoder velocity.      
 
 <Tabs
@@ -272,7 +272,7 @@ int right_velocity();
  
 
 
-## right_mA()
+### right_mA()
 Returns current mA being used.      
 
 <Tabs
@@ -317,7 +317,7 @@ double right_mA();
  
 
 
-## right_over_current()
+### right_over_current()
 Returns `true` when the motor is over current.     
 
 <Tabs
@@ -362,7 +362,7 @@ bool right_over_current();
  
 
 
-## left_sensor()
+### left_sensor()
 Returns left sensor, either integrated encoder or external encoder.   
 
 <Tabs
@@ -407,7 +407,7 @@ int left_sensor();
  
 
 
-## left_velocity()
+### left_velocity()
 Returns integrated encoder velocity.      
 
 <Tabs
@@ -452,7 +452,7 @@ int left_velocity();
  
 
 
-## left_mA()
+### left_mA()
 Returns current mA being used.      
 
 <Tabs
@@ -497,7 +497,7 @@ double left_mA();
  
 
 
-## left_over_current()
+### left_over_current()
 Returns `true` when the motor is over current.     
 
 <Tabs
@@ -541,7 +541,7 @@ bool left_over_current();
 
  
 
-## reset_drive_sensor()
+### reset_drive_sensor()
 Resets integrated encoders and trackers if applicable.   
 
 <Tabs
@@ -580,7 +580,7 @@ void reset_drive_sensor();
  
 
 
-## reset_gyro()
+### reset_gyro()
 Sets current gyro position to parameter, defaulted to 0.    
 
 <Tabs
@@ -619,7 +619,7 @@ void reset_gyro(double new_heading = 0);
  
 
 
-## get_gyro()
+### get_gyro()
 Gets IMU.    
 
 <Tabs
@@ -664,7 +664,7 @@ double get_gyro();
  
 
 
-## imu_calibrate()
+### imu_calibrate()
 Calibrates IMU, and vibrates the controler after a successful calibration.      
 
 <Tabs

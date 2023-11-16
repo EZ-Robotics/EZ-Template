@@ -49,7 +49,7 @@ const config = {
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl:
-            'https://github.com/EZ-Robotics/EZ-Template/tree/main/website',
+            'https://github.com/EZ-Robotics/EZ-Template/tree/website',
         },
         blog: false,
         theme: {
