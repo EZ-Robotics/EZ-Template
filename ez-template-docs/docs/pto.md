@@ -10,53 +10,6 @@ nav_order: 7
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-## Assumed Constructor
-
-All code below assumes this constructor is used.  As long as the name of the constructor is `chassis`, any of the constructors can be used. 
-
-```cpp
-// Chassis constructor
-Drive chassis (
-  // Left Chassis Ports (negative port will reverse it!)
-  //   the first port is the sensored port (when trackers are not used!)
-  {1, -2, 3}
-
-  // Right Chassis Ports (negative port will reverse it!)
-  //   the first port is the sensored port (when trackers are not used!)
-  ,{-4, 5, -6}
-
-  // IMU Port
-  ,7
-
-  // Wheel Diameter (Remember, 4" wheels are actually 4.125!)
-  //    (or tracking wheel diameter)
-  ,4.125
-
-  // Cartridge RPM
-  //   (or tick per rotation if using tracking wheels)
-  ,600
-
-  // External Gear Ratio (MUST BE DECIMAL)
-  //    (or gear ratio of tracking wheel)
-  // eg. if your drive is 84:36 where the 36t is powered, your RATIO would be 2.333.
-  // eg. if your drive is 36:60 where the 60t is powered, your RATIO would be 0.6.
-  ,2.333
-
-  // Uncomment if using tracking wheels
-  /*
-  // Left Tracking Wheel Ports (negative port will reverse it!)
-  ,{1, 2}
-
-  // Right Tracking Wheel Ports (negative port will reverse it!)
-  ,{-3, -4}
-  */
-
-  // Uncomment if tracking wheels are plugged into a 3 wire expander
-  // 3 Wire Port Expander Smart Port
-  // ,9
-);
-
-```
 
  
 
@@ -64,6 +17,7 @@ Drive chassis (
 ## pto_check()
 Checks if the port is in the pto_list.     
 
+`check_if_pto` a PROS motor that is in the drive
 <Tabs
   groupId="ex1"
   defaultValue="proto"
@@ -76,13 +30,12 @@ Checks if the port is in the pto_list.
 <TabItem value="example">
 
 ```cpp
-pros::Motor& intake_l = chassis.left_motors[1];
-pros::Motor& intake_r = chassis.right_motors[1];
-
 void initialize() {
-  printf("Check: %i %i\n", chassis.pto_check(intake_l), chassis.pto_check(intake_r))); // This prints 0 0
-  chassis.pto_add({intake_l, intake_r});
-  printf("Check: %i %i\n", chassis.pto_check(intake_l), chassis.pto_check(intake_r))); // This prints 1 1
+  pros::delay(500);
+
+  printf("Check: %i %i\n", chassis.pto_check(chassis.left_motors[1]), chassis.pto_check(chassis.right_motors[1]))); // This prints 0 0
+  chassis.pto_add({chassis.left_motors[1], chassis.right_motors[1]});
+  printf("Check: %i %i\n", chassis.pto_check(chassis.left_motors[1]), chassis.pto_check(chassis.right_motors[1]))); // This prints 1 1
 }
 ```
 
@@ -110,6 +63,7 @@ bool pto_check(pros::Motor check_if_pto);
 ## pto_add()
 Adds motors to the pto_list.  You cannot add the first index because it's used for autonomous.     
 
+`pto_list` a vector of motors to remove from the drive
 <Tabs
   groupId="ex2"
   defaultValue="proto"
@@ -122,13 +76,12 @@ Adds motors to the pto_list.  You cannot add the first index because it's used f
 <TabItem value="example">
 
 ```cpp
-pros::Motor& intake_l = chassis.left_motors[1];
-pros::Motor& intake_r = chassis.right_motors[1];
-
 void initialize() {
-  printf("Check: %i %i\n", chassis.pto_check(intake_l), chassis.pto_check(intake_r))); // This prints 0 0
-  chassis.pto_add({intake_l, intake_r});
-  printf("Check: %i %i\n", chassis.pto_check(intake_l), chassis.pto_check(intake_r))); // This prints 1 1
+  pros::delay(500);
+
+  printf("Check: %i %i\n", chassis.pto_check(chassis.left_motors[1]), chassis.pto_check(chassis.right_motors[1]))); // This prints 0 0
+  chassis.pto_add({chassis.left_motors[1], chassis.right_motors[1]});
+  printf("Check: %i %i\n", chassis.pto_check(chassis.left_motors[1]), chassis.pto_check(chassis.right_motors[1]))); // This prints 1 1
 }
 ```
 
@@ -156,6 +109,7 @@ void pto_add(std::vector<pros::Motor> pto_list);
 ## pto_remove()
 Removes motors from the pto_list.      
 
+`pto_list` a vector of motors to add back to the drive
 <Tabs
   groupId="ex3"
   defaultValue="proto"
@@ -168,15 +122,15 @@ Removes motors from the pto_list.
 <TabItem value="example">
 
 ```cpp
-pros::Motor& intake_l = chassis.left_motors[1];
-pros::Motor& intake_r = chassis.right_motors[1];
-
 void initialize() {
-  printf("Check: %i %i\n", chassis.pto_check(intake_l), chassis.pto_check(intake_r))); // This prints 0 0
-  chassis.pto_add({intake_l, intake_r});
-  printf("Check: %i %i\n", chassis.pto_check(intake_l), chassis.pto_check(intake_r))); // This prints 1 1
-  chassis.pto_remove({intake_l, intake_r});
-  printf("Check: %i %i\n", chassis.pto_check(intake_l), chassis.pto_check(intake_r))); // This prints 0 0
+  pros::delay(500);
+
+  printf("Check: %i %i\n", chassis.pto_check(chassis.left_motors[1]), chassis.pto_check(chassis.right_motors[1]))); // This prints 0 0
+  chassis.pto_add({chassis.left_motors[1], chassis.right_motors[1]});
+  printf("Check: %i %i\n", chassis.pto_check(chassis.left_motors[1]), chassis.pto_check(chassis.right_motors[1]))); // This prints 1 1
+  chassis.pto_remove({chassis.left_motors[1], chassis.right_motors[1]});
+  printf("Check: %i %i\n", chassis.pto_check(chassis.left_motors[1]), chassis.pto_check(chassis.right_motors[1]))); // This prints 0 0
+
 }
 ```
 
@@ -204,6 +158,8 @@ void pto_remove(std::vector<pros::Motor> pto_list);
 ## pto_toggle()
 Runs `pto_add` if `toggle` is true, and `pto_remove` if `toggle` is false.       
 
+`pto_list` a vector of motors to add / remove to the drive
+`toggle` boolean to add / remove motors to drive
 <Tabs
   groupId="ex4"
   defaultValue="proto"
@@ -216,18 +172,13 @@ Runs `pto_add` if `toggle` is true, and `pto_remove` if `toggle` is false.
 <TabItem value="example">
 
 ```cpp
-pros::Motor& intake_l = chassis.left_motors[1];
-pros::Motor& intake_r = chassis.right_motors[1];
-pros::ADIDigitalOut pto_intake_piston('A');
-bool pto_intake_enabled = false;
-
 void pto_intake(bool toggle) {
   pto_intake_enabled = toggle;
-  chassis.pto_toggle({intake_l, intake_r}, toggle);
+  chassis.pto_toggle({chassis.left_motors[1], chassis.right_motors[1]}, toggle);
   pto_intake_piston.set_value(toggle);
   if (toggle) {
-    intake_l.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
-    intake_r.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
+    chassis.left_motors[1].set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
+    chassis.right_motors[1].set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
   }
 }
 ```

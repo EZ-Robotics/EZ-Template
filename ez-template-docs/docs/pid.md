@@ -15,8 +15,13 @@ import TabItem from '@theme/TabItem';
 
 
 ### PID()
-Creates a PID object with constants.  Everything past kP has a default starting value, so you can juts put kP.  
+Creates a PID object with constants.  Everything past kP has a default starting value, so you can just put kP.  
 
+`p` kP  
+`i` kI  
+`d` kD  
+`p_start_i` i will start when error is within this
+`name` a string for the name of the PID
 <Tabs
   groupId="ex2"
   defaultValue="proto"
@@ -52,6 +57,7 @@ PID(double p, double i = 0, double d = 0, double start_i = 0, std::string name =
 
 ### set_constants()
 Sets PID constants.    
+
 `p` kP  
 `i` kI  
 `d` kD  
@@ -98,6 +104,7 @@ void set_constants(double p, double i = 0, double d = 0, double p_start_i = 0);
 
 ### set_target()
 Sets PID target.   
+
 `target` the goal position for your subsystem  
 <Tabs
   groupId="ex4"
@@ -152,6 +159,7 @@ void set_target(double input);
 
 ### set_exit_condition()
 Sets the exit condition constants.  To disable one of the conditions, set the constants relating to it to `0`.    
+
 `p_small_exit_time` time, in ms, before exiting `p_small_error`  
 `p_small_error` small error threshold  
 `p_big_exit_time` time, in ms, before exiting `p_big_error`  
@@ -201,6 +209,7 @@ void set_exit_condition(int p_small_exit_time, double p_small_error, int p_big_e
 
 ### set_name()
 A string that prints when exit conditions are met.  When you have multiple mechanisms using exit conditions and you're debugging, seeing which exit condition is doing what can be useful.     
+
 `name` a string for the name of the PID
 <Tabs
   groupId="ex6"
@@ -243,6 +252,7 @@ void set_name(std::string name);
 
 ### compute()
 Computes PID.  
+
 `current` the current sensor value for the subsystem
 <Tabs
   groupId="ex7"

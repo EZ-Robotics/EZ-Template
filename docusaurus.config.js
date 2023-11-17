@@ -13,6 +13,7 @@ import lightCode from './src/utils/codeLight.ts';
 const config = {
   title: 'EZ-Template',
   tagline: 'robotics is ez',
+  favicon: `ez-png.png`,
 
   // Set the production url of your site here
   url: 'https://ez-robotics.github.io',

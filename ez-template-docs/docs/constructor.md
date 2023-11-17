@@ -9,10 +9,16 @@ nav_order: 1
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-*Note: smart encoders are not supported as of 2.0.0*
 
 ## Integrated Encoders
+This is the standard setup that uses built in motor encoders. 
 
+`left_motor_ports` a vector of left motor ports, negative reverses the port.  first motor is used for sensing
+`right_motor_ports` a vector of right motor ports, negative reverses the port.  first motor is used for sensing
+`imu_port` the port an imu is in
+`wheel_diameter` diameter of your drive wheel
+`ticks` cartridge rpm
+`ratio` external ratio of your drive.  should be wheel gear / motor gear
 <Tabs
   groupId="ex1"
   defaultValue="proto"
@@ -72,8 +78,16 @@ double wheel_diameter, double ticks, double ratio);
 
 
 ## ADI Encoders in Brain
-Currently only supports parallel trackers!  
+Only supports parallel trackers.
 
+`left_motor_ports` a vector of left motor ports, negative reverses the port
+`right_motor_ports` a vector of right motor ports, negative reverses the port
+`imu_port` the port an imu is in
+`wheel_diameter` diameter of your tracking wheel
+`ticks` ticks per rotation of your sensor.  360 if using ADI quadrature encoders
+`ratio` external ratio of your tracking wheel.  should be wheel gear / motor gear
+`left_tracker_ports` vector of left tracker ports, negative will reverse the encoder
+`right_tracker_ports` vector of right tracker ports, negative will reverse the encoder
 <Tabs
   groupId="ex2"
   defaultValue="proto"
@@ -139,8 +153,17 @@ std::vector<int> right_tracker_ports);
 
 
 ## ADI Encoders in Expander
-Currently only supports parallel trackers!  
+Only supports parallel trackers.  
 
+`left_motor_ports` a vector of left motor ports, negative reverses the port
+`right_motor_ports` a vector of right motor ports, negative reverses the port
+`imu_port` the port an imu is in
+`wheel_diameter` diameter of your tracking wheel
+`ticks` ticks per rotation of your sensor.  360 if using ADI quadrature encoders
+`ratio` external ratio of your tracking wheel.  should be wheel gear / motor gear
+`left_tracker_ports` vector of left tracker ports, negative will reverse the encoder
+`right_tracker_ports` vector of right tracker ports, negative will reverse the encoder
+`expander_smart_port` port of the 3 wire expander
 <Tabs
   groupId="ex3"
   defaultValue="proto"
@@ -210,8 +233,22 @@ std::vector<int> right_tracker_ports, int expander_smart_port);
 
 
 ## Rotation Sensor 
-Currently only supports parallel trackers!  
+:::warning
 
+Note: smart encoders might not work as intended as of of 2.0.0
+
+:::
+
+Only supports parallel trackers.  
+
+`left_motor_ports` a vector of left motor ports, negative reverses the port
+`right_motor_ports` a vector of right motor ports, negative reverses the port
+`imu_port` the port an imu is in
+`wheel_diameter` diameter of your tracking wheel
+`ticks` ticks per rotation of your sensor.  360 if using ADI quadrature encoders
+`ratio` external ratio of your tracking wheel.  should be wheel gear / motor gear
+`left_rotation_port` port for left rotation sensor, negative reverses the port
+`right_rotation_port` port for right rotation sensor, negative reverses the port
 <Tabs
   groupId="ex4"
   defaultValue="proto"

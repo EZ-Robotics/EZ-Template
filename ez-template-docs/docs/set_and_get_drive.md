@@ -10,61 +10,15 @@ nav_order: 3
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-## Assumed Constructor
-
-All code below assumes this constructor is used.  As long as the name of the constructor is `chassis`, any of the constructors can be used. 
-
-```cpp
-// Chassis constructor
-Drive chassis (
-  // Left Chassis Ports (negative port will reverse it!)
-  //   the first port is the sensored port (when trackers are not used!)
-  {1, -2, 3}
-
-  // Right Chassis Ports (negative port will reverse it!)
-  //   the first port is the sensored port (when trackers are not used!)
-  ,{-4, 5, -6}
-
-  // IMU Port
-  ,7
-
-  // Wheel Diameter (Remember, 4" wheels are actually 4.125!)
-  //    (or tracking wheel diameter)
-  ,4.125
-
-  // Cartridge RPM
-  //   (or tick per rotation if using tracking wheels)
-  ,600
-
-  // External Gear Ratio (MUST BE DECIMAL)
-  //    (or gear ratio of tracking wheel)
-  // eg. if your drive is 84:36 where the 36t is powered, your RATIO would be 2.333.
-  // eg. if your drive is 36:60 where the 60t is powered, your RATIO would be 0.6.
-  ,2.333
-
-  // Uncomment if using tracking wheels
-  /*
-  // Left Tracking Wheel Ports (negative port will reverse it!)
-  ,{1, 2}
-
-  // Right Tracking Wheel Ports (negative port will reverse it!)
-  ,{3, 4}
-  */
-
-  // Uncomment if tracking wheels are plugged into a 3 wire expander
-  // 3 Wire Port Expander Smart Port
-  // ,9
-);
-
-```
 
 
 ## Set Drive
 
 ### set_tank()
 Sets the drive to voltage.  
-`left` an integer between -127 and 127.  
-`right` an integer between -127 and 127.  
+
+`left` an integer between -127 and 127  
+`right` an integer between -127 and 127  
 
 <Tabs
   groupId="ex2"
@@ -106,7 +60,8 @@ void set_tank(int left, int right);
 
 ### set_drive_brake()
 Sets brake mode for all drive motors.  
-`brake_type`  takes either `MOTOR_BRAKE_COAST`, `MOTOR_BRAKE_BRAKE`, and `MOTOR_BRAKE_HOLD` as parameters.   
+
+`brake_type`  takes either `MOTOR_BRAKE_COAST`, `MOTOR_BRAKE_BRAKE`, and `MOTOR_BRAKE_HOLD` as parameters   
 
 <Tabs
   groupId="ex3"
@@ -144,8 +99,9 @@ void set_drive_brake(pros::motor_brake_mode_e_t brake_type);
 
 
 ### set_drive_current_limit()
-Sets mA limit to the drive.  Default is 2500.    
-`mA`input miliamps.  
+Sets mA limit to the drive.  Default is 2500.  
+
+`mA` input miliamps  
 
 <Tabs
   groupId="ex4"
@@ -185,7 +141,7 @@ void set_drive_current_limit(int mA);
 ## Telemetry
 
 ### right_sensor()
-Returns right sensor, either integrated encoder or external encoder.   
+Returns right sensor value, either integrated encoder or external encoder.   
 
 <Tabs
   groupId="ex5"
@@ -318,7 +274,7 @@ double right_mA();
 
 
 ### right_over_current()
-Returns `true` when the motor is over current.     
+Returns `true` when the motor is pulling too many amps.     
 
 <Tabs
   groupId="ex8"
@@ -363,7 +319,7 @@ bool right_over_current();
 
 
 ### left_sensor()
-Returns left sensor, either integrated encoder or external encoder.   
+Returns left sensor value, either integrated encoder or external encoder.   
 
 <Tabs
   groupId="ex9"
@@ -498,7 +454,7 @@ double left_mA();
 
 
 ### left_over_current()
-Returns `true` when the motor is over current.     
+Returns `true` when the motor is pulling too many amps.     
 
 <Tabs
   groupId="ex12"
@@ -620,7 +576,7 @@ void reset_gyro(double new_heading = 0);
 
 
 ### get_gyro()
-Gets IMU.    
+Gets IMU sensor, value is degrees.    
 
 <Tabs
   groupId="ex15"
@@ -665,7 +621,7 @@ double get_gyro();
 
 
 ### imu_calibrate()
-Calibrates IMU, and vibrates the controler after a successful calibration.      
+Calibrates IMU, and vibrates the controller after a successful calibration.      
 
 <Tabs
   groupId="ex16"

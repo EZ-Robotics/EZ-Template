@@ -65,8 +65,9 @@ extern pros::Controller master();
 
 ## print_to_screen() 
 Prints to the LLEMU.  This function handles text that's too long for a line by finding the last word and starting it on a new line, and takes `\n` to set a new line.   
-`text` input string.  
-`line` starting line.  
+
+`text` input string  
+`line` starting line  
 
 <Tabs
   groupId="ex3"
@@ -74,7 +75,7 @@ Prints to the LLEMU.  This function handles text that's too long for a line by f
   values={[
     { label: 'Prototype',  value: 'proto', },
     { label: 'Example',  value: 'example', },
-    { label: 'Example2',  value: 'ex2', },
+    { label: 'Example 2',  value: 'ex2', },
     ]}>
 
 <TabItem value="example">
@@ -96,7 +97,7 @@ void initialize() {
 <TabItem value="proto">
 
 ```cpp
-void print_to_screen(, std::string text, int line)
+void print_to_screen(std::string text, int line)
 ```
 
 
@@ -114,7 +115,7 @@ void print_to_screen(, std::string text, int line)
 ```cpp
 void initialize() {
   std::string 32char = 01234567890123456789012345678901;
-  ez::print_to_screen(32char + "hello");
+  ez::print_to_screen(32char + "hello", 2);
 }
 ```
 
@@ -172,8 +173,9 @@ void print_ez_template();
 
 
 ## sgn() 
-Returns the sgn of the input.  Returns 1 if positive, -1 if negative, and 0 if 0.    
+Returns the sign of the input.  Returns 1 if positive, -1 if negative, and 0 if 0.    
 
+`input` value to check the sign of
 <Tabs
   groupId="ex5"
   defaultValue="proto"
@@ -220,6 +222,9 @@ double sgn(double input);
 ## clip_num() 
 Checks if `input` is within range of `max` and `min`.  If it's out, this returns `max` or `min` respectively.    
 
+`input` value to check if it's above/below max/min
+`max` biggest input can be
+`min` smallest input can be
 <Tabs
   groupId="ex6"
   defaultValue="proto"
@@ -266,7 +271,7 @@ double clip_num(double input, double max, double min);
 
 
 ## DELAY_TIME 
-Standard delay time for loops.    
+Standard delay time for loops in ms.    
 
 <Tabs
   groupId="ex7"
@@ -312,7 +317,7 @@ const int DELAY_TIME = 10;
 
 
 ## IS_SD_CARD
-Boolean that checks if an sd card is installed.  True if there is one, false if there isn't.    
+Boolean that checks if an SD card is installed.  True if there is one, false if there isn't.    
 
 <Tabs
   groupId="ex8"
