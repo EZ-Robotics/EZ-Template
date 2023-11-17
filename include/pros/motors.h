@@ -209,7 +209,7 @@ int32_t motor_modify_profiled_velocity(uint8_t port, const int32_t velocity);
  * \return The target position in its encoder units or PROS_ERR_F if the
  * operation failed, setting errno.
  */
-double motor_get_target_position(uint8_t port);
+double motor_target_get_position(uint8_t port);
 
 /**
  * Gets the velocity commanded to the motor by the user.
@@ -225,7 +225,7 @@ double motor_get_target_position(uint8_t port);
  * \return The commanded motor velocity from +-100, +-200, or +-600, or PROS_ERR
  * if the operation failed, setting errno.
  */
-int32_t motor_get_target_velocity(uint8_t port);
+int32_t motor_target_get_velocity(uint8_t port);
 
 /******************************************************************************/
 /**                        Motor telemetry functions                         **/

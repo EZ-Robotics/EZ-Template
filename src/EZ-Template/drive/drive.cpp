@@ -27,11 +27,11 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 
   // Set ports to a global vector
   for (auto i : left_motor_ports) {
-    pros::Motor temp(abs(i), util::is_reversed(i));
+    pros::Motor temp(abs(i), util::reversed_active(i));
     left_motors.push_back(temp);
   }
   for (auto i : right_motor_ports) {
-    pros::Motor temp(abs(i), util::is_reversed(i));
+    pros::Motor temp(abs(i), util::reversed_active(i));
     right_motors.push_back(temp);
   }
 
@@ -39,9 +39,9 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
   WHEEL_DIAMETER = wheel_diameter;
   RATIO = ratio;
   CARTRIDGE = ticks;
-  TICK_PER_INCH = get_tick_per_inch();
+  TICK_PER_INCH = drive_tick_per_inch();
 
-  set_defaults();
+  drive_defaults_set();
 }
 
 // Constructor for tracking wheels plugged into the brain
@@ -49,8 +49,8 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
              int imu_port, double wheel_diameter, double ticks, double ratio,
              std::vector<int> left_tracker_ports, std::vector<int> right_tracker_ports)
     : imu(imu_port),
-      left_tracker(abs(left_tracker_ports[0]), abs(left_tracker_ports[1]), util::is_reversed(left_tracker_ports[0])),
-      right_tracker(abs(right_tracker_ports[0]), abs(right_tracker_ports[1]), util::is_reversed(right_tracker_ports[0])),
+      left_tracker(abs(left_tracker_ports[0]), abs(left_tracker_ports[1]), util::reversed_active(left_tracker_ports[0])),
+      right_tracker(abs(right_tracker_ports[0]), abs(right_tracker_ports[1]), util::reversed_active(right_tracker_ports[0])),
       left_rotation(-1),
       right_rotation(-1),
       ez_auto([this] { this->ez_auto_task(); }) {
@@ -58,11 +58,11 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 
   // Set ports to a global vector
   for (auto i : left_motor_ports) {
-    pros::Motor temp(abs(i), util::is_reversed(i));
+    pros::Motor temp(abs(i), util::reversed_active(i));
     left_motors.push_back(temp);
   }
   for (auto i : right_motor_ports) {
-    pros::Motor temp(abs(i), util::is_reversed(i));
+    pros::Motor temp(abs(i), util::reversed_active(i));
     right_motors.push_back(temp);
   }
 
@@ -70,9 +70,9 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
   WHEEL_DIAMETER = wheel_diameter;
   RATIO = ratio;
   CARTRIDGE = ticks;
-  TICK_PER_INCH = get_tick_per_inch();
+  TICK_PER_INCH = drive_tick_per_inch();
 
-  set_defaults();
+  drive_defaults_set();
 }
 
 // Constructor for tracking wheels plugged into a 3 wire expander
@@ -80,8 +80,8 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
              int imu_port, double wheel_diameter, double ticks, double ratio,
              std::vector<int> left_tracker_ports, std::vector<int> right_tracker_ports, int expander_smart_port)
     : imu(imu_port),
-      left_tracker({expander_smart_port, abs(left_tracker_ports[0]), abs(left_tracker_ports[1])}, util::is_reversed(left_tracker_ports[0])),
-      right_tracker({expander_smart_port, abs(right_tracker_ports[0]), abs(right_tracker_ports[1])}, util::is_reversed(right_tracker_ports[0])),
+      left_tracker({expander_smart_port, abs(left_tracker_ports[0]), abs(left_tracker_ports[1])}, util::reversed_active(left_tracker_ports[0])),
+      right_tracker({expander_smart_port, abs(right_tracker_ports[0]), abs(right_tracker_ports[1])}, util::reversed_active(right_tracker_ports[0])),
       left_rotation(-1),
       right_rotation(-1),
       ez_auto([this] { this->ez_auto_task(); }) {
@@ -89,11 +89,11 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 
   // Set ports to a global vector
   for (auto i : left_motor_ports) {
-    pros::Motor temp(abs(i), util::is_reversed(i));
+    pros::Motor temp(abs(i), util::reversed_active(i));
     left_motors.push_back(temp);
   }
   for (auto i : right_motor_ports) {
-    pros::Motor temp(abs(i), util::is_reversed(i));
+    pros::Motor temp(abs(i), util::reversed_active(i));
     right_motors.push_back(temp);
   }
 
@@ -101,9 +101,9 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
   WHEEL_DIAMETER = wheel_diameter;
   RATIO = ratio;
   CARTRIDGE = ticks;
-  TICK_PER_INCH = get_tick_per_inch();
+  TICK_PER_INCH = drive_tick_per_inch();
 
-  set_defaults();
+  drive_defaults_set();
 }
 
 // Constructor for rotation sensors
@@ -117,16 +117,16 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
       right_rotation(abs(right_rotation_port)),
       ez_auto([this] { this->ez_auto_task(); }) {
   is_tracker = DRIVE_ROTATION;
-  left_rotation.set_reversed(util::is_reversed(left_rotation_port));
-  right_rotation.set_reversed(util::is_reversed(right_rotation_port));
+  left_rotation.set_reversed(util::reversed_active(left_rotation_port));
+  right_rotation.set_reversed(util::reversed_active(right_rotation_port));
 
   // Set ports to a global vector
   for (auto i : left_motor_ports) {
-    pros::Motor temp(abs(i), util::is_reversed(i));
+    pros::Motor temp(abs(i), util::reversed_active(i));
     left_motors.push_back(temp);
   }
   for (auto i : right_motor_ports) {
-    pros::Motor temp(abs(i), util::is_reversed(i));
+    pros::Motor temp(abs(i), util::reversed_active(i));
     right_motors.push_back(temp);
   }
 
@@ -134,45 +134,45 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
   WHEEL_DIAMETER = wheel_diameter;
   RATIO = ratio;
   CARTRIDGE = 36000;
-  TICK_PER_INCH = get_tick_per_inch();
+  TICK_PER_INCH = drive_tick_per_inch();
 
-  set_defaults();
+  drive_defaults_set();
 }
 
-void Drive::set_defaults() {
+void Drive::drive_defaults_set() {
   // PID Constants
-  set_heading_pid_constants(3, 0, 20, 0);
-  set_drive_pid_constants(15, 0, 150);
-  set_turn_pid_constants(3, 0, 20, 0);
-  set_swing_pid_constants(5, 0, 30, 0);
-  set_turn_min(30);
-  set_swing_min(30);
+  pid_heading_constants_set(3, 0, 20, 0);
+  pid_drive_constants_set(15, 0, 150);
+  pid_turn_constants_set(3, 0, 20, 0);
+  pid_swing_constants_set(5, 0, 30, 0);
+  pid_turn_min_set(30);
+  pid_swing_min_set(30);
 
   // Slew constants
-  set_slew_min_power(80, 80);
-  set_slew_distance(7_in, 7_in);
+  slew_power_min_set(80, 80);
+  slew_distance_set(7_in, 7_in);
 
   // Exit condition constants
-  set_turn_exit_condition(200, 3, 500, 7, 750, 750);
-  set_swing_exit_condition(200, 3, 500, 7, 750, 750);
-  set_drive_exit_condition(200, 1_in, 500, 3_in, 750, 750);
+  pid_turn_exit_condition_set(200, 3, 500, 7, 750, 750);
+  pid_swing_exit_condition_set(200, 3, 500, 7, 750, 750);
+  pid_drive_exit_condition_set(200, 1_in, 500, 3_in, 750, 750);
 
   // Modify joystick curve on controller (defaults to disabled)
-  toggle_modify_curve_with_controller(true);
+  opcontrol_curve_buttons_toggle(true);
 
   // Left / Right modify buttons
-  set_left_curve_buttons(pros::E_CONTROLLER_DIGITAL_LEFT, pros::E_CONTROLLER_DIGITAL_RIGHT);
-  set_right_curve_buttons(pros::E_CONTROLLER_DIGITAL_Y, pros::E_CONTROLLER_DIGITAL_A);
+  opcontrol_curve_buttons_left(pros::E_CONTROLLER_DIGITAL_LEFT, pros::E_CONTROLLER_DIGITAL_RIGHT);
+  opcontrol_curve_buttons_right(pros::E_CONTROLLER_DIGITAL_Y, pros::E_CONTROLLER_DIGITAL_A);
 
   // Enable auto printing and drive motors moving
-  toggle_auto_drive(true);
-  toggle_auto_print(true);
+  pid_drive_toggle(true);
+  pid_print_toggle(true);
 
   // Disables limit switch for auto selector
   as::limit_switch_lcd_initialize(nullptr, nullptr);
 }
 
-double Drive::get_tick_per_inch() {
+double Drive::drive_tick_per_inch() {
   CIRCUMFERENCE = WHEEL_DIAMETER * M_PI;
 
   if (is_tracker == DRIVE_ADI_ENCODER || is_tracker == DRIVE_ROTATION)
@@ -184,9 +184,9 @@ double Drive::get_tick_per_inch() {
   return TICK_PER_INCH;
 }
 
-void Drive::set_ratio(double ratio) { RATIO = ratio; }
+void Drive::drive_ratio_set(double ratio) { RATIO = ratio; }
 
-void Drive::private_set_tank(int left, int right) {
+void Drive::private_drive_set(int left, int right) {
   if (pros::millis() < 1500) return;
 
   for (auto i : left_motors) {
@@ -197,12 +197,12 @@ void Drive::private_set_tank(int left, int right) {
   }
 }
 
-void Drive::set_tank(int left, int right) {
-  set_mode(DISABLE);
-  private_set_tank(left, right);
+void Drive::drive_set(int left, int right) {
+  drive_mode_set(DISABLE);
+  private_drive_set(left, right);
 }
 
-void Drive::set_drive_current_limit(int mA) {
+void Drive::drive_current_limit_set(int mA) {
   if (abs(mA) > 2500) {
     mA = 2500;
   }
@@ -216,7 +216,7 @@ void Drive::set_drive_current_limit(int mA) {
 }
 
 // Motor telemetry
-void Drive::reset_drive_sensor() {
+void Drive::drive_sensor_reset() {
   left_motors.front().tare_position();
   right_motors.front().tare_position();
   if (is_tracker == DRIVE_ADI_ENCODER) {
@@ -230,34 +230,34 @@ void Drive::reset_drive_sensor() {
   }
 }
 
-int Drive::raw_right_sensor() {
+int Drive::drive_sensor_right_raw() {
   if (is_tracker == DRIVE_ADI_ENCODER)
     return right_tracker.get_value();
   else if (is_tracker == DRIVE_ROTATION)
     return right_rotation.get_position();
   return right_motors.front().get_position();
 }
-double Drive::right_sensor() { return raw_right_sensor() / get_tick_per_inch(); }
-int Drive::right_velocity() { return right_motors.front().get_actual_velocity(); }
-double Drive::right_mA() { return right_motors.front().get_current_draw(); }
-bool Drive::right_over_current() { return right_motors.front().is_over_current(); }
+double Drive::drive_sensor_right() { return drive_sensor_right_raw() / drive_tick_per_inch(); }
+int Drive::drive_velocity_right() { return right_motors.front().get_actual_velocity(); }
+double Drive::drive_mA_right() { return right_motors.front().get_current_draw(); }
+bool Drive::drive_current_right_over() { return right_motors.front().is_over_current(); }
 
-int Drive::raw_left_sensor() {
+int Drive::drive_sensor_left_raw() {
   if (is_tracker == DRIVE_ADI_ENCODER)
     return left_tracker.get_value();
   else if (is_tracker == DRIVE_ROTATION)
     return left_rotation.get_position();
   return left_motors.front().get_position();
 }
-double Drive::left_sensor() { return raw_left_sensor() / get_tick_per_inch(); }
-int Drive::left_velocity() { return left_motors.front().get_actual_velocity(); }
-double Drive::left_mA() { return left_motors.front().get_current_draw(); }
-bool Drive::left_over_current() { return left_motors.front().is_over_current(); }
+double Drive::drive_sensor_left() { return drive_sensor_left_raw() / drive_tick_per_inch(); }
+int Drive::drive_velocity_left() { return left_motors.front().get_actual_velocity(); }
+double Drive::drive_mA_left() { return left_motors.front().get_current_draw(); }
+bool Drive::drive_current_left_over() { return left_motors.front().is_over_current(); }
 
-void Drive::reset_gyro(double new_heading) { imu.set_rotation(new_heading); }
-double Drive::get_gyro() { return imu.get_rotation(); }
+void Drive::drive_imu_reset(double new_heading) { imu.set_rotation(new_heading); }
+double Drive::drive_imu_get() { return imu.get_rotation(); }
 
-void Drive::imu_loading_display(int iter) {
+void Drive::drive_imu_display_loading(int iter) {
   // If the lcd is already initialized, don't run this function
   if (pros::lcd::is_initialized()) return;
 
@@ -288,13 +288,13 @@ void Drive::imu_loading_display(int iter) {
   }
 }
 
-bool Drive::imu_calibrate(bool run_loading_animation) {
+bool Drive::drive_imu_calibrate(bool run_loading_animation) {
   imu.reset();
   int iter = 0;
   while (true) {
     iter += util::DELAY_TIME;
 
-    if (run_loading_animation) imu_loading_display(iter);
+    if (run_loading_animation) drive_imu_display_loading(iter);
 
     if (iter >= 2000) {
       if (!(imu.get_status() & pros::c::E_IMU_STATUS_CALIBRATING)) {
@@ -313,7 +313,7 @@ bool Drive::imu_calibrate(bool run_loading_animation) {
 }
 
 // Brake modes
-void Drive::set_drive_brake(pros::motor_brake_mode_e_t brake_type) {
+void Drive::drive_brake_set(pros::motor_brake_mode_e_t brake_type) {
   CURRENT_BRAKE = brake_type;
   for (auto i : left_motors) {
     if (!pto_check(i)) i.set_brake_mode(brake_type);  // If the motor is in the pto list, don't do anything to the motor.
@@ -324,10 +324,10 @@ void Drive::set_drive_brake(pros::motor_brake_mode_e_t brake_type) {
 }
 
 void Drive::initialize() {
-  init_curve_sd();
-  imu_calibrate();
-  reset_drive_sensor();
+  opcontrol_curve_sd_initialize();
+  drive_imu_calibrate();
+  drive_sensor_reset();
 }
 
-void Drive::toggle_auto_drive(bool toggle) { drive_toggle = toggle; }
-void Drive::toggle_auto_print(bool toggle) { print_toggle = toggle; }
+void Drive::pid_drive_toggle(bool toggle) { drive_toggle = toggle; }
+void Drive::pid_print_toggle(bool toggle) { print_toggle = toggle; }

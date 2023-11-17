@@ -230,7 +230,7 @@ class Motor {
 	 * \return The target position in its encoder units or PROS_ERR_F if the
 	 * operation failed, setting errno.
 	 */
-	virtual double get_target_position(void) const;
+	virtual double target_get_position(void) const;
 
 	/**
 	 * Gets the velocity commanded to the motor by the user.
@@ -242,7 +242,7 @@ class Motor {
 	 * \return The commanded motor velocity from +-100, +-200, or +-600, or
 	 * PROS_ERR if the operation failed, setting errno.
 	 */
-	virtual std::int32_t get_target_velocity(void) const;
+	virtual std::int32_t target_get_velocity(void) const;
 
 	/****************************************************************************/
 	/**                        Motor telemetry functions                       **/

@@ -9,13 +9,13 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 using namespace ez;
 
 // Set minimum power
-void Drive::set_slew_min_power(int fwd, int rev) {
+void Drive::slew_power_min_set(int fwd, int rev) {
   SLEW_MIN_POWER[0] = abs(fwd);
   SLEW_MIN_POWER[1] = abs(rev);
 }
 
 // Set distance to slew for
-void Drive::set_slew_distance(okapi::QLength fwd, okapi::QLength rev) {
+void Drive::slew_distance_set(okapi::QLength fwd, okapi::QLength rev) {
   SLEW_DISTANCE[0] = fabs(fwd.convert(okapi::inch));
   SLEW_DISTANCE[1] = fabs(rev.convert(okapi::inch));
 }
@@ -32,7 +32,7 @@ void Drive::slew_initialize(slew_ &input, bool slew_on, double max_speed, double
 }
 
 // Slew calculation
-double Drive::slew_calculate(slew_ &input, double current) {
+double Drive::slew_iterate(slew_ &input, double current) {
   // Is slew still on?
   if (input.enabled) {
     // Error is distance away from completed slew

@@ -9,20 +9,20 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 using namespace ez;
 
-void Drive::set_drive_exit_condition(int p_small_exit_time, okapi::QLength p_small_error, int p_big_exit_time, okapi::QLength p_big_error, int p_velocity_exit_time, int p_mA_timeout) {
-  leftPID.set_exit_condition(p_small_exit_time, p_small_error.convert(okapi::inch), p_big_exit_time, p_big_error.convert(okapi::inch), p_velocity_exit_time, p_mA_timeout);
-  rightPID.set_exit_condition(p_small_exit_time, p_small_error.convert(okapi::inch), p_big_exit_time, p_big_error.convert(okapi::inch), p_velocity_exit_time, p_mA_timeout);
+void Drive::pid_drive_exit_condition_set(int p_small_exit_time, okapi::QLength p_small_error, int p_big_exit_time, okapi::QLength p_big_error, int p_velocity_exit_time, int p_mA_timeout) {
+  leftPID.exit_condition_set(p_small_exit_time, p_small_error.convert(okapi::inch), p_big_exit_time, p_big_error.convert(okapi::inch), p_velocity_exit_time, p_mA_timeout);
+  rightPID.exit_condition_set(p_small_exit_time, p_small_error.convert(okapi::inch), p_big_exit_time, p_big_error.convert(okapi::inch), p_velocity_exit_time, p_mA_timeout);
 }
 
-void Drive::set_turn_exit_condition(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout) {
-  turnPID.set_exit_condition(p_small_exit_time, p_small_error, p_big_exit_time, p_big_error, p_velocity_exit_time, p_mA_timeout);
+void Drive::pid_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout) {
+  turnPID.exit_condition_set(p_small_exit_time, p_small_error, p_big_exit_time, p_big_error, p_velocity_exit_time, p_mA_timeout);
 }
-void Drive::set_swing_exit_condition(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout) {
-  swingPID.set_exit_condition(p_small_exit_time, p_small_error, p_big_exit_time, p_big_error, p_velocity_exit_time, p_mA_timeout);
+void Drive::pid_swing_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout) {
+  swingPID.exit_condition_set(p_small_exit_time, p_small_error, p_big_exit_time, p_big_error, p_velocity_exit_time, p_mA_timeout);
 }
 
 // User wrapper for exit condition
-void Drive::wait_drive() {
+void Drive::pid_wait() {
   // Let the PID run at least 1 iteration
   pros::delay(util::DELAY_TIME);
 
@@ -77,8 +77,8 @@ void Drive::wait_until_drive(double target) {
     // Calculate error between current and target (target needs to be an in between position)
     int l_tar = l_start + target;
     int r_tar = r_start + target;
-    int l_error = l_tar - left_sensor();
-    int r_error = r_tar - right_sensor();
+    int l_error = l_tar - drive_sensor_left();
+    int r_error = r_tar - drive_sensor_right();
     int l_sgn = util::sgn(l_error);
     int r_sgn = util::sgn(r_error);
 
@@ -86,8 +86,8 @@ void Drive::wait_until_drive(double target) {
     exit_output right_exit = RUNNING;
 
     while (true) {
-      l_error = l_tar - left_sensor();
-      r_error = r_tar - right_sensor();
+      l_error = l_tar - drive_sensor_left();
+      r_error = r_tar - drive_sensor_right();
 
       // Before robot has reached target, use the exit conditions to avoid getting stuck in this while loop
       if (util::sgn(l_error) == l_sgn || util::sgn(r_error) == r_sgn) {
@@ -115,7 +115,7 @@ void Drive::wait_until_drive(double target) {
   }
 }
 
-void Drive::wait_until(okapi::QLength target) {
+void Drive::pid_wait_until(okapi::QLength target) {
   // If robot is driving...
   if (mode == DRIVE) {
     wait_until_drive(target.convert(okapi::inch));
@@ -125,7 +125,7 @@ void Drive::wait_until(okapi::QLength target) {
 }
 
 // Function to wait until a certain position is reached.  Wrapper for exit condition.
-void Drive::wait_until(double target) {
+void Drive::pid_wait_until(double target) {
   // If robot is driving...
   if (mode == DRIVE) {
     wait_until_drive(target);
@@ -134,7 +134,7 @@ void Drive::wait_until(double target) {
   // If robot is turning or swinging...
   else if (mode == TURN || mode == SWING) {
     // Calculate error between current and target (target needs to be an in between position)
-    int g_error = target - get_gyro();
+    int g_error = target - drive_imu_get();
     int g_sgn = util::sgn(g_error);
 
     exit_output turn_exit = RUNNING;
@@ -143,7 +143,7 @@ void Drive::wait_until(double target) {
     pros::Motor& sensor = current_swing == ez::LEFT_SWING ? left_motors[0] : right_motors[0];
 
     while (true) {
-      g_error = target - get_gyro();
+      g_error = target - drive_imu_get();
 
       // If turning...
       if (mode == TURN) {

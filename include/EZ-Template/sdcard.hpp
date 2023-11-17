@@ -15,12 +15,12 @@ extern AutonSelector auton_selector;
 /**
  * Sets sd card to current page.
  */
-void init_auton_selector();
+void auton_selector_initialize();
 
 /**
  * Sets the sd card to current page.
  */
-void update_auto_sd();
+void auto_sd_update();
 
 /**
  * Increases the page by 1.
@@ -44,8 +44,8 @@ void shutdown();
 
 extern bool turn_off;
 
-extern pros::ADIDigitalIn* left_limit_switch;
-extern pros::ADIDigitalIn* right_limit_switch;
+extern pros::ADIDigitalIn* limit_switch_left;
+extern pros::ADIDigitalIn* limit_switch_right;
 /**
  * Initialize two limitswithces to change pages on the lcd
  *

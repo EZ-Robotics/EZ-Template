@@ -275,8 +275,8 @@ imu_accel_s_t imu_get_accel(uint8_t port);
 imu_status_e_t imu_get_status(uint8_t port);
 
 // NOTE: not used
-// void imu_set_mode(uint8_t port, uint32_t mode);
-// uint32_t imu_get_mode(uint8_t port);
+// void imu_drive_mode_set(uint8_t port, uint32_t mode);
+// uint32_t imu_drive_mode_get(uint8_t port);
 
 //Value reset functions:
 /**
