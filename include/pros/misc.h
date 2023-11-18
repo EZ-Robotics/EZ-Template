@@ -10,7 +10,7 @@
  * This file should not be modified by users, since it gets replaced whenever
  * a kernel upgrade occurs.
  *
- * Copyright (c) 2017-2022, Purdue University ACM SIGBots.
+ * \copyright Copyright (c) 2017-2023, Purdue University ACM SIGBots.
  * All rights reservered.
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -150,6 +150,25 @@ failed to connect or an invalid id is given.
 		errno = EACCES;						\
 		return PROS_ERR;					\
 	}										\
+/******************************************************************************/
+/**                              Date and Time                               **/
+/******************************************************************************/
+
+extern const char* baked_date;
+extern const char* baked_time;
+
+typedef struct {
+	uint16_t year; // Year - 1980
+	uint8_t day;
+	uint8_t month; // 1 = January
+} date_s_t;
+
+typedef struct {
+	uint8_t hour;
+	uint8_t min;
+	uint8_t sec;
+	uint8_t sec_hund; // hundredths of a second
+} time_s_t;
 
 #ifdef __cplusplus
 namespace c {

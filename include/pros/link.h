@@ -9,7 +9,7 @@
  * This file should not be modified by users, since it gets replaced whenever
  * a kernel upgrade occurs.
  *
- * Copyright (c) 2017-2022, Purdue University ACM SIGBots.
+ * \copyright Copyright (c) 2017-2023, Purdue University ACM SIGBots.
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -29,8 +29,24 @@ namespace pros {
 
 typedef enum link_type_e {
     E_LINK_RECIEVER = 0,
-    E_LINK_TRANSMITTER
+    E_LINK_TRANSMITTER,
+    E_LINK_RX = E_LINK_RECIEVER,
+    E_LINK_TX = E_LINK_TRANSMITTER
 } link_type_e_t;
+
+#ifdef PROS_USE_SIMPLE_NAMES
+#ifdef __cplusplus
+#define LINK_RECIEVER pros::E_LINK_RECIEVER
+#define LINK_TRANSMITTER pros::E_LINK_TRANSMITTER
+#define LINK_RX pros::E_LINK_RX
+#define LINK_TX pros::E_LINK_TX
+#else
+#define LINK_RECIEVER E_LINK_RECIEVER
+#define LINK_TRANSMITTER E_LINK_TRANSMITTER
+#define LINK_RX E_LINK_RX
+#define LINK_TX E_LINK_TX
+#endif
+#endif
 
 #define LINK_BUFFER_SIZE 512
 
@@ -41,6 +57,7 @@ namespace c {
 /**
  * Initializes a link on a radio port, with an indicated type. There might be a
  * 1 to 2 second delay from when this function is called to when the link is initializes.
+ * PROS currently only supports the use of one radio per brain.
  *
  * This function uses the following values of errno when an error state is
  * reached:
@@ -66,6 +83,7 @@ uint32_t link_init(uint8_t port, const char* link_id, link_type_e_t type);
  * Initializes a link on a radio port, with an indicated type and the ability for
  * vexlink to override the controller radio. There might be a 1 to 2 second delay
  * from when this function is called to when the link is initializes.
+ * PROS currently only supports the use of one radio per brain.
  *
  * This function uses the following values of errno when an error state is
  * reached:

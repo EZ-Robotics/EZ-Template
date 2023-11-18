@@ -27,8 +27,8 @@ class PID {
    *        kD
    * \param p_start_i
    *        error value that i starts within
-    * \param name
-   *        std::string of name that prints 
+   * \param name
+   *        std::string of name that prints
    */
   PID(double p, double i = 0, double d = 0, double start_i = 0, std::string name = "");
 
@@ -154,7 +154,7 @@ class PID {
   ez::exit_output exit_condition(std::vector<pros::Motor> sensor, bool print = false);
 
   /**
-   * Sets the name of the PID that prints during exit conditions. 
+   * Sets the name of the PID that prints during exit conditions.
    *
    * \param name
    *        a string that is the name you want to print
@@ -162,7 +162,20 @@ class PID {
   void name_set(std::string name);
 
   /**
-   * PID variables. 
+   * Enables / disables i resetting when sgn of error changes.  True resets, false doesn't.
+   *
+   * \param toggle
+   *        true resets, false doesn't
+   */
+  void i_reset_toggle(bool toggle);
+
+  /**
+   * Returns if i will reset when sgn of error changes.  True resets, false doesn't.
+   */
+  bool i_reset_get();
+
+  /**
+   * PID variables.
    */
   double output;
   double cur;
@@ -181,4 +194,5 @@ class PID {
   std::string name;
   bool name_active = false;
   void exit_condition_print(ez::exit_output exit_type);
+  bool reset_i_sgn = true;
 };

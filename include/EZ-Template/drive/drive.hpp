@@ -12,7 +12,9 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "EZ-Template/PID.hpp"
 #include "EZ-Template/util.hpp"
+#include "okapi/api/units/QAngle.hpp"
 #include "okapi/api/units/QLength.hpp"
+#include "okapi/api/units/QTime.hpp"
 #include "pros/motors.h"
 
 using namespace ez;
@@ -523,34 +525,46 @@ class Drive {
   /**
    * Sets the robot to turn using PID.
    *
-   * \param target
+   * \param p_target
    *        target value in degrees
    * \param speed
    *        0 to 127, max speed during motion
    */
-  void pid_turn_set(double target, int speed);
+  void pid_turn_set(okapi::QAngle p_target, int speed);
 
   /**
-  * Sets the robot to turn relative to current heading using PID.
-  * 
-  * \param target
-  *        target in degrees relative to current heading
-  * \param speed
-  *        0 to 127, max speed during motion
-  */
-  void pid_turn_relative_set(double target, int speed);
+   * Sets the robot to turn relative to current heading using PID.
+   *
+   * \param p_target
+   *        target value in okapi angle units
+   * \param speed
+   *        0 to 127, max speed during motion
+   */
+  void pid_turn_relative_set(okapi::QAngle p_target, int speed);
 
   /**
    * Turn using only the left or right side.
    *
    * \param type
    *        L_SWING or R_SWING
-   * \param target
+   * \param p_target
    *        target value in degrees
    * \param speed
    *        0 to 127, max speed during motion
    */
-  void pid_swing_set(e_swing type, double target, int speed);
+  void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed);
+
+  /**
+   * Sets the robot to turn only using the left or right side relative to current heading using PID.
+   *
+   * \param type
+   *        L_SWING or R_SWING
+   * \param p_target
+   *        target value in okapi angle units
+   * \param speed
+   *        0 to 127, max speed during motion
+   */
+  void pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed);
 
   /**
    * Resets all PID targets to 0.
@@ -560,7 +574,7 @@ class Drive {
   /**
    * Sets heading of gyro and target of PID.
    */
-  void set_angle(double angle);
+  void set_angle(okapi::QAngle p_angle);
 
   /**
    * Lock the code in a while loop until the robot has settled.
@@ -568,12 +582,12 @@ class Drive {
   void pid_wait();
 
   /**
-   * Lock the code in a while loop until this position has passed.
+   * Lock the code in a while loop until this position has passed for turning or swinging with okapi units.
    *
    * \param target
-   *        when driving, this is inches.  when turning, this is degrees.
+   *        for turning, using okapi units
    */
-  void pid_wait_until(double target);
+  void pid_wait_until(okapi::QAngle target);
 
   /**
    * Lock the code in a while loop until this position has passed for driving with okapi units.
@@ -713,49 +727,49 @@ class Drive {
    * Set's constants for drive exit conditions.
    *
    * \param p_small_exit_time
-   *        Sets small_exit_time.  Timer for to exit within smalL_error.
+   *        Sets small_exit_time.  Timer for to exit within smalL_error.  In okapi units.
    * \param p_small_error
-   *        Sets smalL_error. Timer will start when error is within this.  Okapi unit.
+   *        Sets smalL_error. Timer will start when error is within this.  In okapi units.
    * \param p_big_exit_time
-   *        Sets big_exit_time.  Timer for to exit within big_error.
+   *        Sets big_exit_time.  Timer for to exit within big_error.  In okapi units.
    * \param p_big_error
-   *        Sets big_error. Timer will start when error is within this. Okapi unit.
+   *        Sets big_error. Timer will start when error is within this.  In okapi units.
    * \param p_velocity_exit_time
-   *        Sets velocity_exit_time.  Timer will start when velocity is 0.
+   *        Sets velocity_exit_time.  Timer will start when velocity is 0.  In okapi units.
    */
-  void pid_drive_exit_condition_set(int p_small_exit_time, okapi::QLength p_small_error, int p_big_exit_time, okapi::QLength p_big_error, int p_velocity_exit_time, int p_mA_timeout);
+  void pid_drive_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QLength p_small_error, okapi::QTime p_big_exit_time, okapi::QLength p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout);
 
   /**
    * Set's constants for turn exit conditions.
    *
    * \param p_small_exit_time
-   *        Sets small_exit_time.  Timer for to exit within smalL_error.
+   *        Sets small_exit_time.  Timer for to exit within smalL_error.  In okapi units.
    * \param p_small_error
-   *        Sets smalL_error. Timer will start when error is within this.
+   *        Sets smalL_error. Timer will start when error is within this.  In okapi units.
    * \param p_big_exit_time
-   *        Sets big_exit_time.  Timer for to exit within big_error.
+   *        Sets big_exit_time.  Timer for to exit within big_error.  In okapi units.
    * \param p_big_error
-   *        Sets big_error. Timer will start when error is within this.
+   *        Sets big_error. Timer will start when error is within this.  In okapi units.
    * \param p_velocity_exit_time
-   *        Sets velocity_exit_time.  Timer will start when velocity is 0.
+   *        Sets velocity_exit_time.  Timer will start when velocity is 0.  In okapi units.
    */
-  void pid_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout);
+  void pid_turn_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QAngle p_small_error, okapi::QTime p_big_exit_time, okapi::QAngle p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout);
 
   /**
    * Set's constants for swing exit conditions.
    *
    * \param p_small_exit_time
-   *        Sets small_exit_time.  Timer for to exit within smalL_error.
+   *        Sets small_exit_time.  Timer for to exit within smalL_error.  In okapi units.
    * \param p_small_error
-   *        Sets smalL_error. Timer will start when error is within this.
+   *        Sets smalL_error. Timer will start when error is within this.  In okapi units.
    * \param p_big_exit_time
-   *        Sets big_exit_time.  Timer for to exit within big_error.
+   *        Sets big_exit_time.  Timer for to exit within big_error.  In okapi units.
    * \param p_big_error
-   *        Sets big_error. Timer will start when error is within this.
+   *        Sets big_error. Timer will start when error is within this.  In okapi units.
    * \param p_velocity_exit_time
-   *        Sets velocity_exit_time.  Timer will start when velocity is 0.
+   *        Sets velocity_exit_time.  Timer will start when velocity is 0.  In okapi units.
    */
-  void pid_swing_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout);
+  void pid_swing_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QAngle p_small_error, okapi::QTime p_big_exit_time, okapi::QAngle p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout);
 
   /**
    * Returns current tick_per_inch()
@@ -823,6 +837,7 @@ class Drive {
    * Private wait until for drive
    */
   void wait_until_drive(double target);
+  void wait_until_turn_swing(double target);
 
   /**
    * Sets the chassis to voltage.

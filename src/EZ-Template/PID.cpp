@@ -54,6 +54,9 @@ void PID::exit_condition_set(int p_small_exit_time, double p_small_error, int p_
 void PID::target_set(double input) { target = input; }
 double PID::target_get() { return target; }
 
+void PID::i_reset_toggle(bool toggle) { reset_i_sgn = toggle; }
+bool PID::i_reset_get() { return reset_i_sgn; };
+
 double PID::compute(double current) {
   error = target - current;
   derivative = error - prev_error;
@@ -62,7 +65,7 @@ double PID::compute(double current) {
     if (fabs(error) < constants.start_i)
       integral += error;
 
-    if (util::sgn(error) != util::sgn(prev_error))
+    if (util::sgn(error) != util::sgn(prev_error) && reset_i_sgn)
       integral = 0;
   }
 

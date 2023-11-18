@@ -142,7 +142,7 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 void Drive::drive_defaults_set() {
   // PID Constants
   pid_heading_constants_set(3, 0, 20, 0);
-  pid_drive_constants_set(15, 0, 150);
+  pid_drive_constants_set(10, 0, 100, 0);
   pid_turn_constants_set(3, 0, 20, 0);
   pid_swing_constants_set(5, 0, 30, 0);
   pid_turn_min_set(30);
@@ -153,9 +153,9 @@ void Drive::drive_defaults_set() {
   slew_distance_set(7_in, 7_in);
 
   // Exit condition constants
-  pid_turn_exit_condition_set(200, 3, 500, 7, 750, 750);
-  pid_swing_exit_condition_set(200, 3, 500, 7, 750, 750);
-  pid_drive_exit_condition_set(200, 1_in, 500, 3_in, 750, 750);
+  pid_turn_exit_condition_set(300_ms, 3_deg, 500_ms, 7_deg, 750_ms, 750_ms);
+  pid_swing_exit_condition_set(300_ms, 3_deg, 500_ms, 7_deg, 750_ms, 750_ms);
+  pid_drive_exit_condition_set(300_ms, 1_in, 500_ms, 3_in, 750_ms, 750_ms);
 
   // Modify joystick curve on controller (defaults to disabled)
   opcontrol_curve_buttons_toggle(true);
@@ -307,7 +307,6 @@ bool Drive::drive_imu_calibrate(bool run_loading_animation) {
     }
     pros::delay(util::DELAY_TIME);
   }
-  master.rumble(".");
   printf("IMU is done calibrating (took %d ms)\n", iter);
   return true;
 }

@@ -46,7 +46,9 @@ void Drive::pid_targets_reset() {
   turnPID.target_set(0);
 }
 
-void Drive::set_angle(double angle) {
+void Drive::set_angle(okapi::QAngle p_angle) {
+  double angle = p_angle.convert(okapi::degree);  // Convert okapi unit to degree
+
   headingPID.target_set(angle);
   drive_imu_reset(angle);
 }
@@ -63,7 +65,7 @@ e_mode Drive::drive_mode_get() { return mode; }
 
 // Set drive PID
 void Drive::pid_drive_set(okapi::QLength p_target, int speed, bool slew_on, bool toggle_heading) {
-  double target = p_target.convert(okapi::inch);
+  double target = p_target.convert(okapi::inch);  // Convert okapi unit to inches
 
   // Print targets
   if (print_toggle) printf("Drive Started... Target Value: %f in", target);
@@ -109,7 +111,9 @@ void Drive::pid_drive_set(okapi::QLength p_target, int speed, bool slew_on, bool
 }
 
 // Set turn PID
-void Drive::pid_turn_set(double target, int speed) {
+void Drive::pid_turn_set(okapi::QAngle p_target, int speed) {
+  double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
+
   // Print targets
   if (print_toggle) printf("Turn Started... Target Value: %f\n", target);
 
@@ -122,10 +126,11 @@ void Drive::pid_turn_set(double target, int speed) {
   drive_mode_set(TURN);
 }
 
-void Drive::pid_turn_relative_set(double target, int speed) {
+void Drive::pid_turn_relative_set(okapi::QAngle p_target, int speed) {
+  double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
   // Compute absolute target by adding to current heading
   double absolute_target = turnPID.target_get() + target;
-  
+
   // Print targets
   if (print_toggle) printf("Turn Started... Target Value: %f\n", absolute_target);
 
@@ -139,7 +144,8 @@ void Drive::pid_turn_relative_set(double target, int speed) {
 }
 
 // Set swing PID
-void Drive::pid_swing_set(e_swing type, double target, int speed) {
+void Drive::pid_swing_set(e_swing type, okapi::QAngle p_target, int speed) {
+  double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
   // Print targets
   if (print_toggle) printf("Swing Started... Target Value: %f\n", target);
   current_swing = type;
@@ -147,6 +153,26 @@ void Drive::pid_swing_set(e_swing type, double target, int speed) {
   // Set PID targets
   swingPID.target_set(target);
   headingPID.target_set(target);  // Update heading target for next drive motion
+  pid_speed_max_set(speed);
+
+  // Run task
+  drive_mode_set(SWING);
+}
+
+// Set swing PID
+void Drive::pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed) {
+  double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
+
+  // Compute absolute target by adding to current heading
+  double absolute_target = swingPID.target_get() + target;
+
+  // Print targets
+  if (print_toggle) printf("Swing Started... Target Value: %f\n", absolute_target);
+  current_swing = type;
+
+  // Set PID targets
+  swingPID.target_set(absolute_target);
+  headingPID.target_set(absolute_target);  // Update heading target for next drive motion
   pid_speed_max_set(speed);
 
   // Run task

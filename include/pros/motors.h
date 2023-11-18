@@ -9,7 +9,7 @@
  * This file should not be modified by users, since it gets replaced whenever
  * a kernel upgrade occurs.
  *
- * Copyright (c) 2017-2022, Purdue University ACM SIGBots.
+ * \copyright Copyright (c) 2017-2023, Purdue University ACM SIGBots.
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -209,7 +209,7 @@ int32_t motor_modify_profiled_velocity(uint8_t port, const int32_t velocity);
  * \return The target position in its encoder units or PROS_ERR_F if the
  * operation failed, setting errno.
  */
-double motor_target_get_position(uint8_t port);
+double motor_get_target_position(uint8_t port);
 
 /**
  * Gets the velocity commanded to the motor by the user.
@@ -225,7 +225,7 @@ double motor_target_get_position(uint8_t port);
  * \return The commanded motor velocity from +-100, +-200, or +-600, or PROS_ERR
  * if the operation failed, setting errno.
  */
-int32_t motor_target_get_velocity(uint8_t port);
+int32_t motor_get_target_velocity(uint8_t port);
 
 /******************************************************************************/
 /**                        Motor telemetry functions                         **/
@@ -597,8 +597,14 @@ typedef enum motor_encoder_units_e {
  */
 typedef enum motor_gearset_e {
 	E_MOTOR_GEARSET_36 = 0,  // 36:1, 100 RPM, Red gear set
+	E_MOTOR_GEAR_RED = E_MOTOR_GEARSET_36,
+	E_MOTOR_GEAR_100 = E_MOTOR_GEARSET_36,
 	E_MOTOR_GEARSET_18 = 1,  // 18:1, 200 RPM, Green gear set
+	E_MOTOR_GEAR_GREEN = E_MOTOR_GEARSET_18,
+	E_MOTOR_GEAR_200 = E_MOTOR_GEARSET_18,
 	E_MOTOR_GEARSET_06 = 2,  // 6:1, 600 RPM, Blue gear set
+	E_MOTOR_GEAR_BLUE  = E_MOTOR_GEARSET_06,
+	E_MOTOR_GEAR_600 = E_MOTOR_GEARSET_06,
 	E_MOTOR_GEARSET_INVALID = INT32_MAX
 } motor_gearset_e_t;
 
@@ -613,9 +619,15 @@ typedef enum motor_gearset_e {
 #define MOTOR_ENCODER_COUNTS pros::E_MOTOR_ENCODER_COUNTS
 #define MOTOR_ENCODER_INVALID pros::E_MOTOR_ENCODER_INVALID
 #define MOTOR_GEARSET_36 pros::E_MOTOR_GEARSET_36
+#define MOTOR_GEAR_RED pros::E_MOTOR_GEAR_RED
+#define MOTOR_GEAR_100 pros::E_MOTOR_GEAR_100
 #define MOTOR_GEARSET_18 pros::E_MOTOR_GEARSET_18
+#define MOTOR_GEAR_GREEN pros::E_MOTOR_GEAR_GREEN
+#define MOTOR_GEAR_200 pros::E_MOTOR_GEAR_200
 #define MOTOR_GEARSET_06 pros::E_MOTOR_GEARSET_06
 #define MOTOR_GEARSET_6 pros::E_MOTOR_GEARSET_06
+#define MOTOR_GEAR_BLUE pros::E_MOTOR_GEAR_BLUE
+#define MOTOR_GEAR_600 pros::E_MOTOR_GEAR_600
 #define MOTOR_GEARSET_INVALID pros::E_MOTOR_GEARSET_INVALID
 #else
 #define MOTOR_BRAKE_COAST E_MOTOR_BRAKE_COAST
@@ -627,9 +639,15 @@ typedef enum motor_gearset_e {
 #define MOTOR_ENCODER_COUNTS E_MOTOR_ENCODER_COUNTS
 #define MOTOR_ENCODER_INVALID E_MOTOR_ENCODER_INVALID
 #define MOTOR_GEARSET_36 E_MOTOR_GEARSET_36
+#define MOTOR_GEAR_RED E_MOTOR_GEAR_RED
+#define MOTOR_GEAR_100 E_MOTOR_GEAR_100
 #define MOTOR_GEARSET_18 E_MOTOR_GEARSET_18
+#define MOTOR_GEAR_GREEN E_MOTOR_GEAR_GREEN
+#define MOTOR_GEAR_200 E_MOTOR_GEAR_200
 #define MOTOR_GEARSET_06 E_MOTOR_GEARSET_06
 #define MOTOR_GEARSET_6 E_MOTOR_GEARSET_06
+#define MOTOR_GEAR_BLUE E_MOTOR_GEAR_BLUE
+#define MOTOR_GEAR_600 E_MOTOR_GEAR_600
 #define MOTOR_GEARSET_INVALID E_MOTOR_GEARSET_INVALID
 #endif
 #endif
