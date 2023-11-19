@@ -43,12 +43,15 @@ void intake_control() {
     pto_toggle_intake(!pto_intake_enabled);
   } 
 
-  if (master.get_digital(DIGITAL_L1))
+  if (master.get_digital(DIGITAL_L1)) {
     set_intake(127);
-  else if (master.get_digital(DIGITAL_L2))
+  }
+  else if (master.get_digital(DIGITAL_L2)) {
     set_intake(-127);
-  else
+  }
+  else {
     set_intake(0);
+  }
 }
 
 void opcontrol() {
@@ -56,7 +59,6 @@ void opcontrol() {
   chassis.set_drive_brake(MOTOR_BRAKE_COAST);
 
   while (true) {
-
     chassis.tank(); // Tank control
 
     intake_control();
@@ -118,7 +120,6 @@ void opcontrol() {
   chassis.set_drive_brake(MOTOR_BRAKE_COAST);
 
   while (true) {
-
     chassis.tank(); // Tank control
 
     intake_control();
@@ -243,7 +244,6 @@ void opcontrol() {
   chassis.set_drive_brake(MOTOR_BRAKE_COAST);
 
   while (true) {
-
     chassis.tank(); // Tank control
 
     intake_control();
