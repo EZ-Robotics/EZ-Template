@@ -53,7 +53,7 @@ void initialize() {
   . . . 
 
   // Autonomous Selector using LLEMMU
-  ez::as::auton_selector.autons_add({
+  ez::as::auton_selector.add_autons({
     Auton("Solo AWP\n\nStarting Position: Plat Down", SoloAWP),
     Auton("Score Rings on Amogo\n\nStarting Position: Plat Down", ScoreRingsPlatDown),
     Auton("Neutral Steal\n\nStarting Position: Plat Down", NeutralStealPlatDown),

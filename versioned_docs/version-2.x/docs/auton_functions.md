@@ -12,7 +12,7 @@ import TabItem from '@theme/TabItem';
 
 ## Setter functions
 
-### pid_drive_set()
+### set_drive_pid()
 Sets the drive to go forward using PID and heading correction.  
 
 `target` is in inches.  
@@ -33,12 +33,12 @@ Sets the drive to go forward using PID and heading correction.
 
 ```cpp
 void autonomous() {
-  chassis.drive_imu_reset(); 
-  chassis.drive_sensor_reset(); 
-  chassis.drive_brake_set(MOTOR_BRAKE_HOLD); 
+  chassis.reset_gyro(); 
+  chassis.reset_drive_sensor(); 
+  chassis.set_drive_brake(MOTOR_BRAKE_HOLD); 
 
-  chassis.pid_drive_set(24, 110, true);
-  chassis.pid_wait();
+  chassis.set_drive_pid(24, 110, true);
+  chassis.wait_drive();
 }
 ```
 
@@ -48,7 +48,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void pid_drive_set(double target, int speed, bool slew_on = false, bool toggle_heading = true);
+void set_drive_pid(double target, int speed, bool slew_on = false, bool toggle_heading = true);
 ```
 
 </TabItem>
@@ -56,7 +56,7 @@ void pid_drive_set(double target, int speed, bool slew_on = false, bool toggle_h
 
 
 
-### pid_turn_set()
+### set_turn_pid()
 Sets the drive to turn using PID.  
 
 `target` is in degrees.  
@@ -75,12 +75,12 @@ Sets the drive to turn using PID.
 
 ```cpp
 void autonomous() {
-  chassis.drive_imu_reset(); 
-  chassis.drive_sensor_reset(); 
-  chassis.drive_brake_set(MOTOR_BRAKE_HOLD); 
+  chassis.reset_gyro(); 
+  chassis.reset_drive_sensor(); 
+  chassis.set_drive_brake(MOTOR_BRAKE_HOLD); 
 
-  chassis.pid_drive_set(24, 110, true);
-  chassis.pid_wait();
+  chassis.set_drive_pid(24, 110, true);
+  chassis.wait_drive();
 }
 ```
 
@@ -89,7 +89,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void pid_turn_set(double target, int speed);
+void set_turn_pid(double target, int speed);
 ```
 
 </TabItem>
@@ -97,7 +97,7 @@ void pid_turn_set(double target, int speed);
 
 
 
-### pid_swing_set()
+### set_swing_pid()
 Sets the robot to swing using PID.  The robot will turn using one side of the drive, either the left or right.  
 
 `type` is either `ez::LEFT_SWING` or `ez::RIGHT_SWING`.  
@@ -116,7 +116,7 @@ Sets the robot to swing using PID.  The robot will turn using one side of the dr
 <TabItem value="proto">
 
 ```cpp
-void pid_swing_set(e_swing type, double target, int speed);
+void set_swing_pid(e_swing type, double target, int speed);
 ```
 
 </TabItem>
@@ -126,15 +126,15 @@ void pid_swing_set(e_swing type, double target, int speed);
 
 ```cpp
 void autonomous() {
-  chassis.drive_imu_reset(); 
-  chassis.drive_sensor_reset(); 
-  chassis.drive_brake_set(MOTOR_BRAKE_HOLD); 
+  chassis.reset_gyro(); 
+  chassis.reset_drive_sensor(); 
+  chassis.set_drive_brake(MOTOR_BRAKE_HOLD); 
 
-  chassis.pid_swing_set(ez::LEFT_SWING, 45, 110);
-  chassis.pid_wait();
+  chassis.set_swing_pid(ez::LEFT_SWING, 45, 110);
+  chassis.wait_drive();
 
-  chassis.pid_swing_set(ez::RIGHT_SWING, 0, 110);
-  chassis.pid_wait();
+  chassis.set_swing_pid(ez::RIGHT_SWING, 0, 110);
+  chassis.wait_drive();
 }
 ```
 
@@ -147,7 +147,7 @@ void autonomous() {
 
 
 
-### pid_targets_reset()
+### reset_pid_targets()
 Resets all drive PID targets to 0.       
 
 <Tabs
@@ -164,12 +164,12 @@ Resets all drive PID targets to 0.
 
 ```cpp
 void autonomous() {
-  chassis.pid_targets_reset(); // Resets PID targets to 0
-  chassis.drive_imu_reset(); // Reset gyro position to 0
-  chassis.drive_sensor_reset(); // Reset drive sensors to 0
-  chassis.drive_brake_set(MOTOR_BRAKE_HOLD); // Set motors to hold.  This helps autonomous consistency.
+  chassis.reset_pid_targets(); // Resets PID targets to 0
+  chassis.reset_gyro(); // Reset gyro position to 0
+  chassis.reset_drive_sensor(); // Reset drive sensors to 0
+  chassis.set_drive_brake(MOTOR_BRAKE_HOLD); // Set motors to hold.  This helps autonomous consistency.
 
-  ez::as::auton_selector.selected_auton_call(); // Calls selected auton from autonomous selector.
+  ez::as::auton_selector.call_selected_auton(); // Calls selected auton from autonomous selector.
 }
 ```
 
@@ -179,7 +179,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void pid_targets_reset();
+void reset_pid_targets();
 ```
 
 
@@ -224,15 +224,15 @@ void set_angle(double angle);
 
 ```cpp
 void autonomous() {
-  chassis.pid_targets_reset(); // Resets PID targets to 0
-  chassis.drive_imu_reset(); // Reset gyro position to 0
-  chassis.drive_sensor_reset(); // Reset drive sensors to 0
-  chassis.drive_brake_set(MOTOR_BRAKE_HOLD); // Set motors to hold.  This helps autonomous consistency.
+  chassis.reset_pid_targets(); // Resets PID targets to 0
+  chassis.reset_gyro(); // Reset gyro position to 0
+  chassis.reset_drive_sensor(); // Reset drive sensors to 0
+  chassis.set_drive_brake(MOTOR_BRAKE_HOLD); // Set motors to hold.  This helps autonomous consistency.
 
   chassis.set_angle(45);
 
-  chassis.pid_turn_set(0, TURN_SPEED);
-  chassis.pid_wait();
+  chassis.set_turn_pid(0, TURN_SPEED);
+  chassis.wait_drive();
 }
 ```
 
@@ -245,7 +245,7 @@ void autonomous() {
 
 
 
-### pid_speed_max_set()
+### set_max_speed()
 Sets the max speed of the drive.  
 
 `speed` an integer between -127 and 127.     
@@ -263,14 +263,14 @@ Sets the max speed of the drive.
 
 ```cpp
 void autonomous() {
-  chassis.drive_imu_reset(); 
-  chassis.drive_sensor_reset(); 
-  chassis.drive_brake_set(MOTOR_BRAKE_HOLD); 
+  chassis.reset_gyro(); 
+  chassis.reset_drive_sensor(); 
+  chassis.set_drive_brake(MOTOR_BRAKE_HOLD); 
 
-  chassis.pid_drive_set(48, 110);
-  chassis.pid_wait_until(24);
-  chassis.pid_speed_max_set(40);
-  chassis.pid_wait();
+  chassis.set_drive_pid(48, 110);
+  chassis.wait_until(24);
+  chassis.set_max_speed(40);
+  chassis.wait_drive();
 }
 ```
 
@@ -281,7 +281,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void pid_speed_max_set(int speed);
+void set_max_speed(int speed);
 ```
 
 
@@ -351,7 +351,7 @@ void set_pid_constants(PID* pid, double p, double i, double d, double p_start_i)
 
 
 
-### slew_power_min_set()
+### set_slew_min_power()
 Sets the starting speed for slew, with the ability to have different constants for forward and reverse.  Below are the defaults.   
 
 `fwd` integer between -127 and 127
@@ -370,7 +370,7 @@ Sets the starting speed for slew, with the ability to have different constants f
 
 ```cpp
 void initialize() {
-  chassis.slew_power_min_set(80, 80);
+  chassis.set_slew_min_power(80, 80);
 }
 ```
 
@@ -382,7 +382,7 @@ void initialize() {
 <TabItem value="proto">
 
 ```cpp
-void slew_power_min_set(int fwd, int rev);
+void set_slew_min_power(int fwd, int rev);
 ```
 
 
@@ -395,7 +395,7 @@ void slew_power_min_set(int fwd, int rev);
 
 
 
-### slew_distance_set()
+### set_slew_distance()
 Sets the distance the drive will slew for, with the ability to have different constants for forward and reverse.  Input is inches.  Below are the defaults.   
 
 `fwd` a distance in inches   
@@ -424,7 +424,7 @@ void initialize() {
 <TabItem value="proto">
 
 ```cpp
-void slew_distance_set (int fwd, int rev);
+void set_slew_distance (int fwd, int rev);
 ```
 
 
@@ -439,7 +439,7 @@ void slew_distance_set (int fwd, int rev);
 
 
 
-### exit_condition_set()
+### set_exit_condition()
 Sets the exit condition constants. This uses the exit conditions from the PID class.  Below are the defaults.  
 
 `type` either `chassis.turn_exit`, `chassis.swing_exit`, or `chassis.drive_exit`  
@@ -464,9 +464,9 @@ Sets the exit condition constants. This uses the exit conditions from the PID cl
 
 ```cpp
 void initialize() {
-  chassis.exit_condition_set(chassis.turn_exit,  100, 3,  500, 7,   500, 500);
-  chassis.exit_condition_set(chassis.swing_exit, 100, 3,  500, 7,   500, 500);
-  chassis.exit_condition_set(chassis.drive_exit, 80,  50, 300, 150, 500, 500);
+  chassis.set_exit_condition(chassis.turn_exit,  100, 3,  500, 7,   500, 500);
+  chassis.set_exit_condition(chassis.swing_exit, 100, 3,  500, 7,   500, 500);
+  chassis.set_exit_condition(chassis.drive_exit, 80,  50, 300, 150, 500, 500);
 }
 ```
 
@@ -477,7 +477,7 @@ void initialize() {
 <TabItem value="proto">
 
 ```cpp
-void exit_condition_set(exit_condition_ &type, int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout);
+void set_exit_condition(exit_condition_ &type, int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout);
 ```
 
 </TabItem>
@@ -486,7 +486,7 @@ void exit_condition_set(exit_condition_ &type, int p_small_exit_time, double p_s
 
 
 
-### pid_swing_min_set()
+### set_swing_min()
 Sets the max power of the drive when the robot is within `start_i`.  This only enables when `i` is enabled, and when the movement is greater then `start_i`.  
 
 `min` the minimum speed the robot will turn at when integral is being used
@@ -504,10 +504,10 @@ Sets the max power of the drive when the robot is within `start_i`.  This only e
 
 ```cpp
 void autonomous() {
-  chassis.pid_swing_min_set(30);
+  chassis.set_swing_min(30);
 
-  chassis.pid_swing_set(45, 110);
-  chassis.pid_wait();
+  chassis.set_swing_pid(45, 110);
+  chassis.wait_drive();
 }
 ```
 
@@ -518,7 +518,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void pid_swing_min_set(int min);
+void set_swing_min(int min);
 ```
 
 
@@ -531,7 +531,7 @@ void pid_swing_min_set(int min);
 
 
 
-### pid_turn_min_set()
+### set_turn_min()
 Sets the max power of the drive when the robot is within `start_i`.  This only enables when `i` is enabled, and when the movement is greater then `start_i`.        
 
 `min` the minimum speed the robot will turn at when integral is being used
@@ -548,10 +548,10 @@ Sets the max power of the drive when the robot is within `start_i`.  This only e
 
 ```cpp
 void autonomous() {
-  chassis.pid_turn_min_set(30);
+  chassis.set_turn_min(30);
 
-  chassis.pid_turn_set(45, 110);
-  chassis.pid_wait();
+  chassis.set_turn_pid(45, 110);
+  chassis.wait_drive();
 }
 ```
 
@@ -561,7 +561,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void pid_turn_min_set(int min);
+void set_turn_min(int min);
 ```
 
 
@@ -573,7 +573,7 @@ void pid_turn_min_set(int min);
 
 
 
-### drive_mode_set()
+### set_mode()
 Sets the current mode of the drive.  
 
 `p_mode` the current task running for the drive.  accepts `ez::DISABLE`, `ez::SWING`, `ez::TURN`, `ez::DRIVE`           
@@ -590,14 +590,14 @@ Sets the current mode of the drive.
 
 ```cpp
 void autonomous() {
-  chassis.pid_drive_set(12, DRIVE_SPEED);
-  chassis.pid_wait();
+  chassis.set_drive_pid(12, DRIVE_SPEED);
+  chassis.wait_drive();
 
-  chassis.drive_mode_set(ez::DISABLE); // Disable drive
+  chassis.set_mode(ez::DISABLE); // Disable drive
 
-  chassis.drive_set(-127, -127); // Run drive motors myself
+  chassis.set_tank(-127, -127); // Run drive motors myself
   pros::delay(2000);
-  chassis.drive_set(0, 0);
+  chassis.set_tank(0, 0);
 }
 ```
 
@@ -607,7 +607,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void drive_mode_set(e_mode p_mode);
+void set_mode(e_mode p_mode);
 ```
 
 
@@ -617,7 +617,7 @@ void drive_mode_set(e_mode p_mode);
 
 
 
-### pid_drive_toggle()
+### toggle_auto_drive()
 Enables/disables the drive from moving in autonomous.  This is useful for debugging and checking PID variables.     
 
 `toggle` true enables the drive, false disables the drive     
@@ -634,12 +634,12 @@ Enables/disables the drive from moving in autonomous.  This is useful for debugg
 
 ```cpp
 void autonomous() {
-  chassis.pid_drive_set(12, DRIVE_SPEED);
-  chassis.pid_wait();
+  chassis.set_drive_pid(12, DRIVE_SPEED);
+  chassis.wait_drive();
 
-  pid_drive_toggle(false); // Disable drive
+  toggle_auto_drive(false); // Disable drive
 
-  chassis.pid_drive_set(-12, DRIVE_SPEED);
+  chassis.set_drive_pid(-12, DRIVE_SPEED);
   while (true) {
     printf(" Left Error: %f  Right Error: %f\n", chassis.leftPID.error, chassis.rightPID.error);
     pros::delay(ez::util::DELAY_TIME);
@@ -654,7 +654,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void pid_drive_toggle(bool toggle);
+void toggle_auto_drive(bool toggle);
 ```
 
 
@@ -668,7 +668,7 @@ void pid_drive_toggle(bool toggle);
 
 
 
-### pid_print_toggle()
+### toggle_auto_print()
 Enables/disables the drive functions printing every drive motion.  This is useful when you're debugging something and don't want terminal cluttered.  
 
 `toggle` true enables printing, false disables
@@ -685,13 +685,13 @@ Enables/disables the drive functions printing every drive motion.  This is usefu
 
 ```cpp
 void autonomous() {
-  chassis.pid_drive_set(12, DRIVE_SPEED); // This will print
-  chassis.pid_wait(); // This will print
+  chassis.set_drive_pid(12, DRIVE_SPEED); // This will print
+  chassis.wait_drive(); // This will print
 
-  pid_print_toggle(false); // Disable prints
+  toggle_auto_print(false); // Disable prints
 
-  chassis.pid_drive_set(-12, DRIVE_SPEED); // This won't print
-  chassis.pid_wait(); // This won't print
+  chassis.set_drive_pid(-12, DRIVE_SPEED); // This won't print
+  chassis.wait_drive(); // This won't print
 }
 ```
 
@@ -702,7 +702,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void pid_print_toggle(bool toggle);
+void toggle_auto_print(bool toggle);
 ```
 
 
@@ -734,7 +734,7 @@ void pid_print_toggle(bool toggle);
 
 
 
-### pid_swing_min_get()
+### get_swing_min()
 Returns the minimum power the robot will swing at while integral is enabled.         
 
 <Tabs
@@ -750,9 +750,9 @@ Returns the minimum power the robot will swing at while integral is enabled.
 
 ```cpp
 void autonomous() {
-  chassis.pid_swing_min_set(30);
+  chassis.set_swing_min(30);
 
-  printf("Swing Min: %i", chassis.pid_swing_min_get());
+  printf("Swing Min: %i", chassis.get_swing_min());
 }
 ```
 
@@ -762,7 +762,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-int pid_swing_min_get();
+int get_swing_min();
 ```
 
 
@@ -774,7 +774,7 @@ int pid_swing_min_get();
 
 
 
-### pid_turn_min_get()
+### get_turn_min()
 Returns the minimum power the robot will turn at while integral is enabled.         
 
 <Tabs
@@ -790,9 +790,9 @@ Returns the minimum power the robot will turn at while integral is enabled.
 
 ```cpp
 void autonomous() {
-  chassis.pid_turn_min_set(30);
+  chassis.set_turn_min(30);
 
-  printf("Turn Min: %i", chassis.pid_turn_min_get());
+  printf("Turn Min: %i", chassis.get_turn_min());
 }
 ```
 
@@ -803,7 +803,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-int pid_turn_min_get();
+int get_turn_min();
 ```
 
 
@@ -818,7 +818,7 @@ int pid_turn_min_get();
 
 
 ### interfered
-Boolean that returns true when `pid_wait()` or `pid_wait_until()` exit with velocity or is_over_current.  This can be used to detect unwanted motion and stop the drive motors from overheating during autonomous.     
+Boolean that returns true when `wait_drive()` or `wait_until()` exit with velocity or is_over_current.  This can be used to detect unwanted motion and stop the drive motors from overheating during autonomous.     
 
 <Tabs
   groupId="examples18"
@@ -836,13 +836,13 @@ Boolean that returns true when `pid_wait()` or `pid_wait_until()` exit with velo
    for (int i=0; i<attempts-1; i++) {
      // Attempt to drive backwards
      printf("i - %i", i);
-     chassis.pid_drive_set(-12, 127);
-     chassis.pid_wait();
+     chassis.set_drive_pid(-12, 127);
+     chassis.wait_drive();
 
      // If failsafed...
      if (chassis.interfered) {
-       chassis.drive_sensor_reset();
-       chassis.pid_drive_set(-2, 20);
+       chassis.reset_drive_sensor();
+       chassis.set_drive_pid(-2, 20);
        pros::delay(1000);
      }
      // If robot successfully drove back, return
@@ -853,16 +853,16 @@ Boolean that returns true when `pid_wait()` or `pid_wait_until()` exit with velo
  }
 
 void auto1() {
-  chassis.pid_drive_set(24, 110, true);
-  chassis.pid_wait();
+  chassis.set_drive_pid(24, 110, true);
+  chassis.wait_drive();
 
   if (chassis.interfered) {
     tug(3);
     return;
   }
 
-  chassis.pid_turn_set(90, 90);
-  chassis.pid_wait();
+  chassis.set_turn_pid(90, 90);
+  chassis.wait_drive();
 }
 ```
 
@@ -886,7 +886,7 @@ bool interfered = false;
 
 
 
-### drive_mode_get()
+### get_mode()
 Returns the current drive mode that the task is running.  Returns `ez::DISABLE`, `ez::SWING`, `ez::TURN`, `ez::DRIVE`.           
 
 <Tabs
@@ -902,16 +902,16 @@ Returns the current drive mode that the task is running.  Returns `ez::DISABLE`,
 
 ```cpp
 void autonomous() {
-  chassis.pid_drive_set(12, DRIVE_SPEED);
-  chassis.pid_wait();
+  chassis.set_drive_pid(12, DRIVE_SPEED);
+  chassis.wait_drive();
 
   if (chassis.interfered)
-    chassis.drive_mode_set(ez::DISABLE);
+    chassis.set_mode(ez::DISABLE);
   
-  if (chassis.drive_mode_get() == ez::DISABLE) {
-    chassis.drive_set(-127, -127); // Run drive motors myself
+  if (chassis.get_mode() == ez::DISABLE) {
+    chassis.set_tank(-127, -127); // Run drive motors myself
     pros::delay(2000);
-    chassis.drive_set(0, 0);
+    chassis.set_tank(0, 0);
   }
 }
 ```
@@ -923,7 +923,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-e_mode drive_mode_get();
+e_mode get_mode();
 ```
 
 
@@ -942,7 +942,7 @@ e_mode drive_mode_get();
 
 
 
-### drive_tick_per_inch()
+### get_tick_per_inch()
 Returns the conversion between raw sensor value and inches.
 <Tabs
   groupId="examples20"
@@ -957,7 +957,7 @@ Returns the conversion between raw sensor value and inches.
 
 ```cpp
 void initialize() {
-  printf("Tick Per Inch: %f\n", chassis.drive_tick_per_inch());
+  printf("Tick Per Inch: %f\n", chassis.get_tick_per_inch());
 }
 ```
 
@@ -967,7 +967,7 @@ void initialize() {
 <TabItem value="proto">
 
 ```cpp
-double drive_tick_per_inch();
+double get_tick_per_inch();
 ```
 
 
@@ -983,7 +983,7 @@ double drive_tick_per_inch();
 
 ## Misc.
 
-### pid_wait()
+### wait_drive()
 Locks the code in place until the drive has settled.  This uses the exit conditions from the PID class.      
 
 <Tabs
@@ -999,15 +999,15 @@ Locks the code in place until the drive has settled.  This uses the exit conditi
 
 ```cpp
 void autonomous() {
-  chassis.drive_imu_reset(); 
-  chassis.drive_sensor_reset(); 
-  chassis.drive_brake_set(MOTOR_BRAKE_HOLD); 
+  chassis.reset_gyro(); 
+  chassis.reset_drive_sensor(); 
+  chassis.set_drive_brake(MOTOR_BRAKE_HOLD); 
 
-  chassis.pid_turn_set(90, 110);
-  chassis.pid_wait();
+  chassis.set_turn_pid(90, 110);
+  chassis.wait_drive();
 
-  chassis.pid_turn_set(0, 110);
-  chassis.pid_wait();
+  chassis.set_turn_pid(0, 110);
+  chassis.wait_drive();
 }
 ```
 
@@ -1018,7 +1018,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void pid_wait();
+void wait_drive();
 ```
 
 
@@ -1033,7 +1033,7 @@ void pid_wait();
 
 
 
-### pid_wait_until()
+### wait_until()
 Locks the code in place until the drive has passed the input parameter.  This uses the exit conditions from the PID class.           
 
 `target` the distance the robot needs to travel before unlocking the code
@@ -1050,14 +1050,14 @@ Locks the code in place until the drive has passed the input parameter.  This us
 
 ```cpp
 void autonomous() {
-  chassis.drive_imu_reset(); 
-  chassis.drive_sensor_reset(); 
-  chassis.drive_brake_set(MOTOR_BRAKE_HOLD); 
+  chassis.reset_gyro(); 
+  chassis.reset_drive_sensor(); 
+  chassis.set_drive_brake(MOTOR_BRAKE_HOLD); 
 
-  chassis.pid_drive_set(48, 110);
-  chassis.pid_wait_until(24);
-  chassis.pid_speed_max_set(40);
-  chassis.pid_wait();
+  chassis.set_drive_pid(48, 110);
+  chassis.wait_until(24);
+  chassis.set_max_speed(40);
+  chassis.wait_drive();
 }
 ```
 
@@ -1068,7 +1068,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void pid_wait_until(double target);
+void wait_until(double target);
 ```
 
 

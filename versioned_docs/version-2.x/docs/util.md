@@ -31,10 +31,10 @@ The pros controller is defined globally in our library as `master`.
 ```cpp
 void opcontrol() {
   while (true) {
-    int l_stick = opcontrol_curve_left(master.get_analog(ANALOG_LEFT_Y));
-    int r_stick = opcontrol_curve_left(master.get_analog(ANALOG_RIGHT_Y));
+    int l_stick = left_curve_function(master.get_analog(ANALOG_LEFT_Y));
+    int r_stick = left_curve_function(master.get_analog(ANALOG_RIGHT_Y));
     
-    chassis.drive_set(l_stick, r_stick);
+    chassis.set_tank(l_stick, r_stick);
     
     pros::delay(ez::util::DELAY_TIME);
   }
@@ -287,7 +287,7 @@ Standard delay time for loops in ms.
 ```cpp
 void opcontrol() {
   while (true) {
-    chassis.opcontrol_tank();
+    chassis.tank();
 
     pros::delay(ez::util::DELAY_TIME);
   }

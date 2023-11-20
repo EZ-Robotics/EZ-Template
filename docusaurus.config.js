@@ -43,6 +43,34 @@ const config = {
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         docs: {
+          /*
+          // For when 3.0 is actually released
+          lastVersion: 'current',
+          versions: {
+            current: {
+              label: '3.0.0',
+              banner: 'none',
+            },
+            '2.x': {
+              label: '2.x',
+              banner: 'unmaintained',
+            },
+          },
+          */
+          
+          // While 3.0 isn't released
+          lastVersion: '2.x',
+          versions: {
+            current: {
+              label: '3.0.0-RC1',
+              banner: 'unreleased',
+            },
+            '2.x': {
+              label: '2.x',
+              banner: 'none',
+            },
+          },
+          
           sidebarCollapsed: false,
           routeBasePath: '/', // url
           path: './ez-template-docs', // file path
@@ -50,7 +78,7 @@ const config = {
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl:
-            'https://github.com/EZ-Robotics/EZ-Template/tree/website',
+            'https://github.com/EZ-Robotics/EZ-Template/tree/website/${versionDocsDirPath}/${docPath}',
         },
         blog: false,
         theme: {
@@ -75,11 +103,17 @@ const config = {
       navbar: {
         title: 'robotics is ez',
         items: [
+          {
+            type: 'docsVersionDropdown',
+            position: 'right',
+            dropdownItemsAfter: [{ to: '/versions', label: 'Versions' }],
+            dropdownActiveClassDisabled: true,
+          },
           { to: '/', label: 'Getting Started', position: 'left' },
           { to: 'category/tutorials', label: 'Tutorials', position: 'left' },
           { to: 'category/docs', label: 'Docs', position: 'left' },
           // { to: '/support', label: 'Support', position: 'left' },
-          { to: 'versions/', label: 'Versions', position: 'right' },
+          // { to: 'versions/', label: 'Versions', position: 'right' },
           { href: 'https://github.com/EZ-Robotics', label: 'GitHub', position: 'right' },
         ],
       },

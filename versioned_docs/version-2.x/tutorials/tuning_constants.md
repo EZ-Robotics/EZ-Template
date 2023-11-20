@@ -31,8 +31,8 @@ Look at our [Using Auton Selector tutorial](https://ez-robotics.github.io/EZ-Tem
 In `src/autons.cpp`, there is a function called `default_constants()`.  This function is where all of your modified PID constants can be set.  
 ```cpp
 void default_constants() {
-  chassis.slew_power_min_set(80, 80);
-  chassis.slew_distance_set(7, 7);
+  chassis.set_slew_min_power(80, 80);
+  chassis.set_slew_distance(7, 7);
   chassis.set_pid_constants(&chassis.headingPID, 11, 0, 20, 0);
   chassis.set_pid_constants(&chassis.forward_drivePID, 0.45, 0, 5, 0);
   chassis.set_pid_constants(&chassis.backward_drivePID, 0.45, 0, 5, 0);
@@ -46,12 +46,12 @@ void default_constants() {
 When your robot has huge weight shifts (grabbing a mobile goal, raising a lift, etc), you might want to have different constants for those states.  You can have multiple functions with constants for different states, and change constants during your autonomous routine.
 ```cpp
 void grab_mogo() {
-  chassis.pid_drive_set(40, 110, true);
-  chassis.pid_wait();
+  chassis.set_drive_pid(40, 110, true);
+  chassis.wait_drive();
 
   one_mogo_constants();
-  chassis.pid_drive_set(-40, 110, true);
-  chassis.pid_wait();
+  chassis.set_drive_pid(-40, 110, true);
+  chassis.wait_drive();
 }
 ```
 
@@ -113,8 +113,8 @@ Slew ramps the speed of the robot up from the start of the motion to avoid wheel
 Minimum power should be as high as it can be without causing the robot to wheelie or cause wheel slip.  Slew distance should be as small as it can be without causing the same. 
 
 ```cpp
-  chassis.slew_power_min_set(80, 80);
-  chassis.slew_distance_set(7, 7);
+  chassis.set_slew_min_power(80, 80);
+  chassis.set_slew_distance(7, 7);
 ```
 
 

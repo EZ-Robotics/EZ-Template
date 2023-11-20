@@ -14,7 +14,7 @@ import TabItem from '@theme/TabItem';
 
 ## Set Drive
 
-### drive_set()
+### set_tank()
 Sets the drive to voltage.  
 
 `left` an integer between -127 and 127  
@@ -33,9 +33,9 @@ Sets the drive to voltage.
 
 ```cpp
 void autonomous() {
-  drive_set(127, 127);
+  set_tank(127, 127);
   pros::delay(1000); // Wait 1 second
-  drive_set(0, 0);
+  set_tank(0, 0);
 }
 ```
 
@@ -46,7 +46,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void drive_set(int left, int right);
+void set_tank(int left, int right);
 ```
 
 </TabItem>
@@ -58,7 +58,7 @@ void drive_set(int left, int right);
  
 
 
-### drive_brake_set()
+### set_drive_brake()
 Sets brake mode for all drive motors.  
 
 `brake_type`  takes either `MOTOR_BRAKE_COAST`, `MOTOR_BRAKE_BRAKE`, and `MOTOR_BRAKE_HOLD` as parameters   
@@ -76,7 +76,7 @@ Sets brake mode for all drive motors.
 
 ```cpp
 void initialize() {
-  drive_brake_set_mode(MOTOR_BRAKE_COAST);
+  set_drive_brake_mode(MOTOR_BRAKE_COAST);
 }
 ```
 
@@ -87,7 +87,7 @@ void initialize() {
 <TabItem value="proto">
 
 ```cpp
-void drive_brake_set(pros::motor_brake_mode_e_t brake_type);
+void set_drive_brake(pros::motor_brake_mode_e_t brake_type);
 ```
 
 </TabItem>
@@ -98,7 +98,7 @@ void drive_brake_set(pros::motor_brake_mode_e_t brake_type);
  
 
 
-### drive_current_limit_set()
+### set_drive_current_limit()
 Sets mA limit to the drive.  Default is 2500.  
 
 `mA` input miliamps  
@@ -116,7 +116,7 @@ Sets mA limit to the drive.  Default is 2500.
 
 ```cpp
 void initialize() {
-  drive_brake_set_mode(1000);
+  set_drive_brake_mode(1000);
 }
 ```
 
@@ -126,7 +126,7 @@ void initialize() {
 <TabItem value="proto">
 
 ```cpp
-void drive_current_limit_set(int mA);
+void set_drive_current_limit(int mA);
 ```
 
 </TabItem>
@@ -140,7 +140,7 @@ void drive_current_limit_set(int mA);
 
 ## Telemetry
 
-### drive_sensor_right()
+### right_sensor()
 Returns right sensor value, either integrated encoder or external encoder.   
 
 <Tabs
@@ -157,9 +157,9 @@ Returns right sensor value, either integrated encoder or external encoder.
 ```cpp
 void opcontrol() {
   while (true) {
-    chassis.opcontrol_tank();
+    chassis.tank();
 
-    printf("Right Sensor: %i \n", chassis.drive_sensor_right());
+    printf("Right Sensor: %i \n", chassis.right_sensor());
 
     pros::delay(ez::util::DELAY_TIME);
   }
@@ -172,7 +172,7 @@ void opcontrol() {
 <TabItem value="proto">
 
 ```cpp
-int drive_sensor_right();
+int right_sensor();
 ```
 
 </TabItem>
@@ -184,7 +184,7 @@ int drive_sensor_right();
  
 
 
-### drive_velocity_right()
+### right_velocity()
 Returns integrated encoder velocity.      
 
 <Tabs
@@ -201,9 +201,9 @@ Returns integrated encoder velocity.
 ```cpp
 void opcontrol() {
   while (true) {
-    chassis.opcontrol_tank();
+    chassis.tank();
 
-    printf("Right Velocity: %i \n", chassis.drive_velocity_right());
+    printf("Right Velocity: %i \n", chassis.right_velocity());
 
     pros::delay(ez::util::DELAY_TIME);
   }
@@ -216,7 +216,7 @@ void opcontrol() {
 <TabItem value="proto">
 
 ```cpp
-int drive_velocity_right();
+int right_velocity();
 ```
 
 </TabItem>
@@ -228,7 +228,7 @@ int drive_velocity_right();
  
 
 
-### drive_mA_right()
+### right_mA()
 Returns current mA being used.      
 
 <Tabs
@@ -245,9 +245,9 @@ Returns current mA being used.
 ```cpp
 void opcontrol() {
   while (true) {
-    chassis.opcontrol_tank();
+    chassis.tank();
 
-    printf("Right mA: %i \n", chassis.drive_mA_right());
+    printf("Right mA: %i \n", chassis.right_mA());
 
     pros::delay(ez::util::DELAY_TIME);
   }
@@ -261,7 +261,7 @@ void opcontrol() {
 <TabItem value="proto">
 
 ```cpp
-double drive_mA_right();
+double right_mA();
 ```
 
 </TabItem>
@@ -273,7 +273,7 @@ double drive_mA_right();
  
 
 
-### drive_current_right_over()
+### right_over_current()
 Returns `true` when the motor is pulling too many amps.     
 
 <Tabs
@@ -290,9 +290,9 @@ Returns `true` when the motor is pulling too many amps.
 ```cpp
 void opcontrol() {
   while (true) {
-    chassis.opcontrol_tank();
+    chassis.tank();
 
-    printf("Right Over Current: %i \n", chassis.drive_current_right_over());
+    printf("Right Over Current: %i \n", chassis.right_over_current());
 
     pros::delay(ez::util::DELAY_TIME);
   }
@@ -305,7 +305,7 @@ void opcontrol() {
 <TabItem value="proto">
 
 ```cpp
-bool drive_current_right_over();
+bool right_over_current();
 ```
 
 </TabItem>
@@ -318,7 +318,7 @@ bool drive_current_right_over();
  
 
 
-### drive_sensor_left()
+### left_sensor()
 Returns left sensor value, either integrated encoder or external encoder.   
 
 <Tabs
@@ -335,9 +335,9 @@ Returns left sensor value, either integrated encoder or external encoder.
 ```cpp
 void opcontrol() {
   while (true) {
-    chassis.opcontrol_tank();
+    chassis.tank();
 
-    printf("Left Sensor: %i \n", chassis.drive_sensor_left());
+    printf("Left Sensor: %i \n", chassis.left_sensor());
 
     pros::delay(ez::util::DELAY_TIME);
   }
@@ -350,7 +350,7 @@ void opcontrol() {
 <TabItem value="proto">
 
 ```cpp
-int drive_sensor_left();
+int left_sensor();
 ```
 
 </TabItem>
@@ -363,7 +363,7 @@ int drive_sensor_left();
  
 
 
-### drive_velocity_left()
+### left_velocity()
 Returns integrated encoder velocity.      
 
 <Tabs
@@ -380,9 +380,9 @@ Returns integrated encoder velocity.
 ```cpp
 void opcontrol() {
   while (true) {
-    chassis.opcontrol_tank();
+    chassis.tank();
 
-    printf("Left Velocity: %i \n", chassis.drive_velocity_left());
+    printf("Left Velocity: %i \n", chassis.left_velocity());
 
     pros::delay(ez::util::DELAY_TIME);
   }
@@ -395,7 +395,7 @@ void opcontrol() {
 <TabItem value="proto">
 
 ```cpp
-int drive_velocity_left();
+int left_velocity();
 ```
 
 </TabItem>
@@ -408,7 +408,7 @@ int drive_velocity_left();
  
 
 
-### drive_mA_left()
+### left_mA()
 Returns current mA being used.      
 
 <Tabs
@@ -425,9 +425,9 @@ Returns current mA being used.
 ```cpp
 void opcontrol() {
   while (true) {
-    chassis.opcontrol_tank();
+    chassis.tank();
 
-    printf("Left mA: %i \n", chassis.drive_mA_left());
+    printf("Left mA: %i \n", chassis.left_mA());
 
     pros::delay(ez::util::DELAY_TIME);
   }
@@ -441,7 +441,7 @@ void opcontrol() {
 <TabItem value="proto">
 
 ```cpp
-double drive_mA_left();
+double left_mA();
 ```
 
 </TabItem>
@@ -453,7 +453,7 @@ double drive_mA_left();
  
 
 
-### drive_current_left_over()
+### left_over_current()
 Returns `true` when the motor is pulling too many amps.     
 
 <Tabs
@@ -470,9 +470,9 @@ Returns `true` when the motor is pulling too many amps.
 ```cpp
 void opcontrol() {
   while (true) {
-    chassis.opcontrol_tank();
+    chassis.tank();
 
-    printf("Left Over Current: %i \n", chassis.drive_current_left_over());
+    printf("Left Over Current: %i \n", chassis.left_over_current());
 
     pros::delay(ez::util::DELAY_TIME);
   }
@@ -486,7 +486,7 @@ void opcontrol() {
 <TabItem value="proto">
 
 ```cpp
-bool drive_current_left_over();
+bool left_over_current();
 ```
 
 </TabItem>
@@ -497,7 +497,7 @@ bool drive_current_left_over();
 
  
 
-### drive_sensor_reset()
+### reset_drive_sensor()
 Resets integrated encoders and trackers if applicable.   
 
 <Tabs
@@ -513,7 +513,7 @@ Resets integrated encoders and trackers if applicable.
 
 ```cpp
 void initialize() {
-  chassis.drive_sensor_reset();
+  chassis.reset_drive_sensor();
 }
 ```
 
@@ -523,7 +523,7 @@ void initialize() {
 <TabItem value="proto">
 
 ```cpp
-void drive_sensor_reset();
+void reset_drive_sensor();
 ```
 
 </TabItem>
@@ -536,7 +536,7 @@ void drive_sensor_reset();
  
 
 
-### drive_imu_reset()
+### reset_gyro()
 Sets current gyro position to parameter, defaulted to 0.    
 
 <Tabs
@@ -552,7 +552,7 @@ Sets current gyro position to parameter, defaulted to 0.
 
 ```cpp
 void initialize() {
-  chassis.drive_imu_reset();
+  chassis.reset_gyro();
 }
 ```
 
@@ -563,7 +563,7 @@ void initialize() {
 <TabItem value="proto">
 
 ```cpp
-void drive_imu_reset(double new_heading = 0);
+void reset_gyro(double new_heading = 0);
 ```
 
 </TabItem>
@@ -575,7 +575,7 @@ void drive_imu_reset(double new_heading = 0);
  
 
 
-### drive_imu_get()
+### get_gyro()
 Gets IMU sensor, value is degrees.    
 
 <Tabs
@@ -592,9 +592,9 @@ Gets IMU sensor, value is degrees.
 ```cpp
 void opcontrol() {
   while (true) {
-    chassis.opcontrol_tank();
+    chassis.tank();
 
-    printf("Gyro: %f \n", chassis.drive_imu_get());
+    printf("Gyro: %f \n", chassis.get_gyro());
 
     pros::delay(ez::util::DELAY_TIME);
   }
@@ -608,7 +608,7 @@ void opcontrol() {
 <TabItem value="proto">
 
 ```cpp
-double drive_imu_get();
+double get_gyro();
 ```
 
 </TabItem>
@@ -620,7 +620,7 @@ double drive_imu_get();
  
 
 
-### drive_imu_calibrate()
+### imu_calibrate()
 Calibrates IMU, and vibrates the controller after a successful calibration.      
 
 <Tabs
@@ -636,7 +636,7 @@ Calibrates IMU, and vibrates the controller after a successful calibration.
 
 ```cpp
 void initialize() {
-  chassis.drive_imu_calibrate();
+  chassis.imu_calibrate();
 }
 ```
 
@@ -646,7 +646,7 @@ void initialize() {
 <TabItem value="proto">
 
 ```cpp
-bool drive_imu_calibrate();
+bool imu_calibrate();
 ```
 
 </TabItem>

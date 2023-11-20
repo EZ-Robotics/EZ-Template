@@ -56,10 +56,10 @@ void intake_control() {
 
 void opcontrol() {
   // This is preference to what you like to drive on.
-  chassis.drive_brake_set(MOTOR_BRAKE_COAST);
+  chassis.set_drive_brake(MOTOR_BRAKE_COAST);
 
   while (true) {
-    chassis.opcontrol_tank(); // Tank control
+    chassis.tank(); // Tank control
 
     intake_control();
 
@@ -117,10 +117,10 @@ void intake_control() {
 
 void opcontrol() {
   // This is preference to what you like to drive on.
-  chassis.drive_brake_set(MOTOR_BRAKE_COAST);
+  chassis.set_drive_brake(MOTOR_BRAKE_COAST);
 
   while (true) {
-    chassis.opcontrol_tank(); // Tank control
+    chassis.tank(); // Tank control
 
     intake_control();
 
@@ -241,10 +241,10 @@ void intake_control() {
 
 void opcontrol() {
   // This is preference to what you like to drive on.
-  chassis.drive_brake_set(MOTOR_BRAKE_COAST);
+  chassis.set_drive_brake(MOTOR_BRAKE_COAST);
 
   while (true) {
-    chassis.opcontrol_tank(); // Tank control
+    chassis.tank(); // Tank control
 
     intake_control();
 

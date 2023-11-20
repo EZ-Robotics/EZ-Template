@@ -139,7 +139,7 @@ void shutdown();
  
 
 
-## autons_add();
+## add_autons();
 Adds autonomous routines to the autonomous selector. Uses `ez::print_to_screen()` to display to the brain.  
 
 `autons` accepts an object of a string and a function
@@ -166,7 +166,7 @@ void auto3() {
 }
 
 void initialize() {
-  ez::as::auton_selector.autons_add({
+  ez::as::auton_selector.add_autons({
     Auton("Autonomous 1\nDoes Something", auto1),
     Auton("Autonomous 2\nDoes Something Else", auto2),
     Auton("Autonomous 3\nDoes Something More", auto3),
@@ -181,7 +181,7 @@ void initialize() {
 
 
 ```cpp
-void autons_add(std::vector<Auton> autons);
+void add_autons(std::vector<Auton> autons);
 ```
 
 
@@ -194,7 +194,7 @@ void autons_add(std::vector<Auton> autons);
 
 
 
-## selected_auton_print();
+## print_selected_auton();
 Prints the current autonomous mode to the screen.    
 <Tabs
   groupId="ex5"
@@ -209,7 +209,7 @@ Prints the current autonomous mode to the screen.
 
 ```cpp
 void initialize() {
-  ez::as::auton_selector.selected_auton_print(); 
+  ez::as::auton_selector.print_selected_auton(); 
 }
 ```
 </TabItem>
@@ -219,7 +219,7 @@ void initialize() {
 
 
 ```cpp
-void selected_auton_print();
+void print_selected_auton();
 ```
 
 
@@ -317,7 +317,7 @@ void page_up();
 
 
 
-## selected_auton_call()
+## call_selected_auton()
 Runs the current autonomous that's selected.    
 <Tabs
   groupId="ex8"
@@ -332,11 +332,11 @@ Runs the current autonomous that's selected.
 
 ```cpp
 void autonomous() {
-  chassis.drive_imu_reset(); 
-  chassis.drive_sensor_reset(); 
-  chassis.drive_brake_set(MOTOR_BRAKE_HOLD); 
+  chassis.reset_gyro(); 
+  chassis.reset_drive_sensor(); 
+  chassis.set_drive_brake(MOTOR_BRAKE_HOLD); 
 
-  ez::as::auton_selector.selected_auton_call(); 
+  ez::as::auton_selector.call_selected_auton(); 
 }
 ```
 
@@ -347,7 +347,7 @@ void autonomous() {
 
 
 ```cpp
-void selected_auton_call();
+void call_selected_auton();
 ```
 
 

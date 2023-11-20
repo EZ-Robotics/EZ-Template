@@ -18,12 +18,12 @@ Normally, pushing the joystick half way means the robot goes half speed. With an
 When the robot is on, tapping/holding the left/right arrows will increase/decrease how large the curve is. When arcade is enabled, each stick will have it's own curve. The y/a buttons will increase/decrease the curve for the right stick.
 
 ## Enabling   
-After you find values you like, in `src/main.cpp` set `chassis.opcontrol_curve_default_sets(0, 0)` to whatever you liked! The first parameter is left stick, second is right stick.  When using tank, only the left stick value is used.    
+After you find values you like, in `src/main.cpp` set `chassis.set_curve_defaults(0, 0)` to whatever you liked! The first parameter is left stick, second is right stick.  When using tank, only the left stick value is used.    
 
 ```cpp
 void initialize() {
   . . .
-  chassis.opcontrol_curve_default_set(2.1, 4.3);
+  chassis.set_curve_default(2.1, 4.3);
   . . .
 }
 ```
@@ -33,7 +33,7 @@ In `src/main.cpp`, in `void initialize()`, if `chassis.toggle_modify_curve_with_
 void initialize() {
   . . .
   chassis.toggle_modify_curve_with_controller(true); 
-  chassis.opcontrol_curve_default_set(2.1, 4.3); 
+  chassis.set_curve_default(2.1, 4.3); 
   . . .
 }
 ```
@@ -41,17 +41,17 @@ void initialize() {
 If you have an sd card plugged in, after changing the number with your controller, the value will save to the sd card.  
 :::warning
 
-You must remove `chassis.opcontrol_curve_default_set(x, x)` from `initialize()` if you have an SD card, otherwise this will overwrite the SD card when you power on the robot!
+You must remove `chassis.set_curve_default(x, x)` from `initialize()` if you have an SD card, otherwise this will overwrite the SD card when you power on the robot!
 
 :::
 
 ## Disabling  
-To disable the joystick curve entirely, in `src/main.cpp` make sure these are 0 `chassis.opcontrol_curve_default_sets(0, 0)`.  If you don't want to modify the curve with the controller, make sure `chassis.toggle_modify_curve_with_controller(false)` is false.   
+To disable the joystick curve entirely, in `src/main.cpp` make sure these are 0 `chassis.set_curve_defaults(0, 0)`.  If you don't want to modify the curve with the controller, make sure `chassis.toggle_modify_curve_with_controller(false)` is false.   
 ```cpp
 void initialize() {
   . . .
   chassis.toggle_modify_curve_with_controller(false); 
-  chassis.opcontrol_curve_default_set(0, 0); 
+  chassis.set_curve_default(0, 0); 
   . . .
 }
   ```
