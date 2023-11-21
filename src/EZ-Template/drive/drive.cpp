@@ -253,7 +253,9 @@ double Drive::left_mA() { return left_motors.front().get_current_draw(); }
 bool Drive::left_over_current() { return left_motors.front().is_over_current(); }
 
 void Drive::reset_gyro(double new_heading) { imu.set_rotation(new_heading); }
-double Drive::get_gyro() { return imu.get_rotation(); }
+double Drive::get_gyro() {
+  return -imu.get_rotation() + 90;
+}
 
 void Drive::imu_loading_display(int iter) {
   // If the lcd is already initialized, don't run this function
