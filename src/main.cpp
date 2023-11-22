@@ -22,7 +22,7 @@
 #define IMU 17
 #define INTAKE 19
 #define CATA 11
-#define LIMIT_SWITCH 'b'
+#define POTENTIOMETER 'b'
 #define WINGS 'a'
 
 // Chassis constructor
@@ -133,7 +133,7 @@ void initialize() {
   inake_initializer.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
   cata_initializer.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
 
-  pros::ADIDigitalIn limitSwitch_initializer(LIMIT_SWITCH);
+  pros::ADIAnalogIn potentiometer_initializer(POTENTIOMETER);
 
   // Initialize chassis and auton selector
   chassis.initialize();
@@ -232,13 +232,15 @@ void opcontrol() {
   bool flipDrive = false;
   bool state = LOW;
   pros::ADIDigitalOut wings(WINGS);
-  pros::ADIDigitalIn limitSwitch(LIMIT_SWITCH);
+  pros::ADIAnalogIn potentiometer(POTENTIOMETER);
 
   pros::Motor intake(INTAKE);
   pros::Motor cata(CATA);
   bool enableIntake = true;
   int cataVoltage = 100;
   chassis.set_active_brake(0.1);
+
+  bool cataDown = false;
 
   /*
    * The while loop needs to run every 10 ms so we don't screw up the drive.
@@ -272,19 +274,21 @@ void opcontrol() {
       delayWings = 20;
     }
 
+    cataDown = potentiometer.get_value() > 1570;
+
     // cata
-    if (limitSwitch.get_value()) {
+    if (delayCata) {
+      delayCata--;
+    } else {  // shoot
+      if (master.get_digital(pros::E_CONTROLLER_DIGITAL_R1) && cataDown) {
+        cataDown = false;  // triggers the following if statement
+        delayCata = 20;
+      }
+    }
+
+    if (cataDown) {
       cata.brake();  // cata is in position to shoot
       enableIntake = true;
-      if (!delayCata) {
-        if (master.get_digital(pros::E_CONTROLLER_DIGITAL_R1)) {  // shoot
-          enableIntake = false;
-          cata = cataVoltage;
-          delayCata = 20;
-        }
-      } else {
-        delayCata--;
-      }
     } else {
       enableIntake = false;
       cata = cataVoltage;  // bring the cata down
@@ -294,7 +298,7 @@ void opcontrol() {
     if (!delayFlip) {
       if (master.get_digital(pros::E_CONTROLLER_DIGITAL_B)) {
         flipDrive = !flipDrive;
-        delayFlip = 0;
+        delayFlip = 20;
       }
     } else {
       delayFlip--;
