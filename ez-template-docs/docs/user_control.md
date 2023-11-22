@@ -330,7 +330,7 @@ void opcontrol_drive_activebrake_set(double kp);
  
 
 
-### toggle_modify_curve_with_controller()
+### opcontrol_curve_buttons_toggle()
 Enables/disables buttons used for modifying the controller curve with the joystick.   
 
 `toggle` true enables, false disables  
@@ -348,7 +348,7 @@ Enables/disables buttons used for modifying the controller curve with the joysti
 
 ```cpp
 void initialize() {
-  chassis.toggle_modify_curve_with_controller(true);
+  chassis.opcontrol_curve_buttons_toggle(true);
 }
 ```
 
@@ -359,7 +359,7 @@ void initialize() {
 
 
 ```cpp
-void toggle_modify_curve_with_controller(bool toggle);
+void opcontrol_curve_buttons_toggle(bool toggle);
 ```
 
 
@@ -373,7 +373,7 @@ void toggle_modify_curve_with_controller(bool toggle);
  
 
 
-### opcontrol_curve_buttons_left()
+### opcontrol_curve_buttons_left_set()
 Sets the buttons that are used to modify the left input curve.  The example is the default.   
 
 `decrease` a pros button  
@@ -392,7 +392,7 @@ Sets the buttons that are used to modify the left input curve.  The example is t
 
 ```cpp
 void initialize() {
-  chassis.opcontrol_curve_buttons_left(pros::E_CONTROLLER_DIGITAL_LEFT, pros::E_CONTROLLER_DIGITAL_RIGHT);
+  chassis.opcontrol_curve_buttons_left_set(pros::E_CONTROLLER_DIGITAL_LEFT, pros::E_CONTROLLER_DIGITAL_RIGHT);
 }
 ```
 
@@ -403,7 +403,7 @@ void initialize() {
 
 
 ```cpp
-void opcontrol_curve_buttons_left(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase);
+void opcontrol_curve_buttons_left_set(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase);
 ```
 
 
@@ -417,7 +417,7 @@ void opcontrol_curve_buttons_left(pros::controller_digital_e_t decrease, pros::c
  
 
 
-### opcontrol_curve_buttons_right()
+### opcontrol_curve_buttons_right_set()
 Sets the buttons that are used to modify the right input curve.  The example is the default.  
 
 `decrease` a pros button  
@@ -436,7 +436,7 @@ Sets the buttons that are used to modify the right input curve.  The example is 
 
 ```cpp
 void initialize() {
-  chassis.opcontrol_curve_buttons_right(pros::E_CONTROLLER_DIGITAL_Y,    pros::E_CONTROLLER_DIGITAL_A);
+  chassis.opcontrol_curve_buttons_right_set(pros::E_CONTROLLER_DIGITAL_Y,    pros::E_CONTROLLER_DIGITAL_A);
 }
 ```
 
@@ -448,7 +448,7 @@ void initialize() {
 
 
 ```cpp
-void opcontrol_curve_buttons_right(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase);
+void opcontrol_curve_buttons_right_set(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase);
 ```
 
 
@@ -563,7 +563,7 @@ double opcontrol_curve_right(double x);
  
 
 
-### opcontrol_joystick_threshold()
+### opcontrol_joystick_threshold_set()
 Threshold the joystick will return 0 within.  This is useful because not all joysticks will return perfectly to 0 when let go. 
 
 `threshold` an integer, recommended to be less then 5  
@@ -580,7 +580,7 @@ Threshold the joystick will return 0 within.  This is useful because not all joy
 
 ```cpp
 void initialize() {
-  chassis.opcontrol_joystick_threshold(5);
+  chassis.opcontrol_joystick_threshold_set(5);
 }
 ```
 
@@ -592,7 +592,7 @@ void initialize() {
 
 
 ```cpp
-void opcontrol_joystick_threshold(int threshold);
+void opcontrol_joystick_threshold_set(int threshold);
 ```
 
 
@@ -629,7 +629,7 @@ void opcontrol() {
 
     pros::delay(ez::util::DELAY_TIME);
   }
-  chassis.opcontrol_joystick_threshold(5);
+  chassis.opcontrol_joystick_threshold_set(5);
 }
 ```
 
@@ -653,7 +653,7 @@ void opcontrol_joystick_threshold_opcontrol(int l_stick, int r_stick);
 
 
  
-### modify_curve_with_controller()
+### opcontrol_curve_buttons_iterate()
 Allows the user to modify the curve with the controller.      
 
 <Tabs
@@ -672,11 +672,11 @@ void opcontrol() {
   while (true) {
     chassis.opcontrol_joystick_threshold_opcontrol(master.get_analog(ANALOG_LEFT_Y), master.get_analog(ANALOG_RIGHT_Y));
 
-    chassis.modify_curve_with_controller();
+    chassis.opcontrol_curve_buttons_iterate();
 
     pros::delay(ez::util::DELAY_TIME);
   }
-  chassis.opcontrol_joystick_threshold(5);
+  chassis.opcontrol_joystick_threshold_set(5);
 }
 ```
 
@@ -687,7 +687,7 @@ void opcontrol() {
 
 
 ```cpp
-void modify_curve_with_controller();
+void opcontrol_curve_buttons_iterate();
 ```
 
 

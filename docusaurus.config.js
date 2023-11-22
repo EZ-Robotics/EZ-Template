@@ -62,7 +62,7 @@ const config = {
           lastVersion: '2.x',
           versions: {
             current: {
-              label: '3.0.0-RC1',
+              label: '3.0.0-pre-release',
               banner: 'unreleased',
             },
             '2.x': {

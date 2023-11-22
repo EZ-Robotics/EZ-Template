@@ -28,11 +28,11 @@ void initialize() {
 }
 ```
 
-In `src/main.cpp`, in `void initialize()`, if `chassis.toggle_modify_curve_with_controller(true)` is enabled, by pressing the left/right (or y/a if arcade is enabled), you can live adjust your curve and it will display to your controller!   
+In `src/main.cpp`, in `void initialize()`, if `chassis.opcontrol_curve_buttons_toggle(true)` is enabled, by pressing the left/right (or y/a if arcade is enabled), you can live adjust your curve and it will display to your controller!   
 ```cpp
 void initialize() {
   . . .
-  chassis.toggle_modify_curve_with_controller(true); 
+  chassis.opcontrol_curve_buttons_toggle(true); 
   chassis.opcontrol_curve_default_set(2.1, 4.3); 
   . . .
 }
@@ -46,11 +46,11 @@ You must remove `chassis.opcontrol_curve_default_set(x, x)` from `initialize()` 
 :::
 
 ## Disabling  
-To disable the joystick curve entirely, in `src/main.cpp` make sure these are 0 `chassis.opcontrol_curve_default_sets(0, 0)`.  If you don't want to modify the curve with the controller, make sure `chassis.toggle_modify_curve_with_controller(false)` is false.   
+To disable the joystick curve entirely, in `src/main.cpp` make sure these are 0 `chassis.opcontrol_curve_default_sets(0, 0)`.  If you don't want to modify the curve with the controller, make sure `chassis.opcontrol_curve_buttons_toggle(false)` is false.   
 ```cpp
 void initialize() {
   . . .
-  chassis.toggle_modify_curve_with_controller(false); 
+  chassis.opcontrol_curve_buttons_toggle(false); 
   chassis.opcontrol_curve_default_set(0, 0); 
   . . .
 }
