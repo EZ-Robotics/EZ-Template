@@ -162,6 +162,11 @@ class PID {
   void name_set(std::string name);
 
   /**
+   * Returns the name of the PID that prints during exit conditions.
+   */
+  std::string name_get();
+
+  /**
    * Enables / disables i resetting when sgn of error changes.  True resets, false doesn't.
    *
    * \param toggle

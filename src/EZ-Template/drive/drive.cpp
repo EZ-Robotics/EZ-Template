@@ -161,8 +161,8 @@ void Drive::drive_defaults_set() {
   opcontrol_curve_buttons_toggle(true);
 
   // Left / Right modify buttons
-  opcontrol_curve_buttons_left(pros::E_CONTROLLER_DIGITAL_LEFT, pros::E_CONTROLLER_DIGITAL_RIGHT);
-  opcontrol_curve_buttons_right(pros::E_CONTROLLER_DIGITAL_Y, pros::E_CONTROLLER_DIGITAL_A);
+  opcontrol_curve_buttons_left_set(pros::E_CONTROLLER_DIGITAL_LEFT, pros::E_CONTROLLER_DIGITAL_RIGHT);
+  opcontrol_curve_buttons_right_set(pros::E_CONTROLLER_DIGITAL_Y, pros::E_CONTROLLER_DIGITAL_A);
 
   // Enable auto printing and drive motors moving
   pid_drive_toggle(true);
@@ -213,6 +213,10 @@ void Drive::drive_current_limit_set(int mA) {
   for (auto i : right_motors) {
     if (!pto_check(i)) i.set_current_limit(abs(mA));  // If the motor is in the pto list, don't do anything to the motor.
   }
+}
+
+int Drive::drive_current_limit_get() {
+  return CURRENT_MA;
 }
 
 // Motor telemetry
@@ -322,6 +326,11 @@ void Drive::drive_brake_set(pros::motor_brake_mode_e_t brake_type) {
   }
 }
 
+// Get brake
+pros::motor_brake_mode_e_t Drive::drive_brake_get() {
+  return CURRENT_BRAKE;
+}
+
 void Drive::initialize() {
   opcontrol_curve_sd_initialize();
   drive_imu_calibrate();
@@ -330,3 +339,6 @@ void Drive::initialize() {
 
 void Drive::pid_drive_toggle(bool toggle) { drive_toggle = toggle; }
 void Drive::pid_print_toggle(bool toggle) { print_toggle = toggle; }
+
+bool Drive::pid_drive_toggle_get() {return drive_toggle;}
+bool Drive::pid_print_toggle_get() {return print_toggle;}

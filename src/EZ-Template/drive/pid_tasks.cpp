@@ -70,8 +70,8 @@ void Drive::turn_pid_task() {
 
   // Clip the speed of the turn when the robot is within StartI, only do this when target is larger then StartI
   if (turnPID.constants.ki != 0 && (fabs(turnPID.target_get()) > turnPID.constants.start_i && fabs(turnPID.error) < turnPID.constants.start_i)) {
-    if (get_turn_min() != 0)
-      gyro_out = util::clamp(gyro_out, get_turn_min(), -get_turn_min());
+    if (pid_turn_min_get() != 0)
+      gyro_out = util::clamp(gyro_out, pid_turn_min_get(), -pid_turn_min_get());
   }
 
   // Set motors

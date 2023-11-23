@@ -22,7 +22,7 @@ using namespace ez;
 class Drive {
  public:
   /**
-   * Joysticks will return 0 when they are within this number.  Set with opcontrol_joystick_threshold()
+   * Joysticks will return 0 when they are within this number.  Set with opcontrol_joystick_threshold_set()
    */
   int JOYSTICK_THRESHOLD;
 
@@ -214,13 +214,13 @@ class Drive {
 
   /**
    * Sets the chassis to controller joysticks using tank control.  Run is usercontrol.
-   * This passes the controller through the curve functions, but is disabled by default.  Use toggle_controller_curve_modifier() to enable it.
+   * This passes the controller through the curve functions, but is disabled by default.  Use opcontrol_curve_buttons_toggle() to enable it.
    */
   void opcontrol_tank();
 
   /**
    * Sets the chassis to controller joysticks using standard arcade control.  Run is usercontrol.
-   * This passes the controller through the curve functions, but is disabled by default.  Use toggle_controller_curve_modifier() to enable it.
+   * This passes the controller through the curve functions, but is disabled by default.  Use opcontrol_curve_buttons_toggle() to enable it.
    *
    * \param stick_type
    *        ez::SINGLE or ez::SPLIT control
@@ -229,7 +229,7 @@ class Drive {
 
   /**
    * Sets the chassis to controller joysticks using flipped arcade control.  Run is usercontrol.
-   * This passes the controller through the curve functions, but is disabled by default.  Use toggle_controller_curve_modifier() to enable it.
+   * This passes the controller through the curve functions, but is disabled by default.  Use opcontrol_curve_buttons_toggle() to enable it.
    *
    * \param stick_type
    *        ez::SINGLE or ez::SPLIT control
@@ -252,12 +252,22 @@ class Drive {
   void opcontrol_curve_default_set(double left, double right = 0);
 
   /**
+   * Gets the default joystick curves, in {left, right}
+   */
+  std::vector<double> opcontrol_curve_default_get();
+
+  /**
    * Runs a P loop on the drive when the joysticks are released.
    *
    * \param kp
    *        Constant for the p loop.
    */
   void opcontrol_drive_activebrake_set(double kp);
+
+  /**
+   * Returns kP for active brake.
+   */
+  double opcontrol_drive_activebrake_get();
 
   /**
    * Enables/disables modifying the joystick input curves with the controller.  True enables, false disables.
@@ -268,6 +278,11 @@ class Drive {
   void opcontrol_curve_buttons_toggle(bool toggle);
 
   /**
+   * Gets the current state of the toggle. Enables/disables modifying the joystick input curves with the controller.  True enables, false disables.
+   */
+  bool opcontrol_curve_buttons_toggle_get();
+
+  /**
    * Sets buttons for modifying the left joystick curve.
    *
    * \param decrease
@@ -275,7 +290,12 @@ class Drive {
    * \param increase
    *        a pros button enumerator
    */
-  void opcontrol_curve_buttons_left(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase);
+  void opcontrol_curve_buttons_left_set(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase);
+
+  /**
+   * Returns a vector of pros controller buttons user for the left joystick curve, in {decrease, increase}
+   */
+  std::vector<pros::controller_digital_e_t> opcontrol_curve_buttons_left_get();
 
   /**
    * Sets buttons for modifying the right joystick curve.
@@ -285,7 +305,12 @@ class Drive {
    * \param increase
    *        a pros button enumerator
    */
-  void opcontrol_curve_buttons_right(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase);
+  void opcontrol_curve_buttons_right_set(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase);
+
+  /**
+   * Returns a vector of pros controller buttons user for the right joystick curve, in {decrease, increase}
+   */
+  std::vector<pros::controller_digital_e_t> opcontrol_curve_buttons_right_get();
 
   /**
    * Outputs a curve from 5225A In the Zone.  This gives more control over the robot at lower speeds.  https://www.desmos.com/calculator/rcfjjg83zx
@@ -309,7 +334,12 @@ class Drive {
    * \param threshold
    *        new threshold
    */
-  void opcontrol_joystick_threshold(int threshold);
+  void opcontrol_joystick_threshold_set(int threshold);
+
+  /**
+   * Gets a new threshold for the joystick.  The joysticks wil not return a value if they are within this.
+   */
+  int opcontrol_joystick_threshold_get();
 
   /**
    * Resets drive sensors at the start of opcontrol.
@@ -391,6 +421,11 @@ class Drive {
   void drive_brake_set(pros::motor_brake_mode_e_t brake_type);
 
   /**
+   * Returns the brake mode of the drive in pros_brake_mode_e_t_
+   */
+  pros::motor_brake_mode_e_t drive_brake_get();
+
+  /**
    * Sets the limit for the current on the drive.
    *
    * \param mA
@@ -399,14 +434,29 @@ class Drive {
   void drive_current_limit_set(int mA);
 
   /**
+   * Gets the limit for the current on the drive.
+   */
+  int drive_current_limit_get();
+
+  /**
    * Toggles set drive in autonomous. True enables, false disables.
    */
   void pid_drive_toggle(bool toggle);
 
   /**
+   * Gets the current state of the toggle. This toggles set drive in autonomous. True enables, false disables.
+   */
+  bool pid_drive_toggle_get();
+
+  /**
    * Toggles printing in autonomous. True enables, false disables.
    */
   void pid_print_toggle(bool toggle);
+
+  /**
+   * Gets the current state of the toggle.  This toggles printing in autonomous. True enables, false disables.
+   */
+  bool pid_print_toggle_get();
 
   /////
   //
@@ -502,6 +552,11 @@ class Drive {
    */
   void opcontrol_joystick_practicemode_toggle(bool toggle);
 
+  /**
+   * Gets current state of the toggle.  Practice mode for driver practice that shuts off the drive if you go max speed.
+   */
+  bool opcontrol_joystick_practicemode_toggle_get();
+
   /////
   //
   // Autonomous Functions
@@ -574,7 +629,7 @@ class Drive {
   /**
    * Sets heading of gyro and target of PID.
    */
-  void set_angle(okapi::QAngle p_angle);
+  void drive_angle_set(okapi::QAngle p_angle);
 
   /**
    * Lock the code in a while loop until the robot has settled.
@@ -609,6 +664,7 @@ class Drive {
    *        ratio of the gears
    */
   void drive_ratio_set(double ratio);
+
   /**
    * Changes max speed during a drive motion.
    *
@@ -616,6 +672,11 @@ class Drive {
    *        new clipped speed
    */
   void pid_speed_max_set(int speed);
+
+  /**
+   * Returns max speed of drive during autonomous.
+   */
+  int pid_speed_max_get();
 
   /**
    * @brief Set the drive pid constants object
@@ -628,6 +689,16 @@ class Drive {
   void pid_drive_constants_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
   /**
+   * @brief returns PID constants with PID::Constants.  Returns -1 if fwd and rev constants aren't the same!
+   *
+   * @param p           kP
+   * @param i           kI
+   * @param d           kD
+   * @param p_start_i   start_I
+   */
+  PID::Constants pid_drive_constants_get();
+
+  /**
    * @brief Set the turn pid constants object
    *
    * @param p           kP
@@ -636,6 +707,16 @@ class Drive {
    * @param p_start_i   start_I
    */
   void pid_turn_constants_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
+
+  /**
+   * @brief returns PID constants with PID::Constants.
+   *
+   * @param p           kP
+   * @param i           kI
+   * @param d           kD
+   * @param p_start_i   start_I
+   */
+  PID::Constants pid_turn_constants_get();
 
   /**
    * @brief Set the swing pid constants object
@@ -648,6 +729,16 @@ class Drive {
   void pid_swing_constants_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
   /**
+   * @brief returns PID constants with PID::Constants.
+   *
+   * @param p           kP
+   * @param i           kI
+   * @param d           kD
+   * @param p_start_i   start_I
+   */
+  PID::Constants pid_swing_constants_get();
+
+  /**
    * @brief Set the heading pid constants object
    *
    * @param p           kP
@@ -656,6 +747,16 @@ class Drive {
    * @param p_start_i   start_I
    */
   void pid_heading_constants_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
+
+  /**
+   * @brief returns PID constants with PID::Constants.
+   *
+   * @param p           kP
+   * @param i           kI
+   * @param d           kD
+   * @param p_start_i   start_I
+   */
+  PID::Constants pid_heading_constants_get();
 
   /**
    * @brief Set the forward pid constants object
@@ -668,6 +769,16 @@ class Drive {
   void pid_drive_forward_constants_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
   /**
+   * @brief returns PID constants with PID::Constants.
+   *
+   * @param p           kP
+   * @param i           kI
+   * @param d           kD
+   * @param p_start_i   start_I
+   */
+  PID::Constants pid_drive_forward_constants_get();
+
+  /**
    * @brief Set the backwards pid constants object
    *
    * @param p           kP
@@ -676,6 +787,16 @@ class Drive {
    * @param p_start_i   start_I
    */
   void pid_drive_backward_constants_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
+
+  /**
+   * @brief returns PID constants with PID::Constants.
+   *
+   * @param p           kP
+   * @param i           kI
+   * @param d           kD
+   * @param p_start_i   start_I
+   */
+  PID::Constants pid_drive_backward_constants_get();
 
   /**
    * Sets minimum power for swings when kI and startI are enabled.
@@ -701,7 +822,7 @@ class Drive {
   /**
    * Returns minimum power for turns when kI and startI are enabled.
    */
-  int get_turn_min();
+  int pid_turn_min_get();
 
   /**
    * Sets minimum slew speed constants.

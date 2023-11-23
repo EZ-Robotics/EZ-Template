@@ -15,6 +15,10 @@ void Drive::opcontrol_curve_default_set(double left, double right) {
   save_r_curve_sd();
 }
 
+std::vector<double> Drive::opcontrol_curve_default_get() {
+  return {left_curve_scale, right_curve_scale};
+}
+
 // Initialize curve SD card
 void Drive::opcontrol_curve_sd_initialize() {
   // If no SD card, return
@@ -73,13 +77,21 @@ void Drive::save_r_curve_sd() {
   fclose(usd_file_write);
 }
 
-void Drive::opcontrol_curve_buttons_left(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase) {
+void Drive::opcontrol_curve_buttons_left_set(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase) {
   l_increase_.button = increase;
   l_decrease_.button = decrease;
 }
-void Drive::opcontrol_curve_buttons_right(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase) {
+void Drive::opcontrol_curve_buttons_right_set(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase) {
   r_increase_.button = increase;
   r_decrease_.button = decrease;
+}
+
+std::vector<pros::controller_digital_e_t> Drive::opcontrol_curve_buttons_left_get() {
+  return {l_decrease_.button, r_decrease_.button};
+}
+
+std::vector<pros::controller_digital_e_t> Drive::opcontrol_curve_buttons_right_get() {
+  return {r_decrease_.button, r_decrease_.button};
 }
 
 // Increase / decrease left and right curves
@@ -134,6 +146,7 @@ void Drive::button_press(button_* input_name, int button, std::function<void()> 
 
 // Toggle modifying curves with controller
 void Drive::opcontrol_curve_buttons_toggle(bool toggle) { disable_controller = toggle; }
+bool Drive::opcontrol_curve_buttons_toggle_get() { return disable_controller; }
 
 // Modify curves with button presses and display them to contrller
 void Drive::opcontrol_curve_buttons_iterate() {
@@ -182,8 +195,14 @@ void Drive::opcontrol_drive_activebrake_set(double kp) {
   drive_sensor_reset();
 }
 
+// Get active brake constant
+double Drive::opcontrol_drive_activebrake_get() {
+  return active_brake_kp;
+}
+
 // Set joystick threshold
-void Drive::opcontrol_joystick_threshold(int threshold) { JOYSTICK_THRESHOLD = abs(threshold); }
+void Drive::opcontrol_joystick_threshold_set(int threshold) { JOYSTICK_THRESHOLD = abs(threshold); }
+int Drive::opcontrol_joystick_threshold_get() { return JOYSTICK_THRESHOLD; }
 
 void Drive::opcontrol_drive_sensors_reset() {
   if (util::AUTON_RAN) {
@@ -193,6 +212,7 @@ void Drive::opcontrol_drive_sensors_reset() {
 }
 
 void Drive::opcontrol_joystick_practicemode_toggle(bool toggle) { practice_mode_is_on = toggle; }
+bool Drive::opcontrol_joystick_practicemode_toggle_get() { return practice_mode_is_on; }
 
 void Drive::opcontrol_joystick_threshold_iterate(int l_stick, int r_stick) {
   // Check the motors are being set to power

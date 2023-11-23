@@ -12,29 +12,63 @@ void Drive::pid_drive_constants_set(double p, double i, double d, double p_start
   pid_drive_backward_constants_set(p, i, d, p_start_i);
 }
 
+PID::Constants Drive::pid_drive_constants_get() {
+  auto fwd_const = pid_drive_forward_constants_get();
+  auto rev_const = pid_drive_backward_constants_get();
+  if (!(fwd_const.kp == rev_const.kp && fwd_const.ki == rev_const.ki && fwd_const.kd == rev_const.kd && fwd_const.start_i == rev_const.start_i)) {
+    printf("\nForward and Reverse constants are not the same!");
+    return {-1, -1, -1, -1};
+  }
+  return fwd_const;
+}
+
 void Drive::pid_drive_forward_constants_set(double p, double i, double d, double p_start_i) {
   forward_drivePID.constants_set(p, i, d, p_start_i);
+}
+
+PID::Constants Drive::pid_drive_forward_constants_get() {
+  return forward_drivePID.constants_get();
 }
 
 void Drive::pid_drive_backward_constants_set(double p, double i, double d, double p_start_i) {
   backward_drivePID.constants_set(p, i, d, p_start_i);
 }
 
+PID::Constants Drive::pid_drive_backward_constants_get() {
+  return backward_drivePID.constants_get();
+}
+
 void Drive::pid_turn_constants_set(double p, double i, double d, double p_start_i) {
   turnPID.constants_set(p, i, d, p_start_i);
+}
+
+PID::Constants Drive::pid_turn_constants_get() {
+  return turnPID.constants_get();
 }
 
 void Drive::pid_swing_constants_set(double p, double i, double d, double p_start_i) {
   swingPID.constants_set(p, i, d, p_start_i);
 }
 
+PID::Constants Drive::pid_swing_constants_get() {
+  return swingPID.constants_get();
+}
+
 void Drive::pid_heading_constants_set(double p, double i, double d, double p_start_i) {
   headingPID.constants_set(p, i, d, p_start_i);
+}
+
+PID::Constants Drive::pid_heading_constants_get() {
+  return headingPID.constants_get();
 }
 
 // Updates max speed
 void Drive::pid_speed_max_set(int speed) {
   max_speed = util::clamp(abs(speed), 127, -127);
+}
+
+int Drive::pid_speed_max_get() {
+  return max_speed;
 }
 
 void Drive::pid_targets_reset() {
@@ -46,7 +80,7 @@ void Drive::pid_targets_reset() {
   turnPID.target_set(0);
 }
 
-void Drive::set_angle(okapi::QAngle p_angle) {
+void Drive::drive_angle_set(okapi::QAngle p_angle) {
   double angle = p_angle.convert(okapi::degree);  // Convert okapi unit to degree
 
   headingPID.target_set(angle);
@@ -54,14 +88,13 @@ void Drive::set_angle(okapi::QAngle p_angle) {
 }
 
 void Drive::drive_mode_set(e_mode p_mode) { mode = p_mode; }
+e_mode Drive::drive_mode_get() { return mode; }
 
 void Drive::pid_turn_min_set(int min) { turn_min = abs(min); }
-int Drive::get_turn_min() { return turn_min; }
+int Drive::pid_turn_min_get() { return turn_min; }
 
 void Drive::pid_swing_min_set(int min) { swing_min = abs(min); }
 int Drive::pid_swing_min_get() { return swing_min; }
-
-e_mode Drive::drive_mode_get() { return mode; }
 
 // Set drive PID
 void Drive::pid_drive_set(okapi::QLength p_target, int speed, bool slew_on, bool toggle_heading) {
