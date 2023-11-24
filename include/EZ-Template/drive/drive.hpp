@@ -413,6 +413,11 @@ class Drive {
   void drive_set(int left, int right);
 
   /**
+   * Gets the chassis to voltage, -127 to 127.  Returns {left, right}
+   */
+  std::vector<int> drive_get();
+
+  /**
    * Changes the way the drive behaves when it is not under active user control
    *
    * \param brake_type

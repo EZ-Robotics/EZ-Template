@@ -202,6 +202,12 @@ void Drive::drive_set(int left, int right) {
   private_drive_set(left, right);
 }
 
+std::vector<int> Drive::drive_get() {
+  int left = left_motors[0].get_voltage() / (12000.0 / 127.0);
+  int right = right_motors[0].get_voltage() / (12000.0 / 127.0);
+  return {left, right};
+}
+
 void Drive::drive_current_limit_set(int mA) {
   if (abs(mA) > 2500) {
     mA = 2500;
@@ -340,5 +346,5 @@ void Drive::initialize() {
 void Drive::pid_drive_toggle(bool toggle) { drive_toggle = toggle; }
 void Drive::pid_print_toggle(bool toggle) { print_toggle = toggle; }
 
-bool Drive::pid_drive_toggle_get() {return drive_toggle;}
-bool Drive::pid_print_toggle_get() {return print_toggle;}
+bool Drive::pid_drive_toggle_get() { return drive_toggle; }
+bool Drive::pid_print_toggle_get() { return print_toggle; }

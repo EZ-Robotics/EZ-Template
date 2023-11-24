@@ -73,7 +73,7 @@ void Drive::pid_wait() {
       turn_exit = turn_exit != RUNNING ? turn_exit : turnPID.exit_condition({left_motors[0], right_motors[0]});
       pros::delay(util::DELAY_TIME);
     }
-    if (print_toggle) std::cout << "  Turn: " << exit_to_string(turn_exit) << " Exit, error:" << turnPID.error << ".\n";
+    if (print_toggle) std::cout << "  Turn: " << exit_to_string(turn_exit) << " Exit, error: " << turnPID.error << ".\n";
 
     if (turn_exit == mA_EXIT || turn_exit == VELOCITY_EXIT) {
       interfered = true;
@@ -88,7 +88,7 @@ void Drive::pid_wait() {
       swing_exit = swing_exit != RUNNING ? swing_exit : swingPID.exit_condition(sensor);
       pros::delay(util::DELAY_TIME);
     }
-    if (print_toggle) std::cout << "  Swing: " << exit_to_string(swing_exit) << " Exit, error:" << swingPID.error << ".\n";
+    if (print_toggle) std::cout << "  Swing: " << exit_to_string(swing_exit) << " Exit, error: " << swingPID.error << ".\n";
 
     if (swing_exit == mA_EXIT || swing_exit == VELOCITY_EXIT) {
       interfered = true;

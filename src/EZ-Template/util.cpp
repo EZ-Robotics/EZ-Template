@@ -24,8 +24,6 @@ void ez_template_print() {
                                      | |
                                      |_|
 )" << '\n';
-
-  printf("Version: 2.2.0-RC2\n");
 }
 std::string get_last_word(std::string text) {
   std::string word = "";

@@ -178,7 +178,7 @@ double Drive::opcontrol_curve_left(double x) {
   return x;
 }
 
-// Right curve fnuction
+// Right curve function
 double Drive::opcontrol_curve_right(double x) {
   if (right_curve_scale != 0) {
     // if (CURVE_TYPE)
