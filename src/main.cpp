@@ -1,15 +1,33 @@
 #include "main.h"
 
+pros::Motor topLeft(20);
+pros::Motor bottomLeft(9, true);
+pros::Motor topRight(13);
+pros::Motor bottomRight(3);
+
+pros::Motor_Group leftDrive({topLeft, bottomLeft});
+pros::Motor_Group rightDrive({topRight, topRight});
+
+pros::Motor leftLift(19, true);
+pros::Motor rightLift(12);
+pros::Motor_Group lift({leftLift, rightLift});
+
+pros::Motor flyLeft(10);
+pros::Motor flyRight(2, true);
+
+pros::Motor_Group flywheel({flyLeft, flyRight});
+
+pros::Controller master(pros::E_CONTROLLER_MASTER);
 
 // Chassis constructor
 Drive chassis (
   // Left Chassis Ports (negative port will reverse it!)
   //   the first port is the sensored port (when trackers are not used!)
-  {-15, -16}
+  {-9, 20}
 
   // Right Chassis Ports (negative port will reverse it!)
   //   the first port is the sensored port (when trackers are not used!)
-  ,{6, 5}
+  ,{3, -13}
 
   // IMU Port
   ,20
@@ -72,12 +90,14 @@ void initialize() {
   // Autonomous Selector using LLEMU
   ez::as::auton_selector.add_autons({
     Auton("Example Drive\n\nDrive forward and come back.", drive_example),
+    /*
     Auton("Example Turn\n\nTurn 3 times.", turn_example),
     Auton("Drive and Turn\n\nDrive forward, turn, come back. ", drive_and_turn),
     Auton("Drive and Turn\n\nSlow down during drive.", wait_until_change_speed),
     Auton("Swing Example\n\nSwing, drive, swing.", swing_example),
     Auton("Combine all 3 movements", combining_movements),
     Auton("Interference\n\nAfter driving forward, robot performs differently if interfered or not.", interfered_example),
+    */
   });
 
   // Initialize chassis and auton selector
@@ -150,16 +170,37 @@ void autonomous() {
  */
 void opcontrol() {
   // This is preference to what you like to drive on.
-  chassis.set_drive_brake(MOTOR_BRAKE_COAST);
+  chassis.set_drive_brake(MOTOR_BRAKE_BRAKE);
+  lift.set_brake_modes(MOTOR_BRAKE_HOLD);
 
   while (true) {
-
-    chassis.tank(); // Tank control
-    // chassis.arcade_standard(ez::SPLIT); // Standard split arcade
+  
+    //chassis.tank(); // Tank control
+    chassis.arcade_standard(ez::SPLIT); // Standard split arcade
     // chassis.arcade_standard(ez::SINGLE); // Standard single arcade
     // chassis.arcade_flipped(ez::SPLIT); // Flipped split arcade
     // chassis.arcade_flipped(ez::SINGLE); // Flipped single arcade
 
+    if(master.get_digital(pros::E_CONTROLLER_DIGITAL_L1)){
+      lift = 127;
+    }
+    else if(master.get_digital(pros::E_CONTROLLER_DIGITAL_L2)){
+      lift = -127;
+    }
+    else{
+      lift.brake();
+      lift = 0;
+    }
+    
+    if(master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_R1)){
+      flywheel = 127;
+    }
+    else if(master.get_digital(pros::E_CONTROLLER_DIGITAL_R2)){
+      flywheel = -127;
+    }
+    if(master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_B)){
+      flywheel = 0;
+    }
     // . . .
     // Put more user control code here!
     // . . .
