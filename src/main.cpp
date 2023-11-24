@@ -5,8 +5,8 @@ pros::Motor bottomLeft(9, true);
 pros::Motor topRight(13);
 pros::Motor bottomRight(3);
 
-pros::Motor_Group leftDrive({topLeft, bottomLeft});
-pros::Motor_Group rightDrive({topRight, topRight});
+pros::Motor_Group leftDrive({bottomLeft, topLeft});
+pros::Motor_Group rightDrive({bottomRight, topRight});
 
 pros::Motor leftLift(19, true);
 pros::Motor rightLift(12);
@@ -30,21 +30,21 @@ Drive chassis (
   ,{3, -13}
 
   // IMU Port
-  ,20
+  ,8
 
   // Wheel Diameter (Remember, 4" wheels are actually 4.125!)
   //    (or tracking wheel diameter)
-  ,2.5
+  ,2.75
 
   // Cartridge RPM
   //   (or tick per rotation if using tracking wheels)
-  ,1200
+  ,600
 
   // External Gear Ratio (MUST BE DECIMAL)
   //    (or gear ratio of tracking wheel)
   // eg. if your drive is 84:36 where the 36t is powered, your RATIO would be 2.333.
   // eg. if your drive is 36:60 where the 60t is powered, your RATIO would be 0.6.
-  ,2
+  ,1.333
 
 
   // Uncomment if using tracking wheels
@@ -89,9 +89,9 @@ void initialize() {
 
   // Autonomous Selector using LLEMU
   ez::as::auton_selector.add_autons({
-    Auton("Example Drive\n\nDrive forward and come back.", drive_example),
+    Auton("Auton example, not real path.", auton_example),
+    //Auton("Example Turn\n\nTurn 3 times.", turn_example),
     /*
-    Auton("Example Turn\n\nTurn 3 times.", turn_example),
     Auton("Drive and Turn\n\nDrive forward, turn, come back. ", drive_and_turn),
     Auton("Drive and Turn\n\nSlow down during drive.", wait_until_change_speed),
     Auton("Swing Example\n\nSwing, drive, swing.", swing_example),

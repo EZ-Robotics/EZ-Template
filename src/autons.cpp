@@ -27,12 +27,13 @@ void default_constants() {
   chassis.set_slew_min_power(80, 80);
   chassis.set_slew_distance(7, 7);
   chassis.set_pid_constants(&chassis.headingPID, 11, 0, 20, 0);
-  chassis.set_pid_constants(&chassis.forward_drivePID, 0.45, 0, 5, 0);
-  chassis.set_pid_constants(&chassis.backward_drivePID, 0.45, 0, 5, 0);
-  chassis.set_pid_constants(&chassis.turnPID, 5, 0.003, 35, 15);
+  chassis.set_pid_constants(&chassis.forward_drivePID, 0.6, 0.2, 5, 0);
+  chassis.set_pid_constants(&chassis.backward_drivePID, 0.6, 0, 5, 0);
+  chassis.set_pid_constants(&chassis.turnPID, 5.75, 0, 47, 0);
   chassis.set_pid_constants(&chassis.swingPID, 7, 0, 45, 0);
 }
 
+/*
 void one_mogo_constants() {
   chassis.set_slew_min_power(80, 80);
   chassis.set_slew_distance(7, 7);
@@ -52,7 +53,7 @@ void two_mogo_constants() {
   chassis.set_pid_constants(&chassis.turnPID, 5, 0.003, 35, 15);
   chassis.set_pid_constants(&chassis.swingPID, 7, 0, 45, 0);
 }
-
+*/
 
 void modified_exit_condition() {
   chassis.set_exit_condition(chassis.turn_exit, 100, 3, 500, 7, 500, 500);
@@ -66,7 +67,7 @@ void modified_exit_condition() {
 ///
 // Drive Example
 ///
-void drive_example() {
+void auton_example() {
   // The first parameter is target inches
   // The second parameter is max speed the robot will drive at
   // The third parameter is a boolean (true or false) for enabling/disabling a slew at the start of drive motions
@@ -76,10 +77,20 @@ void drive_example() {
   chassis.set_drive_pid(24, DRIVE_SPEED, true);
   chassis.wait_drive();
 
-  chassis.set_drive_pid(-12, DRIVE_SPEED);
+  pros::delay(100);
+
+  chassis.set_swing_pid(ez::RIGHT_SWING, -90, SWING_SPEED);
   chassis.wait_drive();
 
-  chassis.set_drive_pid(-12, DRIVE_SPEED);
+  pros::delay(100);
+
+  chassis.set_swing_pid(ez::LEFT_SWING, 180, SWING_SPEED);
+  chassis.wait_drive();
+  
+  chassis.set_drive_pid(48, DRIVE_SPEED);
+  chassis.wait_drive();
+
+  chassis.set_turn_pid(0, TURN_SPEED);
   chassis.wait_drive();
 }
 
@@ -93,13 +104,7 @@ void turn_example() {
   // The second parameter is max speed the robot will drive at
 
 
-  chassis.set_turn_pid(90, TURN_SPEED);
-  chassis.wait_drive();
-
-  chassis.set_turn_pid(45, TURN_SPEED);
-  chassis.wait_drive();
-
-  chassis.set_turn_pid(0, TURN_SPEED);
+  chassis.set_turn_pid(180, TURN_SPEED);
   chassis.wait_drive();
 }
 
