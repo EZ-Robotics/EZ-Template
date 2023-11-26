@@ -19,6 +19,12 @@ pros::Motor_Group flywheel({flyLeft, flyRight});
 
 pros::Controller master(pros::E_CONTROLLER_MASTER);
 
+pros::ADIDigitalOut rightWing('A');
+pros::ADIDigitalOut leftWing('B');
+pros::ADIDigitalOut rachet('C');
+
+pros::Rotation liftSensor(18);
+
 // Chassis constructor
 Drive chassis (
   // Left Chassis Ports (negative port will reverse it!)
@@ -81,6 +87,7 @@ void initialize() {
   chassis.toggle_modify_curve_with_controller(true); // Enables modifying the controller curve with buttons on the joysticks
   chassis.set_active_brake(0); // Sets the active brake kP. We recommend 0.1.
   chassis.set_curve_default(0, 0); // Defaults for curve. If using tank, only the first parameter is used. (Comment this line out if you have an SD card!)  
+  //lift_up_constants();
   default_constants(); // Set the drive to your own constants from autons.cpp!
 
   // These are already defaulted to these buttons, but you can change the left/right curve buttons here!
@@ -89,7 +96,7 @@ void initialize() {
 
   // Autonomous Selector using LLEMU
   ez::as::auton_selector.add_autons({
-    Auton("Auton example, not real path.", auton_example),
+    Auton("6 ball auton", goal_side),
     //Auton("Example Turn\n\nTurn 3 times.", turn_example),
     /*
     Auton("Drive and Turn\n\nDrive forward, turn, come back. ", drive_and_turn),
@@ -99,6 +106,8 @@ void initialize() {
     Auton("Interference\n\nAfter driving forward, robot performs differently if interfered or not.", interfered_example),
     */
   });
+
+  liftSensor.reset_position();
 
   // Initialize chassis and auton selector
   chassis.initialize();
@@ -168,39 +177,118 @@ void autonomous() {
  * operator control task will be stopped. Re-enabling the robot will restart the
  * task, not resume it from where it left off.
  */
+
+/*
+ * 0 // Hold for movement
+ * 1 // Toggle on forwards
+ * -1 // Toggle on reverse
+*/
+int flyToggle = 0;
+double LPrevTime = -40000;
+double LTime = 0;
+double RPrevTime = -40000;
+double RTime = 0;
+
 void opcontrol() {
   // This is preference to what you like to drive on.
   chassis.set_drive_brake(MOTOR_BRAKE_BRAKE);
-  lift.set_brake_modes(MOTOR_BRAKE_HOLD);
+  lift.set_brake_modes(MOTOR_BRAKE_COAST);
 
   while (true) {
-  
+    
     //chassis.tank(); // Tank control
     chassis.arcade_standard(ez::SPLIT); // Standard split arcade
     // chassis.arcade_standard(ez::SINGLE); // Standard single arcade
     // chassis.arcade_flipped(ez::SPLIT); // Flipped split arcade
     // chassis.arcade_flipped(ez::SINGLE); // Flipped single arcade
 
-    if(master.get_digital(pros::E_CONTROLLER_DIGITAL_L1)){
-      lift = 127;
+    // 5 degrees, 500 centidegrees
+
+    if(master.get_digital(pros::E_CONTROLLER_DIGITAL_A)){
+      rachet.set_value(1);
     }
-    else if(master.get_digital(pros::E_CONTROLLER_DIGITAL_L2)){
-      lift = -127;
+    if(master.get_digital(pros::E_CONTROLLER_DIGITAL_LEFT)){
+      rachet.set_value(0);
     }
-    else{
-      lift.brake();
-      lift = 0;
+
+    if(liftSensor.get_angle() > 1000) {
+      if(abs(master.get_analog(ANALOG_RIGHT_Y)) > 80){
+        lift = master.get_analog(ANALOG_RIGHT_Y);
+      }
+      else {
+        lift = 0;
+        lift.set_brake_modes(MOTOR_BRAKE_HOLD);
+      }
     }
-    
-    if(master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_R1)){
-      flywheel = 127;
+    else {
+      if(master.get_analog(ANALOG_RIGHT_Y) > 80){
+        lift = master.get_analog(ANALOG_RIGHT_Y);
+      }
+      else {
+        lift.set_brake_modes(MOTOR_BRAKE_COAST);
+        lift = 0;
+      }
     }
-    else if(master.get_digital(pros::E_CONTROLLER_DIGITAL_R2)){
-      flywheel = -127;
+
+    if(master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_L2)){
+      LPrevTime = LTime;
+      LTime = pros::millis();
+      if(LTime - LPrevTime < 400){
+        flyToggle = 1;
+      }
+      else{
+        flyToggle = 0;
+      }
+    }
+    if(master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_R2)){
+      RPrevTime = RTime;
+      RTime = pros::millis();
+      if(RTime - RPrevTime < 400){
+        flyToggle = -1;
+      }
+      else{
+        flyToggle = 0;
+      }
     }
     if(master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_B)){
-      flywheel = 0;
+      flyToggle = 0;
     }
+
+    if(master.get_digital(pros::E_CONTROLLER_DIGITAL_L1)){
+      leftWing.set_value(1);
+    }
+    else{
+      leftWing.set_value(0);
+    }
+
+    if(master.get_digital(pros::E_CONTROLLER_DIGITAL_R1)){
+      rightWing.set_value(1);
+    }
+    else{
+      rightWing.set_value(0);
+    }
+
+    if(flyToggle == 0) {
+      if(master.get_digital(pros::E_CONTROLLER_DIGITAL_L2)){
+        flywheel = 87;
+      }
+      else if(master.get_digital(pros::E_CONTROLLER_DIGITAL_R2)){
+        flywheel = -87;
+      }
+      else {
+        flywheel = 0;
+      }
+    }
+    else if(flyToggle == 1) {
+      flywheel = 107;
+    }
+    else if(flyToggle == -1) {
+      flywheel = -107;
+    }
+    else {
+      return;
+    }
+  
     // . . .
     // Put more user control code here!
     // . . .

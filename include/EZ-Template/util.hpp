@@ -72,6 +72,16 @@ enum e_mode { DISABLE = 0,
               DRIVE = 3 };
 
 /**
+ * Enum for lift conditions
+ */
+
+enum l_state { INTAKE = 0,
+               OVERNET = 1,
+               CLIMB = 2,
+               LOAD = 3,
+               ANTITIP = 4 };
+
+/**
  * Outputs string for exit_condition enum.
  */
 std::string exit_to_string(exit_output input);
