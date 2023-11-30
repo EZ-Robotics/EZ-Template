@@ -26,6 +26,7 @@ void suicide_score();
 void safe_denial();
 void moderate_denial();
 void suicide_denial();
+void skillsAuto();
 
 void suicide_constants();
 void default_constants();

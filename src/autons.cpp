@@ -294,6 +294,110 @@ void suicide_denial() {
   lift = 0;
 }
 
+void threadWing()
+{
+  ez::print_to_screen("blah",1);
+  rightWing.set_value(1);
+  leftWing.set_value(1);
+}
+
+void skillsAuto(){
+  chassis.set_drive_brake(MOTOR_BRAKE_BRAKE);
+  lift.set_brake_modes(MOTOR_BRAKE_HOLD);
+  flywheel.set_brake_modes(MOTOR_BRAKE_COAST);
+
+  chassis.set_angle(45); 
+  chassis.set_drive_pid(-18, DRIVE_SPEED);
+  chassis.wait_drive();
+
+  chassis.set_turn_pid(-18, SWING_SPEED);
+  chassis.wait_drive();
+
+  chassis.set_drive_pid(-3, DRIVE_SPEED);
+  chassis.wait_drive();
+
+  flywheel = 120;
+
+  lift = 120;
+  pros::delay(1450);
+  lift = 0;
+
+  pros::delay(35000);
+  flywheel = 0;
+
+  // chassis.set_turn_pid(30, DRIVE_SPEED);
+  // chassis.wait_drive();
+  
+  // chassis.set_drive_pid(30, DRIVE_SPEED);
+  // chassis.wait_drive();
+
+  // chassis.set_turn_pid(0, DRIVE_SPEED);
+  // chassis.wait_drive();
+  
+  // chassis.set_drive_pid(72, DRIVE_SPEED, true);
+  // chassis.wait_drive();
+
+  // NOT TESTED !!!! (tween ig but this shld be the path!)// 
+
+  // chassis.set_swing_pid(ez::RIGHT_SWING, -90, SWING_SPEED);
+  // chassis.wait_drive();
+  
+  // chassis.set_drive_pid(10, DRIVE_SPEED);
+  // chassis.wait_drive();
+
+
+//
+
+
+
+
+
+
+
+
+  // random stuff we r not doing maybe
+
+
+  // chassis.set_drive_pid(-10, DRIVE_SPEED);
+  // chassis.wait_drive();
+
+  // chassis.set_swing_pid(ez::RIGHT_SWING, 180, SWING_SPEED);
+  // chassis.wait_drive();
+
+  // chassis.set_swing_pid(ez::RIGHT_SWING, -180, SWING_SPEED);     # This is supposed to swing forward not back..?
+  // chassis.wait_drive();
+  
+  //pros::Task my_task(threadWing);
+
+  // chassis.set_swing_pid(ez::LEFT_SWING, -90, SWING_SPEED);      # This is supposed to swing forward not back..?
+  // chassis.wait_drive();
+
+  // chassis.set_swing_pid(ez::LEFT_SWING, 0, SWING_SPEED);
+  // chassis.wait_drive();
+
+  // chassis.set_drive_pid(20, DRIVE_SPEED);
+  // chassis.wait_drive();
+
+  // chassis.set_drive_pid(-20, DRIVE_SPEED);
+  // chassis.wait_drive();
+
+  // chassis.set_turn_pid(-90, DRIVE_SPEED);
+  // chassis.wait_drive();
+
+  // chassis.set_drive_pid(5, DRIVE_SPEED);
+  // chassis.wait_drive();
+
+  // chassis.set_swing_pid(ez::LEFT_SWING, 0, DRIVE_SPEED);
+  // chassis.sets
+
+  // 
+
+  // chassis.set_drive_pid(40, DRIVE_SPEED, true);
+  // chassis.wait_drive();
+
+
+
+}
 
 /*
 ///
