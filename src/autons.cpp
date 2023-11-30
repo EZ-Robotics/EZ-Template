@@ -49,14 +49,13 @@ void modified_exit_condition() {
 }
 
 void test() {
-  chassis.set_swing_pid(ez::RIGHT_SWING, 45, SWING_SPEED);
-  lift = 60;
+  chassis.set_angle(45);
+  chassis.set_turn_pid(90, TURN_SPEED);
   chassis.wait_drive();
-  lift = 0;
 }
 
 //6 ball goal side
-void goal_side() {
+void safe_score() {
   chassis.set_drive_brake(MOTOR_BRAKE_BRAKE);
   lift.set_brake_modes(MOTOR_BRAKE_HOLD);
   flywheel.set_brake_modes(MOTOR_BRAKE_COAST);
@@ -150,17 +149,153 @@ void goal_side() {
   flywheel = 0;
 }
 
-void descore_side() {
+void safe_denial() {
   chassis.set_drive_brake(MOTOR_BRAKE_BRAKE);
   lift.set_brake_modes(MOTOR_BRAKE_HOLD);
+  flywheel.set_brake_modes(MOTOR_BRAKE_COAST);
+
+  chassis.set_angle(45);
+
+  chassis.set_drive_pid(-10, 50);
+  chassis.wait_drive();
+
+  rightWing.set_value(1);
+  pros::delay(300);
+  rightWing.set_value(0);
+  pros::delay(300);
+
+  chassis.set_swing_pid(ez::RIGHT_SWING, 90, SWING_SPEED);
+  chassis.wait_drive();
+
+  chassis.set_drive_pid(-12, 127);
+  chassis.wait_drive();
+
+  flywheel = -90;
+
+  chassis.set_swing_pid(ez::RIGHT_SWING, -70, SWING_SPEED);
+  chassis.wait_drive();
+
+  chassis.set_drive_pid(42, DRIVE_SPEED);
+  chassis.wait_drive();
+
+  chassis.set_swing_pid(ez::RIGHT_SWING, 0, SWING_SPEED);
+  chassis.wait_drive();
+
+  leftWing.set_value(1);
+
+  chassis.set_drive_pid(24, 127);
+  chassis.wait_drive();
+
+  pros::delay(3000);
+
+  chassis.set_turn_pid(90, TURN_SPEED);
+  chassis.wait_drive();
+
+  chassis.set_drive_pid(36, DRIVE_SPEED);
+  chassis.wait_drive();
+  /*
+  chassis.set_drive_pid(12, DRIVE_SPEED);
+  chassis.wait_drive();
+
+  chassis.set_swing_pid(ez::RIGHT_SWING, -45, SWING_SPEED);
+  chassis.wait_drive();
+
+  flywheel = 127;
+  
+  chassis.set_drive_pid(30, DRIVE_SPEED);
+  chassis.wait_drive();
+
+  flywheel = 0;
+  */
+}
+
+void moderate_denial() {
+  chassis.set_drive_brake(MOTOR_BRAKE_BRAKE);
+  lift.set_brake_modes(MOTOR_BRAKE_HOLD);
+  flywheel.set_brake_modes(MOTOR_BRAKE_COAST);
 
   flywheel = -127;
+  chassis.set_drive_pid(48, 127);
+  chassis.wait_drive();
+  
+  chassis.set_drive_pid(-27, DRIVE_SPEED);
+  chassis.wait_drive();
+
+  flywheel = 127;
+  
+  chassis.set_drive_pid(-27, DRIVE_SPEED);
+  chassis.wait_drive();
+
+  flywheel = 0;
+
+  chassis.set_turn_pid(-97, TURN_SPEED);
+  chassis.wait_drive();
+
+  chassis.set_drive_pid(10, DRIVE_SPEED);
+  chassis.wait_drive();
+
+  chassis.set_swing_pid(ez::LEFT_SWING, -52, SWING_SPEED);
+  chassis.wait_drive();
+
+  chassis.set_drive_pid(14, DRIVE_SPEED);
+  chassis.wait_drive();
+
+  chassis.set_swing_pid(ez::LEFT_SWING, -8, SWING_SPEED);
+  chassis.wait_drive();
+
   chassis.set_drive_pid(5, DRIVE_SPEED);
   chassis.wait_drive();
+
+  chassis.set_turn_pid(172, TURN_SPEED);
+  chassis.wait_drive();
+
+  chassis.set_drive_pid(-7, DRIVE_SPEED);
+}
+
+void suicide_denial() {
+  chassis.set_drive_brake(MOTOR_BRAKE_BRAKE);
+  lift.set_brake_modes(MOTOR_BRAKE_HOLD);
+  flywheel.set_brake_modes(MOTOR_BRAKE_COAST);
+
+  flywheel = -127;
+  chassis.set_drive_pid(48, 127);
+  chassis.wait_drive();
+  
+  chassis.set_drive_pid(-27, DRIVE_SPEED);
+  chassis.wait_drive();
+
+  flywheel = 127;
+  
+  chassis.set_drive_pid(-27, DRIVE_SPEED);
+  chassis.wait_drive();
+
+  flywheel = 0;
+
+  chassis.set_turn_pid(-97, TURN_SPEED);
+  chassis.wait_drive();
+
+  chassis.set_drive_pid(10, DRIVE_SPEED);
+  chassis.wait_drive();
+
+  chassis.set_swing_pid(ez::LEFT_SWING, -52, SWING_SPEED);
+  chassis.wait_drive();
+
+  chassis.set_drive_pid(14, DRIVE_SPEED);
+  chassis.wait_drive();
+
+  lift = 100;
+
+  chassis.set_swing_pid(ez::LEFT_SWING, -8, SWING_SPEED);
+  chassis.wait_drive();
+
+  chassis.set_drive_pid(12, 127);
+  chassis.wait_drive();
+
+  lift = 0;
 }
 
 
-
+/*
 ///
 // Drive Example
 ///
@@ -345,7 +480,7 @@ void interfered_example() {
  chassis.wait_drive();
 }
 
-
+*/
 
 // . . .
 // Make your own autonomous functions here!
