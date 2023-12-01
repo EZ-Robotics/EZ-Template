@@ -4,6 +4,7 @@
 #include "EZ-Template/util.hpp"
 #include "pros/adi.h"
 #include "pros/adi.hpp"
+#include "pros/error.h"
 #include "pros/misc.h"
 #include "pros/misc.hpp"
 #include "pros/motors.h"
@@ -250,18 +251,15 @@ void opcontrol() {
   unsigned int delayWings = 0;
   unsigned int delayCata = 0;
   unsigned int delayFlip = 0;
+  unsigned int thresh = 1700;
   while (true) {
-    arcade_standard2(ez::SPLIT, flipDrive);  // Standard split arcade ++
+    // arcade_standard2(ez::SPLIT, flipDrive);  // Standard split arcade ++
 
     // intake
-    if (master.get_digital(pros::E_CONTROLLER_DIGITAL_L2)) {
-      if (intake.is_stopped()) {
-        intake = 127;
-      }
-    } else if (master.get_digital(pros::E_CONTROLLER_DIGITAL_L1)) {
-      if (intake.is_stopped()) {
-        intake = -127;
-      }
+    if (master.get_digital(pros::E_CONTROLLER_DIGITAL_L2) && enableIntake) {
+      intake = 127;
+    } else if (master.get_digital(pros::E_CONTROLLER_DIGITAL_L1) && enableIntake) {
+      intake = -127;
     } else {
       intake.brake();
     }
@@ -274,24 +272,29 @@ void opcontrol() {
       delayWings = 20;
     }
 
-    cataDown = potentiometer.get_value() > 1570;
+    ez::print_to_screen("Potentiometer value:" + std::to_string(potentiometer.get_value()), 0);
+    ez::print_to_screen("CataDown:" + std::to_string(cataDown), 1);
+
+    cataDown = potentiometer.get_value() < thresh;
 
     // cata
     if (delayCata) {
       delayCata--;
     } else {  // shoot
-      if (master.get_digital(pros::E_CONTROLLER_DIGITAL_R1) && cataDown) {
+      if (master.get_digital(pros::E_CONTROLLER_DIGITAL_R1) && cataDown && potentiometer.get_value() > 50) {
         cataDown = false;  // triggers the following if statement
         delayCata = 20;
       }
     }
 
     if (cataDown) {
-      cata.brake();  // cata is in position to shoot
+      cata = 0;  // cata is in position to shoot
       enableIntake = true;
+      ez::print_to_screen("GONE:" + std::to_string(potentiometer.get_value()), 2);
     } else {
       enableIntake = false;
-      cata = cataVoltage;  // bring the cata down
+      cata = 127;  // bring the cata down
+      ez::print_to_screen("GOING:" + std::to_string(cata.get_voltage() == PROS_ERR_F), 2);
     }
 
     // filpDrive
