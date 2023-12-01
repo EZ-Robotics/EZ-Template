@@ -253,7 +253,7 @@ void opcontrol() {
   unsigned int delayFlip = 0;
   unsigned int thresh = 1700;
   while (true) {
-    // arcade_standard2(ez::SPLIT, flipDrive);  // Standard split arcade ++
+    arcade_standard2(ez::SPLIT, flipDrive);  // Standard split arcade ++
 
     // intake
     if (master.get_digital(pros::E_CONTROLLER_DIGITAL_L2) && enableIntake) {
