@@ -13,7 +13,7 @@ import lightCode from './src/utils/codeLight.ts';
 const config = {
   title: 'EZ-Template',
   tagline: 'robotics is ez',
-  favicon: `ez-png.png`,
+  favicon: `favicon.ico`,
 
   // Set the production url of your site here
   url: 'https://ez-robotics.github.io',
@@ -158,6 +158,10 @@ const config = {
             title: 'More',
             items: [
               {
+                label: 'robotics is ez',
+                href: 'https://www.roboticsisez.com/',
+              },
+              {
                 label: 'Changelog',
                 href: '/versions',
               },
@@ -168,7 +172,7 @@ const config = {
             ],
           },
         ],
-        copyright: `Copyright © ${new Date().getFullYear()} roboticsisez - built with docusaurus`,
+        copyright: `Copyright © ${new Date().getFullYear()} robotics is ez - built with docusaurus`,
       },
       prism: {
         theme: lightCode,
