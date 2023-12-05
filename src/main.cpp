@@ -2,6 +2,7 @@
 
 #include "EZ-Template/drive/drive.hpp"
 #include "EZ-Template/util.hpp"
+#include "constants.hpp"
 #include "pros/adi.h"
 #include "pros/adi.hpp"
 #include "pros/error.h"
@@ -15,16 +16,6 @@
 // For instalattion, upgrading, documentations and tutorials, check out website!
 // https://ez-robotics.github.io/EZ-Template/
 /////
-
-#define LEFT_BACK 18
-#define LEFT_FRONT 12
-#define RIGHT_BACK 20
-#define RIGHT_FRONT 14
-#define IMU 17
-#define INTAKE 19
-#define CATA 11
-#define POTENTIOMETER 'b'
-#define WINGS 'a'
 
 // Chassis constructor
 Drive chassis(
@@ -84,9 +75,6 @@ Drive chassis(
  * to keep execution time for this mode under a few seconds.
  */
 void initialize() {
-  // Print our branding over your terminal :D
-  ez::print_ez_template();
-
   pros::delay(
       500);  // Stop the user from doing anything while legacy ports configure.
 
@@ -103,13 +91,6 @@ void initialize() {
   default_constants();        // Set the drive to your own constants from autons.cpp!
   exit_condition_defaults();  // Set the exit conditions to your own constants
                               // from autons.cpp!
-
-  // These are already defaulted to these buttons, but you can change the
-  // left/right curve buttons here! chassis.set_left_curve_buttons
-  // (pros::E_CONTROLLER_DIGITAL_LEFT, pros::E_CONTROLLER_DIGITAL_RIGHT); // If
-  // using tank, only the left side is used.
-  // chassis.set_right_curve_buttons(pros::E_CONTROLLER_DIGITAL_Y,
-  // pros::E_CONTROLLER_DIGITAL_A);
 
   // Autonomous Selector using LLEMU
   // ez::as::auton_selector.add_autons({
@@ -132,9 +113,9 @@ void initialize() {
                                 pros ::E_MOTOR_ENCODER_DEGREES);
   pros::Motor cata_initializer(CATA, pros::E_MOTOR_GEARSET_36, true);
   inake_initializer.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
-  cata_initializer.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
+  cata_initializer.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);  // TODO: test
 
-  pros::ADIAnalogIn potentiometer_initializer(POTENTIOMETER);
+  pros::ADIDigitalIn limit_initializer(LIMIT);
 
   // Initialize chassis and auton selector
   chassis.initialize();
@@ -181,8 +162,8 @@ void autonomous() {
   chassis.set_drive_brake(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps
                                               // autonomous consistency.
 
-  // ez::as::auton_selector
-  //     .call_selected_auton();  // Calls selected auton from autonomous selector.
+  ez::as::auton_selector
+      .call_selected_auton();  // Calls selected auton from autonomous selector.
 }
 
 void arcade_standard2(e_type stick_type, bool reverse) {
@@ -233,12 +214,12 @@ void opcontrol() {
   bool flipDrive = false;
   bool state = LOW;
   pros::ADIDigitalOut wings(WINGS);
-  pros::ADIAnalogIn potentiometer(POTENTIOMETER);
+  pros::ADIDigitalIn limit_switch(LIMIT);
 
   pros::Motor intake(INTAKE);
   pros::Motor cata(CATA);
   bool enableIntake = true;
-  int cataVoltage = 100;
+
   chassis.set_active_brake(0.1);
 
   bool cataDown = false;
@@ -251,7 +232,6 @@ void opcontrol() {
   unsigned int delayWings = 0;
   unsigned int delayCata = 0;
   unsigned int delayFlip = 0;
-  unsigned int thresh = 1700;
   while (true) {
     arcade_standard2(ez::SPLIT, flipDrive);  // Standard split arcade ++
 
@@ -272,29 +252,26 @@ void opcontrol() {
       delayWings = 20;
     }
 
-    ez::print_to_screen("Potentiometer value:" + std::to_string(potentiometer.get_value()), 0);
-    ez::print_to_screen("CataDown:" + std::to_string(cataDown), 1);
+    cataDown = limit_switch.get_value();
 
-    cataDown = potentiometer.get_value() < thresh;
+    ez::print_to_screen("CataDown:" + std::to_string(cataDown), 0);
 
     // cata
     if (delayCata) {
       delayCata--;
     } else {  // shoot
-      if (master.get_digital(pros::E_CONTROLLER_DIGITAL_R1) && cataDown && potentiometer.get_value() > 50) {
+      if (master.get_digital(pros::E_CONTROLLER_DIGITAL_R1) && cataDown) {
         cataDown = false;  // triggers the following if statement
         delayCata = 20;
       }
     }
 
     if (cataDown) {
-      cata = 0;  // cata is in position to shoot
+      cata = CATAHOLDVOLTAGE;  // cata is in position to shoot
       enableIntake = true;
-      ez::print_to_screen("GONE:" + std::to_string(potentiometer.get_value()), 2);
     } else {
       enableIntake = false;
-      cata = 127;  // bring the cata down
-      ez::print_to_screen("GOING:" + std::to_string(cata.get_voltage() == PROS_ERR_F), 2);
+      cata = CATAVOLTAGE;  // bring the cata down
     }
 
     // filpDrive
