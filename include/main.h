@@ -58,6 +58,7 @@
 // using namespace pros::literals;
 // using namespace okapi;
 // using namespace ez;
+using namespace okapi::literals;
 
 /**
  * Prototypes for the competition control tasks are redefined here to ensure

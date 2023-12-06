@@ -27,8 +27,8 @@ class PID {
    *        kD
    * \param p_start_i
    *        error value that i starts within
-    * \param name
-   *        std::string of name that prints 
+   * \param name
+   *        std::string of name that prints
    */
   PID(double p, double i = 0, double d = 0, double start_i = 0, std::string name = "");
 
@@ -44,7 +44,7 @@ class PID {
    * \param p_start_i
    *        error value that i starts within
    */
-  void set_constants(double p, double i = 0, double d = 0, double p_start_i = 0);
+  void constants_set(double p, double i = 0, double d = 0, double p_start_i = 0);
 
   /**
    * Struct for constants.
@@ -82,15 +82,15 @@ class PID {
    * \param p_velocity_exit_time
    *        Sets velocity_exit_time.  Timer will start when velocity is 0.
    */
-  void set_exit_condition(int p_small_exit_time, double p_small_error, int p_big_exit_time = 0, double p_big_error = 0, int p_velocity_exit_time = 0, int p_mA_timeout = 0);
+  void exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time = 0, double p_big_error = 0, int p_velocity_exit_time = 0, int p_mA_timeout = 0);
 
   /**
-   * Set's target.
+   * Sets target.
    *
    * \param target
    *        Target for PID.
    */
-  void set_target(double input);
+  void target_set(double input);
 
   /**
    * Computes PID.
@@ -103,17 +103,17 @@ class PID {
   /**
    * Returns target value.
    */
-  double get_target();
+  double target_get();
 
   /**
    * Returns constants.
    */
-  Constants get_constants();
+  Constants constants_get();
 
   /**
    * Resets all variables to 0.  This does not reset constants.
    */
-  void reset_variables();
+  void variables_reset();
 
   /**
    * Constants
@@ -154,15 +154,33 @@ class PID {
   ez::exit_output exit_condition(std::vector<pros::Motor> sensor, bool print = false);
 
   /**
-   * Sets the name of the PID that prints during exit conditions. 
+   * Sets the name of the PID that prints during exit conditions.
    *
    * \param name
    *        a string that is the name you want to print
    */
-  void set_name(std::string name);
+  void name_set(std::string name);
 
   /**
-   * PID variables. 
+   * Returns the name of the PID that prints during exit conditions.
+   */
+  std::string name_get();
+
+  /**
+   * Enables / disables i resetting when sgn of error changes.  True resets, false doesn't.
+   *
+   * \param toggle
+   *        true resets, false doesn't
+   */
+  void i_reset_toggle(bool toggle);
+
+  /**
+   * Returns if i will reset when sgn of error changes.  True resets, false doesn't.
+   */
+  bool i_reset_get();
+
+  /**
+   * PID variables.
    */
   double output;
   double cur;
@@ -177,8 +195,9 @@ class PID {
  private:
   int i = 0, j = 0, k = 0, l = 0;
   bool is_mA = false;
-  void reset_timers();
+  void timers_reset();
   std::string name;
-  bool is_name = false;
-  void print_exit(ez::exit_output exit_type);
+  bool name_active = false;
+  void exit_condition_print(ez::exit_output exit_type);
+  bool reset_i_sgn = true;
 };

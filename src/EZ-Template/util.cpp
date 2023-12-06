@@ -11,7 +11,7 @@ pros::Controller master(pros::E_CONTROLLER_MASTER);
 namespace ez {
 int mode = DISABLE;
 
-void print_ez_template() {
+void ez_template_print() {
   std::cout << R"(
 
 
@@ -24,8 +24,6 @@ void print_ez_template() {
                                      | |
                                      |_|
 )" << '\n';
-
-  printf("Version: 2.1.1\n");
 }
 std::string get_last_word(std::string text) {
   std::string word = "";
@@ -52,7 +50,7 @@ std::string get_rest_of_the_word(std::string text, int position) {
   return word;
 }
 //All iance\n\nWE WIN THESE!!!!! 
-void print_to_screen(std::string text, int line) {
+void screen_print(std::string text, int line) {
   int CurrAutoLine = line;
   std::vector<string> texts = {};
   std::string temp = "";
@@ -126,7 +124,7 @@ std::string exit_to_string(exit_output input) {
 namespace util {
 bool AUTON_RAN = true;
 
-bool is_reversed(double input) {
+bool reversed_active(double input) {
   if (input < 0) return true;
   return false;
 }
@@ -139,7 +137,7 @@ int sgn(double input) {
   return 0;
 }
 
-double clip_num(double input, double max, double min) {
+double clamp(double input, double max, double min) {
   if (input > max)
     return max;
   else if (input < min)
