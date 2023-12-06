@@ -47,6 +47,17 @@ EZ-Template is a simple plug-and-play PROS template that handles drive base func
 ## Docs
 [Read the docs here!](https://ez-robotics.github.io/EZ-Template/category/docs)
 
+## Running the docs locally
+
+Install [node](https://nodejs.org/en/download/) & yarn ```npm install --global yarn```
+
+then within the website directory run
+```
+yarn
+yarn build
+yarn serve
+```
+
 
 ## License
 This project is licensed under the Mozilla Public License, version 2.0 - see the [LICENSE](LICENSE)
