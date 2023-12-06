@@ -88,6 +88,18 @@ class SkidSteerModel : public ChassisModel {
   void arcade(double iforwardSpeed, double iyaw, double ithreshold = 0) override;
 
   /**
+   * Drive the robot with a curvature drive layout. The robot drives in constant radius turns
+   * where you control the curvature (inverse of radius) you drive in. This is advantageous
+   * because the forward speed will not affect the rate of turning. The algorithm switches to
+   * arcade if the forward speed is 0. Uses voltage mode.
+   *
+   * @param iforwardSpeed speed in the forward direction
+   * @param icurvature curvature (inverse of radius) to drive in
+   * @param ithreshold deadband on joystick values
+   */
+  void curvature(double iforwardSpeed, double icurvature, double ithreshold = 0) override;
+
+  /**
    * Power the left side motors. Uses velocity mode.
    *
    * @param ispeed The motor power.

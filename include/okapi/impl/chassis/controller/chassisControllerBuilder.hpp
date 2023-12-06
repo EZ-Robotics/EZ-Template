@@ -474,7 +474,7 @@ class ChassisControllerBuilder {
   TimeUtilFactory closedLoopControllerTimeUtilFactory = TimeUtilFactory();
   TimeUtilFactory odometryTimeUtilFactory = TimeUtilFactory();
 
-  AbstractMotor::GearsetRatioPair gearset{AbstractMotor::gearset::invalid,1.0};
+  AbstractMotor::GearsetRatioPair gearset{AbstractMotor::gearset::invalid, 1.0};
   ChassisScales driveScales{{1, 1}, imev5GreenTPR};
   bool differentOdomScales{false};
   ChassisScales odomScales{{1, 1}, imev5GreenTPR};
