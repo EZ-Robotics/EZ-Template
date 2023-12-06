@@ -25,7 +25,7 @@ void print_ez_template() {
                                      |_|
 )" << '\n';
 
-  printf("Version: 2.1.1\n");
+  printf("Version: 2.2.0\n");
 }
 std::string get_last_word(std::string text) {
   std::string word = "";
