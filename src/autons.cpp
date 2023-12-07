@@ -34,12 +34,6 @@ void exit_condition_defaults() {
   chassis.set_exit_condition(chassis.drive_exit, 80, 50, 300, 150, 500, 500);
 }
 
-void modified_exit_condition() {
-  chassis.set_exit_condition(chassis.turn_exit, 100, 3, 500, 7, 500, 500);
-  chassis.set_exit_condition(chassis.swing_exit, 100, 3, 500, 7, 500, 500);
-  chassis.set_exit_condition(chassis.drive_exit, 80, 50, 300, 150, 500, 500);
-}
-
 void cataDown() {
   pros::ADIDigitalIn limit_switch(LIMIT);
   bool cataDown = limit_switch.get_value();
@@ -57,20 +51,18 @@ void cataUp() {
   pros::ADIDigitalIn limit_switch(LIMIT);
   bool cataDown = limit_switch.get_value();
   while (cataDown) {
-    cata = CATAVOLTAGE;
+    cata = CATAMAXVOLTAGE;
     pros::delay(util::DELAY_TIME);
     cataDown = limit_switch.get_value();
   }
   cata = 0;
 }
 
+// start in farthest full starting tile, facing the center of the field
 void autoAttack() {
-  // score triball given
-  // start in farthest full starting tile, facing the center of the field
-  // drive forward to the center of the field
   // bring cataDown now
   pros::Task cataDownTask(cataDown);
-
+  // drive forward to the center of the field
   chassis.set_drive_pid(48, DRIVE_SPEED);
   chassis.wait_drive();
   chassis.set_turn_pid(90, TURN_SPEED);
@@ -78,6 +70,7 @@ void autoAttack() {
   chassis.set_drive_pid(10, DRIVE_SPEED / 2);
   chassis.wait_drive();
   pros::Motor intake(INTAKE);
+  // score triball given
   intake = -127;
   pros::delay(1000);
   intake = 0;
@@ -90,12 +83,12 @@ void autoDefenseHelper() {
   intake = 0;
 }
 
+// remove triball that is in the match load area
+// touch elevation bar
+// start in closest tile, touching the match load area
+// start with no triball
 void autoDefense() {
-  // remove triball that is in the match load area
-  // touch elevation bar
-  // start in closest tile, touching the match load area
-
-  // start with no triball, make sure that the cata is down so we can load the triball
+  // make sure that the cata is down so we can load the triball
   cataDown();
   // get new triball
   autoDefenseHelper();
@@ -164,6 +157,7 @@ void awp() {
   chassis.wait_drive();
 }
 
+// setup like autoDefense, with triballs galore
 void autoSkills() {
   // shoot all triballs
   // go over and score them all with wings

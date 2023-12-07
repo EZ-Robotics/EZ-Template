@@ -18,5 +18,6 @@
 #define SWING_SPEED 90
 
 // main
-#define CATAVOLTAGE 127
+#define CATAVOLTAGE 80
+#define CATAMAXVOLTAGE 127
 #define CATAHOLDVOLTAGE 0

@@ -2,6 +2,7 @@
 
 #include "EZ-Template/drive/drive.hpp"
 #include "EZ-Template/util.hpp"
+#include "autons.hpp"
 #include "constants.hpp"
 #include "pros/adi.h"
 #include "pros/adi.hpp"
@@ -93,19 +94,12 @@ void initialize() {
                               // from autons.cpp!
 
   // Autonomous Selector using LLEMU
-  // ez::as::auton_selector.add_autons({
-  //     Auton("Example Drive\n\nDrive forward and come back.", drive_example),
-  //     Auton("Example Turn\n\nTurn 3 times.", turn_example),
-  //     Auton("Drive and Turn\n\nDrive forward, turn, come back. ",
-  //           drive_and_turn),
-  //     Auton("Drive and Turn\n\nSlow down during drive.",
-  //           wait_until_change_speed),
-  //     Auton("Swing Example\n\nSwing, drive, swing.", swing_example),
-  //     Auton("Combine all 3 movements", combining_movements),
-  //     Auton("Interference\n\nAfter driving forward, robot performs differently "
-  //           "if interfered or not.",
-  //           interfered_example),
-  // });
+  ez::as::auton_selector.add_autons({Auton("AWP\n\nStart for autoAttack on defense side with triball", awp),
+                                     Auton("Auto Attack\n\nStart in farthest full starting tile, facing the center of the field", autoAttack),
+                                     Auton("Auto Defense\n\nStart in closest tile, touching the match load area, no triball",
+                                           autoDefense),
+                                     Auton("Auto Skills\n\nSetup like autoDefense, with triballs galore",
+                                           autoSkills)});
 
   pros::ADIDigitalOut wings_initializer(WINGS, LOW);
 
@@ -233,6 +227,12 @@ void opcontrol() {
   unsigned int delayCata = 0;
   unsigned int delayFlip = 0;
   while (true) {
+    // test AUTOS:
+    // if (master.get_digital(pros::E_CONTROLLER_DIGITAL_X)) {
+    //   autonomous();
+    //   pros::delay(1000);
+    // }
+
     arcade_standard2(ez::SPLIT, flipDrive);  // Standard split arcade ++
 
     // intake
@@ -271,7 +271,11 @@ void opcontrol() {
       enableIntake = true;
     } else {
       enableIntake = false;
-      cata = CATAVOLTAGE;  // bring the cata down
+      if (master.get_digital(pros::E_CONTROLLER_DIGITAL_R1)) {
+        cata = CATAMAXVOLTAGE;  // bring the cata down
+      } else {
+        cata = CATAVOLTAGE;
+      }
     }
 
     // filpDrive
