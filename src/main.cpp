@@ -224,26 +224,18 @@ void opcontrol() {
    * This should help with consistency.
    */
   unsigned int delayWings = 0;
-  unsigned int delayCata = 0;
   unsigned int delayFlip = 0;
   while (true) {
-    // test AUTOS:
+    // test autos:
     // if (master.get_digital(pros::E_CONTROLLER_DIGITAL_X)) {
     //   autonomous();
     //   pros::delay(1000);
     // }
 
+    // drive
     arcade_standard2(ez::SPLIT, flipDrive);  // Standard split arcade ++
 
-    // intake
-    if (master.get_digital(pros::E_CONTROLLER_DIGITAL_L2) && enableIntake) {
-      intake = 127;
-    } else if (master.get_digital(pros::E_CONTROLLER_DIGITAL_L1) && enableIntake) {
-      intake = -127;
-    } else {
-      intake.brake();
-    }
-
+    // wings
     if (delayWings) {
       delayWings--;
     } else if (master.get_digital(pros::E_CONTROLLER_DIGITAL_A)) {
@@ -252,30 +244,36 @@ void opcontrol() {
       delayWings = 20;
     }
 
+    // cata
     cataDown = limit_switch.get_value();
 
     ez::print_to_screen("CataDown:" + std::to_string(cataDown), 0);
 
-    // cata
-    if (delayCata) {
-      delayCata--;
-    } else {  // shoot
-      if (master.get_digital(pros::E_CONTROLLER_DIGITAL_R1) && cataDown) {
-        cataDown = false;  // triggers the following if statement
-        delayCata = 20;
+    if (master.get_digital(pros::E_CONTROLLER_DIGITAL_R1)) {
+      cata = CATAMAXVOLTAGE;  // fire and continuous fire
+      enableIntake = false;   // we don't need intake when we are shooting
+    } else {
+      if (cataDown) {
+        cata = CATAHOLDVOLTAGE;  // cata is in position to shoot
+        enableIntake = true;
+      } else {
+        cata = CATAVOLTAGE;  // cata is going down
+        enableIntake = false;
       }
     }
 
-    if (cataDown) {
-      cata = CATAHOLDVOLTAGE;  // cata is in position to shoot
+    // if cata disconected
+    if (cata.get_flags() == pros::E_MOTOR_FLAGS_BUSY) {
       enableIntake = true;
+    }
+
+    // intake
+    if (master.get_digital(pros::E_CONTROLLER_DIGITAL_L2) && enableIntake) {
+      intake = 127;
+    } else if (master.get_digital(pros::E_CONTROLLER_DIGITAL_L1) && enableIntake) {
+      intake = -127;
     } else {
-      enableIntake = false;
-      if (master.get_digital(pros::E_CONTROLLER_DIGITAL_R1)) {
-        cata = CATAMAXVOLTAGE;  // bring the cata down
-      } else {
-        cata = CATAVOLTAGE;
-      }
+      intake.brake();
     }
 
     // filpDrive
