@@ -77,10 +77,6 @@ void autoAttack() {
 }
 
 void autoDefenseHelper() {
-  pros::Motor intake(INTAKE);
-  intake = -127;
-  pros::delay(1000);
-  intake = 0;
 }
 
 // remove triball that is in the match load area
@@ -91,7 +87,10 @@ void autoDefense() {
   // make sure that the cata is down so we can load the triball
   cataDown();
   // get new triball
-  autoDefenseHelper();
+  pros::Motor intake(INTAKE);
+  intake = -127;
+  pros::delay(1000);
+  intake = 0;
   // drive to the rod
   pros::Task cataUpTask(cataUp);          // shoot triball to get it out of system and to keep cata up
   chassis.set_drive_pid(6, DRIVE_SPEED);  // get away from match load
@@ -136,9 +135,12 @@ void awp() {
   chassis.wait_drive();
   chassis.set_turn_pid(-45, TURN_SPEED);
   chassis.wait_drive();
+  pros::Motor intake(INTAKE);
+  intake = -127;
   chassis.set_drive_pid(-24, DRIVE_SPEED);
   chassis.wait_drive();
-  autoDefenseHelper();                    // intake triball
+  pros::delay(1000);
+  intake = 0;                             // intake triball
   chassis.set_drive_pid(6, DRIVE_SPEED);  // get to the rod
   chassis.wait_drive();
   chassis.set_turn_pid(45, TURN_SPEED);

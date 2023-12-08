@@ -212,7 +212,6 @@ void opcontrol() {
 
   pros::Motor intake(INTAKE);
   pros::Motor cata(CATA);
-  bool enableIntake = true;
 
   chassis.set_active_brake(0.1);
 
@@ -251,26 +250,18 @@ void opcontrol() {
 
     if (master.get_digital(pros::E_CONTROLLER_DIGITAL_R1)) {
       cata = CATAMAXVOLTAGE;  // fire and continuous fire
-      enableIntake = false;   // we don't need intake when we are shooting
     } else {
       if (cataDown) {
         cata = CATAHOLDVOLTAGE;  // cata is in position to shoot
-        enableIntake = true;
       } else {
         cata = CATAVOLTAGE;  // cata is going down
-        enableIntake = false;
       }
     }
 
-    // if cata disconected
-    if (cata.get_flags() == pros::E_MOTOR_FLAGS_BUSY) {
-      enableIntake = true;
-    }
-
     // intake
-    if (master.get_digital(pros::E_CONTROLLER_DIGITAL_L2) && enableIntake) {
+    if (master.get_digital(pros::E_CONTROLLER_DIGITAL_L2)) {
       intake = 127;
-    } else if (master.get_digital(pros::E_CONTROLLER_DIGITAL_L1) && enableIntake) {
+    } else if (master.get_digital(pros::E_CONTROLLER_DIGITAL_L1)) {
       intake = -127;
     } else {
       intake.brake();
