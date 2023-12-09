@@ -254,7 +254,7 @@ bool Drive::left_over_current() { return left_motors.front().is_over_current(); 
 
 void Drive::reset_gyro(double new_heading) { imu.set_rotation(new_heading); }
 double Drive::get_gyro() {
-  return imu.get_rotation();
+  return -imu.get_rotation();
 }
 
 void Drive::imu_loading_display(int iter) {

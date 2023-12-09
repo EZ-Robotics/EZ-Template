@@ -70,6 +70,7 @@ extern "C" {
 #endif
 void autonomous(void);
 void initialize(void);
+void arcade_standard2(bool reverse);
 void disabled(void);
 void competition_initialize(void);
 void opcontrol(void);

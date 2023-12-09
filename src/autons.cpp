@@ -1,5 +1,8 @@
-#include "autons.hpp"
+#include "../include/autons.hpp"
 
+#include <string>
+
+#include "EZ-Template/drive/drive.hpp"
 #include "EZ-Template/util.hpp"
 #include "constants.hpp"
 #include "main.h"
@@ -21,11 +24,11 @@
 void default_constants() {
   chassis.set_slew_min_power(80, 80);
   chassis.set_slew_distance(7, 7);
-  chassis.set_pid_constants(&chassis.headingPID, 11, 0, 20, 0);
-  chassis.set_pid_constants(&chassis.forward_drivePID, 0.45, 0, 5, 0);
-  chassis.set_pid_constants(&chassis.backward_drivePID, 0.45, 0, 5, 0);
-  chassis.set_pid_constants(&chassis.turnPID, 5, 0.003, 35, 15);
-  chassis.set_pid_constants(&chassis.swingPID, 7, 0, 45, 0);
+  chassis.set_pid_constants(&chassis.headingPID, 0, 0, 0, 0);
+  chassis.set_pid_constants(&chassis.forward_drivePID, 0.25, 0, 0, 0);
+  chassis.set_pid_constants(&chassis.backward_drivePID, 0.25, 0, 0, 0);
+  chassis.set_pid_constants(&chassis.turnPID, 1, 0, 0, 0);
+  chassis.set_pid_constants(&chassis.swingPID, 0, 0, 0, 0);
 }
 
 void exit_condition_defaults() {
@@ -35,15 +38,6 @@ void exit_condition_defaults() {
 }
 
 void cataDown() {
-  pros::ADIDigitalIn limit_switch(LIMIT);
-  bool cataDown = limit_switch.get_value();
-  pros::Motor cata(CATA);
-  while (!cataDown) {
-    cata = -CATAVOLTAGE;
-    pros::delay(util::DELAY_TIME);
-    cataDown = limit_switch.get_value();
-  }
-  cata = CATAHOLDVOLTAGE;
 }
 
 void cataUp() {
@@ -63,7 +57,7 @@ void autoAttack() {
   // bring cataDown now
   pros::Task cataDownTask(cataDown);
   // drive forward to the center of the field
-  chassis.set_drive_pid(48, DRIVE_SPEED);
+  chassis.set_drive_pid(55, DRIVE_SPEED);
   chassis.wait_drive();
   chassis.set_turn_pid(90, TURN_SPEED);
   chassis.wait_drive();
@@ -76,39 +70,49 @@ void autoAttack() {
   intake = 0;
 }
 
-void autoDefenseHelper() {
-}
-
 // remove triball that is in the match load area
 // touch elevation bar
 // start in closest tile, touching the match load area
 // start with no triball
 void autoDefense() {
   // make sure that the cata is down so we can load the triball
-  cataDown();
-  // get new triball
+  pros::ADIDigitalIn limit_switch(LIMIT);
+  bool cataDown = limit_switch.get_value();
+  pros::Motor cata(CATA);
   pros::Motor intake(INTAKE);
-  intake = -127;
-  pros::delay(1000);
+  while (!cataDown) {
+    cata = CATAVOLTAGE;
+    pros::delay(util::DELAY_TIME);
+    cataDown = limit_switch.get_value();
+  }
+  cata.brake();
+
+  // get new triball
+  intake = 127;
+  pros::delay(3000);
   intake = 0;
+  cata = CATAVOLTAGE;
   // drive to the rod
-  pros::Task cataUpTask(cataUp);          // shoot triball to get it out of system and to keep cata up
-  chassis.set_drive_pid(6, DRIVE_SPEED);  // get away from match load
+  chassis.set_drive_pid(-18, DRIVE_SPEED);  // get away from match load
   chassis.wait_drive();
   chassis.set_turn_pid(45, TURN_SPEED);  // start to the rod
   chassis.wait_drive();
-  chassis.set_drive_pid(12, DRIVE_SPEED);
+  cata = 0;
+  chassis.set_drive_pid(-7, DRIVE_SPEED);
   chassis.wait_drive();
-  chassis.set_turn_pid(90, TURN_SPEED);
+  chassis.set_turn_pid(135, TURN_SPEED);
   chassis.wait_drive();
-  chassis.set_drive_pid(12, DRIVE_SPEED);
+  chassis.set_drive_pid(-16, DRIVE_SPEED);
   chassis.wait_drive();
-  chassis.set_turn_pid(-90, TURN_SPEED);
+  chassis.set_turn_pid(45, TURN_SPEED);
   chassis.wait_drive();
-  chassis.set_drive_pid(72, DRIVE_SPEED);
-  chassis.wait_until(60);
+  chassis.set_pid_constants(&chassis.headingPID, 11, 0, 0, 0);
+
+  chassis.set_drive_pid(-32, DRIVE_SPEED);
+  chassis.wait_until(-24);
   chassis.set_max_speed(DRIVE_SPEED / 4);  // slow down so we are there
   chassis.wait_drive();
+  chassis.set_pid_constants(&chassis.headingPID, 0, 0, 0, 0);
 }
 
 void awp() {
@@ -173,4 +177,39 @@ void autoSkills() {
   // go under
   chassis.set_drive_pid(6, DRIVE_SPEED);
   chassis.set_turn_pid(45, TURN_SPEED);  // get away from the match load area and turn to correct heading
+}
+
+void auto_disabled() {
+}
+
+void drive_example() {
+  // The first parameter is target inches
+  // The second parameter is max speed the robot will drive at
+  // The third parameter is a boolean (true or false) for enabling/disabling a slew at the start of drive motions
+  // for slew, only enable it when the drive distance is greater then the slew distance + a few inches
+  // chassis.leftPID.set_target(500);
+  // chassis.rightPID.set_target(500);
+
+  chassis.set_drive_pid(24, DRIVE_SPEED);
+  chassis.wait_drive();
+
+  // chassis.set_drive_pid(-12, DRIVE_SPEED);
+  // chassis.wait_drive();
+
+  // chassis.set_drive_pid(-12, DRIVE_SPEED);
+  // chassis.wait_drive();
+}
+
+void turn_example() {
+  // The first parameter is target degrees
+  // The second parameter is max speed the robot will drive at
+
+  chassis.set_turn_pid(90, TURN_SPEED);
+  chassis.wait_drive();
+
+  chassis.set_turn_pid(45, TURN_SPEED);
+  chassis.wait_drive();
+
+  chassis.set_turn_pid(0, TURN_SPEED);
+  chassis.wait_drive();
 }

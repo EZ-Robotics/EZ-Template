@@ -17,4 +17,7 @@ void awp();
 void autoAttack();
 void autoDefense();
 void autoSkills();
-void autoDefenseHelper();
+void auto_disabled();
+
+void drive_example();
+void turn_example();

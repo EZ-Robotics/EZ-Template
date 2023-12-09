@@ -1,5 +1,6 @@
 #include "main.h"
 
+#include "EZ-Template/auton.hpp"
 #include "EZ-Template/drive/drive.hpp"
 #include "EZ-Template/util.hpp"
 #include "autons.hpp"
@@ -51,7 +52,7 @@ Drive chassis(
     // be 2.333. eg. if your drive is 36:60 where the 60t is powered, your RATIO
     // would be 0.6.
     ,
-    2.0 / 3.0
+    3.0 / 2.0
 
     // Uncomment if using tracking wheels
     /*
@@ -83,7 +84,7 @@ void initialize() {
   chassis.toggle_modify_curve_with_controller(
       true);                           // Enables modifying the controller curve with buttons on the
                                        // joysticks
-  chassis.set_active_brake(0.1);       // Sets the active brake kP. We recommend 0.1.
+  chassis.set_active_brake(0.05);      // Sets the active brake kP. We recommend 0.1.
   chassis.set_joystick_threshold(15);  // Sets the joystick threshold. We
                                        // recommend 15 for competition.
   chassis.set_curve_default(
@@ -94,12 +95,14 @@ void initialize() {
                               // from autons.cpp!
 
   // Autonomous Selector using LLEMU
-  ez::as::auton_selector.add_autons({Auton("AWP\n\nStart for autoAttack on defense side with triball", awp),
-                                     Auton("Auto Attack\n\nStart in farthest full starting tile, facing the center of the field", autoAttack),
-                                     Auton("Auto Defense\n\nStart in closest tile, touching the match load area, no triball",
-                                           autoDefense),
-                                     Auton("Auto Skills\n\nSetup like autoDefense, with triballs galore",
-                                           autoSkills)});
+  ez::as::auton_selector.add_autons({
+      // Auton("AWP\n\nStart for autoAttack on defense side with triball", awp),
+      Auton("Auto Attack\n\nStart in farthest full starting tile, facing the center of the field", autoAttack),
+      Auton("Auto Defense\n\nStart in closest tile, touching the match load area, no triball",
+            autoDefense),
+      Auton("disabled", auto_disabled),
+      // Auton("Auto Skills\n\nSetup like autoDefense, with triballs galore", autoSkills)
+  });
 
   pros::ADIDigitalOut wings_initializer(WINGS, LOW);
 
@@ -107,9 +110,10 @@ void initialize() {
                                 pros ::E_MOTOR_ENCODER_DEGREES);
   pros::Motor cata_initializer(CATA, pros::E_MOTOR_GEARSET_36, true);
   inake_initializer.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
-  cata_initializer.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);  // TODO: test
+  cata_initializer.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);  // TODO: test
 
   pros::ADIDigitalIn limit_initializer(LIMIT);
+  pros::ADIAnalogIn pot_initializer(POT);
 
   // Initialize chassis and auton selector
   chassis.initialize();
@@ -150,17 +154,17 @@ void competition_initialize() {
  * from where it left off.
  */
 void autonomous() {
-  chassis.reset_pid_targets();                // Resets PID targets to 0
-  chassis.reset_gyro();                       // Reset gyro position to 0
-  chassis.reset_drive_sensor();               // Reset drive sensors to 0
-  chassis.set_drive_brake(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps
-                                              // autonomous consistency.
+  chassis.reset_pid_targets();                        // Resets PID targets to 0
+  chassis.reset_gyro();                               // Reset gyro position to 0
+  chassis.reset_drive_sensor();                       // Reset drive sensors to 0
+  chassis.set_drive_brake(pros::E_MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps
+                                                      // autonomous consistency.
 
   ez::as::auton_selector
       .call_selected_auton();  // Calls selected auton from autonomous selector.
 }
 
-void arcade_standard2(e_type stick_type, bool reverse) {
+void arcade_standard2(bool reverse) {
   bool is_tank = false;
   chassis.reset_drive_sensors_opcontrol();
 
@@ -168,17 +172,11 @@ void arcade_standard2(e_type stick_type, bool reverse) {
   chassis.modify_curve_with_controller();
 
   int fwd_stick, turn_stick;
-  // Check arcade type (split vs single, normal vs flipped)
-  if (stick_type == SPLIT) {
-    // Put the joysticks through the curve function
-    fwd_stick = chassis.left_curve_function(master.get_analog(ANALOG_LEFT_Y));
-    turn_stick =
-        chassis.right_curve_function(master.get_analog(ANALOG_RIGHT_X));
-  } else if (stick_type == SINGLE) {
-    // Put the joysticks through the curve function
-    fwd_stick = chassis.left_curve_function(master.get_analog(ANALOG_LEFT_Y));
-    turn_stick = chassis.right_curve_function(master.get_analog(ANALOG_LEFT_X));
-  }
+  // Put the joysticks through the curve function
+  fwd_stick = chassis.left_curve_function(master.get_analog(ANALOG_LEFT_Y));
+  turn_stick =
+      chassis.right_curve_function(master.get_analog(ANALOG_RIGHT_X));
+
   turn_stick = -turn_stick;
   if (reverse)
     fwd_stick = -fwd_stick;
@@ -203,12 +201,13 @@ void arcade_standard2(e_type stick_type, bool reverse) {
  */
 void opcontrol() {
   // This is preference to what you like to drive on.
-  chassis.set_drive_brake(MOTOR_BRAKE_COAST);
+  chassis.set_drive_brake(pros::E_MOTOR_BRAKE_COAST);
 
   bool flipDrive = false;
   bool state = LOW;
   pros::ADIDigitalOut wings(WINGS);
   pros::ADIDigitalIn limit_switch(LIMIT);
+  pros::ADIAnalogIn pot(POT);
 
   pros::Motor intake(INTAKE);
   pros::Motor cata(CATA);
@@ -225,14 +224,8 @@ void opcontrol() {
   unsigned int delayWings = 0;
   unsigned int delayFlip = 0;
   while (true) {
-    // test autos:
-    // if (master.get_digital(pros::E_CONTROLLER_DIGITAL_X)) {
-    //   autonomous();
-    //   pros::delay(1000);
-    // }
-
     // drive
-    arcade_standard2(ez::SPLIT, flipDrive);  // Standard split arcade ++
+    arcade_standard2(flipDrive);  // Standard split arcade ++
 
     // wings
     if (delayWings) {
@@ -240,19 +233,19 @@ void opcontrol() {
     } else if (master.get_digital(pros::E_CONTROLLER_DIGITAL_A)) {
       state = !state;
       wings.set_value(state);
-      delayWings = 20;
+      delayWings = 40;
     }
 
     // cata
     cataDown = limit_switch.get_value();
-
-    ez::print_to_screen("CataDown:" + std::to_string(cataDown), 0);
+    cataDown = pot.get_value() > 2250;  // we are using the limit switch
 
     if (master.get_digital(pros::E_CONTROLLER_DIGITAL_R1)) {
       cata = CATAMAXVOLTAGE;  // fire and continuous fire
     } else {
       if (cataDown) {
-        cata = CATAHOLDVOLTAGE;  // cata is in position to shoot
+        cata.brake();  // cata is in position to shoot
+        ez::print_to_screen("Down: " + std::to_string(pot.get_value()), 0);
       } else {
         cata = CATAVOLTAGE;  // cata is going down
       }
@@ -271,7 +264,7 @@ void opcontrol() {
     if (!delayFlip) {
       if (master.get_digital(pros::E_CONTROLLER_DIGITAL_B)) {
         flipDrive = !flipDrive;
-        delayFlip = 20;
+        delayFlip = 40;
       }
     } else {
       delayFlip--;
