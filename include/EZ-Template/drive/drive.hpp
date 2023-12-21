@@ -562,6 +562,18 @@ class Drive {
    */
   bool opcontrol_joystick_practicemode_toggle_get();
 
+     /**
+   * Reversal for drivetrain in opcontrol that flips the left and right side and the direction of the drive
+   *
+   * @param toggle True if you want your drivetrain reversed and False if you do not.
+   */
+  void opcontrol_drive_reverse_set(bool toggle);
+
+  /**
+   * Gets current state of the toggle.  Reversal for drivetrain in opcontrol that flips the left and right side and the direction of the drive.
+   */
+  bool opcontrol_drive_reverse_get();
+  
   /////
   //
   // Autonomous Functions
@@ -1086,4 +1098,10 @@ class Drive {
   void l_increase();
   void r_decrease();
   void r_increase();
+
+     /**
+   * Boolean to flip which side is the front of the robot for driver control.
+   */
+   bool is_reversed = false;
+
 };
