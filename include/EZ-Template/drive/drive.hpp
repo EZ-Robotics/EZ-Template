@@ -578,7 +578,7 @@ class Drive {
    * \param slew_on
    *        ramp up from slew_min to speed over slew_distance.  only use when you're going over about 14"
    * \param toggle_heading
-   *        toggle for heading correction
+   *        toggle for heading correction 
    */
   void pid_drive_set(okapi::QLength p_target, int speed, bool slew_on = false, bool toggle_heading = true);
 
