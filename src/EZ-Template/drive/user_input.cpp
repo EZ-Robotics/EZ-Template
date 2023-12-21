@@ -229,6 +229,10 @@ void Drive::opcontrol_joystick_threshold_iterate(int l_stick, int r_stick) {
          drive_set(l_stick, r_stick);
     if (active_brake_kp != 0) drive_sensor_reset();
   }
+  // When joys are released, run active brake (P) on drive
+  else {
+    drive_set((0 - drive_sensor_left()) * active_brake_kp, (0 - drive_sensor_right()) * active_brake_kp);
+  }
 }
 
 
