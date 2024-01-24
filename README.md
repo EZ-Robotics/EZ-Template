@@ -2,10 +2,8 @@
 ![](https://github.com/EZ-Robotics/EZ-Template/workflows/Build/badge.svg)
 [![License: MPL 2.0](https://img.shields.io/badge/License-MPL%202.0-brightgreen.svg)](https://opensource.org/licenses/MPL-2.0) 
 
-# EZ-Template
-EZ-Template is a simple plug-and-play PROS template that handles drive base functions, autonomous selector, input curves, and active brake with PTO support.   
-
-[Autonomous routines that used EZ-Template](https://photos.app.goo.gl/yRwuvmq7hDoM4f6EA)
+# EZ-Template 
+EZ-Template is a simple plug-and-play PROS template that handles drive base functions, autonomous selector, input curves, and active brake with PTO support.
 
 ## Features
 - Simple to setup 
@@ -24,7 +22,9 @@ EZ-Template is a simple plug-and-play PROS template that handles drive base func
 - Add / remove motors from the drive dynamically to allow for PTO use
 - Exposed PID class for use with your other subsystems
 
-## Download and Installation  
+
+## Installation
+
 1) Download the latest `Example-Project.zip` [here](https://github.com/EZ-Robotics/EZ-Template/releases/latest).  Extract the zip, and open it in PROS.   
 2) In `src/main.cpp`, configure drive and IMU ports to what they are on your robot.  Be sure to read the comments!    
 3) Configure your wheel size and cartridge.  Remember that older 4" omni wheels without mounting holes are actually 4.125!    
@@ -33,43 +33,13 @@ EZ-Template is a simple plug-and-play PROS template that handles drive base func
 6) To test the test autonomous modes, plug into a competition switch and select the autonomous mode on the brain screen by pressing the left and right buttons.  The current page will be the autonomous that runs.  For making new autonomous routines, [click here](https://ez-robotics.github.io/EZ-Template/tutorials/example_autons) for examples on how to use the drive functions.  
 
 ## Upgrading  
-*Note: this only works for 2.x and beyond.  You cannot upgrade from 1.x to 2.x, or 2.x to 3.x without changing code.*  
+*Note: This only works within major versions.  2.1 can upgrade to 2.2, but 2.x cannot upgrade to 3.x.*
+
 1) Download the most recent `EZ-Template@x.x.x.zip` [here](https://github.com/EZ-Robotics/EZ-Template/releases/latest).  
 2) Move the file to your project.  
 3) Open terminal or command prompt, and `cd` into your projects directory.    
 4) Run this command from terminal `prosv5 c fetch EZ-Template@x.x.x.zip` replacing `x.x.x` with the version number of your file.
 5) Apply the library to the project `prosv5 c apply EZ-Template`.  
-6) Put `#include "EZ-Template/api.hpp"` in your `include/main.h`.  
-
-## Tutorials
-[Check out our tutorials here!](https://ez-robotics.github.io/EZ-Template/category/tutorials)
-
-## Docs
-[Read the docs here!](https://ez-robotics.github.io/EZ-Template/category/docs)
-
-## Running the docs locally
-
-Install [node](https://nodejs.org/en/download/) & yarn ```npm install --global yarn```
-
-then within the website directory run
-```
-yarn
-yarn build
-yarn serve
-```
-
-## Running the docs locally
-
-Install [node](https://nodejs.org/en/download/) & yarn ```npm install --global yarn```
-
-then within the website directory run
-```
-yarn
-yarn build
-yarn serve
-```
-
 
 ## License
-This project is licensed under the Mozilla Public License, version 2.0 - see the [LICENSE](LICENSE)
-file for the full license.
+This project is licensed under the Mozilla Public License, version 2.0 - see the [LICENSE](LICENSE) file for the full license.
