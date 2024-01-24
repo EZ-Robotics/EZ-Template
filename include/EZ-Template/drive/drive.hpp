@@ -562,7 +562,7 @@ class Drive {
    */
   bool opcontrol_joystick_practicemode_toggle_get();
 
-     /**
+  /**
    * Reversal for drivetrain in opcontrol that flips the left and right side and the direction of the drive
    *
    * @param toggle True if you want your drivetrain reversed and False if you do not.
@@ -573,7 +573,7 @@ class Drive {
    * Gets current state of the toggle.  Reversal for drivetrain in opcontrol that flips the left and right side and the direction of the drive.
    */
   bool opcontrol_drive_reverse_get();
-  
+
   /////
   //
   // Autonomous Functions
@@ -590,7 +590,7 @@ class Drive {
    * \param slew_on
    *        ramp up from slew_min to speed over slew_distance.  only use when you're going over about 14"
    * \param toggle_heading
-   *        toggle for heading correction 
+   *        toggle for heading correction
    */
   void pid_drive_set(okapi::QLength p_target, int speed, bool slew_on = false, bool toggle_heading = true);
 
@@ -1099,9 +1099,8 @@ class Drive {
   void r_decrease();
   void r_increase();
 
-     /**
+  /**
    * Boolean to flip which side is the front of the robot for driver control.
    */
-   bool is_reversed = false;
-
+  bool is_reversed = false;
 };

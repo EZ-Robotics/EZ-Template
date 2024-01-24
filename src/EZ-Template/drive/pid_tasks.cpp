@@ -55,6 +55,18 @@ void Drive::drive_pid_task() {
   double l_out = l_drive_out + gyro_out;
   double r_out = r_drive_out - gyro_out;
 
+  // Vector scaling
+  double max_slew_out = fmin(l_slew_out, r_slew_out);
+  if (fabs(l_out) > max_slew_out || fabs(r_out) > max_slew_out) {
+    if (fabs(l_out) > fabs(r_out)) {
+      r_out = r_out * (max_slew_out / fabs(l_out));
+      l_out = util::clamp(l_out, max_slew_out, -max_slew_out);
+    } else {
+      l_out = l_out * (max_slew_out / fabs(r_out));
+      r_out = util::clamp(r_out, max_slew_out, -max_slew_out);
+    }
+  }
+
   // Set motors
   if (drive_toggle)
     private_drive_set(l_out, r_out);
