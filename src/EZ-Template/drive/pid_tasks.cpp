@@ -95,6 +95,8 @@ void Drive::turn_pid_task() {
 void Drive::swing_pid_task() {
   // Compute PID
   swingPID.compute(drive_imu_get());
+  leftPID.compute(drive_sensor_left());
+  rightPID.compute(drive_sensor_right());
 
   // Clip swingPID to max speed
   double swing_out = util::clamp(swingPID.output, max_speed, -max_speed);
@@ -105,11 +107,17 @@ void Drive::swing_pid_task() {
       swing_out = util::clamp(swing_out, pid_swing_min_get(), -pid_swing_min_get());
   }
 
+  // Set the motors powers, and decide what to do with the "still" side of the drive
+  double opposite_output = 0;
+  double scale = swing_out / max_speed;
   if (drive_toggle) {
     // Check if left or right swing, then set motors accordingly
-    if (current_swing == LEFT_SWING)
-      private_drive_set(swing_out, 0);
-    else if (current_swing == RIGHT_SWING)
-      private_drive_set(0, -swing_out);
+    if (current_swing == LEFT_SWING) {
+      opposite_output = swing_opposite_speed == 0 ? rightPID.output : swing_opposite_speed * scale;
+      private_drive_set(swing_out, opposite_output);
+    } else if (current_swing == RIGHT_SWING) {
+      opposite_output = swing_opposite_speed == 0 ? leftPID.output : swing_opposite_speed * scale;
+      private_drive_set(-opposite_output, -swing_out);
+    }
   }
 }

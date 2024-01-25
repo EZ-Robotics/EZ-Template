@@ -5,6 +5,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
 #include "main.h"
+#include "okapi/api/units/QAngle.hpp"
 
 // Set PID constants
 void Drive::pid_drive_constants_set(double p, double i, double d, double p_start_i) {
@@ -64,7 +65,7 @@ PID::Constants Drive::pid_heading_constants_get() {
 
 // Updates max speed
 void Drive::pid_speed_max_set(int speed) {
-  max_speed = util::clamp(abs(speed), 127, -127);
+  max_speed = abs(util::clamp(speed, 127, -127));
 }
 
 int Drive::pid_speed_max_get() {
@@ -80,11 +81,14 @@ void Drive::pid_targets_reset() {
   turnPID.target_set(0);
 }
 
-void Drive::drive_angle_set(okapi::QAngle p_angle) {
-  double angle = p_angle.convert(okapi::degree);  // Convert okapi unit to degree
-
+void Drive::drive_angle_raw_set(double angle) {
   headingPID.target_set(angle);
   drive_imu_reset(angle);
+}
+
+void Drive::drive_angle_set(okapi::QAngle p_angle) {
+  double angle = p_angle.convert(okapi::degree);  // Convert okapi unit to degree
+  drive_angle_raw_set(angle);
 }
 
 void Drive::drive_mode_set(e_mode p_mode) { mode = p_mode; }
@@ -143,10 +147,8 @@ void Drive::pid_drive_set(okapi::QLength p_target, int speed, bool slew_on, bool
   drive_mode_set(DRIVE);
 }
 
-// Set turn PID
-void Drive::pid_turn_set(okapi::QAngle p_target, int speed) {
-  double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
-
+// Raw Set Turn PID
+void Drive::pid_turn_raw_set(double target, int speed) {
   // Print targets
   if (print_toggle) printf("Turn Started... Target Value: %f\n", target);
 
@@ -159,55 +161,56 @@ void Drive::pid_turn_set(okapi::QAngle p_target, int speed) {
   drive_mode_set(TURN);
 }
 
+// Set turn PID
+void Drive::pid_turn_set(okapi::QAngle p_target, int speed) {
+  double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
+  pid_turn_raw_set(target, speed);
+}
+
 void Drive::pid_turn_relative_set(okapi::QAngle p_target, int speed) {
   double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
   // Compute absolute target by adding to current heading
   double absolute_target = turnPID.target_get() + target;
+  pid_turn_raw_set(absolute_target, speed);
 
-  // Print targets
-  if (print_toggle) printf("Turn Started... Target Value: %f\n", absolute_target);
-
-  // Set PID targets
-  turnPID.target_set(absolute_target);
-  headingPID.target_set(absolute_target);
-  pid_speed_max_set(speed);
-
-  // Run task
-  drive_mode_set(TURN);
+  if (print_toggle) printf("Relative ");
 }
 
-// Set swing PID
-void Drive::pid_swing_set(e_swing type, okapi::QAngle p_target, int speed) {
-  double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
+// Raw Set Swing PID
+void Drive::pid_swing_raw_set(e_swing type, double target, int speed, int opposite_speed) {
   // Print targets
   if (print_toggle) printf("Swing Started... Target Value: %f\n", target);
   current_swing = type;
+
+  // Set targets for the side that isn't moving
+  auto consts = forward_drivePID.constants_get();
+  leftPID.constants_set(consts.kp, consts.ki, consts.kd, consts.start_i);
+  rightPID.constants_set(consts.kp, consts.ki, consts.kd, consts.start_i);
+  leftPID.target_set(drive_sensor_left());
+  rightPID.target_set(drive_sensor_right());
 
   // Set PID targets
   swingPID.target_set(target);
   headingPID.target_set(target);  // Update heading target for next drive motion
   pid_speed_max_set(speed);
+  swing_opposite_speed = opposite_speed;
 
   // Run task
   drive_mode_set(SWING);
 }
 
 // Set swing PID
-void Drive::pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed) {
+void Drive::pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed) {
   double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
+  pid_swing_raw_set(type, target, speed, opposite_speed);
+}
 
+// Set swing PID
+void Drive::pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed) {
+  double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
   // Compute absolute target by adding to current heading
   double absolute_target = swingPID.target_get() + target;
+  pid_swing_raw_set(type, absolute_target, speed, opposite_speed);
 
-  // Print targets
-  if (print_toggle) printf("Swing Started... Target Value: %f\n", absolute_target);
-  current_swing = type;
-
-  // Set PID targets
-  swingPID.target_set(absolute_target);
-  headingPID.target_set(absolute_target);  // Update heading target for next drive motion
-  pid_speed_max_set(speed);
-
-  // Run task
-  drive_mode_set(SWING);
+  if (print_toggle) printf("Relative ");
 }

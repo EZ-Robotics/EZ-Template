@@ -14,7 +14,7 @@ Drive chassis (
   // IMU Port
   ,6
 
-  // Wheel Diameter (Remember, 4" wheels are actually 4.125!)
+  // Wheel Diameter (Remember, old 4" wheels are actually 4.125!)
   //    (or tracking wheel diameter)
   ,3.25
 

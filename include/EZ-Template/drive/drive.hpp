@@ -598,6 +598,16 @@ class Drive {
    * Sets the robot to turn using PID.
    *
    * \param p_target
+   *        target value as a double
+   * \param speed
+   *        0 to 127, max speed during motion
+   */
+  void pid_turn_raw_set(double target, int speed);
+
+  /**
+   * Sets the robot to turn using PID.
+   *
+   * \param p_target
    *        target value in degrees
    * \param speed
    *        0 to 127, max speed during motion
@@ -620,11 +630,27 @@ class Drive {
    * \param type
    *        L_SWING or R_SWING
    * \param p_target
+   *        target value as a double
+   * \param speed
+   *        0 to 127, max speed during motion
+   * \param opposite_speed
+   *        0 to 127, max speed of the opposite side of the drive during the swing.  This is used for arcs, and is defaulted to 0.
+   */
+  void pid_swing_raw_set(e_swing type, double target, int speed, int opposite_speed);
+
+  /**
+   * Turn using only the left or right side.
+   *
+   * \param type
+   *        L_SWING or R_SWING
+   * \param p_target
    *        target value in degrees
    * \param speed
    *        0 to 127, max speed during motion
+   * \param opposite_speed
+   *        0 to 127, max speed of the opposite side of the drive during the swing.  This is used for arcs, and is defaulted to 0.
    */
-  void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed);
+  void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed = 0);
 
   /**
    * Sets the robot to turn only using the left or right side relative to current heading using PID.
@@ -635,8 +661,10 @@ class Drive {
    *        target value in okapi angle units
    * \param speed
    *        0 to 127, max speed during motion
+   * \param opposite_speed
+   *        0 to 127, max speed of the opposite side of the drive during the swing.  This is used for arcs, and is defaulted to 0.
    */
-  void pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed);
+  void pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed = 0);
 
   /**
    * Resets all PID targets to 0.
@@ -644,9 +672,14 @@ class Drive {
   void pid_targets_reset();
 
   /**
-   * Sets heading of gyro and target of PID.
+   * Sets heading of gyro and target of PID, okapi angle.
    */
   void drive_angle_set(okapi::QAngle p_angle);
+
+  /**
+   * Sets heading of gyro and target of PID, takes double as an angle.
+   */
+  void drive_angle_raw_set(double angle);
 
   /**
    * Lock the code in a while loop until the robot has settled.
@@ -970,6 +1003,7 @@ class Drive {
   int swing_min = 0;
   int turn_min = 0;
   bool practice_mode_is_on = false;
+  int swing_opposite_speed = 0;
 
   /**
    * Private wait until for drive
