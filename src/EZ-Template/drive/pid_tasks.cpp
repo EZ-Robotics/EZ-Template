@@ -41,12 +41,12 @@ void Drive::drive_pid_task() {
   headingPID.compute(drive_imu_get());
 
   // Compute slew
-  double l_slew_out = slew_iterate(left_slew, drive_sensor_left());
-  double r_slew_out = slew_iterate(right_slew, drive_sensor_right());
+  slew_left.iterate(drive_sensor_left());
+  slew_right.iterate(drive_sensor_right());
 
   // Clip leftPID and rightPID to slew (if slew is disabled, it returns max_speed)
-  double l_drive_out = util::clamp(leftPID.output, l_slew_out, -l_slew_out);
-  double r_drive_out = util::clamp(rightPID.output, r_slew_out, -r_slew_out);
+  double l_drive_out = util::clamp(leftPID.output, slew_left.output(), -slew_left.output());
+  double r_drive_out = util::clamp(rightPID.output, slew_right.output(), -slew_right.output());
 
   // Toggle heading
   double gyro_out = heading_on ? headingPID.output : 0;
@@ -56,7 +56,7 @@ void Drive::drive_pid_task() {
   double r_out = r_drive_out - gyro_out;
 
   // Vector scaling
-  double max_slew_out = fmin(l_slew_out, r_slew_out);
+  double max_slew_out = fmin(slew_left.output(), slew_right.output());
   if (fabs(l_out) > max_slew_out || fabs(r_out) > max_slew_out) {
     if (fabs(l_out) > fabs(r_out)) {
       r_out = r_out * (max_slew_out / fabs(l_out));
@@ -77,8 +77,11 @@ void Drive::turn_pid_task() {
   // Compute PID
   turnPID.compute(drive_imu_get());
 
+  // Compute slew
+  slew_turn.iterate(drive_imu_get());
+
   // Clip gyroPID to max speed
-  double gyro_out = util::clamp(turnPID.output, max_speed, -max_speed);
+  double gyro_out = util::clamp(turnPID.output, slew_turn.output(), -slew_turn.output());
 
   // Clip the speed of the turn when the robot is within StartI, only do this when target is larger then StartI
   if (turnPID.constants.ki != 0 && (fabs(turnPID.target_get()) > turnPID.constants.start_i && fabs(turnPID.error) < turnPID.constants.start_i)) {
@@ -98,8 +101,12 @@ void Drive::swing_pid_task() {
   leftPID.compute(drive_sensor_left());
   rightPID.compute(drive_sensor_right());
 
+  // Compute slew
+  double current = slew_swing_using_angle ? drive_imu_get() : (current_swing == LEFT_SWING ? drive_sensor_left() : drive_sensor_right());
+  slew_swing.iterate(current);
+
   // Clip swingPID to max speed
-  double swing_out = util::clamp(swingPID.output, max_speed, -max_speed);
+  double swing_out = util::clamp(swingPID.output, slew_swing.output(), -slew_swing.output());
 
   // Clip the speed of the turn when the robot is within StartI, only do this when target is larger then StartI
   if (swingPID.constants.ki != 0 && (fabs(swingPID.target_get()) > swingPID.constants.start_i && fabs(swingPID.error) < swingPID.constants.start_i)) {
@@ -113,11 +120,11 @@ void Drive::swing_pid_task() {
   if (drive_toggle) {
     // Check if left or right swing, then set motors accordingly
     if (current_swing == LEFT_SWING) {
-      opposite_output = swing_opposite_speed == 0 ? rightPID.output : swing_opposite_speed * scale;
+      opposite_output = swing_opposite_speed == 0 ? rightPID.output : (swing_opposite_speed * scale);
       private_drive_set(swing_out, opposite_output);
     } else if (current_swing == RIGHT_SWING) {
-      opposite_output = swing_opposite_speed == 0 ? leftPID.output : swing_opposite_speed * scale;
-      private_drive_set(-opposite_output, -swing_out);
+      opposite_output = swing_opposite_speed == 0 ? leftPID.output : -(swing_opposite_speed * scale);
+      private_drive_set(opposite_output, -swing_out);
     }
   }
 }

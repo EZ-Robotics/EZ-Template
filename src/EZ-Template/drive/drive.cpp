@@ -9,6 +9,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include <list>
 
 #include "main.h"
+#include "okapi/api/units/QAngle.hpp"
 #include "pros/llemu.hpp"
 #include "pros/screen.hpp"
 
@@ -149,8 +150,7 @@ void Drive::drive_defaults_set() {
   pid_swing_min_set(30);
 
   // Slew constants
-  slew_power_min_set(80, 80);
-  slew_distance_set(7_in, 7_in);
+  slew_drive_constants_set(7_in, 80);
 
   // Exit condition constants
   pid_turn_exit_condition_set(300_ms, 3_deg, 500_ms, 7_deg, 750_ms, 750_ms);
@@ -348,3 +348,57 @@ void Drive::pid_print_toggle(bool toggle) { print_toggle = toggle; }
 
 bool Drive::pid_drive_toggle_get() { return drive_toggle; }
 bool Drive::pid_print_toggle_get() { return print_toggle; }
+
+void Drive::slew_forward_constants_set(okapi::QLength distance, int min_speed) {
+  double dist = distance.convert(okapi::inch);
+  slew_forward.constants_set(dist, min_speed);
+}
+
+void Drive::slew_backward_constants_set(okapi::QLength distance, int min_speed) {
+  double dist = distance.convert(okapi::inch);
+  slew_backward.constants_set(dist, min_speed);
+}
+
+void Drive::slew_drive_constants_set(okapi::QLength distance, int min_speed) {
+  slew_backward_constants_set(distance, min_speed);
+  slew_forward_constants_set(distance, min_speed);
+}
+
+void Drive::slew_turn_constants_set(okapi::QAngle distance, int min_speed) {
+  double dist = distance.convert(okapi::degree);
+  slew_turn.constants_set(dist, min_speed);
+}
+
+void Drive::slew_swing_backward_constants_set(okapi::QLength distance, int min_speed) {
+  slew_swing_rev_using_angle = false;
+  double dist = distance.convert(okapi::inch);
+  slew_swing_backward.constants_set(dist, min_speed);
+}
+
+void Drive::slew_swing_forward_constants_set(okapi::QLength distance, int min_speed) {
+  slew_swing_fwd_using_angle = false;
+  double dist = distance.convert(okapi::inch);
+  slew_swing_forward.constants_set(dist, min_speed);
+}
+
+void Drive::slew_swing_constants_set(okapi::QLength distance, int min_speed) {
+  slew_swing_forward_constants_set(distance, min_speed);
+  slew_swing_backward_constants_set(distance, min_speed);
+}
+
+void Drive::slew_swing_backward_constants_set(okapi::QAngle distance, int min_speed) {
+  slew_swing_rev_using_angle = true;
+  double dist = distance.convert(okapi::degree);
+  slew_swing_backward.constants_set(dist, min_speed);
+}
+
+void Drive::slew_swing_forward_constants_set(okapi::QAngle distance, int min_speed) {
+  slew_swing_fwd_using_angle = true;
+  double dist = distance.convert(okapi::degree);
+  slew_swing_forward.constants_set(dist, min_speed);
+}
+
+void Drive::slew_swing_constants_set(okapi::QAngle distance, int min_speed) {
+  slew_swing_forward_constants_set(distance, min_speed);
+  slew_swing_backward_constants_set(distance, min_speed);
+}

@@ -5,10 +5,8 @@
 // https://ez-robotics.github.io/EZ-Template/
 /////
 
-const int DRIVE_SPEED = 110;  // This is 110/127 (around 87% of max speed).  We don't suggest making this 127.
-                              // If this is 127 and the robot tries to heading correct, it's only correcting by
-                              // making one side slower.  When this is 87%, it's correcting by making one side
-                              // faster and one side slower, giving better heading correction.
+// These are out of 127
+const int DRIVE_SPEED = 110;  
 const int TURN_SPEED = 90;
 const int SWING_SPEED = 90;
 
@@ -16,47 +14,19 @@ const int SWING_SPEED = 90;
 // Constants
 ///
 
-// It's best practice to tune constants when the robot is empty and with heavier game objects, or with lifts up vs down.
-// If the objects are light or the cog doesn't change much, then there isn't a concern here.
-
 void default_constants() {
-  chassis.pid_turn_exit_condition_set(300_ms, 3_deg, 500_ms, 7_deg, 750_ms, 750_ms);
-  chassis.pid_swing_exit_condition_set(300_ms, 3_deg, 500_ms, 7_deg, 750_ms, 750_ms);
-  chassis.pid_drive_exit_condition_set(300_ms, 1_in, 500_ms, 3_in, 750_ms, 750_ms);
-
-  chassis.slew_power_min_set(80, 80);
-  chassis.slew_distance_set(7_in, 7_in);
   chassis.pid_heading_constants_set(3, 0, 20, 0);
   chassis.pid_drive_constants_set(10, 0, 100, 0);
   chassis.pid_turn_constants_set(3, 0, 20, 0);
   chassis.pid_swing_constants_set(5, 0, 30, 0);
-}
 
-void one_mogo_constants() {
   chassis.pid_turn_exit_condition_set(300_ms, 3_deg, 500_ms, 7_deg, 750_ms, 750_ms);
   chassis.pid_swing_exit_condition_set(300_ms, 3_deg, 500_ms, 7_deg, 750_ms, 750_ms);
   chassis.pid_drive_exit_condition_set(300_ms, 1_in, 500_ms, 3_in, 750_ms, 750_ms);
 
-  chassis.slew_power_min_set(80, 80);
-  chassis.slew_distance_set(7_in, 7_in);
-  chassis.pid_heading_constants_set(3, 0, 20, 0);
-  chassis.pid_drive_constants_set(10, 0, 100, 0);
-  chassis.pid_turn_constants_set(3, 0, 20, 0);
-  chassis.pid_swing_constants_set(5, 0, 30, 0);
+  chassis.slew_drive_constants_set(7_in, 80);
 }
 
-void two_mogo_constants() {
-  chassis.pid_turn_exit_condition_set(300_ms, 3_deg, 500_ms, 7_deg, 750_ms, 750_ms);
-  chassis.pid_swing_exit_condition_set(300_ms, 3_deg, 500_ms, 7_deg, 750_ms, 750_ms);
-  chassis.pid_drive_exit_condition_set(300_ms, 1_in, 500_ms, 3_in, 750_ms, 750_ms);
-
-  chassis.slew_power_min_set(80, 80);
-  chassis.slew_distance_set(7_in, 7_in);
-  chassis.pid_heading_constants_set(3, 0, 20, 0);
-  chassis.pid_drive_constants_set(10, 0, 100, 0);
-  chassis.pid_turn_constants_set(3, 0, 20, 0);
-  chassis.pid_swing_constants_set(5, 0, 30, 0);
-}
 
 ///
 // Drive Example

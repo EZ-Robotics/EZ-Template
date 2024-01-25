@@ -13,4 +13,3 @@ void combining_movements();
 void interfered_example();
 
 void default_constants();
-void using_inches_constants();

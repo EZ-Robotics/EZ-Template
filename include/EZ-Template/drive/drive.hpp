@@ -11,6 +11,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include <tuple>
 
 #include "EZ-Template/PID.hpp"
+#include "EZ-Template/slew.hpp"
 #include "EZ-Template/util.hpp"
 #include "okapi/api/units/QAngle.hpp"
 #include "okapi/api/units/QLength.hpp"
@@ -91,6 +92,118 @@ class Drive {
   PID rightPID;
   PID backward_drivePID;
   PID swingPID;
+
+  /**
+   * Slew objects.
+   */
+  ez::slew slew_left;
+  ez::slew slew_right;
+  ez::slew slew_forward;
+  ez::slew slew_backward;
+  ez::slew slew_turn;
+  ez::slew slew_swing_forward;
+  ez::slew slew_swing_backward;
+  ez::slew slew_swing;
+
+  /**
+   * Sets constants for slew for turns.  Slew ramps up the speed of the robot until the set distance is traveled.
+   *
+   * \param distance
+   *        the distance the robot travels before reaching max speed, an okapi distance unit
+   * \param min_speed
+   *        the starting speed for the movement
+   */
+  void slew_swing_constants_set(okapi::QLength distance, int min_speed);
+
+  /**
+   * Sets constants for slew for turns.  Slew ramps up the speed of the robot until the set distance is traveled.
+   *
+   * \param distance
+   *        the distance the robot travels before reaching max speed, an okapi distance unit
+   * \param min_speed
+   *        the starting speed for the movement
+   */
+  void slew_swing_forward_constants_set(okapi::QLength distance, int min_speed);
+
+  /**
+   * Sets constants for slew for turns.  Slew ramps up the speed of the robot until the set distance is traveled.
+   *
+   * \param distance
+   *        the distance the robot travels before reaching max speed, an okapi distance unit
+   * \param min_speed
+   *        the starting speed for the movement
+   */
+  void slew_swing_backward_constants_set(okapi::QLength distance, int min_speed);
+
+    /**
+   * Sets constants for slew for turns.  Slew ramps up the speed of the robot until the set distance is traveled.
+   *
+   * \param distance
+   *        the distance the robot travels before reaching max speed, an okapi angle unit
+   * \param min_speed
+   *        the starting speed for the movement
+   */
+  void slew_swing_constants_set(okapi::QAngle distance, int min_speed);
+
+  /**
+   * Sets constants for slew for turns.  Slew ramps up the speed of the robot until the set distance is traveled.
+   *
+   * \param distance
+   *        the distance the robot travels before reaching max speed, an okapi angle unit
+   * \param min_speed
+   *        the starting speed for the movement
+   */
+  void slew_swing_forward_constants_set(okapi::QAngle distance, int min_speed);
+
+  /**
+   * Sets constants for slew for turns.  Slew ramps up the speed of the robot until the set distance is traveled.
+   *
+   * \param distance
+   *        the distance the robot travels before reaching max speed, an okapi angle unit
+   * \param min_speed
+   *        the starting speed for the movement
+   */
+  void slew_swing_backward_constants_set(okapi::QAngle distance, int min_speed);
+
+  /**
+   * Sets constants for slew for turns.  Slew ramps up the speed of the robot until the set distance is traveled.
+   *
+   * \param distance
+   *        the distance the robot travels before reaching max speed, an okapi angle unit
+   * \param min_speed
+   *        the starting speed for the movement
+   */
+  void slew_turn_constants_set(okapi::QAngle distance, int min_speed);
+
+  /**
+   * Sets constants for slew for driving forward.  Slew ramps up the speed of the robot until the set distance is traveled.
+   *
+   * \param distance
+   *        the distance the robot travels before reaching max speed, an okapi distance unit
+   * \param min_speed
+   *        the starting speed for the movement
+   */
+  void slew_forward_constants_set(okapi::QLength distance, int min_speed);
+
+  /**
+   * Sets constants for slew for driving backward.  Slew ramps up the speed of the robot until the set distance is traveled.
+   *
+   * \param distance
+   *        the distance the robot travels before reaching max speed, an okapi distance unit
+   * \param min_speed
+   *        the starting speed for the movement
+   */
+  void slew_backward_constants_set(okapi::QLength distance, int min_speed);
+
+  /**
+   * Sets constants for slew for driving.  Slew ramps up the speed of the robot until the set distance is traveled.
+   *
+   * \param distance
+   *        the distance the robot travels before reaching max speed, an okapi distance unit
+   * \param min_speed
+   *        the starting speed for the movement
+   */
+  void slew_drive_constants_set(okapi::QLength distance, int min_speed);
 
   /**
    * Current mode of the drive.
@@ -347,7 +460,7 @@ class Drive {
   void opcontrol_drive_sensors_reset();
 
   /**
-   * Sets minimum slew distance constants.
+   * Sets minimum value distance constants.
    *
    * \param l_stick
    *        input for left joystick
@@ -588,7 +701,7 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param slew_on
-   *        ramp up from slew_min to speed over slew_distance.  only use when you're going over about 14"
+   *        ramp up from a lower speed to your target speed
    * \param toggle_heading
    *        toggle for heading correction
    */
@@ -601,8 +714,10 @@ class Drive {
    *        target value as a double
    * \param speed
    *        0 to 127, max speed during motion
+   * \param slew_on
+   *        ramp up from a lower speed to your target speed
    */
-  void pid_turn_raw_set(double target, int speed);
+  void pid_turn_raw_set(double target, int speed, bool slew_on = false);
 
   /**
    * Sets the robot to turn using PID.
@@ -611,8 +726,10 @@ class Drive {
    *        target value in degrees
    * \param speed
    *        0 to 127, max speed during motion
+   * \param slew_on
+   *        ramp up from a lower speed to your target speed
    */
-  void pid_turn_set(okapi::QAngle p_target, int speed);
+  void pid_turn_set(okapi::QAngle p_target, int speed, bool slew_on = false);
 
   /**
    * Sets the robot to turn relative to current heading using PID.
@@ -621,8 +738,10 @@ class Drive {
    *        target value in okapi angle units
    * \param speed
    *        0 to 127, max speed during motion
+   * \param slew_on
+   *        ramp up from a lower speed to your target speed
    */
-  void pid_turn_relative_set(okapi::QAngle p_target, int speed);
+  void pid_turn_relative_set(okapi::QAngle p_target, int speed, bool slew_on = false);
 
   /**
    * Turn using only the left or right side.
@@ -636,7 +755,7 @@ class Drive {
    * \param opposite_speed
    *        0 to 127, max speed of the opposite side of the drive during the swing.  This is used for arcs, and is defaulted to 0.
    */
-  void pid_swing_raw_set(e_swing type, double target, int speed, int opposite_speed);
+  void pid_swing_raw_set(e_swing type, double target, int speed, int opposite_speed = 0, bool slew_on = false);
 
   /**
    * Turn using only the left or right side.
@@ -650,7 +769,7 @@ class Drive {
    * \param opposite_speed
    *        0 to 127, max speed of the opposite side of the drive during the swing.  This is used for arcs, and is defaulted to 0.
    */
-  void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed = 0);
+  void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed = 0, bool slew_on = false);
 
   /**
    * Sets the robot to turn only using the left or right side relative to current heading using PID.
@@ -664,7 +783,7 @@ class Drive {
    * \param opposite_speed
    *        0 to 127, max speed of the opposite side of the drive during the swing.  This is used for arcs, and is defaulted to 0.
    */
-  void pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed = 0);
+  void pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed = 0, bool slew_on = false);
 
   /**
    * Resets all PID targets to 0.
@@ -875,26 +994,6 @@ class Drive {
   int pid_turn_min_get();
 
   /**
-   * Sets minimum slew speed constants.
-   *
-   * \param fwd
-   *        minimum power for forward drive pd
-   * \param rev
-   *        minimum power for backwards drive pd
-   */
-  void slew_power_min_set(int fwd, int rev);
-
-  /**
-   * Sets minimum slew distance constants.
-   *
-   * \param fwd
-   *        minimum distance for forward drive pd, okapi unit
-   * \param rev
-   *        minimum distance for backwards drive pd, okapi unit
-   */
-  void slew_distance_set(okapi::QLength fwd, okapi::QLength rev);
-
-  /**
    * Set's constants for drive exit conditions.
    *
    * \param p_small_exit_time
@@ -952,51 +1051,6 @@ class Drive {
    */
   void opcontrol_curve_buttons_iterate();
 
-  // Slew
-  struct slew_ {
-    int sign = 0;
-    double error = 0;
-    double x_intercept = 0;
-    double y_intercept = 0;
-    double slope = 0;
-    double output = 0;
-    bool enabled = false;
-    double max_speed = 0;
-  };
-
-  slew_ left_slew;
-  slew_ right_slew;
-
-  /**
-   * Initialize slew.
-   *
-   * \param input
-   *        slew_ enum
-   * \param slew_on
-   *        is slew on?
-   * \param max_speed
-   *        target speed during the slew
-   * \param target
-   *        target sensor value
-   * \param current
-   *        current sensor value
-   * \param start
-   *        starting position
-   * \param backwards
-   *        slew direction for constants
-   */
-  void slew_initialize(slew_ &input, bool slew_on, double max_speed, double target, double current, double start, bool backwards);
-
-  /**
-   * Calculate slew.
-   *
-   * \param input
-   *        slew_ enum
-   * \param current
-   *        current sensor value
-   */
-  double slew_iterate(slew_ &input, double current);
-
  private:  // !Auton
   bool drive_toggle = true;
   bool print_toggle = true;
@@ -1004,6 +1058,9 @@ class Drive {
   int turn_min = 0;
   bool practice_mode_is_on = false;
   int swing_opposite_speed = 0;
+  bool slew_swing_fwd_using_angle = false;
+  bool slew_swing_rev_using_angle = false;
+  bool slew_swing_using_angle = false;
 
   /**
    * Private wait until for drive
@@ -1059,12 +1116,6 @@ class Drive {
   void swing_pid_task();
   void turn_pid_task();
   void ez_auto_task();
-
-  /**
-   * Constants for slew
-   */
-  double SLEW_DISTANCE[2];
-  double SLEW_MIN_POWER[2];
 
   /**
    * Starting value for left/right
