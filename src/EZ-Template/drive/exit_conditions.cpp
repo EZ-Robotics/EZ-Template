@@ -9,6 +9,11 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 using namespace ez;
 
+void Drive::pid_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout) {
+  leftPID.exit_condition_set(p_small_exit_time, p_small_error, p_big_exit_time, p_big_error, p_velocity_exit_time, p_mA_timeout);
+  rightPID.exit_condition_set(p_small_exit_time, p_small_error, p_big_exit_time, p_big_error, p_velocity_exit_time, p_mA_timeout);
+}
+
 void Drive::pid_drive_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QLength p_small_error, okapi::QTime p_big_exit_time, okapi::QLength p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout) {
   // Convert okapi units to doubles
   double se = p_small_error.convert(okapi::inch);
@@ -18,8 +23,11 @@ void Drive::pid_drive_exit_condition_set(okapi::QTime p_small_exit_time, okapi::
   double vet = p_velocity_exit_time.convert(okapi::millisecond);
   double mAt = p_mA_timeout.convert(okapi::millisecond);
 
-  leftPID.exit_condition_set(set, se, bet, be, vet, mAt);
-  rightPID.exit_condition_set(set, se, bet, be, vet, mAt);
+  pid_drive_exit_condition_set(set, se, bet, be, vet, mAt);
+}
+
+void Drive::pid_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout) {
+  turnPID.exit_condition_set(p_small_exit_time, p_small_error, p_big_exit_time, p_big_error, p_velocity_exit_time, p_mA_timeout);
 }
 
 void Drive::pid_turn_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QAngle p_small_error, okapi::QTime p_big_exit_time, okapi::QAngle p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout) {
@@ -31,7 +39,11 @@ void Drive::pid_turn_exit_condition_set(okapi::QTime p_small_exit_time, okapi::Q
   double vet = p_velocity_exit_time.convert(okapi::millisecond);
   double mAt = p_mA_timeout.convert(okapi::millisecond);
 
-  turnPID.exit_condition_set(set, se, bet, be, vet, mAt);
+  pid_turn_exit_condition_set(set, se, bet, be, vet, mAt);
+}
+
+void Drive::pid_swing_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout) {
+  swingPID.exit_condition_set(p_small_exit_time, p_small_error, p_big_exit_time, p_big_error, p_velocity_exit_time, p_mA_timeout);
 }
 
 void Drive::pid_swing_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QAngle p_small_error, okapi::QTime p_big_exit_time, okapi::QAngle p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout) {
@@ -43,7 +55,7 @@ void Drive::pid_swing_exit_condition_set(okapi::QTime p_small_exit_time, okapi::
   double vet = p_velocity_exit_time.convert(okapi::millisecond);
   double mAt = p_mA_timeout.convert(okapi::millisecond);
 
-  swingPID.exit_condition_set(set, se, bet, be, vet, mAt);
+  pid_swing_exit_condition_set(set, se, bet, be, vet, mAt);
 }
 
 // User wrapper for exit condition
@@ -230,5 +242,18 @@ void Drive::pid_wait_until(okapi::QAngle target) {
     wait_until_turn_swing(target.convert(okapi::degree));
   } else {
     printf("QAngle not supported for drive!\n");
+  }
+}
+
+void Drive::pid_wait_until(double target) {
+  // If driving...
+  if (mode == DRIVE) {
+    wait_until_drive(target);
+  }
+  // If turning or swinging...
+  else if (mode == TURN || mode == SWING) {
+    wait_until_turn_swing(target);
+  } else {
+    printf("Not in a valid drive mode!\n");
   }
 }

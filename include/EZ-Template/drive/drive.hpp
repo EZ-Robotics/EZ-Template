@@ -92,6 +92,8 @@ class Drive {
   PID rightPID;
   PID backward_drivePID;
   PID swingPID;
+  PID forward_swingPID;
+  PID backward_swingPID;
 
   /**
    * Slew objects.
@@ -135,7 +137,7 @@ class Drive {
    */
   void slew_swing_backward_constants_set(okapi::QLength distance, int min_speed);
 
-    /**
+  /**
    * Sets constants for slew for turns.  Slew ramps up the speed of the robot until the set distance is traveled.
    *
    * \param distance
@@ -694,7 +696,7 @@ class Drive {
   /////
 
   /**
-   * Sets the robot to move forward using PID.
+   * Sets the robot to move forward using PID with okapi units.
    *
    * \param target
    *        target value in inches
@@ -708,19 +710,33 @@ class Drive {
   void pid_drive_set(okapi::QLength p_target, int speed, bool slew_on = false, bool toggle_heading = true);
 
   /**
+   * Sets the robot to move forward using PID without okapi units.
+   *
+   * \param target
+   *        target value as a double, unit is inches
+   * \param speed
+   *        0 to 127, max speed during motion
+   * \param slew_on
+   *        ramp up from a lower speed to your target speed
+   * \param toggle_heading
+   *        toggle for heading correction
+   */
+  void pid_drive_set(double target, int speed, bool slew_on, bool toggle_heading = true);
+
+  /**
    * Sets the robot to turn using PID.
    *
-   * \param p_target
-   *        target value as a double
+   * \param target
+   *        target value as a double, unit is degrees
    * \param speed
    *        0 to 127, max speed during motion
    * \param slew_on
    *        ramp up from a lower speed to your target speed
    */
-  void pid_turn_raw_set(double target, int speed, bool slew_on = false);
+  void pid_turn_set(double target, int speed, bool slew_on = false);
 
   /**
-   * Sets the robot to turn using PID.
+   * Sets the robot to turn using PID with okapi units.
    *
    * \param p_target
    *        target value in degrees
@@ -732,7 +748,7 @@ class Drive {
   void pid_turn_set(okapi::QAngle p_target, int speed, bool slew_on = false);
 
   /**
-   * Sets the robot to turn relative to current heading using PID.
+   * Sets the robot to turn relative to current heading using PID with okapi units.
    *
    * \param p_target
    *        target value in okapi angle units
@@ -744,21 +760,33 @@ class Drive {
   void pid_turn_relative_set(okapi::QAngle p_target, int speed, bool slew_on = false);
 
   /**
-   * Turn using only the left or right side.
+   * Sets the robot to turn relative to current heading using PID without okapi units.
+   *
+   * \param p_target
+   *        target value as a double, unit is degrees
+   * \param speed
+   *        0 to 127, max speed during motion
+   * \param slew_on
+   *        ramp up from a lower speed to your target speed
+   */
+  void pid_turn_relative_set(double target, int speed, bool slew_on = false);
+
+  /**
+   * Turn using only the left or right side without okapi units.
    *
    * \param type
    *        L_SWING or R_SWING
    * \param p_target
-   *        target value as a double
+   *        target value as a double, unit is degrees
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
    *        0 to 127, max speed of the opposite side of the drive during the swing.  This is used for arcs, and is defaulted to 0.
    */
-  void pid_swing_raw_set(e_swing type, double target, int speed, int opposite_speed = 0, bool slew_on = false);
+  void pid_swing_set(e_swing type, double target, int speed, int opposite_speed = 0, bool slew_on = false);
 
   /**
-   * Turn using only the left or right side.
+   * Turn using only the left or right side with okapi units.
    *
    * \param type
    *        L_SWING or R_SWING
@@ -772,7 +800,7 @@ class Drive {
   void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed = 0, bool slew_on = false);
 
   /**
-   * Sets the robot to turn only using the left or right side relative to current heading using PID.
+   * Sets the robot to turn only using the left or right side relative to current heading using PID with okapi units.
    *
    * \param type
    *        L_SWING or R_SWING
@@ -784,6 +812,20 @@ class Drive {
    *        0 to 127, max speed of the opposite side of the drive during the swing.  This is used for arcs, and is defaulted to 0.
    */
   void pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed = 0, bool slew_on = false);
+
+  /**
+   * Sets the robot to turn only using the left or right side relative to current heading using PID without okapi units.
+   *
+   * \param type
+   *        L_SWING or R_SWING
+   * \param p_target
+   *        target value as a double, unit is degrees
+   * \param speed
+   *        0 to 127, max speed during motion
+   * \param opposite_speed
+   *        0 to 127, max speed of the opposite side of the drive during the swing.  This is used for arcs, and is defaulted to 0.
+   */
+  void pid_swing_relative_set(e_swing type, double target, int speed, int opposite_speed = 0, bool slew_on = false);
 
   /**
    * Resets all PID targets to 0.
@@ -798,7 +840,7 @@ class Drive {
   /**
    * Sets heading of gyro and target of PID, takes double as an angle.
    */
-  void drive_angle_raw_set(double angle);
+  void drive_angle_set(double angle);
 
   /**
    * Lock the code in a while loop until the robot has settled.
@@ -820,6 +862,14 @@ class Drive {
    *        for driving, using okapi units
    */
   void pid_wait_until(okapi::QLength target);
+
+  /**
+   * Lock the code in a while loop until this position has passed for driving without okapi units.
+   *
+   * \param target
+   *        for driving or turning, using a double.  degrees for turns/swings, inches for driving.
+   */
+  void pid_wait_until(double target);
 
   /**
    * Autonomous interference detection.  Returns true when interfered, and false when nothing happened.
@@ -846,26 +896,6 @@ class Drive {
    * Returns max speed of drive during autonomous.
    */
   int pid_speed_max_get();
-
-  /**
-   * @brief Set the drive pid constants object
-   *
-   * @param p           kP
-   * @param i           kI
-   * @param d           kD
-   * @param p_start_i   start_I
-   */
-  void pid_drive_constants_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
-
-  /**
-   * @brief returns PID constants with PID::Constants.  Returns -1 if fwd and rev constants aren't the same!
-   *
-   * @param p           kP
-   * @param i           kI
-   * @param d           kD
-   * @param p_start_i   start_I
-   */
-  PID::Constants pid_drive_constants_get();
 
   /**
    * @brief Set the turn pid constants object
@@ -898,7 +928,7 @@ class Drive {
   void pid_swing_constants_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
   /**
-   * @brief returns PID constants with PID::Constants.
+   * @brief returns PID constants with PID::Constants. Returns -1 if fwd and rev constants aren't the same!
    *
    * @param p           kP
    * @param i           kI
@@ -906,6 +936,46 @@ class Drive {
    * @param p_start_i   start_I
    */
   PID::Constants pid_swing_constants_get();
+
+  /**
+   * @brief Set the forward swing pid constants object
+   *
+   * @param p           kP
+   * @param i           kI
+   * @param d           kD
+   * @param p_start_i   start_I
+   */
+  void pid_swing_constants_forward_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
+
+  /**
+   * @brief returns PID constants with PID::Constants.
+   *
+   * @param p           kP
+   * @param i           kI
+   * @param d           kD
+   * @param p_start_i   start_I
+   */
+  PID::Constants pid_swing_constants_forward_get();
+
+  /**
+   * @brief Set the backward swing pid constants object
+   *
+   * @param p           kP
+   * @param i           kI
+   * @param d           kD
+   * @param p_start_i   start_I
+   */
+  void pid_swing_constants_backward_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
+
+  /**
+   * @brief returns PID constants with PID::Constants.
+   *
+   * @param p           kP
+   * @param i           kI
+   * @param d           kD
+   * @param p_start_i   start_I
+   */
+  PID::Constants pid_swing_constants_backward_get();
 
   /**
    * @brief Set the heading pid constants object
@@ -928,6 +998,26 @@ class Drive {
   PID::Constants pid_heading_constants_get();
 
   /**
+   * @brief Set the drive pid constants object
+   *
+   * @param p           kP
+   * @param i           kI
+   * @param d           kD
+   * @param p_start_i   start_I
+   */
+  void pid_drive_constants_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
+
+  /**
+   * @brief returns PID constants with PID::Constants.  Returns -1 if fwd and rev constants aren't the same!
+   *
+   * @param p           kP
+   * @param i           kI
+   * @param d           kD
+   * @param p_start_i   start_I
+   */
+  PID::Constants pid_drive_constants_get();
+
+  /**
    * @brief Set the forward pid constants object
    *
    * @param p           kP
@@ -935,7 +1025,7 @@ class Drive {
    * @param d           kD
    * @param p_start_i   start_I
    */
-  void pid_drive_forward_constants_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
+  void pid_drive_constants_forward_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
   /**
    * @brief returns PID constants with PID::Constants.
@@ -945,7 +1035,7 @@ class Drive {
    * @param d           kD
    * @param p_start_i   start_I
    */
-  PID::Constants pid_drive_forward_constants_get();
+  PID::Constants pid_drive_constants_forward_get();
 
   /**
    * @brief Set the backwards pid constants object
@@ -955,7 +1045,7 @@ class Drive {
    * @param d           kD
    * @param p_start_i   start_I
    */
-  void pid_drive_backward_constants_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
+  void pid_drive_constants_backward_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
   /**
    * @brief returns PID constants with PID::Constants.
@@ -965,7 +1055,7 @@ class Drive {
    * @param d           kD
    * @param p_start_i   start_I
    */
-  PID::Constants pid_drive_backward_constants_get();
+  PID::Constants pid_drive_constants_backward_get();
 
   /**
    * Sets minimum power for swings when kI and startI are enabled.
@@ -1040,6 +1130,54 @@ class Drive {
    *        Sets velocity_exit_time.  Timer will start when velocity is 0.  In okapi units.
    */
   void pid_swing_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QAngle p_small_error, okapi::QTime p_big_exit_time, okapi::QAngle p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout);
+
+  /**
+   * Set's constants for drive exit conditions.
+   *
+   * \param p_small_exit_time
+   *        Sets small_exit_time.  Timer for to exit within smalL_error.
+   * \param p_small_error
+   *        Sets smalL_error. Timer will start when error is within this.
+   * \param p_big_exit_time
+   *        Sets big_exit_time.  Timer for to exit within big_error.
+   * \param p_big_error
+   *        Sets big_error. Timer will start when error is within this.
+   * \param p_velocity_exit_time
+   *        Sets velocity_exit_time.  Timer will start when velocity is 0.
+   */
+  void pid_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout);
+
+  /**
+   * Set's constants for turn exit conditions.
+   *
+   * \param p_small_exit_time
+   *        Sets small_exit_time.  Timer for to exit within smalL_error.
+   * \param p_small_error
+   *        Sets smalL_error. Timer will start when error is within this.
+   * \param p_big_exit_time
+   *        Sets big_exit_time.  Timer for to exit within big_error.
+   * \param p_big_error
+   *        Sets big_error. Timer will start when error is within this.
+   * \param p_velocity_exit_time
+   *        Sets velocity_exit_time.  Timer will start when velocity is 0.
+   */
+  void pid_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout);
+
+  /**
+   * Set's constants for swing exit conditions.
+   *
+   * \param p_small_exit_time
+   *        Sets small_exit_time.  Timer for to exit within smalL_error.
+   * \param p_small_error
+   *        Sets smalL_error. Timer will start when error is within this.
+   * \param p_big_exit_time
+   *        Sets big_exit_time.  Timer for to exit within big_error.
+   * \param p_big_error
+   *        Sets big_error. Timer will start when error is within this.
+   * \param p_velocity_exit_time
+   *        Sets velocity_exit_time.  Timer will start when velocity is 0.
+   */
+  void pid_swing_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout);
 
   /**
    * Returns current tick_per_inch()

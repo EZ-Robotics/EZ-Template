@@ -10,13 +10,13 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 // Set PID constants
 void Drive::pid_drive_constants_set(double p, double i, double d, double p_start_i) {
-  pid_drive_forward_constants_set(p, i, d, p_start_i);
-  pid_drive_backward_constants_set(p, i, d, p_start_i);
+  pid_drive_constants_forward_set(p, i, d, p_start_i);
+  pid_drive_constants_backward_set(p, i, d, p_start_i);
 }
 
 PID::Constants Drive::pid_drive_constants_get() {
-  auto fwd_const = pid_drive_forward_constants_get();
-  auto rev_const = pid_drive_backward_constants_get();
+  auto fwd_const = pid_drive_constants_forward_get();
+  auto rev_const = pid_drive_constants_backward_get();
   if (!(fwd_const.kp == rev_const.kp && fwd_const.ki == rev_const.ki && fwd_const.kd == rev_const.kd && fwd_const.start_i == rev_const.start_i)) {
     printf("\nForward and Reverse constants are not the same!");
     return {-1, -1, -1, -1};
@@ -24,19 +24,19 @@ PID::Constants Drive::pid_drive_constants_get() {
   return fwd_const;
 }
 
-void Drive::pid_drive_forward_constants_set(double p, double i, double d, double p_start_i) {
+void Drive::pid_drive_constants_forward_set(double p, double i, double d, double p_start_i) {
   forward_drivePID.constants_set(p, i, d, p_start_i);
 }
 
-PID::Constants Drive::pid_drive_forward_constants_get() {
+PID::Constants Drive::pid_drive_constants_forward_get() {
   return forward_drivePID.constants_get();
 }
 
-void Drive::pid_drive_backward_constants_set(double p, double i, double d, double p_start_i) {
+void Drive::pid_drive_constants_backward_set(double p, double i, double d, double p_start_i) {
   backward_drivePID.constants_set(p, i, d, p_start_i);
 }
 
-PID::Constants Drive::pid_drive_backward_constants_get() {
+PID::Constants Drive::pid_drive_constants_backward_get() {
   return backward_drivePID.constants_get();
 }
 
@@ -49,11 +49,34 @@ PID::Constants Drive::pid_turn_constants_get() {
 }
 
 void Drive::pid_swing_constants_set(double p, double i, double d, double p_start_i) {
-  swingPID.constants_set(p, i, d, p_start_i);
+  pid_swing_constants_forward_set(p, i, d, p_start_i);
+  pid_swing_constants_backward_set(p, i, d, p_start_i);
 }
 
 PID::Constants Drive::pid_swing_constants_get() {
-  return swingPID.constants_get();
+  auto fwd_const = pid_swing_constants_forward_get();
+  auto rev_const = pid_swing_constants_backward_get();
+  if (!(fwd_const.kp == rev_const.kp && fwd_const.ki == rev_const.ki && fwd_const.kd == rev_const.kd && fwd_const.start_i == rev_const.start_i)) {
+    printf("\nForward and Reverse constants are not the same!");
+    return {-1, -1, -1, -1};
+  }
+  return fwd_const;
+}
+
+void Drive::pid_swing_constants_forward_set(double p, double i, double d, double p_start_i) {
+  forward_swingPID.constants_set(p, i, d, p_start_i);
+}
+
+PID::Constants Drive::pid_swing_constants_forward_get() {
+  return forward_swingPID.constants_get();
+}
+
+void Drive::pid_swing_constants_backward_set(double p, double i, double d, double p_start_i) {
+  backward_swingPID.constants_set(p, i, d, p_start_i);
+}
+
+PID::Constants Drive::pid_swing_constants_backward_get() {
+  return backward_swingPID.constants_get();
 }
 
 void Drive::pid_heading_constants_set(double p, double i, double d, double p_start_i) {
@@ -82,14 +105,14 @@ void Drive::pid_targets_reset() {
   turnPID.target_set(0);
 }
 
-void Drive::drive_angle_raw_set(double angle) {
+void Drive::drive_angle_set(double angle) {
   headingPID.target_set(angle);
   drive_imu_reset(angle);
 }
 
 void Drive::drive_angle_set(okapi::QAngle p_angle) {
   double angle = p_angle.convert(okapi::degree);  // Convert okapi unit to degree
-  drive_angle_raw_set(angle);
+  drive_angle_set(angle);
 }
 
 void Drive::drive_mode_set(e_mode p_mode) { mode = p_mode; }
@@ -101,10 +124,8 @@ int Drive::pid_turn_min_get() { return turn_min; }
 void Drive::pid_swing_min_set(int min) { swing_min = abs(min); }
 int Drive::pid_swing_min_get() { return swing_min; }
 
-// Set drive PID
-void Drive::pid_drive_set(okapi::QLength p_target, int speed, bool slew_on, bool toggle_heading) {
-  double target = p_target.convert(okapi::inch);  // Convert okapi unit to inches
-
+// Set drive PID raw
+void Drive::pid_drive_set(double target, int speed, bool slew_on, bool toggle_heading) {
   // Print targets
   if (print_toggle) printf("Drive Started... Target Value: %f in", target);
   if (slew_on && print_toggle) printf(" with slew");
@@ -151,8 +172,14 @@ void Drive::pid_drive_set(okapi::QLength p_target, int speed, bool slew_on, bool
   drive_mode_set(DRIVE);
 }
 
+// Set drive PID
+void Drive::pid_drive_set(okapi::QLength p_target, int speed, bool slew_on, bool toggle_heading) {
+  double target = p_target.convert(okapi::inch);  // Convert okapi unit to inches
+  pid_drive_set(target, speed, slew_on, toggle_heading);
+}
+
 // Raw Set Turn PID
-void Drive::pid_turn_raw_set(double target, int speed, bool slew_on) {
+void Drive::pid_turn_set(double target, int speed, bool slew_on) {
   // Print targets
   if (print_toggle) printf("Turn Started... Target Value: %f\n", target);
 
@@ -173,20 +200,25 @@ void Drive::pid_turn_raw_set(double target, int speed, bool slew_on) {
 // Set turn PID
 void Drive::pid_turn_set(okapi::QAngle p_target, int speed, bool slew_on) {
   double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
-  pid_turn_raw_set(target, speed, slew_on);
+  pid_turn_set(target, speed, slew_on);
 }
 
 // Set relative turn PID
 void Drive::pid_turn_relative_set(okapi::QAngle p_target, int speed, bool slew_on) {
   double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
+  pid_turn_relative_set(target, speed, slew_on);
+}
+
+// Set relative turn PID
+void Drive::pid_turn_relative_set(double target, int speed, bool slew_on) {
   // Compute absolute target by adding to current heading
-  double absolute_target = turnPID.target_get() + target;
+  double absolute_target = headingPID.target_get() + target;
   if (print_toggle) printf("Relative ");
-  pid_turn_raw_set(absolute_target, speed, slew_on);
+  pid_turn_set(absolute_target, speed, slew_on);
 }
 
 // Raw Set Swing PID
-void Drive::pid_swing_raw_set(e_swing type, double target, int speed, int opposite_speed, bool slew_on) {
+void Drive::pid_swing_set(e_swing type, double target, int speed, int opposite_speed, bool slew_on) {
   // use left/right as 1 and -1, and multiply along with sgn of error to find if fwd or rev
 
   // Print targets
@@ -199,20 +231,24 @@ void Drive::pid_swing_raw_set(e_swing type, double target, int speed, int opposi
 
   // Set constants according to the robots direction
   PID::Constants pid_consts;
+  PID::Constants pid_swing_consts;
   slew::Constants slew_consts;
 
   if (direction == -1) {
     pid_consts = backward_drivePID.constants_get();
+    pid_swing_consts = backward_swingPID.constants_get();
     slew_consts = slew_swing_backward.constants_get();
     slew_swing_using_angle = slew_swing_rev_using_angle;
 
   } else {
     pid_consts = forward_drivePID.constants_get();
+    pid_swing_consts = forward_swingPID.constants_get();
     slew_consts = slew_swing_forward.constants_get();
     slew_swing_using_angle = slew_swing_fwd_using_angle;
   }
 
   // Set targets for the side that isn't moving
+  swingPID.constants_set(pid_swing_consts.kp, pid_swing_consts.ki, pid_swing_consts.kd, pid_swing_consts.start_i);
   leftPID.constants_set(pid_consts.kp, pid_consts.ki, pid_consts.kd, pid_consts.start_i);
   rightPID.constants_set(pid_consts.kp, pid_consts.ki, pid_consts.kd, pid_consts.start_i);
   leftPID.target_set(drive_sensor_left());
@@ -237,14 +273,18 @@ void Drive::pid_swing_raw_set(e_swing type, double target, int speed, int opposi
 // Set swing PID
 void Drive::pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed, bool slew_on) {
   double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
-  pid_swing_raw_set(type, target, speed, opposite_speed, slew_on);
+  pid_swing_set(type, target, speed, opposite_speed, slew_on);
 }
 
 // Set relative swing PID
 void Drive::pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed, bool slew_on) {
   double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
+  pid_swing_relative_set(type, target, speed, opposite_speed, slew_on);
+}
+
+void Drive::pid_swing_relative_set(e_swing type, double target, int speed, int opposite_speed, bool slew_on) {
   // Compute absolute target by adding to current heading
-  double absolute_target = swingPID.target_get() + target;
+  double absolute_target = headingPID.target_get() + target;
   if (print_toggle) printf("Relative ");
-  pid_swing_raw_set(type, absolute_target, speed, opposite_speed, slew_on);
+  pid_swing_set(type, absolute_target, speed, opposite_speed, slew_on);
 }
