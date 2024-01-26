@@ -1190,7 +1190,59 @@ class Drive {
    */
   void opcontrol_curve_buttons_iterate();
 
+  /**
+   * Enables PID Tuner
+   */
+  void pid_tuner_enable();
+
+  /**
+   * Disables PID Tuner
+   */
+  void pid_tuner_disable();
+
+  /**
+   * Toggles PID tuner between enabled and disables
+   */
+  void pid_tuner_toggle();
+
+  /**
+   * Checks if PID Tuner is enabled.  True is enabled, false is disables.
+   */
+  bool pid_tuner_enabled();
+
+  /**
+   * Iterates through controller inputs to modify PID constants
+   */
+  void pid_tuner_iterate();
+
+  /**
+   * Toggle for printing the display of the PID Tuner to the brain
+   *
+   * \param input
+   *        true prints to brain, false doesn't
+   */
+  void pid_tuner_print_brain(bool input);
+
+  /**
+   * Toggle for printing the display of the PID Tuner to the terminal
+   *
+   * \param input
+   *        true prints to terminal, false doesn't
+   */
+  void pid_tuner_print_terminal(bool input);
+
+  /**
+   * Returns true if printing to terminal is enabled
+   */
+  bool pid_tuner_print_terminal_enabled();
+
+  /**
+   * Returns true if printing to brain is enabled
+   */
+  bool pid_tuner_print_brain_enabled();
+
  private:  // !Auton
+  void print_pid_tuner();
   bool drive_toggle = true;
   bool print_toggle = true;
   int swing_min = 0;
@@ -1200,6 +1252,28 @@ class Drive {
   bool slew_swing_fwd_using_angle = false;
   bool slew_swing_rev_using_angle = false;
   bool slew_swing_using_angle = false;
+  bool pid_tuner_terminal_b = false;
+  bool pid_tuner_lcd_b = true;
+
+  struct const_and_name {
+    std::string name = "";
+    PID::Constants *consts;
+  };
+  std::vector<const_and_name> constants;
+
+  void modify_pid_tuner_value(double p, double i, double d, double start);
+  void increase_pid_tuner();
+  void decrease_pid_tuner();
+  int column = 0;
+  int row = 0;
+  int column_max = 0;
+  const int row_max = 3;
+  std::string name, kp, ki, kd, starti;
+  std::string arrow = " <--\n";
+  std::string newline = "\n";
+  bool last_controller_curve_state;
+  bool pid_tuner_on = false;
+  ;
 
   /**
    * Private wait until for drive

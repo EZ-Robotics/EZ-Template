@@ -145,10 +145,16 @@ void Drive::button_press(button_* input_name, int button, std::function<void()> 
 }
 
 // Toggle modifying curves with controller
-void Drive::opcontrol_curve_buttons_toggle(bool toggle) { disable_controller = toggle; }
+void Drive::opcontrol_curve_buttons_toggle(bool toggle) {
+  if (pid_tuner_on && toggle) {
+    printf("Cannot modify curve while PID Tuner is active!\n");
+    return;
+  }
+  disable_controller = toggle;
+}
 bool Drive::opcontrol_curve_buttons_toggle_get() { return disable_controller; }
 
-// Modify curves with button presses and display them to contrller
+// Modify curves with button presses and display them to controller
 void Drive::opcontrol_curve_buttons_iterate() {
   if (!disable_controller) return;  // True enables, false disables.
 
@@ -234,7 +240,6 @@ void Drive::opcontrol_joystick_threshold_iterate(int l_stick, int r_stick) {
     drive_set((0 - drive_sensor_left()) * active_brake_kp, (0 - drive_sensor_right()) * active_brake_kp);
   }
 }
-
 
 // Clip joysticks based on joystick threshold
 int Drive::clipped_joystick(int joystick) { return abs(joystick) < JOYSTICK_THRESHOLD ? 0 : joystick; }

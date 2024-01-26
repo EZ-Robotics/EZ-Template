@@ -103,6 +103,9 @@ void Drive::pid_targets_reset() {
   forward_drivePID.target_set(0);
   backward_drivePID.target_set(0);
   turnPID.target_set(0);
+  swingPID.target_set(0);
+  forward_swingPID.target_set(0);
+  backward_swingPID.target_set(0);
 }
 
 void Drive::drive_angle_set(double angle) {

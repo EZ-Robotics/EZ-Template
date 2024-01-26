@@ -1,4 +1,7 @@
 #include "main.h"
+#include "EZ-Template/sdcard.hpp"
+#include "pros/llemu.hpp"
+#include "pros/misc.hpp"
 
 
 // Chassis constructor
@@ -151,6 +154,16 @@ void opcontrol() {
   chassis.drive_brake_set(MOTOR_BRAKE_COAST);
   
   while (true) {
+    // Only allow PID Tuner to be enabled when not connected to a competition switch / tournament
+    if (!pros::competition::is_connected()) {
+      if (master.get_digital_new_press(DIGITAL_X)) 
+        chassis.pid_tuner_toggle();
+    
+      if (master.get_digital_new_press(DIGITAL_B)) 
+        autonomous();
+
+      chassis.pid_tuner_iterate();
+    } 
 
     chassis.opcontrol_tank(); // Tank control
     // chassis.opcontrol_arcade_standard(ez::SPLIT); // Standard split arcade

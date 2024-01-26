@@ -49,7 +49,7 @@ std::string get_rest_of_the_word(std::string text, int position) {
   }
   return word;
 }
-//All iance\n\nWE WIN THESE!!!!! 
+
 void screen_print(std::string text, int line) {
   int CurrAutoLine = line;
   std::vector<string> texts = {};
