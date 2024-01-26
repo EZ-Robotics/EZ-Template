@@ -8,6 +8,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include <functional>
 #include <iostream>
 
+namespace ez {
 class Auton {
  public:
   Auton();
@@ -17,3 +18,4 @@ class Auton {
 
  private:
 };
+}  // namespace ez

@@ -20,6 +20,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 using namespace ez;
 
+namespace ez {
 class Drive {
  public:
   /**
@@ -1327,3 +1328,4 @@ class Drive {
    */
   bool is_reversed = false;
 };
+};  // namespace ez

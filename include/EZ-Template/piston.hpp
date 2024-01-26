@@ -8,6 +8,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "api.h"
 
+namespace ez {
 class Piston {
  public:
   /**
@@ -19,9 +20,9 @@ class Piston {
    * Piston constructor.  This class keeps track of piston state.  The starting position of your piston is FALSE.
    *
    * \param input_port
-   *        The ports of your pistons. 
+   *        The ports of your pistons.
    * \param default_state
-   *        Starting state of your piston. 
+   *        Starting state of your piston.
    */
   Piston(int input_port, bool default_state = false);
 
@@ -71,3 +72,4 @@ class Piston {
   bool current = false;
   int last_press = 0;
 };
+};  // namespace ez

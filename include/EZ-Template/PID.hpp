@@ -9,6 +9,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include "EZ-Template/util.hpp"
 #include "api.h"
 
+namespace ez {
 class PID {
  public:
   /**
@@ -201,3 +202,4 @@ class PID {
   void exit_condition_print(ez::exit_output exit_type);
   bool reset_i_sgn = true;
 };
+};  // namespace ez

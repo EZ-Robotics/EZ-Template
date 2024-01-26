@@ -6,6 +6,8 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "EZ-Template/piston.hpp"
 
+using namespace ez;
+
 // Constructor for one piston
 Piston::Piston(int input_port, bool default_state)
     : piston(input_port, default_state) {

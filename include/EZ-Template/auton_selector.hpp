@@ -10,6 +10,8 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include "EZ-Template/auton.hpp"
 
 using namespace std;
+
+namespace ez {
 class AutonSelector {
  public:
   std::vector<Auton> Autons;
@@ -21,3 +23,4 @@ class AutonSelector {
   void selected_auton_print();
   void autons_add(std::vector<Auton> autons);
 };
+}  // namespace ez
