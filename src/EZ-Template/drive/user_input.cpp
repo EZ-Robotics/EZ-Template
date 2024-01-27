@@ -151,6 +151,8 @@ void Drive::opcontrol_curve_buttons_toggle(bool toggle) {
     return;
   }
   disable_controller = toggle;
+  if (!disable_controller)
+    master.set_text(2, 0, "            ");
 }
 bool Drive::opcontrol_curve_buttons_toggle_get() { return disable_controller; }
 

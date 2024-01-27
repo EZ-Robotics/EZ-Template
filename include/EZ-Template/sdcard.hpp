@@ -42,6 +42,13 @@ void initialize();
  */
 void shutdown();
 
+/**
+ * Returns true if the auton selector is running
+ */
+bool enabled();
+
+inline bool auton_selector_running;
+
 extern bool turn_off;
 
 extern pros::ADIDigitalIn* limit_switch_left;

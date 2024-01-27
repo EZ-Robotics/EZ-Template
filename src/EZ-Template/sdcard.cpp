@@ -73,18 +73,26 @@ void initialize() {
   ez::as::auton_selector.selected_auton_print();
   pros::lcd::register_btn0_cb(ez::as::page_down);
   pros::lcd::register_btn2_cb(ez::as::page_up);
+
+  auton_selector_running = true;
 }
 
 void shutdown() {
   pros::lcd::shutdown();
+  pros::lcd::register_btn0_cb(nullptr);
+  pros::lcd::register_btn2_cb(nullptr);
+
+  auton_selector_running = false;
 }
+
+bool enabled() { return auton_selector_running; }
 
 bool turn_off = false;
 
 // Using a button to control the lcd
 pros::ADIDigitalIn* limit_switch_left = nullptr;
 pros::ADIDigitalIn* limit_switch_right = nullptr;
-pros::Task limit_switch_task(limitSwitchTask);
+pros::Task limit_switch_task(ez::as::limitSwitchTask);
 void limit_switch_lcd_initialize(pros::ADIDigitalIn* right_limit, pros::ADIDigitalIn* left_limit) {
   if (!left_limit && !right_limit) {
     delete limit_switch_left;
@@ -102,9 +110,9 @@ void limit_switch_lcd_initialize(pros::ADIDigitalIn* right_limit, pros::ADIDigit
 void limitSwitchTask() {
   while (true) {
     if (limit_switch_right && limit_switch_right->get_new_press())
-      page_up();
+      ez::as::page_up();
     else if (limit_switch_left && limit_switch_left->get_new_press())
-      page_down();
+      ez::as::page_down();
 
     if (pros::millis() >= 500 && turn_off)
       limit_switch_task.suspend();

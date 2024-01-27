@@ -1221,7 +1221,7 @@ class Drive {
    * \param input
    *        true prints to brain, false doesn't
    */
-  void pid_tuner_print_brain(bool input);
+  void pid_tuner_print_brain_set(bool input);
 
   /**
    * Toggle for printing the display of the PID Tuner to the terminal
@@ -1229,7 +1229,7 @@ class Drive {
    * \param input
    *        true prints to terminal, false doesn't
    */
-  void pid_tuner_print_terminal(bool input);
+  void pid_tuner_print_terminal_set(bool input);
 
   /**
    * Returns true if printing to terminal is enabled
@@ -1241,8 +1241,59 @@ class Drive {
    */
   bool pid_tuner_print_brain_enabled();
 
+  /**
+   * Sets the value that PID Tuner increments P
+   *
+   * \param p
+   *        double, p will increase by this
+   */
+  void pid_tuner_increment_p_set(double p);
+
+  /**
+   * Sets the value that PID Tuner increments I
+   *
+   * \param p
+   *        double, i will increase by this
+   */
+  void pid_tuner_increment_i_set(double i);
+
+  /**
+   * Sets the value that PID Tuner increments D
+   *
+   * \param p
+   *        double, d will increase by this
+   */
+  void pid_tuner_increment_d_set(double d);
+
+  /**
+   * Sets the value that PID Tuner increments Start I
+   *
+   * \param p
+   *        double, start i will increase by this
+   */
+  void pid_tuner_increment_start_i_set(double start_i);
+
+  /**
+   * Returns the value that PID Tuner increments P
+   */
+  double pid_tuner_increment_p_get();
+
+  /**
+   * Returns the value that PID Tuner increments I
+   */
+  double pid_tuner_increment_i_get();
+
+  /**
+   * Returns the value that PID Tuner increments D
+   */
+  double pid_tuner_increment_d_get();
+
+  /**
+   * Returns the value that PID Tuner increments Start I
+   */
+  double pid_tuner_increment_start_i_get();
+
  private:  // !Auton
-  void print_pid_tuner();
   bool drive_toggle = true;
   bool print_toggle = true;
   int swing_min = 0;
@@ -1260,10 +1311,13 @@ class Drive {
     PID::Constants *consts;
   };
   std::vector<const_and_name> constants;
-
-  void modify_pid_tuner_value(double p, double i, double d, double start);
-  void increase_pid_tuner();
-  void decrease_pid_tuner();
+  void pid_tuner_print();
+  void pid_tuner_value_modify(double p, double i, double d, double start);
+  void pid_tuner_value_increase();
+  void pid_tuner_value_decrease();
+  void pid_tuner_print_brain();
+  void pid_tuner_print_terminal();
+  void pid_tuner_brain_init();
   int column = 0;
   int row = 0;
   int column_max = 0;
@@ -1272,8 +1326,10 @@ class Drive {
   std::string arrow = " <--\n";
   std::string newline = "\n";
   bool last_controller_curve_state;
+  bool last_auton_selector_state;
   bool pid_tuner_on = false;
-  ;
+  std::string complete_pid_tuner_output;
+  double p_increment = 0.1, i_increment = 0.001, d_increment = 0.25, start_i_increment = 1.0;
 
   /**
    * Private wait until for drive
