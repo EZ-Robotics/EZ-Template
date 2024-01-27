@@ -1,7 +1,7 @@
 #include "main.h"
 
 /////
-// For installation, upgrading, documentations and tutorials, check out website!
+// For installation, upgrading, documentations and tutorials, check out our website!
 // https://ez-robotics.github.io/EZ-Template/
 /////
 
@@ -13,7 +13,6 @@ const int SWING_SPEED = 90;
 ///
 // Constants
 ///
-
 void default_constants() {
   chassis.pid_heading_constants_set(3, 0, 20);
   chassis.pid_drive_constants_set(10, 0, 100);
@@ -90,10 +89,10 @@ void drive_and_turn() {
 void wait_until_change_speed() {
   // pid_wait_until will wait until the robot gets to a desired position
 
-  // When the robot gets to 6 inches, the robot will travel the remaining distance at a max speed of 40
+  // When the robot gets to 6 inches, the robot will travel the remaining distance at a max speed of 30
   chassis.pid_drive_set(24_in, DRIVE_SPEED, true);
   chassis.pid_wait_until(6_in);
-  chassis.pid_speed_max_set(40);  // After driving 6 inches at DRIVE_SPEED, the robot will go the remaining distance at 40 speed
+  chassis.pid_speed_max_set(30);  // After driving 6 inches at DRIVE_SPEED, the robot will go the remaining distance at 30 speed
   chassis.pid_wait();
 
   chassis.pid_turn_set(45_deg, TURN_SPEED);
@@ -105,10 +104,10 @@ void wait_until_change_speed() {
   chassis.pid_turn_set(0_deg, TURN_SPEED);
   chassis.pid_wait();
 
-  // When the robot gets to -6 inches, the robot will travel the remaining distance at a max speed of 40
+  // When the robot gets to -6 inches, the robot will travel the remaining distance at a max speed of 30
   chassis.pid_drive_set(-24_in, DRIVE_SPEED, true);
   chassis.pid_wait_until(-6_in);
-  chassis.pid_speed_max_set(40);  // After driving 6 inches at DRIVE_SPEED, the robot will go the remaining distance at 40 speed
+  chassis.pid_speed_max_set(30);  // After driving 6 inches at DRIVE_SPEED, the robot will go the remaining distance at 30 speed
   chassis.pid_wait();
 }
 
@@ -119,14 +118,18 @@ void swing_example() {
   // The first parameter is ez::LEFT_SWING or ez::RIGHT_SWING
   // The second parameter is target degrees
   // The third parameter is speed of the moving side of the drive
+  // The fourth parameter is the speed of the still side of the drive, this allows for wider arcs
 
-  chassis.pid_swing_set(ez::LEFT_SWING, 45_deg, SWING_SPEED);
+  chassis.pid_swing_set(ez::LEFT_SWING, 45_deg, SWING_SPEED, 45);
   chassis.pid_wait();
 
-  chassis.pid_drive_set(24_in, DRIVE_SPEED, true);
-  chassis.pid_wait_until(12_deg);
+  chassis.pid_swing_set(ez::RIGHT_SWING, 0_deg, SWING_SPEED, 45);
+  chassis.pid_wait();
 
-  chassis.pid_swing_set(ez::RIGHT_SWING, 0_deg, SWING_SPEED);
+  chassis.pid_swing_set(ez::RIGHT_SWING, 45_deg, SWING_SPEED, 45);
+  chassis.pid_wait();
+
+  chassis.pid_swing_set(ez::LEFT_SWING, 0_deg, SWING_SPEED, 45);
   chassis.pid_wait();
 }
 
@@ -140,7 +143,7 @@ void combining_movements() {
   chassis.pid_turn_set(45_deg, TURN_SPEED);
   chassis.pid_wait();
 
-  chassis.pid_swing_set(ez::RIGHT_SWING, -45_deg, TURN_SPEED);
+  chassis.pid_swing_set(ez::RIGHT_SWING, -45_deg, SWING_SPEED, 45);
   chassis.pid_wait();
 
   chassis.pid_turn_set(0_deg, TURN_SPEED);
