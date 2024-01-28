@@ -25,7 +25,6 @@ ez::Drive chassis (
   // Cartridge RPM
   ,600
 
-
   // External Gear Ratio (MUST BE DECIMAL) This is WHEEL GEAR / MOTOR GEAR
   // eg. if your drive is 84:36 where the 36t is powered, your RATIO would be 84/36 which is 2.333
   // eg. if your drive is 36:60 where the 60t is powered, your RATIO would be 36/60 which is 0.6
@@ -143,6 +142,7 @@ void opcontrol() {
   while (true) {
     
     // PID Tuner
+    // After you find values that you're happy with, you'll have to set them in auton.cpp
     if (!pros::competition::is_connected()) { 
       // Enable / Disable PID Tuner
       if (master.get_digital_new_press(DIGITAL_X)) 

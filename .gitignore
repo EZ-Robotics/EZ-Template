@@ -36,3 +36,12 @@ temp.log
 temp.errors
 *.ini
 .d/
+
+EZ-Template-Example-Project/bin/
+EZ-Template-Example-Project/.vscode/
+EZ-Template-Example-Project/.cache/
+EZ-Template-Example-Project/compile_commands.json
+EZ-Template-Example-Project/temp.log
+EZ-Template-Example-Project/temp.errors
+EZ-Template-Example-Project/*.ini
+EZ-Template-Example-Project/.d/
