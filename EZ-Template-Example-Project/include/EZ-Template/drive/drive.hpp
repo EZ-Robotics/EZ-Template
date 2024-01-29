@@ -126,7 +126,7 @@ class Drive {
    * \param min_speed
    *        the starting speed for the movement
    */
-  void slew_swing_forward_constants_set(okapi::QLength distance, int min_speed);
+  void slew_swing_constants_forward_set(okapi::QLength distance, int min_speed);
 
   /**
    * Sets constants for slew for turns.  Slew ramps up the speed of the robot until the set distance is traveled.
@@ -136,7 +136,7 @@ class Drive {
    * \param min_speed
    *        the starting speed for the movement
    */
-  void slew_swing_backward_constants_set(okapi::QLength distance, int min_speed);
+  void slew_swing_constants_backward_set(okapi::QLength distance, int min_speed);
 
   /**
    * Sets constants for slew for turns.  Slew ramps up the speed of the robot until the set distance is traveled.
@@ -156,7 +156,7 @@ class Drive {
    * \param min_speed
    *        the starting speed for the movement
    */
-  void slew_swing_forward_constants_set(okapi::QAngle distance, int min_speed);
+  void slew_swing_constants_forward_set(okapi::QAngle distance, int min_speed);
 
   /**
    * Sets constants for slew for turns.  Slew ramps up the speed of the robot until the set distance is traveled.
@@ -166,7 +166,7 @@ class Drive {
    * \param min_speed
    *        the starting speed for the movement
    */
-  void slew_swing_backward_constants_set(okapi::QAngle distance, int min_speed);
+  void slew_swing_constants_backward_set(okapi::QAngle distance, int min_speed);
 
   /**
    * Sets constants for slew for turns.  Slew ramps up the speed of the robot until the set distance is traveled.
@@ -186,7 +186,7 @@ class Drive {
    * \param min_speed
    *        the starting speed for the movement
    */
-  void slew_forward_constants_set(okapi::QLength distance, int min_speed);
+  void slew_drive_constants_forward_set(okapi::QLength distance, int min_speed);
 
   /**
    * Sets constants for slew for driving backward.  Slew ramps up the speed of the robot until the set distance is traveled.
@@ -196,7 +196,7 @@ class Drive {
    * \param min_speed
    *        the starting speed for the movement
    */
-  void slew_backward_constants_set(okapi::QLength distance, int min_speed);
+  void slew_drive_constants_backward_set(okapi::QLength distance, int min_speed);
 
   /**
    * Sets constants for slew for driving.  Slew ramps up the speed of the robot until the set distance is traveled.

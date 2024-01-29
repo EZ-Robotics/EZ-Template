@@ -349,19 +349,19 @@ void Drive::pid_print_toggle(bool toggle) { print_toggle = toggle; }
 bool Drive::pid_drive_toggle_get() { return drive_toggle; }
 bool Drive::pid_print_toggle_get() { return print_toggle; }
 
-void Drive::slew_forward_constants_set(okapi::QLength distance, int min_speed) {
+void Drive::slew_drive_constants_forward_set(okapi::QLength distance, int min_speed) {
   double dist = distance.convert(okapi::inch);
   slew_forward.constants_set(dist, min_speed);
 }
 
-void Drive::slew_backward_constants_set(okapi::QLength distance, int min_speed) {
+void Drive::slew_drive_constants_backward_set(okapi::QLength distance, int min_speed) {
   double dist = distance.convert(okapi::inch);
   slew_backward.constants_set(dist, min_speed);
 }
 
 void Drive::slew_drive_constants_set(okapi::QLength distance, int min_speed) {
-  slew_backward_constants_set(distance, min_speed);
-  slew_forward_constants_set(distance, min_speed);
+  slew_drive_constants_backward_set(distance, min_speed);
+  slew_drive_constants_forward_set(distance, min_speed);
 }
 
 void Drive::slew_turn_constants_set(okapi::QAngle distance, int min_speed) {
@@ -369,36 +369,36 @@ void Drive::slew_turn_constants_set(okapi::QAngle distance, int min_speed) {
   slew_turn.constants_set(dist, min_speed);
 }
 
-void Drive::slew_swing_backward_constants_set(okapi::QLength distance, int min_speed) {
+void Drive::slew_swing_constants_backward_set(okapi::QLength distance, int min_speed) {
   slew_swing_rev_using_angle = false;
   double dist = distance.convert(okapi::inch);
   slew_swing_backward.constants_set(dist, min_speed);
 }
 
-void Drive::slew_swing_forward_constants_set(okapi::QLength distance, int min_speed) {
+void Drive::slew_swing_constants_forward_set(okapi::QLength distance, int min_speed) {
   slew_swing_fwd_using_angle = false;
   double dist = distance.convert(okapi::inch);
   slew_swing_forward.constants_set(dist, min_speed);
 }
 
 void Drive::slew_swing_constants_set(okapi::QLength distance, int min_speed) {
-  slew_swing_forward_constants_set(distance, min_speed);
-  slew_swing_backward_constants_set(distance, min_speed);
+  slew_swing_constants_forward_set(distance, min_speed);
+  slew_swing_constants_backward_set(distance, min_speed);
 }
 
-void Drive::slew_swing_backward_constants_set(okapi::QAngle distance, int min_speed) {
+void Drive::slew_swing_constants_backward_set(okapi::QAngle distance, int min_speed) {
   slew_swing_rev_using_angle = true;
   double dist = distance.convert(okapi::degree);
   slew_swing_backward.constants_set(dist, min_speed);
 }
 
-void Drive::slew_swing_forward_constants_set(okapi::QAngle distance, int min_speed) {
+void Drive::slew_swing_constants_forward_set(okapi::QAngle distance, int min_speed) {
   slew_swing_fwd_using_angle = true;
   double dist = distance.convert(okapi::degree);
   slew_swing_forward.constants_set(dist, min_speed);
 }
 
 void Drive::slew_swing_constants_set(okapi::QAngle distance, int min_speed) {
-  slew_swing_forward_constants_set(distance, min_speed);
-  slew_swing_backward_constants_set(distance, min_speed);
+  slew_swing_constants_forward_set(distance, min_speed);
+  slew_swing_constants_backward_set(distance, min_speed);
 }

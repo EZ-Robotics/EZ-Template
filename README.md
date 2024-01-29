@@ -38,8 +38,8 @@ EZ-Template is a simple plug-and-play PROS template that handles drive base func
 1) Download the most recent `EZ-Template@x.x.x.zip` [here](https://github.com/EZ-Robotics/EZ-Template/releases/latest).  
 2) Move the file to your project.  
 3) Open terminal or command prompt, and `cd` into your projects directory.    
-4) Run this command from terminal `prosv5 c fetch EZ-Template@x.x.x.zip` replacing `x.x.x` with the version number of your file.
-5) Apply the library to the project `prosv5 c apply EZ-Template`.  
+4) Run this command from terminal `pros c fetch EZ-Template@x.x.x.zip` replacing `x.x.x` with the version number of your file.
+5) Apply the library to the project `pros c apply EZ-Template`.  
 
 ## License
 This project is licensed under the Mozilla Public License, version 2.0 - see the [LICENSE](LICENSE) file for the full license.
