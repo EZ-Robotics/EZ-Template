@@ -10,18 +10,561 @@ import TabItem from '@theme/TabItem';
 
 
 
-## Setter functions
+## Functions with Okapi Units
+
+### pid_drive_set()
+Sets the drive to go forward using PID and heading correction.  
+
+`p_target` is in an okapi length unit.  
+`speed` is 0 to 127.  It's recommended to keep this at 110.  
+`slew_on` increases the speed of the drive gradually.  You must set slew constants for this to work!  
+`toggle_heading` will disable heading correction when false. 
+<Tabs
+  groupId="pid_drive_set_okapi"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.drive_imu_reset(); 
+  chassis.drive_sensor_reset(); 
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD); 
+
+  chassis.pid_drive_set(24_in, 110, true);
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+void pid_drive_set(okapi::QLength p_target, int speed, bool slew_on = false, bool toggle_heading = true);
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+
+
+
+
+
+
+### pid_turn_set()
+Sets the drive to turn using PID.  
+
+`p_target` is an okapi angle unit.  
+`speed` is 0 to 127.  
+`slew_on` increases the speed of the drive gradually.  You must set slew constants for this to work!
+<Tabs
+  groupId="pid_turn_set_okapi"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.drive_imu_reset(); 
+  chassis.drive_sensor_reset(); 
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD); 
+
+  chassis.pid_turn_set(24_deg, 110, true);
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+
+<TabItem value="proto">
+
+```cpp
+void pid_turn_set(okapi::QAngle p_target, int speed, bool slew_on = false);
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+### pid_turn_relative_set()
+Sets the drive to turn using PID.  Target is relative here, the robot will add the target to your current angle.  
+
+`p_target` is an okapi angle unit.  
+`speed` is 0 to 127.  
+`slew_on` increases the speed of the drive gradually.  You must set slew constants for this to work!
+<Tabs
+  groupId="pid_turn_rel_set_okapi"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.drive_imu_reset(); 
+  chassis.drive_sensor_reset(); 
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD); 
+
+  // Turns to 90 deg
+  chassis.pid_turn_relative_set(90_deg, 110, true);
+  chassis.pid_wait();
+
+  // Turns backwards by 45 degrees
+  chassis.pid_turn_relative_set(-45_deg, 110, true);
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+
+<TabItem value="proto">
+
+```cpp
+void pid_turn_relative_set(okapi::QAngle p_target, int speed, bool slew_on = false);
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+
+### pid_swing_set()
+Sets the robot to swing using PID.  The robot will turn using one side of the drive, either the left or right.  The opposite side of the drive can be set to a value for wider or tighter arcs.  
+
+`type` is either `ez::LEFT_SWING` or `ez::RIGHT_SWING`.  
+`p_target` is an okapi angle unit.  
+`speed` is 0 to 127.        
+`opposite_speed` is -127 to 127.  
+`slew_on` increases the speed of the drive gradually.  You must set slew constants for this to work!  
+<Tabs
+  groupId="pid_swing_set_okapi"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="proto">
+
+```cpp
+void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed = 0, bool slew_on = false);
+```
+
+</TabItem>
+
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.drive_imu_reset(); 
+  chassis.drive_sensor_reset(); 
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD); 
+
+  chassis.pid_swing_set(ez::LEFT_SWING, 45_deg, 110, 0, true);
+  chassis.pid_wait();
+
+  chassis.pid_swing_set(ez::RIGHT_SWING, 0_deg, 110, 50, true);
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+
+
+### pid_swing_relative_set()
+Sets the robot to swing using PID.  The robot will turn using one side of the drive, either the left or right.  The opposite side of the drive can be set to a value for wider or tighter arcs.  Target is relative here, the robot will add the target to your current angle.  
+
+`type` is either `ez::LEFT_SWING` or `ez::RIGHT_SWING`.  
+`p_target` is an okapi angle unit.  
+`speed` is 0 to 127.        
+`opposite_speed` is -127 to 127.  
+`slew_on` increases the speed of the drive gradually.  You must set slew constants for this to work!  
+<Tabs
+  groupId="pid_swing_rel_set_okapi"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="proto">
+
+```cpp
+void pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed = 0, bool slew_on = false);
+
+```
+
+</TabItem>
+
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.drive_imu_reset(); 
+  chassis.drive_sensor_reset(); 
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD); 
+
+  // This will turn to 90 degrees
+  chassis.pid_swing_relative_set(ez::LEFT_SWING, 90_deg, 110);
+  chassis.pid_wait();
+
+  // This will go backwards by 45 degrees
+  chassis.pid_swing_relative_set(ez::RIGHT_SWING, -45_deg, 110);
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### drive_angle_set()
+Sets the angle of the robot.  This is useful when your robot is setup in at an unconventional angle and you want 0 to be when you're square with the field.         
+
+`p_angle` an okapi angle unit, angle that the robot will think it's now facing.
+<Tabs
+  groupId="drive_angle_set_okapi"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="proto">
+
+```cpp
+void drive_angle_set(okapi::QAngle p_angle);
+```
+
+
+</TabItem>
+
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset(); // Resets PID targets to 0
+  chassis.drive_imu_reset(); // Reset gyro position to 0
+  chassis.drive_sensor_reset(); // Reset drive sensors to 0
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD); // Set motors to hold.  This helps autonomous consistency.
+
+  chassis.drive_angle_set(45_deg);
+
+  chassis.pid_turn_set(0, TURN_SPEED);
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### pid_drive_exit_condition_set()
+Sets the exit condition constants for driving. This uses the exit conditions from the PID class.  
+ 
+`p_small_exit_time` time, in okapi units, before exiting `p_small_error`  
+`p_small_error` small error threshold in okapi length unit  
+`p_big_exit_time` time, in okapi units, before exiting `p_big_error`  
+`p_big_error` big error threshold, in okapi length unit  
+`p_velocity_exit_time` time, in okapi units, for velocity to be 0  
+`p_mA_timeout` time, in okapi units, for `is_over_current` to be true       
+<Tabs
+  groupId="pid_drive_Exit_set_okapi"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+
+```cpp
+void initialize() {
+  chassis.pid_drive_exit_condition_set(300_ms, 1_in, 500_ms, 3_in, 750_ms, 750_ms);
+}
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+void pid_drive_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QLength p_small_error, okapi::QTime p_big_exit_time, okapi::QLength p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout);
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+
+
+
+
+### pid_turn_exit_condition_set()
+Sets the exit condition constants for turning. This uses the exit conditions from the PID class.  
+ 
+`p_small_exit_time` time, in okapi units, before exiting `p_small_error`  
+`p_small_error` small error threshold in okapi angle unit  
+`p_big_exit_time` time, in okapi units, before exiting `p_big_error`  
+`p_big_error` big error threshold, in okapi angle unit  
+`p_velocity_exit_time` time, in okapi units, for velocity to be 0  
+`p_mA_timeout` time, in okapi units, for `is_over_current` to be true       
+<Tabs
+  groupId="pid_turn_Exit_set_okapi"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+
+```cpp
+void initialize() {
+  chassis.pid_turn_exit_condition_set(300_ms, 3_deg, 500_ms, 7_deg, 750_ms, 750_ms);
+}
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+void pid_turn_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QAngle p_small_error, okapi::QTime p_big_exit_time, okapi::QAngle p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout);
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+
+### pid_swing_exit_condition_set()
+Sets the exit condition constants for swing turns. This uses the exit conditions from the PID class.  
+ 
+`p_small_exit_time` time, in okapi units, before exiting `p_small_error`  
+`p_small_error` small error threshold in okapi angle unit  
+`p_big_exit_time` time, in okapi units, before exiting `p_big_error`  
+`p_big_error` big error threshold, in okapi angle unit  
+`p_velocity_exit_time` time, in okapi units, for velocity to be 0  
+`p_mA_timeout` time, in okapi units, for `is_over_current` to be true       
+<Tabs
+  groupId="pid_swing_Exit_set_okapi"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+
+```cpp
+void initialize() {
+  chassis.pid_swing_exit_condition_set(300_ms, 3_deg, 500_ms, 7_deg, 750_ms, 750_ms);
+}
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+void pid_swing_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QAngle p_small_error, okapi::QTime p_big_exit_time, okapi::QAngle p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout);
+```
+
+</TabItem>
+</Tabs>
+
+### pid_wait_until()
+Locks the code in place until the drive has passed the input parameter.  This uses the exit conditions from the PID class.  This only works for drive motions.             
+
+`target` the distance the robot needs to travel before unlocking the code as an okapi length unit.     
+<Tabs
+  groupId="pid_wait_until_distance"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.drive_imu_reset(); 
+  chassis.drive_sensor_reset(); 
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD); 
+
+  chassis.pid_drive_set(48_in, 110);
+  chassis.pid_wait_until(24_in);
+  chassis.pid_speed_max_set(40);
+  chassis.pid_wait();
+}
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+void pid_wait_until(okapi::QLength target);
+```
+
+
+</TabItem>
+</Tabs>
+
+
+
+### pid_wait_until()
+Locks the code in place until the drive has passed the input parameter.  This uses the exit conditions from the PID class.  This only works for turn and swing motions.             
+
+`target` the distance the robot needs to travel before unlocking the code as an okapi angle unit.     
+<Tabs
+  groupId="pid_wait_until_angle"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.drive_imu_reset(); 
+  chassis.drive_sensor_reset(); 
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD); 
+
+  chassis.pid_turn_set(90_deg, 110);
+  chassis.pid_wait_until(45_deg);
+  chassis.pid_speed_max_set(40);
+  chassis.pid_wait();
+}
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+void pid_wait_until(okapi::QAngle target);
+```
+
+
+</TabItem>
+</Tabs>
+
+
+
+
+## Functions without Okapi Units
 
 ### pid_drive_set()
 Sets the drive to go forward using PID and heading correction.  
 
 `target` is in inches.  
-`speed` is -127 to 127.  It's recommended to keep this at 110.  
-`slew_on` will ramp the drive up.
+`speed` is 0 to 127.  It's recommended to keep this at 110.  
+`slew_on` increases the speed of the drive gradually.  You must set slew constants for this to work!  
 `toggle_heading` will disable heading correction when false. 
-
 <Tabs
-  groupId="examples1"
+  groupId="pid_drive_set"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -55,15 +598,14 @@ void pid_drive_set(double target, int speed, bool slew_on = false, bool toggle_h
 </Tabs>
 
 
-
 ### pid_turn_set()
 Sets the drive to turn using PID.  
 
 `target` is in degrees.  
-`speed` is -127 to 127.    
-
+`speed` is 0 to 127.  
+`slew_on` increases the speed of the drive gradually.  You must set slew constants for this to work! 
 <Tabs
-  groupId="examples2"
+  groupId="pid_turn_set"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -79,7 +621,7 @@ void autonomous() {
   chassis.drive_sensor_reset(); 
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD); 
 
-  chassis.pid_drive_set(24, 110, true);
+  chassis.pid_turn_set(24, 110, true);
   chassis.pid_wait();
 }
 ```
@@ -89,7 +631,51 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void pid_turn_set(double target, int speed);
+void pid_turn_set(double target, int speed, bool slew_on = false);
+```
+
+</TabItem>
+</Tabs>
+
+### pid_turn_relative_set()
+Sets the drive to turn using PID.  Target is relative here, the robot will add the target to your current angle.  
+
+`target` is in degrees.  
+`speed` is 0 to 127.  
+`slew_on` increases the speed of the drive gradually.  You must set slew constants for this to work!
+<Tabs
+  groupId="pid_turn_rel_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.drive_imu_reset(); 
+  chassis.drive_sensor_reset(); 
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD); 
+
+  // Turns to 90 deg
+  chassis.pid_turn_relative_set(90, 110, true);
+  chassis.pid_wait();
+
+  // Turns backwards by 45 degrees
+  chassis.pid_turn_relative_set(-45, 110, true);
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+
+<TabItem value="proto">
+
+```cpp
+void pid_turn_relative_set(double target, int speed, bool slew_on = false);
 ```
 
 </TabItem>
@@ -98,14 +684,15 @@ void pid_turn_set(double target, int speed);
 
 
 ### pid_swing_set()
-Sets the robot to swing using PID.  The robot will turn using one side of the drive, either the left or right.  
+Sets the robot to swing using PID.  The robot will turn using one side of the drive, either the left or right.  The opposite side of the drive can be set to a value for wider or tighter arcs.  
 
 `type` is either `ez::LEFT_SWING` or `ez::RIGHT_SWING`.  
 `target` is in degrees.  
-`speed` is -127 to 127.        
-
+`speed` is 0 to 127.        
+`opposite_speed` is -127 to 127.  
+`slew_on` increases the speed of the drive gradually.  You must set slew constants for this to work!  
 <Tabs
-  groupId="examples3"
+  groupId="pid_swing_set_double"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -116,7 +703,7 @@ Sets the robot to swing using PID.  The robot will turn using one side of the dr
 <TabItem value="proto">
 
 ```cpp
-void pid_swing_set(e_swing type, double target, int speed);
+void pid_swing_set(e_swing type, double target, int speed, int opposite_speed = 0, bool slew_on = false);
 ```
 
 </TabItem>
@@ -130,10 +717,10 @@ void autonomous() {
   chassis.drive_sensor_reset(); 
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD); 
 
-  chassis.pid_swing_set(ez::LEFT_SWING, 45, 110);
+  chassis.pid_swing_set(ez::LEFT_SWING, 45, 110, 0, true);
   chassis.pid_wait();
 
-  chassis.pid_swing_set(ez::RIGHT_SWING, 0, 110);
+  chassis.pid_swing_set(ez::RIGHT_SWING, 0, 110, 50, true);
   chassis.pid_wait();
 }
 ```
@@ -142,16 +729,16 @@ void autonomous() {
 </Tabs>
 
 
+### pid_swing_relative_set()
+Sets the robot to swing using PID.  The robot will turn using one side of the drive, either the left or right.  The opposite side of the drive can be set to a value for wider or tighter arcs.  Target is relative here, the robot will add the target to your current angle.  
 
-
-
-
-
-### pid_targets_reset()
-Resets all drive PID targets to 0.       
-
+`type` is either `ez::LEFT_SWING` or `ez::RIGHT_SWING`.  
+`p_target` is in degrees.  
+`speed` is 0 to 127.        
+`opposite_speed` is -127 to 127.  
+`slew_on` increases the speed of the drive gradually.  You must set slew constants for this to work!  
 <Tabs
-  groupId="examples4"
+  groupId="pid_swing_relative_set"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -159,50 +746,43 @@ Resets all drive PID targets to 0.
   ]
 }>
 
-<TabItem value="example">
-
+<TabItem value="proto">
 
 ```cpp
-void autonomous() {
-  chassis.pid_targets_reset(); // Resets PID targets to 0
-  chassis.drive_imu_reset(); // Reset gyro position to 0
-  chassis.drive_sensor_reset(); // Reset drive sensors to 0
-  chassis.drive_brake_set(MOTOR_BRAKE_HOLD); // Set motors to hold.  This helps autonomous consistency.
-
-  ez::as::auton_selector.selected_auton_call(); // Calls selected auton from autonomous selector.
-}
+void pid_swing_relative_set(e_swing type, double target, int speed, int opposite_speed = 0, bool slew_on = false);
 ```
 
 </TabItem>
 
 
-<TabItem value="proto">
+<TabItem value="example">
 
 ```cpp
-void pid_targets_reset();
-```
+void autonomous() {
+  chassis.drive_imu_reset(); 
+  chassis.drive_sensor_reset(); 
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD); 
 
+  // This will turn to 90 degrees
+  chassis.pid_swing_relative_set(ez::LEFT_SWING, 90, 110);
+  chassis.pid_wait();
+
+  // This will go backwards by 45 degrees
+  chassis.pid_swing_relative_set(ez::RIGHT_SWING, -45, 110);
+  chassis.pid_wait();
+}
+```
 
 </TabItem>
 </Tabs>
 
 
-
-
-
-
-
-
-
-
-
-
-### set_angle()
+### drive_angle_set()
 Sets the angle of the robot.  This is useful when your robot is setup in at an unconventional angle and you want 0 to be when you're square with the field.         
 
-`angle` angle that the robot will think it's now facing
+`angle` is in degrees, angle that the robot will think it's now facing.
 <Tabs
-  groupId="examples5"
+  groupId="drive_angle_set_double"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -213,7 +793,7 @@ Sets the angle of the robot.  This is useful when your robot is setup in at an u
 <TabItem value="proto">
 
 ```cpp
-void set_angle(double angle);
+void drive_angle_set(double angle);
 ```
 
 
@@ -229,7 +809,7 @@ void autonomous() {
   chassis.drive_sensor_reset(); // Reset drive sensors to 0
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD); // Set motors to hold.  This helps autonomous consistency.
 
-  chassis.set_angle(45);
+  chassis.drive_angle_set(45);
 
   chassis.pid_turn_set(0, TURN_SPEED);
   chassis.pid_wait();
@@ -241,7 +821,129 @@ void autonomous() {
 
 
 
+### pid_drive_exit_condition_set()
+Sets the exit condition constants for driving. This uses the exit conditions from the PID class.  
 
+This function can also be used without okapi units.  
+`p_small_exit_time` time, in ms, before exiting `p_small_error`  
+`p_small_error` small error threshold, assumed inches  
+`p_big_exit_time` time, in ms, before exiting `p_big_error`  
+`p_big_error` big error threshold, assumed inches  
+`p_velocity_exit_time` time, in ms, for velocity to be 0  
+`p_mA_timeout` time, in ms, for `is_over_current` to be true   
+<Tabs
+  groupId="pid_drive_exit_set_double"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+
+```cpp
+void initialize() {
+  chassis.pid_drive_exit_condition_set(300, 1, 500, 3, 750, 750);
+}
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+void pid_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout);
+```
+
+</TabItem>
+</Tabs>
+
+
+### pid_turn_exit_condition_set()
+Sets the exit condition constants for turning. This uses the exit conditions from the PID class.  
+
+This function can also be used without okapi units.  
+`p_small_exit_time` time, in ms, before exiting `p_small_error`  
+`p_small_error` small error threshold, assumed degrees  
+`p_big_exit_time` time, in ms, before exiting `p_big_error`  
+`p_big_error` big error threshold, assumed degrees  
+`p_velocity_exit_time` time, in ms, for velocity to be 0  
+`p_mA_timeout` time, in ms, for `is_over_current` to be true   
+<Tabs
+  groupId="pid_turn_exit_set_double"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+
+```cpp
+void initialize() {
+  chassis.pid_turn_exit_condition_set(300, 1, 500, 3, 750, 750);
+}
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+void pid_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout);
+```
+
+</TabItem>
+</Tabs>
+
+### pid_swing_exit_condition_set()
+Sets the exit condition constants for swing turns. This uses the exit conditions from the PID class.  
+
+This function can also be used without okapi units.  
+`p_small_exit_time` time, in ms, before exiting `p_small_error`  
+`p_small_error` small error threshold, assumed degrees  
+`p_big_exit_time` time, in ms, before exiting `p_big_error`  
+`p_big_error` big error threshold, assumed degrees  
+`p_velocity_exit_time` time, in ms, for velocity to be 0  
+`p_mA_timeout` time, in ms, for `is_over_current` to be true   
+<Tabs
+  groupId="pid_swing_exit_set_double"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+
+```cpp
+void initialize() {
+  chassis.pid_swing_exit_condition_set(300, 1, 500, 3, 750, 750);
+}
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+void pid_swing_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout);
+```
+
+</TabItem>
+</Tabs>
 
 
 
@@ -250,7 +952,7 @@ Sets the max speed of the drive.
 
 `speed` an integer between -127 and 127.     
 <Tabs
-  groupId="examples6"
+  groupId="pid_speed_max_set"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -294,22 +996,15 @@ void pid_speed_max_set(int speed);
 
 
 
-### set_pid_constants()
-:::note
-
-Note: this function was changed with 2.0.1
-
-:::
-Set PID constants.  Below are the defaults.  
-
-`pid` either `&chassis.headingPID`, `&chassis.forward_drivePID`, `&chassis.backward_drivePID`, `&chassis.turnPID`, or `&chassis.swingPID`   
+### pid_drive_constants_set()
+Set PID drive constants for forwards and backwards.   
+ 
 `p` proportion constant  
-`i` integral constant 
+`i` integral constant  
 `d` derivative constant  
 `p_start_i` error needs to be within this for i to start      
-
 <Tabs
-  groupId="examples7"
+  groupId="pid_drive_constants_Set"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -322,11 +1017,7 @@ Set PID constants.  Below are the defaults.
 
 ```cpp
 void initialize() {
-  chassis.set_pid_constants(&chassis.headingPID, 11, 0, 20, 0);
-  chassis.set_pid_constants(&chassis.forward_drivePID, 0.45, 0, 5, 0);
-  chassis.set_pid_constants(&chassis.backward_drivePID, 0.45, 0, 5, 0);
-  chassis.set_pid_constants(&chassis.turnPID, 5, 0.003, 35, 15;
-  chassis.set_pid_constants(&chassis.swingPID, 7, 0, 45, 0);
+  chassis.pid_drive_constants_set(10, 0, 100);
 }
 ```
 
@@ -337,7 +1028,7 @@ void initialize() {
 <TabItem value="proto">
 
 ```cpp
-void set_pid_constants(PID* pid, double p, double i, double d, double p_start_i);
+void pid_drive_constants_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 ```
 
 
@@ -346,112 +1037,15 @@ void set_pid_constants(PID* pid, double p, double i, double d, double p_start_i)
 
 
 
-
-
-
-
-
-### slew_power_min_set()
-Sets the starting speed for slew, with the ability to have different constants for forward and reverse.  Below are the defaults.   
-
-`fwd` integer between -127 and 127
-`rev` integer between -127 and 127  
-
+### pid_drive_constants_forward_set()
+Set PID drive constants for forwards movements.   
+ 
+`p` proportion constant  
+`i` integral constant  
+`d` derivative constant  
+`p_start_i` error needs to be within this for i to start      
 <Tabs
-  groupId="examples8"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-
-<TabItem value="example">
-
-```cpp
-void initialize() {
-  chassis.slew_power_min_set(80, 80);
-}
-```
-
-
-
-</TabItem>
-
-
-<TabItem value="proto">
-
-```cpp
-void slew_power_min_set(int fwd, int rev);
-```
-
-
-</TabItem>
-</Tabs>
-
-
-
-
-
-
-
-### slew_distance_set()
-Sets the distance the drive will slew for, with the ability to have different constants for forward and reverse.  Input is inches.  Below are the defaults.   
-
-`fwd` a distance in inches   
-`rev` a distance in inches   
-
-<Tabs
-  groupId="examples9"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-
-<TabItem value="example">
-
-```cpp
-void initialize() {
-  chassis.set_slew_min_distance(7, 7);
-}
-```
-
-</TabItem>
-
-
-<TabItem value="proto">
-
-```cpp
-void slew_distance_set (int fwd, int rev);
-```
-
-
-</TabItem>
-</Tabs>
-
-
-
-
-
-
-
-
-
-### exit_condition_set()
-Sets the exit condition constants. This uses the exit conditions from the PID class.  Below are the defaults.  
-
-`type` either `chassis.turn_exit`, `chassis.swing_exit`, or `chassis.drive_exit`  
-`p_small_exit_time` time, in ms, before exiting `p_small_error`  
-`p_small_error` small error threshold  
-`p_big_exit_time` time, in ms, before exiting `p_big_error`  
-`p_big_error` big error threshold  
-`p_velocity_exit_time` time, in ms, for velocity to be 0  
-`p_mA_timeout` time, in ms, for `is_over_current` to be true       
-
-<Tabs
-  groupId="examples10"
+  groupId="pid_drive_constants_forward_Set"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -464,9 +1058,7 @@ Sets the exit condition constants. This uses the exit conditions from the PID cl
 
 ```cpp
 void initialize() {
-  chassis.exit_condition_set(chassis.turn_exit,  100, 3,  500, 7,   500, 500);
-  chassis.exit_condition_set(chassis.swing_exit, 100, 3,  500, 7,   500, 500);
-  chassis.exit_condition_set(chassis.drive_exit, 80,  50, 300, 150, 500, 500);
+  chassis.pid_drive_constants_forward_set(10, 0, 100);
 }
 ```
 
@@ -477,13 +1069,264 @@ void initialize() {
 <TabItem value="proto">
 
 ```cpp
-void exit_condition_set(exit_condition_ &type, int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout);
+void pid_drive_constants_forward_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 ```
+
 
 </TabItem>
 </Tabs>
 
 
+
+### pid_drive_constants_backward_set()
+Set PID drive constants for backwards movements.   
+ 
+`p` proportion constant  
+`i` integral constant  
+`d` derivative constant  
+`p_start_i` error needs to be within this for i to start      
+<Tabs
+  groupId="pid_drive_constants_backward_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+
+```cpp
+void initialize() {
+  chassis.pid_drive_constants_backward_set(10, 0, 100);
+}
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+void pid_drive_constants_backward_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
+```
+
+
+</TabItem>
+</Tabs>
+
+
+
+### pid_heading_constants_set()
+Set PID drive constants heading correction during drive motions.   
+ 
+`p` proportion constant  
+`i` integral constant  
+`d` derivative constant  
+`p_start_i` error needs to be within this for i to start      
+<Tabs
+  groupId="pid_heading_constants_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+
+```cpp
+void initialize() {
+  chassis.pid_heading_constants_set(3, 0, 20);
+}
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+void pid_heading_constants_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
+```
+
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+
+### pid_turn_constants_set()
+Set PID drive constants for turns.   
+ 
+`p` proportion constant  
+`i` integral constant  
+`d` derivative constant  
+`p_start_i` error needs to be within this for i to start      
+<Tabs
+  groupId="pid_turn_constants_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+
+```cpp
+void initialize() {
+  chassis.pid_turn_constants_set(3, 0, 20);
+}
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+void pid_turn_constants_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
+```
+
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+### pid_swing_constants_set()
+Set PID drive constants for forward and backward swings.   
+ 
+`p` proportion constant  
+`i` integral constant  
+`d` derivative constant  
+`p_start_i` error needs to be within this for i to start      
+<Tabs
+  groupId="pid_swing_constants_Set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+
+```cpp
+void initialize() {
+  chassis.pid_swing_constants_set(5, 0, 30);
+}
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+void pid_swing_constants_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
+```
+
+
+</TabItem>
+</Tabs>
+
+
+
+
+### pid_swing_constants_forward_set()
+Set PID drive constants for forward swings.   
+ 
+`p` proportion constant  
+`i` integral constant  
+`d` derivative constant  
+`p_start_i` error needs to be within this for i to start      
+<Tabs
+  groupId="pid_swing_constants_forward_Set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+
+```cpp
+void initialize() {
+  chassis.pid_swing_constants_forward_set(5, 0, 30);
+}
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+void pid_swing_constants_forward_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
+```
+
+
+</TabItem>
+</Tabs>
+
+
+
+### pid_swing_constants_backward_set()
+Set PID drive constants for backward swings.   
+ 
+`p` proportion constant  
+`i` integral constant  
+`d` derivative constant  
+`p_start_i` error needs to be within this for i to start      
+<Tabs
+  groupId="pid_swing_constants_backward_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+
+```cpp
+void initialize() {
+  chassis.pid_swing_constants_backward_set(5, 0, 30);
+}
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+void pid_swing_constants_backward_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
+```
+
+
+</TabItem>
+</Tabs>
 
 
 ### pid_swing_min_set()
@@ -710,21 +1553,86 @@ void pid_print_toggle(bool toggle);
 </Tabs>
 
 
+### pid_wait_until()
+Locks the code in place until the drive has passed the input parameter.  This uses the exit conditions from the PID class.           
+
+`target` the distance the robot needs to travel before unlocking the code.  This is degrees if turning or swinging, and inches if driving.  
+<Tabs
+  groupId="pid_wait_until_double"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.drive_imu_reset(); 
+  chassis.drive_sensor_reset(); 
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD); 
+
+  chassis.pid_drive_set(48, 110);
+  chassis.pid_wait_until(24);
+  chassis.pid_speed_max_set(40);
+  chassis.pid_wait();
+}
+```
 
 
+</TabItem>
 
 
+<TabItem value="proto">
+
+```cpp
+void pid_wait_until(double target);
+```
 
 
+</TabItem>
+</Tabs>
+
+### pid_targets_reset()
+Resets all drive PID targets to 0.       
+
+<Tabs
+  groupId="pid_targets_reset"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
 
 
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset(); // Resets PID targets to 0
+  chassis.drive_imu_reset(); // Reset gyro position to 0
+  chassis.drive_sensor_reset(); // Reset drive sensors to 0
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD); // Set motors to hold.  This helps autonomous consistency.
+
+  ez::as::auton_selector.selected_auton_call(); // Calls selected auton from autonomous selector.
+}
+```
+
+</TabItem>
 
 
+<TabItem value="proto">
+
+```cpp
+void pid_targets_reset();
+```
 
 
-
-
-
+</TabItem>
+</Tabs>
 
 
 
@@ -1031,49 +1939,6 @@ void pid_wait();
 
 
 
-
-
-### pid_wait_until()
-Locks the code in place until the drive has passed the input parameter.  This uses the exit conditions from the PID class.           
-
-`target` the distance the robot needs to travel before unlocking the code
-<Tabs
-  groupId="examples22"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-
-<TabItem value="example">
-
-```cpp
-void autonomous() {
-  chassis.drive_imu_reset(); 
-  chassis.drive_sensor_reset(); 
-  chassis.drive_brake_set(MOTOR_BRAKE_HOLD); 
-
-  chassis.pid_drive_set(48, 110);
-  chassis.pid_wait_until(24);
-  chassis.pid_speed_max_set(40);
-  chassis.pid_wait();
-}
-```
-
-
-</TabItem>
-
-
-<TabItem value="proto">
-
-```cpp
-void pid_wait_until(double target);
-```
-
-
-</TabItem>
-</Tabs>
 
 
 

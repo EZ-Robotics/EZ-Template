@@ -25,14 +25,13 @@ void drive_example() {
   // The third parameter is a boolean (true or false) for enabling/disabling a slew at the start of drive motions
   // for slew, only enable it when the drive distance is greater then the slew distance + a few inches
 
-
-  chassis.pid_drive_set(24, DRIVE_SPEED, true);
+  chassis.pid_drive_set(24_in, DRIVE_SPEED, true);
   chassis.pid_wait();
 
-  chassis.pid_drive_set(-12, DRIVE_SPEED);
+  chassis.pid_drive_set(-12_in, DRIVE_SPEED);
   chassis.pid_wait();
 
-  chassis.pid_drive_set(-12, DRIVE_SPEED);
+  chassis.pid_drive_set(-12_in, DRIVE_SPEED);
   chassis.pid_wait();
 }
 ```
@@ -48,14 +47,13 @@ void turn_example() {
   // The first parameter is target degrees
   // The second parameter is max speed the robot will drive at
 
-
-  chassis.pid_turn_set(90, TURN_SPEED);
+  chassis.pid_turn_set(90_deg, TURN_SPEED);
   chassis.pid_wait();
 
-  chassis.pid_turn_set(45, TURN_SPEED);
+  chassis.pid_turn_set(45_deg, TURN_SPEED);
   chassis.pid_wait();
 
-  chassis.pid_turn_set(0, TURN_SPEED);
+  chassis.pid_turn_set(0_deg, TURN_SPEED);
   chassis.pid_wait();
 }
 ```
@@ -68,19 +66,19 @@ void turn_example() {
 This autonomous routine will combine driving and turning in a single function. 
 ```cpp
 void drive_and_turn() {
-  chassis.pid_drive_set(24, DRIVE_SPEED, true);
+  chassis.pid_drive_set(24_in, DRIVE_SPEED, true);
   chassis.pid_wait();
 
-  chassis.pid_turn_set(45, TURN_SPEED);
+  chassis.pid_turn_set(45_deg, TURN_SPEED);
   chassis.pid_wait();
 
-  chassis.pid_turn_set(-45, TURN_SPEED);
+  chassis.pid_turn_set(-45_deg, TURN_SPEED);
   chassis.pid_wait();
 
-  chassis.pid_turn_set(0, TURN_SPEED);
+  chassis.pid_turn_set(0_deg, TURN_SPEED);
   chassis.pid_wait();
 
-  chassis.pid_drive_set(-24, DRIVE_SPEED, true);
+  chassis.pid_drive_set(-24_in, DRIVE_SPEED, true);
   chassis.pid_wait();
 }
 ```
@@ -90,31 +88,30 @@ void drive_and_turn() {
 
 
 ## Wait Until and Changing Speed
-Now we add `pid_wait_until()`.  This new function will wait until a specified distance has been traveled and then allow the code to continue.  The robot will drive at `DRIVE_SPEED` until the robot has traveled 6 inches, then will lower the max speed to 40.  The same thing happens on the return back. 
+Now we add `pid_wait_until()`.  This new function will wait until a specified distance has been traveled and then allow the code to continue.  The robot will drive at `DRIVE_SPEED` until the robot has traveled 6 inches, then will lower the max speed to 30.  The same thing happens on the return back. 
 ```cpp
-void pid_wait_until_change_speed() {
+void wait_until_change_speed() {
   // pid_wait_until will wait until the robot gets to a desired position
 
-
-  // When the robot gets to 6 inches, the robot will travel the remaining distance at a max speed of 40
-  chassis.pid_drive_set(24, DRIVE_SPEED, true);
-  chassis.pid_wait_until(6);
-  chassis.pid_speed_max_set(40); // After driving 6 inches at DRIVE_SPEED, the robot will go the remaining distance at 40 speed
+  // When the robot gets to 6 inches, the robot will travel the remaining distance at a max speed of 30
+  chassis.pid_drive_set(24_in, DRIVE_SPEED, true);
+  chassis.pid_wait_until(6_in);
+  chassis.pid_speed_max_set(30);  // After driving 6 inches at DRIVE_SPEED, the robot will go the remaining distance at 30 speed
   chassis.pid_wait();
 
-  chassis.pid_turn_set(45, TURN_SPEED);
+  chassis.pid_turn_set(45_deg, TURN_SPEED);
   chassis.pid_wait();
 
-  chassis.pid_turn_set(-45, TURN_SPEED);
+  chassis.pid_turn_set(-45_deg, TURN_SPEED);
   chassis.pid_wait();
 
-  chassis.pid_turn_set(0, TURN_SPEED);
+  chassis.pid_turn_set(0_deg, TURN_SPEED);
   chassis.pid_wait();
 
-  // When the robot gets to -6 inches, the robot will travel the remaining distance at a max speed of 40
-  chassis.pid_drive_set(-24, DRIVE_SPEED, true);
-  chassis.pid_wait_until(-6);
-  chassis.pid_speed_max_set(40); // After driving 6 inches at DRIVE_SPEED, the robot will go the remaining distance at 40 speed
+  // When the robot gets to -6 inches, the robot will travel the remaining distance at a max speed of 30
+  chassis.pid_drive_set(-24_in, DRIVE_SPEED, true);
+  chassis.pid_wait_until(-6_in);
+  chassis.pid_speed_max_set(30);  // After driving 6 inches at DRIVE_SPEED, the robot will go the remaining distance at 30 speed
   chassis.pid_wait();
 }
 ```
@@ -124,23 +121,25 @@ void pid_wait_until_change_speed() {
 
 
 ## Swing Turns
-Swing turns are turns that only use one side of the drive.  Left swings use the left side, and right swings use the right side.  This will turn the robot to 45 degrees using the left side, drive 24 inches, then turn to 0 degrees using the right side. 
+Swing turns are turns that only use one side of the drive.  Left swings use the left side, and right swings use the right side.  This will drive in a segmented S curve.   
 ```cpp
 void swing_example() {
   // The first parameter is ez::LEFT_SWING or ez::RIGHT_SWING
   // The second parameter is target degrees
   // The third parameter is speed of the moving side of the drive
+  // The fourth parameter is the speed of the still side of the drive, this allows for wider arcs
 
-
-  chassis.pid_swing_set(ez::LEFT_SWING, 45, SWING_SPEED);
+  chassis.pid_swing_set(ez::LEFT_SWING, 45_deg, SWING_SPEED, 45);
   chassis.pid_wait();
 
-  chassis.pid_drive_set(24, DRIVE_SPEED, true);
-  chassis.pid_wait_until(12);
-
-  chassis.pid_swing_set(ez::RIGHT_SWING, 0, SWING_SPEED);
+  chassis.pid_swing_set(ez::RIGHT_SWING, 0_deg, SWING_SPEED, 45);
   chassis.pid_wait();
-}
+
+  chassis.pid_swing_set(ez::RIGHT_SWING, 45_deg, SWING_SPEED, 45);
+  chassis.pid_wait();
+
+  chassis.pid_swing_set(ez::LEFT_SWING, 0_deg, SWING_SPEED, 45);
+  chassis.pid_wait();
 ```
 
 
@@ -151,19 +150,19 @@ void swing_example() {
 This combines all movements from above. 
 ```cpp
 void combining_movements() {
-  chassis.pid_drive_set(24, DRIVE_SPEED, true);
+  chassis.pid_drive_set(24_in, DRIVE_SPEED, true);
   chassis.pid_wait();
 
-  chassis.pid_turn_set(45, TURN_SPEED);
+  chassis.pid_turn_set(45_deg, TURN_SPEED);
   chassis.pid_wait();
 
-  chassis.pid_drive_set(ez::RIGHT_SWING, -45, TURN_SPEED);
+  chassis.pid_swing_set(ez::RIGHT_SWING, -45_deg, SWING_SPEED, 45);
   chassis.pid_wait();
 
-  chassis.pid_turn_set(0, TURN_SPEED);
+  chassis.pid_turn_set(0_deg, TURN_SPEED);
   chassis.pid_wait();
 
-  chassis.pid_drive_set(-24, DRIVE_SPEED, true);
+  chassis.pid_drive_set(-24_in, DRIVE_SPEED, true);
   chassis.pid_wait();
 }
 ```
@@ -175,17 +174,17 @@ void combining_movements() {
 ## Interference
 Interference checks if the drive exited in an unintentional way.  If the robot stops unintentionally or pulls too many amps this will trigger.  This allows you to add fail-safes that stop your robot from burning out.  The below function will attempt to "tug" an opponent mobile goal a couple times before giving up.
 ```cpp
-void tug (int attempts) {
-  for (int i=0; i<attempts-1; i++) {
+void tug(int attempts) {
+  for (int i = 0; i < attempts - 1; i++) {
     // Attempt to drive backwards
     printf("i - %i", i);
-    chassis.pid_drive_set(-12, 127);
+    chassis.pid_drive_set(-12_in, 127);
     chassis.pid_wait();
 
     // If failsafed...
     if (chassis.interfered) {
       chassis.drive_sensor_reset();
-      chassis.pid_drive_set(-2, 20);
+      chassis.pid_drive_set(-2_in, 20);
       pros::delay(1000);
     }
     // If robot successfully drove back, return
@@ -195,19 +194,19 @@ void tug (int attempts) {
   }
 }
 
-// If there is no interference, robot will drive forward and turn 90 degrees. 
-// If interfered, robot will drive forward and then attempt to drive backwards. 
+// If there is no interference, robot will drive forward and turn 90 degrees.
+// If interfered, robot will drive forward and then attempt to drive backwards.
 void interfered_example() {
- chassis.pid_drive_set(24, DRIVE_SPEED, true);
- chassis.pid_wait();
+  chassis.pid_drive_set(24_in, DRIVE_SPEED, true);
+  chassis.pid_wait();
 
- if (chassis.interfered) {
-   tug(3);
-   return;
- }
+  if (chassis.interfered) {
+    tug(3);
+    return;
+  }
 
- chassis.pid_turn_set(90, TURN_SPEED);
- chassis.pid_wait();
+  chassis.pid_turn_set(90_deg, TURN_SPEED);
+  chassis.pid_wait();
 }
 ```
 

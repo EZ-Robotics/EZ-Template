@@ -20,7 +20,7 @@ import TabItem from '@theme/TabItem';
 Sets the drive to the left and right y axis.  
 
 <Tabs
-  groupId="ex15"
+  groupId="opcontrol_tank"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -64,7 +64,7 @@ Sets the drive to standard arcade.  Left stick is fwd/rev.
 `stick_type` is either `ez::SPLIT` or `ez::SINGLE`
 
 <Tabs
-  groupId="ex1"
+  groupId="opcontrol_arcade_standard"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -111,7 +111,7 @@ Sets the drive to flipped arcade.  Right stick is fwd/rev.
 `stick_type` is either `ez::SPLIT` or `ez::SINGLE`  
 
 <Tabs
-  groupId="ex2"
+  groupId="opcontrol_arcade_flipped"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -158,45 +158,7 @@ void opcontrol_arcade_flipped(e_type stick_type);
 
 
 
-## Joystick Functions
-
-### initialize()
-Runs `opcontrol_curve_sd_initialize()` and `drive_imu_calibrate()`.    
-
-<Tabs
-  groupId="ex3"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-
-<TabItem value="example">
-
-```cpp
-void initialize() {
-  chassis.initialize();
-}
-```
-
-
-</TabItem>
-
-
-<TabItem value="proto">
-
-
-```cpp
-void Drive::initialize();
-```
-
-
-
-</TabItem>
-</Tabs>
-
-
+## Joystick Curves
 
 
  
@@ -206,7 +168,7 @@ void Drive::initialize();
 Sets the left/right curve constants to what's on the SD card.  If the SD card is empty, creates needed files.  
 
 <Tabs
-  groupId="ex4"
+  groupId="opcontrol_curve_sd_initialize"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -250,7 +212,7 @@ Sets the left/right curve defaults and saves new values to the SD card.
 `right` right input curve  
 
 <Tabs
-  groupId="ex5"
+  groupId="opcontrol_curve_default_sets"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -287,44 +249,6 @@ void opcontrol_curve_default_set(double left, double right);
  
 
 
-### opcontrol_drive_activebrake_set()
-Active brake runs a P loop on the drive when joysticks are within their threshold.  
-
-`kp` proportional constant for drive  
-
-<Tabs
-  groupId="ex6"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-
-<TabItem value="example">
-
-```cpp
-void initialize() {
-  chassis.opcontrol_drive_activebrake_set(0.1);
-}
-```
-
-
-</TabItem>
-
-
-<TabItem value="proto">
-
-
-```cpp
-void opcontrol_drive_activebrake_set(double kp);
-```
-
-
-
-</TabItem>
-</Tabs>
-
 
 
  
@@ -336,7 +260,7 @@ Enables/disables buttons used for modifying the controller curve with the joysti
 `toggle` true enables, false disables  
 
 <Tabs
-  groupId="ex7"
+  groupId="opcontrol_curve_buttons_toggle"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -369,6 +293,43 @@ void opcontrol_curve_buttons_toggle(bool toggle);
 
 
 
+### opcontrol_curve_buttons_toggle_get()
+Returns true if modifying the curve with the controller is enabled, and false if it isn't.  
+
+<Tabs
+  groupId="opcontrol_curve_buttons_toggle_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  printf("Enabled? %i\n", chassis.opcontrol_curve_buttons_toggle_get()); // Returns false
+  chassis.opcontrol_curve_buttons_toggle(true);
+  printf("Enabled? %i\n", chassis.opcontrol_curve_buttons_toggle_get()); // Returns true
+}
+```
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+
+```cpp
+bool opcontrol_curve_buttons_toggle_get();
+```
+
+
+
+</TabItem>
+</Tabs>
+
 
  
 
@@ -380,7 +341,7 @@ Sets the buttons that are used to modify the left input curve.  The example is t
 `increase` a pros button  
 
 <Tabs
-  groupId="ex8"
+  groupId="opcontrol_curve_buttons_left_set"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -424,7 +385,7 @@ Sets the buttons that are used to modify the right input curve.  The example is 
 `increase` a pros button  
 
 <Tabs
-  groupId="ex9"
+  groupId="opcontrol_curve_buttons_right_set"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -467,7 +428,7 @@ Returns the input times the curve [here](https://www.desmos.com/calculator/7oyvw
 `x` input value  
 
 <Tabs
-  groupId="ex10"
+  groupId="opcontrol_curve_left"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -507,17 +468,13 @@ double opcontrol_curve_left(double x);
 </Tabs>
 
 
-
- 
-
-
 ### opcontrol_curve_right()
 Returns the input times the curve [here](https://www.desmos.com/calculator/7oyvwwpmed).  `opcontrol_tank()`, `opcontrol_arcade_standard()`, and `opcontrol_arcade_flipped()` all handle this for you.  
 
 `x` input value  
 
 <Tabs
-  groupId="ex11"
+  groupId="opcontrol_curve_right"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -557,10 +514,54 @@ double opcontrol_curve_right(double x);
 </Tabs>
 
 
+### opcontrol_curve_buttons_iterate()
+Allows the user to modify the curve with the controller.      
+
+<Tabs
+  groupId="opcontrol_curve_buttons_iterate"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void opcontrol() {
+  while (true) {
+    chassis.opcontrol_joystick_threshold_opcontrol(master.get_analog(ANALOG_LEFT_Y), master.get_analog(ANALOG_RIGHT_Y));
+
+    chassis.opcontrol_curve_buttons_iterate();
+
+    pros::delay(ez::util::DELAY_TIME);
+  }
+  chassis.opcontrol_joystick_threshold_set(5);
+}
+```
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+
+```cpp
+void opcontrol_curve_buttons_iterate();
+```
 
 
 
- 
+</TabItem>
+</Tabs>
+
+
+
+
+
+
+ ## Joystick General
 
 
 ### opcontrol_joystick_threshold_set()
@@ -568,7 +569,7 @@ Threshold the joystick will return 0 within.  This is useful because not all joy
 
 `threshold` an integer, recommended to be less then 5  
 <Tabs
-  groupId="ex12"
+  groupId="opcontrol_joystick_threshold_set"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -612,7 +613,7 @@ Runs the joystick control.  Sets the left drive to `l_stick`, and right drive to
 `l_stick` left joystick value
 `r_stick` right joystick value
 <Tabs
-  groupId="ex13"
+  groupId="opcontrol_joystick_threshld_opcontrol"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -652,12 +653,95 @@ void opcontrol_joystick_threshold_opcontrol(int l_stick, int r_stick);
 
 
 
+
+
+
+## Active Brake
  
-### opcontrol_curve_buttons_iterate()
-Allows the user to modify the curve with the controller.      
+### opcontrol_drive_activebrake_set()
+Active brake runs a P loop on the drive when joysticks are within their threshold.  
+
+`kp` proportional constant for drive  
+<Tabs
+  groupId="active_brake_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  chassis.opcontrol_drive_activebrake_set(0.1);
+}
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+
+```cpp
+void opcontrol_drive_activebrake_set(double kp);
+```
+
+
+
+</TabItem>
+</Tabs>
+
+
+### opcontrol_drive_activebrake_get()
+Returns the kP of active brake.  
 
 <Tabs
-  groupId="ex14"
+  groupId="active_brake_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  chassis.opcontrol_drive_activebrake_set(0.1);
+  printf("kP is: %f\n", chassis.opcontrol_drive_activebrake_get);
+}
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+
+```cpp
+double opcontrol_drive_activebrake_get();
+```
+
+
+
+</TabItem>
+</Tabs>
+
+
+## Reversing Drive
+
+### opcontrol_drive_reverse_set()
+Setting this to true reverses the drive direction during opcontrol, and false reverts it back to normal.    
+
+`toggle` reverses or reverts drive direction.  
+<Tabs
+  groupId="drive_reverse_set"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -670,15 +754,16 @@ Allows the user to modify the curve with the controller.
 ```cpp
 void opcontrol() {
   while (true) {
-    chassis.opcontrol_joystick_threshold_opcontrol(master.get_analog(ANALOG_LEFT_Y), master.get_analog(ANALOG_RIGHT_Y));
+    if (master.get_digital_new_press(DIGITAL_B)) 
+      chassis.opcontrol_drive_reverse_set(!chassis.opcontrol_drive_reverse_get());
 
-    chassis.opcontrol_curve_buttons_iterate();
+    chassis.opcontrol_tank();
 
-    pros::delay(ez::util::DELAY_TIME);
+    pros::delay(10);
   }
-  chassis.opcontrol_joystick_threshold_set(5);
 }
 ```
+
 
 </TabItem>
 
@@ -687,7 +772,7 @@ void opcontrol() {
 
 
 ```cpp
-void opcontrol_curve_buttons_iterate();
+void opcontrol_drive_reverse_set(bool toggle);
 ```
 
 
@@ -696,6 +781,45 @@ void opcontrol_curve_buttons_iterate();
 </Tabs>
 
 
+### opcontrol_drive_reverse_get()
+Returns `true` if the drive is currently reversed, and `false` if it isn't.  
+
+<Tabs
+  groupId="drive_reverse_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void opcontrol() {
+  while (true) {
+    if (master.get_digital_new_press(DIGITAL_B)) 
+      chassis.opcontrol_drive_reverse_set(!chassis.opcontrol_drive_reverse_get());
+
+    chassis.opcontrol_tank();
+
+    pros::delay(10);
+  }
+}
+```
 
 
- 
+</TabItem>
+
+
+<TabItem value="proto">
+
+
+```cpp
+bool opcontrol_drive_reverse_get();
+```
+
+
+
+</TabItem>
+</Tabs>

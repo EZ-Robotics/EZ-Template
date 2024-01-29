@@ -31,7 +31,7 @@ This is the standard setup that uses built in motor encoders.
 <TabItem value="example">
 
 ```cpp
-Drive chassis (
+ez::Drive chassis (
   // Left Chassis Ports (negative port will reverse it!)
   //   the first port is the sensored port (when trackers are not used!)
   {1, -2, 3}
@@ -101,7 +101,7 @@ Only supports parallel trackers.
 
 ```cpp
 // Chassis constructor
-Drive chassis (
+ez::Drive chassis (
   // Left Chassis Ports (negative port will reverse it!)
   {1, -2, 3}
 
@@ -177,7 +177,7 @@ Only supports parallel trackers.
 
 ```cpp
 // Chassis constructor
-Drive chassis (
+ez::Drive chassis (
   // Left Chassis Ports (negative port will reverse it!)
   {1, -2, 3}
 
@@ -262,7 +262,7 @@ Only supports parallel trackers.
 
 ```cpp
 // Chassis constructor
-Drive chassis (
+ez::Drive chassis (
   // Left Chassis Ports (negative port will reverse it!)
   //   the first port is the sensored port (when trackers are not used!)
   {1, -2, 3}

@@ -15,7 +15,7 @@ import TabItem from '@theme/TabItem';
 ## initialize() 
 Initializes the autonomous selector.  If an SD card is plugged in, the current page will set to what's on the SD card.  
 <Tabs
-  groupId="ex1"
+  groupId="initialize_auto_selector"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -54,7 +54,7 @@ Sets external buttons to increase/decrease the current autonomous page.
 `right_limit` a button to go forward a page
 `left_limit` a button to go backwards a page
 <Tabs
-  groupId="ex2"
+  groupId="limit_switch_lcd_initialize"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -98,7 +98,7 @@ void limit_switch_lcd_initialize(pros::ADIDigitalIn* right_limit, pros::ADIDigit
 ## shutdown() 
 Wrapper for `pros::lcd::shutdown()` [found here](https://pros.cs.purdue.edu/v5/api/cpp/llemu.html#shutdown).    
 <Tabs
-  groupId="ex3"
+  groupId="shutdown"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -144,7 +144,7 @@ Adds autonomous routines to the autonomous selector. Uses `ez::print_to_screen()
 
 `autons` accepts an object of a string and a function
 <Tabs
-  groupId="ex4"
+  groupId="autons_add"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -197,7 +197,7 @@ void autons_add(std::vector<Auton> autons);
 ## selected_auton_print();
 Prints the current autonomous mode to the screen.    
 <Tabs
-  groupId="ex5"
+  groupId="selected_auton_print"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -237,7 +237,7 @@ void selected_auton_print();
 ## page_down()
 Decreases the page number. Best used with the lcd callback functions.   
 <Tabs
-  groupId="ex6"
+  groupId="page_down"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -278,7 +278,7 @@ void page_down();
 ## page_up()
 Increases the page number. Best used with the lcd callback functions  
 <Tabs
-  groupId="ex7"
+  groupId="page_up"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -320,7 +320,7 @@ void page_up();
 ## selected_auton_call()
 Runs the current autonomous that's selected.    
 <Tabs
-  groupId="ex8"
+  groupId="selected_auton_call"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -356,6 +356,43 @@ void selected_auton_call();
 </Tabs>
 
 
+
+
+## enabled()
+Returns true if the auton selector is enabled and false if it isn't.  
+<Tabs
+  groupId="enabled"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  printf("Enabled? %i\n", ez::as::enabled()); // Returns false
+  ez::as::initialize();
+  printf("Enabled? %i\n", ez::as::enabled()); // Returns true
+}
+```
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+
+```cpp
+bool ez::as::enabled();
+```
+
+
+
+</TabItem>
+</Tabs>
 
 
 

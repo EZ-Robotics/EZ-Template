@@ -11,17 +11,55 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
 
+## Initialize Drive
+
+### initialize()
+Runs `opcontrol_curve_sd_initialize()` and `drive_imu_calibrate()`.    
+
+<Tabs
+  groupId="drive_init"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  chassis.initialize();
+}
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+
+```cpp
+void Drive::initialize();
+```
+
+
+
+</TabItem>
+</Tabs>
+
 
 ## Set Drive
 
 ### drive_set()
-Sets the drive to voltage.  
+Sets the drive to voltage.  Sets mode to `ez::DISABLE`.  
 
 `left` an integer between -127 and 127  
 `right` an integer between -127 and 127  
 
 <Tabs
-  groupId="ex2"
+  groupId="drive_set"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -64,7 +102,7 @@ Sets brake mode for all drive motors.
 `brake_type`  takes either `MOTOR_BRAKE_COAST`, `MOTOR_BRAKE_BRAKE`, and `MOTOR_BRAKE_HOLD` as parameters   
 
 <Tabs
-  groupId="ex3"
+  groupId="drive_brake_set"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -104,7 +142,7 @@ Sets mA limit to the drive.  Default is 2500.
 `mA` input miliamps  
 
 <Tabs
-  groupId="ex4"
+  groupId="drive_current_limit_set"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -144,7 +182,7 @@ void drive_current_limit_set(int mA);
 Returns right sensor value, either integrated encoder or external encoder.   
 
 <Tabs
-  groupId="ex5"
+  groupId="drive_sensor_right"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -188,7 +226,7 @@ int drive_sensor_right();
 Returns integrated encoder velocity.      
 
 <Tabs
-  groupId="ex6"
+  groupId="drive_velocity_right"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -232,7 +270,7 @@ int drive_velocity_right();
 Returns current mA being used.      
 
 <Tabs
-  groupId="ex7"
+  groupId="edrive_mA_rightx7"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -277,7 +315,7 @@ double drive_mA_right();
 Returns `true` when the motor is pulling too many amps.     
 
 <Tabs
-  groupId="ex8"
+  groupId="drive_current_right_over"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -322,7 +360,7 @@ bool drive_current_right_over();
 Returns left sensor value, either integrated encoder or external encoder.   
 
 <Tabs
-  groupId="ex9"
+  groupId="drive_sensor_left"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -367,7 +405,7 @@ int drive_sensor_left();
 Returns integrated encoder velocity.      
 
 <Tabs
-  groupId="ex10"
+  groupId="drive_velocity_left"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -412,7 +450,7 @@ int drive_velocity_left();
 Returns current mA being used.      
 
 <Tabs
-  groupId="ex11"
+  groupId="drive_mA_left"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -457,7 +495,7 @@ double drive_mA_left();
 Returns `true` when the motor is pulling too many amps.     
 
 <Tabs
-  groupId="ex12"
+  groupId="drive_current_left_over"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -501,7 +539,7 @@ bool drive_current_left_over();
 Resets integrated encoders and trackers if applicable.   
 
 <Tabs
-  groupId="ex13"
+  groupId="drive_sensor_reset"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -540,7 +578,7 @@ void drive_sensor_reset();
 Sets current gyro position to parameter, defaulted to 0.    
 
 <Tabs
-  groupId="ex14"
+  groupId="drive_imu_reset"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -579,7 +617,7 @@ void drive_imu_reset(double new_heading = 0);
 Gets IMU sensor, value is degrees.    
 
 <Tabs
-  groupId="ex15"
+  groupId="drive_imu_get"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -624,7 +662,7 @@ double drive_imu_get();
 Calibrates IMU, and vibrates the controller after a successful calibration.      
 
 <Tabs
-  groupId="ex16"
+  groupId="drive_imu_calibrate"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },

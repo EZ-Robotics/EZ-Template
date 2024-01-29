@@ -34,7 +34,7 @@ Creates a PID object with constants.  Everything past kP has a default starting 
 <TabItem value="example">
 
 ```cpp
-PID liftPID{1, 0.003, 4, 100, "Lift"};
+ez::PID liftPID{1, 0.003, 4, 100, "Lift"};
 ```
 
 </TabItem>
@@ -74,7 +74,7 @@ Sets PID constants.
 <TabItem value="example">
 
 ```cpp
-PID liftPID;
+ez::PID liftPID;
 void initialize() {
   liftPID.constants_set(1, 0, 4);
 }
@@ -118,7 +118,7 @@ Sets PID target.
 <TabItem value="example">
 
 ```cpp
-PID liftPID{1, 0.003, 4, 100, "Lift"};  
+ez::PID liftPID{1, 0.003, 4, 100, "Lift"};  
 pros::Motor lift_motor(1);
 void opcontrol() {
   while (true) {
@@ -179,7 +179,7 @@ Sets the exit condition constants.  To disable one of the conditions, set the co
 <TabItem value="example">
 
 ```cpp
-PID liftPID{1, 0.003, 4, 100, "Lift"};  
+ez::PID liftPID{1, 0.003, 4, 100, "Lift"};  
 void initialize() {
   liftPID.exit_condition_set(100, 3, 500, 7, 500, 500);
 }
@@ -223,7 +223,7 @@ A string that prints when exit conditions are met.  When you have multiple mecha
 <TabItem value="example">
 
 ```cpp
-PID liftPID{1, 0.003, 4, 100};
+ez::PID liftPID{1, 0.003, 4, 100};
 void initialize() {
   liftPID.name_set("Lift");
 }  
@@ -266,7 +266,7 @@ Computes PID.
 <TabItem value="example">
 
 ```cpp
-PID liftPID{1, 0.003, 4, 100, "Lift"};  
+ez::PID liftPID{1, 0.003, 4, 100, "Lift"};  
 pros::Motor lift_motor(1);
 void opcontrol() {
   while (true) {
@@ -335,7 +335,7 @@ Outputs one of the `exit_output` states.  This exit condition checks `small_erro
 <TabItem value="example">
 
 ```cpp
-PID liftPID{1, 0.003, 4, 100, "Lift"};  
+ez::PID liftPID{1, 0.003, 4, 100, "Lift"};  
 pros::Motor lift_motor(1);
 
 void initialize() {
@@ -395,7 +395,7 @@ Outputs one of the `exit_output` states.  This exit condition checks `small_erro
 <TabItem value="example">
 
 ```cpp
-PID liftPID{1, 0.003, 4, 100, "Lift"};  
+ez::PID liftPID{1, 0.003, 4, 100, "Lift"};  
 pros::Motor lift_motor(1);
 
 void initialize() {
@@ -454,7 +454,7 @@ Outputs one of the `exit_output` states.  This exit condition checks `small_erro
 <TabItem value="example">
 
 ```cpp
-PID liftPID{1, 0.003, 4, 100, "Lift"};  
+ez::PID liftPID{1, 0.003, 4, 100, "Lift"};  
 pros::Motor l_lift_motor(1);
 pros::Motor r_lift_motor(2, true);
 

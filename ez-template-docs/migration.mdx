@@ -4,7 +4,7 @@ title: 2.x -> 3.x
 
 :::danger
 
-3.x has **breaking changes** from 2.x.  To upgrade your project without starting fresh, you must change **everything** listed below.
+3.x has **breaking changes** from 2.x.  This document is intended to help migrate your code to a fresh example project.
 
 :::
 
@@ -19,8 +19,6 @@ In VScode, `ctrl` + `shift` + `F` allows you to search for and replace every ins
 
 Be sure to check what you're replacing to avoid unintentionally breaking your code.
 :::
-
-Below are functions that have been renamed.  Some functions, such as PTO, have not been renamed because they already followed this. 
 
 ### **drive.hpp**
 
@@ -75,12 +73,6 @@ Below are functions that have been renamed.  Some functions, such as PTO, have n
 | `wait_drive()` | `pid_wait()` |
 | `wait_until()` | `pid_wait_until()` |
 | `set_max_speed()` | `pid_speed_max_set()` |
-| `set_drive_pid_constants()` | `pid_drive_constants_set()` |
-| `set_turn_pid_constants()` | `pid_turn_constants_set()` |
-| `set_swing_pid_constants()` | `pid_swing_constants_set()` |
-| `set_heading_pid_constants()` | `pid_heading_constants_set()` |
-| `set_drive_forward_pid_constants()` | `pid_drive_forward_constants_set()` |
-| `set_drive_backwards_pid_constants()` | `pid_drive_backward_constants_set()` |
 | `set_swing_min()` | `pid_swing_min_set()` |
 | `set_turn_min()` | `pid_turn_min_set()` |
 | `toggle_auto_drive()` | `pid_drive_toggle()` |
@@ -90,9 +82,6 @@ Below are functions that have been renamed.  Some functions, such as PTO, have n
 | `set_swing_exit_condition()` | `pid_swing_exit_condition_set()` |
 | `get_swing_min()` | `pid_swing_min_get()` |
 | `get_turn_min()` | `pid_turn_min_get()` |
-| `set_slew_min_power()` | `slew_power_min_set()` |
-| `set_slew_distance()` | `slew_distance_set()` |
-| `slew_calculate()` | `slew_iterate()` |
 
 </APITable>
 
@@ -128,7 +117,51 @@ Below are functions that have been renamed.  Some functions, such as PTO, have n
 
 </APITable>
 
-## Okapi Units
-[Okapi Units](https://okapilib.github.io/OkapiLib/md_docs_api_units.html) allow users to use whatever units they would like instead of being locked into inches.  parameters that used to assume inches now use okapi units. 
 
-Put a list of functions that now use okapi units here.  They should link to their docs.
+## Set PID Constants
+
+Setting PID constants has been changed to have a function per PID object. 
+
+```cpp
+void default_constants() {
+  // Drive Constants
+  chassis.pid_drive_constants_set(10, 0, 100); // Sets forward and backward
+  chassis.pid_drive_constants_forward_set(10, 0, 100);
+  chassis.pid_drive_constants_backward_set(10, 0, 100);
+  chassis.pid_heading_constants_set(3, 0, 20);
+
+  // Turn Constants
+  chassis.pid_turn_constants_set(3, 0, 20);
+
+  // Swing Constants
+  chassis.pid_swing_constants_set(5, 0, 30); // Sets forward and backward
+  chassis.pid_swing_constants_forward_set(5, 0, 30);
+  chassis.pid_swing_constants_forward_set(5, 0, 30);
+}
+```
+
+## Set Slew Constants
+
+Slew has been extracted into a class and has been implemented into every type of movement. 
+
+```cpp
+void default_constants() {
+  // Drive Constants
+  chassis.slew_drive_constants_set(7_in, 80); // Sets forward and backward
+  chassis.slew_drive_constants_forward_set(7_in, 80);
+  chassis.slew_drive_constants_backward_set(7_in, 80);
+
+  // Turn Constants
+  chassis.slew_turn_constants_set(5_deg, 50);
+
+  // Swing Constants with Angle
+  chassis.slew_swing_constants_set(5_deg, 50); // Sets forward and backward
+  chassis.slew_swing_constants_forward_set(5_deg, 50);
+  chassis.slew_swing_constants_backward_set(5_deg, 50);
+
+  // Swing Constants with Distance
+  chassis.slew_swing_constants_set(7_in, 50); // Sets forward and backward
+  chassis.slew_swing_constants_forward_set(7_in, 50);
+  chassis.slew_swing_constants_backward_set(5_in, 50);
+}
+```

@@ -17,7 +17,7 @@ void set_lift(int input) {
   l_lift = input;
   r_lift = input;
 }
-PID liftPID{0.45, 0, 0, 0, "Lift"};
+ez::PID liftPID{0.45, 0, 0, 0, "Lift"};
 
 void initialize() {
   l_lift.tare_position();
@@ -49,7 +49,7 @@ void set_lift(int input) {
   l_lift = input;
   r_lift = input;
 }
-PID liftPID{0.45, 0, 0, 0, "Lift"};
+ez::PID liftPID{0.45, 0, 0, 0, "Lift"};
 
 void lift_auto(double target) {
   liftPID.target_set(target);
@@ -97,7 +97,7 @@ void set_lift(int input) {
   l_lift = input;
   r_lift = input;
 }
-PID liftPID{0.45, 0, 0, 0, "Lift"};
+ez::PID liftPID{0.45, 0, 0, 0, "Lift"};
 
 
 void lift_wait() {

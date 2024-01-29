@@ -43,7 +43,7 @@ const config = {
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         docs: {
-          /*
+          
           // For when 3.0 is actually released
           lastVersion: 'current',
           versions: {
@@ -56,8 +56,8 @@ const config = {
               banner: 'unmaintained',
             },
           },
-          */
           
+          /*
           // While 3.0 isn't released
           lastVersion: '2.x',
           versions: {
@@ -70,6 +70,7 @@ const config = {
               banner: 'none',
             },
           },
+          */
           
           sidebarCollapsed: false,
           routeBasePath: '/', // url
@@ -114,6 +115,7 @@ const config = {
           { to: 'category/docs', label: 'Docs', position: 'left' },
           // { to: '/support', label: 'Support', position: 'left' },
           // { to: 'versions/', label: 'Versions', position: 'right' },
+          { href: 'https://www.roboticsisez.com/', label: 'robotics is ez', position: 'right' },
           { href: 'https://github.com/EZ-Robotics', label: 'GitHub', position: 'right' },
         ],
       },

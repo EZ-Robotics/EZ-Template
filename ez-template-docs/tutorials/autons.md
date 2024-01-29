@@ -10,7 +10,7 @@ description: Add autonomous routines to the selector
 ## Learn to use Autonomous Functions
 Read through `src/autons.cpp` ([or click here](https://ez-robotics.github.io/EZ-Template/tutorials/example_autons)) and learn how to use the autonomous functions by reading through the example routines!  
 
-## Make Your Own Autonomous Routine
+## Make the Autonomous Routines
 Make a new function in `src/autons.cpp` and name it something that says what the autonomous will do.  
 ```cpp
 void SoloAWP() {
@@ -38,7 +38,7 @@ void NeutralStealPlatUp() {
 }
 ```
 
-## Add the Function to `autons.hpp` 
+## Add it to `autons.hpp` 
 In `include/autons.hpp` add the name of your function.  
 ```cpp
 void SoloAWP();
@@ -46,8 +46,8 @@ void ScoreRingsPlatDown();
 void NeutralStealPlatDown();
 void NeutralStealPlatUp();
 ```
-## Add the Function to the Autonomous Selector
-To add the autonomous mode to the on screen selector, in `src/main.cpp` go to `void initialize()` and either replace an existing autonomous mode or add new pages.    
+## Add it to the Autonomous Selector
+To add the autonomous mode to the on screen selector, in `src/main.cpp` go to `void initialize()` and either replace an existing autonomous mode or add new pages.  [Click here](https://ez-robotics.github.io/EZ-Template/tutorials/using_auton_selector) to learn how to use the autonomous selector.    
 ```cpp
 void initialize() {
   . . . 
