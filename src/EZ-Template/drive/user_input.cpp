@@ -7,7 +7,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include "main.h"
 
 // Set curve defaults
-void Drive::set_curve_default(double left, double right) {
+void Drive::opcontrol_curve_default_set(double left, double right) {
   left_curve_scale = left;
   right_curve_scale = right;
 
@@ -15,10 +15,14 @@ void Drive::set_curve_default(double left, double right) {
   save_r_curve_sd();
 }
 
+std::vector<double> Drive::opcontrol_curve_default_get() {
+  return {left_curve_scale, right_curve_scale};
+}
+
 // Initialize curve SD card
-void Drive::init_curve_sd() {
+void Drive::opcontrol_curve_sd_initialize() {
   // If no SD card, return
-  if (!ez::util::IS_SD_CARD) return;
+  if (!ez::util::SD_CARD_ACTIVE) return;
 
   FILE* l_usd_file_read;
   // If file exists...
@@ -52,7 +56,7 @@ void Drive::init_curve_sd() {
 // Save new left curve to SD card
 void Drive::save_l_curve_sd() {
   // If no SD card, return
-  if (!ez::util::IS_SD_CARD) return;
+  if (!ez::util::SD_CARD_ACTIVE) return;
 
   FILE* usd_file_write = fopen("/usd/left_curve.txt", "w");
   std::string in_str = std::to_string(left_curve_scale);
@@ -64,7 +68,7 @@ void Drive::save_l_curve_sd() {
 // Save new right curve to SD card
 void Drive::save_r_curve_sd() {
   // If no SD card, return
-  if (!ez::util::IS_SD_CARD) return;
+  if (!ez::util::SD_CARD_ACTIVE) return;
 
   FILE* usd_file_write = fopen("/usd/right_curve.txt", "w");
   std::string in_str = std::to_string(right_curve_scale);
@@ -73,13 +77,21 @@ void Drive::save_r_curve_sd() {
   fclose(usd_file_write);
 }
 
-void Drive::set_left_curve_buttons(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase) {
+void Drive::opcontrol_curve_buttons_left_set(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase) {
   l_increase_.button = increase;
   l_decrease_.button = decrease;
 }
-void Drive::set_right_curve_buttons(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase) {
+void Drive::opcontrol_curve_buttons_right_set(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase) {
   r_increase_.button = increase;
   r_decrease_.button = decrease;
+}
+
+std::vector<pros::controller_digital_e_t> Drive::opcontrol_curve_buttons_left_get() {
+  return {l_decrease_.button, r_decrease_.button};
+}
+
+std::vector<pros::controller_digital_e_t> Drive::opcontrol_curve_buttons_right_get() {
+  return {r_decrease_.button, r_decrease_.button};
 }
 
 // Increase / decrease left and right curves
@@ -133,10 +145,19 @@ void Drive::button_press(button_* input_name, int button, std::function<void()> 
 }
 
 // Toggle modifying curves with controller
-void Drive::toggle_modify_curve_with_controller(bool toggle) { disable_controller = toggle; }
+void Drive::opcontrol_curve_buttons_toggle(bool toggle) {
+  if (pid_tuner_on && toggle) {
+    printf("Cannot modify curve while PID Tuner is active!\n");
+    return;
+  }
+  disable_controller = toggle;
+  if (!disable_controller)
+    master.set_text(2, 0, "            ");
+}
+bool Drive::opcontrol_curve_buttons_toggle_get() { return disable_controller; }
 
-// Modify curves with button presses and display them to contrller
-void Drive::modify_curve_with_controller() {
+// Modify curves with button presses and display them to controller
+void Drive::opcontrol_curve_buttons_iterate() {
   if (!disable_controller) return;  // True enables, false disables.
 
   button_press(&l_increase_, master.get_digital(l_increase_.button), ([this] { this->l_increase(); }), ([this] { this->save_l_curve_sd(); }));
@@ -155,7 +176,7 @@ void Drive::modify_curve_with_controller() {
 }
 
 // Left curve function
-double Drive::left_curve_function(double x) {
+double Drive::opcontrol_curve_left(double x) {
   if (left_curve_scale != 0) {
     // if (CURVE_TYPE)
     return (powf(2.718, -(left_curve_scale / 10)) + powf(2.718, (fabs(x) - 127) / 10) * (1 - powf(2.718, -(left_curve_scale / 10)))) * x;
@@ -165,8 +186,8 @@ double Drive::left_curve_function(double x) {
   return x;
 }
 
-// Right curve fnuction
-double Drive::right_curve_function(double x) {
+// Right curve function
+double Drive::opcontrol_curve_right(double x) {
   if (right_curve_scale != 0) {
     // if (CURVE_TYPE)
     return (powf(2.718, -(right_curve_scale / 10)) + powf(2.718, (fabs(x) - 127) / 10) * (1 - powf(2.718, -(right_curve_scale / 10)))) * x;
@@ -177,90 +198,117 @@ double Drive::right_curve_function(double x) {
 }
 
 // Set active brake constant
-void Drive::set_active_brake(double kp) { active_brake_kp = kp; }
+void Drive::opcontrol_drive_activebrake_set(double kp) {
+  active_brake_kp = kp;
+  drive_sensor_reset();
+}
+
+// Get active brake constant
+double Drive::opcontrol_drive_activebrake_get() {
+  return active_brake_kp;
+}
 
 // Set joystick threshold
-void Drive::set_joystick_threshold(int threshold) { JOYSTICK_THRESHOLD = abs(threshold); }
+void Drive::opcontrol_joystick_threshold_set(int threshold) { JOYSTICK_THRESHOLD = abs(threshold); }
+int Drive::opcontrol_joystick_threshold_get() { return JOYSTICK_THRESHOLD; }
 
-void Drive::reset_drive_sensors_opcontrol() {
+void Drive::opcontrol_drive_sensors_reset() {
   if (util::AUTON_RAN) {
-    reset_drive_sensor();
+    drive_sensor_reset();
     util::AUTON_RAN = false;
   }
 }
 
-void Drive::joy_thresh_opcontrol(int l_stick, int r_stick) {
-  // Threshold if joysticks don't come back to perfect 0
-  if (abs(l_stick) > JOYSTICK_THRESHOLD || abs(r_stick) > JOYSTICK_THRESHOLD) {
-    set_tank(l_stick, r_stick);
-    if (active_brake_kp != 0) reset_drive_sensor();
+void Drive::opcontrol_joystick_practicemode_toggle(bool toggle) { practice_mode_is_on = toggle; }
+bool Drive::opcontrol_joystick_practicemode_toggle_get() { return practice_mode_is_on; }
+
+void Drive::opcontrol_drive_reverse_set(bool toggle) { is_reversed = toggle; }
+bool Drive::opcontrol_drive_reverse_get() { return is_reversed; }
+
+void Drive::opcontrol_joystick_threshold_iterate(int l_stick, int r_stick) {
+  // Check the motors are being set to power
+  if (abs(l_stick) > 0 || abs(r_stick) > 0) {
+    if (practice_mode_is_on && (abs(l_stick) > 120 || abs(r_stick) > 120))
+      drive_set(0, 0);
+    else
+      if(is_reversed == true)
+        drive_set(-r_stick, -l_stick);
+      else
+         drive_set(l_stick, r_stick);
+    if (active_brake_kp != 0) drive_sensor_reset();
   }
   // When joys are released, run active brake (P) on drive
   else {
-    set_tank((0 - left_sensor()) * active_brake_kp, (0 - right_sensor()) * active_brake_kp);
+    drive_set((0 - drive_sensor_left()) * active_brake_kp, (0 - drive_sensor_right()) * active_brake_kp);
   }
 }
 
+// Clip joysticks based on joystick threshold
+int Drive::clipped_joystick(int joystick) { return abs(joystick) < JOYSTICK_THRESHOLD ? 0 : joystick; }
+
 // Tank control
-void Drive::tank() {
+void Drive::opcontrol_tank() {
   is_tank = true;
-  reset_drive_sensors_opcontrol();
+  opcontrol_drive_sensors_reset();
 
   // Toggle for controller curve
-  modify_curve_with_controller();
+  opcontrol_curve_buttons_iterate();
+
+  auto analog_left_value = master.get_analog(ANALOG_LEFT_Y);
+  auto analog_right_value = master.get_analog(ANALOG_RIGHT_Y);
 
   // Put the joysticks through the curve function
-  int l_stick = left_curve_function(master.get_analog(ANALOG_LEFT_Y));
-  int r_stick = left_curve_function(master.get_analog(ANALOG_RIGHT_Y));
+  int l_stick = opcontrol_curve_left(clipped_joystick(master.get_analog(ANALOG_LEFT_Y)));
+  int r_stick = opcontrol_curve_left(clipped_joystick(master.get_analog(ANALOG_RIGHT_Y)));
 
   // Set robot to l_stick and r_stick, check joystick threshold, set active brake
-  joy_thresh_opcontrol(l_stick, r_stick);
+  opcontrol_joystick_threshold_iterate(l_stick, r_stick);
 }
 
 // Arcade standard
-void Drive::arcade_standard(e_type stick_type) {
+void Drive::opcontrol_arcade_standard(e_type stick_type) {
   is_tank = false;
-  reset_drive_sensors_opcontrol();
+  opcontrol_drive_sensors_reset();
 
   // Toggle for controller curve
-  modify_curve_with_controller();
+  opcontrol_curve_buttons_iterate();
 
   int fwd_stick, turn_stick;
   // Check arcade type (split vs single, normal vs flipped)
   if (stick_type == SPLIT) {
     // Put the joysticks through the curve function
-    fwd_stick = left_curve_function(master.get_analog(ANALOG_LEFT_Y));
-    turn_stick = right_curve_function(master.get_analog(ANALOG_RIGHT_X));
+    fwd_stick = opcontrol_curve_left(clipped_joystick(master.get_analog(ANALOG_LEFT_Y)));
+    turn_stick = opcontrol_curve_right(clipped_joystick(master.get_analog(ANALOG_RIGHT_X)));
   } else if (stick_type == SINGLE) {
     // Put the joysticks through the curve function
-    fwd_stick = left_curve_function(master.get_analog(ANALOG_LEFT_Y));
-    turn_stick = right_curve_function(master.get_analog(ANALOG_LEFT_X));
+    fwd_stick = opcontrol_curve_left(clipped_joystick(master.get_analog(ANALOG_LEFT_Y)));
+    turn_stick = opcontrol_curve_right(clipped_joystick(master.get_analog(ANALOG_LEFT_X)));
   }
 
   // Set robot to l_stick and r_stick, check joystick threshold, set active brake
-  joy_thresh_opcontrol(fwd_stick + turn_stick, fwd_stick - turn_stick);
+  opcontrol_joystick_threshold_iterate(fwd_stick + turn_stick, fwd_stick - turn_stick);
 }
 
 // Arcade control flipped
-void Drive::arcade_flipped(e_type stick_type) {
+void Drive::opcontrol_arcade_flipped(e_type stick_type) {
   is_tank = false;
-  reset_drive_sensors_opcontrol();
+  opcontrol_drive_sensors_reset();
 
   // Toggle for controller curve
-  modify_curve_with_controller();
+  opcontrol_curve_buttons_iterate();
 
   int turn_stick, fwd_stick;
   // Check arcade type (split vs single, normal vs flipped)
   if (stick_type == SPLIT) {
     // Put the joysticks through the curve function
-    fwd_stick = right_curve_function(master.get_analog(ANALOG_RIGHT_Y));
-    turn_stick = left_curve_function(master.get_analog(ANALOG_LEFT_X));
+    fwd_stick = opcontrol_curve_right(clipped_joystick(master.get_analog(ANALOG_RIGHT_Y)));
+    turn_stick = opcontrol_curve_left(clipped_joystick(master.get_analog(ANALOG_LEFT_X)));
   } else if (stick_type == SINGLE) {
     // Put the joysticks through the curve function
-    fwd_stick = right_curve_function(master.get_analog(ANALOG_RIGHT_Y));
-    turn_stick = left_curve_function(master.get_analog(ANALOG_RIGHT_X));
+    fwd_stick = opcontrol_curve_right(clipped_joystick(master.get_analog(ANALOG_RIGHT_Y)));
+    turn_stick = opcontrol_curve_left(clipped_joystick(master.get_analog(ANALOG_RIGHT_X)));
   }
 
   // Set robot to l_stick and r_stick, check joystick threshold, set active brake
-  joy_thresh_opcontrol(fwd_stick + turn_stick, fwd_stick - turn_stick);
+  opcontrol_joystick_threshold_iterate(fwd_stick + turn_stick, fwd_stick - turn_stick);
 }

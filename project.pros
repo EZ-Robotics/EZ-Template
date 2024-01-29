@@ -5,7 +5,7 @@
         "target": "v5",
         "templates": {
             "kernel": {
-                "location": "C:\\Users\\xuzwi\\AppData\\Roaming\\PROS\\templates\\kernel@3.8.0",
+                "location": "C:\\Users\\union\\AppData\\Roaming\\PROS\\templates\\kernel@3.8.0",
                 "metadata": {
                     "cold_addr": "58720256",
                     "cold_output": "bin/cold.package.bin",
@@ -166,7 +166,7 @@
                 "version": "3.8.0"
             },
             "okapilib": {
-                "location": "C:\\Users\\xuzwi\\AppData\\Roaming\\PROS\\templates\\okapilib@4.8.0",
+                "location": "C:\\Users\\union\\AppData\\Roaming\\PROS\\templates\\okapilib@4.8.0",
                 "metadata": {
                     "origin": "pros-mainline"
                 },
