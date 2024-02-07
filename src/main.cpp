@@ -145,6 +145,9 @@ void opcontrol() {
     // After you find values that you're happy with, you'll have to set them in auton.cpp
     if (!pros::competition::is_connected()) { 
       // Enable / Disable PID Tuner
+      //  When enabled:
+      //  * use A and Y to increment / decrement the constants
+      //  * use the arrow keys to navigate the constants
       if (master.get_digital_new_press(DIGITAL_X)) 
         chassis.pid_tuner_toggle();
         
