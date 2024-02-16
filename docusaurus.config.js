@@ -77,8 +77,8 @@ const config = {
           sidebarPath: './sidebars.js',
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
-          editUrl:
-            'https://github.com/EZ-Robotics/EZ-Template/tree/website/${versionDocsDirPath}/${docPath}',
+          editUrl: ({versionDocsDirPath, docPath}) =>
+            `https://github.com/EZ-Robotics/EZ-Template/tree/website/${versionDocsDirPath}/${docPath}`,
         },
         blog: false,
         theme: {

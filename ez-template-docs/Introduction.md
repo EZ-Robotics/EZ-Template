@@ -30,11 +30,14 @@ preview: /img/embed.png
 - Add / remove motors from the drive dynamically to allow for PTO use
 - Exposed PID class for use with your other subsystems
 
-## [Tutorials](./category/tutorials)
-Tutorials on how to use EZ-Template can be found [here](./category/tutorials).
+## [Installation and Upgrading](https://ez-robotics.github.io/EZ-Template/tutorials/installation)
+Installation and Upgrading tutorials can be foud [here](https://ez-robotics.github.io/EZ-Template/tutorials/installation).  
 
-## [Docs](./category/docs)
-Documentation on how to use EZ-Template functions can be found [here](./category/docs).
+## [Tutorials](https://ez-robotics.github.io/EZ-Template/category/tutorials)
+Tutorials on how to use and install EZ-Template can be found [here](https://ez-robotics.github.io/EZ-Template/category/tutorials).  
+
+## [Docs](https://ez-robotics.github.io/EZ-Template/category/docs)
+Documentation on how to use EZ-Template functions can be found [here](https://ez-robotics.github.io/EZ-Template/category/docs).  
 
 ## [License](https://opensource.org/licenses/MPL-2.0)
 This project is licensed under the Mozilla Public License, version 2.0 - see the [LICENSE](https://opensource.org/licenses/MPL-2.0) file for the full license.
