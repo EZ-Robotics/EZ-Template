@@ -3,12 +3,6 @@ title: Joystick Curves
 description: Adjusting the joystick's behavior to make it exponential
 ---
 
-
-# **Joystick Curves**
-
-
-
-## Introduction  
 Using the [5225 curves from 2018](https://www.desmos.com/calculator/7oyvwwpmed), (explained [here](https://www.vexforum.com/t/team-5225a-in-the-zone-code-release-yes-you-read-that-right/63199/10)). The x-axis is the joystick input and the y-axis is the motor output.
 
 Normally, pushing the joystick half way means the robot goes half speed. With an input curve, pushing the joystick half way may only move the robot at 1/4 power. This means more of the joystick movement goes to lower speeds, giving you more control of the robot.

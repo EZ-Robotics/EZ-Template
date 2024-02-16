@@ -3,21 +3,15 @@ title: Using Autonomous Selector
 description: How to have multiple autonomous routines in one program
 ---
 
+## Select and Run your Autonomous
+With a competition switch, run your code in disable.  Select the autonomous on the screen by pressing the left / right buttons until you're on the page you want.  Select `Autonomous` on your competition switch, and set it to `Enable` to run the autonomous.
 
-# **Using Autonomous Selector**
+## Using an SD Card
+The SD card will remember the last page you were on before powering the robot off.  If you're on page 3 and power off, the next time you power on the selector will start on page 3.  
 
+To use an SD card with the brain, just plug it in!
 
-
-
-## Without SD Card  
-With a competition switch, run your code in disable.  Select the autonomous on the screen by pressing the left / right buttons until you're on the page you want.  Run the autonomous!
-
-## With SD Card
-The last page you're on will save to the SD Card.  So if you're running Page 3, select it once using the steps above, then you won't have to select it again.  
-
-To use an SD Card with the brain, just plug it in and EZ-Template will generate the files needed. 
-
-## In Opcontrol
+## Testing Autonomous in Opcontrol
 During opcontrol you can call your autonomous.  In the example below, when the robot isn't connected to a competition switch and B is pressed on the controller, the autonomous will run.  To select your autonomous, use the left / right buttons on the brain screen until you're on the page you want, then run the autonomous.  
 ```cpp
 void opcontrol() {

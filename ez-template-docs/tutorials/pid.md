@@ -4,8 +4,6 @@ description: How to add a feedback loop to motors and increase their accuracy
 ---
 
 
-
-# PID Tutorial
 PID (proportion, integral, derivative) is a feedback controlled used to move something to a position.  The controller slows down as it approaches its target and will correct itself after overshoot occurs.  It is a relatively simply controller and can be very consistent with [tuning](https://ez-robotics.github.io/EZ-Template/tutorials/tuning_constants).  
 
 ## Example 1 - User Control

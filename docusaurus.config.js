@@ -72,7 +72,6 @@ const config = {
           },
           */
           
-          sidebarCollapsed: false,
           routeBasePath: '/', // url
           path: './ez-template-docs', // file path
           sidebarPath: './sidebars.js',

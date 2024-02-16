@@ -3,8 +3,6 @@ title: Tuning Constants
 description: Tuning the PID system to accurately rotate the desired amount
 ---
 
-
-# **Tuning Constants**
 For more information on how PID controllers work, [reference this document made by George Gillard](http://georgegillard.com/documents/2-introduction-to-pid-controllers). 
 
 

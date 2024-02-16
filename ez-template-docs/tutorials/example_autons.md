@@ -4,9 +4,6 @@ description: Some examples and test routines
 ---
 
 
-
-# **Example Autonomous Routines**
-
 ## Assumed Constants  
 These are default speeds that we can use throughout our autonomous routines to make it easier to modify them retroactively.
 ```cpp

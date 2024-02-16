@@ -3,10 +3,6 @@ title: Adding Autonomous Routines
 description: Add autonomous routines to the selector
 ---
 
-# **Adding Autonomous Routines**
-
-
-
 ## Learn to use Autonomous Functions
 Read through `src/autons.cpp` ([or click here](https://ez-robotics.github.io/EZ-Template/tutorials/example_autons)) and learn how to use the autonomous functions by reading through the example routines!  
 

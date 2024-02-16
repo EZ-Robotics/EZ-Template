@@ -675,7 +675,7 @@ Active brake runs a P loop on the drive when joysticks are within their threshol
 
 ```cpp
 void initialize() {
-  chassis.opcontrol_drive_activebrake_set(0.1);
+  chassis.opcontrol_drive_activebrake_set(2.0);
 }
 ```
 

@@ -117,6 +117,10 @@ Be sure to check what you're replacing to avoid unintentionally breaking your co
 
 </APITable>
 
+## Drive PID Constants
+In v2.x, all sensor data for the drive was handled in raw ticks.  This stopped the user from being able to add tracking wheels retroactively easily without completely retuning all constants.  v3.x handles drive sensor data in inches.  This means if a user adds tracking wheels retroactively, all PID constants will be transferable.  
+
+This means drive forward PID, backward PID, and active brake are **not transferable** to v3.x.  
 
 ## Set PID Constants
 
@@ -136,7 +140,7 @@ void default_constants() {
   // Swing Constants
   chassis.pid_swing_constants_set(5, 0, 30); // Sets forward and backward
   chassis.pid_swing_constants_forward_set(5, 0, 30);
-  chassis.pid_swing_constants_forward_set(5, 0, 30);
+  chassis.pid_swing_constants_backward_set(5, 0, 30);
 }
 ```
 

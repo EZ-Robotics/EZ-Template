@@ -3,7 +3,6 @@ title: PTO Tutorial
 description: Add or remove drive motors dynamically
 ---
 
-# PTO Tutorial
 
 PTO (power take off) is used to share power between two mechanisms, usually between the drive and something else.  For example, a 6 motor drive could pneumatically shift to a 4 motor drive and a 2 motor intake.  
 
