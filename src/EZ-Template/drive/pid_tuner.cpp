@@ -52,6 +52,7 @@ void Drive::pid_tuner_enable() {
       {"Turn PID Constants", &turnPID.constants},
       {"Swing Forward PID Constants", &forward_swingPID.constants},
       {"Swing Backward PID Constants", &backward_swingPID.constants}};
+  column_max = constants.size() - 1;
 
   pid_tuner_brain_init();
 
@@ -87,16 +88,16 @@ void Drive::pid_tuner_toggle() {
 void Drive::pid_tuner_print() {
   if (!pid_tuner_on) return;
 
-  std::string name = constants[column].name + "\n";
-  std::string kp = "kp: " + std::to_string(constants[column].consts->kp);
-  std::string ki = "ki: " + std::to_string(constants[column].consts->ki);
-  std::string kd = "kd: " + std::to_string(constants[column].consts->kd);
-  std::string starti = "start i: " + std::to_string(constants[column].consts->start_i);
+  name = constants[column].name + "\n";
+  kp = "kp: " + std::to_string(constants[column].consts->kp);
+  ki = "ki: " + std::to_string(constants[column].consts->ki);
+  kd = "kd: " + std::to_string(constants[column].consts->kd);
+  starti = "start i: " + std::to_string(constants[column].consts->start_i);
 
-  kp = row == 0 ? kp + arrow : kp + "\n";
-  ki = row == 1 ? ki + arrow : ki + "\n";
-  kd = row == 2 ? kd + arrow : kd + "\n";
-  starti = row == 3 ? starti + arrow : starti + "\n";
+  kp = row == 0 ? kp + arrow : kp + newline;
+  ki = row == 1 ? ki + arrow : ki + newline;
+  kd = row == 2 ? kd + arrow : kd + newline;
+  starti = row == 3 ? starti + arrow : starti + newline;
 
   complete_pid_tuner_output = name + "\n" + kp + ki + kd + starti + "\n";
 
@@ -115,7 +116,7 @@ void Drive::pid_tuner_print_terminal() {
 }
 
 // Modify constants
-void Drive::pid_tuner_value_modify(float p, float i, float d, float start) {
+void Drive::pid_tuner_value_modify(double p, double i, double d, double start) {
   if (!pid_tuner_on) return;
 
   switch (row) {
@@ -162,26 +163,26 @@ void Drive::pid_tuner_iterate() {
   // Up / Down for Rows
   if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_RIGHT)) {
     column++;
-    if (column > constants.size() - 1)
+    if (column > column_max)
       column = 0;
     pid_tuner_print();
   } else if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_LEFT)) {
     column--;
     if (column < 0)
-      column = constants.size() - 1;
+      column = column_max;
     pid_tuner_print();
   }
 
   // Left / Right for Columns
   if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_DOWN)) {
     row++;
-    if (row > 3)
+    if (row > row_max)
       row = 0;
     pid_tuner_print();
   } else if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_UP)) {
     row--;
     if (row < 0)
-      row = 3;
+      row = row_max;
     pid_tuner_print();
   }
 

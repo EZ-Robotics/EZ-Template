@@ -194,6 +194,8 @@ void Drive::pid_turn_set(double target, int speed, bool slew_on) {
   // Initialize slew
   slew_turn.initialize(slew_on, max_speed, target, drive_imu_get());
 
+  printf("%.2f   %.2f\n\n", slew_turn.constants.distance_to_travel, slew_turn.constants.min_speed);
+
   // Run task
   drive_mode_set(TURN);
 }

@@ -99,7 +99,7 @@ void PID::exit_condition_print(ez::exit_output exit_type) {
 
 exit_output PID::exit_condition(bool print) {
   // If this function is called while all exit constants are 0, print an error
-  if (exit.small_error == 0 && exit.small_exit_time == 0 && exit.big_error == 0 && exit.big_exit_time == 0 && exit.velocity_exit_time == 0 && exit.mA_timeout == 0) {
+  if (!(exit.small_error && exit.small_exit_time && exit.big_error && exit.big_exit_time && exit.velocity_exit_time && exit.mA_timeout)) {
     exit_condition_print(ERROR_NO_CONSTANTS);
     return ERROR_NO_CONSTANTS;
   }

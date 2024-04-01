@@ -12,23 +12,21 @@ using namespace ez;
 void Drive::ez_auto_task() {
   while (true) {
     // Autonomous PID
-    switch (drive_mode_get()) {
-      case DRIVE:
-        drive_pid_task();
-        break;
-      case TURN:
-        turn_pid_task();
-        break;
-      case SWING:
-        swing_pid_task();
-        break;
-      case DISABLE:
-        break;
-      default:
-        break;
-    }
+    if (drive_mode_get() == DRIVE)
+      drive_pid_task();
+    else if (drive_mode_get() == TURN)
+      turn_pid_task();
+    else if (drive_mode_get() == SWING)
+      swing_pid_task();
 
     util::AUTON_RAN = drive_mode_get() != DISABLE ? true : false;
+
+    /*
+    if (pros::competition::is_autonomous() && !util::AUTON_RAN)
+      util::AUTON_RAN = true;
+    else if (!pros::competition::is_autonomous())
+      drive_mode_set(DISABLE);
+    */
 
     pros::delay(util::DELAY_TIME);
   }
