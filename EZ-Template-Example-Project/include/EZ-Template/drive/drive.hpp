@@ -722,7 +722,7 @@ class Drive {
    * \param toggle_heading
    *        toggle for heading correction
    */
-  void pid_drive_set(double target, int speed, bool slew_on, bool toggle_heading = true);
+  void pid_drive_set(double target, int speed, bool slew_on = false, bool toggle_heading = true);
 
   /**
    * Sets the robot to turn using PID.
@@ -782,7 +782,7 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        0 to 127, max speed of the opposite side of the drive during the swing.  This is used for arcs, and is defaulted to 0.
+   *        -127 to 127, max speed of the opposite side of the drive during the swing.  This is used for arcs, and is defaulted to 0.
    */
   void pid_swing_set(e_swing type, double target, int speed, int opposite_speed = 0, bool slew_on = false);
 
@@ -796,7 +796,7 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        0 to 127, max speed of the opposite side of the drive during the swing.  This is used for arcs, and is defaulted to 0.
+   *        -127 to 127, max speed of the opposite side of the drive during the swing.  This is used for arcs, and is defaulted to 0.
    */
   void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed = 0, bool slew_on = false);
 
@@ -810,7 +810,7 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        0 to 127, max speed of the opposite side of the drive during the swing.  This is used for arcs, and is defaulted to 0.
+   *        -127 to 127, max speed of the opposite side of the drive during the swing.  This is used for arcs, and is defaulted to 0.
    */
   void pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed = 0, bool slew_on = false);
 
@@ -824,7 +824,7 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        0 to 127, max speed of the opposite side of the drive during the swing.  This is used for arcs, and is defaulted to 0.
+   *        -127 to 127, max speed of the opposite side of the drive during the swing.  This is used for arcs, and is defaulted to 0.
    */
   void pid_swing_relative_set(e_swing type, double target, int speed, int opposite_speed = 0, bool slew_on = false);
 
@@ -1305,14 +1305,13 @@ class Drive {
   bool slew_swing_using_angle = false;
   bool pid_tuner_terminal_b = false;
   bool pid_tuner_lcd_b = true;
-
   struct const_and_name {
     std::string name = "";
     PID::Constants *consts;
   };
   std::vector<const_and_name> constants;
   void pid_tuner_print();
-  void pid_tuner_value_modify(double p, double i, double d, double start);
+  void pid_tuner_value_modify(float p, float i, float d, float start);
   void pid_tuner_value_increase();
   void pid_tuner_value_decrease();
   void pid_tuner_print_brain();
@@ -1320,16 +1319,12 @@ class Drive {
   void pid_tuner_brain_init();
   int column = 0;
   int row = 0;
-  int column_max = 0;
-  const int row_max = 3;
-  std::string name, kp, ki, kd, starti;
   std::string arrow = " <--\n";
-  std::string newline = "\n";
-  bool last_controller_curve_state;
-  bool last_auton_selector_state;
+  bool last_controller_curve_state = false;
+  bool last_auton_selector_state = false;
   bool pid_tuner_on = false;
-  std::string complete_pid_tuner_output;
-  double p_increment = 0.1, i_increment = 0.001, d_increment = 0.25, start_i_increment = 1.0;
+  std::string complete_pid_tuner_output = "";
+  float p_increment = 0.1, i_increment = 0.001, d_increment = 0.25, start_i_increment = 1.0;
 
   /**
    * Private wait until for drive
