@@ -118,10 +118,10 @@ void Drive::wait_until_drive(double target) {
   }
 
   // Calculate error between current and target (target needs to be an in between position)
-  int l_tar = l_start + target;
-  int r_tar = r_start + target;
-  int l_error = l_tar - drive_sensor_left();
-  int r_error = r_tar - drive_sensor_right();
+  double l_tar = l_start + target;
+  double r_tar = r_start + target;
+  double l_error = l_tar - drive_sensor_left();
+  double r_error = r_tar - drive_sensor_right();
   int l_sgn = util::sgn(l_error);
   int r_sgn = util::sgn(r_error);
 
@@ -166,7 +166,7 @@ void Drive::wait_until_turn_swing(double target) {
   }
 
   // Calculate error between current and target (target needs to be an in between position)
-  int g_error = target - drive_imu_get();
+  double g_error = target - drive_imu_get();
   int g_sgn = util::sgn(g_error);
 
   exit_output turn_exit = RUNNING;

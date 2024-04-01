@@ -26,7 +26,7 @@ slew::Constants slew::constants_get() { return constants; }  // Get constants
 
 // Initialize for the movement
 void slew::initialize(bool enabled, double maximum_speed, double target, double current) {
-  is_enabled = enabled;
+  is_enabled = maximum_speed < constants.min_speed ? false : enabled;
   max_speed = maximum_speed;
 
   sign = util::sgn(target - current);
