@@ -10,25 +10,25 @@
 ez::Drive chassis (
   // Left Chassis Ports (negative port will reverse it!)
   //   the first port is used as the sensor
-  {-10, -19, 20, 9}
+  {-7, -6, -8, 20}
 
   // Right Chassis Ports (negative port will reverse it!)
   //   the first port is used as the sensor
-  ,{3, -4, -11, 12}
+  ,{-12, 2, 5, 11}
 
   // IMU Port
-  ,6
+  ,15
 
   // Wheel Diameter (Remember, 4" wheels without screw holes are actually 4.125!)
-  ,3.25
+  ,4.0
 
   // Cartridge RPM
-  ,600
+  ,400
 
   // External Gear Ratio (MUST BE DECIMAL) This is WHEEL GEAR / MOTOR GEAR
   // eg. if your drive is 84:36 where the 36t is powered, your RATIO would be 84/36 which is 2.333
   // eg. if your drive is 36:60 where the 60t is powered, your RATIO would be 36/60 which is 0.6
-  ,1.18343195266
+  ,1.0
 );
 
 
@@ -47,7 +47,7 @@ void initialize() {
 
   // Configure your chassis controls
   chassis.opcontrol_curve_buttons_toggle(true); // Enables modifying the controller curve with buttons on the joysticks
-  chassis.opcontrol_drive_activebrake_set(0); // Sets the active brake kP. We recommend 0.1.
+  chassis.opcontrol_drive_activebrake_set(0); // Sets the active brake kP. We recommend 2.
   chassis.opcontrol_curve_default_set(0, 0); // Defaults for curve. If using tank, only the first parameter is used. (Comment this line out if you have an SD card!)  
   default_constants(); // Set the drive to your own constants from autons.cpp!
 
@@ -145,6 +145,9 @@ void opcontrol() {
     // After you find values that you're happy with, you'll have to set them in auton.cpp
     if (!pros::competition::is_connected()) { 
       // Enable / Disable PID Tuner
+      //  When enabled:
+      //  * use A and Y to increment / decrement the constants
+      //  * use the arrow keys to navigate the constants
       if (master.get_digital_new_press(DIGITAL_X)) 
         chassis.pid_tuner_toggle();
         
