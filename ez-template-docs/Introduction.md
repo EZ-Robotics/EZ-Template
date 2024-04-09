@@ -15,7 +15,8 @@ preview: /img/embed.png
 
 ## Features
 - Simple to setup 
-- PID for driving, turning, and swing turns
+- PID for driving, turning, swing turns, and arcs
+- Easy to use PID tuner 
 - Speed ramp-up for driving
 - Asynchronous PID with blocking functions until settled and until a specific position has come
 - Joystick input curves
@@ -29,6 +30,7 @@ preview: /img/embed.png
 - 3 wire encoder and rotation sensor support
 - Add / remove motors from the drive dynamically to allow for PTO use
 - Exposed PID class for use with your other subsystems
+- Exposed slew class for gradual speed ramp-up for your other subsystems
 
 ## [Discord Server](https://discord.gg/EHjXBcK2Gy)
 Need extra assistance using EZ-Template?  Feel free to join our [Discord Server](https://discord.gg/EHjXBcK2Gy).  
