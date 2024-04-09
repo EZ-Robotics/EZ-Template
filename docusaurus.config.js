@@ -115,7 +115,7 @@ const config = {
           // { to: '/support', label: 'Support', position: 'left' },
           // { to: 'versions/', label: 'Versions', position: 'right' },
           { href: 'https://www.roboticsisez.com/', label: 'robotics is ez', position: 'right' },
-          { href: 'https://github.com/EZ-Robotics', label: 'GitHub', position: 'right' },
+          { href: 'https://github.com/EZ-Robotics/EZ-Template', label: 'GitHub', position: 'right' },
         ],
       },
       footer: {

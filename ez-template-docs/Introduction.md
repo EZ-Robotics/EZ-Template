@@ -30,6 +30,9 @@ preview: /img/embed.png
 - Add / remove motors from the drive dynamically to allow for PTO use
 - Exposed PID class for use with your other subsystems
 
+## [Discord Server](https://discord.gg/EHjXBcK2Gy)
+Need extra assistance using EZ-Template?  Feel free to join our [Discord Server](https://discord.gg/EHjXBcK2Gy).  
+
 ## [Installation and Upgrading](https://ez-robotics.github.io/EZ-Template/tutorials/installation)
 Installation and Upgrading tutorials can be foud [here](https://ez-robotics.github.io/EZ-Template/tutorials/installation).  
 
