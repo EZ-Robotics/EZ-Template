@@ -90,10 +90,10 @@ bool enabled() { return auton_selector_running; }
 bool turn_off = false;
 
 // Using a button to control the lcd
-pros::ADIDigitalIn* limit_switch_left = nullptr;
-pros::ADIDigitalIn* limit_switch_right = nullptr;
+pros::adi::DigitalIn* limit_switch_left = nullptr;
+pros::adi::DigitalIn* limit_switch_right = nullptr;
 pros::Task limit_switch_task(ez::as::limitSwitchTask);
-void limit_switch_lcd_initialize(pros::ADIDigitalIn* right_limit, pros::ADIDigitalIn* left_limit) {
+void limit_switch_lcd_initialize(pros::adi::DigitalIn* right_limit, pros::adi::DigitalIn* left_limit) {
   if (!left_limit && !right_limit) {
     delete limit_switch_left;
     delete limit_switch_right;

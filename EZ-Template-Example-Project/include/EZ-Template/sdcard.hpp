@@ -51,8 +51,8 @@ inline bool auton_selector_running;
 
 extern bool turn_off;
 
-extern pros::ADIDigitalIn* limit_switch_left;
-extern pros::ADIDigitalIn* limit_switch_right;
+extern pros::adi::DigitalIn* limit_switch_left;
+extern pros::adi::DigitalIn* limit_switch_right;
 /**
  * Initialize two limitswithces to change pages on the lcd
  *
@@ -61,7 +61,7 @@ extern pros::ADIDigitalIn* limit_switch_right;
  * @param right_limit_port
  *        port for the right limit switch
  */
-void limit_switch_lcd_initialize(pros::ADIDigitalIn* right_limit, pros::ADIDigitalIn* left_limit = nullptr);
+void limit_switch_lcd_initialize(pros::adi::DigitalIn* right_limit, pros::adi::DigitalIn* left_limit = nullptr);
 
 /**
  * pre_auto_task

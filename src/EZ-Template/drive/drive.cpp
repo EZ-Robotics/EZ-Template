@@ -28,11 +28,13 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 
   // Set ports to a global vector
   for (auto i : left_motor_ports) {
-    pros::Motor temp(abs(i), util::reversed_active(i));
+    pros::Motor temp((std::int8_t)abs(i));
+    temp.set_reversed(util::reversed_active(i));
     left_motors.push_back(temp);
   }
   for (auto i : right_motor_ports) {
-    pros::Motor temp(abs(i), util::reversed_active(i));
+    pros::Motor temp((std::int8_t)abs(i));
+    temp.set_reversed(util::reversed_active(i));
     right_motors.push_back(temp);
   }
 
@@ -59,11 +61,13 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 
   // Set ports to a global vector
   for (auto i : left_motor_ports) {
-    pros::Motor temp(abs(i), util::reversed_active(i));
+    pros::Motor temp(abs(i));
+    temp.set_reversed(util::reversed_active(i));
     left_motors.push_back(temp);
   }
   for (auto i : right_motor_ports) {
-    pros::Motor temp(abs(i), util::reversed_active(i));
+    pros::Motor temp(abs(i));
+    temp.set_reversed(util::reversed_active(i));
     right_motors.push_back(temp);
   }
 
@@ -90,11 +94,13 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 
   // Set ports to a global vector
   for (auto i : left_motor_ports) {
-    pros::Motor temp(abs(i), util::reversed_active(i));
+    pros::Motor temp(abs(i));
+    temp.set_reversed(util::reversed_active(i));
     left_motors.push_back(temp);
   }
   for (auto i : right_motor_ports) {
-    pros::Motor temp(abs(i), util::reversed_active(i));
+    pros::Motor temp(abs(i));
+    temp.set_reversed(util::reversed_active(i));
     right_motors.push_back(temp);
   }
 
@@ -123,11 +129,13 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 
   // Set ports to a global vector
   for (auto i : left_motor_ports) {
-    pros::Motor temp(abs(i), util::reversed_active(i));
+    pros::Motor temp(abs(i));
+    temp.set_reversed(util::reversed_active(i));
     left_motors.push_back(temp);
   }
   for (auto i : right_motor_ports) {
-    pros::Motor temp(abs(i), util::reversed_active(i));
+    pros::Motor temp(abs(i));
+    temp.set_reversed(util::reversed_active(i));
     right_motors.push_back(temp);
   }
 
@@ -275,7 +283,7 @@ void Drive::drive_imu_display_loading(int iter) {
   int boarder = 50;
 
   // Create the boarder
-  pros::screen::set_pen(COLOR_WHITE);
+  pros::screen::set_pen(pros::c::COLOR_WHITE);
   for (int i = 1; i < 3; i++) {
     pros::screen::draw_rect(boarder + i, boarder + i, 480 - boarder - i, 240 - boarder - i);
   }
@@ -291,7 +299,7 @@ void Drive::drive_imu_display_loading(int iter) {
   // Failsafe time
   else {
     static int last_x1 = boarder;
-    pros::screen::set_pen(COLOR_RED);
+    pros::screen::set_pen(pros::c::COLOR_RED);
     int x1 = ((iter - 2000) * ((480 - (boarder * 2)) / 1000.0)) + boarder;
     pros::screen::fill_rect(last_x1, boarder, x1, 240 - boarder);
     last_x1 = x1;
@@ -299,25 +307,8 @@ void Drive::drive_imu_display_loading(int iter) {
 }
 
 bool Drive::drive_imu_calibrate(bool run_loading_animation) {
-  imu.reset();
-  int iter = 0;
-  while (true) {
-    iter += util::DELAY_TIME;
-
-    if (run_loading_animation) drive_imu_display_loading(iter);
-
-    if (iter >= 2000) {
-      if (!(imu.get_status() & pros::c::E_IMU_STATUS_CALIBRATING)) {
-        break;
-      }
-      if (iter >= 3000) {
-        printf("No IMU plugged in, (took %d ms to realize that)\n", iter);
-        return false;
-      }
-    }
-    pros::delay(util::DELAY_TIME);
-  }
-  printf("IMU is done calibrating (took %d ms)\n", iter);
+  // blocking reset
+  imu.reset(true);
   return true;
 }
 
