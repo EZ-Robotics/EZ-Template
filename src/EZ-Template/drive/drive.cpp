@@ -307,8 +307,34 @@ void Drive::drive_imu_display_loading(int iter) {
 }
 
 bool Drive::drive_imu_calibrate(bool run_loading_animation) {
-  // blocking reset
-  imu.reset(true);
+  imu.reset();
+  int iter = 0;
+  bool current_status = imu.is_calibrating();
+  bool last_status = current_status;
+  bool successful = false;
+  while (true) {
+    iter += util::DELAY_TIME;
+
+    if (run_loading_animation) drive_imu_display_loading(iter);
+
+    if (!successful) {
+      last_status = current_status;
+      current_status = imu.is_calibrating();
+      successful = !current_status && last_status ? true : false;
+    }
+
+    if (iter >= 2000) {
+      if (successful) {
+        break;
+      }
+      if (iter >= 3000) {
+        printf("No IMU plugged in, (took %d ms to realize that)\n", iter);
+        return false;
+      }
+    }
+    pros::delay(util::DELAY_TIME);
+  }
+  printf("IMU is done calibrating (took %d ms)\n", iter);
   return true;
 }
 
