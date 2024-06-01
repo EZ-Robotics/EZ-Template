@@ -153,8 +153,8 @@ class ADIAnalogIn : protected ADIPort {
 	 * this time and computes an average from approximately 500 samples, 1 ms
 	 * apart, for a 0.5 s period of calibration. The average value thus calculated
 	 * is returned and stored for later calls to the
-	 * pros::ADIAnalogIn::get_value_calibrated() and
-	 * pros::ADIAnalogIn::get_value_calibrated_HR() functions. These functions
+	 * pros::adi::AnalogIn::get_value_calibrated() and
+	 * pros::adi::AnalogIn::get_value_calibrated_HR() functions. These functions
 	 * will return the difference between this value and the current sensor value
 	 * when called.
 	 *
@@ -172,10 +172,10 @@ class ADIAnalogIn : protected ADIPort {
 	/**
 	 * Gets the 12 bit calibrated value of an analog input port.
 	 *
-	 * The pros::ADIAnalogIn::calibrate() function must be run first. This
+	 * The pros::adi::AnalogIn::calibrate() function must be run first. This
 	 * function is inappropriate for sensor values intended for integration, as
 	 * round-off error can accumulate causing drift over time. Use
-	 * pros::ADIAnalogIn::get_value_calibrated_HR() instead.
+	 * pros::adi::AnalogIn::get_value_calibrated_HR() instead.
 	 *
 	 * This function uses the following values of errno when an error state is
 	 * reached:
@@ -189,7 +189,7 @@ class ADIAnalogIn : protected ADIPort {
 	/**
 	 * Gets the 16 bit calibrated value of an analog input port.
 	 *
-	 * The pros::ADIAnalogIn::calibrate() function must be run first. This is
+	 * The pros::adi::AnalogIn::calibrate() function must be run first. This is
 	 * intended for integrated sensor values such as gyros and accelerometers to
 	 * reduce drift due to round-off, and should not be used on a sensor such as a
 	 * line tracker or potentiometer.
@@ -735,7 +735,7 @@ class ADIPotentiometer : public ADIAnalogIn {
 	 * this time and computes an average from approximately 500 samples, 1 ms
 	 * apart, for a 0.5 s period of calibration. The average value thus calculated
 	 * is returned and stored for later calls to the
-	 * pros::ADIPotentiometer::get_value_calibrated() function. This function
+	 * pros::adi::Potentiometer::get_value_calibrated() function. This function
 	 * will return the difference between this value and the current sensor value
 	 * when called.
 	 *
@@ -752,7 +752,7 @@ class ADIPotentiometer : public ADIAnalogIn {
 	/**
 	 * Gets the 12 bit calibrated value of a potentiometer port.
 	 *
-	 * The pros::ADIPotentiometer::calibrate() function must be run first.
+	 * The pros::adi::Potentiometer::calibrate() function must be run first.
 	 *
 	 * This function uses the following values of errno when an error state is
 	 * reached:
