@@ -118,7 +118,13 @@ void PID::velocity_sensor_secondary_toggle_set(bool toggle) { use_second_sensor 
 bool PID::velocity_sensor_secondary_toggle_get() { return use_second_sensor; }
 
 void PID::velocity_sensor_secondary_set(double secondary_sensor) { second_sensor = secondary_sensor; }
-double PID::velocity_sensor_secondary_get() { return velocity_zero_secondary; }
+double PID::velocity_sensor_secondary_get() { return second_sensor; }
+
+void PID::velocity_sensor_main_exit_set(double zero) { velocity_zero_main = zero; }
+double PID::velocity_sensor_main_exit_get() { return velocity_zero_main; }
+
+void PID::velocity_sensor_secondary_exit_set(double zero) { velocity_zero_secondary = zero; }
+double PID::velocity_sensor_secondary_exit_get() { return velocity_zero_secondary; }
 
 exit_output PID::exit_condition(bool print) {
   // If this function is called while all exit constants are 0, print an error

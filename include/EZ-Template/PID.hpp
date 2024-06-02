@@ -169,12 +169,12 @@ class PID {
    * \param zero
    *        a small double
    */
-  void velocity_zero_main_set(double zero);
+  void velocity_sensor_main_exit_set(double zero);
 
   /**
    * Returns the threshold that the main sensor will return 0 velocity within
    */
-  double velocity_zero_main_get();
+  double velocity_sensor_main_exit_get();
 
   /**
    * Sets the threshold that the secondary sensor will return 0 velocity within
@@ -182,12 +182,12 @@ class PID {
    * \param zero
    *        a small double
    */
-  void velocity_zero_secondary_set(double zero);
+  void velocity_sensor_secondary_exit_set(double zero);
 
   /**
    * Returns the threshold that the secondary sensor will return 0 velocity within
    */
-  double velocity_zero_secondary_get();
+  double velocity_sensor_secondary_exit_get();
 
   /**
    * Iterative exit condition for PID.
