@@ -97,9 +97,20 @@ class PID {
    * Computes PID.
    *
    * \param current
-   *        Current sensor library.
+   *        Current sensor value.
    */
   double compute(double current);
+
+  /**
+   * Computes PID, but you set the error yourself.  This function ignores target.
+   * Current is only used here for calculative derivative.
+   *
+   * \param err
+   *        Error in PID, you need to calculate this yourself.
+   * \param current
+   *        Current sensor value.
+   */
+  double compute_error(double err, double current);
 
   /**
    * Returns target value.
@@ -183,15 +194,16 @@ class PID {
   /**
    * PID variables.
    */
-  double output;
-  double cur;
-  double error;
-  double target;
-  double prev_error;
-  double integral;
-  double derivative;
-  long time;
-  long prev_time;
+  double output = 0.0;
+  double cur = 0.0;
+  double error = 0.0;
+  double target = 0.0;
+  double prev_error = 0.0;
+  double prev_current = 0.0;
+  double integral = 0.0;
+  double derivative = 0.0;
+  long time = 0;
+  long prev_time = 0;
 
  private:
   int i = 0, j = 0, k = 0, l = 0;
@@ -201,5 +213,6 @@ class PID {
   bool name_active = false;
   void exit_condition_print(ez::exit_output exit_type);
   bool reset_i_sgn = true;
+  double raw_compute();
 };
 };  // namespace ez

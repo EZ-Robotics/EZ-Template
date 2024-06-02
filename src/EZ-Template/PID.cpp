@@ -59,18 +59,34 @@ bool PID::i_reset_get() { return reset_i_sgn; };
 
 double PID::compute(double current) {
   error = target - current;
-  derivative = error - prev_error;
+  return compute_error(error, current);
+}
+
+double PID::compute_error(double err, double current) {
+  error = err;
+  cur = current;
+
+  return raw_compute();
+}
+
+double PID::raw_compute() {
+  // calculate derivative on measurement instead of error to avoid "derivative kick"
+  // https://www.isa.org/intech-home/2023/june-2023/features/fundamentals-pid-control
+  derivative = cur - prev_current;
 
   if (constants.ki != 0) {
+    // Only compute i when within a threshold of target
     if (fabs(error) < constants.start_i)
       integral += error;
 
-    if (util::sgn(error) != util::sgn(prev_error) && reset_i_sgn)
+    // Reset i when the sign of error flips
+    if (util::sgn(error) != util::sgn(prev_current) && reset_i_sgn)
       integral = 0;
   }
 
-  output = (error * constants.kp) + (integral * constants.ki) + (derivative * constants.kd);
+  output = (error * constants.kp) + (integral * constants.ki) - (derivative * constants.kd);
 
+  prev_current = cur;
   prev_error = error;
 
   return output;
