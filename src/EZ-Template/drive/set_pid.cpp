@@ -156,10 +156,11 @@ void Drive::pid_drive_set(double target, int speed, bool slew_on, bool toggle_he
   if (l_target_encoder < l_start && r_target_encoder < r_start) {
     pid_consts = backward_drivePID.constants_get();
     slew_consts = slew_backward.constants_get();
-
+    motion_chain_backward = true;
   } else {
     pid_consts = forward_drivePID.constants_get();
     slew_consts = slew_forward.constants_get();
+    motion_chain_backward=false;
   }
   leftPID.constants_set(pid_consts.kp, pid_consts.ki, pid_consts.kd, pid_consts.start_i);
   rightPID.constants_set(pid_consts.kp, pid_consts.ki, pid_consts.kd, pid_consts.start_i);
@@ -249,12 +250,14 @@ void Drive::pid_swing_set(e_swing type, double target, int speed, int opposite_s
     pid_swing_consts = backward_swingPID.constants_get();
     slew_consts = slew_swing_backward.constants_get();
     slew_swing_using_angle = slew_swing_rev_using_angle;
+    motion_chain_backward = true;
 
   } else {
     pid_consts = forward_drivePID.constants_get();
     pid_swing_consts = forward_swingPID.constants_get();
     slew_consts = slew_swing_forward.constants_get();
     slew_swing_using_angle = slew_swing_fwd_using_angle;
+    motion_chain_backward = false;
   }
 
   // Set targets for the side that isn't moving

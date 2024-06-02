@@ -62,6 +62,7 @@ void initialize() {
     Auton("Drive and Turn\n\nDrive forward, turn, come back. ", drive_and_turn),
     Auton("Drive and Turn\n\nSlow down during drive.", wait_until_change_speed),
     Auton("Swing Example\n\nSwing in an 'S' curve", swing_example),
+    Auton("Motion Chaining\n\nDrive forward, turn, and come back, but blend everything together :D", motion_chaining),
     Auton("Combine all 3 movements", combining_movements),
     Auton("Interference\n\nAfter driving forward, robot performs differently if interfered or not.", interfered_example),
   });
@@ -117,38 +118,7 @@ void autonomous() {
   chassis.drive_sensor_reset(); // Reset drive sensors to 0
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD); // Set motors to hold.  This helps autonomous consistency
 
-  chassis.pid_turn_set(45_deg, 110);
-  chassis.pid_wait_chain();
-
-  chassis.pid_turn_set(0_deg, 110);
-  chassis.pid_wait_chain();
-
-  chassis.pid_drive_set(-12_in, 110);
-  chassis.pid_wait_chain(); 
-
-  chassis.pid_drive_set(12_in, 110);
-  chassis.pid_wait_chain();
-
-  /*
-  chassis.pid_drive_set(12_in, 110);
-  chassis.pid_wait_quick();
-
-  //chassis.motion_chaining_enabled = false;
-  chassis.pid_turn_set(-45_deg, 110);
-  chassis.pid_wait_quick();
-
-  chassis.pid_turn_set(45_deg, 110);
-  chassis.pid_wait_quick();
-
-  chassis.pid_turn_set(0_deg, 110);
-  chassis.pid_wait_quick();
-
-  chassis.pid_drive_set(-12_in, 110);
-  chassis.pid_wait();
-  */
-
-
-  //ez::as::auton_selector.selected_auton_call(); // Calls selected auton from autonomous selector
+  ez::as::auton_selector.selected_auton_call(); // Calls selected auton from autonomous selector
 }
 
 

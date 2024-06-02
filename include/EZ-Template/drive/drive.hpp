@@ -891,6 +891,19 @@ class Drive {
   void pid_wait_until(double target);
 
   /**
+   * Lock the code in a while loop until the robot has settled.
+   * Wrapper for pid_wait_until(target), target is your previously input target
+   */
+  void pid_wait_quick();
+
+  /**
+   * Lock the code in a while loop until the robot has settled.
+   * This also adds distance to target, and then exits with pid_wait_quick
+   * This will exit the motion while carrying momentum into the next motion.
+   */
+  void pid_wait_quick_chain();
+
+  /**
    * Autonomous interference detection.  Returns true when interfered, and false when nothing happened.
    */
   bool interfered = false;
@@ -935,6 +948,29 @@ class Drive {
    * @param p_start_i   start_I
    */
   PID::Constants pid_turn_constants_get();
+
+  /**
+   * Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.
+   * This sets turning constants.
+   *
+   * \param input
+   *        okapi angle unit
+   */
+  void pid_turn_chain_constant_set(okapi::QAngle input);
+
+  /**
+   * Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.
+   * This sets turning constants.
+   *
+   * \param input
+   *        angle in degrees
+   */
+  void pid_turn_chain_constant_set(double input);
+
+  /**
+   * Returns the amount that the PID will overshoot target by to maintain momentum into the next motion for turning.
+   */
+  double pid_turn_chain_constant_get();
 
   /**
    * @brief Set the swing pid constants object
@@ -995,6 +1031,70 @@ class Drive {
    * @param p_start_i   start_I
    */
   PID::Constants pid_swing_constants_backward_get();
+
+  /**
+   * Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.
+   * This sets forward and backwards swing constants.
+   *
+   * \param input
+   *        okapi angle unit
+   */
+  void pid_swing_chain_constant_set(okapi::QAngle input);
+
+  /**
+   * Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.
+   * This only sets forward swing constants.
+   *
+   * \param input
+   *        okapi angle unit
+   */
+  void pid_swing_chain_forward_constant_set(okapi::QAngle input);
+
+  /**
+   * Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.
+   * This only sets backward swing constants.
+   *
+   * \param input
+   *        okapi angle unit
+   */
+  void pid_swing_chain_backward_constant_set(okapi::QAngle input);
+
+  /**
+   * Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.
+   * This sets forward and backwards swing constants.
+   *
+   * \param input
+   *        angle in degrees
+   */
+  void pid_swing_chain_constant_set(double input);
+
+  /**
+   * Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.
+   * This only sets forward constants.
+   *
+   * \param input
+   *        angle in degrees
+   */
+  void pid_swing_chain_forward_constant_set(double input);
+
+  /**
+   * Returns the amount that the PID will overshoot target by to maintain momentum into the next motion for swinging forward.
+   */
+  double pid_swing_chain_forward_constant_get();
+
+  /**
+   * Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.
+   * This only sets backwards swing constants.
+   *
+   * \param input
+   *        angle in degrees
+   */
+  void pid_swing_chain_backward_constant_set(double input);
+
+  /**
+   * Returns the amount that the PID will overshoot target by to maintain momentum into the next motion for swinging backward.
+   */
+  double pid_swing_chain_backward_constant_get();
 
   /**
    * @brief Set the heading pid constants object
@@ -1075,6 +1175,70 @@ class Drive {
    * @param p_start_i   start_I
    */
   PID::Constants pid_drive_constants_backward_get();
+
+  /**
+   * Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.
+   * This sets forward and backwards driving constants.
+   *
+   * \param input
+   *        okapi length unit
+   */
+  void pid_drive_chain_constant_set(okapi::QLength input);
+
+  /**
+   * Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.
+   * This only sets forward driving constants.
+   *
+   * \param input
+   *        okapi length unit
+   */
+  void pid_drive_chain_forward_constant_set(okapi::QLength input);
+
+  /**
+   * Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.
+   * This only sets backward driving constants.
+   *
+   * \param input
+   *        okapi length unit
+   */
+  void pid_drive_chain_backward_constant_set(okapi::QLength input);
+
+  /**
+   * Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.
+   * This sets forward and backwards driving constants.
+   *
+   * \param input
+   *        distance in inches
+   */
+  void pid_drive_chain_constant_set(double input);
+
+  /**
+   * Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.
+   * This only sets forward driving constants.
+   *
+   * \param input
+   *        distance in inches
+   */
+  void pid_drive_chain_forward_constant_set(double input);
+
+  /**
+   * Returns the amount that the PID will overshoot target by to maintain momentum into the next motion for driving forward.
+   */
+  double pid_drive_chain_forward_constant_get();
+
+  /**
+   * Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.
+   * This only sets backward driving constants.
+   *
+   * \param input
+   *        distance in inches
+   */
+  void pid_drive_chain_backward_constant_set(double input);
+
+  /**
+   * Returns the amount that the PID will overshoot target by to maintain momentum into the next motion for driving backward.
+   */
+  double pid_drive_chain_backward_constant_get();
 
   /**
    * Sets minimum power for swings when kI and startI are enabled.
@@ -1323,19 +1487,19 @@ class Drive {
    */
   double pid_tuner_increment_start_i_get();
 
-  double drive_motion_chain_scale = 3.0;
-  double swing_motion_chain_scale = 3.0;
-  double turn_motion_chain_scale = 3.0;
-  double used_motion_chain_scale = 0.0;
-
-
+ private:  // !Auton
   double chain_target_start = 0.0;
   double chain_sensor_start = 0.0;
-  void pid_wait_quick();
-  void pid_wait_chain();
+  double drive_forward_motion_chain_scale = 0.0;
+  double drive_backward_motion_chain_scale = 0.0;
+  double swing_forward_motion_chain_scale = 0.0;
+  double swing_backward_motion_chain_scale = 0.0;
+  double turn_motion_chain_scale = 0.0;
+  double used_motion_chain_scale = 0.0;
+  bool motion_chain_backward = false;
 
- private:  // !Auton
   double IMU_SCALER = 1.0;
+
   bool drive_toggle = true;
   bool print_toggle = true;
   int swing_min = 0;

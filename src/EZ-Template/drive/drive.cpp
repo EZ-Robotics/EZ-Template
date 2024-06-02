@@ -165,6 +165,10 @@ void Drive::drive_defaults_set() {
   pid_swing_exit_condition_set(300_ms, 3_deg, 500_ms, 7_deg, 750_ms, 750_ms);
   pid_drive_exit_condition_set(300_ms, 1_in, 500_ms, 3_in, 750_ms, 750_ms);
 
+  pid_turn_chain_constant_set(3_deg);
+  pid_swing_chain_constant_set(5_deg);
+  pid_drive_chain_constant_set(3_in);
+
   // Modify joystick curve on controller (defaults to disabled)
   opcontrol_curve_buttons_toggle(true);
 
