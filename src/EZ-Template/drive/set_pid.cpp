@@ -133,6 +133,9 @@ void Drive::pid_drive_set(double target, int speed, bool slew_on, bool toggle_he
   if (print_toggle) printf("Drive Started... Target Value: %f in", target);
   if (slew_on && print_toggle) printf(" with slew");
   if (print_toggle) printf("\n");
+  chain_target_start = target;
+  chain_sensor_start = drive_sensor_left();
+  used_motion_chain_scale = 0.0;
 
   // Global setup
   pid_speed_max_set(speed);
@@ -185,6 +188,9 @@ void Drive::pid_drive_set(okapi::QLength p_target, int speed, bool slew_on, bool
 void Drive::pid_turn_set(double target, int speed, bool slew_on) {
   // Print targets
   if (print_toggle) printf("Turn Started... Target Value: %f\n", target);
+  chain_sensor_start = drive_imu_get();
+  chain_target_start = target;
+  used_motion_chain_scale = 0.0;
 
   // Set PID targets
   turnPID.target_set(target);
@@ -192,7 +198,7 @@ void Drive::pid_turn_set(double target, int speed, bool slew_on) {
   pid_speed_max_set(speed);
 
   // Initialize slew
-  slew_turn.initialize(slew_on, max_speed, target, drive_imu_get());
+  slew_turn.initialize(slew_on, max_speed, target, chain_sensor_start);
 
   // Run task
   drive_mode_set(TURN);
@@ -225,10 +231,13 @@ void Drive::pid_swing_set(e_swing type, double target, int speed, int opposite_s
   // Print targets
   if (print_toggle) printf("Swing Started... Target Value: %f\n", target);
   current_swing = type;
+  chain_sensor_start = drive_imu_get();
+  chain_target_start = target;
+  used_motion_chain_scale = 0.0;
 
   // Figure out if going forward or backward
   int side = type == ez::LEFT_SWING ? 1 : -1;
-  int direction = util::sgn((target - drive_imu_get()) * side);
+  int direction = util::sgn((target - chain_sensor_start) * side);
 
   // Set constants according to the robots direction
   PID::Constants pid_consts;
@@ -264,7 +273,7 @@ void Drive::pid_swing_set(e_swing type, double target, int speed, int opposite_s
 
   // Initialize slew
   double slew_tar = slew_swing_using_angle ? target : direction * 100;
-  double current = slew_swing_using_angle ? drive_imu_get() : (current_swing == LEFT_SWING ? drive_sensor_left() : drive_sensor_right());
+  double current = slew_swing_using_angle ? chain_sensor_start : (current_swing == LEFT_SWING ? drive_sensor_left() : drive_sensor_right());
   slew_swing.initialize(slew_on, max_speed, slew_tar, current);
 
   // Run task

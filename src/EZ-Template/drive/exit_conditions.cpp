@@ -269,3 +269,40 @@ void Drive::pid_wait_until(double target) {
     printf("Not in a valid drive mode!\n");
   }
 }
+
+// Pid wait, but quickly :)
+void Drive::pid_wait_quick() {
+  if (!(mode == DRIVE || mode == TURN || mode == SWING)) {
+    printf("Not in a valid drive mode!\n");
+    return;
+  }
+
+  // This is the target the user set, not the modified chained target
+  pid_wait_until(chain_target_start);
+}
+
+// Pid wait that hold momentum into the next motion
+void Drive::pid_wait_chain() {
+  // If driving, add drive_motion_chain_scale to target
+  if (mode == DRIVE) {
+    used_motion_chain_scale = drive_motion_chain_scale * util::sgn(chain_target_start);
+    leftPID.target_set(leftPID.target_get() + used_motion_chain_scale);
+    rightPID.target_set(leftPID.target_get() + used_motion_chain_scale);
+  }
+  // If turning, add turn_motion_chain_scale to target
+  else if (mode == TURN) {
+    used_motion_chain_scale = turn_motion_chain_scale * util::sgn(chain_target_start - chain_sensor_start);
+    turnPID.target_set(turnPID.target_get() + used_motion_chain_scale);
+  }
+  // If swinging, add swing_motion_chain_scale to target
+  else if (mode == SWING) {
+    used_motion_chain_scale = swing_motion_chain_scale * util::sgn(chain_target_start - chain_sensor_start);
+    swingPID.target_set(swingPID.target_get() + used_motion_chain_scale);
+  } else {
+    printf("Not in a valid drive mode!\n");
+    return;
+  }
+
+  // Exit at the real target
+  pid_wait_quick();
+}

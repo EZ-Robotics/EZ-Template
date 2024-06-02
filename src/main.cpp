@@ -117,7 +117,38 @@ void autonomous() {
   chassis.drive_sensor_reset(); // Reset drive sensors to 0
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD); // Set motors to hold.  This helps autonomous consistency
 
-  ez::as::auton_selector.selected_auton_call(); // Calls selected auton from autonomous selector
+  chassis.pid_turn_set(45_deg, 110);
+  chassis.pid_wait_chain();
+
+  chassis.pid_turn_set(0_deg, 110);
+  chassis.pid_wait_chain();
+
+  chassis.pid_drive_set(-12_in, 110);
+  chassis.pid_wait_chain(); 
+
+  chassis.pid_drive_set(12_in, 110);
+  chassis.pid_wait_chain();
+
+  /*
+  chassis.pid_drive_set(12_in, 110);
+  chassis.pid_wait_quick();
+
+  //chassis.motion_chaining_enabled = false;
+  chassis.pid_turn_set(-45_deg, 110);
+  chassis.pid_wait_quick();
+
+  chassis.pid_turn_set(45_deg, 110);
+  chassis.pid_wait_quick();
+
+  chassis.pid_turn_set(0_deg, 110);
+  chassis.pid_wait_quick();
+
+  chassis.pid_drive_set(-12_in, 110);
+  chassis.pid_wait();
+  */
+
+
+  //ez::as::auton_selector.selected_auton_call(); // Calls selected auton from autonomous selector
 }
 
 

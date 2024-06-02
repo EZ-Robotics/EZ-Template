@@ -1323,6 +1323,17 @@ class Drive {
    */
   double pid_tuner_increment_start_i_get();
 
+  double drive_motion_chain_scale = 3.0;
+  double swing_motion_chain_scale = 3.0;
+  double turn_motion_chain_scale = 3.0;
+  double used_motion_chain_scale = 0.0;
+
+
+  double chain_target_start = 0.0;
+  double chain_sensor_start = 0.0;
+  void pid_wait_quick();
+  void pid_wait_chain();
+
  private:  // !Auton
   double IMU_SCALER = 1.0;
   bool drive_toggle = true;
