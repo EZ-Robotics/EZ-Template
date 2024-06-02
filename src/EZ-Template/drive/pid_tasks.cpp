@@ -46,27 +46,31 @@ void Drive::drive_pid_task() {
   slew_left.iterate(drive_sensor_left());
   slew_right.iterate(drive_sensor_right());
 
-  // Clip leftPID and rightPID to slew (if slew is disabled, it returns max_speed)
-  double l_drive_out = util::clamp(leftPID.output, slew_left.output(), -slew_left.output());
-  double r_drive_out = util::clamp(rightPID.output, slew_right.output(), -slew_right.output());
+  // Left and Right outputs
+  double l_drive_out = leftPID.output;
+  double r_drive_out = rightPID.output;
+
+  // Scale leftPID and rightPID to slew (if slew is disabled, it returns max_speed)
+  double max_slew_out = fmin(slew_left.output(), slew_right.output());
+  double faster_side = fmax(fabs(l_drive_out), fabs(r_drive_out));
+  if (faster_side > max_slew_out) {
+    l_drive_out = l_drive_out * (max_slew_out / faster_side);
+    r_drive_out = r_drive_out * (max_slew_out / faster_side);
+  }
 
   // Toggle heading
-  double gyro_out = heading_on ? headingPID.output : 0;
+  double imu_out = heading_on ? headingPID.output : 0;
 
   // Combine heading and drive
-  double l_out = l_drive_out + gyro_out;
-  double r_out = r_drive_out - gyro_out;
+  double l_out = l_drive_out + imu_out;
+  double r_out = r_drive_out - imu_out;
 
-  // Vector scaling
-  double max_slew_out = fmin(slew_left.output(), slew_right.output());
-  if (fabs(l_out) > max_slew_out || fabs(r_out) > max_slew_out) {
-    if (fabs(l_out) > fabs(r_out)) {
-      r_out = r_out * (max_slew_out / fabs(l_out));
-      l_out = util::clamp(l_out, max_slew_out, -max_slew_out);
-    } else {
-      l_out = l_out * (max_slew_out / fabs(r_out));
-      r_out = util::clamp(r_out, max_slew_out, -max_slew_out);
-    }
+  // Vector scaling when combining drive and imo
+  max_slew_out = fmin(slew_left.output(), slew_right.output());
+  faster_side = fmax(fabs(l_out), fabs(r_out));
+  if (faster_side > max_slew_out) {
+    l_out = l_out * (max_slew_out / faster_side);
+    r_out = r_out * (max_slew_out / faster_side);
   }
 
   // Set motors
