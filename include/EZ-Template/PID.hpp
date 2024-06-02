@@ -138,6 +138,58 @@ class PID {
   exit_condition_ exit;
 
   /**
+   * Updates a secondary sensor for velocity exiting.  Ideal use is IMU during normal drive motions.
+   *
+   * \param secondary_sensor
+   *        double for a secondary sensor.
+   */
+  void velocity_sensor_secondary_set(double secondary_sensor);
+
+  /**
+   * Returns the updated secondary sensor for velocity exiting.
+   */
+  double velocity_sensor_secondary_get();
+
+  /**
+   * Boolean for if the secondary sensor will be updated or not.  True uses this sensor, false does not.
+   *
+   * \param toggle
+   *        True uses this sensor, false does not.
+   */
+  void velocity_sensor_secondary_toggle_set(bool toggle);
+
+  /**
+   * Returns the boolean for if the secondary sensor will be updated or not.  True uses this sensor, false does not.
+   */
+  bool velocity_sensor_secondary_toggle_get();
+
+  /**
+   * Sets the threshold that the main sensor will return 0 velocity within
+   *
+   * \param zero
+   *        a small double
+   */
+  void velocity_sensor_main_exit_set(double zero);
+
+  /**
+   * Returns the threshold that the main sensor will return 0 velocity within
+   */
+  double velocity_sensor_main_exit_get();
+
+  /**
+   * Sets the threshold that the secondary sensor will return 0 velocity within
+   *
+   * \param zero
+   *        a small double
+   */
+  void velocity_sensor_secondary_exit_set(double zero);
+
+  /**
+   * Returns the threshold that the secondary sensor will return 0 velocity within
+   */
+  double velocity_sensor_secondary_exit_get();
+
+  /**
    * Iterative exit condition for PID.
    *
    * \param print = false
@@ -206,13 +258,17 @@ class PID {
   long prev_time = 0;
 
  private:
-  int i = 0, j = 0, k = 0, l = 0;
+  double velocity_zero_main = 0.05;
+  double velocity_zero_secondary = 0.1;
+  int i = 0, j = 0, k = 0, l = 0, m = 0;
   bool is_mA = false;
+  double second_sensor = 0.0;
   void timers_reset();
   std::string name;
   bool name_active = false;
   void exit_condition_print(ez::exit_output exit_type);
   bool reset_i_sgn = true;
   double raw_compute();
+  bool use_second_sensor = false;
 };
 };  // namespace ez

@@ -9,12 +9,14 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 using namespace ez;
 
-void Drive::pid_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout) {
+void Drive::pid_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu) {
   leftPID.exit_condition_set(p_small_exit_time, p_small_error, p_big_exit_time, p_big_error, p_velocity_exit_time, p_mA_timeout);
   rightPID.exit_condition_set(p_small_exit_time, p_small_error, p_big_exit_time, p_big_error, p_velocity_exit_time, p_mA_timeout);
+  leftPID.velocity_sensor_secondary_toggle_set(use_imu);
+  rightPID.velocity_sensor_secondary_toggle_set(use_imu);
 }
 
-void Drive::pid_drive_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QLength p_small_error, okapi::QTime p_big_exit_time, okapi::QLength p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout) {
+void Drive::pid_drive_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QLength p_small_error, okapi::QTime p_big_exit_time, okapi::QLength p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout, bool use_imu) {
   // Convert okapi units to doubles
   double se = p_small_error.convert(okapi::inch);
   double be = p_big_error.convert(okapi::inch);
@@ -23,14 +25,15 @@ void Drive::pid_drive_exit_condition_set(okapi::QTime p_small_exit_time, okapi::
   int vet = p_velocity_exit_time.convert(okapi::millisecond);
   int mAt = p_mA_timeout.convert(okapi::millisecond);
 
-  pid_drive_exit_condition_set(set, se, bet, be, vet, mAt);
+  pid_drive_exit_condition_set(set, se, bet, be, vet, mAt, use_imu);
 }
 
-void Drive::pid_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout) {
+void Drive::pid_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu) {
   turnPID.exit_condition_set(p_small_exit_time, p_small_error, p_big_exit_time, p_big_error, p_velocity_exit_time, p_mA_timeout);
+  turnPID.velocity_sensor_secondary_toggle_set(use_imu);
 }
 
-void Drive::pid_turn_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QAngle p_small_error, okapi::QTime p_big_exit_time, okapi::QAngle p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout) {
+void Drive::pid_turn_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QAngle p_small_error, okapi::QTime p_big_exit_time, okapi::QAngle p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout, bool use_imu) {
   // Convert okapi units to doubles
   double se = p_small_error.convert(okapi::degree);
   double be = p_big_error.convert(okapi::degree);
@@ -39,14 +42,15 @@ void Drive::pid_turn_exit_condition_set(okapi::QTime p_small_exit_time, okapi::Q
   int vet = p_velocity_exit_time.convert(okapi::millisecond);
   int mAt = p_mA_timeout.convert(okapi::millisecond);
 
-  pid_turn_exit_condition_set(set, se, bet, be, vet, mAt);
+  pid_turn_exit_condition_set(set, se, bet, be, vet, mAt, use_imu);
 }
 
-void Drive::pid_swing_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout) {
+void Drive::pid_swing_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu) {
   swingPID.exit_condition_set(p_small_exit_time, p_small_error, p_big_exit_time, p_big_error, p_velocity_exit_time, p_mA_timeout);
+  swingPID.velocity_sensor_secondary_toggle_set(use_imu);
 }
 
-void Drive::pid_swing_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QAngle p_small_error, okapi::QTime p_big_exit_time, okapi::QAngle p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout) {
+void Drive::pid_swing_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QAngle p_small_error, okapi::QTime p_big_exit_time, okapi::QAngle p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout, bool use_imu) {
   // Convert okapi units to doubles
   double se = p_small_error.convert(okapi::degree);
   double be = p_big_error.convert(okapi::degree);
@@ -55,7 +59,7 @@ void Drive::pid_swing_exit_condition_set(okapi::QTime p_small_exit_time, okapi::
   int vet = p_velocity_exit_time.convert(okapi::millisecond);
   int mAt = p_mA_timeout.convert(okapi::millisecond);
 
-  pid_swing_exit_condition_set(set, se, bet, be, vet, mAt);
+  pid_swing_exit_condition_set(set, se, bet, be, vet, mAt, use_imu);
 }
 
 // User wrapper for exit condition
@@ -67,6 +71,8 @@ void Drive::pid_wait() {
     exit_output left_exit = RUNNING;
     exit_output right_exit = RUNNING;
     while (left_exit == RUNNING || right_exit == RUNNING) {
+      leftPID.velocity_sensor_secondary_set(drive_imu_accel_get());
+      rightPID.velocity_sensor_secondary_set(drive_imu_accel_get());
       left_exit = left_exit != RUNNING ? left_exit : leftPID.exit_condition(left_motors[0]);
       right_exit = right_exit != RUNNING ? right_exit : rightPID.exit_condition(right_motors[0]);
       pros::delay(util::DELAY_TIME);
@@ -82,6 +88,7 @@ void Drive::pid_wait() {
   else if (mode == TURN) {
     exit_output turn_exit = RUNNING;
     while (turn_exit == RUNNING) {
+      turnPID.velocity_sensor_secondary_set(drive_imu_accel_get());
       turn_exit = turn_exit != RUNNING ? turn_exit : turnPID.exit_condition({left_motors[0], right_motors[0]});
       pros::delay(util::DELAY_TIME);
     }
@@ -97,6 +104,7 @@ void Drive::pid_wait() {
     exit_output swing_exit = RUNNING;
     pros::Motor& sensor = current_swing == ez::LEFT_SWING ? left_motors[0] : right_motors[0];
     while (swing_exit == RUNNING) {
+      swingPID.velocity_sensor_secondary_set(drive_imu_accel_get());
       swing_exit = swing_exit != RUNNING ? swing_exit : swingPID.exit_condition(sensor);
       pros::delay(util::DELAY_TIME);
     }
@@ -135,6 +143,8 @@ void Drive::wait_until_drive(double target) {
     // Before robot has reached target, use the exit conditions to avoid getting stuck in this while loop
     if (util::sgn(l_error) == l_sgn || util::sgn(r_error) == r_sgn) {
       if (left_exit == RUNNING || right_exit == RUNNING) {
+        leftPID.velocity_sensor_secondary_set(drive_imu_accel_get());
+        rightPID.velocity_sensor_secondary_set(drive_imu_accel_get());
         left_exit = left_exit != RUNNING ? left_exit : leftPID.exit_condition(left_motors[0]);
         right_exit = right_exit != RUNNING ? right_exit : rightPID.exit_condition(right_motors[0]);
         pros::delay(util::DELAY_TIME);
@@ -182,6 +192,7 @@ void Drive::wait_until_turn_swing(double target) {
       // Before robot has reached target, use the exit conditions to avoid getting stuck in this while loop
       if (util::sgn(g_error) == g_sgn) {
         if (turn_exit == RUNNING) {
+          turnPID.velocity_sensor_secondary_set(drive_imu_accel_get());
           turn_exit = turn_exit != RUNNING ? turn_exit : turnPID.exit_condition({left_motors[0], right_motors[0]});
           pros::delay(util::DELAY_TIME);
         } else {
@@ -205,6 +216,7 @@ void Drive::wait_until_turn_swing(double target) {
       // Before robot has reached target, use the exit conditions to avoid getting stuck in this while loop
       if (util::sgn(g_error) == g_sgn) {
         if (swing_exit == RUNNING) {
+          swingPID.velocity_sensor_secondary_set(drive_imu_accel_get());
           swing_exit = swing_exit != RUNNING ? swing_exit : swingPID.exit_condition(sensor);
           pros::delay(util::DELAY_TIME);
         } else {

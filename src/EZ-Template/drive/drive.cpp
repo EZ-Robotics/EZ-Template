@@ -274,6 +274,7 @@ bool Drive::drive_current_left_over() { return left_motors.front().is_over_curre
 
 void Drive::drive_imu_reset(double new_heading) { imu.set_rotation(new_heading); }
 double Drive::drive_imu_get() { return imu.get_rotation() * IMU_SCALER; }
+double Drive::drive_imu_accel_get() { return imu.get_accel().x + imu.get_accel().y; }
 
 void Drive::drive_imu_scaler_set(double scaler) { IMU_SCALER = scaler; }
 double Drive::drive_imu_scaler_get() { return IMU_SCALER; }
