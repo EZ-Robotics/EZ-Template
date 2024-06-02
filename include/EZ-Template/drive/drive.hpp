@@ -641,7 +641,7 @@ class Drive {
   void drive_sensor_reset();
 
   /**
-   * Resets the current gyro value.  Defaults to 0, recommended to run at the start of your autonomous routine.
+   * Resets the current imu value.  Defaults to 0, recommended to run at the start of your autonomous routine.
    *
    * \param new_heading
    *        New heading value.
@@ -649,9 +649,22 @@ class Drive {
   void drive_imu_reset(double new_heading = 0);
 
   /**
-   * Returns the current gyro value.
+   * Returns the current imu value.
    */
   double drive_imu_get();
+
+  /**
+   * Sets a new imu scaling factor.  This value is multiplied by the imu to change its output.
+   *
+   * \param scaler
+   *        Factor to scale the imu by.
+   */
+  void drive_imu_scaler_set(double scaler);
+
+  /**
+   * Returns the current imu scaling factor.
+   */
+  double drive_imu_scaler_get();
 
   /**
    * Calibrates the IMU, recommended to run in initialize().
@@ -834,12 +847,12 @@ class Drive {
   void pid_targets_reset();
 
   /**
-   * Sets heading of gyro and target of PID, okapi angle.
+   * Sets heading of imo and target of PID, okapi angle.
    */
   void drive_angle_set(okapi::QAngle p_angle);
 
   /**
-   * Sets heading of gyro and target of PID, takes double as an angle.
+   * Sets heading of imo and target of PID, takes double as an angle.
    */
   void drive_angle_set(double angle);
 
@@ -1294,6 +1307,7 @@ class Drive {
   double pid_tuner_increment_start_i_get();
 
  private:  // !Auton
+  double IMU_SCALER = 1.0;
   bool drive_toggle = true;
   bool print_toggle = true;
   int swing_min = 0;
