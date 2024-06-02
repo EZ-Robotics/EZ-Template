@@ -121,7 +121,7 @@ exit_output PID::exit_condition(bool print) {
 
   // If the robot is close to the target, start a timer.  If the robot doesn't get closer within
   // a certain amount of time, exit and continue.  This does not run while small_timeout is running
-  if (exit.big_error != 0 && exit.big_exit_time != 0) {  // Check if this condition is enabled
+  else if (exit.big_error != 0 && exit.big_exit_time != 0) {  // Check if this condition is enabled
     if (abs(error) < exit.big_error) {
       i += util::DELAY_TIME;
       if (i > exit.big_exit_time) {

@@ -18,10 +18,10 @@ void Drive::pid_drive_exit_condition_set(okapi::QTime p_small_exit_time, okapi::
   // Convert okapi units to doubles
   double se = p_small_error.convert(okapi::inch);
   double be = p_big_error.convert(okapi::inch);
-  double set = p_small_exit_time.convert(okapi::millisecond);
-  double bet = p_big_exit_time.convert(okapi::millisecond);
-  double vet = p_velocity_exit_time.convert(okapi::millisecond);
-  double mAt = p_mA_timeout.convert(okapi::millisecond);
+  int set = p_small_exit_time.convert(okapi::millisecond);
+  int bet = p_big_exit_time.convert(okapi::millisecond);
+  int vet = p_velocity_exit_time.convert(okapi::millisecond);
+  int mAt = p_mA_timeout.convert(okapi::millisecond);
 
   pid_drive_exit_condition_set(set, se, bet, be, vet, mAt);
 }
@@ -34,10 +34,10 @@ void Drive::pid_turn_exit_condition_set(okapi::QTime p_small_exit_time, okapi::Q
   // Convert okapi units to doubles
   double se = p_small_error.convert(okapi::degree);
   double be = p_big_error.convert(okapi::degree);
-  double set = p_small_exit_time.convert(okapi::millisecond);
-  double bet = p_big_exit_time.convert(okapi::millisecond);
-  double vet = p_velocity_exit_time.convert(okapi::millisecond);
-  double mAt = p_mA_timeout.convert(okapi::millisecond);
+  int set = p_small_exit_time.convert(okapi::millisecond);
+  int bet = p_big_exit_time.convert(okapi::millisecond);
+  int vet = p_velocity_exit_time.convert(okapi::millisecond);
+  int mAt = p_mA_timeout.convert(okapi::millisecond);
 
   pid_turn_exit_condition_set(set, se, bet, be, vet, mAt);
 }
@@ -50,10 +50,10 @@ void Drive::pid_swing_exit_condition_set(okapi::QTime p_small_exit_time, okapi::
   // Convert okapi units to doubles
   double se = p_small_error.convert(okapi::degree);
   double be = p_big_error.convert(okapi::degree);
-  double set = p_small_exit_time.convert(okapi::millisecond);
-  double bet = p_big_exit_time.convert(okapi::millisecond);
-  double vet = p_velocity_exit_time.convert(okapi::millisecond);
-  double mAt = p_mA_timeout.convert(okapi::millisecond);
+  int set = p_small_exit_time.convert(okapi::millisecond);
+  int bet = p_big_exit_time.convert(okapi::millisecond);
+  int vet = p_velocity_exit_time.convert(okapi::millisecond);
+  int mAt = p_mA_timeout.convert(okapi::millisecond);
 
   pid_swing_exit_condition_set(set, se, bet, be, vet, mAt);
 }
