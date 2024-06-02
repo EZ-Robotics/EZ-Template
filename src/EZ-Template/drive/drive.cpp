@@ -273,7 +273,10 @@ double Drive::drive_mA_left() { return left_motors.front().get_current_draw(); }
 bool Drive::drive_current_left_over() { return left_motors.front().is_over_current(); }
 
 void Drive::drive_imu_reset(double new_heading) { imu.set_rotation(new_heading); }
-double Drive::drive_imu_get() { return imu.get_rotation(); }
+double Drive::drive_imu_get() { return imu.get_rotation() * IMU_SCALER; }
+
+void Drive::drive_imu_scaler_set(double scaler) { IMU_SCALER = scaler; }
+double Drive::drive_imu_scaler_get() { return IMU_SCALER; }
 
 void Drive::drive_imu_display_loading(int iter) {
   // If the lcd is already initialized, don't run this function
