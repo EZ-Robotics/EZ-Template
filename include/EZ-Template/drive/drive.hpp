@@ -649,9 +649,14 @@ class Drive {
   void drive_imu_reset(double new_heading = 0);
 
   /**
-   * Returns the current imu value.
+   * Returns the current imu rotation value.
    */
   double drive_imu_get();
+
+  /**
+   * Returns the current imu accel x + accel y value.
+   */
+  double drive_imu_accel_get();
 
   /**
    * Sets a new imu scaling factor.  This value is multiplied by the imu to change its output.
@@ -1110,8 +1115,10 @@ class Drive {
    *        Sets big_error. Timer will start when error is within this.  In okapi units.
    * \param p_velocity_exit_time
    *        Sets velocity_exit_time.  Timer will start when velocity is 0.  In okapi units.
+   * \param use_imu
+   *        Adds the Imu for velocity calculation in conjunction with the main sensor.
    */
-  void pid_drive_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QLength p_small_error, okapi::QTime p_big_exit_time, okapi::QLength p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout);
+  void pid_drive_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QLength p_small_error, okapi::QTime p_big_exit_time, okapi::QLength p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout, bool use_imu = true);
 
   /**
    * Set's constants for turn exit conditions.
@@ -1126,8 +1133,10 @@ class Drive {
    *        Sets big_error. Timer will start when error is within this.  In okapi units.
    * \param p_velocity_exit_time
    *        Sets velocity_exit_time.  Timer will start when velocity is 0.  In okapi units.
+   * \param use_imu
+   *        Adds the Imu for velocity calculation in conjunction with the main sensor.
    */
-  void pid_turn_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QAngle p_small_error, okapi::QTime p_big_exit_time, okapi::QAngle p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout);
+  void pid_turn_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QAngle p_small_error, okapi::QTime p_big_exit_time, okapi::QAngle p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout, bool use_imu = true);
 
   /**
    * Set's constants for swing exit conditions.
@@ -1142,8 +1151,10 @@ class Drive {
    *        Sets big_error. Timer will start when error is within this.  In okapi units.
    * \param p_velocity_exit_time
    *        Sets velocity_exit_time.  Timer will start when velocity is 0.  In okapi units.
+   * \param use_imu
+   *        Adds the Imu for velocity calculation in conjunction with the main sensor.
    */
-  void pid_swing_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QAngle p_small_error, okapi::QTime p_big_exit_time, okapi::QAngle p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout);
+  void pid_swing_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QAngle p_small_error, okapi::QTime p_big_exit_time, okapi::QAngle p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout, bool use_imu = true);
 
   /**
    * Set's constants for drive exit conditions.
@@ -1158,8 +1169,10 @@ class Drive {
    *        Sets big_error. Timer will start when error is within this.
    * \param p_velocity_exit_time
    *        Sets velocity_exit_time.  Timer will start when velocity is 0.
+   * \param use_imu
+   *        Adds the Imu for velocity calculation in conjunction with the main sensor.
    */
-  void pid_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout);
+  void pid_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = true);
 
   /**
    * Set's constants for turn exit conditions.
@@ -1174,8 +1187,10 @@ class Drive {
    *        Sets big_error. Timer will start when error is within this.
    * \param p_velocity_exit_time
    *        Sets velocity_exit_time.  Timer will start when velocity is 0.
+   * \param use_imu
+   *        Adds the Imu for velocity calculation in conjunction with the main sensor.
    */
-  void pid_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout);
+  void pid_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = true);
 
   /**
    * Set's constants for swing exit conditions.
@@ -1190,8 +1205,10 @@ class Drive {
    *        Sets big_error. Timer will start when error is within this.
    * \param p_velocity_exit_time
    *        Sets velocity_exit_time.  Timer will start when velocity is 0.
+   * \param use_imu
+   *        Adds the Imu for velocity calculation in conjunction with the main sensor.
    */
-  void pid_swing_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout);
+  void pid_swing_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = true);
 
   /**
    * Returns current tick_per_inch()
