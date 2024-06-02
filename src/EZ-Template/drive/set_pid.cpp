@@ -130,7 +130,7 @@ int Drive::pid_swing_min_get() { return swing_min; }
 // Set drive PID raw
 void Drive::pid_drive_set(double target, int speed, bool slew_on, bool toggle_heading) {
   // Print targets
-  if (print_toggle) printf("Drive Started... Target Value: %f in", target);
+  if (print_toggle) printf("Drive Started... Target Value: %f", target);
   if (slew_on && print_toggle) printf(" with slew");
   if (print_toggle) printf("\n");
 

@@ -77,7 +77,7 @@ void Drive::pid_wait() {
       right_exit = right_exit != RUNNING ? right_exit : rightPID.exit_condition(right_motors[0]);
       pros::delay(util::DELAY_TIME);
     }
-    if (print_toggle) std::cout << "  Left: " << exit_to_string(left_exit) << " Exit, error: " << leftPID.error << ".   Right: " << exit_to_string(right_exit) << " Exit, error: " << rightPID.error << ".\n";
+    if (print_toggle) std::cout << "  Left: " << exit_to_string(left_exit) << " Exit, error: " << leftPID.error << "   Right: " << exit_to_string(right_exit) << " Exit, error: " << rightPID.error << "\n";
 
     if (left_exit == mA_EXIT || left_exit == VELOCITY_EXIT || right_exit == mA_EXIT || right_exit == VELOCITY_EXIT) {
       interfered = true;
@@ -92,7 +92,7 @@ void Drive::pid_wait() {
       turn_exit = turn_exit != RUNNING ? turn_exit : turnPID.exit_condition({left_motors[0], right_motors[0]});
       pros::delay(util::DELAY_TIME);
     }
-    if (print_toggle) std::cout << "  Turn: " << exit_to_string(turn_exit) << " Exit, error: " << turnPID.error << ".\n";
+    if (print_toggle) std::cout << "  Turn: " << exit_to_string(turn_exit) << " Exit, error: " << turnPID.error << "\n";
 
     if (turn_exit == mA_EXIT || turn_exit == VELOCITY_EXIT) {
       interfered = true;
@@ -108,7 +108,7 @@ void Drive::pid_wait() {
       swing_exit = swing_exit != RUNNING ? swing_exit : swingPID.exit_condition(sensor);
       pros::delay(util::DELAY_TIME);
     }
-    if (print_toggle) std::cout << "  Swing: " << exit_to_string(swing_exit) << " Exit, error: " << swingPID.error << ".\n";
+    if (print_toggle) std::cout << "  Swing: " << exit_to_string(swing_exit) << " Exit, error: " << swingPID.error << "\n";
 
     if (swing_exit == mA_EXIT || swing_exit == VELOCITY_EXIT) {
       interfered = true;
@@ -149,8 +149,10 @@ void Drive::wait_until_drive(double target) {
         right_exit = right_exit != RUNNING ? right_exit : rightPID.exit_condition(right_motors[0]);
         pros::delay(util::DELAY_TIME);
       } else {
-        if (print_toggle) std::cout << "  Left: " << exit_to_string(left_exit) << " Wait Until Exit.   Right: " << exit_to_string(right_exit) << " Wait Until Exit.\n";
-
+        if (print_toggle) {
+          std::cout << "  Left: " << exit_to_string(left_exit) << " Wait Until Exit Failsafe, triggered at " << drive_sensor_left() - l_start << " instead of " << l_tar << "\n";
+          std::cout << "  Right: " << exit_to_string(right_exit) << " Wait Until Exit Failsafe, triggered at " << drive_sensor_right() - r_start << " instead of " << r_tar << "\n";
+        }
         if (left_exit == mA_EXIT || left_exit == VELOCITY_EXIT || right_exit == mA_EXIT || right_exit == VELOCITY_EXIT) {
           interfered = true;
         }
@@ -159,7 +161,7 @@ void Drive::wait_until_drive(double target) {
     }
     // Once we've past target, return
     else if (util::sgn(l_error) != l_sgn || util::sgn(r_error) != r_sgn) {
-      if (print_toggle) printf("  Drive Wait Until Exit.  Left: %f   Right: %f\n", drive_sensor_left() - l_start, drive_sensor_right() - r_start);
+      if (print_toggle) printf("  Drive Wait Until Exit Success. Triggered at: L,R(%f, %f)  Target: L,R(%f, %f)\n", drive_sensor_left() - l_start, drive_sensor_right() - r_start, l_tar, r_tar);
       return;
     }
 
@@ -196,7 +198,7 @@ void Drive::wait_until_turn_swing(double target) {
           turn_exit = turn_exit != RUNNING ? turn_exit : turnPID.exit_condition({left_motors[0], right_motors[0]});
           pros::delay(util::DELAY_TIME);
         } else {
-          if (print_toggle) std::cout << "  Turn: " << exit_to_string(turn_exit) << " Wait Until Exit.\n";
+          if (print_toggle) std::cout << "  Turn: " << exit_to_string(turn_exit) << " Wait Until Exit Failsafe, triggered at " << drive_imu_get() << " instead of " << target << "\n";
 
           if (turn_exit == mA_EXIT || turn_exit == VELOCITY_EXIT) {
             interfered = true;
@@ -206,7 +208,7 @@ void Drive::wait_until_turn_swing(double target) {
       }
       // Once we've past target, return
       else if (util::sgn(g_error) != g_sgn) {
-        if (print_toggle) printf("  Turn Wait Until Exit.  Triggered at: %f\n", drive_imu_get());
+        if (print_toggle) printf("  Turn Wait Until Exit Success, triggered at %f.  Target: %f\n", drive_imu_get(), target);
         return;
       }
     }
@@ -220,7 +222,7 @@ void Drive::wait_until_turn_swing(double target) {
           swing_exit = swing_exit != RUNNING ? swing_exit : swingPID.exit_condition(sensor);
           pros::delay(util::DELAY_TIME);
         } else {
-          if (print_toggle) std::cout << "  Swing: " << exit_to_string(swing_exit) << " Wait Until Exit.\n";
+          if (print_toggle) std::cout << "  Swing: " << exit_to_string(swing_exit) << " Wait Until Exit Failsafe, triggered at " << drive_imu_get() << " instead of " << target << "\n";
 
           if (swing_exit == mA_EXIT || swing_exit == VELOCITY_EXIT) {
             interfered = true;
@@ -230,7 +232,7 @@ void Drive::wait_until_turn_swing(double target) {
       }
       // Once we've past target, return
       else if (util::sgn(g_error) != g_sgn) {
-        if (print_toggle) std::cout << "  Swing Wait Until Exit.\n";
+        if (print_toggle) printf("  Swing Wait Until Exit Success, triggered at %f. Target: %f\n", drive_imu_get(), target);
         return;
       }
     }
