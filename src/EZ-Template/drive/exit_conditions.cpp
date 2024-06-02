@@ -271,3 +271,75 @@ void Drive::pid_wait_until(double target) {
     printf("Not in a valid drive mode!\n");
   }
 }
+
+// Pid wait, but quickly :)
+void Drive::pid_wait_quick() {
+  if (!(mode == DRIVE || mode == TURN || mode == SWING)) {
+    printf("Not in a valid drive mode!\n");
+    return;
+  }
+
+  // This is the target the user set, not the modified chained target
+  pid_wait_until(chain_target_start);
+}
+
+// Set drive motion chain constants
+void Drive::pid_drive_chain_constant_set(double input) {
+  pid_drive_chain_forward_constant_set(input);
+  pid_drive_chain_backward_constant_set(input);
+}
+void Drive::pid_drive_chain_forward_constant_set(double input) { drive_forward_motion_chain_scale = fabs(input); }
+void Drive::pid_drive_chain_backward_constant_set(double input) { drive_backward_motion_chain_scale = fabs(input); }
+void Drive::pid_drive_chain_constant_set(okapi::QLength input) { pid_drive_chain_constant_set(input.convert(okapi::inch)); }
+void Drive::pid_drive_chain_forward_constant_set(okapi::QLength input) { pid_drive_chain_forward_constant_set(input.convert(okapi::inch)); }
+void Drive::pid_drive_chain_backward_constant_set(okapi::QLength input) { pid_drive_chain_backward_constant_set(input.convert(okapi::inch)); }
+
+// Set turn motion chain constants
+void Drive::pid_turn_chain_constant_set(double input) { turn_motion_chain_scale = fabs(input); }
+void Drive::pid_turn_chain_constant_set(okapi::QAngle input) { pid_turn_chain_constant_set(input.convert(okapi::degree)); }
+
+// Set swing motion chain constants
+void Drive::pid_swing_chain_constant_set(double input) {
+  pid_swing_chain_forward_constant_set(input);
+  pid_swing_chain_backward_constant_set(input);
+}
+void Drive::pid_swing_chain_forward_constant_set(double input) { swing_forward_motion_chain_scale = fabs(input); }
+void Drive::pid_swing_chain_backward_constant_set(double input) { swing_backward_motion_chain_scale = fabs(input); }
+void Drive::pid_swing_chain_constant_set(okapi::QAngle input) { pid_swing_chain_constant_set(input.convert(okapi::degree)); }
+void Drive::pid_swing_chain_forward_constant_set(okapi::QAngle input) { pid_swing_chain_forward_constant_set(input.convert(okapi::degree)); }
+void Drive::pid_swing_chain_backward_constant_set(okapi::QAngle input) { pid_swing_chain_backward_constant_set(input.convert(okapi::degree)); }
+
+// Get motion chain constants
+double Drive::pid_drive_chain_forward_constant_get() { return drive_forward_motion_chain_scale; }
+double Drive::pid_drive_chain_backward_constant_get() { return drive_backward_motion_chain_scale; }
+double Drive::pid_turn_chain_constant_get() { return turn_motion_chain_scale; }
+double Drive::pid_swing_chain_forward_constant_get() { return swing_forward_motion_chain_scale; }
+double Drive::pid_swing_chain_backward_constant_get() { return swing_backward_motion_chain_scale; }
+
+// Pid wait that hold momentum into the next motion
+void Drive::pid_wait_quick_chain() {
+  // If driving, add drive_motion_chain_scale to target
+  if (mode == DRIVE) {
+    double chain_scale = motion_chain_backward ? drive_backward_motion_chain_scale : drive_forward_motion_chain_scale;
+    used_motion_chain_scale = chain_scale * util::sgn(chain_target_start);
+    leftPID.target_set(leftPID.target_get() + used_motion_chain_scale);
+    rightPID.target_set(leftPID.target_get() + used_motion_chain_scale);
+  }
+  // If turning, add turn_motion_chain_scale to target
+  else if (mode == TURN) {
+    used_motion_chain_scale = turn_motion_chain_scale * util::sgn(chain_target_start - chain_sensor_start);
+    turnPID.target_set(turnPID.target_get() + used_motion_chain_scale);
+  }
+  // If swinging, add swing_motion_chain_scale to target
+  else if (mode == SWING) {
+    double chain_scale = motion_chain_backward ? swing_backward_motion_chain_scale : swing_forward_motion_chain_scale;
+    used_motion_chain_scale = chain_scale * util::sgn(chain_target_start - chain_sensor_start);
+    swingPID.target_set(swingPID.target_get() + used_motion_chain_scale);
+  } else {
+    printf("Not in a valid drive mode!\n");
+    return;
+  }
+
+  // Exit at the real target
+  pid_wait_quick();
+}
