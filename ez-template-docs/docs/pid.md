@@ -52,8 +52,116 @@ PID(double p, double i = 0, double d = 0, double start_i = 0, std::string name =
 </Tabs>  
 
 
-
 ## Functions
+
+
+### compute()
+Computes PID.  
+
+`current` the current sensor value for the subsystem
+<Tabs
+  groupId="ex7"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+ez::PID liftPID{1, 0.003, 4, 100, "Lift"};  
+pros::Motor lift_motor(1);
+void opcontrol() {
+  while (true) {
+    if (master.get_digital(DIGITAL_L1)) {
+      liftPID.target_set(500);
+    }
+    else if (master.get_digital(DIGITAL_L2)) {
+      liftPID.target_set(0);
+    }
+    lift_motor = liftPID.compute(lift_motor.get_position());
+
+    pros::delay(ez::util::DELAY_TIME);
+  }
+}
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+double compute(double current);
+```
+
+
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+### compute_error()
+Computes PID based on error.  This function ignores target entirely and the user has to calculate error.  
+
+`error` the target minus current, you calculate this yourself    
+`current` the current sensor value for the subsystem
+<Tabs
+  groupId="compute_error"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+ez::PID liftPID{1, 0.003, 4, 100, "Lift"};  
+pros::Motor lift_motor(1);
+void opcontrol() {
+  double target = 0.0;
+  double error = 0.0;
+  while (true) {
+    if (master.get_digital(DIGITAL_L1)) {
+      target = 500.0;
+    }
+    else if (master.get_digital(DIGITAL_L2)) {
+      target = 0.0;
+    }
+    error = target - lift_motor.get_position();
+    lift_motor = liftPID.compute_error(error, lift_motor.get_position());
+
+    pros::delay(ez::util::DELAY_TIME);
+  }
+}
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+double compute_error(double err, double current);
+```
+
+
+
+</TabItem>
+</Tabs>
+
+
+
+## Setters
 
 ### constants_set()
 Sets PID constants.    
@@ -202,6 +310,169 @@ void exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_e
 
 
 
+### velocity_sensor_secondary_toggle_set()  
+Enables / disables the use of the second sensor.  True enables this and uses the secondary sensor in velocity exits, false disables.    
+
+`toggle` sensor value for the secondary sensor  
+<Tabs
+  groupId="velocity_sensor_secondary_toggle_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+ez::PID liftPID;
+void initialize() {
+  liftPID.velocity_sensor_secondary_toggle_set(true);  // Enable the secondary sensor
+}
+```
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+void velocity_sensor_secondary_toggle_set(bool toggle);
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+
+
+### velocity_sensor_secondary_set()
+This sets the sensor value for the secondary sensor.  The secondary sensor is used in addition to the main sensor for determining velocity exits, if enabled.      
+ 
+`secondary_sensor` sensor value for the secondary sensor  
+<Tabs
+  groupId="velocity_sensor_secondary_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+...
+```
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+void velocity_sensor_secondary_set(double secondary_sensor);
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+### velocity_sensor_main_exit_set()
+Sets a threshold for the main sensors velocity.  The velocity timer will start increasing when the main sensor is within this value.  This is defaulted to `0.05`.  
+
+`zero` double, a small threshold   
+<Tabs
+  groupId="velocity_sensor_main_exit_set()"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+ez::PID liftPID;
+void initialize() {
+  liftPID.velocity_sensor_secondary_toggle_set(true);  // Enable the secondary sensor
+}
+```
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+void velocity_sensor_main_exit_set(double zero);
+```
+
+</TabItem>
+</Tabs>
+
+
+
+### velocity_sensor_secondary_exit_set()
+Sets a threshold for the secondary sensors velocity.  The velocity timer will start increasing when the secondary sensor is within this value.  This is defaulted to `0.1`.  This is only used when the secondary sensor is enabled.   
+
+`zero` double, a small threshold   
+<Tabs
+  groupId="velocity_sensor_secondary_exit_set()"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+ez::PID liftPID;
+void initialize() {
+  liftPID.velocity_sensor_secondary_toggle_set(true);  // Enable the secondary sensor
+}
+```
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+void velocity_sensor_secondary_exit_set(double zero);
+```
+
+</TabItem>
+</Tabs>
 
  
 
@@ -246,16 +517,16 @@ void name_set(std::string name);
 
 
 
+
+## Getters
  
 
+### target_set()
+Sets PID target.   
 
-
-### compute()
-Computes PID.  
-
-`current` the current sensor value for the subsystem
+`target` the goal position for your subsystem  
 <Tabs
-  groupId="ex7"
+  groupId="ex4"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -272,9 +543,11 @@ void opcontrol() {
   while (true) {
     if (master.get_digital(DIGITAL_L1)) {
       liftPID.target_set(500);
+      printf("%.2f\n", liftPID.target_get()); // This prints 500
     }
     else if (master.get_digital(DIGITAL_L2)) {
       liftPID.target_set(0);
+      printf("%.2f\n", liftPID.target_get()); // This prints 0
     }
     lift_motor = liftPID.compute(lift_motor.get_position());
 
@@ -290,7 +563,7 @@ void opcontrol() {
 <TabItem value="proto">
 
 ```cpp
-double compute(double current);
+double target_set();
 ```
 
 
@@ -300,7 +573,161 @@ double compute(double current);
 
 
 
- 
+### velocity_sensor_secondary_toggle_get()
+Returns the value for the secondary sensor.  The secondary sensor is used in addition to the main sensor for determining velocity exits, if enabled.   
+
+<Tabs
+  groupId="velocity_sensor_secondary_toggle_get()"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+ez::PID liftPID;
+void initialize() {
+  printf("%i\n",liftPID.velocity_sensor_secondary_toggle_get());  // This prints 0
+  liftPID.velocity_sensor_secondary_toggle_set(true);  // Enable the secondary sensor
+  printf("%i\n",liftPID.velocity_sensor_secondary_toggle_get());  // This prints 1
+}
+```
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+double velocity_sensor_secondary_toggle_get();
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+
+
+
+### velocity_sensor_main_exit_get()
+Gets a threshold for the secondary sensors velocity.  The velocity timer will start increasing when the secondary sensor is within this value.  This is defaulted to `0.1`.    
+<Tabs
+  groupId="velocity_sensor_main_exit_get()"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+ez::PID liftPID;
+void initialize() {
+  liftPID.velocity_sensor_secondary_toggle_set(true);  // Enable the secondary sensor
+  printf("%.2f\n",liftPID.velocity_sensor_main_exit_get());  // This prints 0.05
+}
+```
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+double velocity_sensor_main_exit_get();
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+
+
+
+### velocity_sensor_secondary_exit_get()
+Gets a threshold for the secondary sensors velocity.  The velocity timer will start increasing when the secondary sensor is within this value.  This is defaulted to `0.1`.  This is only used when the secondary sensor is enabled.     
+<Tabs
+  groupId="velocity_sensor_secondary_exit_get()"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+ez::PID liftPID;
+void initialize() {
+  liftPID.velocity_sensor_secondary_toggle_set(true);  // Enable the secondary sensor
+  printf("%.2f\n",liftPID.velocity_sensor_secondary_exit_get());  // This prints 0.1
+}
+```
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+double velocity_sensor_secondary_exit_get();
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+
+### velocity_sensor_secondary_get()
+Returns if the secondary sensor is enabled or disables.  True means this is enabled and the secondary sensor is in use, false means disabled.    
+
+<Tabs
+  groupId="velocity_sensor_secondary_get()"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+ez::PID liftPID;
+void initialize() {
+  liftPID.velocity_sensor_secondary_toggle_set(true);  // Enable the secondary sensor
+}
+```
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+double velocity_sensor_secondary_get();
+```
+
+</TabItem>
+</Tabs>
+
+
+
 
 
 
@@ -496,3 +923,16 @@ ez::exit_output exit_condition(std::vector<pros::Motor> sensor, bool print = fal
 
 </TabItem>
 </Tabs>
+
+
+
+
+
+
+
+
+
+
+
+
+

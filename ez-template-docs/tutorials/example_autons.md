@@ -141,6 +141,33 @@ void swing_example() {
 
 
 
+## Motion Chaining
+Motion Chaining is when you exit a movement while the robot is still moving so you carry momentum into the next movement.  
+```cpp
+void motion_chaining() {
+  // Motion chaining is where motions all try to blend together instead of individual movements.
+  // This works by exiting while the robot is still moving a little bit.
+  // To use this, replace pid_wait with pid_wait_quick_chain.
+  chassis.pid_drive_set(24_in, DRIVE_SPEED, true);
+  chassis.pid_wait_quick_chain();
+
+  chassis.pid_turn_set(45_deg, TURN_SPEED);
+  chassis.pid_wait_quick_chain();
+
+  chassis.pid_turn_set(-45_deg, TURN_SPEED);
+  chassis.pid_wait_quick_chain();
+
+  chassis.pid_turn_set(0_deg, TURN_SPEED);
+  chassis.pid_wait_quick_chain();
+
+  // Your final motion should still be a normal pid_wait
+  chassis.pid_drive_set(-24_in, DRIVE_SPEED, true);
+  chassis.pid_wait();
+}
+```
+
+
+
 
 
 ## Combining All Movements

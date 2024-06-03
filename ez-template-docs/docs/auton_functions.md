@@ -340,7 +340,8 @@ Sets the exit condition constants for driving. This uses the exit conditions fro
 `p_big_exit_time` time, in okapi units, before exiting `p_big_error`  
 `p_big_error` big error threshold, in okapi length unit  
 `p_velocity_exit_time` time, in okapi units, for velocity to be 0  
-`p_mA_timeout` time, in okapi units, for `is_over_current` to be true       
+`p_mA_timeout` time, in okapi units, for `is_over_current` to be true   
+`use_imu` boolean, true adds the IMU to velocity timeouts, false only uses the PID sensor.  This defaults to `true`     
 <Tabs
   groupId="pid_drive_Exit_set_okapi"
   defaultValue="proto"
@@ -366,7 +367,7 @@ void initialize() {
 <TabItem value="proto">
 
 ```cpp
-void pid_drive_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QLength p_small_error, okapi::QTime p_big_exit_time, okapi::QLength p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout);
+void pid_drive_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QLength p_small_error, okapi::QTime p_big_exit_time, okapi::QLength p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout, use_imu = true);
 ```
 
 </TabItem>
@@ -388,7 +389,8 @@ Sets the exit condition constants for turning. This uses the exit conditions fro
 `p_big_exit_time` time, in okapi units, before exiting `p_big_error`  
 `p_big_error` big error threshold, in okapi angle unit  
 `p_velocity_exit_time` time, in okapi units, for velocity to be 0  
-`p_mA_timeout` time, in okapi units, for `is_over_current` to be true       
+`p_mA_timeout` time, in okapi units, for `is_over_current` to be true   
+`use_imu` boolean, true adds the IMU to velocity timeouts, false only uses the PID sensor.  This defaults to `true`     
 <Tabs
   groupId="pid_turn_Exit_set_okapi"
   defaultValue="proto"
@@ -414,7 +416,7 @@ void initialize() {
 <TabItem value="proto">
 
 ```cpp
-void pid_turn_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QAngle p_small_error, okapi::QTime p_big_exit_time, okapi::QAngle p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout);
+void pid_turn_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QAngle p_small_error, okapi::QTime p_big_exit_time, okapi::QAngle p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout, use_imu = true);
 ```
 
 </TabItem>
@@ -434,6 +436,7 @@ Sets the exit condition constants for swing turns. This uses the exit conditions
 `p_big_error` big error threshold, in okapi angle unit  
 `p_velocity_exit_time` time, in okapi units, for velocity to be 0  
 `p_mA_timeout` time, in okapi units, for `is_over_current` to be true       
+`use_imu` boolean, true adds the IMU to velocity timeouts, false only uses the PID sensor.  This defaults to `true`     
 <Tabs
   groupId="pid_swing_Exit_set_okapi"
   defaultValue="proto"
@@ -459,7 +462,7 @@ void initialize() {
 <TabItem value="proto">
 
 ```cpp
-void pid_swing_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QAngle p_small_error, okapi::QTime p_big_exit_time, okapi::QAngle p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout);
+void pid_swing_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QAngle p_small_error, okapi::QTime p_big_exit_time, okapi::QAngle p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout, use_imu = true);
 ```
 
 </TabItem>
@@ -831,6 +834,7 @@ This function can also be used without okapi units.
 `p_big_error` big error threshold, assumed inches  
 `p_velocity_exit_time` time, in ms, for velocity to be 0  
 `p_mA_timeout` time, in ms, for `is_over_current` to be true   
+`use_imu` boolean, true adds the IMU to velocity timeouts, false only uses the PID sensor.  This defaults to `true`     
 <Tabs
   groupId="pid_drive_exit_set_double"
   defaultValue="proto"
@@ -856,7 +860,7 @@ void initialize() {
 <TabItem value="proto">
 
 ```cpp
-void pid_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout);
+void pid_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, use_imu = true);
 ```
 
 </TabItem>
@@ -873,6 +877,7 @@ This function can also be used without okapi units.
 `p_big_error` big error threshold, assumed degrees  
 `p_velocity_exit_time` time, in ms, for velocity to be 0  
 `p_mA_timeout` time, in ms, for `is_over_current` to be true   
+`use_imu` boolean, true adds the IMU to velocity timeouts, false only uses the PID sensor.  This defaults to `true`     
 <Tabs
   groupId="pid_turn_exit_set_double"
   defaultValue="proto"
@@ -898,7 +903,7 @@ void initialize() {
 <TabItem value="proto">
 
 ```cpp
-void pid_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout);
+void pid_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, use_imu = true);
 ```
 
 </TabItem>
@@ -914,6 +919,7 @@ This function can also be used without okapi units.
 `p_big_error` big error threshold, assumed degrees  
 `p_velocity_exit_time` time, in ms, for velocity to be 0  
 `p_mA_timeout` time, in ms, for `is_over_current` to be true   
+`use_imu` boolean, true adds the IMU to velocity timeouts, false only uses the PID sensor.  This defaults to `true`     
 <Tabs
   groupId="pid_swing_exit_set_double"
   defaultValue="proto"
@@ -939,7 +945,7 @@ void initialize() {
 <TabItem value="proto">
 
 ```cpp
-void pid_swing_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout);
+void pid_swing_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, use_imu = true);
 ```
 
 </TabItem>
