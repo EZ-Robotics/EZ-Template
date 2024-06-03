@@ -244,6 +244,11 @@ class PID {
   bool i_reset_get();
 
   /**
+   * Resets all timers for exit conditions.
+   */
+  void timers_reset();
+
+  /**
    * PID variables.
    */
   double output = 0.0;
@@ -263,7 +268,7 @@ class PID {
   int i = 0, j = 0, k = 0, l = 0, m = 0;
   bool is_mA = false;
   double second_sensor = 0.0;
-  void timers_reset();
+
   std::string name;
   bool name_active = false;
   void exit_condition_print(ez::exit_output exit_type);

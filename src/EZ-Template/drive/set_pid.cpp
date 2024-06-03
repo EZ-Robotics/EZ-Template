@@ -129,6 +129,9 @@ int Drive::pid_swing_min_get() { return swing_min; }
 
 // Set drive PID raw
 void Drive::pid_drive_set(double target, int speed, bool slew_on, bool toggle_heading) {
+  leftPID.timers_reset();
+  rightPID.timers_reset();
+
   // Print targets
   if (print_toggle) printf("Drive Started... Target Value: %f", target);
   if (slew_on && print_toggle) printf(" with slew");
@@ -160,7 +163,7 @@ void Drive::pid_drive_set(double target, int speed, bool slew_on, bool toggle_he
   } else {
     pid_consts = forward_drivePID.constants_get();
     slew_consts = slew_forward.constants_get();
-    motion_chain_backward=false;
+    motion_chain_backward = false;
   }
   leftPID.constants_set(pid_consts.kp, pid_consts.ki, pid_consts.kd, pid_consts.start_i);
   rightPID.constants_set(pid_consts.kp, pid_consts.ki, pid_consts.kd, pid_consts.start_i);
@@ -187,6 +190,8 @@ void Drive::pid_drive_set(okapi::QLength p_target, int speed, bool slew_on, bool
 
 // Raw Set Turn PID
 void Drive::pid_turn_set(double target, int speed, bool slew_on) {
+  turnPID.timers_reset();
+
   // Print targets
   if (print_toggle) printf("Turn Started... Target Value: %f\n", target);
   chain_sensor_start = drive_imu_get();
@@ -227,7 +232,7 @@ void Drive::pid_turn_relative_set(double target, int speed, bool slew_on) {
 
 // Raw Set Swing PID
 void Drive::pid_swing_set(e_swing type, double target, int speed, int opposite_speed, bool slew_on) {
-  // use left/right as 1 and -1, and multiply along with sgn of error to find if fwd or rev
+  swingPID.timers_reset();
 
   // Print targets
   if (print_toggle) printf("Swing Started... Target Value: %f\n", target);

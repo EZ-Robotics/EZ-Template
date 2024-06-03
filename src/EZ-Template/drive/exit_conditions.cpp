@@ -162,6 +162,8 @@ void Drive::wait_until_drive(double target) {
     // Once we've past target, return
     else if (util::sgn(l_error) != l_sgn || util::sgn(r_error) != r_sgn) {
       if (print_toggle) printf("  Drive Wait Until Exit Success. Triggered at: L,R(%f, %f)  Target: L,R(%f, %f)\n", drive_sensor_left() - l_start, drive_sensor_right() - r_start, l_tar, r_tar);
+      leftPID.timers_reset();
+      rightPID.timers_reset();
       return;
     }
 
@@ -209,6 +211,7 @@ void Drive::wait_until_turn_swing(double target) {
       // Once we've past target, return
       else if (util::sgn(g_error) != g_sgn) {
         if (print_toggle) printf("  Turn Wait Until Exit Success, triggered at %f.  Target: %f\n", drive_imu_get(), target);
+        turnPID.timers_reset();
         return;
       }
     }
@@ -233,6 +236,7 @@ void Drive::wait_until_turn_swing(double target) {
       // Once we've past target, return
       else if (util::sgn(g_error) != g_sgn) {
         if (print_toggle) printf("  Swing Wait Until Exit Success, triggered at %f. Target: %f\n", drive_imu_get(), target);
+        swingPID.timers_reset();
         return;
       }
     }

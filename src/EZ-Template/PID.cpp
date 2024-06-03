@@ -194,6 +194,8 @@ exit_output PID::exit_condition(bool print) {
     }
   }
 
+  // printf("j: %i   i: %i   k: %i   m: %i\n", j, i, k, m);
+
   return RUNNING;
 }
 
