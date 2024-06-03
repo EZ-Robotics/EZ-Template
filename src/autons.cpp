@@ -6,7 +6,7 @@
 /////
 
 // These are out of 127
-const int DRIVE_SPEED = 110;  
+const int DRIVE_SPEED = 110;
 const int TURN_SPEED = 90;
 const int SWING_SPEED = 90;
 
@@ -29,7 +29,6 @@ void default_constants() {
 
   chassis.slew_drive_constants_set(7_in, 80);
 }
-
 
 ///
 // Drive Example
@@ -142,7 +141,7 @@ void swing_example() {
 ///
 void motion_chaining() {
   // Motion chaining is where motions all try to blend together instead of individual movements.
-  // This works by exiting while the robot is still moving a little bit. 
+  // This works by exiting while the robot is still moving a little bit.
   // To use this, replace pid_wait with pid_wait_quick_chain.
   chassis.pid_drive_set(24_in, DRIVE_SPEED, true);
   chassis.pid_wait_quick_chain();

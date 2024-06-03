@@ -6,7 +6,7 @@
 /////
 
 // These are out of 127
-const int DRIVE_SPEED = 110;  
+const int DRIVE_SPEED = 110;
 const int TURN_SPEED = 90;
 const int SWING_SPEED = 90;
 
@@ -23,9 +23,12 @@ void default_constants() {
   chassis.pid_swing_exit_condition_set(300_ms, 3_deg, 500_ms, 7_deg, 750_ms, 750_ms);
   chassis.pid_drive_exit_condition_set(300_ms, 1_in, 500_ms, 3_in, 750_ms, 750_ms);
 
+  chassis.pid_turn_chain_constant_set(3_deg);
+  chassis.pid_swing_chain_constant_set(5_deg);
+  chassis.pid_drive_chain_constant_set(3_in);
+
   chassis.slew_drive_constants_set(7_in, 80);
 }
-
 
 ///
 // Drive Example
@@ -134,17 +137,41 @@ void swing_example() {
 }
 
 ///
+// Combining Turn + Drive
+///
+void motion_chaining() {
+  // Motion chaining is where motions all try to blend together instead of individual movements.
+  // This works by exiting while the robot is still moving a little bit.
+  // To use this, replace pid_wait with pid_wait_quick_chain.
+  chassis.pid_drive_set(24_in, DRIVE_SPEED, true);
+  chassis.pid_wait_quick_chain();
+
+  chassis.pid_turn_set(45_deg, TURN_SPEED);
+  chassis.pid_wait_quick_chain();
+
+  chassis.pid_turn_set(-45_deg, TURN_SPEED);
+  chassis.pid_wait_quick_chain();
+
+  chassis.pid_turn_set(0_deg, TURN_SPEED);
+  chassis.pid_wait_quick_chain();
+
+  // Your final motion should still be a normal pid_wait
+  chassis.pid_drive_set(-24_in, DRIVE_SPEED, true);
+  chassis.pid_wait();
+}
+
+///
 // Auto that tests everything
 ///
 void combining_movements() {
   chassis.pid_drive_set(24_in, DRIVE_SPEED, true);
-  chassis.pid_wait();
+  chassis.pid_wait_quick_chain();
 
   chassis.pid_turn_set(45_deg, TURN_SPEED);
   chassis.pid_wait();
 
   chassis.pid_swing_set(ez::RIGHT_SWING, -45_deg, SWING_SPEED, 45);
-  chassis.pid_wait();
+  chassis.pid_wait_quick_chain();
 
   chassis.pid_turn_set(0_deg, TURN_SPEED);
   chassis.pid_wait();

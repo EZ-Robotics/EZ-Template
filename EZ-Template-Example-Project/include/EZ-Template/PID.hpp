@@ -97,9 +97,20 @@ class PID {
    * Computes PID.
    *
    * \param current
-   *        Current sensor library.
+   *        Current sensor value.
    */
   double compute(double current);
+
+  /**
+   * Computes PID, but you set the error yourself.  This function ignores target.
+   * Current is only used here for calculative derivative.
+   *
+   * \param err
+   *        Error in PID, you need to calculate this yourself.
+   * \param current
+   *        Current sensor value.
+   */
+  double compute_error(double err, double current);
 
   /**
    * Returns target value.
@@ -125,6 +136,58 @@ class PID {
    * Exit
    */
   exit_condition_ exit;
+
+  /**
+   * Updates a secondary sensor for velocity exiting.  Ideal use is IMU during normal drive motions.
+   *
+   * \param secondary_sensor
+   *        double for a secondary sensor.
+   */
+  void velocity_sensor_secondary_set(double secondary_sensor);
+
+  /**
+   * Returns the updated secondary sensor for velocity exiting.
+   */
+  double velocity_sensor_secondary_get();
+
+  /**
+   * Boolean for if the secondary sensor will be updated or not.  True uses this sensor, false does not.
+   *
+   * \param toggle
+   *        True uses this sensor, false does not.
+   */
+  void velocity_sensor_secondary_toggle_set(bool toggle);
+
+  /**
+   * Returns the boolean for if the secondary sensor will be updated or not.  True uses this sensor, false does not.
+   */
+  bool velocity_sensor_secondary_toggle_get();
+
+  /**
+   * Sets the threshold that the main sensor will return 0 velocity within
+   *
+   * \param zero
+   *        a small double
+   */
+  void velocity_sensor_main_exit_set(double zero);
+
+  /**
+   * Returns the threshold that the main sensor will return 0 velocity within
+   */
+  double velocity_sensor_main_exit_get();
+
+  /**
+   * Sets the threshold that the secondary sensor will return 0 velocity within
+   *
+   * \param zero
+   *        a small double
+   */
+  void velocity_sensor_secondary_exit_set(double zero);
+
+  /**
+   * Returns the threshold that the secondary sensor will return 0 velocity within
+   */
+  double velocity_sensor_secondary_exit_get();
 
   /**
    * Iterative exit condition for PID.
@@ -183,23 +246,29 @@ class PID {
   /**
    * PID variables.
    */
-  double output;
-  double cur;
-  double error;
-  double target;
-  double prev_error;
-  double integral;
-  double derivative;
-  long time;
-  long prev_time;
+  double output = 0.0;
+  double cur = 0.0;
+  double error = 0.0;
+  double target = 0.0;
+  double prev_error = 0.0;
+  double prev_current = 0.0;
+  double integral = 0.0;
+  double derivative = 0.0;
+  long time = 0;
+  long prev_time = 0;
 
  private:
-  int i = 0, j = 0, k = 0, l = 0;
+  double velocity_zero_main = 0.05;
+  double velocity_zero_secondary = 0.1;
+  int i = 0, j = 0, k = 0, l = 0, m = 0;
   bool is_mA = false;
+  double second_sensor = 0.0;
   void timers_reset();
   std::string name;
   bool name_active = false;
   void exit_condition_print(ez::exit_output exit_type);
   bool reset_i_sgn = true;
+  double raw_compute();
+  bool use_second_sensor = false;
 };
 };  // namespace ez

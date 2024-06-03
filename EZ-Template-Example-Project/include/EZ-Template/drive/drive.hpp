@@ -66,12 +66,12 @@ class Drive {
   /**
    * Left tracking wheel.
    */
-  pros::ADIEncoder left_tracker;
+  pros::adi::Encoder left_tracker;
 
   /**
    * Right tracking wheel.
    */
-  pros::ADIEncoder right_tracker;
+  pros::adi::Encoder right_tracker;
 
   /**
    * Left rotation tracker.
@@ -641,7 +641,7 @@ class Drive {
   void drive_sensor_reset();
 
   /**
-   * Resets the current gyro value.  Defaults to 0, recommended to run at the start of your autonomous routine.
+   * Resets the current imu value.  Defaults to 0, recommended to run at the start of your autonomous routine.
    *
    * \param new_heading
    *        New heading value.
@@ -649,9 +649,27 @@ class Drive {
   void drive_imu_reset(double new_heading = 0);
 
   /**
-   * Returns the current gyro value.
+   * Returns the current imu rotation value.
    */
   double drive_imu_get();
+
+  /**
+   * Returns the current imu accel x + accel y value.
+   */
+  double drive_imu_accel_get();
+
+  /**
+   * Sets a new imu scaling factor.  This value is multiplied by the imu to change its output.
+   *
+   * \param scaler
+   *        Factor to scale the imu by.
+   */
+  void drive_imu_scaler_set(double scaler);
+
+  /**
+   * Returns the current imu scaling factor.
+   */
+  double drive_imu_scaler_get();
 
   /**
    * Calibrates the IMU, recommended to run in initialize().
@@ -834,12 +852,12 @@ class Drive {
   void pid_targets_reset();
 
   /**
-   * Sets heading of gyro and target of PID, okapi angle.
+   * Sets heading of imo and target of PID, okapi angle.
    */
   void drive_angle_set(okapi::QAngle p_angle);
 
   /**
-   * Sets heading of gyro and target of PID, takes double as an angle.
+   * Sets heading of imo and target of PID, takes double as an angle.
    */
   void drive_angle_set(double angle);
 
@@ -871,6 +889,19 @@ class Drive {
    *        for driving or turning, using a double.  degrees for turns/swings, inches for driving.
    */
   void pid_wait_until(double target);
+
+  /**
+   * Lock the code in a while loop until the robot has settled.
+   * Wrapper for pid_wait_until(target), target is your previously input target
+   */
+  void pid_wait_quick();
+
+  /**
+   * Lock the code in a while loop until the robot has settled.
+   * This also adds distance to target, and then exits with pid_wait_quick
+   * This will exit the motion while carrying momentum into the next motion.
+   */
+  void pid_wait_quick_chain();
 
   /**
    * Autonomous interference detection.  Returns true when interfered, and false when nothing happened.
@@ -917,6 +948,29 @@ class Drive {
    * @param p_start_i   start_I
    */
   PID::Constants pid_turn_constants_get();
+
+  /**
+   * Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.
+   * This sets turning constants.
+   *
+   * \param input
+   *        okapi angle unit
+   */
+  void pid_turn_chain_constant_set(okapi::QAngle input);
+
+  /**
+   * Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.
+   * This sets turning constants.
+   *
+   * \param input
+   *        angle in degrees
+   */
+  void pid_turn_chain_constant_set(double input);
+
+  /**
+   * Returns the amount that the PID will overshoot target by to maintain momentum into the next motion for turning.
+   */
+  double pid_turn_chain_constant_get();
 
   /**
    * @brief Set the swing pid constants object
@@ -977,6 +1031,70 @@ class Drive {
    * @param p_start_i   start_I
    */
   PID::Constants pid_swing_constants_backward_get();
+
+  /**
+   * Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.
+   * This sets forward and backwards swing constants.
+   *
+   * \param input
+   *        okapi angle unit
+   */
+  void pid_swing_chain_constant_set(okapi::QAngle input);
+
+  /**
+   * Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.
+   * This only sets forward swing constants.
+   *
+   * \param input
+   *        okapi angle unit
+   */
+  void pid_swing_chain_forward_constant_set(okapi::QAngle input);
+
+  /**
+   * Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.
+   * This only sets backward swing constants.
+   *
+   * \param input
+   *        okapi angle unit
+   */
+  void pid_swing_chain_backward_constant_set(okapi::QAngle input);
+
+  /**
+   * Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.
+   * This sets forward and backwards swing constants.
+   *
+   * \param input
+   *        angle in degrees
+   */
+  void pid_swing_chain_constant_set(double input);
+
+  /**
+   * Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.
+   * This only sets forward constants.
+   *
+   * \param input
+   *        angle in degrees
+   */
+  void pid_swing_chain_forward_constant_set(double input);
+
+  /**
+   * Returns the amount that the PID will overshoot target by to maintain momentum into the next motion for swinging forward.
+   */
+  double pid_swing_chain_forward_constant_get();
+
+  /**
+   * Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.
+   * This only sets backwards swing constants.
+   *
+   * \param input
+   *        angle in degrees
+   */
+  void pid_swing_chain_backward_constant_set(double input);
+
+  /**
+   * Returns the amount that the PID will overshoot target by to maintain momentum into the next motion for swinging backward.
+   */
+  double pid_swing_chain_backward_constant_get();
 
   /**
    * @brief Set the heading pid constants object
@@ -1059,6 +1177,70 @@ class Drive {
   PID::Constants pid_drive_constants_backward_get();
 
   /**
+   * Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.
+   * This sets forward and backwards driving constants.
+   *
+   * \param input
+   *        okapi length unit
+   */
+  void pid_drive_chain_constant_set(okapi::QLength input);
+
+  /**
+   * Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.
+   * This only sets forward driving constants.
+   *
+   * \param input
+   *        okapi length unit
+   */
+  void pid_drive_chain_forward_constant_set(okapi::QLength input);
+
+  /**
+   * Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.
+   * This only sets backward driving constants.
+   *
+   * \param input
+   *        okapi length unit
+   */
+  void pid_drive_chain_backward_constant_set(okapi::QLength input);
+
+  /**
+   * Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.
+   * This sets forward and backwards driving constants.
+   *
+   * \param input
+   *        distance in inches
+   */
+  void pid_drive_chain_constant_set(double input);
+
+  /**
+   * Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.
+   * This only sets forward driving constants.
+   *
+   * \param input
+   *        distance in inches
+   */
+  void pid_drive_chain_forward_constant_set(double input);
+
+  /**
+   * Returns the amount that the PID will overshoot target by to maintain momentum into the next motion for driving forward.
+   */
+  double pid_drive_chain_forward_constant_get();
+
+  /**
+   * Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.
+   * This only sets backward driving constants.
+   *
+   * \param input
+   *        distance in inches
+   */
+  void pid_drive_chain_backward_constant_set(double input);
+
+  /**
+   * Returns the amount that the PID will overshoot target by to maintain momentum into the next motion for driving backward.
+   */
+  double pid_drive_chain_backward_constant_get();
+
+  /**
    * Sets minimum power for swings when kI and startI are enabled.
    *
    * \param min
@@ -1097,8 +1279,10 @@ class Drive {
    *        Sets big_error. Timer will start when error is within this.  In okapi units.
    * \param p_velocity_exit_time
    *        Sets velocity_exit_time.  Timer will start when velocity is 0.  In okapi units.
+   * \param use_imu
+   *        Adds the Imu for velocity calculation in conjunction with the main sensor.
    */
-  void pid_drive_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QLength p_small_error, okapi::QTime p_big_exit_time, okapi::QLength p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout);
+  void pid_drive_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QLength p_small_error, okapi::QTime p_big_exit_time, okapi::QLength p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout, bool use_imu = true);
 
   /**
    * Set's constants for turn exit conditions.
@@ -1113,8 +1297,10 @@ class Drive {
    *        Sets big_error. Timer will start when error is within this.  In okapi units.
    * \param p_velocity_exit_time
    *        Sets velocity_exit_time.  Timer will start when velocity is 0.  In okapi units.
+   * \param use_imu
+   *        Adds the Imu for velocity calculation in conjunction with the main sensor.
    */
-  void pid_turn_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QAngle p_small_error, okapi::QTime p_big_exit_time, okapi::QAngle p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout);
+  void pid_turn_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QAngle p_small_error, okapi::QTime p_big_exit_time, okapi::QAngle p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout, bool use_imu = true);
 
   /**
    * Set's constants for swing exit conditions.
@@ -1129,8 +1315,10 @@ class Drive {
    *        Sets big_error. Timer will start when error is within this.  In okapi units.
    * \param p_velocity_exit_time
    *        Sets velocity_exit_time.  Timer will start when velocity is 0.  In okapi units.
+   * \param use_imu
+   *        Adds the Imu for velocity calculation in conjunction with the main sensor.
    */
-  void pid_swing_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QAngle p_small_error, okapi::QTime p_big_exit_time, okapi::QAngle p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout);
+  void pid_swing_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QAngle p_small_error, okapi::QTime p_big_exit_time, okapi::QAngle p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout, bool use_imu = true);
 
   /**
    * Set's constants for drive exit conditions.
@@ -1145,8 +1333,10 @@ class Drive {
    *        Sets big_error. Timer will start when error is within this.
    * \param p_velocity_exit_time
    *        Sets velocity_exit_time.  Timer will start when velocity is 0.
+   * \param use_imu
+   *        Adds the Imu for velocity calculation in conjunction with the main sensor.
    */
-  void pid_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout);
+  void pid_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = true);
 
   /**
    * Set's constants for turn exit conditions.
@@ -1161,8 +1351,10 @@ class Drive {
    *        Sets big_error. Timer will start when error is within this.
    * \param p_velocity_exit_time
    *        Sets velocity_exit_time.  Timer will start when velocity is 0.
+   * \param use_imu
+   *        Adds the Imu for velocity calculation in conjunction with the main sensor.
    */
-  void pid_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout);
+  void pid_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = true);
 
   /**
    * Set's constants for swing exit conditions.
@@ -1177,8 +1369,10 @@ class Drive {
    *        Sets big_error. Timer will start when error is within this.
    * \param p_velocity_exit_time
    *        Sets velocity_exit_time.  Timer will start when velocity is 0.
+   * \param use_imu
+   *        Adds the Imu for velocity calculation in conjunction with the main sensor.
    */
-  void pid_swing_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout);
+  void pid_swing_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = true);
 
   /**
    * Returns current tick_per_inch()
@@ -1294,6 +1488,18 @@ class Drive {
   double pid_tuner_increment_start_i_get();
 
  private:  // !Auton
+  double chain_target_start = 0.0;
+  double chain_sensor_start = 0.0;
+  double drive_forward_motion_chain_scale = 0.0;
+  double drive_backward_motion_chain_scale = 0.0;
+  double swing_forward_motion_chain_scale = 0.0;
+  double swing_backward_motion_chain_scale = 0.0;
+  double turn_motion_chain_scale = 0.0;
+  double used_motion_chain_scale = 0.0;
+  bool motion_chain_backward = false;
+
+  double IMU_SCALER = 1.0;
+
   bool drive_toggle = true;
   bool print_toggle = true;
   int swing_min = 0;
