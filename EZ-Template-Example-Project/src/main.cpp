@@ -8,17 +8,17 @@
 // Chassis constructor
 ez::Drive chassis(
     // These are your drive motors, the first motor is used for sensing!
-    {-5, -6, -7, -8},  // Left Chassis Ports (negative port will reverse it!)
-    {11, 15, 16, 17},  // Right Chassis Ports (negative port will reverse it!)
+    {1, 2, 3},     // Left Chassis Ports (negative port will reverse it!)
+    {-4, -5, -6},  // Right Chassis Ports (negative port will reverse it!)
 
-    21,     // IMU Port
+    7,      // IMU Port
     4.125,  // Wheel Diameter (Remember, 4" wheels without screw holes are actually 4.125!)
-    420,    // Cartridge RPM
+    600,    // Cartridge RPM
 
     // External Gear Ratio (MUST BE DECIMAL) This is WHEEL GEAR / MOTOR GEAR
     // eg. if your drive is 84:36 where the 36t is powered, your RATIO would be 84/36 which is 2.333
     // eg. if your drive is 36:60 where the 60t is powered, your RATIO would be 36/60 which is 0.6
-    1.0);
+    1.75);
 
 /**
  * Runs initialization code. This occurs as soon as the program is started.
