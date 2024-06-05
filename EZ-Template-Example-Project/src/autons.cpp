@@ -110,7 +110,7 @@ void wait_until_change_speed() {
   // When the robot gets to -6 inches, the robot will travel the remaining distance at a max speed of 30
   chassis.pid_drive_set(-24_in, 30, true);
   chassis.pid_wait_until(-6_in);
-  chassis.pid_speed_max_set(30);  // After driving 6 inches at 30 speed, the robot will go the remaining distance at DRIVE_SPEED
+  chassis.pid_speed_max_set(DRIVE_SPEED);  // After driving 6 inches at 30 speed, the robot will go the remaining distance at DRIVE_SPEED
   chassis.pid_wait();
 }
 
