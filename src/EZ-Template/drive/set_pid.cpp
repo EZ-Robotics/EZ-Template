@@ -90,6 +90,10 @@ PID::Constants Drive::pid_heading_constants_get() {
 // Updates max speed
 void Drive::pid_speed_max_set(int speed) {
   max_speed = abs(util::clamp(speed, 127, -127));
+  slew_left.speed_max_set(max_speed);
+  slew_right.speed_max_set(max_speed);
+  slew_turn.speed_max_set(max_speed);
+  slew_swing.speed_max_set(max_speed);
 }
 
 int Drive::pid_speed_max_get() {

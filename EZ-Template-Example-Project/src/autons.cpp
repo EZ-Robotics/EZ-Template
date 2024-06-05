@@ -14,14 +14,14 @@ const int SWING_SPEED = 90;
 // Constants
 ///
 void default_constants() {
-  chassis.pid_heading_constants_set(3, 0, 20);
-  chassis.pid_drive_constants_set(10, 0, 100);
-  chassis.pid_turn_constants_set(3, 0, 20);
-  chassis.pid_swing_constants_set(5, 0, 30);
+  chassis.pid_heading_constants_set(11, 0, 20);
+  chassis.pid_drive_constants_set(20, 0, 100);
+  chassis.pid_turn_constants_set(3, 0.05, 20, 15);
+  chassis.pid_swing_constants_set(6, 0, 65);
 
-  chassis.pid_turn_exit_condition_set(300_ms, 3_deg, 500_ms, 7_deg, 750_ms, 750_ms);
-  chassis.pid_swing_exit_condition_set(300_ms, 3_deg, 500_ms, 7_deg, 750_ms, 750_ms);
-  chassis.pid_drive_exit_condition_set(300_ms, 1_in, 500_ms, 3_in, 750_ms, 750_ms);
+  chassis.pid_turn_exit_condition_set(80_ms, 3_deg, 250_ms, 7_deg, 500_ms, 500_ms);
+  chassis.pid_swing_exit_condition_set(80_ms, 3_deg, 250_ms, 7_deg, 500_ms, 500_ms);
+  chassis.pid_drive_exit_condition_set(80_ms, 1_in, 250_ms, 3_in, 500_ms, 500_ms);
 
   chassis.pid_turn_chain_constant_set(3_deg);
   chassis.pid_swing_chain_constant_set(5_deg);
@@ -93,9 +93,9 @@ void wait_until_change_speed() {
   // pid_wait_until will wait until the robot gets to a desired position
 
   // When the robot gets to 6 inches, the robot will travel the remaining distance at a max speed of 30
-  chassis.pid_drive_set(24_in, DRIVE_SPEED, true);
+  chassis.pid_drive_set(24_in, 30, true);
   chassis.pid_wait_until(6_in);
-  chassis.pid_speed_max_set(30);  // After driving 6 inches at DRIVE_SPEED, the robot will go the remaining distance at 30 speed
+  chassis.pid_speed_max_set(DRIVE_SPEED);  // After driving 6 inches at 30 speed, the robot will go the remaining distance at DRIVE_SPEED
   chassis.pid_wait();
 
   chassis.pid_turn_set(45_deg, TURN_SPEED);
@@ -108,9 +108,9 @@ void wait_until_change_speed() {
   chassis.pid_wait();
 
   // When the robot gets to -6 inches, the robot will travel the remaining distance at a max speed of 30
-  chassis.pid_drive_set(-24_in, DRIVE_SPEED, true);
+  chassis.pid_drive_set(-24_in, 30, true);
   chassis.pid_wait_until(-6_in);
-  chassis.pid_speed_max_set(30);  // After driving 6 inches at DRIVE_SPEED, the robot will go the remaining distance at 30 speed
+  chassis.pid_speed_max_set(30);  // After driving 6 inches at 30 speed, the robot will go the remaining distance at DRIVE_SPEED
   chassis.pid_wait();
 }
 
@@ -137,7 +137,7 @@ void swing_example() {
 }
 
 ///
-// Combining Turn + Drive
+// Motion Chaining
 ///
 void motion_chaining() {
   // Motion chaining is where motions all try to blend together instead of individual movements.
@@ -153,7 +153,7 @@ void motion_chaining() {
   chassis.pid_wait_quick_chain();
 
   chassis.pid_turn_set(0_deg, TURN_SPEED);
-  chassis.pid_wait_quick_chain();
+  chassis.pid_wait();
 
   // Your final motion should still be a normal pid_wait
   chassis.pid_drive_set(-24_in, DRIVE_SPEED, true);

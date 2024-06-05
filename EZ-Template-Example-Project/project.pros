@@ -5,7 +5,7 @@
         "target": "v5",
         "templates": {
             "EZ-Template": {
-                "location": "C:\\Users\\union\\AppData\\Roaming\\PROS\\templates\\EZ-Template@3.1.0",
+                "location": "C:\\Users\\union\\AppData\\Roaming\\PROS\\templates\\EZ-Template@3.1.0-RC2",
                 "metadata": {
                     "origin": "local"
                 },
@@ -13,20 +13,20 @@
                 "py/object": "pros.conductor.templates.local_template.LocalTemplate",
                 "supported_kernels": "^4.1.0",
                 "system_files": [
-                    "include\\EZ-Template\\util.hpp",
-                    "include\\EZ-Template\\PID.hpp",
-                    "include\\EZ-Template\\auton_selector.hpp",
-                    "firmware\\EZ-Template.a",
-                    "include\\EZ-Template\\piston.hpp",
-                    "include\\EZ-Template\\slew.hpp",
                     "include\\EZ-Template\\api.hpp",
+                    "include\\EZ-Template\\auton_selector.hpp",
                     "include\\EZ-Template\\drive\\drive.hpp",
-                    "include\\EZ-Template\\auton.hpp",
-                    "include\\EZ-Template\\sdcard.hpp"
+                    "include\\EZ-Template\\PID.hpp",
+                    "include\\EZ-Template\\sdcard.hpp",
+                    "firmware\\EZ-Template.a",
+                    "include\\EZ-Template\\slew.hpp",
+                    "include\\EZ-Template\\piston.hpp",
+                    "include\\EZ-Template\\util.hpp",
+                    "include\\EZ-Template\\auton.hpp"
                 ],
                 "target": "v5",
                 "user_files": [],
-                "version": "3.1.0"
+                "version": "3.1.0-RC2"
             },
             "kernel": {
                 "location": "C:\\Users\\union\\AppData\\Roaming\\PROS\\templates\\kernel@4.1.0",

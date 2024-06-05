@@ -20,6 +20,9 @@ void slew::constants_set(double distance, int minimum_speed) {
   constants.distance_to_travel = distance;
 }
 
+void slew::speed_max_set(double speed) { max_speed = speed; }
+double slew::speed_max_get() { return max_speed; }
+
 bool slew::enabled() { return is_enabled; }                  // Is slew currently enabled?
 double slew::output() { return last_output; }                // Returns output
 slew::Constants slew::constants_get() { return constants; }  // Get constants

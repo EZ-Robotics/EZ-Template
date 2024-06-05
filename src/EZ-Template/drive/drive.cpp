@@ -150,10 +150,10 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 
 void Drive::drive_defaults_set() {
   // PID Constants
-  pid_heading_constants_set(3, 0, 20, 0);
-  pid_drive_constants_set(10, 0, 100, 0);
-  pid_turn_constants_set(3, 0, 20, 0);
-  pid_swing_constants_set(5, 0, 30, 0);
+  pid_heading_constants_set(11, 0, 20, 0);
+  pid_drive_constants_set(20, 0, 100, 0);
+  pid_turn_constants_set(3, 0.05, 20, 15);
+  pid_swing_constants_set(6, 0, 65);
   pid_turn_min_set(30);
   pid_swing_min_set(30);
 
@@ -161,9 +161,9 @@ void Drive::drive_defaults_set() {
   slew_drive_constants_set(7_in, 80);
 
   // Exit condition constants
-  pid_turn_exit_condition_set(300_ms, 3_deg, 500_ms, 7_deg, 750_ms, 750_ms);
-  pid_swing_exit_condition_set(300_ms, 3_deg, 500_ms, 7_deg, 750_ms, 750_ms);
-  pid_drive_exit_condition_set(300_ms, 1_in, 500_ms, 3_in, 750_ms, 750_ms);
+  pid_turn_exit_condition_set(80_ms, 3_deg, 250_ms, 7_deg, 500_ms, 500_ms);
+  pid_swing_exit_condition_set(80_ms, 3_deg, 250_ms, 7_deg, 500_ms, 500_ms);
+  pid_drive_exit_condition_set(80_ms, 1_in, 250_ms, 3_in, 500_ms, 500_ms);
 
   pid_turn_chain_constant_set(3_deg);
   pid_swing_chain_constant_set(5_deg);
@@ -197,6 +197,9 @@ double Drive::drive_tick_per_inch() {
 }
 
 void Drive::drive_ratio_set(double ratio) { RATIO = ratio; }
+double Drive::drive_ratio_get() { return RATIO; }
+void Drive::drive_rpm_set(double rpm) { CARTRIDGE = rpm; }
+double Drive::drive_rpm_get() { return CARTRIDGE; }
 
 void Drive::private_drive_set(int left, int right) {
   if (pros::millis() < 1500) return;

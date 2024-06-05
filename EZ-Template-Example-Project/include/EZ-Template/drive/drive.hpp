@@ -249,7 +249,7 @@ class Drive {
    * \param ratio
    *        External gear ratio, wheel gear / motor gear.
    */
-  Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks, double ratio);
+  Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks, double ratio = 1.0);
 
   /**
    * Creates a Drive Controller using encoders plugged into the brain.
@@ -915,6 +915,24 @@ class Drive {
    *        ratio of the gears
    */
   void drive_ratio_set(double ratio);
+
+  /**
+   * @brief Set the cartridge/wheel rpm of the robot
+   *
+   * @param rpm
+   *        rpm of the cartridge or wheel
+   */
+  void drive_rpm_set(double rpm);
+
+  /**
+   * Returns the ratio of the drive.
+   */
+  double drive_ratio_get();
+
+  /**
+   * Returns the current cartridge / wheel rpm.
+   */
+  double drive_rpm_get();
 
   /**
    * Changes max speed during a drive motion.
