@@ -701,3 +701,124 @@ double output();
 </Tabs>
 
 
+
+
+
+
+### speed_max_set()
+Sets the max speed slew can be.   
+
+`speed`  maximum speed the output can be
+<Tabs
+  groupId="speed_max_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+PID lift_slew;
+pros::Motor lift(1);
+void initialize() {
+  lift_slew.constants_set(100, 50);
+  lift_slew.initialize(true, 127, 500, lift.get_position());
+}
+
+void autonomous() {
+  while (lift.get_position() <= 500) {
+    if (lift.get_position() < 100) 
+      lift_slew.speed_max_set(50);
+    else 
+      lift_slew.speed_max_set(127);
+    lift_slew.iterate(lift.get_position();
+    lift = lift_slew.output();
+    pros::delay(10);
+  }
+  lift = 0;
+}
+```
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+void speed_max_set(double speed);
+```
+
+
+
+</TabItem>
+</Tabs>
+
+
+
+
+### speed_max_set()
+Returns the max speed slew can be.   
+<Tabs
+  groupId="speed_max_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+PID lift_slew;
+pros::Motor lift(1);
+void initialize() {
+  lift_slew.constants_set(100, 50);
+  lift_slew.initialize(true, 127, 500, lift.get_position());
+}
+
+void autonomous() {
+  while (lift.get_position() <= 500) {
+    if (lift.get_position() < 100) 
+      lift_slew.speed_max_set(50);
+    else 
+      lift_slew.speed_max_set(127);
+    printf("%.2f", lift_slew.speed_max_get());
+
+    lift_slew.iterate(lift.get_position();
+    lift = lift_slew.output();
+    pros::delay(10);
+  }
+  lift = 0;
+}
+```
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+double speed_max_get();
+```
+
+
+
+</TabItem>
+</Tabs>
+
+  /**
+   * Sets the max speed the slew can be
+   *
+   * \param speed
+   *        maximum speed
+   */
+  void speed_max_set(double speed);
+
+  /**
+   * Returns the max speed the slew can be
+   */
+  double speed_max_get();

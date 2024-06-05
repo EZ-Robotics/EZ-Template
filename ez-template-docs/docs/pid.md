@@ -926,13 +926,50 @@ ez::exit_output exit_condition(std::vector<pros::Motor> sensor, bool print = fal
 
 
 
+### timers_reset()
+Resets all timers for exit conditions.     
+<Tabs
+  groupId="timers_reset"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+ez::PID liftPID{1, 0.003, 4, 100, "Lift"};  
+pros::Motor lift_motor(1);
+void opcontrol() {
+  while (true) {
+    if (master.get_digital(DIGITAL_L1)) {
+      liftPID.timers_reset();
+      liftPID.target_set(500);
+    }
+    else if (master.get_digital(DIGITAL_L2)) {
+      liftPID.timers_reset();
+      liftPID.target_set(0);
+    }
+    lift_motor = liftPID.compute(lift_motor.get_position());
+
+    pros::delay(ez::util::DELAY_TIME);
+  }
+}
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+void timers_reset();
+```
 
 
 
-
-
-
-
-
-
-
+</TabItem>
+</Tabs>

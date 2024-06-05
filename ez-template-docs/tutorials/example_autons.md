@@ -91,9 +91,9 @@ void wait_until_change_speed() {
   // pid_wait_until will wait until the robot gets to a desired position
 
   // When the robot gets to 6 inches, the robot will travel the remaining distance at a max speed of 30
-  chassis.pid_drive_set(24_in, DRIVE_SPEED, true);
+  chassis.pid_drive_set(24_in, 30, true);
   chassis.pid_wait_until(6_in);
-  chassis.pid_speed_max_set(30);  // After driving 6 inches at DRIVE_SPEED, the robot will go the remaining distance at 30 speed
+  chassis.pid_speed_max_set(DRIVE_SPEED);  // After driving 6 inches at 30 speed, the robot will go the remaining distance at DRIVE_SPEED
   chassis.pid_wait();
 
   chassis.pid_turn_set(45_deg, TURN_SPEED);
@@ -106,9 +106,9 @@ void wait_until_change_speed() {
   chassis.pid_wait();
 
   // When the robot gets to -6 inches, the robot will travel the remaining distance at a max speed of 30
-  chassis.pid_drive_set(-24_in, DRIVE_SPEED, true);
+  chassis.pid_drive_set(-24_in, 30, true);
   chassis.pid_wait_until(-6_in);
-  chassis.pid_speed_max_set(30);  // After driving 6 inches at DRIVE_SPEED, the robot will go the remaining distance at 30 speed
+  chassis.pid_speed_max_set(DRIVE_SPEED);  // After driving 6 inches at 30 speed, the robot will go the remaining distance at DRIVE_SPEED
   chassis.pid_wait();
 }
 ```
@@ -158,7 +158,7 @@ void motion_chaining() {
   chassis.pid_wait_quick_chain();
 
   chassis.pid_turn_set(0_deg, TURN_SPEED);
-  chassis.pid_wait_quick_chain();
+  chassis.pid_wait();
 
   // Your final motion should still be a normal pid_wait
   chassis.pid_drive_set(-24_in, DRIVE_SPEED, true);
