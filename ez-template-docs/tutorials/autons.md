@@ -37,6 +37,12 @@ void NeutralStealPlatUp() {
 ## Add it to `autons.hpp` 
 In `include/autons.hpp` add the name of your function.  
 ```cpp
+#pragma once
+
+#include "EZ-Template/drive/drive.hpp"
+
+extern Drive chassis;
+
 void SoloAWP();
 void ScoreRingsPlatDown();
 void NeutralStealPlatDown();

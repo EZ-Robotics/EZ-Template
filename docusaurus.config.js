@@ -109,7 +109,7 @@ const config = {
             dropdownItemsAfter: [{ to: '/versions', label: 'Versions' }],
             dropdownActiveClassDisabled: true,
           },
-          { to: '/', label: 'Getting Started', position: 'left' },
+          { to: '/', label: 'EZ-Template', position: 'left' },
           { to: 'category/tutorials', label: 'Tutorials', position: 'left' },
           { to: 'category/docs', label: 'Docs', position: 'left' },
           // { to: '/support', label: 'Support', position: 'left' },
@@ -125,7 +125,7 @@ const config = {
             title: 'Learn',
             items: [
               {
-                label: 'Getting Started',
+                label: 'EZ-Template',
                 to: '/',
               },
               {

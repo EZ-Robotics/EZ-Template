@@ -3,7 +3,7 @@ title: Practice Mode
 description: How to use Practice Mode to improve your driving
 ---
 
-New drivers will often flick the joysticks, going full power or no power.  Practice mode is a training mode to help drivers use other parts of the joystick by shutting off the drive when the joysticks go full power.  
+The best drivers are able to use the entire range of the joystick to its fullest extent.  New drivers like to treat the joysticks as binary.  Practice mode is here to help train binary joystick users by shutting the entire drive off when the joystick is maxed out.  
 
 ## Enabling
 Adding `chassis.opcontrol_joystick_practicemode_toggle(true);` to your code will enable practice mode.  When practicing, we recommend driving in a figure 8 pattern to force yourself to use more of the joystick.  

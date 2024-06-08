@@ -24,17 +24,96 @@ const sidebars = {
       collapsed: false,
       collapsible: true,
       items: [
-        'tutorials/installation',
-        'tutorials/using_auton_selector',
-        'tutorials/autons',
-        'tutorials/example_autons',
+
+        // Getting Started
+        {
+          type: 'category',
+          label: 'Getting Started',
+          link: {
+            type: 'generated-index',
+          },
+          collapsed: false,
+          collapsible: true,
+          items: [
+            'tutorials/installation',
+            'tutorials/using_auton_selector',
+            'tutorials/autons',
+            'tutorials/example_autons',
+            'tutorials/intake_control'
+          ],
+        },
+
+        // User Control
+        {
+          type: 'category',
+          label: 'User Control',
+          link: {
+            type: 'generated-index',
+          },
+          collapsed: true,
+          collapsible: true,
+          items: [
+            'tutorials/control_schemes',
+            'tutorials/joystick_curve', 
+            'tutorials/activebrake', // this needs examples
+            'tutorials/practice_mode',
+          ],
+        },
+
+        /*
+        // Tuning Constants
+        {
+          type: 'category',
+          label: 'Tuning Constants',
+          link: {
+            type: 'generated-index',
+          },
+          collapsed: true,
+          collapsible: true,
+          items: [
+            'tutorials/tuning_constants',
+            // maybe split ^ up a bit
+            // page just for exit conditions
+            // gain scheduling?
+          ],
+        },
+
+        // Using EZ PID
+        {
+          type: 'category',
+          label: 'Using EZ PID',
+          link: {
+            type: 'generated-index',
+          },
+          collapsed: true,
+          collapsible: true,
+          items: [
+            'tutorials/pid', // this needs to get broken up
+          ],
+        },
+
+        // Using a PTO
+        {
+          type: 'category',
+          label: 'Using a PTO',
+          link: {
+            type: 'generated-index',
+          },
+          collapsed: true,
+          collapsible: true,
+          items: [
+            'tutorials/pto_tutorial',
+          ],
+        },*/
+
+        // Remove these when above is uncommented
         'tutorials/tuning_constants',
-        'tutorials/joystick_curve',
-        'tutorials/activebrake',
-        'tutorials/practice_mode',
         'tutorials/pid',
         'tutorials/pto_tutorial',
+
+        'tutorials/upgrading', // this needs to get broken up
       ],
+
     },
     {
       type: 'category',
@@ -42,7 +121,7 @@ const sidebars = {
       link: {
         type: 'generated-index',
       },
-      collapsed: false,
+      collapsed: true,
       collapsible: true,
       items: [
         'docs/constructor',

@@ -3,6 +3,7 @@ title: Example Autonomous Routines
 description: Some examples and test routines
 ---
 
+Reading documentation can be overwhelming, so EZ-Template has example autonomous routines for you to use and modify on your own to learn by doing.  
 
 ## Assumed Constants  
 These are default speeds that we can use throughout our autonomous routines to make it easier to modify them retroactively.
