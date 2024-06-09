@@ -1,7 +1,7 @@
 #include "main.h"
 
 /////
-// For installation, upgrading, documentations and tutorials, check out our website!
+// For installation, upgrading, documentations, and tutorials, check out our website!
 // https://ez-robotics.github.io/EZ-Template/
 /////
 
@@ -144,7 +144,7 @@ void motion_chaining() {
   // This works by exiting while the robot is still moving a little bit.
   // To use this, replace pid_wait with pid_wait_quick_chain.
   chassis.pid_drive_set(24_in, DRIVE_SPEED, true);
-  chassis.pid_wait_quick_chain();
+  chassis.pid_wait();
 
   chassis.pid_turn_set(45_deg, TURN_SPEED);
   chassis.pid_wait_quick_chain();

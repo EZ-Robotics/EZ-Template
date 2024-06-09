@@ -167,10 +167,14 @@ void Drive::opcontrol_curve_buttons_iterate() {
     button_press(&r_decrease_, master.get_digital(r_decrease_.button), ([this] { this->r_decrease(); }), ([this] { this->save_r_curve_sd(); }));
   }
 
-  auto sr = std::to_string(right_curve_scale);
-  auto sl = std::to_string(left_curve_scale);
+  std::ostringstream short_sl, short_sr;
+  short_sl << std::fixed << std::setprecision(1) << left_curve_scale;
+  short_sr << std::fixed << std::setprecision(1) << right_curve_scale;
+
+  auto sr = short_sr.str();
+  auto sl = short_sl.str();
   if (!is_tank)
-    master.set_text(2, 0, sl + "   " + sr);
+    master.set_text(2, 0, sl + "         " + sr);
   else
     master.set_text(2, 0, sl);
 }
@@ -230,11 +234,10 @@ void Drive::opcontrol_joystick_threshold_iterate(int l_stick, int r_stick) {
   if (abs(l_stick) > 0 || abs(r_stick) > 0) {
     if (practice_mode_is_on && (abs(l_stick) > 120 || abs(r_stick) > 120))
       drive_set(0, 0);
+    else if (is_reversed == true)
+      drive_set(-r_stick, -l_stick);
     else
-      if(is_reversed == true)
-        drive_set(-r_stick, -l_stick);
-      else
-         drive_set(l_stick, r_stick);
+      drive_set(l_stick, r_stick);
     if (active_brake_kp != 0) drive_sensor_reset();
   }
   // When joys are released, run active brake (P) on drive

@@ -137,7 +137,7 @@ void Drive::pid_drive_set(double target, int speed, bool slew_on, bool toggle_he
   rightPID.timers_reset();
 
   // Print targets
-  if (print_toggle) printf("Drive Started... Target Value: %f", target);
+  if (print_toggle) printf("Drive Started... Target Value: %.2f", target);
   if (slew_on && print_toggle) printf(" with slew");
   if (print_toggle) printf("\n");
   chain_target_start = target;
@@ -197,7 +197,7 @@ void Drive::pid_turn_set(double target, int speed, bool slew_on) {
   turnPID.timers_reset();
 
   // Print targets
-  if (print_toggle) printf("Turn Started... Target Value: %f\n", target);
+  if (print_toggle) printf("Turn Started... Target Value: %.2f\n", target);
   chain_sensor_start = drive_imu_get();
   chain_target_start = target;
   used_motion_chain_scale = 0.0;
@@ -239,7 +239,7 @@ void Drive::pid_swing_set(e_swing type, double target, int speed, int opposite_s
   swingPID.timers_reset();
 
   // Print targets
-  if (print_toggle) printf("Swing Started... Target Value: %f\n", target);
+  if (print_toggle) printf("Swing Started... Target Value: %.2f\n", target);
   current_swing = type;
   chain_sensor_start = drive_imu_get();
   chain_target_start = target;

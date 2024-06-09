@@ -149,6 +149,9 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 }
 
 void Drive::drive_defaults_set() {
+  std::cout << std::fixed;
+  std::cout << std::setprecision(2);
+
   // PID Constants
   pid_heading_constants_set(11, 0, 20, 0);
   pid_drive_constants_set(20, 0, 100, 0);
