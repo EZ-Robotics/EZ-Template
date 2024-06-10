@@ -36,7 +36,7 @@ const sidebars = {
           collapsible: true,
           items: [
             'tutorials/installation',
-            'tutorials/upgrading', // this needs to get broken up
+            'tutorials/upgrading',
             'tutorials/using_auton_selector',
             'tutorials/autons',
             'tutorials/example_autons',
@@ -135,9 +135,25 @@ const sidebars = {
         'docs/slew',
         'docs/piston',
         'docs/util',
+        'migration',
       ],
     },
-    'migration',
+    /*
+    {
+      type: 'category',
+      label: 'Community',
+      link: {
+        type: 'generated-index',
+      },
+      collapsed: true,
+      collapsible: true,
+      items: [
+        'support',
+        'showcase',
+      ],
+    },
+    */
+    
   ],
 };
 export default sidebars;
