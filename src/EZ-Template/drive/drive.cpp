@@ -28,11 +28,13 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 
   // Set ports to a global vector
   for (auto i : left_motor_ports) {
-    pros::Motor temp(abs(i), util::reversed_active(i));
+    pros::Motor temp((std::int8_t)abs(i));
+    temp.set_reversed(util::reversed_active(i));
     left_motors.push_back(temp);
   }
   for (auto i : right_motor_ports) {
-    pros::Motor temp(abs(i), util::reversed_active(i));
+    pros::Motor temp((std::int8_t)abs(i));
+    temp.set_reversed(util::reversed_active(i));
     right_motors.push_back(temp);
   }
 
@@ -59,11 +61,13 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 
   // Set ports to a global vector
   for (auto i : left_motor_ports) {
-    pros::Motor temp(abs(i), util::reversed_active(i));
+    pros::Motor temp(abs(i));
+    temp.set_reversed(util::reversed_active(i));
     left_motors.push_back(temp);
   }
   for (auto i : right_motor_ports) {
-    pros::Motor temp(abs(i), util::reversed_active(i));
+    pros::Motor temp(abs(i));
+    temp.set_reversed(util::reversed_active(i));
     right_motors.push_back(temp);
   }
 
@@ -90,11 +94,13 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 
   // Set ports to a global vector
   for (auto i : left_motor_ports) {
-    pros::Motor temp(abs(i), util::reversed_active(i));
+    pros::Motor temp(abs(i));
+    temp.set_reversed(util::reversed_active(i));
     left_motors.push_back(temp);
   }
   for (auto i : right_motor_ports) {
-    pros::Motor temp(abs(i), util::reversed_active(i));
+    pros::Motor temp(abs(i));
+    temp.set_reversed(util::reversed_active(i));
     right_motors.push_back(temp);
   }
 
@@ -123,11 +129,13 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 
   // Set ports to a global vector
   for (auto i : left_motor_ports) {
-    pros::Motor temp(abs(i), util::reversed_active(i));
+    pros::Motor temp(abs(i));
+    temp.set_reversed(util::reversed_active(i));
     left_motors.push_back(temp);
   }
   for (auto i : right_motor_ports) {
-    pros::Motor temp(abs(i), util::reversed_active(i));
+    pros::Motor temp(abs(i));
+    temp.set_reversed(util::reversed_active(i));
     right_motors.push_back(temp);
   }
 
@@ -141,11 +149,14 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 }
 
 void Drive::drive_defaults_set() {
+  std::cout << std::fixed;
+  std::cout << std::setprecision(2);
+
   // PID Constants
-  pid_heading_constants_set(3, 0, 20, 0);
-  pid_drive_constants_set(10, 0, 100, 0);
-  pid_turn_constants_set(3, 0, 20, 0);
-  pid_swing_constants_set(5, 0, 30, 0);
+  pid_heading_constants_set(11, 0, 20, 0);
+  pid_drive_constants_set(20, 0, 100, 0);
+  pid_turn_constants_set(3, 0.05, 20, 15);
+  pid_swing_constants_set(6, 0, 65);
   pid_turn_min_set(30);
   pid_swing_min_set(30);
 
@@ -153,9 +164,13 @@ void Drive::drive_defaults_set() {
   slew_drive_constants_set(7_in, 80);
 
   // Exit condition constants
-  pid_turn_exit_condition_set(300_ms, 3_deg, 500_ms, 7_deg, 750_ms, 750_ms);
-  pid_swing_exit_condition_set(300_ms, 3_deg, 500_ms, 7_deg, 750_ms, 750_ms);
-  pid_drive_exit_condition_set(300_ms, 1_in, 500_ms, 3_in, 750_ms, 750_ms);
+  pid_turn_exit_condition_set(80_ms, 3_deg, 250_ms, 7_deg, 500_ms, 500_ms);
+  pid_swing_exit_condition_set(80_ms, 3_deg, 250_ms, 7_deg, 500_ms, 500_ms);
+  pid_drive_exit_condition_set(80_ms, 1_in, 250_ms, 3_in, 500_ms, 500_ms);
+
+  pid_turn_chain_constant_set(3_deg);
+  pid_swing_chain_constant_set(5_deg);
+  pid_drive_chain_constant_set(3_in);
 
   // Modify joystick curve on controller (defaults to disabled)
   opcontrol_curve_buttons_toggle(true);
@@ -185,6 +200,9 @@ double Drive::drive_tick_per_inch() {
 }
 
 void Drive::drive_ratio_set(double ratio) { RATIO = ratio; }
+double Drive::drive_ratio_get() { return RATIO; }
+void Drive::drive_rpm_set(double rpm) { CARTRIDGE = rpm; }
+double Drive::drive_rpm_get() { return CARTRIDGE; }
 
 void Drive::private_drive_set(int left, int right) {
   if (pros::millis() < 1500) return;
@@ -265,7 +283,11 @@ double Drive::drive_mA_left() { return left_motors.front().get_current_draw(); }
 bool Drive::drive_current_left_over() { return left_motors.front().is_over_current(); }
 
 void Drive::drive_imu_reset(double new_heading) { imu.set_rotation(new_heading); }
-double Drive::drive_imu_get() { return imu.get_rotation(); }
+double Drive::drive_imu_get() { return imu.get_rotation() * IMU_SCALER; }
+double Drive::drive_imu_accel_get() { return imu.get_accel().x + imu.get_accel().y; }
+
+void Drive::drive_imu_scaler_set(double scaler) { IMU_SCALER = scaler; }
+double Drive::drive_imu_scaler_get() { return IMU_SCALER; }
 
 void Drive::drive_imu_display_loading(int iter) {
   // If the lcd is already initialized, don't run this function
@@ -275,7 +297,7 @@ void Drive::drive_imu_display_loading(int iter) {
   int boarder = 50;
 
   // Create the boarder
-  pros::screen::set_pen(COLOR_WHITE);
+  pros::screen::set_pen(pros::c::COLOR_WHITE);
   for (int i = 1; i < 3; i++) {
     pros::screen::draw_rect(boarder + i, boarder + i, 480 - boarder - i, 240 - boarder - i);
   }
@@ -291,7 +313,7 @@ void Drive::drive_imu_display_loading(int iter) {
   // Failsafe time
   else {
     static int last_x1 = boarder;
-    pros::screen::set_pen(COLOR_RED);
+    pros::screen::set_pen(pros::c::COLOR_RED);
     int x1 = ((iter - 2000) * ((480 - (boarder * 2)) / 1000.0)) + boarder;
     pros::screen::fill_rect(last_x1, boarder, x1, 240 - boarder);
     last_x1 = x1;
@@ -301,13 +323,22 @@ void Drive::drive_imu_display_loading(int iter) {
 bool Drive::drive_imu_calibrate(bool run_loading_animation) {
   imu.reset();
   int iter = 0;
+  bool current_status = imu.is_calibrating();
+  bool last_status = current_status;
+  bool successful = false;
   while (true) {
     iter += util::DELAY_TIME;
 
     if (run_loading_animation) drive_imu_display_loading(iter);
 
+    if (!successful) {
+      last_status = current_status;
+      current_status = imu.is_calibrating();
+      successful = !current_status && last_status ? true : false;
+    }
+
     if (iter >= 2000) {
-      if (!(imu.get_status() & pros::c::E_IMU_STATUS_CALIBRATING)) {
+      if (successful) {
         break;
       }
       if (iter >= 3000) {

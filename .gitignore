@@ -22,11 +22,9 @@ yarn-error.log*
 # Compiled Object files
 *.o
 *.obj
-
 # Executables
 *.bin
 *.elf
-
 # PROS
 bin/
 .vscode/
@@ -45,3 +43,4 @@ EZ-Template-Example-Project/temp.log
 EZ-Template-Example-Project/temp.errors
 EZ-Template-Example-Project/*.ini
 EZ-Template-Example-Project/.d/
+.d/

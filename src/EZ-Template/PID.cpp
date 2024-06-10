@@ -59,18 +59,34 @@ bool PID::i_reset_get() { return reset_i_sgn; };
 
 double PID::compute(double current) {
   error = target - current;
-  derivative = error - prev_error;
+  return compute_error(error, current);
+}
+
+double PID::compute_error(double err, double current) {
+  error = err;
+  cur = current;
+
+  return raw_compute();
+}
+
+double PID::raw_compute() {
+  // calculate derivative on measurement instead of error to avoid "derivative kick"
+  // https://www.isa.org/intech-home/2023/june-2023/features/fundamentals-pid-control
+  derivative = cur - prev_current;
 
   if (constants.ki != 0) {
+    // Only compute i when within a threshold of target
     if (fabs(error) < constants.start_i)
       integral += error;
 
-    if (util::sgn(error) != util::sgn(prev_error) && reset_i_sgn)
+    // Reset i when the sign of error flips
+    if (util::sgn(error) != util::sgn(prev_current) && reset_i_sgn)
       integral = 0;
   }
 
-  output = (error * constants.kp) + (integral * constants.ki) + (derivative * constants.kd);
+  output = (error * constants.kp) + (integral * constants.ki) - (derivative * constants.kd);
 
+  prev_current = cur;
   prev_error = error;
 
   return output;
@@ -81,6 +97,7 @@ void PID::timers_reset() {
   k = 0;
   j = 0;
   l = 0;
+  m = 0;
   is_mA = false;
 }
 
@@ -96,6 +113,18 @@ void PID::exit_condition_print(ez::exit_output exit_type) {
   else
     std::cout << exit_to_string(exit_type) << " Exit.\n";
 }
+
+void PID::velocity_sensor_secondary_toggle_set(bool toggle) { use_second_sensor = toggle; }
+bool PID::velocity_sensor_secondary_toggle_get() { return use_second_sensor; }
+
+void PID::velocity_sensor_secondary_set(double secondary_sensor) { second_sensor = secondary_sensor; }
+double PID::velocity_sensor_secondary_get() { return second_sensor; }
+
+void PID::velocity_sensor_main_exit_set(double zero) { velocity_zero_main = zero; }
+double PID::velocity_sensor_main_exit_get() { return velocity_zero_main; }
+
+void PID::velocity_sensor_secondary_exit_set(double zero) { velocity_zero_secondary = zero; }
+double PID::velocity_sensor_secondary_exit_get() { return velocity_zero_secondary; }
 
 exit_output PID::exit_condition(bool print) {
   // If this function is called while all exit constants are 0, print an error
@@ -121,7 +150,7 @@ exit_output PID::exit_condition(bool print) {
 
   // If the robot is close to the target, start a timer.  If the robot doesn't get closer within
   // a certain amount of time, exit and continue.  This does not run while small_timeout is running
-  if (exit.big_error != 0 && exit.big_exit_time != 0) {  // Check if this condition is enabled
+  else if (exit.big_error != 0 && exit.big_exit_time != 0) {  // Check if this condition is enabled
     if (abs(error) < exit.big_error) {
       i += util::DELAY_TIME;
       if (i > exit.big_exit_time) {
@@ -134,9 +163,9 @@ exit_output PID::exit_condition(bool print) {
     }
   }
 
-  // If the motor velocity is 0,the code will timeout and set interfered to true.
+  // If the motor velocity is 0, the code will timeout and set interfered to true.
   if (exit.velocity_exit_time != 0) {  // Check if this condition is enabled
-    if (abs(derivative) <= 0.05) {
+    if (abs(derivative) <= velocity_zero_main) {
       k += util::DELAY_TIME;
       if (k > exit.velocity_exit_time) {
         timers_reset();
@@ -147,6 +176,25 @@ exit_output PID::exit_condition(bool print) {
       k = 0;
     }
   }
+
+  if (!use_second_sensor)
+    return RUNNING;
+
+  // If the secondary sensors velocity is 0, the code will timeout and set interfered to true.
+  if (exit.velocity_exit_time != 0) {  // Check if this condition is enabled
+    if (abs(second_sensor) <= velocity_zero_secondary) {
+      m += util::DELAY_TIME;
+      if (m > exit.velocity_exit_time) {
+        timers_reset();
+        if (print) exit_condition_print(VELOCITY_EXIT);
+        return VELOCITY_EXIT;
+      }
+    } else {
+      m = 0;
+    }
+  }
+
+  // printf("j: %i   i: %i   k: %i   m: %i\n", j, i, k, m);
 
   return RUNNING;
 }

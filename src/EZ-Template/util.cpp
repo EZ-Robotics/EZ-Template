@@ -56,7 +56,7 @@ void screen_print(std::string text, int line) {
   std::string temp = "";
 
   for (int i = 0; i < text.length(); i++) {
-    if (text[i] != '\n' && temp.length() + 1 > 32) {
+    if (text[i] != '\n' && temp.length() + 1 > 38) {
       auto last_word = get_last_word(temp);
       if (last_word == temp) {
         texts.push_back(temp);

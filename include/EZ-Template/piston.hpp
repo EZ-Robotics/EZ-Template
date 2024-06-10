@@ -14,7 +14,7 @@ class Piston {
   /**
    * Piston used throughout.
    */
-  pros::ADIDigitalOut piston;
+  pros::adi::DigitalOut piston;
 
   /**
    * Piston constructor.  This class keeps track of piston state.  The starting position of your piston is FALSE.

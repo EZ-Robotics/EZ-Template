@@ -90,6 +90,10 @@ PID::Constants Drive::pid_heading_constants_get() {
 // Updates max speed
 void Drive::pid_speed_max_set(int speed) {
   max_speed = abs(util::clamp(speed, 127, -127));
+  slew_left.speed_max_set(max_speed);
+  slew_right.speed_max_set(max_speed);
+  slew_turn.speed_max_set(max_speed);
+  slew_swing.speed_max_set(max_speed);
 }
 
 int Drive::pid_speed_max_get() {
@@ -129,10 +133,16 @@ int Drive::pid_swing_min_get() { return swing_min; }
 
 // Set drive PID raw
 void Drive::pid_drive_set(double target, int speed, bool slew_on, bool toggle_heading) {
+  leftPID.timers_reset();
+  rightPID.timers_reset();
+
   // Print targets
-  if (print_toggle) printf("Drive Started... Target Value: %f in", target);
+  if (print_toggle) printf("Drive Started... Target Value: %.2f", target);
   if (slew_on && print_toggle) printf(" with slew");
   if (print_toggle) printf("\n");
+  chain_target_start = target;
+  chain_sensor_start = drive_sensor_left();
+  used_motion_chain_scale = 0.0;
 
   // Global setup
   pid_speed_max_set(speed);
@@ -153,10 +163,11 @@ void Drive::pid_drive_set(double target, int speed, bool slew_on, bool toggle_he
   if (l_target_encoder < l_start && r_target_encoder < r_start) {
     pid_consts = backward_drivePID.constants_get();
     slew_consts = slew_backward.constants_get();
-
+    motion_chain_backward = true;
   } else {
     pid_consts = forward_drivePID.constants_get();
     slew_consts = slew_forward.constants_get();
+    motion_chain_backward = false;
   }
   leftPID.constants_set(pid_consts.kp, pid_consts.ki, pid_consts.kd, pid_consts.start_i);
   rightPID.constants_set(pid_consts.kp, pid_consts.ki, pid_consts.kd, pid_consts.start_i);
@@ -183,8 +194,13 @@ void Drive::pid_drive_set(okapi::QLength p_target, int speed, bool slew_on, bool
 
 // Raw Set Turn PID
 void Drive::pid_turn_set(double target, int speed, bool slew_on) {
+  turnPID.timers_reset();
+
   // Print targets
-  if (print_toggle) printf("Turn Started... Target Value: %f\n", target);
+  if (print_toggle) printf("Turn Started... Target Value: %.2f\n", target);
+  chain_sensor_start = drive_imu_get();
+  chain_target_start = target;
+  used_motion_chain_scale = 0.0;
 
   // Set PID targets
   turnPID.target_set(target);
@@ -192,7 +208,7 @@ void Drive::pid_turn_set(double target, int speed, bool slew_on) {
   pid_speed_max_set(speed);
 
   // Initialize slew
-  slew_turn.initialize(slew_on, max_speed, target, drive_imu_get());
+  slew_turn.initialize(slew_on, max_speed, target, chain_sensor_start);
 
   // Run task
   drive_mode_set(TURN);
@@ -220,15 +236,18 @@ void Drive::pid_turn_relative_set(double target, int speed, bool slew_on) {
 
 // Raw Set Swing PID
 void Drive::pid_swing_set(e_swing type, double target, int speed, int opposite_speed, bool slew_on) {
-  // use left/right as 1 and -1, and multiply along with sgn of error to find if fwd or rev
+  swingPID.timers_reset();
 
   // Print targets
-  if (print_toggle) printf("Swing Started... Target Value: %f\n", target);
+  if (print_toggle) printf("Swing Started... Target Value: %.2f\n", target);
   current_swing = type;
+  chain_sensor_start = drive_imu_get();
+  chain_target_start = target;
+  used_motion_chain_scale = 0.0;
 
   // Figure out if going forward or backward
   int side = type == ez::LEFT_SWING ? 1 : -1;
-  int direction = util::sgn((target - drive_imu_get()) * side);
+  int direction = util::sgn((target - chain_sensor_start) * side);
 
   // Set constants according to the robots direction
   PID::Constants pid_consts;
@@ -240,12 +259,14 @@ void Drive::pid_swing_set(e_swing type, double target, int speed, int opposite_s
     pid_swing_consts = backward_swingPID.constants_get();
     slew_consts = slew_swing_backward.constants_get();
     slew_swing_using_angle = slew_swing_rev_using_angle;
+    motion_chain_backward = true;
 
   } else {
     pid_consts = forward_drivePID.constants_get();
     pid_swing_consts = forward_swingPID.constants_get();
     slew_consts = slew_swing_forward.constants_get();
     slew_swing_using_angle = slew_swing_fwd_using_angle;
+    motion_chain_backward = false;
   }
 
   // Set targets for the side that isn't moving
@@ -264,7 +285,7 @@ void Drive::pid_swing_set(e_swing type, double target, int speed, int opposite_s
 
   // Initialize slew
   double slew_tar = slew_swing_using_angle ? target : direction * 100;
-  double current = slew_swing_using_angle ? drive_imu_get() : (current_swing == LEFT_SWING ? drive_sensor_left() : drive_sensor_right());
+  double current = slew_swing_using_angle ? chain_sensor_start : (current_swing == LEFT_SWING ? drive_sensor_left() : drive_sensor_right());
   slew_swing.initialize(slew_on, max_speed, slew_tar, current);
 
   // Run task

@@ -4,9 +4,13 @@ License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
+#include "sdcard.hpp"
+
 #include <filesystem>
 
-#include "main.h"
+#include "auton_selector.hpp"
+#include "pros/llemu.hpp"
+#include "util.hpp"
 
 namespace ez::as {
 AutonSelector auton_selector{};
@@ -29,9 +33,9 @@ void auton_selector_initialize() {
   FILE* as_usd_file_read;
   // If file exists...
   if ((as_usd_file_read = fopen("/usd/auto.txt", "r"))) {
-    char l_buf[5];
-    fread(l_buf, 1, 5, as_usd_file_read);
-    ez::as::auton_selector.auton_page_current = std::stof(l_buf);
+    char a_buf[10];
+    fread(a_buf, 1, 10, as_usd_file_read);
+    ez::as::auton_selector.auton_page_current = std::stof(a_buf);
     fclose(as_usd_file_read);
   }
   // If file doesn't exist, create file
@@ -90,10 +94,10 @@ bool enabled() { return auton_selector_running; }
 bool turn_off = false;
 
 // Using a button to control the lcd
-pros::ADIDigitalIn* limit_switch_left = nullptr;
-pros::ADIDigitalIn* limit_switch_right = nullptr;
+pros::adi::DigitalIn* limit_switch_left = nullptr;
+pros::adi::DigitalIn* limit_switch_right = nullptr;
 pros::Task limit_switch_task(ez::as::limitSwitchTask);
-void limit_switch_lcd_initialize(pros::ADIDigitalIn* right_limit, pros::ADIDigitalIn* left_limit) {
+void limit_switch_lcd_initialize(pros::adi::DigitalIn* right_limit, pros::adi::DigitalIn* left_limit) {
   if (!left_limit && !right_limit) {
     delete limit_switch_left;
     delete limit_switch_right;

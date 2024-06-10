@@ -76,6 +76,19 @@ class slew {
    */
   double output();
 
+  /**
+   * Sets the max speed the slew can be
+   *
+   * \param speed
+   *        maximum speed
+   */
+  void speed_max_set(double speed);
+
+  /**
+   * Returns the max speed the slew can be
+   */
+  double speed_max_get();
+
  private:
   int sign = 0;
   double error = 0;
