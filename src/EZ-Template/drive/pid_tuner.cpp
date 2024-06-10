@@ -6,6 +6,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "EZ-Template/api.hpp"
 #include "EZ-Template/sdcard.hpp"
+#include "pros/llemu.hpp"
 #include "pros/misc.h"
 
 // Is the PID Tuner enabled?

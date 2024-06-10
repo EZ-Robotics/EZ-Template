@@ -161,7 +161,9 @@ void Drive::wait_until_drive(double target) {
     }
     // Once we've past target, return
     else if (util::sgn(l_error) != l_sgn || util::sgn(r_error) != r_sgn) {
-      if (print_toggle) printf("  Drive Wait Until Exit Success. Triggered at: L,R(%f, %f)  Target: L,R(%f, %f)\n", drive_sensor_left() - l_start, drive_sensor_right() - r_start, l_tar, r_tar);
+      if (print_toggle) printf("  Drive Wait Until Exit Success. Triggered at: L,R(%.2f, %.2f)  Target: L,R(%.2f, %.2f)\n", drive_sensor_left() - l_start, drive_sensor_right() - r_start, l_tar, r_tar);
+      leftPID.timers_reset();
+      rightPID.timers_reset();
       return;
     }
 
@@ -208,7 +210,8 @@ void Drive::wait_until_turn_swing(double target) {
       }
       // Once we've past target, return
       else if (util::sgn(g_error) != g_sgn) {
-        if (print_toggle) printf("  Turn Wait Until Exit Success, triggered at %f.  Target: %f\n", drive_imu_get(), target);
+        if (print_toggle) printf("  Turn Wait Until Exit Success, triggered at %.2f.  Target: %.2f\n", drive_imu_get(), target);
+        turnPID.timers_reset();
         return;
       }
     }
@@ -232,7 +235,8 @@ void Drive::wait_until_turn_swing(double target) {
       }
       // Once we've past target, return
       else if (util::sgn(g_error) != g_sgn) {
-        if (print_toggle) printf("  Swing Wait Until Exit Success, triggered at %f. Target: %f\n", drive_imu_get(), target);
+        if (print_toggle) printf("  Swing Wait Until Exit Success, triggered at %.2f. Target: %.2f\n", drive_imu_get(), target);
+        swingPID.timers_reset();
         return;
       }
     }
@@ -323,7 +327,7 @@ void Drive::pid_wait_quick_chain() {
     double chain_scale = motion_chain_backward ? drive_backward_motion_chain_scale : drive_forward_motion_chain_scale;
     used_motion_chain_scale = chain_scale * util::sgn(chain_target_start);
     leftPID.target_set(leftPID.target_get() + used_motion_chain_scale);
-    rightPID.target_set(leftPID.target_get() + used_motion_chain_scale);
+    rightPID.target_set(rightPID.target_get() + used_motion_chain_scale);
   }
   // If turning, add turn_motion_chain_scale to target
   else if (mode == TURN) {
