@@ -36,6 +36,7 @@ const sidebars = {
           collapsible: true,
           items: [
             'tutorials/installation',
+            'tutorials/upgrading', // this needs to get broken up
             'tutorials/using_auton_selector',
             'tutorials/autons',
             'tutorials/example_autons',
@@ -54,13 +55,13 @@ const sidebars = {
           collapsible: true,
           items: [
             'tutorials/control_schemes',
-            'tutorials/joystick_curve', 
-            'tutorials/activebrake', // this needs examples
+            'tutorials/joystick_curve',
+            'tutorials/activebrake',
             'tutorials/practice_mode',
           ],
         },
 
-        /*
+
         // Tuning Constants
         {
           type: 'category',
@@ -71,13 +72,14 @@ const sidebars = {
           collapsed: true,
           collapsible: true,
           items: [
+            'tutorials/slew_constants',
             'tutorials/tuning_constants',
-            // maybe split ^ up a bit
-            // page just for exit conditions
+            'tutorials/tuning_exit_conditions',
             // gain scheduling?
           ],
         },
 
+        /*
         // Using EZ PID
         {
           type: 'category',
@@ -104,14 +106,12 @@ const sidebars = {
           items: [
             'tutorials/pto_tutorial',
           ],
-        },*/
+        },
+        */
 
         // Remove these when above is uncommented
-        'tutorials/tuning_constants',
         'tutorials/pid',
         'tutorials/pto_tutorial',
-
-        'tutorials/upgrading', // this needs to get broken up
       ],
 
     },
