@@ -24,17 +24,96 @@ const sidebars = {
       collapsed: false,
       collapsible: true,
       items: [
-        'tutorials/installation',
-        'tutorials/using_auton_selector',
-        'tutorials/autons',
-        'tutorials/example_autons',
-        'tutorials/tuning_constants',
-        'tutorials/joystick_curve',
-        'tutorials/activebrake',
-        'tutorials/practice_mode',
+
+        // Getting Started
+        {
+          type: 'category',
+          label: 'Getting Started',
+          link: {
+            type: 'generated-index',
+          },
+          collapsed: false,
+          collapsible: true,
+          items: [
+            'tutorials/installation',
+            'tutorials/upgrading',
+            'tutorials/using_auton_selector',
+            'tutorials/autons',
+            'tutorials/example_autons',
+            'tutorials/intake_control'
+          ],
+        },
+
+        // User Control
+        {
+          type: 'category',
+          label: 'User Control',
+          link: {
+            type: 'generated-index',
+          },
+          collapsed: true,
+          collapsible: true,
+          items: [
+            'tutorials/control_schemes',
+            'tutorials/joystick_curve',
+            'tutorials/activebrake',
+            'tutorials/practice_mode',
+          ],
+        },
+
+
+        // Tuning Constants
+        {
+          type: 'category',
+          label: 'Tuning Constants',
+          link: {
+            type: 'generated-index',
+          },
+          collapsed: true,
+          collapsible: true,
+          items: [
+            'tutorials/slew_constants',
+            'tutorials/tuning_constants',
+            'tutorials/tuning_exit_conditions',
+            // gain scheduling?
+          ],
+        },
+
+        /*
+        // Using EZ PID
+        {
+          type: 'category',
+          label: 'Using EZ PID',
+          link: {
+            type: 'generated-index',
+          },
+          collapsed: true,
+          collapsible: true,
+          items: [
+            'tutorials/pid', // this needs to get broken up
+          ],
+        },
+
+        // Using a PTO
+        {
+          type: 'category',
+          label: 'Using a PTO',
+          link: {
+            type: 'generated-index',
+          },
+          collapsed: true,
+          collapsible: true,
+          items: [
+            'tutorials/pto_tutorial',
+          ],
+        },
+        */
+
+        // Remove these when above is uncommented
         'tutorials/pid',
         'tutorials/pto_tutorial',
       ],
+
     },
     {
       type: 'category',
@@ -42,7 +121,7 @@ const sidebars = {
       link: {
         type: 'generated-index',
       },
-      collapsed: false,
+      collapsed: true,
       collapsible: true,
       items: [
         'docs/constructor',
@@ -56,9 +135,25 @@ const sidebars = {
         'docs/slew',
         'docs/piston',
         'docs/util',
+        'migration',
       ],
     },
-    'migration',
+    /*
+    {
+      type: 'category',
+      label: 'Community',
+      link: {
+        type: 'generated-index',
+      },
+      collapsed: true,
+      collapsible: true,
+      items: [
+        'support',
+        'showcase',
+      ],
+    },
+    */
+    
   ],
 };
 export default sidebars;

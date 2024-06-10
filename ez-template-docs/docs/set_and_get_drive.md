@@ -133,6 +133,8 @@ void drive_brake_set(pros::motor_brake_mode_e_t brake_type);
 
 
 
+
+
  
 
 
@@ -171,7 +173,50 @@ void drive_current_limit_set(int mA);
 </Tabs>
 
 
+### drive_imu_scaler_set()
+Sets a scaler for the imu.  This number is multiplied by the imu so users can tune what a "degree" is.   
 
+`scaler`  a small double   
+<Tabs
+  groupId="drive_imu_scaler_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void turn_example() {
+  chassis.drive_imu_scaler_set(2);
+
+  // This will now turn to 45 real degrees
+  chassis.pid_turn_set(90_deg, TURN_SPEED);
+  chassis.pid_wait();
+
+  // This will turn to 22.5 real degrees
+  chassis.pid_turn_set(45_deg, TURN_SPEED);
+  chassis.pid_wait();
+
+  chassis.pid_turn_set(0_deg, TURN_SPEED);
+  chassis.pid_wait();
+}
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+void drive_imu_scaler_set(double scaler);
+```
+
+</TabItem>
+</Tabs>
 
  
 
@@ -653,9 +698,46 @@ double drive_imu_get();
 </Tabs>
 
 
+### drive_imu_accel_get()
+Gets imu x + y acceleration.  This is (optionally) used internally as the secondary sensor for velocity exiting.  
+
+<Tabs
+  groupId="drive_imu_accel_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void opcontrol() {
+  while (true) {
+    chassis.opcontrol_tank();
+
+    printf("Accel x + y: %f \n", chassis.drive_imu_accel_get());
+
+    pros::delay(ez::util::DELAY_TIME);
+  }
+}
+```
 
 
- 
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+double drive_imu_accel_get();
+```
+
+</TabItem>
+</Tabs>
+
+
 
 
 ### drive_imu_calibrate()
@@ -692,6 +774,78 @@ bool drive_imu_calibrate();
 
 
 
+### drive_imu_get()
+Gets IMU sensor scaler.  This number is multiplied by the imu so users can tune what a "degree" means.     
+
+<Tabs
+  groupId="drive_imu_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+...
+```
 
 
- 
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+double drive_imu_scaler_get();
+```
+
+</TabItem>
+</Tabs>
+
+
+### drive_imu_scaler_get()
+Gets the scaler for the imu.  This number is multiplied by the imu so users can tune what a "degree" is.     
+<Tabs
+  groupId="drive_imu_scaler_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void turn_example() {
+  chassis.drive_imu_scaler_set(2);
+  printf("%.2f\n", chassis.drive_imu_scaler_get()); // Prints 2
+
+  // This will now turn to 45 real degrees
+  chassis.pid_turn_set(90_deg, TURN_SPEED);
+  chassis.pid_wait();
+
+  // This will turn to 22.5 real degrees
+  chassis.pid_turn_set(45_deg, TURN_SPEED);
+  chassis.pid_wait();
+
+  chassis.pid_turn_set(0_deg, TURN_SPEED);
+  chassis.pid_wait();
+}
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+double drive_imu_scaler_get();
+```
+
+</TabItem>
+</Tabs>

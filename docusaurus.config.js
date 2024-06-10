@@ -48,7 +48,7 @@ const config = {
           lastVersion: 'current',
           versions: {
             current: {
-              label: '3.0.1',
+              label: '3.1.0',
               banner: 'none',
             },
             '2.x': {
@@ -109,10 +109,10 @@ const config = {
             dropdownItemsAfter: [{ to: '/versions', label: 'Versions' }],
             dropdownActiveClassDisabled: true,
           },
-          { to: '/', label: 'Getting Started', position: 'left' },
+          { to: '/', label: 'EZ-Template', position: 'left' },
           { to: 'category/tutorials', label: 'Tutorials', position: 'left' },
           { to: 'category/docs', label: 'Docs', position: 'left' },
-          // { to: '/support', label: 'Support', position: 'left' },
+          // { to: 'category/community', label: 'Community', position: 'left' },
           // { to: 'versions/', label: 'Versions', position: 'right' },
           { href: 'https://www.roboticsisez.com/', label: 'robotics is ez', position: 'right' },
           { href: 'https://github.com/EZ-Robotics/EZ-Template', label: 'GitHub', position: 'right' },
@@ -125,7 +125,7 @@ const config = {
             title: 'Learn',
             items: [
               {
-                label: 'Getting Started',
+                label: 'EZ-Template',
                 to: '/',
               },
               {
@@ -141,10 +141,10 @@ const config = {
           {
             title: 'Community',
             items: [
-              /*{
+              {
                 label: 'Discord',
-                href: 'https://discordapp.com/invite/docusaurus',
-              },*/
+                href: 'https://discord.gg/EHjXBcK2Gy',
+              },
               {
                 label: 'Instagram',
                 href: 'https://www.instagram.com/roboticsisez',

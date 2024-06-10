@@ -340,7 +340,8 @@ Sets the exit condition constants for driving. This uses the exit conditions fro
 `p_big_exit_time` time, in okapi units, before exiting `p_big_error`  
 `p_big_error` big error threshold, in okapi length unit  
 `p_velocity_exit_time` time, in okapi units, for velocity to be 0  
-`p_mA_timeout` time, in okapi units, for `is_over_current` to be true       
+`p_mA_timeout` time, in okapi units, for `is_over_current` to be true   
+`use_imu` boolean, true adds the IMU to velocity timeouts, false only uses the PID sensor.  This defaults to `true`     
 <Tabs
   groupId="pid_drive_Exit_set_okapi"
   defaultValue="proto"
@@ -366,7 +367,7 @@ void initialize() {
 <TabItem value="proto">
 
 ```cpp
-void pid_drive_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QLength p_small_error, okapi::QTime p_big_exit_time, okapi::QLength p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout);
+void pid_drive_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QLength p_small_error, okapi::QTime p_big_exit_time, okapi::QLength p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout, use_imu = true);
 ```
 
 </TabItem>
@@ -388,7 +389,8 @@ Sets the exit condition constants for turning. This uses the exit conditions fro
 `p_big_exit_time` time, in okapi units, before exiting `p_big_error`  
 `p_big_error` big error threshold, in okapi angle unit  
 `p_velocity_exit_time` time, in okapi units, for velocity to be 0  
-`p_mA_timeout` time, in okapi units, for `is_over_current` to be true       
+`p_mA_timeout` time, in okapi units, for `is_over_current` to be true   
+`use_imu` boolean, true adds the IMU to velocity timeouts, false only uses the PID sensor.  This defaults to `true`     
 <Tabs
   groupId="pid_turn_Exit_set_okapi"
   defaultValue="proto"
@@ -414,7 +416,7 @@ void initialize() {
 <TabItem value="proto">
 
 ```cpp
-void pid_turn_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QAngle p_small_error, okapi::QTime p_big_exit_time, okapi::QAngle p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout);
+void pid_turn_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QAngle p_small_error, okapi::QTime p_big_exit_time, okapi::QAngle p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout, use_imu = true);
 ```
 
 </TabItem>
@@ -434,6 +436,7 @@ Sets the exit condition constants for swing turns. This uses the exit conditions
 `p_big_error` big error threshold, in okapi angle unit  
 `p_velocity_exit_time` time, in okapi units, for velocity to be 0  
 `p_mA_timeout` time, in okapi units, for `is_over_current` to be true       
+`use_imu` boolean, true adds the IMU to velocity timeouts, false only uses the PID sensor.  This defaults to `true`     
 <Tabs
   groupId="pid_swing_Exit_set_okapi"
   defaultValue="proto"
@@ -459,11 +462,214 @@ void initialize() {
 <TabItem value="proto">
 
 ```cpp
-void pid_swing_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QAngle p_small_error, okapi::QTime p_big_exit_time, okapi::QAngle p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout);
+void pid_swing_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QAngle p_small_error, okapi::QTime p_big_exit_time, okapi::QAngle p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout, use_imu = true);
 ```
 
 </TabItem>
 </Tabs>
+
+### pid_drive_chain_constant_set()
+Sets the amount that the PID will overshoot target by to maintain momentum into the next motion when using `pid_wait_quick_chain()` for drive motions.    
+ 
+`input` okapi length unit       
+<Tabs
+  groupId="pid_drive_chain_constant_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  chassis.pid_drive_chain_constant_set(3_in);
+}
+```
+</TabItem>
+<TabItem value="proto">
+
+```cpp
+void pid_drive_chain_constant_set(okapi::QLength input);
+```
+</TabItem>
+</Tabs>
+
+
+### pid_drive_chain_forward_constant_set()
+Sets the amount that the PID will overshoot target by to maintain momentum into the next motion when using `pid_wait_quick_chain()` for forward drive motions.    
+ 
+`input` okapi length unit    
+<Tabs
+  groupId="pid_drive_chain_forward_constant_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  chassis.pid_drive_chain_forward_constant_set(3_in);
+}
+```
+</TabItem>
+<TabItem value="proto">
+
+```cpp
+void pid_drive_chain_forward_constant_set(okapi::QLength input);
+```
+</TabItem>
+</Tabs>
+
+
+### pid_drive_chain_backward_constant_set()
+Sets the amount that the PID will overshoot target by to maintain momentum into the next motion when using `pid_wait_quick_chain()` for backward drive motions.    
+ 
+`input` okapi length unit    
+<Tabs
+  groupId="pid_drive_chain_backward_constant_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  chassis.pid_drive_chain_backward_constant_set(3_in);
+}
+```
+</TabItem>
+<TabItem value="proto">
+
+```cpp
+void pid_drive_chain_backward_constant_set(okapi::QLength input);
+```
+</TabItem>
+</Tabs>
+
+
+### pid_turn_chain_constant_set()
+Sets the amount that the PID will overshoot target by to maintain momentum into the next motion when using `pid_wait_quick_chain()` for turns.    
+ 
+`input` okapi angle unit      
+<Tabs
+  groupId="pid_turn_chain_constant_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  chassis.pid_turn_chain_constant_set(3_deg);
+}
+```
+</TabItem>
+<TabItem value="proto">
+
+```cpp
+void pid_turn_chain_constant_set(okapi::QAngle input);
+```
+</TabItem>
+</Tabs>
+
+
+
+### pid_swing_chain_constant_set()
+Sets the amount that the PID will overshoot target by to maintain momentum into the next motion when using `pid_wait_quick_chain()` for swings.    
+ 
+`input` okapi angle unit      
+<Tabs
+  groupId="pid_swing_chain_constant_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  chassis.pid_swing_chain_constant_set(5_deg);
+}
+```
+</TabItem>
+<TabItem value="proto">
+
+```cpp
+void pid_swing_chain_constant_set(okapi::QAngle input);
+```
+</TabItem>
+</Tabs>
+
+### pid_swing_chain_forward_constant_set()
+Sets the amount that the PID will overshoot target by to maintain momentum into the next motion when using `pid_wait_quick_chain()` for forward swings.    
+ 
+`input` okapi angle unit      
+<Tabs
+  groupId="pid_swing_chain_forward_constant_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  chassis.pid_swing_chain_forward_constant_set(5_deg);
+}
+```
+</TabItem>
+<TabItem value="proto">
+
+```cpp
+void pid_swing_chain_forward_constant_set(okapi::QAngle input);
+```
+</TabItem>
+</Tabs>
+
+
+### pid_swing_chain_backward_constant_set()
+Sets the amount that the PID will overshoot target by to maintain momentum into the next motion when using `pid_wait_quick_chain()` for backward swings.    
+ 
+`input` okapi angle unit      
+<Tabs
+  groupId="pid_swing_chain_forward_constant_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  chassis.pid_swing_chain_backward_constant_set(5_deg);
+}
+```
+</TabItem>
+<TabItem value="proto">
+
+```cpp
+void pid_swing_chain_backward_constant_set(okapi::QAngle input);
+```
+</TabItem>
+</Tabs>
+
 
 ### pid_wait_until()
 Locks the code in place until the drive has passed the input parameter.  This uses the exit conditions from the PID class.  This only works for drive motions.             
@@ -831,6 +1037,7 @@ This function can also be used without okapi units.
 `p_big_error` big error threshold, assumed inches  
 `p_velocity_exit_time` time, in ms, for velocity to be 0  
 `p_mA_timeout` time, in ms, for `is_over_current` to be true   
+`use_imu` boolean, true adds the IMU to velocity timeouts, false only uses the PID sensor.  This defaults to `true`     
 <Tabs
   groupId="pid_drive_exit_set_double"
   defaultValue="proto"
@@ -856,7 +1063,7 @@ void initialize() {
 <TabItem value="proto">
 
 ```cpp
-void pid_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout);
+void pid_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, use_imu = true);
 ```
 
 </TabItem>
@@ -873,6 +1080,7 @@ This function can also be used without okapi units.
 `p_big_error` big error threshold, assumed degrees  
 `p_velocity_exit_time` time, in ms, for velocity to be 0  
 `p_mA_timeout` time, in ms, for `is_over_current` to be true   
+`use_imu` boolean, true adds the IMU to velocity timeouts, false only uses the PID sensor.  This defaults to `true`     
 <Tabs
   groupId="pid_turn_exit_set_double"
   defaultValue="proto"
@@ -898,7 +1106,7 @@ void initialize() {
 <TabItem value="proto">
 
 ```cpp
-void pid_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout);
+void pid_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, use_imu = true);
 ```
 
 </TabItem>
@@ -914,6 +1122,7 @@ This function can also be used without okapi units.
 `p_big_error` big error threshold, assumed degrees  
 `p_velocity_exit_time` time, in ms, for velocity to be 0  
 `p_mA_timeout` time, in ms, for `is_over_current` to be true   
+`use_imu` boolean, true adds the IMU to velocity timeouts, false only uses the PID sensor.  This defaults to `true`     
 <Tabs
   groupId="pid_swing_exit_set_double"
   defaultValue="proto"
@@ -939,7 +1148,7 @@ void initialize() {
 <TabItem value="proto">
 
 ```cpp
-void pid_swing_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout);
+void pid_swing_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, use_imu = true);
 ```
 
 </TabItem>
@@ -1328,6 +1537,209 @@ void pid_swing_constants_backward_set(double p, double i = 0.0, double d = 0.0, 
 </TabItem>
 </Tabs>
 
+### pid_drive_chain_constant_set()
+Sets the amount that the PID will overshoot target by to maintain momentum into the next motion when using `pid_wait_quick_chain()` for drive motions.    
+ 
+`input` double, length in inches   
+<Tabs
+  groupId="pid_drive_chain_constant_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  chassis.pid_drive_chain_constant_set(3);
+}
+```
+</TabItem>
+<TabItem value="proto">
+
+```cpp
+void pid_drive_chain_constant_set(double input);
+```
+</TabItem>
+</Tabs>
+
+
+### pid_drive_chain_forward_constant_set()
+Sets the amount that the PID will overshoot target by to maintain momentum into the next motion when using `pid_wait_quick_chain()` for forward drive motions.    
+ 
+`input` double, length in inches   
+<Tabs
+  groupId="pid_drive_chain_forward_constant_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  chassis.pid_drive_chain_forward_constant_set(3);
+}
+```
+</TabItem>
+<TabItem value="proto">
+
+```cpp
+void pid_drive_chain_forward_constant_set(double input);
+```
+</TabItem>
+</Tabs>
+
+
+### pid_drive_chain_backward_constant_set()
+Sets the amount that the PID will overshoot target by to maintain momentum into the next motion when using `pid_wait_quick_chain()` for backward drive motions.    
+ 
+`input` double, length in inches   
+<Tabs
+  groupId="pid_drive_chain_backward_constant_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  chassis.pid_drive_chain_backward_constant_set(3);
+}
+```
+</TabItem>
+<TabItem value="proto">
+
+```cpp
+void pid_drive_chain_backward_constant_set(double input);
+```
+</TabItem>
+</Tabs>
+
+
+
+### pid_turn_chain_constant_set()
+Sets the amount that the PID will overshoot target by to maintain momentum into the next motion when using `pid_wait_quick_chain()` for turns.    
+ 
+`input` double, angle in degrees      
+<Tabs
+  groupId="pid_turn_chain_constant_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  chassis.pid_turn_chain_constant_set(3);
+}
+```
+</TabItem>
+<TabItem value="proto">
+
+```cpp
+void pid_turn_chain_constant_set(double input);
+```
+</TabItem>
+</Tabs>
+
+
+### pid_swing_chain_constant_set()
+Sets the amount that the PID will overshoot target by to maintain momentum into the next motion when using `pid_wait_quick_chain()` for swings.    
+ 
+`input` double, angle in degrees   
+<Tabs
+  groupId="pid_swing_chain_constant_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  chassis.pid_swing_chain_constant_set(5);
+}
+```
+</TabItem>
+<TabItem value="proto">
+
+```cpp
+void pid_swing_chain_constant_set(double input);
+```
+</TabItem>
+</Tabs>
+
+
+### pid_swing_chain_forward_constant_set()
+Sets the amount that the PID will overshoot target by to maintain momentum into the next motion when using `pid_wait_quick_chain()` for forward swings.    
+ 
+`input` double, angle in degrees   
+<Tabs
+  groupId="pid_swing_chain_forward_constant_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  chassis.pid_swing_chain_forward_constant_set(5);
+}
+```
+</TabItem>
+<TabItem value="proto">
+
+```cpp
+void pid_swing_chain_forward_constant_set(double input);
+```
+</TabItem>
+</Tabs>
+
+
+### pid_swing_chain_backward_constant_set()
+Sets the amount that the PID will overshoot target by to maintain momentum into the next motion when using `pid_wait_quick_chain()` for backward swings.    
+ 
+`input` double, angle in degrees   
+<Tabs
+  groupId="pid_swing_chain_backward_constant_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  chassis.pid_swing_chain_backward_constant_set(5);
+}
+```
+</TabItem>
+<TabItem value="proto">
+
+```cpp
+void pid_swing_chain_backward_constant_set(double input);
+```
+</TabItem>
+</Tabs>
+
 
 ### pid_swing_min_set()
 Sets the max power of the drive when the robot is within `start_i`.  This only enables when `i` is enabled, and when the movement is greater then `start_i`.  
@@ -1457,6 +1869,91 @@ void drive_mode_set(e_mode p_mode);
 </TabItem>
 </Tabs>
 
+
+### drive_rpm_set()
+Sets a new RPM for the drive.  This is can be used when a drive has a transmission.  
+
+`rpm` the rpm of the wheel
+<Tabs
+  groupId="drive_rpm_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void drive_example() {
+  chassis.pid_drive_set(24_in, DRIVE_SPEED);
+  chassis.pid_wait();
+
+  chassis.drive_rpm_set(50);  // Engage torque rpm
+
+  chassis.pid_drive_set(-24_in, DRIVE_SPEED);
+  chassis.pid_wait();
+
+  chassis.drive_rpm_set(343);  // Return back to normal rpm
+}
+```
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+void drive_rpm_set(double rpm);
+```
+
+
+</TabItem>
+</Tabs>
+
+
+### drive_ratio_set()
+Sets a new ratio for the drive.  This is can be used when a drive has a transmission.  This should be `wheel / motor`.  
+
+`ratio` the new of the drive   
+<Tabs
+  groupId="drive_ratio_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void drive_example() {
+  chassis.pid_drive_set(24_in, DRIVE_SPEED);
+  chassis.pid_wait();
+
+  chassis.drive_ratio_set(0.083);  // Engage torque rpm
+
+  chassis.pid_drive_set(-24_in, DRIVE_SPEED);
+  chassis.pid_wait();
+
+  chassis.drive_ratio_set(1.79);  // Return back to normal rpm
+}
+```
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+void drive_ratio_set(double ratio);
+```
+
+
+</TabItem>
+</Tabs>
 
 
 
@@ -1720,7 +2217,145 @@ int pid_turn_min_get();
 
 
 
+### pid_drive_chain_forward_constant_get()
+Returns a double that's the amount that the PID will overshoot target by to maintain momentum into the next motion when using `pid_wait_quick_chain()` for forward drive motions.      
+<Tabs
+  groupId="pid_drive_chain_forward_constant_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+<TabItem value="example">
 
+```cpp
+void initialize() {
+  chassis.pid_drive_chain_constant_set(3_in);
+  printf("%.2f\n", chassis.pid_drive_chain_forward_constant_get());
+}
+```
+</TabItem>
+<TabItem value="proto">
+
+```cpp
+double pid_drive_chain_forward_constant_get();
+```
+</TabItem>
+</Tabs>
+
+
+### pid_drive_chain_backward_constant_get()
+Returns a double that's the amount that the PID will overshoot target by to maintain momentum into the next motion when using `pid_wait_quick_chain()` for backward drive motions.      
+<Tabs
+  groupId="pid_drive_chain_backward_constant_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  chassis.pid_drive_chain_constant_set(3_in);
+  printf("%.2f\n", chassis.pid_drive_chain_backward_constant_get());
+}
+```
+</TabItem>
+<TabItem value="proto">
+
+```cpp
+double pid_drive_chain_backward_constant_get();
+```
+</TabItem>
+</Tabs>
+
+
+
+### pid_turn_chain_constant_get()
+Returns a double that's the amount that the PID will overshoot target by to maintain momentum into the next motion when using `pid_wait_quick_chain()` for turns.         
+<Tabs
+  groupId="pid_turn_chain_constant_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  chassis.pid_turn_chain_constant_set(3_deg);
+  printf("%.2f\n", chassis.pid_turn_chain_constant_get());
+}
+```
+</TabItem>
+<TabItem value="proto">
+
+```cpp
+double pid_turn_chain_constant_get();
+```
+</TabItem>
+</Tabs>
+
+
+### pid_swing_chain_forward_constant_get()
+Returns a double that's the amount that the PID will overshoot target by to maintain momentum into the next motion when using `pid_wait_quick_chain()` for forward swings.      
+<Tabs
+  groupId="pid_swing_chain_forward_constant_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  chassis.pid_swing_chain_constant_set(5_deg);
+  printf("%.2f\n", chassis.pid_swing_chain_forward_constant_get());
+}
+```
+</TabItem>
+<TabItem value="proto">
+
+```cpp
+double pid_swing_chain_forward_constant_get();
+```
+</TabItem>
+</Tabs>
+
+
+### pid_swing_chain_backward_constant_get()
+Returns a double that's the amount that the PID will overshoot target by to maintain momentum into the next motion when using `pid_wait_quick_chain()` for backward swings.      
+<Tabs
+  groupId="pid_swing_chain_backward_constant_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  chassis.pid_swing_chain_constant_set(5_deg);
+  printf("%.2f\n", chassis.pid_swing_chain_backward_constant_get());
+}
+```
+</TabItem>
+<TabItem value="proto">
+
+```cpp
+double pid_swing_chain_backward_constant_get();
+```
+</TabItem>
+</Tabs>
 
 
 
@@ -1884,6 +2519,93 @@ double drive_tick_per_inch();
 
 
 
+### drive_rpm_get()
+Returns RPM for the drive.  This is can be used when a drive has a transmission.  
+<Tabs
+  groupId="drive_rpm_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void drive_example() {
+  chassis.pid_drive_set(24_in, DRIVE_SPEED);
+  chassis.pid_wait();
+
+  chassis.drive_rpm_set(50);  // Engage torque rpm
+  printf("%.2f\n", chassis.drive_rpm_get());
+
+  chassis.pid_drive_set(-24_in, DRIVE_SPEED);
+  chassis.pid_wait();
+
+  chassis.drive_rpm_set(343);  // Return back to normal 
+  printf("%.2f\n", chassis.drive_rpm_get());
+}
+```
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+double drive_rpm_get();
+```
+
+
+</TabItem>
+</Tabs>
+
+
+### drive_ratio_get()
+Returns ratio for the drive.  This is can be used when a drive has a transmission.  This should be `wheel / motor`.   
+<Tabs
+  groupId="drive_ratio_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void drive_example() {
+  chassis.pid_drive_set(24_in, DRIVE_SPEED);
+  chassis.pid_wait();
+
+  chassis.drive_ratio_set(0.083);  // Engage torque rpm
+  printf("%.2f\n", chassis.drive_ratio_get());
+
+  chassis.pid_drive_set(-24_in, DRIVE_SPEED);
+  chassis.pid_wait();
+
+  chassis.drive_ratio_set(1.79);  // Return back to normal rpm
+  printf("%.2f\n", chassis.drive_ratio_get());
+}
+```
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+double drive_ratio_get();
+```
+
+
+</TabItem>
+</Tabs>
+
+
+
 
 
 
@@ -1934,11 +2656,89 @@ void pid_wait();
 </Tabs>
 
 
+### pid_wait_quick()
+Locks the code in place until the drive passes target.  This function exits quicker then `pid_wait()`, and is effectively using `pid_wait_until(target)`, where `target` is the most recent targe  value that was set.  If `target` is not overshot, this will use the normal exit conditions from the PID class.      
+
+<Tabs
+  groupId="pid_wait_quick"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.drive_imu_reset(); 
+  chassis.drive_sensor_reset(); 
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD); 
+
+  chassis.pid_turn_set(90, 110);
+  chassis.pid_wait_quick();
+
+  chassis.pid_turn_set(0, 110);
+  chassis.pid_wait_quick();
+}
+```
 
 
+</TabItem>
 
 
+<TabItem value="proto">
+
+```cpp
+void pid_wait_quick();
+```
 
 
+</TabItem>
+</Tabs>
 
 
+### pid_wait_quick_chain()
+Locks the code in place until the drive passes target.  To ensure that the robot will pass the target, this function will add some amount, such as `pid_turn_chain_constant_set(3_deg);`, to target, then will act as a wrapper for `pid_wait_quick()`.  If target is not overshot, this will use the normal exit conditions from the PID class.   
+
+Because this function adds to target, this should **not** be used as a final wait.  This should be used between motions.     
+
+<Tabs
+  groupId="pid_wait_quick_chain"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.drive_imu_reset(); 
+  chassis.drive_sensor_reset(); 
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD); 
+
+  chassis.pid_turn_set(90, 110);
+  chassis.pid_wait_quick_chain();
+
+  chassis.pid_turn_set(0, 110);
+  chassis.pid_wait_quick();
+}
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+void pid_wait_quick_chain();
+```
+
+
+</TabItem>
+</Tabs>

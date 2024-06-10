@@ -2,49 +2,55 @@
 title: Using Autonomous Selector
 description: How to have multiple autonomous routines in one program
 ---
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
 
-## Select and Run your Autonomous
-With a competition switch, run your code in disable.  Select the autonomous on the screen by pressing the left / right buttons until you're on the page you want.  Select `Autonomous` on your competition switch, and set it to `Enable` to run the autonomous.
+## Why?
+There are two main ways to have multiple autonomous routines: 
+1. One program loaded with multiple routines.
+2. Multiple programs with one routine each.
 
-## Using an SD Card
-The SD card will remember the last page you were on before powering the robot off.  If you're on page 3 and power off, the next time you power on the selector will start on page 3.  
+I dislike 2.  If you make a change to a PID constant or make a change to user control code, you now have to redownload multiple times.  I find this tedious and easy to make a mistake while under pressure at a tournament.  
 
-To use an SD card with the brain, just plug it in!
+## Selecting the Autonomous Routine
+The brain screen has 3 buttons.  With EZ-Template the center button does nothing.  You can navigate through the menus by selecting the left or right button.  Once autonomous mode is enabled, the page that is left open will be the autonomous routine that runs.  
 
-## Testing Autonomous in Opcontrol
-During opcontrol you can call your autonomous.  In the example below, when the robot isn't connected to a competition switch and B is pressed on the controller, the autonomous will run.  To select your autonomous, use the left / right buttons on the brain screen until you're on the page you want, then run the autonomous.  
+## Running the Autonomous Routine
+### With a Competition Switch
+With a competition switch, run your code in disable.  Select the autonomous on the screen.  Change the competition switch to `Autonomous` on your competition switch, and set it to `Enable`.  Your autonomous routine will run!
+
+### Without a Competition Switch
+This code changed in the example project slightly between 3.0.x and 3.1.0, where it now requires multiple buttons to be held to prevent accidental triggers.  But, holding `B` and `DOWN` will run the selected autonomous routine during driver control.  
+<Tabs
+  groupId="310"
+  defaultValue="proto"
+  values={[
+    { label: '>3.1.0',  value: 'proto', },
+ { label: '<3.1.0',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
 ```cpp
-void opcontrol() {
-  // This is preference to what you like to drive on
-  chassis.drive_brake_set(MOTOR_BRAKE_COAST);
-  
-  while (true) {
-    
-    // PID Tuner
-    // After you find values that you're happy with, you'll have to set them in auton.cpp
-    if (!pros::competition::is_connected()) { 
-      // Enable / Disable PID Tuner
-      if (master.get_digital_new_press(DIGITAL_X)) 
-        chassis.pid_tuner_toggle();
-        
-      // Trigger the selected autonomous routine
-      if (master.get_digital_new_press(DIGITAL_B)) 
-        autonomous();
-
-      chassis.pid_tuner_iterate(); // Allow PID Tuner to iterate
-    } 
-
-    chassis.opcontrol_tank(); // Tank control
-    // chassis.opcontrol_arcade_standard(ez::SPLIT); // Standard split arcade
-    // chassis.opcontrol_arcade_standard(ez::SINGLE); // Standard single arcade
-    // chassis.opcontrol_arcade_flipped(ez::SPLIT); // Flipped split arcade
-    // chassis.opcontrol_arcade_flipped(ez::SINGLE); // Flipped single arcade
-
-    // . . .
-    // Put more user control code here!
-    // . . .
-
-    pros::delay(ez::util::DELAY_TIME); // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
-  }
-}
+// Trigger the selected autonomous routine
+if (master.get_digital_new_press(DIGITAL_B))
+  autonomous();
 ```
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+// Trigger the selected autonomous routine
+if (master.get_digital(DIGITAL_B) && master.get_digital(DIGITAL_DOWN))
+  autonomous();
+```
+</TabItem>
+</Tabs>
+
+## Micro-SD Card Support
+To make things easier at tournaments, having an SD card in your brain will save the last page between cycles.  So if you select page 3 then turn off the brain, the next time you turn the brain on it'll start from page 3.  This means you can select your autonomous routine while queueing for a match and it'll hold when you get to a match.  
+
+The micro-SD card must be formatted to FAT32.  [Here](https://www.lifewire.com/format-sd-card-to-fat32-6666166) is a tutorial on how to do that. 

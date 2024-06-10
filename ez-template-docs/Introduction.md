@@ -33,13 +33,16 @@ preview: /img/embed.png
 - Exposed slew class for gradual speed ramp-up for your other subsystems
 
 ## [Discord Server](https://discord.gg/EHjXBcK2Gy)
-Need extra assistance using EZ-Template?  Feel free to join our [Discord Server](https://discord.gg/EHjXBcK2Gy).  
+Need extra assistance using EZ-Template?  Feel free to join our [Discord Server](https://discord.gg/EHjXBcK2Gy)!  
 
-## [Installation and Upgrading](https://ez-robotics.github.io/EZ-Template/tutorials/installation)
-Installation and Upgrading tutorials can be foud [here](https://ez-robotics.github.io/EZ-Template/tutorials/installation).  
+## [Installation](https://ez-robotics.github.io/EZ-Template/tutorials/installation)
+Installation tutorials can be found [here](https://ez-robotics.github.io/EZ-Template/tutorials/installation).  
+
+## [Upgrading](https://ez-robotics.github.io/EZ-Template/tutorials/upgrading)
+Upgrading tutorials can be found [here](https://ez-robotics.github.io/EZ-Template/tutorials/upgrading). 
 
 ## [Tutorials](https://ez-robotics.github.io/EZ-Template/category/tutorials)
-Tutorials on how to use and install EZ-Template can be found [here](https://ez-robotics.github.io/EZ-Template/category/tutorials).  
+Tutorials on how to use and install EZ-Template can be found [here](https://ez-robotics.github.io/EZ-Template/category/tutorials). 
 
 ## [Docs](https://ez-robotics.github.io/EZ-Template/category/docs)
 Documentation on how to use EZ-Template functions can be found [here](https://ez-robotics.github.io/EZ-Template/category/docs).  

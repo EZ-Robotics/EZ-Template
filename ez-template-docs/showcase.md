@@ -1,16 +1,18 @@
 ---
-title: support
-unlisted: true
+title: Showcase
+draft: true
+description: cool stuff that's ez
 ---
 
-On this page we have ez related communities that you can be apart of. 
+This page various implementations of EZ-Template that are amazing!
 
-Before participating in Docusaurus' communities, please read our Code of Conduct. We have adopted the Contributor Covenant and we expect that all community members adhere to the guidelines within.
-
-# Discord
+Have a run you want posted here?  Ask in our [Discord Server](https://discord.gg/EHjXBcK2Gy) or email me at `jess@roboticsisez.com`.  
 
 
-# News
+## Discord
+
+
+## News
 Follow [@roboticsisez](https://www.instagram.com/roboticsisez) on Instragram for the latest news!
 
 Support

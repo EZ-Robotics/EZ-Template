@@ -3,12 +3,14 @@ title: Active Brake
 description: Powerful, tunable brake for driver control
 ---
 
-If you put the motors on brake type hold, a robot can still push the robot a bit, and when you let go of the joysticks the robot just locks in place. Active brake runs a P loop on the drive when you let go of the joysticks. By adjusting the kP, you adjust how hard the robot fights back. If you make it smaller, there will be a larger dead zone and you'll coast a little bit. Active brake vs brake type is personal preference.  
+By default, the drivetrain is on `coast` where if you let go of the joysticks the robot will continue to move a bit.  Generally, this seems like the preferred way the community likes to control their robots, and people don't really like the feel of driving on `brake` or `hold` (which is a decision that's fully preference-based).  
 
-This is nice to use while the robot's brake mode is set to `coast` so you have full control over how much the robot will fight back when pushed.  
+Active brake gives you more control than these 3 states.  Active brake will run a P loop when you let go of the joysticks, giving you full control over how aggressive this is.  You can use it along with `coast` and have the `kP` be super low so you still feel like it's on coast but it'll only move so far.  
 
-## Enabling  
-To adjust the kP, in `src/main.cpp` change `chassis.opcontrol_drive_activebrake_set(0)` to whatever you like! We suggest around `2.0`.
-
-## Disabling  
-To disable active brake, in `src/main.cpp` make sure the kP is 0 with `chassis.opcontrol_drive_activebrake_set(0)`.
+```cpp
+void initialize() {
+  // . . .
+  chassis.opcontrol_drive_activebrake_set(2.0);  // Sets the active brake kP. We recommend ~2.  0 will disable.  
+  // . . .
+}
+```
