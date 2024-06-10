@@ -38,7 +38,7 @@ Need extra assistance using EZ-Template?  Feel free to join our [Discord Server]
 ## [Installation](https://ez-robotics.github.io/EZ-Template/tutorials/installation)
 Installation tutorials can be found [here](https://ez-robotics.github.io/EZ-Template/tutorials/installation).  
 
-## [Upgrading](https://ez-robotics.github.io/EZ-Template/tutorials/installation)
+## [Upgrading](https://ez-robotics.github.io/EZ-Template/tutorials/upgrading)
 Upgrading tutorials can be found [here](https://ez-robotics.github.io/EZ-Template/tutorials/upgrading). 
 
 ## [Tutorials](https://ez-robotics.github.io/EZ-Template/category/tutorials)
