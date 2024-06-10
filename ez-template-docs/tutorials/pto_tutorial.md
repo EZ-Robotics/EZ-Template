@@ -17,7 +17,7 @@ using namespace ez;
 #define LEFT_INTAKE 3
 #define RIGHT_INTAKE 3
 
-pros::ADIDigitalOut pto_intake_piston('A');
+pros::adi::DigitalOut pto_intake_piston('A');
 bool pto_intake_enabled = false;
 
 void pto_toggle_intake(bool toggle) {
