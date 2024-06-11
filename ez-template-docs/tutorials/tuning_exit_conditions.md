@@ -31,7 +31,7 @@ EZ-Template's exit conditions are a little more special than that though.  We r
 You can add another layer to this where it'll also check for a larger area.  Now 2 timers will run, one when you're within X of target and one when you're within Y of target.     
 ![](images/big_timeout.gif) 
 
-But when the robot enters the smaller exit zone, the big timer will not continue.  This can be seen here.     
+But when the robot enters the smaller exit zone, the big timer will not continue.  If the big timer was not reset to 0 and we overshot target, big timer would be starting from a very high number and we would exit before correctly confirming the robot has settled.  This can be seen here.     
 ![](images/big_timeout_reset_small_timeout.gif) 
 
 There are 2 more timers that you can add on as well.  These are intended to be **failsafes** for when the previous two don't trigger fast enough or don't trigger at all.  One timer will start to increase when the velocity of the robot is 0, so if the robot is still for too long it'll exit.  Another timer will start once the robot sees it's pulling on the motors too hard (ie, you're fighting your opponent for a mobile goal), and if it's doing this for too long it'll exit.  
@@ -67,11 +67,13 @@ chassis.pid_wait_until(24);
 ```
 
 ### pid_wait_quick_chain()
-`pid_wait_quick_chain()` is your fastest way of exiting.  The code below is what happens internally.  You will tell the robot to go 24 inches, internally X will get added to target, and `pid_wait_until()` will get called with the target YOU entered.  While being the fastest way of exiting, this should be used with caution as it can lead to inconsistencies.  Make sure your PID is well-tuned and do enough testing that you're confident your results are consistent.   
+`pid_wait_quick_chain()` is your fastest way of exiting.  The code below is what happens internally.  You will tell the robot to go 24 inches, internally X will get added to target, and `pid_wait_until()` will get called with the target YOU entered.  The code below is what happens for you internally.   
 ```cpp
 chassis.pid_drive_set(27_in, 110);  // You really want to go 24in
 chassis.pid_wait_until(24);
 ```
+
+While being the fastest way of exiting, this should be used carefully to avoid inconsistencies.  Make sure your PID is well-tuned and do enough testing that you're confident your results are consistent.  
 
 ## Tuning
 Ultimately you're tuning for 2 functions; timers and when to start timing for `pid_wait()`, and how much to add to target for `pid_wait_quick_chain()`.  
@@ -99,7 +101,11 @@ The default constants are already pretty aggressive, you shouldn't have to tune 
 You should make these numbers as low as you can without causing inconsistencies.  With `pid_wait()` you generally want the robot to be pretty close to stopped before it moves on to the next motion.  
 
 ### Tuning pid_wait_quick_chain()
-You can tune the amount added to `target` during chained motions.  If this number is too large, you'll carry too much momentum into the next motion and will cause inconsistencies.  The only downside to this number being too small is potential wasted time as it could turn into a normal `pid_wait()` if you don't overshoot your target.  Generally, I would err on this being smaller.  
+You can tune the amount added to `target` during chained motions.  
+
+**Larger constants** will carry more momentum into the next motion, making your autonomous faster but potentially hurting consistency.  **Smaller constants** will carry less momentum into the next motion, this will still be significantly faster then any other method of exiting but could be slightly less consistent than `pid_wait()`.  
+
+If I were making autonomous routines, I would try to use a smaller constant for normal motions and only push a larger constant when an autonomous routine would greatly bennifit from it.  
 
 
 #### Driving
