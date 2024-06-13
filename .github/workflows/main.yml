@@ -1,4 +1,4 @@
-name: PROS Build Example
+name: Build
 
 on:
   push:
