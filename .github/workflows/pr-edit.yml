@@ -27,8 +27,9 @@ jobs:
               const marker = `\r\n<!-- DO NOT REMOVE!! -->\r\n<!-- bot: ${purpose} -->\r\n`;
 
               const old_marker = new RegExp(marker.replace("\r\n", "\r?\n")).exec(old_body)?.[0] ?? marker;
-              
-              body = old_body.split(old_marker)[0] + marker + body;
+
+              fixed_split = old_body.split(old_marker)[0] !== undefined ? old_body.split(old_marker)[0] : [''];
+              body = fixed_split + marker + body;
               await github.request('PATCH /repos/{owner}/{repo}/pulls/{pull_number}', {
                 owner: owner,
                 repo: repo,
