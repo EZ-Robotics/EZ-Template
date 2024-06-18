@@ -4,6 +4,7 @@ on:
   workflow_run:
     workflows: ['Build']
     types: [completed]
+  workflow_dispatch:
 jobs:
   pr_comment:
     # if build was successful and ran on a branch that is currently the head in a pull request
