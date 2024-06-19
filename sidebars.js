@@ -72,9 +72,11 @@ const sidebars = {
           collapsed: true,
           collapsible: true,
           items: [
-            'tutorials/slew_constants',
             'tutorials/tuning_constants',
             'tutorials/tuning_exit_conditions',
+            'tutorials/slew_constants',
+            'tutorials/imu_scaling',
+            'tutorials/wheel_diameter_tuning',
             // gain scheduling?
           ],
         },
@@ -138,6 +140,7 @@ const sidebars = {
         'migration',
       ],
     },
+
     /*
     {
       type: 'category',
@@ -148,12 +151,12 @@ const sidebars = {
       collapsed: true,
       collapsible: true,
       items: [
-        'support',
         'showcase',
+        'support',
       ],
     },
     */
-    
+
   ],
 };
 export default sidebars;
