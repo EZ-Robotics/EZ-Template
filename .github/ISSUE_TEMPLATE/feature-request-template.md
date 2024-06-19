@@ -19,4 +19,4 @@ assignees: ''
 <!-- Eg. "The Ziegler-Nichols method of automatic PID tuning seems best because..." -->
 
 ## OPTIONAL: Additional context
-<!-- Images, code, videos.  Anything you think will help us implement this feature -->>
+<!-- Images, code, videos.  Anything you think will help us implement this feature -->
