@@ -22,4 +22,4 @@ EZ-Template Version: <!-- eg. v3.1.0 -->
 Other Libraries: <!-- eg. LemLib, VOSS, etc. -->
 
 ## OPTIONAL: Additional Information
-<!-- Images, code, videos.  Anything you think will help us fix this problem -->>
+<!-- Images, code, videos.  Anything you think will help us fix this problem -->
