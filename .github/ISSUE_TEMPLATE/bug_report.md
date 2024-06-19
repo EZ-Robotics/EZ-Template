@@ -1,24 +1,25 @@
 ---
-name: Bug Report Template
-about: Create a bug report to help us improve the project.
-title: Bug Repot Template
-labels: ''
+name: Bug Report
+about: Create a report to help us improve
+title: "\U0001F41B[BUG] - "
+labels: bug
 assignees: ''
-
 ---
 
-#### Expected Behavior
+## Expected Behavior
+<!-- What behavior were you expecting? -->
 
-#### Actual Behavior
+## Actual Behavior
+<!-- What behavior ended up happening? -->
 
-#### Steps to Reproduce
+## Steps to Reproduce
+<!-- Provide a link to a live example, or a set of steps to reproduce this bug.  If able, please include code to reproduce -->
 
-#### Versions
-Run `prosv5 conduct info-project` to see what versions you're running. 
-PROS Kernel Version: 
-EZ-Template Version: 
+## Versions
+<!-- Run `pros conduct info-project` to see what versions you're running. -->
+PROS Kernel Version: <!-- eg. 4.1.0 -->
+EZ-Template Version: <!-- eg. v3.1.0 -->
+Other Libraries: <!-- eg. LemLib, VOSS, etc. -->
 
-#### Additional Information
-
-#### Failure Logs
-Screenshots or snippets of code that are causing issue.
+## OPTIONAL: Additional Information
+<!-- Images, code, videos.  Anything you think will help us fix this problem -->>

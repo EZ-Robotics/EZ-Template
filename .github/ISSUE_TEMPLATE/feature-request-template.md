@@ -1,20 +1,22 @@
 ---
-name: Feature Request Template
+name: Feature Request
 about: Suggest an idea for this project
-title: Feature Request Template Template
-labels: ''
+title: "✨[FEATURE] - "
+labels: enhancement
 assignees: ''
-
 ---
 
-#### Is your feature request related to a problem? Please describe.
-A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
+## Is this feature related to a problem?  
+<!-- What problem exists within EZ-Template for this feature to help? -->
+<!-- Eg. "I'm always frustrated when I have to spend hours manually tuning PID" -->
 
-#### Describe the solution you'd like
-A clear and concise description of what you want to happen.
+## What should be added?
+<!-- What should be added to EZ-Template? -->
+<!-- Eg. "Autonomous PID tuning" -->
 
-#### Describe alternatives you've considered
-A clear and concise description of any alternative solutions or features you've considered.
+## OPTIONAL: Describe any solutions you've considered
+<!-- Feel free to go more in-depth here about how you'd like the solution implemented -->
+<!-- Eg. "The Ziegler-Nichols method of automatic PID tuning seems best because..." -->
 
-#### Additional context
-Add any other context or screenshots about the feature request here.
+## OPTIONAL: Additional context
+<!-- Images, code, videos.  Anything you think will help us implement this feature -->>
