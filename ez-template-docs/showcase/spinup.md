@@ -30,7 +30,7 @@ To fix some problems within EZ-Template, such as adding units and having a consi
 
 <iframe width="315" height="560" src="https://www.youtube.com/embed/3LhVMSq-gLU?si=zlFn9ZNe1XOBtHfe" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
 ⠀⠀
-<iframe width="315" height="560" src="https://www.youtube.com/embed/3LhVMSq-gLU?si=zlFn9ZNe1XOBtHfe" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>   
+<iframe width="315" height="560" src="https://www.youtube.com/embed/uqlkVD8D4qc?si=1xejvTCIOPbOGKR4" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>   
 
 ## 334U
 <iframe width="560" height="315" src="https://www.youtube.com/embed/xWdm5e-Tw3o?si=Sbve5XcKgOF4f0VX" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
