@@ -26,7 +26,14 @@ To open the pros terminal, we'll first select the pros icon on the left.
 Then we'll select `Integrated Terminal`.  This will bring up a menu at the bottom of VS Code, and it will populate when you're plugged into the robot or controller while it's running.  
 ![](images/integrated_terminal.png)
 
-Place your robot carefully, ideally against a wall to ensure consistency.  Now we'll push the robot a known distance.  Some number will be in our terminal now, probably close to the known distance but not quite exact.  Keep track of what these numbers are and this test can be repeated a couple of times.  That'll leave us with this:
+To ensure our results can be trusted, let's give ourselves the ability to reset the drive sensors to 0.  In `while(true) { }` in opcontrol, we can add the chunk of code below.  
+```cpp
+if (master.get_digital(DIGITAL_L1)) {
+  chassis.drive_sensor_reset();
+}
+```
+
+Place your robot carefully, ideally against a wall to ensure consistency.  After resetting the drive sensors by pressing L1, we'll push the robot a known distance.  Some number will be in our terminal now, probably close to the known distance but not quite exact.  Keep track of what these numbers are and this test can be repeated a couple of times.  That'll leave us with this:
 ```
 Left: 24.29   Right: 24.22
 Left: 24.38   Right: 24.40
@@ -38,10 +45,10 @@ All of these numbers are close showing that I was consistently pushing the robot
 (known distance / averaged sensor values) * previous wheel size
 ```
 
-For the example data above, the average sensor value is 24.2783.  The robot was pushed 24", and the robot currently thinks it's using 2.75" wheels.  
+For the example data above, the average sensor value is 24.2783.  The robot was pushed 24", and the robot currently thinks it's using 2.75" wheels.  Feeding these numbers into the equation above gives us this.  
 ```
 (24 / 24.2783) * 2.75
 ```
 
 ## You're Done!
-Take this new number and replace it with your wheel size in your drive constructor.  That's it!  
+Take this new number, in my case 2.7185, and replace it with your wheel size in your drive constructor.  That's it!  
