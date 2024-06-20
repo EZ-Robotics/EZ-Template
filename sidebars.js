@@ -141,7 +141,6 @@ const sidebars = {
       ],
     },
 
-    /*
     {
       type: 'category',
       label: 'Community',
@@ -151,11 +150,27 @@ const sidebars = {
       collapsed: true,
       collapsible: true,
       items: [
-        'showcase',
         'support',
+        // Getting Started
+        {
+          type: 'category',
+          label: 'Showcase',
+          link: {
+            type: 'generated-index',
+          },
+          collapsed: false,
+          collapsible: true,
+          items: [
+            // 'showcase/highstakes',  // Bring this back once autos actually exist
+            'showcase/overunder',
+            'showcase/spinup',
+            'showcase/tippingpoint',
+            'showcase/changeup',
+            'showcase/towertakeover',
+          ],
+        },
       ],
     },
-    */
 
   ],
 };
