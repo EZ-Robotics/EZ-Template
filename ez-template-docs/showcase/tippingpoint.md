@@ -47,6 +47,9 @@ This brought attention to the EZ-Template and this grew more and more.  By the e
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/TEzD2983alo?si=JbuUwnzIt3CwhyyP" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
 
+### BCUZ
+<iframe width="560" height="315" src="https://www.youtube.com/embed/sfHrp96o6R4?si=qkOLehbHuHlilRU1" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
+
 ### 1669X
 <iframe width="560" height="315" src="https://www.youtube.com/embed/r2SrME0Xdd0?si=An1oiJhjwIJYxz6p" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
 
