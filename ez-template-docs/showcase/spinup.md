@@ -11,7 +11,7 @@ Have a run you want posted here?  Ask in our [Discord Server](https://discord.gg
 
 :::
 
-To fix some problems within EZ-Template, such as adding units and having a consistent naming convention, [v3.0.0](https://github.com/EZ-Robotics/EZ-Template/releases/tag/v3.0.0-RC1) was being beta tested throughout this season.  The old v2  of EZ-Template continued to help teams during Spin Up, and ended up being used by both the HS World Champion, 7686B.      
+To fix some problems within EZ-Template, such as adding units and having a consistent naming convention, [v3.0.0](https://github.com/EZ-Robotics/EZ-Template/releases/tag/v3.0.0-RC1) was being beta tested throughout this season.  The old v2  of EZ-Template continued to help teams during Spin Up, and ended up being used by the HS World Champion, 7686B.      
 
 ## 7686B
 High School World Champion  
