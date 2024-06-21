@@ -1,6 +1,5 @@
 ---
 title: Support
-draft: true
 description: ez support
 ---
 
