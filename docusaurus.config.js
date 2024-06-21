@@ -43,7 +43,7 @@ const config = {
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         docs: {
-          
+
           // For when 3.0 is actually released
           lastVersion: 'current',
           versions: {
@@ -56,7 +56,7 @@ const config = {
               banner: 'unmaintained',
             },
           },
-          
+
           /*
           // While 3.0 isn't released
           lastVersion: '2.x',
@@ -71,13 +71,13 @@ const config = {
             },
           },
           */
-          
+
           routeBasePath: '/', // url
           path: './ez-template-docs', // file path
           sidebarPath: './sidebars.js',
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
-          editUrl: ({versionDocsDirPath, docPath}) =>
+          editUrl: ({ versionDocsDirPath, docPath }) =>
             `https://github.com/EZ-Robotics/EZ-Template/tree/website/${versionDocsDirPath}/${docPath}`,
         },
         blog: false,
@@ -112,8 +112,8 @@ const config = {
           { to: '/', label: 'EZ-Template', position: 'left' },
           { to: 'category/tutorials', label: 'Tutorials', position: 'left' },
           { to: 'category/docs', label: 'Docs', position: 'left' },
-          // { to: 'category/community', label: 'Community', position: 'left' },
-          // { to: 'versions/', label: 'Versions', position: 'right' },
+          { to: '/category/showcase', label: 'Showcase', position: 'left' },
+          { to: 'support', label: 'Support', position: 'left' },
           { href: 'https://www.roboticsisez.com/', label: 'robotics is ez', position: 'right' },
           { href: 'https://github.com/EZ-Robotics/EZ-Template', label: 'GitHub', position: 'right' },
         ],
@@ -149,10 +149,14 @@ const config = {
                 label: 'Instagram',
                 href: 'https://www.instagram.com/roboticsisez',
               },
-              /*{
-                label: 'Help',
+              {
+                label: 'Support',
                 href: '/support',
-              },*/
+              },
+              {
+                label: 'Showcase',
+                href: '/category/showcase',
+              },
             ],
           },
           {

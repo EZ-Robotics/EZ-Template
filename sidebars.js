@@ -72,9 +72,11 @@ const sidebars = {
           collapsed: true,
           collapsible: true,
           items: [
-            'tutorials/slew_constants',
             'tutorials/tuning_constants',
             'tutorials/tuning_exit_conditions',
+            'tutorials/slew_constants',
+            'tutorials/imu_scaling',
+            'tutorials/wheel_diameter_tuning',
             // gain scheduling?
           ],
         },
@@ -138,7 +140,7 @@ const sidebars = {
         'migration',
       ],
     },
-    /*
+
     {
       type: 'category',
       label: 'Community',
@@ -149,11 +151,27 @@ const sidebars = {
       collapsible: true,
       items: [
         'support',
-        'showcase',
+        // Getting Started
+        {
+          type: 'category',
+          label: 'Showcase',
+          link: {
+            type: 'generated-index',
+          },
+          collapsed: false,
+          collapsible: true,
+          items: [
+            // 'showcase/highstakes',  // Bring this back once autos actually exist
+            'showcase/overunder',
+            'showcase/spinup',
+            'showcase/tippingpoint',
+            'showcase/changeup',
+            'showcase/towertakeover',
+          ],
+        },
       ],
     },
-    */
-    
+
   ],
 };
 export default sidebars;
