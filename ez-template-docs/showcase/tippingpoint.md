@@ -13,9 +13,24 @@ Have a run you want posted here?  Ask in our [Discord Server](https://discord.gg
 
 At the start of this season I was involved with a [summer camp](https://www.roboticsisez.com/projects/harvard-westlake-amogo-dogo) at Harvard-Westlake where a season was condensed down into 1 week.  Two robots were made and published called [AMOGO x DOGO](https://www.vexforum.com/t/harvard-westlake-robotics-amogo-x-dogo-reveal/92670).  Code was released for both of these robots, and the PROS version included the template I was working on for my competition robots in Change Up.  
 
-This brought attention to the EZ-Template and this grew more and more.  By the end of the season EZ-Template was completely rewritten.  [v1.0.0](https://github.com/EZ-Robotics/EZ-Template/tree/6ee89ea2c076b22a8dc87025956d0bc92af3babf) -> [v2.1.1](https://github.com/EZ-Robotics/EZ-Template/tree/dde66be3518142e0b208708fa4bfcdc41960cff5) were all created during this season.  EZ-Template ended up being used by the HS World Champions this season.    
+This brought attention to the EZ-Template and this grew more and more.  By the end of the season EZ-Template was completely rewritten.  [v1.0.0](https://github.com/EZ-Robotics/EZ-Template/tree/6ee89ea2c076b22a8dc87025956d0bc92af3babf) -> [v2.1.1](https://github.com/EZ-Robotics/EZ-Template/tree/dde66be3518142e0b208708fa4bfcdc41960cff5) were all created during this season.  EZ-Template ended up being used by the HS World Champion this season, 38141B.    
 
 ## Highlights
+### 38141B
+High School World Champion  
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/48Qy_qmK--I?si=6253EQaYnkwbI8dq" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/AUWkGa8izhM?si=xVzqoCimWjCl9ZCO" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/Z0jPnYM4g0w?si=aUsT6yQaGKcP52B4" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>   
+⠀⠀
+<iframe width="315" height="560" src="https://www.youtube.com/embed/VuRuLGlXKsY?si=fZWg2iwpK_7PlT6h" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
+
+<iframe width="315" height="560" src="https://www.youtube.com/embed/7lbyZlyZrxM?si=NF1XBFs5Dp7EWOlw" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
+⠀⠀
+<iframe width="315" height="560" src="https://www.youtube.com/embed/ezsYvmgPYpc?si=pQK_miUiHLNqJqIu" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
+
 ### EZ x 21S
 <iframe width="560" height="315" src="https://www.youtube.com/embed/-iKVvODZ_7M?si=iDjz0_4ZiQcx19HU" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
 
@@ -24,11 +39,11 @@ This brought attention to the EZ-Template and this grew more and more.  By the e
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/abxZKTxWg4A?si=vNeEqAJ6oVNDS302" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
 
-### 6627A
-<iframe width="560" height="315" src="https://www.youtube.com/embed/_dDUSwbiwDs?si=dAslain3sxldWTlF" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
-
 
 ## More
+
+### 6627A
+<iframe width="560" height="315" src="https://www.youtube.com/embed/_dDUSwbiwDs?si=dAslain3sxldWTlF" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>   
 
 ### EZ
 <iframe width="560" height="315" src="https://www.youtube.com/embed/aMjDo37H36s?si=ijKrN8jtFwHGCY0-" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
@@ -48,7 +63,7 @@ This brought attention to the EZ-Template and this grew more and more.  By the e
 <iframe width="560" height="315" src="https://www.youtube.com/embed/TEzD2983alo?si=JbuUwnzIt3CwhyyP" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
 
 ### BCUZ
-<iframe width="560" height="315" src="https://www.youtube.com/embed/sfHrp96o6R4?si=qkOLehbHuHlilRU1" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
+<iframe width="560" height="315" src="https://www.youtube.com/embed/C-iuJJg1fEA?si=igY15Wz88I3oe09Z" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
 
 ### 1669X
 <iframe width="560" height="315" src="https://www.youtube.com/embed/r2SrME0Xdd0?si=An1oiJhjwIJYxz6p" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
