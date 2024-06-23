@@ -12,8 +12,8 @@ This code uses a function called `set_lift` to set the power of 2 lift motors in
 pros::Motor l_lift(17);
 pros::Motor r_lift(18);
 void set_lift(int input) {
-  l_lift = input;
-  r_lift = input;
+  l_lift.move(input);
+  r_lift.move(input);
 }
 ez::PID liftPID{0.45, 0, 0, 0, "Lift"};
 
@@ -44,8 +44,8 @@ We've added a new function called `lift_auto()`.  This function takes in a targ
 pros::Motor l_lift(17);
 pros::Motor r_lift(18);
 void set_lift(int input) {
- l_lift = input;
- r_lift = input;
+  l_lift.move(input);
+  r_lift.move(input);
 }
 ez::PID liftPID{0.45, 0, 0, 0, "Lift"};
 
@@ -92,8 +92,8 @@ Example 2 has a problem of not being able to do other things while the lift is r
 pros::Motor l_lift(17);
 pros::Motor r_lift(18);
 void set_lift(int input) {
-  l_lift = input;
-  r_lift = input;
+  l_lift.move(input);
+  r_lift.move(input);
 }
 ez::PID liftPID{0.45, 0, 0, 0, "Lift"};
 

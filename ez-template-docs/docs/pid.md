@@ -81,7 +81,7 @@ void opcontrol() {
     else if (master.get_digital(DIGITAL_L2)) {
       liftPID.target_set(0);
     }
-    lift_motor = liftPID.compute(lift_motor.get_position());
+    lift_motor.move(liftPID.compute(lift_motor.get_position()));
 
     pros::delay(ez::util::DELAY_TIME);
   }
@@ -137,7 +137,7 @@ void opcontrol() {
       target = 0.0;
     }
     error = target - lift_motor.get_position();
-    lift_motor = liftPID.compute_error(error, lift_motor.get_position());
+    lift_motor.move(liftPID.compute_error(error, lift_motor.get_position()));
 
     pros::delay(ez::util::DELAY_TIME);
   }
@@ -236,7 +236,7 @@ void opcontrol() {
     else if (master.get_digital(DIGITAL_L2)) {
       liftPID.target_set(0);
     }
-    lift_motor = liftPID.compute(lift_motor.get_position());
+    lift_motor.move(liftPID.compute(lift_motor.get_position()));
 
     pros::delay(ez::util::DELAY_TIME);
   }
@@ -549,7 +549,7 @@ void opcontrol() {
       liftPID.target_set(0);
       printf("%.2f\n", liftPID.target_get()); // This prints 0
     }
-    lift_motor = liftPID.compute(lift_motor.get_position());
+    lift_motor.move(liftPID.compute(lift_motor.get_position()));
 
     pros::delay(ez::util::DELAY_TIME);
   }
@@ -772,13 +772,13 @@ void initialize() {
 void autonomous() {
   liftPID.target_set(500);
   while (liftPID.exit_condition(true) == ez::RUNNING) {
-    lift_motor = liftPID.compute(lift_motor.get_position());
+    lift_motor.move(liftPID.compute(lift_motor.get_position()));
     pros::delay(ez::util::DELAY_TIME);
   }
 
   liftPID.target_set(0);
   while (liftPID.exit_condition(true) == ez::RUNNING) {
-    lift_motor = liftPID.compute(lift_motor.get_position());
+    lift_motor.move(liftPID.compute(lift_motor.get_position()));
     pros::delay(ez::util::DELAY_TIME);
   }
 }
@@ -832,13 +832,13 @@ void initialize() {
 void autonomous() {
   liftPID.target_set(500);
   while (liftPID.exit_condition(lift_motor, true) == ez::RUNNING) {
-    lift_motor = liftPID.compute(lift_motor.get_position());
+    lift_motor.move(liftPID.compute(lift_motor.get_position()));
     pros::delay(ez::util::DELAY_TIME);
   }
 
   liftPID.target_set(0);
   while (liftPID.exit_condition(lift_motor, true) == ez::RUNNING) {
-    lift_motor = liftPID.compute(lift_motor.get_position());
+    lift_motor.move(liftPID.compute(lift_motor.get_position()));
     pros::delay(ez::util::DELAY_TIME);
   }
 }
@@ -886,8 +886,8 @@ pros::Motor l_lift_motor(1);
 pros::Motor r_lift_motor(2, true);
 
 void set_lift(int input) {
-  l_lift_motor = input;
-  r_lift_motor = input;
+  l_lift_motor.move(input);
+  r_lift_motor.move(input);
 }
 
 void initialize() {
@@ -952,7 +952,7 @@ void opcontrol() {
       liftPID.timers_reset();
       liftPID.target_set(0);
     }
-    lift_motor = liftPID.compute(lift_motor.get_position());
+    lift_motor.move(liftPID.compute(lift_motor.get_position()));
 
     pros::delay(ez::util::DELAY_TIME);
   }

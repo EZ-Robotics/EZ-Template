@@ -32,8 +32,8 @@ void pto_toggle_intake(bool toggle) {
 
 void set_intake(int input) {
   if (!pto_intake_enabled) return;
-  chassis.left_motors[LEFT_INTAKE] = input;
-  chassis.right_motors[RIGHT_INTAKE] = input;
+  chassis.left_motors[LEFT_INTAKE].move(input;
+  chassis.right_motors[RIGHT_INTAKE].move(input;
 }
 
 // User control code
@@ -97,8 +97,8 @@ void pto_toggle_intake(bool toggle) {
 void set_intake(int input) {
   pto_toggle_intake(input == 0 ? false : true);
   if (!pto_piston_enabled) return;
-  chassis.left_motors[LEFT_INTAKE] = -input;
-  chassis.right_motors[RIGHT_INTAKE] = -input;
+  chassis.left_motors[LEFT_INTAKE].move(-input);
+  chassis.right_motors[RIGHT_INTAKE].move(-input);
 }
 
 // User control code
@@ -157,8 +157,8 @@ void pto_toggle_intake(bool toggle) {
 // Raw intake function (intended use in this file only)
 void raw_set_intake(int input) {
   if (!pto_piston_enabled) return;
-  chassis.left_motors[LEFT_INTAKE] = -input;
-  chassis.right_motors[RIGHT_INTAKE] = -input;
+  chassis.left_motors[LEFT_INTAKE].move(-input);
+  chassis.right_motors[RIGHT_INTAKE].move(-input);
 }
 
 // Global intake function (for use outside of this file)

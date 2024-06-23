@@ -99,13 +99,13 @@ void opcontrol() {
     // . . .
 
     if (master.get_digital(DIGITAL_L1)) {
-      intake = 127;
+      intake.move(127);
     } 
     else if (master.get_digital(DIGITAL_L2)) {
-      intake = -127;
+      intake.move(-127);
     } 
     else {
-      intake = 0;
+      intake.move(0);
     }
 
     pros::delay(ez::util::DELAY_TIME);  // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
@@ -119,9 +119,9 @@ Now that the motor is created in `subsystems.hpp` we can access it in our autono
 void intake_autonomous() {
   chassis.pid_drive_set(24_in, DRIVE_SPEED, true);
   chassis.pid_wait_until(6_in);
-  intake = 127;
+  intake.move(127);
   chassis.pid_wait_quick_chain();
-  intake = 0;
+  intake.move(0);
 
   chassis.pid_turn_set(45_deg, TURN_SPEED);
   chassis.pid_wait_quick_chain();
@@ -132,11 +132,11 @@ void intake_autonomous() {
   chassis.pid_turn_set(0_deg, TURN_SPEED);
   chassis.pid_wait();
 
-  intake = -127;
+  intake.move(-127);
   chassis.pid_drive_set(-24_in, DRIVE_SPEED, true);
   chassis.pid_speed_max_set(DRIVE_SPEED);  
   chassis.pid_wait();
-  intake = 0;
+  intake.move(0);
 }
 ```
 
