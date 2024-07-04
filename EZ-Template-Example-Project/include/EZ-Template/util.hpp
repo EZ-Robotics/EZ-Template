@@ -69,7 +69,43 @@ enum exit_output { RUNNING = 1,
 enum e_mode { DISABLE = 0,
               SWING = 1,
               TURN = 2,
-              DRIVE = 3 };
+              TURN_TO_POINT = 3,
+              DRIVE = 4,
+              POINT_TO_POINT = 5,
+              PURE_PURSUIT = 6,
+              BOOMERANG = 7 };
+
+/**
+ * Enum for turn types
+ */
+enum turn_types { FWD = 0,
+                  FORWARD = FWD,
+                  fwd = FWD,
+                  forward = FWD,
+                  REV = 1,
+                  REVERSE = REV,
+                  rev = REV,
+                  reverse = REV };
+
+const double ANGLE_NOT_SET = 0.0000000000000000000001;
+
+/**
+ * Struct for coordinates
+ */
+typedef struct pose {
+  double x = 0.0;
+  double y = 0.0;
+  double theta = ANGLE_NOT_SET;
+} pose;
+
+/**
+ * Struct for odom movements
+ */
+typedef struct odom {
+  pose target;
+  turn_types turn_type;
+  int max_xy_speed;
+} odom;
 
 /**
  * Outputs string for exit_condition enum.
@@ -103,5 +139,13 @@ const bool SD_CARD_ACTIVE = pros::usd::is_installed();
  * Delay time for tasks
  */
 const int DELAY_TIME = 10;
+
+double to_deg(double input);
+double to_rad(double input);
+double absolute_angle_to_point(pose itarget, pose icurrent);
+double wrap_angle(double theta);
+double distance_to_point(pose itarget, pose icurrent);
+pose vector_off_point(double added, pose icurrent);
+
 }  // namespace util
 }  // namespace ez

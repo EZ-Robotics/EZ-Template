@@ -324,6 +324,72 @@ class Drive {
 
   /////
   //
+  // Odometry
+  //
+  /////
+
+  /**
+   * Tasks for tracking.
+   */
+  // pros::Task ez_tracking;
+  void ez_tracking_task();
+
+  void pid_odom_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = true);
+  void pid_odom_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = true);
+  void pid_odom_turn_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QAngle p_small_error, okapi::QTime p_big_exit_time, okapi::QAngle p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout, bool use_imu = true);
+  void pid_odom_drive_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QLength p_small_error, okapi::QTime p_big_exit_time, okapi::QLength p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout, bool use_imu = true);
+  void drive_width_set(double input);
+  double drive_width_get();
+  void drive_odom_enable(bool input);
+  pose odom_target = {0, 0, 0};
+  pose odom_current = {0, 0, 0};
+  std::vector<odom> pp_movements;
+  std::vector<int> injected_pp_index;
+  int pp_index = 0;
+  void odom_pose_x_set(double x);
+  void odom_pose_y_set(double y);
+  void odom_pose_set(pose itarget);
+  void odom_pose_theta_set(double a);
+  void odom_reset();
+  bool imu_calibration_complete = false;
+  double angle_rad = 0.0;
+  void pid_turn_set(pose itarget, turn_types dir, int speed, bool slew_on = false);
+  pose turn_to_point_target = {0, 0, 0};
+  void pid_odom_ptp_set(odom imovement, bool slew_on = false);
+  void pid_odom_pp_set(std::vector<odom> imovements, bool slew_on = false);
+  void pid_odom_injected_pp_set(std::vector<odom> imovements, bool slew_on = false);
+  void pid_odom_smooth_pp_set(std::vector<odom> imovements, bool slew_on = false);
+  std::vector<odom> smooth_path(std::vector<odom> ipath, double weight_smooth = 0.75, double weight_data = 0.03, double tolerance = 0.0001);
+  double is_past_target(pose target, pose current);
+  void raw_pid_odom_pp_set(std::vector<odom> imovements, bool slew_on);
+  int past_target = 0;
+  std::vector<pose> point_to_face = {{0, 0, 0}, {0, 0, 0}};
+  double SPACING = 0.5;
+  double LOOK_AHEAD = 7.0;
+  // bool is_past_target_using_xy = false;
+  void pid_wait_until_pp(int index);
+  double dlead = 0.375;
+  void pid_odom_boomerang_set(odom imovement, bool slew_on = false);
+  //  Odometry
+  bool odometry_enabled = true;
+  float track_width = 0.0;
+  double l_last = 0, r_last = 0 /*, c_last = 0*/;
+  /*double h = 0, h2 = 0*/;  // rad for big circle
+  double last_theta = 0;
+  // double Xx = 0, Yy = 0, Xy = 0, Yx = 0;
+  turn_types current_drive_direction = fwd;
+  bool ptf1_running = false;
+  std::vector<pose> find_point_to_face(pose current, pose target, bool set_global = false);
+  void raw_pid_odom_ptp_set(odom imovement, bool slew_on);
+  std::vector<odom> inject_points(std::vector<odom> imovements);
+  void ptp_task();
+  void boomerang_task();
+  void pp_task();
+  PID xyPID;
+  PID aPID;
+
+  /////
+  //
   // User Control
   //
   /////
