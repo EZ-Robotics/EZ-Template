@@ -149,11 +149,13 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 }
 
 void Drive::drive_defaults_set() {
+  imu.set_data_rate(5);
+
   std::cout << std::fixed;
   std::cout << std::setprecision(2);
 
   // PID Constants
-  pid_heading_constants_set(11, 0, 20, 0);
+  pid_heading_constants_set(8, 0, 50, 0);
   pid_drive_constants_set(20, 0, 100, 0);
   pid_turn_constants_set(3, 0.05, 20, 15);
   pid_swing_constants_set(6, 0, 65);
@@ -167,6 +169,8 @@ void Drive::drive_defaults_set() {
   pid_turn_exit_condition_set(80_ms, 3_deg, 250_ms, 7_deg, 500_ms, 500_ms);
   pid_swing_exit_condition_set(80_ms, 3_deg, 250_ms, 7_deg, 500_ms, 500_ms);
   pid_drive_exit_condition_set(80_ms, 1_in, 250_ms, 3_in, 500_ms, 500_ms);
+  pid_odom_turn_exit_condition_set(100_ms, 3_deg, 300_ms, 7_deg, 500_ms, 750_ms);
+  pid_odom_drive_exit_condition_set(100_ms, 1_in, 300_ms, 3_in, 500_ms, 500_ms);
 
   pid_turn_chain_constant_set(3_deg);
   pid_swing_chain_constant_set(5_deg);
@@ -245,6 +249,8 @@ int Drive::drive_current_limit_get() {
 
 // Motor telemetry
 void Drive::drive_sensor_reset() {
+  l_last = 0;
+  r_last = 0;
   left_motors.front().tare_position();
   right_motors.front().tare_position();
   if (is_tracker == DRIVE_ADI_ENCODER) {
@@ -282,7 +288,11 @@ int Drive::drive_velocity_left() { return left_motors.front().get_actual_velocit
 double Drive::drive_mA_left() { return left_motors.front().get_current_draw(); }
 bool Drive::drive_current_left_over() { return left_motors.front().is_over_current(); }
 
-void Drive::drive_imu_reset(double new_heading) { imu.set_rotation(new_heading); }
+void Drive::drive_imu_reset(double new_heading) {
+  imu.set_rotation(new_heading);
+  angle_rad = util::to_rad(new_heading);
+  last_theta = angle_rad;
+}
 double Drive::drive_imu_get() { return imu.get_rotation() * IMU_SCALER; }
 double Drive::drive_imu_accel_get() { return imu.get_accel().x + imu.get_accel().y; }
 
@@ -321,6 +331,7 @@ void Drive::drive_imu_display_loading(int iter) {
 }
 
 bool Drive::drive_imu_calibrate(bool run_loading_animation) {
+  imu_calibration_complete = false;
   imu.reset();
   int iter = 0;
   bool current_status = imu.is_calibrating();
@@ -349,6 +360,7 @@ bool Drive::drive_imu_calibrate(bool run_loading_animation) {
     pros::delay(util::DELAY_TIME);
   }
   printf("IMU is done calibrating (took %d ms)\n", iter);
+  imu_calibration_complete = true;
   return true;
 }
 

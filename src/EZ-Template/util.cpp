@@ -62,9 +62,9 @@ void screen_print(std::string text, int line) {
         texts.push_back(temp);
         temp = text[i];
       } else {
-        int size = last_word.length(); 
+        int size = last_word.length();
 
-        auto rest_of_word = get_rest_of_the_word(text, i); 
+        auto rest_of_word = get_rest_of_the_word(text, i);
         temp.erase(temp.length() - size, size);
         texts.push_back(temp);
         last_word += rest_of_word;
@@ -74,7 +74,6 @@ void screen_print(std::string text, int line) {
           texts.push_back(temp);
           break;
         }
-        
       }
     }
     if (i >= text.length() - 1) {
@@ -143,6 +142,52 @@ double clamp(double input, double max, double min) {
   else if (input < min)
     return min;
   return input;
+}
+
+// Conversions from deg to rad and rad to deg
+double to_deg(double input) { return input * (180 / M_PI); }
+double to_rad(double input) { return input * (M_PI / 180); }
+
+// Finds error in shortest angle to point
+double absolute_angle_to_point(pose itarget, pose icurrent) {
+  // Difference in target to current (legs of triangle)
+  double x_error = itarget.x - icurrent.x;
+  double y_error = itarget.y - icurrent.y;
+
+  // Displacement of error
+  double error = to_deg(atan2(x_error, y_error));
+  return error;
+}
+
+// Outputs angle within 180 t0 -180
+double wrap_angle(double theta) {
+  while (theta > 180) theta -= 360;
+  while (theta < -180) theta += 360;
+  return theta;
+}
+
+// Find shortest distance to point
+double distance_to_point(pose itarget, pose icurrent) {
+  // Difference in target to current (legs of triangle)
+  double x_error = (itarget.x - icurrent.x);
+  double y_error = (itarget.y - icurrent.y);
+
+  // Hypotenuse of triangle
+  double distance = hypot(x_error, y_error);
+
+  return distance;
+}
+
+// Uses input as hypot to find the new xy
+pose vector_off_point(double added, pose icurrent) {
+  double x_error = sin(to_rad(icurrent.theta)) * added;
+  double y_error = cos(to_rad(icurrent.theta)) * added;
+
+  pose output;
+  output.x = x_error + icurrent.x;
+  output.y = y_error + icurrent.y;
+  output.theta = icurrent.theta;
+  return output;
 }
 
 }  // namespace util

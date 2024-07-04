@@ -104,6 +104,8 @@ void Drive::pid_targets_reset() {
   headingPID.target_set(0);
   leftPID.target_set(0);
   rightPID.target_set(0);
+  xyPID.target_set(0);
+  aPID.target_set(0);
   forward_drivePID.target_set(0);
   backward_drivePID.target_set(0);
   turnPID.target_set(0);
@@ -309,4 +311,186 @@ void Drive::pid_swing_relative_set(e_swing type, double target, int speed, int o
   double absolute_target = headingPID.target_get() + target;
   if (print_toggle) printf("Relative ");
   pid_swing_set(type, absolute_target, speed, opposite_speed, slew_on);
+}
+
+/////
+// Odom Stuff
+/////
+
+// Set turn PID to point
+void Drive::pid_turn_set(pose itarget, turn_types dir, int speed, bool slew_on) {
+  current_drive_direction = dir;
+
+  // Calculate the point to look at
+  point_to_face = find_point_to_face(odom_current, {itarget.x, itarget.y}, true);
+
+  int add = current_drive_direction == REV ? 180 : 0;                                                     // Decide if going fwd or rev
+  double target = util::absolute_angle_to_point(point_to_face[!ptf1_running], odom_current) + add;  // Calculate the point for angle to face
+  turnPID.target_set(util::wrap_angle(target - drive_imu_get()));                                   // Constrain error to -180 to 180
+
+  if (print_toggle) printf("Turn to Point PID Started... Target Point: (%f, %f) \n", itarget.x, itarget.y);
+  pid_turn_set(target, speed, slew_on);
+
+  drive_mode_set(TURN_TO_POINT);
+}
+
+// Raw move to point
+void Drive::raw_pid_odom_ptp_set(odom imovement, bool slew_on) {
+  // Update current turn type
+  current_drive_direction = imovement.turn_type;
+
+  // Calculate the point to look at
+  point_to_face = find_point_to_face(odom_current, {imovement.target.x, imovement.target.y}, true);
+
+  // Set max speed
+  pid_speed_max_set(imovement.max_xy_speed);
+
+  // Only update angle if the new target is unique
+  if (imovement.target.x != odom_target.x && imovement.target.y != odom_target.y)
+    odom_target.theta = util::absolute_angle_to_point(imovement.target, odom_target);
+
+  // Set targets
+  odom_target.x = imovement.target.x;
+  odom_target.y = imovement.target.y;
+
+  // Change constants if we're going fwd or rev
+  PID::Constants pid_consts;
+  slew::Constants slew_consts;
+  PID::Constants angle_consts = headingPID.constants_get();
+  if (imovement.turn_type == REV) {
+    pid_consts = backward_drivePID.constants_get();
+    slew_consts = slew_backward.constants_get();
+
+  } else {
+    pid_consts = forward_drivePID.constants_get();
+    slew_consts = slew_forward.constants_get();
+  }
+
+  // Set constants
+  xyPID.constants_set(pid_consts.kp, pid_consts.ki, pid_consts.kd, pid_consts.start_i);
+  aPID.constants_set(angle_consts.kp, angle_consts.ki, angle_consts.kd, angle_consts.start_i);
+  slew_left.constants_set(slew_consts.distance_to_travel, slew_consts.min_speed);
+  slew_right.constants_set(slew_consts.distance_to_travel, slew_consts.min_speed);
+
+  if (print_toggle) {
+    if (mode == PURE_PURSUIT)
+      printf(" ");
+
+    printf("Odom Motion Started... Target Coordinates: (%f, %f, %f) \n", imovement.target.x, imovement.target.y, imovement.target.theta);
+  }
+
+  // Get the starting point for if we're positive or negative.  This is used to find if we've past target
+  past_target = util::sgn(is_past_target(odom_target, odom_current));
+
+  // Initialize slew
+  int dir = (current_drive_direction == REV ? -1 : 1);  // If we're going backwards, add a -1
+  double dist_to_target = util::distance_to_point(odom_target, odom_current) * dir;
+  dist_to_target = dist_to_target < slew_consts.distance_to_travel && mode == PURE_PURSUIT ? slew_consts.distance_to_travel : dist_to_target;
+  slew_left.initialize(slew_on, max_speed, dist_to_target + l_start, l_start);
+  slew_right.initialize(slew_on, max_speed, dist_to_target + r_start, r_start);
+
+  // This is used for wait_until
+  leftPID.target_set(l_start + dist_to_target);
+  rightPID.target_set(l_start + dist_to_target);
+  leftPID.exit = xyPID.exit;
+  rightPID.exit = xyPID.exit;
+}
+
+// Move to point
+void Drive::pid_odom_ptp_set(odom imovement, bool slew_on) {
+  // This is used for wait_until
+  l_start = drive_sensor_left();
+  r_start = drive_sensor_right();
+
+  raw_pid_odom_ptp_set(imovement, slew_on);
+  drive_mode_set(POINT_TO_POINT);
+}
+
+// Raw pure pursuit
+void Drive::raw_pid_odom_pp_set(std::vector<odom> imovements, bool slew_on) {
+  // Clear current list of targets
+  pp_movements.clear();
+  pp_index = 0;
+
+  // Set new target
+  pp_movements = imovements;
+
+  raw_pid_odom_ptp_set(pp_movements[pp_index], slew_on);
+
+  // This is used for wait_until
+  l_start = drive_sensor_left();
+  r_start = drive_sensor_right();
+
+  drive_mode_set(PURE_PURSUIT);
+}
+
+// Pure pursuit
+void Drive::pid_odom_pp_set(std::vector<odom> imovements, bool slew_on) {
+  // This is used for pid_wait_until_pp()
+  injected_pp_index.clear();
+  for (int i = 0; i < imovements.size(); i++) {
+    injected_pp_index.push_back(i);
+  }
+
+  if (print_toggle) printf("Pure Pursuit ");
+  raw_pid_odom_pp_set(imovements, slew_on);
+}
+
+// Smooth injected pure pursuit
+void Drive::pid_odom_injected_pp_set(std::vector<ez::odom> imovements, bool slew_on) {
+  // This is used for pid_wait_until_pp()
+  injected_pp_index.clear();
+  for (int i = 0; i < imovements.size(); i++) {
+    injected_pp_index.push_back(i);
+  }
+
+  if (print_toggle) printf("Injected ");
+  std::vector<odom> input_path = inject_points(imovements);
+  raw_pid_odom_pp_set(input_path, slew_on);
+}
+
+// Smooth injected pure pursuit
+void Drive::pid_odom_smooth_pp_set(std::vector<odom> imovements, bool slew_on) {
+  // This is used for pid_wait_until_pp()
+  injected_pp_index.clear();
+  for (int i = 0; i < imovements.size(); i++) {
+    injected_pp_index.push_back(i);
+  }
+
+  if (print_toggle) printf("Smooth Injected ");
+  std::vector<odom> input_path = smooth_path(inject_points(imovements), 0.75, 0.03, 0.0001);
+  raw_pid_odom_pp_set(input_path, slew_on);
+}
+
+// Pose to Pose
+void Drive::pid_odom_boomerang_set(odom imovement, bool slew_on) {
+  std::vector<odom> imovements;
+
+  // if (imovement.turn_type == rev) {
+  //   imovement.target.theta += 90;
+  // }
+
+  imovements.push_back({{odom_current.x, odom_current.y, imovement.target.theta}, imovement.turn_type, imovement.max_xy_speed});
+  imovements.push_back(imovement);
+
+  // This is used for pid_wait_until_pp()
+  injected_pp_index.clear();
+  for (int i = 0; i < imovements.size(); i++) {
+    injected_pp_index.push_back(i);
+  }
+
+  // Clear current list of targets
+  pp_movements.clear();
+  pp_index = 0;
+
+  // Set new target
+  pp_movements = imovements;
+
+  raw_pid_odom_ptp_set(pp_movements[1], slew_on);
+
+  // This is used for wait_until
+  l_start = drive_sensor_left();
+  r_start = drive_sensor_right();
+
+  drive_mode_set(BOOMERANG);
 }

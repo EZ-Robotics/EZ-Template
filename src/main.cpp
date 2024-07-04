@@ -22,6 +22,8 @@ ez::Drive chassis(
  * to keep execution time for this mode under a few seconds.
  */
 void initialize() {
+  chassis.odometry_enabled = false;
+
   // Print our branding over your terminal :D
   ez::ez_template_print();
 
@@ -95,8 +97,33 @@ void autonomous() {
   chassis.drive_imu_reset();                  // Reset gyro position to 0
   chassis.drive_sensor_reset();               // Reset drive sensors to 0
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+  chassis.odom_pose_set({0, 0, 0});
+  chassis.drive_width_set(8.93);
+  chassis.dlead = 0.375;
+  chassis.odometry_enabled = true;
 
-  ez::as::auton_selector.selected_auton_call();  // Calls selected auton from autonomous selector
+  // chassis.pid_drive_set(dist, speed);
+  // chassis.pid_wait();
+
+  // chassis.pid_odom_ptp_set({{dist, dist}, fwd, speed});
+  // chassis.pid_wait();
+
+  // chassis.pid_odom_ptp_set({{0, dist}, rev, speed});
+  // chassis.pid_wait();
+
+  // chassis.pid_odom_ptp_set({{0, 0}, fwd, speed});
+  // chassis.pid_wait();
+
+  double x = 12;
+  double y = 16;
+  int speed = 80;
+  chassis.pid_odom_smooth_pp_set({{{0, y, -45}, fwd, speed},
+                                  {{x, y}, rev, speed},
+                                  {{x, 0}, fwd, speed}},
+                                 false);
+  chassis.pid_wait();
+
+  // ez::as::auton_selector.selected_auton_call();  // Calls selected auton from autonomous selector
 }
 
 /**
@@ -139,7 +166,7 @@ void opcontrol() {
     }
 
     // chassis.opcontrol_tank();  // Tank control
-    chassis.opcontrol_arcade_standard(ez::SPLIT);   // Standard split arcade
+    chassis.opcontrol_arcade_standard(ez::SPLIT);  // Standard split arcade
     // chassis.opcontrol_arcade_standard(ez::SINGLE);  // Standard single arcade
     // chassis.opcontrol_arcade_flipped(ez::SPLIT);    // Flipped split arcade
     // chassis.opcontrol_arcade_flipped(ez::SINGLE);   // Flipped single arcade
