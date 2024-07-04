@@ -324,7 +324,7 @@ void Drive::pid_turn_set(pose itarget, turn_types dir, int speed, bool slew_on) 
   // Calculate the point to look at
   point_to_face = find_point_to_face(odom_current, {itarget.x, itarget.y}, true);
 
-  int add = current_drive_direction == REV ? 180 : 0;                                                     // Decide if going fwd or rev
+  int add = current_drive_direction == REV ? 180 : 0;                                               // Decide if going fwd or rev
   double target = util::absolute_angle_to_point(point_to_face[!ptf1_running], odom_current) + add;  // Calculate the point for angle to face
   turnPID.target_set(util::wrap_angle(target - drive_imu_get()));                                   // Constrain error to -180 to 180
 
@@ -426,24 +426,40 @@ void Drive::raw_pid_odom_pp_set(std::vector<odom> imovements, bool slew_on) {
 
 // Pure pursuit
 void Drive::pid_odom_pp_set(std::vector<odom> imovements, bool slew_on) {
+  std::vector<odom> input = imovements;
+  input.insert(input.begin(), {{{odom_current.x, odom_current.y, ANGLE_NOT_SET}, imovements[0].turn_type, imovements[0].max_xy_speed}});
+
+  int t = 0;
+  for (int i = 0; i < input.size() - 1; i++) {
+    int j = i + t;
+    j = i;
+    if (input[j].target.theta != ANGLE_NOT_SET) {
+      // Calculate the new point with known information: hypot and angle
+      double angle_to_point = input[j].target.theta;
+      int dir = input[j].turn_type == REV ? -1 : 1;
+      pose new_point = util::vector_off_point(LOOK_AHEAD * dir, {input[j].target.x, input[j].target.y, angle_to_point});
+      new_point.theta = ANGLE_NOT_SET;
+
+      input.insert(input.cbegin() + j + 1, {new_point, input[j].turn_type, input[j].max_xy_speed});
+
+      t++;
+    }
+  }
+
   // This is used for pid_wait_until_pp()
   injected_pp_index.clear();
-  for (int i = 0; i < imovements.size(); i++) {
-    injected_pp_index.push_back(i);
+  injected_pp_index.push_back(0);
+  for (int i = 0; i < input.size(); i++) {
+    if (input[i].target.theta == ANGLE_NOT_SET && i != 0)
+      injected_pp_index.push_back(i);
   }
 
   if (print_toggle) printf("Pure Pursuit ");
-  raw_pid_odom_pp_set(imovements, slew_on);
+  raw_pid_odom_pp_set(input, slew_on);
 }
 
 // Smooth injected pure pursuit
 void Drive::pid_odom_injected_pp_set(std::vector<ez::odom> imovements, bool slew_on) {
-  // This is used for pid_wait_until_pp()
-  injected_pp_index.clear();
-  for (int i = 0; i < imovements.size(); i++) {
-    injected_pp_index.push_back(i);
-  }
-
   if (print_toggle) printf("Injected ");
   std::vector<odom> input_path = inject_points(imovements);
   raw_pid_odom_pp_set(input_path, slew_on);
@@ -451,12 +467,6 @@ void Drive::pid_odom_injected_pp_set(std::vector<ez::odom> imovements, bool slew
 
 // Smooth injected pure pursuit
 void Drive::pid_odom_smooth_pp_set(std::vector<odom> imovements, bool slew_on) {
-  // This is used for pid_wait_until_pp()
-  injected_pp_index.clear();
-  for (int i = 0; i < imovements.size(); i++) {
-    injected_pp_index.push_back(i);
-  }
-
   if (print_toggle) printf("Smooth Injected ");
   std::vector<odom> input_path = smooth_path(inject_points(imovements), 0.75, 0.03, 0.0001);
   raw_pid_odom_pp_set(input_path, slew_on);

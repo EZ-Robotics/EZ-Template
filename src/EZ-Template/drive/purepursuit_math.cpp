@@ -83,6 +83,7 @@ std::vector<odom> Drive::inject_points(std::vector<ez::odom> imovements) {
 
   std::vector<odom> output;  // Output vector
   int output_index = -1;     // Keeps track of current index
+  injected_pp_index.push_back(0);
 
   // This for loop runs for how many points there are minus one because there is one less vector then points
   for (int i = 0; i < input.size() - 1; i++) {
@@ -95,7 +96,11 @@ std::vector<odom> Drive::inject_points(std::vector<ez::odom> imovements) {
                       input[i].turn_type,
                       input[i].max_xy_speed});
     output_index++;
-    injected_pp_index.push_back(output_index);
+    if (i != 0 && input[i - 1].target.theta == ANGLE_NOT_SET) {
+      if (input[i].target.theta == ANGLE_NOT_SET) {
+        injected_pp_index.push_back(output_index);
+      }
+    }
 
     // Add the injected points
     for (int j = 0; j < num_of_points_that_fit; j++) {
@@ -111,6 +116,10 @@ std::vector<odom> Drive::inject_points(std::vector<ez::odom> imovements) {
                             input[i + 1].turn_type,
                             input[i + 1].max_xy_speed});
           output_index++;
+
+          if (j == 0 && input[i].target.theta != ANGLE_NOT_SET) {
+            injected_pp_index.push_back(output_index);
+          }
         }
       } else {
         j = num_of_points_that_fit;
