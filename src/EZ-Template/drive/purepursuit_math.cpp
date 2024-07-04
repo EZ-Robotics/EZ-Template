@@ -96,7 +96,6 @@ std::vector<odom> Drive::inject_points(std::vector<ez::odom> imovements) {
                       input[i].max_xy_speed});
     output_index++;
     injected_pp_index.push_back(output_index);
-    printf("parent %.2f, %.2f, %.2f   dir: %i\n", input[i].target.x, input[i].target.y, input[i].target.theta, input[i].turn_type);
 
     // Add the injected points
     for (int j = 0; j < num_of_points_that_fit; j++) {
@@ -106,14 +105,13 @@ std::vector<odom> Drive::inject_points(std::vector<ez::odom> imovements) {
         pose new_point = util::vector_off_point(SPACING, {output[output_index].target.x, output[output_index].target.y, angle_to_point});
 
         // If the new point is the same as the parent point, remove it to save 10ms delay
-        // if (!(new_point.x == input[i + 1].target.x && new_point.y == input[i + 1].target.y)) {
-        // Push new point to vector
-        output.push_back({{new_point.x, new_point.y, ANGLE_NOT_SET},
-                          input[i + 1].turn_type,
-                          input[i + 1].max_xy_speed});
-        output_index++;
-        printf("  %.2f, %.2f, %.2f   dir: %i\n", new_point.x, new_point.y, ANGLE_NOT_SET, input[i + 1].turn_type);
-        // }
+        if (util::distance_to_point(new_point, input[i + 1].target) >= SPACING) {
+          // Push new point to vector
+          output.push_back({{new_point.x, new_point.y, ANGLE_NOT_SET},
+                            input[i + 1].turn_type,
+                            input[i + 1].max_xy_speed});
+          output_index++;
+        }
       } else {
         j = num_of_points_that_fit;
       }
@@ -124,7 +122,6 @@ std::vector<odom> Drive::inject_points(std::vector<ez::odom> imovements) {
   }
   output.push_back(input.back());
   output_index++;
-  printf("parent %.2f, %.2f, %.2f   dir: %i\n", output.back().target.x, output.back().target.y, output.back().target.theta, output.back().turn_type);
 
   injected_pp_index.push_back(output_index);
 
@@ -176,7 +173,6 @@ std::vector<odom> Drive::smooth_path(std::vector<odom> ipath, double weight_smoo
       }
     }
   }
-  printf("\n\nsmooth\n");
 
   // Convert array to odom
   std::vector<odom> output = ipath;  // Set output to input so target angles, turn types and speed hold
@@ -184,7 +180,6 @@ std::vector<odom> Drive::smooth_path(std::vector<odom> ipath, double weight_smoo
   for (int i = 0; i < ipath.size(); i++) {
     output[i].target.x = new_path[i][0];
     output[i].target.y = new_path[i][1];
-    printf("(%.2f, %.2f, %.2f)   %i\n", output[i].target.x, output[i].target.y, output[i].target.theta, (int)dont_touch[i]);
   }
 
   return output;
