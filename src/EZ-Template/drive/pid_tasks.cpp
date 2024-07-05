@@ -264,9 +264,7 @@ void Drive::pp_task() {
 
   if (pp_movements[pp_index].target.theta != ANGLE_NOT_SET) {
     boomerang_task();
-    // printf("boom   dir: %i\n", current_drive_direction);
   } else {
     ptp_task();
-    // printf("ptp   dir: %i\n", current_drive_direction);
   }
 }

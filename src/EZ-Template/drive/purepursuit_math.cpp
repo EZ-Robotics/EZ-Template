@@ -85,6 +85,8 @@ std::vector<odom> Drive::inject_points(std::vector<ez::odom> imovements) {
   int output_index = -1;     // Keeps track of current index
   injected_pp_index.push_back(0);
 
+  bool allow_injecting = false;  // Flag to disable injecting for the first few points
+
   // This for loop runs for how many points there are minus one because there is one less vector then points
   for (int i = 0; i < input.size() - 1; i++) {
     // Figure out how many points fit in the vector
@@ -107,16 +109,22 @@ std::vector<odom> Drive::inject_points(std::vector<ez::odom> imovements) {
       if (input[i + 1].target.theta == ANGLE_NOT_SET) {
         // Calculate the new point with known information: hypot and angle
         double angle_to_point = util::absolute_angle_to_point(input[i + 1].target, input[i].target);
-        pose new_point = util::vector_off_point(SPACING, {output[output_index].target.x, output[output_index].target.y, angle_to_point});
+        pose new_point = util::vector_off_point(SPACING * (j + 1), {input[i].target.x, input[i].target.y, angle_to_point});
+
+        // A one time flag to stop points from being injected for LOOK_AHEAD from current
+        // https://github.com/EZ-Robotics/EZ-Template/issues/152
+        if (util::distance_to_point(new_point, input[0].target) >= LOOK_AHEAD)
+          allow_injecting = true;
 
         // If the new point is the same as the parent point, remove it to save 10ms delay
-        if (util::distance_to_point(new_point, input[i + 1].target) >= SPACING) {
+        if (util::distance_to_point(new_point, input[i + 1].target) >= SPACING && allow_injecting) {
           // Push new point to vector
           output.push_back({{new_point.x, new_point.y, ANGLE_NOT_SET},
                             input[i + 1].turn_type,
                             input[i + 1].max_xy_speed});
           output_index++;
 
+          // don't allow boomerang points in!
           if (j == 0 && input[i].target.theta != ANGLE_NOT_SET) {
             injected_pp_index.push_back(output_index);
           }

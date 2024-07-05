@@ -328,7 +328,7 @@ void Drive::pid_turn_set(pose itarget, turn_types dir, int speed, bool slew_on) 
   double target = util::absolute_angle_to_point(point_to_face[!ptf1_running], odom_current) + add;  // Calculate the point for angle to face
   turnPID.target_set(util::wrap_angle(target - drive_imu_get()));                                   // Constrain error to -180 to 180
 
-  if (print_toggle) printf("Turn to Point PID Started... Target Point: (%f, %f) \n", itarget.x, itarget.y);
+  if (print_toggle) printf("Turn to Point PID Started... Target Point: (%.2f, %.2f) \n", itarget.x, itarget.y);
   pid_turn_set(target, speed, slew_on);
 
   drive_mode_set(TURN_TO_POINT);
@@ -372,12 +372,12 @@ void Drive::raw_pid_odom_ptp_set(odom imovement, bool slew_on) {
   slew_left.constants_set(slew_consts.distance_to_travel, slew_consts.min_speed);
   slew_right.constants_set(slew_consts.distance_to_travel, slew_consts.min_speed);
 
-  if (print_toggle) {
+  if (print_toggle && mode != BOOMERANG && (last_pp_mode != BOOMERANG)) {
     if (mode == PURE_PURSUIT)
       printf(" ");
-
-    printf("Odom Motion Started... Target Coordinates: (%f, %f, %f) \n", imovement.target.x, imovement.target.y, imovement.target.theta);
+    printf("Odom Motion Started... Target Coordinates: (%.2f, %.2f, %.2f) \n", imovement.target.x, imovement.target.y, imovement.target.theta);
   }
+  last_pp_mode = pp_movements[pp_index].target.theta != ANGLE_NOT_SET ? BOOMERANG : PURE_PURSUIT;
 
   // Get the starting point for if we're positive or negative.  This is used to find if we've past target
   past_target = util::sgn(is_past_target(odom_target, odom_current));
@@ -408,6 +408,8 @@ void Drive::pid_odom_ptp_set(odom imovement, bool slew_on) {
 
 // Raw pure pursuit
 void Drive::raw_pid_odom_pp_set(std::vector<odom> imovements, bool slew_on) {
+  last_pp_mode = DISABLE;
+
   // Clear current list of targets
   pp_movements.clear();
   pp_index = 0;
@@ -474,6 +476,7 @@ void Drive::pid_odom_smooth_pp_set(std::vector<odom> imovements, bool slew_on) {
 
 // Pose to Pose
 void Drive::pid_odom_boomerang_set(odom imovement, bool slew_on) {
+  if (print_toggle) printf("Boomerang ");
   std::vector<odom> imovements;
 
   // if (imovement.turn_type == rev) {
@@ -496,6 +499,7 @@ void Drive::pid_odom_boomerang_set(odom imovement, bool slew_on) {
   // Set new target
   pp_movements = imovements;
 
+  drive_mode_set(POINT_TO_POINT);  // This allows the first print message to happen
   raw_pid_odom_ptp_set(pp_movements[1], slew_on);
 
   // This is used for wait_until

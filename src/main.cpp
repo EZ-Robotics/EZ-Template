@@ -79,6 +79,15 @@ void competition_initialize() {
   // . . .
 }
 
+void print_(std::vector<odom> input) {
+  int t = 0;
+  for (auto i : input) {
+    printf("%i - (%.2f, %.2f, %.2f)\n", t, i.target.x, i.target.y, i.target.theta);
+    t++;
+  }
+  printf("\n\n");
+}
+
 /**
  * Runs the user autonomous code. This function will be started in its own task
  * with the default priority and stack size whenever the robot is enabled via
@@ -99,6 +108,14 @@ void autonomous() {
   chassis.drive_width_set(8.93);  // just use a tape measure
   chassis.dlead = 0.375;
   chassis.odometry_enabled = true;
+
+  // chassis.pid_drive_toggle(false);
+  // chassis.pid_print_toggle(false);
+
+  std::vector<odom> move = {{{0, 16, 45}, fwd, 110},
+                            {{16, 16}, fwd, 110}};
+  print_(move);
+  print_(chassis.inject_points(move));
 
   chassis.pid_odom_smooth_pp_set({{{0, 16, 45}, fwd, 110},
                                   {{16, 16}, fwd, 110}});
@@ -149,8 +166,8 @@ void opcontrol() {
       chassis.pid_tuner_iterate();  // Allow PID Tuner to iterate
     }
 
-    // chassis.opcontrol_tank();  // Tank control
-    chassis.opcontrol_arcade_standard(ez::SPLIT);  // Standard split arcade
+    chassis.opcontrol_tank();  // Tank control
+    // chassis.opcontrol_arcade_standard(ez::SPLIT);  // Standard split arcade
     // chassis.opcontrol_arcade_standard(ez::SINGLE);  // Standard single arcade
     // chassis.opcontrol_arcade_flipped(ez::SPLIT);    // Flipped split arcade
     // chassis.opcontrol_arcade_flipped(ez::SINGLE);   // Flipped single arcade

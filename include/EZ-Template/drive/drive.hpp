@@ -387,6 +387,7 @@ class Drive {
   void pp_task();
   PID xyPID;
   PID aPID;
+  e_mode last_pp_mode = DISABLE;
 
   /////
   //
