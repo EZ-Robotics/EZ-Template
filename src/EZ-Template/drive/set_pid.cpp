@@ -372,13 +372,16 @@ void Drive::raw_pid_odom_ptp_set(odom imovement, bool slew_on) {
   slew_left.constants_set(slew_consts.distance_to_travel, slew_consts.min_speed);
   slew_right.constants_set(slew_consts.distance_to_travel, slew_consts.min_speed);
 
-  if (print_toggle && mode != BOOMERANG && (last_pp_mode != BOOMERANG)) {
+  bool is_current_boomerang = false;
+  if (mode == PURE_PURSUIT)
+    is_current_boomerang = pp_movements[pp_index].target.theta != ANGLE_NOT_SET ? true : false;
+  if (print_toggle && !was_last_pp_mode_boomerang) {
     if (mode == PURE_PURSUIT)
       printf(" ");
     printf("Odom Motion Started... Target Coordinates: (%.2f, %.2f, %.2f) \n", imovement.target.x, imovement.target.y, imovement.target.theta);
   }
   if (mode == PURE_PURSUIT)
-    last_pp_mode = pp_movements[pp_index].target.theta != ANGLE_NOT_SET ? BOOMERANG : PURE_PURSUIT;
+    was_last_pp_mode_boomerang = is_current_boomerang;
 
   // Get the starting point for if we're positive or negative.  This is used to find if we've past target
   past_target = util::sgn(is_past_target(odom_target, odom_current));
@@ -399,6 +402,9 @@ void Drive::raw_pid_odom_ptp_set(odom imovement, bool slew_on) {
 
 // Move to point
 void Drive::pid_odom_ptp_set(odom imovement, bool slew_on) {
+  odom_second_to_last = odom_current;
+  odom_target_start = imovement.target;
+
   xyPID.timers_reset();
   aPID.timers_reset();
 
@@ -412,7 +418,10 @@ void Drive::pid_odom_ptp_set(odom imovement, bool slew_on) {
 
 // Raw pure pursuit
 void Drive::raw_pid_odom_pp_set(std::vector<odom> imovements, bool slew_on) {
-  last_pp_mode = DISABLE;
+  odom_second_to_last = imovements[imovements.size() - 2].target;
+  odom_target_start = imovements[imovements.size() - 1].target;
+
+  was_last_pp_mode_boomerang = false;
 
   // Clear current list of targets
   pp_movements.clear();
@@ -489,17 +498,19 @@ void Drive::pid_odom_smooth_pp_set(std::vector<odom> imovements, bool slew_on) {
 
 // Pose to Pose
 void Drive::pid_odom_boomerang_set(odom imovement, bool slew_on) {
+  if (print_toggle) printf("Boomerang ");
+  pid_odom_pp_set({imovement}, slew_on);
+  /*
+  odom_start = odom_current;
+  odom_target_start = imovement.target;
+
   xyPID.timers_reset();
   aPID.timers_reset();
 
   if (print_toggle) printf("Boomerang ");
   std::vector<odom> imovements;
 
-  // if (imovement.turn_type == rev) {
-  //   imovement.target.theta += 90;
-  // }
-
-  imovements.push_back({{odom_current.x, odom_current.y, imovement.target.theta}, imovement.turn_type, imovement.max_xy_speed});
+  imovements.push_back({{odom_current.x, odom_current.y, ANGLE_NOT_SET}, imovement.turn_type, imovement.max_xy_speed});
   imovements.push_back(imovement);
 
   // This is used for pid_wait_until_pp()
@@ -523,4 +534,5 @@ void Drive::pid_odom_boomerang_set(odom imovement, bool slew_on) {
   r_start = drive_sensor_right();
 
   drive_mode_set(BOOMERANG);
+  */
 }

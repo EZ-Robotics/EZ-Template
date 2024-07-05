@@ -343,6 +343,8 @@ class Drive {
   void drive_odom_enable(bool input);
   pose odom_target = {0, 0, 0};
   pose odom_current = {0, 0, 0};
+  pose odom_second_to_last = {0, 0, 0};
+  pose odom_target_start = {0, 0, 0};
   std::vector<odom> pp_movements;
   std::vector<int> injected_pp_index;
   int pp_index = 0;
@@ -367,8 +369,9 @@ class Drive {
   double SPACING = 0.5;
   double LOOK_AHEAD = 7.0;
   // bool is_past_target_using_xy = false;
-  void pid_wait_until_pp(int index);
+  void pid_wait_until_index(int index);
   void pid_wait_until_point(pose target);
+  void pid_wait_until(pose target);
   double dlead = 0.375;
   void pid_odom_boomerang_set(odom imovement, bool slew_on = false);
   //  Odometry
@@ -388,7 +391,7 @@ class Drive {
   void pp_task();
   PID xyPID;
   PID aPID;
-  e_mode last_pp_mode = DISABLE;
+  bool was_last_pp_mode_boomerang = false;
 
   /////
   //

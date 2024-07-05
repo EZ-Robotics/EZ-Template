@@ -72,8 +72,7 @@ enum e_mode { DISABLE = 0,
               TURN_TO_POINT = 3,
               DRIVE = 4,
               POINT_TO_POINT = 5,
-              PURE_PURSUIT = 6,
-              BOOMERANG = 7 };
+              PURE_PURSUIT = 6 };
 
 /**
  * Enum for turn types

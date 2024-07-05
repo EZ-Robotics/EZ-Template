@@ -30,9 +30,6 @@ void Drive::ez_auto_task() {
         case PURE_PURSUIT:
           pp_task();
           break;
-        case BOOMERANG:
-          boomerang_task();
-          break;
         case DISABLE:
           break;
         default:
@@ -225,7 +222,7 @@ void Drive::ptp_task() {
 }
 
 void Drive::boomerang_task() {
-  int target_index = mode == BOOMERANG ? 1 : pp_index;
+  int target_index = pp_index;
   pose target = pp_movements[target_index].target;
 
   // target.theta += current_drive_direction == REV ? 180 : 0;  // Decide if going fwd or rev
@@ -241,7 +238,6 @@ void Drive::boomerang_task() {
 
   if (util::distance_to_point(target, odom_current) < LOOK_AHEAD / 2.0) {
     temp = target;
-    if (mode == BOOMERANG) pp_index = 1;
   }
 
   if (odom_target.x != temp.x || odom_target.y != temp.y) {

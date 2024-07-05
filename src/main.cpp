@@ -125,24 +125,38 @@ void autonomous() {
     chassis.pid_odom_boomerang_set({{0, 0, 0}, rev, 110});
     chassis.pid_wait();
     */
+  /*
+int speed = 60;
+std::vector<odom> move = {{{0, 12, 12.5}, fwd, speed},
+                          {{0.5, 12}, fwd, speed},
+                          {{1.5, 18}, fwd, speed}};
+print_(move);
+print_(chassis.inject_points(move));
+print_(chassis.smooth_path(chassis.inject_points(move)));
+
+chassis.pid_odom_pp_set(move);
+
+chassis.pid_wait_until_pp(0);
+chassis.drive_set(0, 0);
+
+printf("\n\n");
+for (auto i : chassis.injected_pp_index) {
+  printf("%i\n", i);
+}
+printf("\n\n");
+*/
   int speed = 60;
-  std::vector<odom> move = {{{0, 12, 12.5}, fwd, speed},
-                            {{0.5, 12}, fwd, speed},
-                            {{1.5, 18}, fwd, speed}};
-  print_(move);
-  print_(chassis.inject_points(move));
-  print_(chassis.smooth_path(chassis.inject_points(move)));
-
-  chassis.pid_odom_pp_set(move);
-
-  chassis.pid_wait_until_pp(0);
-  chassis.drive_set(0, 0);
-
-  printf("\n\n");
-  for (auto i : chassis.injected_pp_index) {
-    printf("%i\n", i);
-  }
-  printf("\n\n");
+  // chassis.pid_odom_smooth_pp_set({{{0, 6}, fwd, speed},
+  //                                 {{0, 10}, fwd, speed}});
+  // print_(chassis.pp_movements);
+  // printf("\n\n");
+  // for (auto i : chassis.injected_pp_index) {
+  //  printf("%i\n", i);
+  // }
+  // printf("\n\n %i\n", chassis.injected_pp_index.size() - 1);
+  // chassis.pid_wait_until_pp(1);
+  chassis.pid_odom_boomerang_set({{0, 6, 10}, fwd, speed});
+  chassis.pid_wait_quick_chain();
 
   // ez::as::auton_selector.selected_auton_call();  // Calls selected auton from autonomous selector
 }
