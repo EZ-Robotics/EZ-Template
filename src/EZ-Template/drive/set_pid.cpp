@@ -377,7 +377,8 @@ void Drive::raw_pid_odom_ptp_set(odom imovement, bool slew_on) {
       printf(" ");
     printf("Odom Motion Started... Target Coordinates: (%.2f, %.2f, %.2f) \n", imovement.target.x, imovement.target.y, imovement.target.theta);
   }
-  last_pp_mode = pp_movements[pp_index].target.theta != ANGLE_NOT_SET ? BOOMERANG : PURE_PURSUIT;
+  if (mode == PURE_PURSUIT)
+    last_pp_mode = pp_movements[pp_index].target.theta != ANGLE_NOT_SET ? BOOMERANG : PURE_PURSUIT;
 
   // Get the starting point for if we're positive or negative.  This is used to find if we've past target
   past_target = util::sgn(is_past_target(odom_target, odom_current));
@@ -398,6 +399,9 @@ void Drive::raw_pid_odom_ptp_set(odom imovement, bool slew_on) {
 
 // Move to point
 void Drive::pid_odom_ptp_set(odom imovement, bool slew_on) {
+  xyPID.timers_reset();
+  aPID.timers_reset();
+
   // This is used for wait_until
   l_start = drive_sensor_left();
   r_start = drive_sensor_right();
@@ -428,6 +432,9 @@ void Drive::raw_pid_odom_pp_set(std::vector<odom> imovements, bool slew_on) {
 
 // Pure pursuit
 void Drive::pid_odom_pp_set(std::vector<odom> imovements, bool slew_on) {
+  xyPID.timers_reset();
+  aPID.timers_reset();
+
   std::vector<odom> input = imovements;
   input.insert(input.begin(), {{{odom_current.x, odom_current.y, ANGLE_NOT_SET}, imovements[0].turn_type, imovements[0].max_xy_speed}});
 
@@ -452,7 +459,7 @@ void Drive::pid_odom_pp_set(std::vector<odom> imovements, bool slew_on) {
   injected_pp_index.clear();
   injected_pp_index.push_back(0);
   for (int i = 0; i < input.size(); i++) {
-    if (input[i].target.theta == ANGLE_NOT_SET && i != 0)
+    if (i != 0 && input[i - 1].target.theta == ANGLE_NOT_SET)
       injected_pp_index.push_back(i);
   }
 
@@ -462,6 +469,9 @@ void Drive::pid_odom_pp_set(std::vector<odom> imovements, bool slew_on) {
 
 // Smooth injected pure pursuit
 void Drive::pid_odom_injected_pp_set(std::vector<ez::odom> imovements, bool slew_on) {
+  xyPID.timers_reset();
+  aPID.timers_reset();
+
   if (print_toggle) printf("Injected ");
   std::vector<odom> input_path = inject_points(imovements);
   raw_pid_odom_pp_set(input_path, slew_on);
@@ -469,6 +479,9 @@ void Drive::pid_odom_injected_pp_set(std::vector<ez::odom> imovements, bool slew
 
 // Smooth injected pure pursuit
 void Drive::pid_odom_smooth_pp_set(std::vector<odom> imovements, bool slew_on) {
+  xyPID.timers_reset();
+  aPID.timers_reset();
+
   if (print_toggle) printf("Smooth Injected ");
   std::vector<odom> input_path = smooth_path(inject_points(imovements), 0.75, 0.03, 0.0001);
   raw_pid_odom_pp_set(input_path, slew_on);
@@ -476,6 +489,9 @@ void Drive::pid_odom_smooth_pp_set(std::vector<odom> imovements, bool slew_on) {
 
 // Pose to Pose
 void Drive::pid_odom_boomerang_set(odom imovement, bool slew_on) {
+  xyPID.timers_reset();
+  aPID.timers_reset();
+
   if (print_toggle) printf("Boomerang ");
   std::vector<odom> imovements;
 

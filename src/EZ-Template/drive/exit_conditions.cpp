@@ -131,8 +131,10 @@ void Drive::pid_wait() {
         xy_exit = xy_exit != RUNNING ? xy_exit : xyPID.exit_condition({left_motors[0], right_motors[0]});
         a_exit = a_exit != RUNNING ? a_exit : aPID.exit_condition({left_motors[0], right_motors[0]});
 
-        if (xy_exit == mA_EXIT || xy_exit == VELOCITY_EXIT || a_exit == mA_EXIT || a_exit == VELOCITY_EXIT)
+        if ((xy_exit == mA_EXIT || xy_exit == VELOCITY_EXIT) && (a_exit == mA_EXIT || a_exit == VELOCITY_EXIT)) {
+          if (print_toggle) std::cout << "  XY: " << exit_to_string(xy_exit) << " Exited early, error: " << xyPID.error << ".   Angle: " << exit_to_string(a_exit) << " Exited early, error: " << aPID.error << ".\n";
           break;
+        }
 
         pros::delay(util::DELAY_TIME);
       }
@@ -345,6 +347,40 @@ void Drive::pid_wait_until(double target) {
   }
 }
 
+void Drive::pid_wait_until_point(pose target) {
+  pros::delay(10);
+
+  int xy_sgn = util::sgn(is_past_target(target, odom_current));
+
+  exit_output xy_exit = RUNNING;
+  exit_output a_exit = RUNNING;
+
+  while (true) {
+    xyPID.velocity_sensor_secondary_set(drive_imu_accel_get());
+    aPID.velocity_sensor_secondary_set(drive_imu_accel_get());
+    xy_exit = xy_exit != RUNNING ? xy_exit : xyPID.exit_condition({left_motors[0], right_motors[0]});
+    a_exit = a_exit != RUNNING ? a_exit : aPID.exit_condition({left_motors[0], right_motors[0]});
+
+    if ((xy_exit == mA_EXIT || xy_exit == VELOCITY_EXIT) && (a_exit == mA_EXIT || a_exit == VELOCITY_EXIT)) {
+      if (print_toggle) {
+        std::cout << "  XY: " << exit_to_string(xy_exit) << " Wait Until Exit Failsafe, triggered at (" << odom_current.x << ", " << odom_current.y << ") instead of (" << target.x << ", " << target.y << ")\n";
+        xyPID.timers_reset();
+        aPID.timers_reset();
+      }
+      return;
+    }
+
+    if (util::sgn((is_past_target(target, odom_current))) != xy_sgn) {
+      if (print_toggle) printf("  XY Wait Until Exit Success, triggered at (%.2f, %.2f).  Target: (%.2f, %.2f)\n", odom_current.x, odom_current.y, target.x, target.y);
+      xyPID.timers_reset();
+      aPID.timers_reset();
+      return;
+    }
+
+    pros::delay(util::DELAY_TIME);
+  }
+}
+
 // wait for pp
 void Drive::pid_wait_until_pp(int index) {
   // Let the PID run at least 1 iteration
@@ -353,23 +389,29 @@ void Drive::pid_wait_until_pp(int index) {
   if (index > injected_pp_index.size() || index < 0)
     printf("  Wait Until PP Error!  Index %i is not within range!  %i is max!\n", index, injected_pp_index.size());
 
+  index += 1;
+
   exit_output xy_exit = RUNNING;
   exit_output a_exit = RUNNING;
-  while (pp_index < injected_pp_index[index + 1]) {
+  while (pp_index < injected_pp_index[index]) {
     xyPID.velocity_sensor_secondary_set(drive_imu_accel_get());
     aPID.velocity_sensor_secondary_set(drive_imu_accel_get());
     xy_exit = xy_exit != RUNNING ? xy_exit : xyPID.exit_condition({left_motors[0], right_motors[0]});
     a_exit = a_exit != RUNNING ? a_exit : aPID.exit_condition({left_motors[0], right_motors[0]});
 
-    if (xy_exit == mA_EXIT || xy_exit == VELOCITY_EXIT || a_exit == mA_EXIT || a_exit == VELOCITY_EXIT)
+    if ((xy_exit == mA_EXIT || xy_exit == VELOCITY_EXIT) && (a_exit == mA_EXIT || a_exit == VELOCITY_EXIT)) {
+      if (print_toggle) {
+        std::cout << "  XY: " << exit_to_string(xy_exit) << " Wait Until Exit Failsafe, triggered at (" << odom_current.x << ", " << odom_current.y << ") instead of (" << pp_movements[index].target.x << ", " << pp_movements[index].target.y << ")\n";
+        xyPID.timers_reset();
+        aPID.timers_reset();
+      }
       break;
-
-    printf("%i < %i\n", pp_index, injected_pp_index[index]);
+    }
 
     pros::delay(util::DELAY_TIME);
   }
 
-  if (print_toggle) printf("  Wait Until PP at (%.2f, %.2f)\n", pp_movements[pp_index].target.x, pp_movements[pp_index].target.y);
+  pid_wait_until_point(pp_movements[injected_pp_index[index]].target);
 }
 
 // Pid wait, but quickly :)

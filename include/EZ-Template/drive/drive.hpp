@@ -368,6 +368,7 @@ class Drive {
   double LOOK_AHEAD = 7.0;
   // bool is_past_target_using_xy = false;
   void pid_wait_until_pp(int index);
+  void pid_wait_until_point(pose target);
   double dlead = 0.375;
   void pid_odom_boomerang_set(odom imovement, bool slew_on = false);
   //  Odometry

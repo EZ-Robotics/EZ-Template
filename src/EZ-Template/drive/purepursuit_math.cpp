@@ -98,10 +98,10 @@ std::vector<odom> Drive::inject_points(std::vector<ez::odom> imovements) {
                       input[i].turn_type,
                       input[i].max_xy_speed});
     output_index++;
+
+    // don't let the injected point after boomerang in
     if (i != 0 && input[i - 1].target.theta == ANGLE_NOT_SET) {
-      if (input[i].target.theta == ANGLE_NOT_SET) {
-        injected_pp_index.push_back(output_index);
-      }
+      injected_pp_index.push_back(output_index);
     }
 
     // Add the injected points
@@ -123,11 +123,6 @@ std::vector<odom> Drive::inject_points(std::vector<ez::odom> imovements) {
                             input[i + 1].turn_type,
                             input[i + 1].max_xy_speed});
           output_index++;
-
-          // don't allow boomerang points in!
-          if (j == 0 && input[i].target.theta != ANGLE_NOT_SET) {
-            injected_pp_index.push_back(output_index);
-          }
         }
       } else {
         j = num_of_points_that_fit;
@@ -152,6 +147,7 @@ std::vector<odom> Drive::smooth_path(std::vector<odom> ipath, double weight_smoo
   double new_path[500][3];
   std::vector<bool> dont_touch;
   int t = 0;
+  bool allow_injecting = false;
 
   // Convert odom to array
   for (int i = 0; i < ipath.size(); i++) {
@@ -159,7 +155,13 @@ std::vector<odom> Drive::smooth_path(std::vector<odom> ipath, double weight_smoo
     path[i][1] = new_path[i][1] = ipath[i].target.y;
     path[i][2] = new_path[i][2] = ipath[i].target.theta;
 
-    if (ipath[i].target.theta != ANGLE_NOT_SET || (t <= LOOK_AHEAD * 2 && t != 0)) {
+    // A one time flag to stop points from being injected for LOOK_AHEAD from current
+    // https://github.com/EZ-Robotics/EZ-Template/issues/152
+    if (util::distance_to_point(ipath[i].target, ipath[0].target) >= LOOK_AHEAD)
+      allow_injecting = true;
+
+    // Don't touch that extends after boomerang, or that are super close to start
+    if ((ipath[i].target.theta != ANGLE_NOT_SET || (t <= LOOK_AHEAD * 2 && t != 0)) || !allow_injecting) {
       dont_touch.push_back(true);
       t++;
     } else {
