@@ -14,6 +14,8 @@ void Drive::pid_drive_exit_condition_set(int p_small_exit_time, double p_small_e
   rightPID.exit_condition_set(p_small_exit_time, p_small_error, p_big_exit_time, p_big_error, p_velocity_exit_time, p_mA_timeout);
   leftPID.velocity_sensor_secondary_toggle_set(use_imu);
   rightPID.velocity_sensor_secondary_toggle_set(use_imu);
+  internal_leftPID.exit = leftPID.exit;
+  internal_rightPID.exit = rightPID.exit;
 }
 
 void Drive::pid_drive_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QLength p_small_error, okapi::QTime p_big_exit_time, okapi::QLength p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout, bool use_imu) {
@@ -511,7 +513,7 @@ void Drive::pid_wait_quick_chain() {
       odom_target = target;
     else
       pp_movements.push_back({target,
-                              pp_movements[pp_movements.size() - 1].turn_type,
+                              pp_movements[pp_movements.size() - 1].drive_direction,
                               pp_movements[pp_movements.size() - 1].max_xy_speed});
 
   } else {

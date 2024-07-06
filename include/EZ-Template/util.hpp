@@ -77,7 +77,7 @@ enum e_mode { DISABLE = 0,
 /**
  * Enum for turn types
  */
-enum turn_types { FWD = 0,
+enum drive_directions { FWD = 0,
                   FORWARD = FWD,
                   fwd = FWD,
                   forward = FWD,
@@ -102,7 +102,7 @@ typedef struct pose {
  */
 typedef struct odom {
   pose target;
-  turn_types turn_type;
+  drive_directions drive_direction;
   int max_xy_speed;
 } odom;
 

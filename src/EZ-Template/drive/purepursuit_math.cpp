@@ -62,7 +62,7 @@ std::vector<odom> Drive::inject_points(std::vector<ez::odom> imovements) {
 
   // Create new vector that includes the starting point
   std::vector<odom> input = imovements;
-  input.insert(input.begin(), {{{odom_current.x, odom_current.y, ANGLE_NOT_SET}, imovements[0].turn_type, imovements[0].max_xy_speed}});
+  input.insert(input.begin(), {{{odom_current.x, odom_current.y, ANGLE_NOT_SET}, imovements[0].drive_direction, imovements[0].max_xy_speed}});
 
   int t = 0;
   for (int i = 0; i < input.size() - 1; i++) {
@@ -71,11 +71,11 @@ std::vector<odom> Drive::inject_points(std::vector<ez::odom> imovements) {
     if (input[j].target.theta != ANGLE_NOT_SET) {
       // Calculate the new point with known information: hypot and angle
       double angle_to_point = input[j].target.theta;
-      int dir = input[j].turn_type == REV ? -1 : 1;
+      int dir = input[j].drive_direction == REV ? -1 : 1;
       pose new_point = util::vector_off_point(LOOK_AHEAD * dir, {input[j].target.x, input[j].target.y, angle_to_point});
       new_point.theta = ANGLE_NOT_SET;
 
-      input.insert(input.cbegin() + j + 1, {new_point, input[j].turn_type, input[j].max_xy_speed});
+      input.insert(input.cbegin() + j + 1, {new_point, input[j].drive_direction, input[j].max_xy_speed});
 
       t++;
     }
@@ -95,7 +95,7 @@ std::vector<odom> Drive::inject_points(std::vector<ez::odom> imovements) {
     // Add parent point
     // Make sure the robot is looking at next point
     output.push_back({{input[i].target.x, input[i].target.y, input[i].target.theta},
-                      input[i].turn_type,
+                      input[i].drive_direction,
                       input[i].max_xy_speed});
     output_index++;
 
@@ -120,7 +120,7 @@ std::vector<odom> Drive::inject_points(std::vector<ez::odom> imovements) {
         if (util::distance_to_point(new_point, input[i + 1].target) >= SPACING && allow_injecting) {
           // Push new point to vector
           output.push_back({{new_point.x, new_point.y, ANGLE_NOT_SET},
-                            input[i + 1].turn_type,
+                            input[i + 1].drive_direction,
                             input[i + 1].max_xy_speed});
           output_index++;
         }
@@ -128,9 +128,6 @@ std::vector<odom> Drive::inject_points(std::vector<ez::odom> imovements) {
         j = num_of_points_that_fit;
       }
     }
-    // Make sure the final point is there
-    // output.push_back(input[i + 1]);
-    // output_index++;
   }
   output.push_back(input.back());
   output_index++;

@@ -79,15 +79,6 @@ void competition_initialize() {
   // . . .
 }
 
-void print_(std::vector<odom> input) {
-  int t = 0;
-  for (auto i : input) {
-    printf("%i - (%.2f, %.2f, %.2f)\n", t, i.target.x, i.target.y, i.target.theta);
-    t++;
-  }
-  printf("\n\n");
-}
-
 /**
  * Runs the user autonomous code. This function will be started in its own task
  * with the default priority and stack size whenever the robot is enabled via
@@ -106,57 +97,38 @@ void autonomous() {
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
   chassis.odom_pose_set({0, 0, 0});
   chassis.drive_width_set(8.93);  // just use a tape measure
-  chassis.dlead = 0.375;
+  chassis.dlead = 0.5;
   chassis.odometry_enabled = true;
 
-  // chassis.pid_drive_toggle(false);
-  // chassis.pid_print_toggle(false);
-
   /*
-    std::vector<odom> move = {{{0, 16, 45}, fwd, 110},
-                              {{16, 16}, fwd, 110}};
-    print_(move);
-    print_(chassis.inject_points(move));
+  chassis.pid_odom_set({{{0, 16}, fwd, 110},
+                        {{16, 16}, fwd, 110},
+                        {{16, 0}, fwd, 110}},
+                       false);
+  chassis.pid_wait();
 
-    chassis.pid_odom_smooth_pp_set({{{0, 16, 45}, fwd, 110},
-                                    {{16, 16}, fwd, 110}});
-    chassis.pid_wait();
+  chassis.pid_odom_set({{{16, 16}, rev, 110},
+                        {{0, 16}, rev, 110},
+                        {{0, 0}, rev, 110}},
+                       false);
+  chassis.pid_wait();
+  */
 
-    chassis.pid_odom_boomerang_set({{0, 0, 0}, rev, 110});
-    chassis.pid_wait();
-    */
-  /*
-int speed = 60;
-std::vector<odom> move = {{{0, 12, 12.5}, fwd, speed},
-                          {{0.5, 12}, fwd, speed},
-                          {{1.5, 18}, fwd, speed}};
-print_(move);
-print_(chassis.inject_points(move));
-print_(chassis.smooth_path(chassis.inject_points(move)));
+  int speed = 90;
+  double dist = 12;
+  chassis.pid_odom_set({{{0, dist}, fwd, speed},
+                        {{dist, dist}, fwd, speed}},
+                       false);
+  chassis.pid_wait();
 
-chassis.pid_odom_pp_set(move);
+  chassis.pid_odom_set({{{0, dist}, rev, speed},
+                        {{0, 0}, rev, speed}},
+                       false);
+  chassis.pid_wait();
+  printf("(%.2f, %.2f, %.2f)\n", chassis.odom_current.x, chassis.odom_current.y, chassis.odom_current.theta);
 
-chassis.pid_wait_until_pp(0);
-chassis.drive_set(0, 0);
-
-printf("\n\n");
-for (auto i : chassis.injected_pp_index) {
-  printf("%i\n", i);
-}
-printf("\n\n");
-*/
-  int speed = 60;
-  // chassis.pid_odom_smooth_pp_set({{{0, 6}, fwd, speed},
-  //                                 {{0, 10}, fwd, speed}});
-  // print_(chassis.pp_movements);
-  // printf("\n\n");
-  // for (auto i : chassis.injected_pp_index) {
-  //  printf("%i\n", i);
-  // }
-  // printf("\n\n %i\n", chassis.injected_pp_index.size() - 1);
-  // chassis.pid_wait_until_pp(1);
-  chassis.pid_odom_boomerang_set({{0, 6, 10}, fwd, speed});
-  chassis.pid_wait_quick_chain();
+  // chassis.pid_odom_set({{12, 12, 110}, fwd, 127});
+  // chassis.pid_wait();
 
   // ez::as::auton_selector.selected_auton_call();  // Calls selected auton from autonomous selector
 }

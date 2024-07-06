@@ -64,7 +64,7 @@ void Drive::drive_pid_task() {
   double r_drive_out = rightPID.output;
 
   // Scale leftPID and rightPID to slew (if slew is disabled, it returns max_speed)
-  double max_slew_out = fmin(slew_left.output(), slew_right.output());
+  double max_slew_out = fmax(slew_left.output(), slew_right.output());
   double faster_side = fmax(fabs(l_drive_out), fabs(r_drive_out));
   if (faster_side > max_slew_out) {
     l_drive_out = l_drive_out * (max_slew_out / faster_side);
@@ -79,7 +79,7 @@ void Drive::drive_pid_task() {
   double r_out = r_drive_out - imu_out;
 
   // Vector scaling when combining drive and imo
-  max_slew_out = fmin(slew_left.output(), slew_right.output());
+  max_slew_out = fmax(slew_left.output(), slew_right.output());
   faster_side = fmax(fabs(l_out), fabs(r_out));
   if (faster_side > max_slew_out) {
     l_out = l_out * (max_slew_out / faster_side);
@@ -165,11 +165,7 @@ void Drive::ptp_task() {
   // Compute slew
   slew_left.iterate(drive_sensor_left());
   slew_right.iterate(drive_sensor_right());
-  ///
-  ///// FIX THIS
-  ///
-  // double max_slew_out = fmin(slew_left.output(), slew_right.output());
-  double max_slew_out = max_speed;
+  double max_slew_out = fmax(slew_left.output(), slew_right.output());
 
   // Decide if we've past the target or not
   int dir = (current_drive_direction == REV ? -1 : 1);                                                    // If we're going backwards, add a -1
@@ -207,6 +203,7 @@ void Drive::ptp_task() {
   l_out = l_out * max_slew_out;
   r_out = r_out * max_slew_out;
 
+  // printf("left: %.2f   right: %.2f\n", slew_left.output(), slew_right.output());
   // printf("cos %.2f   max_slew_out %.2f      headingerr: %.2f\n", cos_scale, max_slew_out, aPID.target_get());
   // printf("lr(%.2f, %.2f)   xy_raw: %.2f   xy_out: %.2f   heading_out: %.2f      cos: %.2f   max_slew_out: %.2f\n", l_out, r_out, xyPID.output, xy_out, aPID.output, cos_scale, max_slew_out);
   // printf("xy(%.2f, %.2f, %.2f)   xyPID: %.2f   aPID: %.2f     dir: %i   sgn: %i   past_target: %i    is_past_target: %i   is_past_using_xy: %i      fake_xy(%.2f, %.2f, %.2f)\n", odom_current.x, odom_current.y, odom_current.theta, xyPID.target_get(), aPID.target_get(), dir, flipped, past_target, (int)is_past_target(odom_target, odom_current), is_past_target_using_xy, fake_x, fake_y, util::to_deg(fake_angle));
@@ -241,7 +238,7 @@ void Drive::boomerang_task() {
   }
 
   if (odom_target.x != temp.x || odom_target.y != temp.y) {
-    raw_pid_odom_ptp_set({temp, pp_movements[target_index].turn_type, pp_movements[target_index].max_xy_speed}, false);
+    raw_pid_odom_ptp_set({temp, pp_movements[target_index].drive_direction, pp_movements[target_index].max_xy_speed}, false);
   }
 
   // printf("cur(%.2f, %.2f, %.2f)   tar(%.2f, %.2f, %.2f)   h %.2f  \n", odom_current.x, odom_current.y, odom_current.theta, temp.x, temp.y, temp.theta, h);
