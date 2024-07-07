@@ -343,6 +343,9 @@ class Drive {
   void drive_odom_enable(bool input);
   pose odom_target = {0, 0, 0};
   pose odom_current = {0, 0, 0};
+  pose odom_second_to_last = {0, 0, 0};
+  pose odom_start = {0, 0, 0};
+  pose odom_target_start = {0, 0, 0};
   std::vector<odom> pp_movements;
   std::vector<int> injected_pp_index;
   int pp_index = 0;
@@ -353,8 +356,10 @@ class Drive {
   void odom_reset();
   bool imu_calibration_complete = false;
   double angle_rad = 0.0;
-  void pid_turn_set(pose itarget, turn_types dir, int speed, bool slew_on = false);
+  void pid_turn_set(pose itarget, drive_directions dir, int speed, bool slew_on = false);
   pose turn_to_point_target = {0, 0, 0};
+  void pid_odom_set(odom imovement, bool slew_on = false);
+  void pid_odom_set(std::vector<odom> imovements, bool slew_on = false);
   void pid_odom_ptp_set(odom imovement, bool slew_on = false);
   void pid_odom_pp_set(std::vector<odom> imovements, bool slew_on = false);
   void pid_odom_injected_pp_set(std::vector<odom> imovements, bool slew_on = false);
@@ -367,7 +372,9 @@ class Drive {
   double SPACING = 0.5;
   double LOOK_AHEAD = 7.0;
   // bool is_past_target_using_xy = false;
-  void pid_wait_until_pp(int index);
+  void pid_wait_until_index(int index);
+  void pid_wait_until_point(pose target);
+  void pid_wait_until(pose target);
   double dlead = 0.375;
   void pid_odom_boomerang_set(odom imovement, bool slew_on = false);
   //  Odometry
@@ -377,7 +384,7 @@ class Drive {
   /*double h = 0, h2 = 0*/;  // rad for big circle
   double last_theta = 0;
   // double Xx = 0, Yy = 0, Xy = 0, Yx = 0;
-  turn_types current_drive_direction = fwd;
+  drive_directions current_drive_direction = fwd;
   bool ptf1_running = false;
   std::vector<pose> find_point_to_face(pose current, pose target, bool set_global = false);
   void raw_pid_odom_ptp_set(odom imovement, bool slew_on);
@@ -387,6 +394,9 @@ class Drive {
   void pp_task();
   PID xyPID;
   PID aPID;
+  PID internal_leftPID;
+  PID internal_rightPID;
+  bool was_last_pp_mode_boomerang = false;
 
   /////
   //
