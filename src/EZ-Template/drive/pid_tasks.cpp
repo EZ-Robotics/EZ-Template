@@ -5,6 +5,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
 #include "EZ-Template/api.hpp"
+#include "EZ-Template/util.hpp"
 #include "pros/misc.hpp"
 
 using namespace ez;
@@ -12,7 +13,7 @@ using namespace ez;
 void Drive::ez_auto_task() {
   int timer = 0;
   while (true) {
-    if (timer >= ez::util::DELAY_TIME) {
+    if (timer >= util::DELAY_TIME) {
       // Autonomous PID
       switch (drive_mode_get()) {
         case DRIVE:
@@ -43,7 +44,7 @@ void Drive::ez_auto_task() {
 
     ez_tracking_task();
     pros::delay(1);
-    timer++;
+    timer += 1;
   }
 }
 
@@ -78,7 +79,7 @@ void Drive::drive_pid_task() {
   double l_out = l_drive_out + imu_out;
   double r_out = r_drive_out - imu_out;
 
-  // Vector scaling when combining drive and imo
+  // Vector scaling when combining drive and imu
   max_slew_out = fmax(slew_left.output(), slew_right.output());
   faster_side = fmax(fabs(l_out), fabs(r_out));
   if (faster_side > max_slew_out) {
@@ -176,38 +177,44 @@ void Drive::ptp_task() {
   xyPID.compute_error(temp_target * dir * flipped, odom_current.x + odom_current.y);
 
   // Compute angle
-  int add = current_drive_direction == REV ? 180 : 0;  // Decide if going fwd or rev
   pose ptf = point_to_face[!ptf1_running];
-  double a_target = util::absolute_angle_to_point(ptf, odom_current) + add;  // Calculate the point for angle to face
-  double wrapped_a_target = util::wrap_angle(a_target - drive_imu_get());    // Constrain error to -180 to 180
+  double a_target = util::absolute_angle_to_point(ptf, odom_current);      // Calculate the point for angle to face
+  a_target += current_drive_direction == REV ? 180 : 0;                    // Decide if going fwd or rev
+  double wrapped_a_target = util::wrap_angle(a_target - drive_imu_get());  // Constrain error to -180 to 180
   aPID.compute_error(wrapped_a_target, drive_imu_get());
 
   // Prioritize turning by scaling xy_out down
-  double cos_scale = cos(util::to_rad(aPID.target_get()));
-  double xy_out = util::clamp(xyPID.output, max_slew_out, -max_slew_out) * (cos_scale / 1.375);
-  double a_out = util::clamp(aPID.output, max_slew_out, -max_slew_out);
+  double xy_out = xyPID.output;
+  // xy_out = util::clamp(xy_out, max_slew_out, -max_slew_out);
+  xy_out *= cos(util::to_rad(aPID.error)) / 1.375;
+  double a_out = aPID.output;
+  // a_out = util::clamp(a_out, max_slew_out, -max_slew_out);
 
-  double forward = xy_out / 127.0;
-  double curve = a_out / 127.0;
-
-  double l_out = forward + curve;
-  double r_out = forward - curve;
-
-  // normalizes output
-  double faster_side = fmax(fabs(l_out), fabs(r_out));
-  if (faster_side > 1.0) {
-    l_out = l_out * (1.0 / faster_side);
-    r_out = r_out * (1.0 / faster_side);
+  // Scale xy_out and a_out to max speed
+  // this ensures no data is lost that would otherwise by lost in clamping
+  double faster_side = fmax(fabs(xy_out), fabs(a_out));
+  if (faster_side > max_slew_out) {
+    xy_out = xy_out * (max_slew_out / faster_side);
+    a_out = a_out * (max_slew_out / faster_side);
   }
 
-  l_out = l_out * max_slew_out;
-  r_out = r_out * max_slew_out;
+  // Combine heading and drive
+  double l_out = xy_out + a_out;
+  double r_out = xy_out - a_out;
 
-  // printf("left: %.2f   right: %.2f\n", slew_left.output(), slew_right.output());
+  // Vector scaling when combining drive and imu
+  // this ensures no data is lost that would otherwise by lost in clamping
+  faster_side = fmax(fabs(l_out), fabs(r_out));
+  if (faster_side > max_slew_out) {
+    l_out = l_out * (max_slew_out / faster_side);
+    r_out = r_out * (max_slew_out / faster_side);
+  }
+
+  // printf("lr out (%.2f, %.2f)   fwd curveZ(%.2f, %.2f)   lr slew (%.2f, %.2f)\n", l_out, r_out, xy_out, a_out, slew_left.output(), slew_right.output());
   // printf("cos %.2f   max_slew_out %.2f      headingerr: %.2f\n", cos_scale, max_slew_out, aPID.target_get());
-  // printf("lr(%.2f, %.2f)   xy_raw: %.2f   xy_out: %.2f   heading_out: %.2f      cos: %.2f   max_slew_out: %.2f\n", l_out, r_out, xyPID.output, xy_out, aPID.output, cos_scale, max_slew_out);
+  // printf("lr(%.2f, %.2f)   xy_raw: %.2f   xy_out: %.2f   heading_out: %.2f      max_slew_out: %.2f\n", l_out, r_out, xyPID.output, xy_out, aPID.output, max_slew_out);
   // printf("xy(%.2f, %.2f, %.2f)   xyPID: %.2f   aPID: %.2f     dir: %i   sgn: %i   past_target: %i    is_past_target: %i   is_past_using_xy: %i      fake_xy(%.2f, %.2f, %.2f)\n", odom_current.x, odom_current.y, odom_current.theta, xyPID.target_get(), aPID.target_get(), dir, flipped, past_target, (int)is_past_target(odom_target, odom_current), is_past_target_using_xy, fake_x, fake_y, util::to_deg(fake_angle));
-  // printf("xy(%.2f, %.2f, %.2f)   xyPID: %.2f   aPID: %.2f   ptf:(%.2f, %.2f)\n", odom_current.x, odom_current.y, odom_current.theta, xyPID.target_get(), aPID.target_get(), ptf.x, ptf.y);
+  // printf("xy(%.2f, %.2f, %.2f)   xyPID: %.2f   aPID: %.2f   ptf:(%.2f, %.2f)\n", odom_current.x, odom_current.y, odom_current.theta, xyPID.error, aPID.error, ptf.x, ptf.y);
 
   // Set motors
   if (drive_toggle)

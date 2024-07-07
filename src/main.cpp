@@ -96,39 +96,17 @@ void autonomous() {
   chassis.drive_sensor_reset();               // Reset drive sensors to 0
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
   chassis.odom_pose_set({0, 0, 0});
-  chassis.drive_width_set(8.93);  // just use a tape measure
+  chassis.drive_width_set(11);  // just use a tape measure
   chassis.dlead = 0.5;
   chassis.odometry_enabled = true;
 
-  /*
   chassis.pid_odom_set({{{0, 16}, fwd, 110},
-                        {{16, 16}, fwd, 110},
-                        {{16, 0}, fwd, 110}},
-                       false);
+                        {{17, 16}, fwd, 110}},
+                       true);
   chassis.pid_wait();
 
-  chassis.pid_odom_set({{{16, 16}, rev, 110},
-                        {{0, 16}, rev, 110},
-                        {{0, 0}, rev, 110}},
-                       false);
+  chassis.pid_odom_set({{0, 0, 0}, rev, 110}, true);
   chassis.pid_wait();
-  */
-
-  int speed = 90;
-  double dist = 12;
-  chassis.pid_odom_set({{{0, dist}, fwd, speed},
-                        {{dist, dist}, fwd, speed}},
-                       false);
-  chassis.pid_wait();
-
-  chassis.pid_odom_set({{{0, dist}, rev, speed},
-                        {{0, 0}, rev, speed}},
-                       false);
-  chassis.pid_wait();
-  printf("(%.2f, %.2f, %.2f)\n", chassis.odom_current.x, chassis.odom_current.y, chassis.odom_current.theta);
-
-  // chassis.pid_odom_set({{12, 12, 110}, fwd, 127});
-  // chassis.pid_wait();
 
   // ez::as::auton_selector.selected_auton_call();  // Calls selected auton from autonomous selector
 }

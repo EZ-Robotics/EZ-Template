@@ -398,6 +398,7 @@ void Drive::raw_pid_odom_ptp_set(odom imovement, bool slew_on) {
 void Drive::pid_odom_ptp_set(odom imovement, bool slew_on) {
   odom_second_to_last = odom_current;
   odom_target_start = imovement.target;
+  odom_start = odom_current;
 
   xyPID.timers_reset();
   aPID.timers_reset();
@@ -421,6 +422,7 @@ void Drive::pid_odom_ptp_set(odom imovement, bool slew_on) {
 void Drive::raw_pid_odom_pp_set(std::vector<odom> imovements, bool slew_on) {
   odom_second_to_last = imovements[imovements.size() - 2].target;
   odom_target_start = imovements[imovements.size() - 1].target;
+  odom_start = odom_current;
 
   was_last_pp_mode_boomerang = false;
 
@@ -513,7 +515,7 @@ void Drive::pid_odom_set(odom imovement, bool slew_on) {
   if (imovement.target.theta != ANGLE_NOT_SET)
     pid_odom_boomerang_set(imovement, slew_on);
   else
-    pid_odom_ptp_set({imovement}, slew_on);
+    pid_odom_injected_pp_set({imovement}, slew_on);
 }
 
 void Drive::pid_odom_set(std::vector<odom> imovements, bool slew_on) {

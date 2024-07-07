@@ -155,7 +155,7 @@ void Drive::drive_defaults_set() {
   std::cout << std::setprecision(2);
 
   // PID Constants
-  pid_heading_constants_set(8, 0, 50, 0);
+  pid_heading_constants_set(7, 0, 45, 0);
   pid_drive_constants_set(20, 0, 100, 0);
   pid_turn_constants_set(3, 0.05, 20, 15);
   pid_swing_constants_set(6, 0, 65);

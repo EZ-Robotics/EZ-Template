@@ -100,11 +100,22 @@ void autonomous() {
   chassis.dlead = 0.5;
   chassis.odometry_enabled = true;
 
-  chassis.pid_odom_smooth_pp_set({{{0, 16, 45}, fwd, 110},
-                                  {{16, 16}, fwd, 110}});
+  /*
+  chassis.pid_odom_set({{{0, 16}, fwd, 110},
+                        {{16, 16}, fwd, 110}},
+                       true);
   chassis.pid_wait();
 
-  chassis.pid_odom_boomerang_set({{0, 0, 0}, rev, 110});
+  chassis.pid_odom_set({{0, 0, 0}, rev, 110}, true);
+  chassis.pid_wait();
+  */
+
+  chassis.pid_odom_smooth_pp_set({{{0, 16}, fwd, 110},
+                                  {{16, 16}, fwd, 110}},
+                                 true);
+  chassis.pid_wait();
+
+  chassis.pid_odom_boomerang_set({{0, 0, 0}, rev, 110}, true);
   chassis.pid_wait();
 
   // ez::as::auton_selector.selected_auton_call();  // Calls selected auton from autonomous selector

@@ -14,7 +14,7 @@ const int SWING_SPEED = 90;
 // Constants
 ///
 void default_constants() {
-  chassis.pid_heading_constants_set(8, 0, 50);
+  chassis.pid_heading_constants_set(7, 0, 45);
   chassis.pid_drive_constants_set(20, 0, 100);
   chassis.pid_turn_constants_set(3, 0.05, 20, 15);
   chassis.pid_swing_constants_set(6, 0, 65);
@@ -30,8 +30,8 @@ void default_constants() {
   chassis.pid_drive_chain_constant_set(3_in);
 
   chassis.slew_turn_constants_set(3_deg, 70);
-  chassis.slew_drive_constants_set(3_in, 80);
-  chassis.slew_drive_constants_set(3_in, 80);
+  chassis.slew_drive_constants_set(3_in, 70);
+  chassis.slew_swing_constants_set(3_in, 80);
 }
 
 ///

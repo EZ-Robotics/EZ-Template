@@ -344,6 +344,7 @@ class Drive {
   pose odom_target = {0, 0, 0};
   pose odom_current = {0, 0, 0};
   pose odom_second_to_last = {0, 0, 0};
+  pose odom_start = {0, 0, 0};
   pose odom_target_start = {0, 0, 0};
   std::vector<odom> pp_movements;
   std::vector<int> injected_pp_index;
