@@ -164,8 +164,8 @@ void Drive::drive_defaults_set() {
 
   // Slew constants
   slew_turn_constants_set(3_deg, 70);
-  slew_drive_constants_set(3_in, 80);
-  slew_drive_constants_set(3_in, 80);
+  slew_drive_constants_set(3_in, 70);
+  slew_swing_constants_set(3_in, 80);
 
   // Exit condition constants
   pid_turn_exit_condition_set(80_ms, 3_deg, 250_ms, 7_deg, 500_ms, 500_ms);

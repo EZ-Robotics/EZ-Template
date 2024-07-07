@@ -30,8 +30,8 @@ void default_constants() {
   chassis.pid_drive_chain_constant_set(3_in);
 
   chassis.slew_turn_constants_set(3_deg, 70);
-  chassis.slew_drive_constants_set(3_in, 80);
-  chassis.slew_drive_constants_set(3_in, 80);
+  chassis.slew_drive_constants_set(3_in, 70);
+  chassis.slew_swing_constants_set(3_in, 80);
 }
 
 ///

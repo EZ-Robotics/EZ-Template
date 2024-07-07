@@ -96,8 +96,8 @@ void autonomous() {
   chassis.drive_sensor_reset();               // Reset drive sensors to 0
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
   chassis.odom_pose_set({0, 0, 0});
-  chassis.drive_width_set(8.93);  // just use a tape measure
-  chassis.dlead = 0.375;
+  chassis.drive_width_set(11);  // just use a tape measure
+  chassis.dlead = 0.5;
   chassis.odometry_enabled = true;
 
   chassis.pid_odom_smooth_pp_set({{{0, 16, 45}, fwd, 110},
@@ -149,8 +149,8 @@ void opcontrol() {
       chassis.pid_tuner_iterate();  // Allow PID Tuner to iterate
     }
 
-    // chassis.opcontrol_tank();  // Tank control
-    chassis.opcontrol_arcade_standard(ez::SPLIT);  // Standard split arcade
+    chassis.opcontrol_tank();  // Tank control
+    // chassis.opcontrol_arcade_standard(ez::SPLIT);   // Standard split arcade
     // chassis.opcontrol_arcade_standard(ez::SINGLE);  // Standard single arcade
     // chassis.opcontrol_arcade_flipped(ez::SPLIT);    // Flipped split arcade
     // chassis.opcontrol_arcade_flipped(ez::SINGLE);   // Flipped single arcade

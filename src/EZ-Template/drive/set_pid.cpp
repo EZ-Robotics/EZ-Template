@@ -357,7 +357,7 @@ void Drive::raw_pid_odom_ptp_set(odom imovement, bool slew_on) {
   PID::Constants pid_consts;
   slew::Constants slew_consts;
   PID::Constants angle_consts = headingPID.constants_get();
-  if (imovement.drive_direction == REV) {
+  if (current_drive_direction == REV) {
     pid_consts = backward_drivePID.constants_get();
     slew_consts = slew_backward.constants_get();
 
@@ -386,16 +386,10 @@ void Drive::raw_pid_odom_ptp_set(odom imovement, bool slew_on) {
   // Get the starting point for if we're positive or negative.  This is used to find if we've past target
   past_target = util::sgn(is_past_target(odom_target, odom_current));
 
-  // Initialize slew
-  int dir = current_drive_direction == REV ? -1 : 1;  // If we're going backwards, add a -1
-  double dist_to_target = util::distance_to_point(odom_target, odom_current) * dir;
-  dist_to_target = dist_to_target < slew_consts.distance_to_travel && mode == PURE_PURSUIT ? slew_consts.distance_to_travel : dist_to_target;
-  slew_left.initialize(slew_on, max_speed, dist_to_target + l_start, l_start);
-  slew_right.initialize(slew_on, max_speed, dist_to_target + r_start, r_start);
-
   // This is used for wait_until
-  leftPID.target_set(l_start + dist_to_target);
-  rightPID.target_set(l_start + dist_to_target);
+  int dir = current_drive_direction == REV ? -1 : 1;  // If we're going backwards, add a -1
+  leftPID.target_set(l_start + (LOOK_AHEAD * dir));
+  rightPID.target_set(l_start + (LOOK_AHEAD * dir));
   leftPID.exit = xyPID.exit;  // Switch over to xy pid exits
   rightPID.exit = xyPID.exit;
 }
@@ -408,11 +402,18 @@ void Drive::pid_odom_ptp_set(odom imovement, bool slew_on) {
   xyPID.timers_reset();
   aPID.timers_reset();
 
-  // This is used for wait_until
+  // This is used for wait_until and slew
   l_start = drive_sensor_left();
   r_start = drive_sensor_right();
 
   raw_pid_odom_ptp_set(imovement, slew_on);
+
+  // Initialize slew
+  int dir = current_drive_direction == REV ? -1 : 1;  // If we're going backwards, add a -1
+  double dist_to_target = util::distance_to_point(odom_target, odom_current) * dir;
+  slew_left.initialize(slew_on, max_speed, dist_to_target + l_start, l_start);
+  slew_right.initialize(slew_on, max_speed, dist_to_target + r_start, r_start);
+
   drive_mode_set(POINT_TO_POINT);
 }
 
@@ -432,9 +433,15 @@ void Drive::raw_pid_odom_pp_set(std::vector<odom> imovements, bool slew_on) {
 
   raw_pid_odom_ptp_set(pp_movements[pp_index], slew_on);
 
-  // This is used for wait_until
+  // This is used for wait_until and slew
   l_start = drive_sensor_left();
   r_start = drive_sensor_right();
+
+  // Initialize slew
+  int dir = current_drive_direction == REV ? -1 : 1;  // If we're going backwards, add a -1
+  double dist_to_target = util::distance_to_point(pp_movements.end()->target, odom_current) * dir;
+  slew_left.initialize(slew_on, max_speed, dist_to_target + l_start, l_start);
+  slew_right.initialize(slew_on, max_speed, dist_to_target + r_start, r_start);
 
   drive_mode_set(PURE_PURSUIT);
 }

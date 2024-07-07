@@ -45,15 +45,15 @@ void Drive::ez_tracking_task() {
   // while (true) {
   // printf("x: %.2f   y: %.2f   a: %.2f\n", odom_current.x, odom_current.y, odom_current.theta);
 
-  float l_current = drive_sensor_left();
+  // float l_current = drive_sensor_left();
   float r_current = drive_sensor_right();
   // c_current = get_raw_center();
 
-  float l_ = l_current - l_last;
+  // float l_ = l_current - l_last;
   float r_ = r_current - r_last;
   // float c = c_current - c_last;
 
-  l_last = l_current;
+  // l_last = l_current;
   r_last = r_current;
   // c_last = c_current;
 
@@ -63,7 +63,7 @@ void Drive::ez_tracking_task() {
   last_theta = current_global_theta;
 
   float beta = 0.0;
-  float h = l_;
+  float h = r_;
   if (theta != 0) {
     float radius_r = r_ / theta;
     beta = theta / 2.0;
