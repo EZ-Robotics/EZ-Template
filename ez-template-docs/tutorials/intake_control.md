@@ -58,9 +58,22 @@ inline pros::MotorGroup intake({10, -11});  // Negative port will reverse the m
 
 
 ## Button Control
-To move a motor we type `motor name = a number between -127 and 127;`.  So to make the intake spin at full speed forward, we would type `intake = 127;`.
+To move a motor we type `motor name.move(a number between -127 and 127);`.  So to make the intake spin at full speed forward, we would type `intake.move(127);`.
 
 EZ-Template has a controller object already made for you that you can access with `master`.  You can read controller inputs with `master.get_digital(DIGITAL_button)`.  With an if/else statement, we can have the intake go full speed forward when L1 is pressed, and go full speed backward when L2 is pressed.  When neither button is pressed the intake will stop moving.  
+```cpp
+if (master.get_digital(DIGITAL_L1)) {
+  intake.move(127);
+} 
+else if (master.get_digital(DIGITAL_L2)) {
+  intake.move(-127);
+} 
+else {
+  intake.move(0);
+}
+```
+
+Adding this into the default `opcontrol()` function looks like this.  
 ```cpp
 void opcontrol() {
   // This is preference to what you like to drive on
