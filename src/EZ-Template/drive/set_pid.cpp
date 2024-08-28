@@ -124,7 +124,11 @@ void Drive::drive_angle_set(okapi::QAngle p_angle) {
   drive_angle_set(angle);
 }
 
-void Drive::drive_mode_set(e_mode p_mode) { mode = p_mode; }
+void Drive::drive_mode_set(e_mode p_mode) {
+  mode = p_mode;
+  if (mode == DISABLE)
+    private_drive_set(0, 0);
+}
 e_mode Drive::drive_mode_get() { return mode; }
 
 void Drive::pid_turn_min_set(int min) { turn_min = abs(min); }
