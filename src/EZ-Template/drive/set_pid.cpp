@@ -192,10 +192,22 @@ void Drive::pid_drive_set(double target, int speed, bool slew_on, bool toggle_he
   drive_mode_set(DRIVE);
 }
 
+// Set pid using global slew
+void Drive::pid_drive_set(double target, int speed) {
+  bool slew_on = util::sgn(target) >= 0 ? slew_drive_forward_get() : slew_drive_backward_get();
+  pid_drive_set(target, speed, slew_on);
+}
+
 // Set drive PID
 void Drive::pid_drive_set(okapi::QLength p_target, int speed, bool slew_on, bool toggle_heading) {
   double target = p_target.convert(okapi::inch);  // Convert okapi unit to inches
   pid_drive_set(target, speed, slew_on, toggle_heading);
+}
+
+// Set drive PID with global slew and okapi units
+void Drive::pid_drive_set(okapi::QLength p_target, int speed) {
+  double target = p_target.convert(okapi::inch);  // Convert okapi unit to inches
+  pid_drive_set(target, speed);
 }
 
 // Raw Set Turn PID
@@ -221,9 +233,19 @@ void Drive::pid_turn_set(double target, int speed, bool slew_on) {
 }
 
 // Set turn PID
+void Drive::pid_turn_set(double target, int speed) {
+  pid_turn_set(target, speed, slew_turn_get());
+}
+
+// Set turn PID
 void Drive::pid_turn_set(okapi::QAngle p_target, int speed, bool slew_on) {
   double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
   pid_turn_set(target, speed, slew_on);
+}
+
+// Set turn PID
+void Drive::pid_turn_set(okapi::QAngle p_target, int speed) {
+  pid_turn_set(p_target, speed, slew_turn_get());
 }
 
 // Set relative turn PID
@@ -232,12 +254,20 @@ void Drive::pid_turn_relative_set(okapi::QAngle p_target, int speed, bool slew_o
   pid_turn_relative_set(target, speed, slew_on);
 }
 
+void Drive::pid_turn_relative_set(okapi::QAngle p_target, int speed) {
+  pid_turn_relative_set(p_target, speed, slew_turn_get());
+}
+
 // Set relative turn PID
 void Drive::pid_turn_relative_set(double target, int speed, bool slew_on) {
   // Compute absolute target by adding to current heading
   double absolute_target = headingPID.target_get() + target;
   if (print_toggle) printf("Relative ");
   pid_turn_set(absolute_target, speed, slew_on);
+}
+
+void Drive::pid_turn_relative_set(double target, int speed) {
+  pid_turn_relative_set(target, speed, slew_turn_get());
 }
 
 // Raw Set Swing PID
@@ -266,7 +296,6 @@ void Drive::pid_swing_set(e_swing type, double target, int speed, int opposite_s
     slew_consts = slew_swing_backward.constants_get();
     slew_swing_using_angle = slew_swing_rev_using_angle;
     motion_chain_backward = true;
-
   } else {
     pid_consts = forward_drivePID.constants_get();
     pid_swing_consts = forward_swingPID.constants_get();
@@ -290,12 +319,54 @@ void Drive::pid_swing_set(e_swing type, double target, int speed, int opposite_s
   swing_opposite_speed = opposite_speed;
 
   // Initialize slew
-  double slew_tar = slew_swing_using_angle ? target : direction * 100;
   double current = slew_swing_using_angle ? chain_sensor_start : (current_swing == LEFT_SWING ? drive_sensor_left() : drive_sensor_right());
+  double slew_tar = slew_swing_using_angle ? target : direction * 100;
+  if (!slew_swing_using_angle) slew_tar += current;
   slew_swing.initialize(slew_on, max_speed, slew_tar, current);
 
   // Run task
   drive_mode_set(SWING);
+}
+
+void Drive::pid_swing_set(e_swing type, double target, int speed) {
+  // Figure out if going forward or backward
+  int side = type == ez::LEFT_SWING ? 1 : -1;
+  int direction = util::sgn((target - drive_imu_get()) * side);
+  bool slew_on = direction == 1 ? slew_swing_forward_get() : slew_swing_backward_get();
+  pid_swing_set(type, target, speed, 0, slew_on);
+}
+
+void Drive::pid_swing_set(e_swing type, double target, int speed, bool slew_on) {
+  pid_swing_set(type, target, speed, 0, slew_on);
+}
+
+void Drive::pid_swing_set(e_swing type, double target, int speed, int opposite_speed) {
+  // Figure out if going forward or backward
+  int side = type == ez::LEFT_SWING ? 1 : -1;
+  int direction = util::sgn((target - drive_imu_get()) * side);
+  bool slew_on = direction == 1 ? slew_swing_forward_get() : slew_swing_backward_get();
+  pid_swing_set(type, target, speed, opposite_speed, slew_on);
+}
+
+void Drive::pid_swing_set(e_swing type, okapi::QAngle p_target, int speed) {
+  double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
+  pid_swing_set(type, target, speed);
+}
+
+void Drive::pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, bool slew_on) {
+  double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
+  pid_swing_set(type, target, speed, slew_on);
+}
+
+// Set swing PID
+void Drive::pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed) {
+  double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
+
+  // Figure out if going forward or backward
+  int side = type == ez::LEFT_SWING ? 1 : -1;
+  int direction = util::sgn((target - drive_imu_get()) * side);
+  bool slew_on = direction == 1 ? slew_swing_forward_get() : slew_swing_backward_get();
+  pid_swing_set(type, target, speed, opposite_speed, slew_on);
 }
 
 // Set swing PID
@@ -304,9 +375,25 @@ void Drive::pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, int o
   pid_swing_set(type, target, speed, opposite_speed, slew_on);
 }
 
-// Set relative swing PID
-void Drive::pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed, bool slew_on) {
-  double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
+void Drive::pid_swing_relative_set(e_swing type, double target, int speed) {
+  // Figure out if going forward or backward
+  double absolute_heading = target + headingPID.target_get();
+  int side = type == ez::LEFT_SWING ? 1 : -1;
+  int direction = util::sgn((absolute_heading - drive_imu_get()) * side);
+  bool slew_on = direction == 1 ? slew_swing_forward_get() : slew_swing_backward_get();
+  pid_swing_relative_set(type, target, speed, 0, slew_on);
+}
+
+void Drive::pid_swing_relative_set(e_swing type, double target, int speed, bool slew_on) {
+  pid_swing_relative_set(type, target, speed, 0, slew_on);
+}
+
+void Drive::pid_swing_relative_set(e_swing type, double target, int speed, int opposite_speed) {
+  double absolute_heading = target + headingPID.target_get();
+  // Figure out if going forward or backward
+  int side = type == ez::LEFT_SWING ? 1 : -1;
+  int direction = util::sgn((absolute_heading - drive_imu_get()) * side);
+  bool slew_on = direction == 1 ? slew_swing_forward_get() : slew_swing_backward_get();
   pid_swing_relative_set(type, target, speed, opposite_speed, slew_on);
 }
 
@@ -315,6 +402,33 @@ void Drive::pid_swing_relative_set(e_swing type, double target, int speed, int o
   double absolute_target = headingPID.target_get() + target;
   if (print_toggle) printf("Relative ");
   pid_swing_set(type, absolute_target, speed, opposite_speed, slew_on);
+}
+
+// Set relative swing PID
+void Drive::pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed) {
+  double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
+  pid_swing_relative_set(type, target, speed);
+}
+
+void Drive::pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, bool slew_on) {
+  double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
+  pid_swing_relative_set(type, target, speed, slew_on);
+}
+
+void Drive::pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed) {
+  double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
+  double absolute_target = target + headingPID.target_get();
+
+  // Figure out if going forward or backward
+  int side = type == ez::LEFT_SWING ? 1 : -1;
+  int direction = util::sgn((absolute_target - drive_imu_get()) * side);
+  bool slew_on = direction == 1 ? slew_swing_forward_get() : slew_swing_backward_get();
+  pid_swing_relative_set(type, target, speed, opposite_speed, slew_on);
+}
+
+void Drive::pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed, bool slew_on) {
+  double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
+  pid_swing_relative_set(type, target, speed, opposite_speed, slew_on);
 }
 
 /////
@@ -336,6 +450,10 @@ void Drive::pid_turn_set(pose itarget, drive_directions dir, int speed, bool sle
   pid_turn_set(target, speed, slew_on);
 
   drive_mode_set(TURN_TO_POINT);
+}
+
+void Drive::pid_turn_set(pose itarget, drive_directions dir, int speed) {
+  pid_turn_set(itarget, dir, speed, slew_turn_get());
 }
 
 // Raw move to point
@@ -418,6 +536,12 @@ void Drive::pid_odom_ptp_set(odom imovement, bool slew_on) {
   drive_mode_set(POINT_TO_POINT);
 }
 
+// Move to point
+void Drive::pid_odom_ptp_set(odom imovement) {
+  bool slew_on = imovement.drive_direction == fwd ? slew_drive_forward_get() : slew_drive_backward_get();
+  pid_odom_ptp_set(imovement, slew_on);
+}
+
 // Raw pure pursuit
 void Drive::raw_pid_odom_pp_set(std::vector<odom> imovements, bool slew_on) {
   odom_second_to_last = imovements[imovements.size() - 2].target;
@@ -485,6 +609,11 @@ void Drive::pid_odom_pp_set(std::vector<odom> imovements, bool slew_on) {
   raw_pid_odom_pp_set(input, slew_on);
 }
 
+void Drive::pid_odom_pp_set(std::vector<odom> imovements) {
+  bool slew_on = imovements[0].drive_direction == fwd ? slew_drive_forward_get() : slew_drive_backward_get();
+  pid_odom_pp_set(imovements, slew_on);
+}
+
 // Smooth injected pure pursuit
 void Drive::pid_odom_injected_pp_set(std::vector<ez::odom> imovements, bool slew_on) {
   xyPID.timers_reset();
@@ -493,6 +622,11 @@ void Drive::pid_odom_injected_pp_set(std::vector<ez::odom> imovements, bool slew
   if (print_toggle) printf("Injected ");
   std::vector<odom> input_path = inject_points(imovements);
   raw_pid_odom_pp_set(input_path, slew_on);
+}
+
+void Drive::pid_odom_injected_pp_set(std::vector<ez::odom> imovements) {
+  bool slew_on = imovements[0].drive_direction == fwd ? slew_drive_forward_get() : slew_drive_backward_get();
+  pid_odom_injected_pp_set(imovements, slew_on);
 }
 
 // Smooth injected pure pursuit
@@ -505,10 +639,20 @@ void Drive::pid_odom_smooth_pp_set(std::vector<odom> imovements, bool slew_on) {
   raw_pid_odom_pp_set(input_path, slew_on);
 }
 
+void Drive::pid_odom_smooth_pp_set(std::vector<odom> imovements) {
+  bool slew_on = imovements[0].drive_direction == fwd ? slew_drive_forward_get() : slew_drive_backward_get();
+  pid_odom_smooth_pp_set(imovements, slew_on);
+}
+
 // Pose to Pose
 void Drive::pid_odom_boomerang_set(odom imovement, bool slew_on) {
   if (print_toggle) printf("Boomerang ");
   pid_odom_pp_set({imovement}, slew_on);
+}
+
+void Drive::pid_odom_boomerang_set(odom imovement) {
+  bool slew_on = imovement.drive_direction == fwd ? slew_drive_forward_get() : slew_drive_backward_get();
+  pid_odom_boomerang_set(imovement, slew_on);
 }
 
 void Drive::pid_odom_set(odom imovement, bool slew_on) {
@@ -518,6 +662,16 @@ void Drive::pid_odom_set(odom imovement, bool slew_on) {
     pid_odom_injected_pp_set({imovement}, slew_on);
 }
 
+void Drive::pid_odom_set(odom imovement) {
+  bool slew_on = imovement.drive_direction == fwd ? slew_drive_forward_get() : slew_drive_backward_get();
+  pid_odom_set(imovement, slew_on);
+}
+
 void Drive::pid_odom_set(std::vector<odom> imovements, bool slew_on) {
   pid_odom_smooth_pp_set(imovements, slew_on);
+}
+
+void Drive::pid_odom_set(std::vector<odom> imovements) {
+  bool slew_on = imovements[0].drive_direction == fwd ? slew_drive_forward_get() : slew_drive_backward_get();
+  pid_odom_set(imovements, slew_on);
 }

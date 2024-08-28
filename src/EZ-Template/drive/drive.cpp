@@ -447,3 +447,27 @@ void Drive::slew_swing_constants_set(okapi::QAngle distance, int min_speed) {
   slew_swing_constants_forward_set(distance, min_speed);
   slew_swing_constants_backward_set(distance, min_speed);
 }
+
+// Global enables for drive slew
+void Drive::slew_drive_set(bool slew_on) {
+  global_forward_drive_slew_enabled = slew_on;
+  global_backward_drive_slew_enabled = slew_on;
+}
+void Drive::slew_drive_forward_set(bool slew_on) { global_forward_drive_slew_enabled = slew_on; }
+bool Drive::slew_drive_forward_get() { return global_forward_drive_slew_enabled; }
+void Drive::slew_drive_backward_set(bool slew_on) { global_backward_drive_slew_enabled = slew_on; }
+bool Drive::slew_drive_backward_get() { return global_backward_drive_slew_enabled; }
+
+// Global enables for swing slew
+void Drive::slew_swing_set(bool slew_on) {
+  global_forward_swing_slew_enabled = slew_on;
+  global_backward_swing_slew_enabled = slew_on;
+}
+void Drive::slew_swing_forward_set(bool slew_on) { global_forward_swing_slew_enabled = slew_on; }
+bool Drive::slew_swing_forward_get() { return global_forward_swing_slew_enabled; }
+void Drive::slew_swing_backward_set(bool slew_on) { global_backward_swing_slew_enabled = slew_on; }
+bool Drive::slew_swing_backward_get() { return global_backward_swing_slew_enabled; }
+
+// Global enables for turn slew
+void Drive::slew_turn_set(bool slew_on) { global_turn_slew_enabled = slew_on; }
+bool Drive::slew_turn_get() { return global_turn_slew_enabled; }
