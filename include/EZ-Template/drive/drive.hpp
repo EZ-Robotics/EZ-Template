@@ -359,6 +359,9 @@ class Drive {
 
   void pid_turn_set(pose itarget, drive_directions dir, int speed);
   void pid_turn_set(pose itarget, drive_directions dir, int speed, bool slew_on);
+  void pid_turn_set(pose itarget, drive_directions dir, int speed, e_angle_behavior behavior);
+  void pid_turn_set(pose itarget, drive_directions dir, int speed, e_angle_behavior behavior, bool slew_on);
+
   pose turn_to_point_target = {0, 0, 0};
 
   void pid_odom_ptp_set(odom imovement);
@@ -428,6 +431,36 @@ class Drive {
   bool global_turn_slew_enabled = false;
   void slew_turn_set(bool slew_on);
   bool slew_turn_get();
+
+  e_angle_behavior current_angle_behavior = raw;
+
+  e_angle_behavior default_swing_type = raw;
+  e_angle_behavior default_turn_type = raw;
+  e_angle_behavior default_odom_type = shortest;
+  void pid_angle_behavior_set(e_angle_behavior behavior);
+  void pid_turn_behavior_set(e_angle_behavior behavior);
+  void pid_swing_behavior_set(e_angle_behavior behavior);
+  void pid_odom_behavior_set(e_angle_behavior behavior);
+  e_angle_behavior pid_turn_behavior_get();
+  e_angle_behavior pid_swing_behavior_get();
+  e_angle_behavior pid_odom_behavior_get();
+
+  void pid_angle_behavior_tolerance_set(double tolerance);
+  double pid_angle_behavior_tolerance_get();
+  double turn_tolerance = 3.0;
+  bool turn_biased_left = false;
+  void pid_angle_behavior_bias_set(e_angle_behavior behavior);
+  e_angle_behavior pid_angle_behavior_bias_get(e_angle_behavior);
+  double turn_is_toleranced(double target, double current, double longest, double shortest);
+  double turn_short(double target, double current, bool print = false);
+  double turn_long(double target, double current, bool print = false);
+  double new_turn_target_compute(double target, double current, ez::e_angle_behavior behavior);
+  double turn_left(double target, double current, bool print = false);
+  double turn_right(double target, double current, bool print = false);
+  double angle_adder = 0.0;
+  bool ANGLE_ADDER_WAS_RESET = true;
+
+  bool is_swing_slew_enabled(e_swing type, double target, double current);
 
   /////
   //
@@ -882,6 +915,18 @@ class Drive {
   void pid_turn_set(double target, int speed);
 
   /**
+   * Sets the robot to turn using PID.
+   *
+   * \param target
+   *        target value as a double, unit is degrees
+   * \param speed
+   *        0 to 127, max speed during motion
+   * \param behavior
+   *        changes what direction the robot will turn.  can be left, right, shortest, longest, raw
+   */
+  void pid_turn_set(double target, int speed, e_angle_behavior behavior);
+
+  /**
    * Sets the robot to turn using PID, using slew if enabled for this motion.
    *
    * \param target
@@ -894,6 +939,20 @@ class Drive {
   void pid_turn_set(double target, int speed, bool slew_on);
 
   /**
+   * Sets the robot to turn using PID, using slew if enabled for this motion.
+   *
+   * \param target
+   *        target value as a double, unit is degrees
+   * \param speed
+   *        0 to 127, max speed during motion
+   * \param behavior
+   *        changes what direction the robot will turn.  can be left, right, shortest, longest, raw
+   * \param slew_on
+   *        ramp up from a lower speed to your target speed
+   */
+  void pid_turn_set(double target, int speed, e_angle_behavior behavior, bool slew_on);
+
+  /**
    * Sets the robot to turn using PID with okapi units.
    *
    * \param p_target
@@ -902,6 +961,18 @@ class Drive {
    *        0 to 127, max speed during motion
    */
   void pid_turn_set(okapi::QAngle p_target, int speed);
+
+  /**
+   * Sets the robot to turn using PID with okapi units.
+   *
+   * \param p_target
+   *        target value in degrees
+   * \param speed
+   *        0 to 127, max speed during motion
+   * \param behavior
+   *        changes what direction the robot will turn.  can be left, right, shortest, longest, raw
+   */
+  void pid_turn_set(okapi::QAngle p_target, int speed, e_angle_behavior behavior);
 
   /**
    * Sets the robot to turn using PID with okapi units, using slew if enabled for this motion.
@@ -916,6 +987,20 @@ class Drive {
   void pid_turn_set(okapi::QAngle p_target, int speed, bool slew_on);
 
   /**
+   * Sets the robot to turn using PID with okapi units, using slew if enabled for this motion.
+   *
+   * \param p_target
+   *        target value in degrees
+   * \param speed
+   *        0 to 127, max speed during motion
+   * \param behavior
+   *        changes what direction the robot will turn.  can be left, right, shortest, longest, raw
+   * \param slew_on
+   *        ramp up from a lower speed to your target speed
+   */
+  void pid_turn_set(okapi::QAngle p_target, int speed, e_angle_behavior behavior, bool slew_on);
+
+  /**
    * Sets the robot to turn relative to current heading using PID with okapi units, only using slew if globally enabled.
    *
    * \param p_target
@@ -924,6 +1009,18 @@ class Drive {
    *        0 to 127, max speed during motion
    */
   void pid_turn_relative_set(okapi::QAngle p_target, int speed);
+
+  /**
+   * Sets the robot to turn relative to current heading using PID with okapi units, only using slew if globally enabled.
+   *
+   * \param p_target
+   *        target value in okapi angle units
+   * \param speed
+   *        0 to 127, max speed during motion
+   * \param behavior
+   *        changes what direction the robot will turn.  can be left, right, shortest, longest, raw
+   */
+  void pid_turn_relative_set(okapi::QAngle p_target, int speed, e_angle_behavior behavior);
 
   /**
    * Sets the robot to turn relative to current heading using PID with okapi units, using slew if enabled for this motion.
@@ -938,6 +1035,20 @@ class Drive {
   void pid_turn_relative_set(okapi::QAngle p_target, int speed, bool slew_on);
 
   /**
+   * Sets the robot to turn relative to current heading using PID with okapi units, using slew if enabled for this motion.
+   *
+   * \param p_target
+   *        target value in okapi angle units
+   * \param speed
+   *        0 to 127, max speed during motion
+   * \param behavior
+   *        changes what direction the robot will turn.  can be left, right, shortest, longest, raw
+   * \param slew_on
+   *        ramp up from a lower speed to your target speed
+   */
+  void pid_turn_relative_set(okapi::QAngle p_target, int speed, e_angle_behavior behavior, bool slew_on);
+
+  /**
    * Sets the robot to turn relative to current heading using PID without okapi units, only using slew if globally enabled.
    *
    * \param p_target
@@ -946,6 +1057,18 @@ class Drive {
    *        0 to 127, max speed during motion
    */
   void pid_turn_relative_set(double target, int speed);
+
+  /**
+   * Sets the robot to turn relative to current heading using PID without okapi units, only using slew if globally enabled.
+   *
+   * \param p_target
+   *        target value as a double, unit is degrees
+   * \param speed
+   *        0 to 127, max speed during motion
+   * \param behavior
+   *        changes what direction the robot will turn.  can be left, right, shortest, longest, raw
+   */
+  void pid_turn_relative_set(double target, int speed, e_angle_behavior behavior);
 
   /**
    * Sets the robot to turn relative to current heading using PID without okapi units, using slew if enabled for this motion.
@@ -960,6 +1083,20 @@ class Drive {
   void pid_turn_relative_set(double target, int speed, bool slew_on);
 
   /**
+   * Sets the robot to turn relative to current heading using PID without okapi units, using slew if enabled for this motion.
+   *
+   * \param p_target
+   *        target value as a double, unit is degrees
+   * \param speed
+   *        0 to 127, max speed during motion
+   * \param behavior
+   *        changes what direction the robot will turn.  can be left, right, shortest, longest, raw
+   * \param slew_on
+   *        ramp up from a lower speed to your target speed
+   */
+  void pid_turn_relative_set(double target, int speed, e_angle_behavior behavior, bool slew_on);
+
+  /**
    * Turn using only the left or right side without okapi units, only using slew if globally enabled.
    *
    * \param type
@@ -972,6 +1109,18 @@ class Drive {
   void pid_swing_set(e_swing type, double target, int speed);
 
   /**
+   * Turn using only the left or right side without okapi units, only using slew if globally enabled.
+   *
+   * \param type
+   *        L_SWING or R_SWING
+   * \param target
+   *        target value as a double, unit is degrees
+   * \param speed
+   *        0 to 127, max speed during motion
+   */
+  void pid_swing_set(e_swing type, double target, int speed, e_angle_behavior behavior);
+
+  /**
    * Turn using only the left or right side without okapi units, using slew if enabled for this motion.
    *
    * \param type
@@ -982,6 +1131,18 @@ class Drive {
    *        0 to 127, max speed during motion
    */
   void pid_swing_set(e_swing type, double target, int speed, bool slew_on);
+
+  /**
+   * Turn using only the left or right side without okapi units, using slew if enabled for this motion.
+   *
+   * \param type
+   *        L_SWING or R_SWING
+   * \param target
+   *        target value as a double, unit is degrees
+   * \param speed
+   *        0 to 127, max speed during motion
+   */
+  void pid_swing_set(e_swing type, double target, int speed, e_angle_behavior behavior, bool slew_on);
 
   /**
    * Turn using only the left or right side without okapi units, only using slew if globally enabled.
@@ -998,6 +1159,20 @@ class Drive {
   void pid_swing_set(e_swing type, double target, int speed, int opposite_speed);
 
   /**
+   * Turn using only the left or right side without okapi units, only using slew if globally enabled.
+   *
+   * \param type
+   *        L_SWING or R_SWING
+   * \param target
+   *        target value as a double, unit is degrees
+   * \param speed
+   *        0 to 127, max speed during motion
+   * \param opposite_speed
+   *        -127 to 127, max speed of the opposite side of the drive during the swing.  This is used for arcs, and is defaulted to 0.
+   */
+  void pid_swing_set(e_swing type, double target, int speed, int opposite_speed, e_angle_behavior behavior);
+
+  /**
    * Turn using only the left or right side without okapi units, using slew if enabled for this motion.
    *
    * \param type
@@ -1010,6 +1185,20 @@ class Drive {
    *        -127 to 127, max speed of the opposite side of the drive during the swing.  This is used for arcs, and is defaulted to 0.
    */
   void pid_swing_set(e_swing type, double target, int speed, int opposite_speed, bool slew_on);
+
+  /**
+   * Turn using only the left or right side without okapi units, using slew if enabled for this motion.
+   *
+   * \param type
+   *        L_SWING or R_SWING
+   * \param target
+   *        target value as a double, unit is degrees
+   * \param speed
+   *        0 to 127, max speed during motion
+   * \param opposite_speed
+   *        -127 to 127, max speed of the opposite side of the drive during the swing.  This is used for arcs, and is defaulted to 0.
+   */
+  void pid_swing_set(e_swing type, double target, int speed, int opposite_speed, e_angle_behavior behavior, bool slew_on);
 
   /**
    * Turn using only the left or right side with okapi units, only using slew if globally enabled.
@@ -1026,6 +1215,20 @@ class Drive {
   void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed);
 
   /**
+   * Turn using only the left or right side with okapi units, only using slew if globally enabled.
+   *
+   * \param type
+   *        L_SWING or R_SWING
+   * \param p_target
+   *        target value in degrees
+   * \param speed
+   *        0 to 127, max speed during motion
+   * \param opposite_speed
+   *        -127 to 127, max speed of the opposite side of the drive during the swing.  This is used for arcs, and is defaulted to 0.
+   */
+  void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, e_angle_behavior behavior);
+
+  /**
    * Turn using only the left or right side with okapi units, using slew if enabled for this motion.
    *
    * \param type
@@ -1036,6 +1239,18 @@ class Drive {
    *        0 to 127, max speed during motion
    */
   void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, bool slew_on);
+
+  /**
+   * Turn using only the left or right side with okapi units, using slew if enabled for this motion.
+   *
+   * \param type
+   *        L_SWING or R_SWING
+   * \param p_target
+   *        target value in degrees
+   * \param speed
+   *        0 to 127, max speed during motion
+   */
+  void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, e_angle_behavior behavior, bool slew_on);
 
   /**
    * Turn using only the left or right side with okapi units, only using slew if globally enabled.
@@ -1052,6 +1267,20 @@ class Drive {
   void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed);
 
   /**
+   * Turn using only the left or right side with okapi units, only using slew if globally enabled.
+   *
+   * \param type
+   *        L_SWING or R_SWING
+   * \param p_target
+   *        target value in degrees
+   * \param speed
+   *        0 to 127, max speed during motion
+   * \param opposite_speed
+   *        -127 to 127, max speed of the opposite side of the drive during the swing.  This is used for arcs, and is defaulted to 0.
+   */
+  void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed, e_angle_behavior behavior);
+
+  /**
    * Turn using only the left or right side with okapi units, using slew if enabled for this motion.
    *
    * \param type
@@ -1066,6 +1295,20 @@ class Drive {
   void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed, bool slew_on);
 
   /**
+   * Turn using only the left or right side with okapi units, using slew if enabled for this motion.
+   *
+   * \param type
+   *        L_SWING or R_SWING
+   * \param p_target
+   *        target value in degrees
+   * \param speed
+   *        0 to 127, max speed during motion
+   * \param opposite_speed
+   *        -127 to 127, max speed of the opposite side of the drive during the swing.  This is used for arcs, and is defaulted to 0.
+   */
+  void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed, e_angle_behavior behavior, bool slew_on);
+
+  /**
    * Sets the robot to turn only using the left or right side relative to current heading using PID with okapi units, only using slew if globally enabled.
    *
    * \param type
@@ -1078,6 +1321,18 @@ class Drive {
   void pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed);
 
   /**
+   * Sets the robot to turn only using the left or right side relative to current heading using PID with okapi units, only using slew if globally enabled.
+   *
+   * \param type
+   *        L_SWING or R_SWING
+   * \param p_target
+   *        target value in okapi angle units
+   * \param speed
+   *        0 to 127, max speed during motion
+   */
+  void pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, e_angle_behavior behavior);
+
+  /**
    * Sets the robot to turn only using the left or right side relative to current heading using PID with okapi units, using slew if enabled for this motion.
    *
    * \param type
@@ -1088,6 +1343,18 @@ class Drive {
    *        0 to 127, max speed during motion
    */
   void pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, bool slew_on);
+
+  /**
+   * Sets the robot to turn only using the left or right side relative to current heading using PID with okapi units, using slew if enabled for this motion.
+   *
+   * \param type
+   *        L_SWING or R_SWING
+   * \param p_target
+   *        target value in okapi angle units
+   * \param speed
+   *        0 to 127, max speed during motion
+   */
+  void pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, e_angle_behavior behavior, bool slew_on);
 
   /**
    * Sets the robot to turn only using the left or right side relative to current heading using PID with okapi units, only using slew if globally enabled.
@@ -1104,6 +1371,20 @@ class Drive {
   void pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed);
 
   /**
+   * Sets the robot to turn only using the left or right side relative to current heading using PID with okapi units, only using slew if globally enabled.
+   *
+   * \param type
+   *        L_SWING or R_SWING
+   * \param p_target
+   *        target value in okapi angle units
+   * \param speed
+   *        0 to 127, max speed during motion
+   * \param opposite_speed
+   *        -127 to 127, max speed of the opposite side of the drive during the swing.  This is used for arcs, and is defaulted to 0.
+   */
+  void pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed, e_angle_behavior behavior);
+
+  /**
    * Sets the robot to turn only using the left or right side relative to current heading using PID with okapi units, using slew if enabled for this motion.
    *
    * \param type
@@ -1118,6 +1399,20 @@ class Drive {
   void pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed, bool slew_on);
 
   /**
+   * Sets the robot to turn only using the left or right side relative to current heading using PID with okapi units, using slew if enabled for this motion.
+   *
+   * \param type
+   *        L_SWING or R_SWING
+   * \param p_target
+   *        target value in okapi angle units
+   * \param speed
+   *        0 to 127, max speed during motion
+   * \param opposite_speed
+   *        -127 to 127, max speed of the opposite side of the drive during the swing.  This is used for arcs, and is defaulted to 0.
+   */
+  void pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed, e_angle_behavior behavior, bool slew_on);
+
+  /**
    * Sets the robot to turn only using the left or right side relative to current heading using PID without okapi units, only using slew if globally enabled.
    *
    * \param type
@@ -1130,6 +1425,18 @@ class Drive {
   void pid_swing_relative_set(e_swing type, double target, int speed);
 
   /**
+   * Sets the robot to turn only using the left or right side relative to current heading using PID without okapi units, only using slew if globally enabled.
+   *
+   * \param type
+   *        L_SWING or R_SWING
+   * \param p_target
+   *        target value as a double, unit is degrees
+   * \param speed
+   *        0 to 127, max speed during motion
+   */
+  void pid_swing_relative_set(e_swing type, double target, int speed, e_angle_behavior behavior);
+
+  /**
    * Sets the robot to turn only using the left or right side relative to current heading using PID without okapi units, using slew if enabled for this motion.
    *
    * \param type
@@ -1140,6 +1447,18 @@ class Drive {
    *        0 to 127, max speed during motion
    */
   void pid_swing_relative_set(e_swing type, double target, int speed, bool slew_on);
+
+  /**
+   * Sets the robot to turn only using the left or right side relative to current heading using PID without okapi units, using slew if enabled for this motion.
+   *
+   * \param type
+   *        L_SWING or R_SWING
+   * \param p_target
+   *        target value as a double, unit is degrees
+   * \param speed
+   *        0 to 127, max speed during motion
+   */
+  void pid_swing_relative_set(e_swing type, double target, int speed, e_angle_behavior behavior, bool slew_on);
 
   /**
    * Sets the robot to turn only using the left or right side relative to current heading using PID without okapi units, only using slew if globally enabled.
@@ -1156,6 +1475,20 @@ class Drive {
   void pid_swing_relative_set(e_swing type, double target, int speed, int opposite_speed);
 
   /**
+   * Sets the robot to turn only using the left or right side relative to current heading using PID without okapi units, only using slew if globally enabled.
+   *
+   * \param type
+   *        L_SWING or R_SWING
+   * \param p_target
+   *        target value as a double, unit is degrees
+   * \param speed
+   *        0 to 127, max speed during motion
+   * \param opposite_speed
+   *        -127 to 127, max speed of the opposite side of the drive during the swing.  This is used for arcs, and is defaulted to 0.
+   */
+  void pid_swing_relative_set(e_swing type, double target, int speed, int opposite_speed, e_angle_behavior behavior);
+
+  /**
    * Sets the robot to turn only using the left or right side relative to current heading using PID without okapi units, using slew if enabled for this motion.
    *
    * \param type
@@ -1168,6 +1501,20 @@ class Drive {
    *        -127 to 127, max speed of the opposite side of the drive during the swing.  This is used for arcs, and is defaulted to 0.
    */
   void pid_swing_relative_set(e_swing type, double target, int speed, int opposite_speed, bool slew_on);
+
+  /**
+   * Sets the robot to turn only using the left or right side relative to current heading using PID without okapi units, using slew if enabled for this motion.
+   *
+   * \param type
+   *        L_SWING or R_SWING
+   * \param p_target
+   *        target value as a double, unit is degrees
+   * \param speed
+   *        0 to 127, max speed during motion
+   * \param opposite_speed
+   *        -127 to 127, max speed of the opposite side of the drive during the swing.  This is used for arcs, and is defaulted to 0.
+   */
+  void pid_swing_relative_set(e_swing type, double target, int speed, int opposite_speed, e_angle_behavior behavior, bool slew_on);
 
   /**
    * Resets all PID targets to 0.

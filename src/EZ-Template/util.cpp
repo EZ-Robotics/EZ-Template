@@ -159,6 +159,42 @@ double absolute_angle_to_point(pose itarget, pose icurrent) {
   return error;
 }
 
+// Outputs a target that will get you there the fastest
+double turn_shortest(double target, double current, bool print) {
+  if (print) printf("SHORTEST   Target: %.2f   Current: %.2f      New Target: ", target, current);
+  double error = target - current;
+  if (fabs(error) < 180.0) {
+    if (print) printf("%.2f\n", target);
+    return target;
+  }
+  double new_target = target;
+
+  while (error > 180) {
+    new_target -= 360;
+    error = new_target - current;
+  }
+  while (error < -180) {
+    new_target += 360;
+    error = new_target - current;
+  }
+
+  if (print) printf("%.2f\n", new_target);
+  return new_target;
+}
+
+// Outputs a target that will get you there the slowest
+double turn_longest(double target, double current, bool print) {
+  if (print) printf("LONGEST   Target: %.2f   Current: %.2f      New Target: ", target, current);
+  double shortest_target = turn_shortest(target, current, false);
+  double new_target = target;
+
+  double error = shortest_target - current;
+  new_target = shortest_target - (360 * util::sgn(error));
+
+  if (print) printf("%.2f\n", new_target);
+  return new_target;
+}
+
 // Outputs angle within 180 t0 -180
 double wrap_angle(double theta) {
   while (theta > 180) theta -= 360;

@@ -59,11 +59,13 @@ std::vector<pose> Drive::find_point_to_face(pose current, pose target, bool set_
 // Inject point based on https://www.chiefdelphi.com/t/paper-implementation-of-the-adaptive-pure-pursuit-controller/166552
 std::vector<odom> Drive::inject_points(std::vector<ez::odom> imovements) {
   injected_pp_index.clear();
+  bool first_point_added = false;
 
   // Create new vector that includes the starting point
   std::vector<odom> input = imovements;
   input.insert(input.begin(), {{{odom_current.x, odom_current.y, ANGLE_NOT_SET}, imovements[0].drive_direction, imovements[0].max_xy_speed}});
 
+  // Inject new parent points for boomerang
   int t = 0;
   for (int i = 0; i < input.size() - 1; i++) {
     int j = i + t;
@@ -81,6 +83,12 @@ std::vector<odom> Drive::inject_points(std::vector<ez::odom> imovements) {
     }
   }
 
+  // Shift all the turn behaviors 1 parent point down
+  for (int i = 0; i < input.size() - 1; i++) {
+    input[i].turn_behavior = input[i + 1].turn_behavior;
+  }
+  input.back().turn_behavior = raw;
+
   std::vector<odom> output;  // Output vector
   int output_index = -1;     // Keeps track of current index
   injected_pp_index.push_back(0);
@@ -96,7 +104,8 @@ std::vector<odom> Drive::inject_points(std::vector<ez::odom> imovements) {
     // Make sure the robot is looking at next point
     output.push_back({{input[i].target.x, input[i].target.y, input[i].target.theta},
                       input[i].drive_direction,
-                      input[i].max_xy_speed});
+                      input[i].max_xy_speed,
+                      input[i].turn_behavior});
     output_index++;
 
     // don't let the injected point after boomerang in
@@ -116,12 +125,20 @@ std::vector<odom> Drive::inject_points(std::vector<ez::odom> imovements) {
         if (util::distance_to_point(new_point, input[0].target) >= LOOK_AHEAD)
           allow_injecting = true;
 
-        // If the new point is the same as the parent point, remove it to save 10ms delay
+        // If the new point is basically the same as the parent point, remove it to save 10ms delay
         if (util::distance_to_point(new_point, input[i + 1].target) >= SPACING && allow_injecting) {
+          // Update the first target point with the real desired turn behavior
+          e_angle_behavior new_turn_behavior = raw;
+          if (!first_point_added) {
+            new_turn_behavior = input[0].turn_behavior;
+            first_point_added = true;
+          }
+
           // Push new point to vector
           output.push_back({{new_point.x, new_point.y, ANGLE_NOT_SET},
                             input[i + 1].drive_direction,
-                            input[i + 1].max_xy_speed});
+                            input[i + 1].max_xy_speed,
+                            new_turn_behavior});  // Setting this to raw will maintain the parent points turn behavior
           output_index++;
         }
       } else {
@@ -199,4 +216,111 @@ std::vector<odom> Drive::smooth_path(std::vector<odom> ipath, double weight_smoo
   }
 
   return output;
+}
+
+// Outputs the shortest angle to where you want to go, but tolerances it
+// to bias one way
+double Drive::turn_short(double target, double current, bool print) {
+  if (print) printf("SHORTEST   Target: %.2f   Current: %.2f      New Target: ", target, current);
+  double shortest = util::turn_shortest(target, current, false);
+  if (fabs(fabs(util::wrap_angle(shortest)) - 180.0) > turn_tolerance) {
+    if (print) printf("%.2f\n", shortest);
+    return shortest;
+  }
+  double longest = util::turn_longest(target, current, false);
+  double output = turn_is_toleranced(target, current, longest, shortest);
+  if (print) printf("%.2f\n", output);
+  return output;
+}
+
+// Outputs the shortest angle to where you want to go, but tolerances it
+// to bias one way
+double Drive::turn_long(double target, double current, bool print) {
+  if (print) printf("LONGEST   Target: %.2f   Current: %.2f      New Target: ", target, current);
+  double longest = util::turn_longest(target, current, false);
+  if (fabs(fabs(util::wrap_angle(longest)) - 180.0) > turn_tolerance) {
+    if (print) printf("%.2f\n", longest);
+    return longest;
+  }
+  double shortest = util::turn_shortest(target, current, false);
+  double output = turn_is_toleranced(target, current, longest, shortest);
+  if (print) printf("%.2f\n", output);
+  return output;
+}
+
+// This figures out the tolerances
+double Drive::turn_is_toleranced(double target, double current, double longest, double shortest) {
+  double output = target;
+  int long_error_sgn = util::sgn(longest - current);
+  int short_error_sgn = util::sgn(shortest - current);
+
+  if (turn_biased_left)
+    output = long_error_sgn == -1 ? longest : shortest;
+  else
+    output = long_error_sgn == 1 ? longest : shortest;
+
+  return output;
+}
+
+// Always turn left
+double Drive::turn_left(double target, double current, bool print) {
+  if (print) printf("LEFT   Target: %.2f   Current: %.2f      New Target: ", target, current);
+  double shortest = util::turn_shortest(target, current, false);
+  double output = shortest;
+  if (util::sgn(shortest - current) == -1) {
+    output = shortest;
+
+    return output;
+  }
+
+  double longest = util::turn_longest(target, current, false);
+  output = longest;
+
+  if (print) printf("%.2f\n", output);
+  return output;
+}
+
+// Always turn right
+double Drive::turn_right(double target, double current, bool print) {
+  if (print) printf("LEFT   Target: %.2f   Current: %.2f      New Target: ", target, current);
+  double shortest = util::turn_shortest(target, current, false);
+  double output = shortest;
+  if (util::sgn(shortest - current) == 1) {
+    output = shortest;
+
+    return output;
+  }
+
+  double longest = util::turn_longest(target, current, false);
+  output = longest;
+
+  if (print) printf("%.2f\n", output);
+  return output;
+}
+
+// This outputs a new target depending on the turn behavior.  this is used throughout ez-template
+// as a "one stop shop" for new turn targets
+double Drive::new_turn_target_compute(double target, double current, ez::e_angle_behavior behavior) {
+  double new_target = 0.0;
+  switch (behavior) {
+    case raw:
+      new_target = target;
+      break;
+    case cw:
+      new_target = turn_right(target, current);
+      break;
+    case ccw:
+      new_target = turn_left(target, current);
+      break;
+    case shortest:
+      new_target = turn_short(target, current);
+      break;
+    case longest:
+      new_target = turn_long(target, current);
+      break;
+    default:
+      new_target = target;
+      break;
+  }
+  return new_target;
 }

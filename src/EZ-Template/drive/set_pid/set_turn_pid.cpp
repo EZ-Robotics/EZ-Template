@@ -1,0 +1,174 @@
+/*
+This Source Code Form is subject to the terms of the Mozilla Public
+License, v. 2.0. If a copy of the MPL was not distributed with this
+file, You can obtain one at http://mozilla.org/MPL/2.0/.
+*/
+
+#include "EZ-Template/util.hpp"
+#include "main.h"
+#include "okapi/api/units/QAngle.hpp"
+
+/////
+// Sets turn constants
+/////
+void Drive::slew_turn_constants_set(okapi::QAngle distance, int min_speed) {
+  double dist = distance.convert(okapi::degree);
+  slew_turn.constants_set(dist, min_speed);
+}
+void Drive::pid_turn_constants_set(double p, double i, double d, double p_start_i) {
+  turnPID.constants_set(p, i, d, p_start_i);
+}
+PID::Constants Drive::pid_turn_constants_get() { return turnPID.constants_get(); }
+void Drive::pid_turn_min_set(int min) { turn_min = abs(min); }
+int Drive::pid_turn_min_get() { return turn_min; }
+
+// Sets the behavior of turning
+void Drive::pid_turn_behavior_set(ez::e_angle_behavior behavior) { default_turn_type = behavior; }
+ez::e_angle_behavior Drive::pid_turn_behavior_get() { return default_turn_type; }
+
+// Global enables for turn slew
+void Drive::slew_turn_set(bool slew_on) { global_turn_slew_enabled = slew_on; }
+bool Drive::slew_turn_get() { return global_turn_slew_enabled; }
+
+/////
+// Set turn PID basic wrappers
+/////
+// Absolute
+void Drive::pid_turn_set(double target, int speed) {
+  pid_turn_set(target, speed, pid_turn_behavior_get(), slew_turn_get());
+}
+void Drive::pid_turn_set(okapi::QAngle p_target, int speed) {
+  pid_turn_set(p_target, speed, pid_turn_behavior_get(), slew_turn_get());
+}
+// Relative
+void Drive::pid_turn_relative_set(double target, int speed) {
+  pid_turn_relative_set(target, speed, pid_turn_behavior_get(), slew_turn_get());
+}
+void Drive::pid_turn_relative_set(okapi::QAngle p_target, int speed) {
+  pid_turn_relative_set(p_target, speed, pid_turn_behavior_get(), slew_turn_get());
+}
+
+/////
+// Set turn PID with only turn behavior
+/////
+// Absolute
+void Drive::pid_turn_set(double target, int speed, e_angle_behavior behavior) {
+  pid_turn_set(target, speed, behavior, slew_turn_get());
+}
+void Drive::pid_turn_set(okapi::QAngle p_target, int speed, e_angle_behavior behavior) {
+  pid_turn_set(p_target, speed, behavior, slew_turn_get());
+}
+// Relative
+void Drive::pid_turn_relative_set(okapi::QAngle p_target, int speed, e_angle_behavior behavior) {
+  pid_turn_relative_set(p_target, speed, behavior, slew_turn_get());
+}
+void Drive::pid_turn_relative_set(double target, int speed, e_angle_behavior behavior) {
+  pid_turn_relative_set(target, speed, behavior, slew_turn_get());
+}
+
+/////
+// Set turn PID with only slew
+/////
+// Absolute
+void Drive::pid_turn_set(double target, int speed, bool slew_on) {
+  pid_turn_set(target, speed, pid_turn_behavior_get(), slew_on);
+}
+void Drive::pid_turn_set(okapi::QAngle p_target, int speed, bool slew_on) {
+  double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
+  pid_turn_set(target, speed, pid_turn_behavior_get(), slew_on);
+}
+// Relative
+void Drive::pid_turn_relative_set(double target, int speed, bool slew_on) {
+  pid_turn_relative_set(target, speed, pid_turn_behavior_get(), slew_on);
+}
+void Drive::pid_turn_relative_set(okapi::QAngle p_target, int speed, bool slew_on) {
+  double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
+  pid_turn_relative_set(target, speed, pid_turn_behavior_get(), slew_on);
+}
+
+/////
+// Set turn PID with turn behavior and slew
+/////
+// Absolute
+void Drive::pid_turn_set(okapi::QAngle p_target, int speed, e_angle_behavior behavior, bool slew_on) {
+  double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
+  pid_turn_set(target, speed, behavior, slew_on);
+}
+// Relative
+void Drive::pid_turn_relative_set(double target, int speed, e_angle_behavior behavior, bool slew_on) {
+  // Compute absolute target by adding to current heading
+  double absolute_target = headingPID.target_get() + target;
+  if (print_toggle) printf("Relative ");
+  pid_turn_set(absolute_target, speed, behavior, slew_on);
+}
+void Drive::pid_turn_relative_set(okapi::QAngle p_target, int speed, e_angle_behavior behavior, bool slew_on) {
+  double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
+  pid_turn_relative_set(target, speed, behavior, slew_on);
+}
+
+/////
+// Turn to angle base
+/////
+void Drive::pid_turn_set(double target, int speed, e_angle_behavior behavior, bool slew_on) {
+  turnPID.timers_reset();
+
+  // Set turn behavior
+  current_angle_behavior = behavior;
+
+  // Compute new turn target based on new angle
+  target = new_turn_target_compute(target, drive_imu_get(), current_angle_behavior);
+
+  // Print targets
+  if (print_toggle) printf("Turn Started... Target Value: %.2f\n", target);
+  chain_sensor_start = drive_imu_get();
+  chain_target_start = target;
+  used_motion_chain_scale = 0.0;
+
+  // Set PID targets
+  turnPID.target_set(target);
+  headingPID.target_set(target);  // Update heading target for next drive motion
+  pid_speed_max_set(speed);
+
+  // Initialize slew
+  slew_turn.initialize(slew_on, max_speed, target, chain_sensor_start);
+
+  // Run task
+  drive_mode_set(TURN);
+}
+
+/////
+// Turn to point wrappers
+/////
+void Drive::pid_turn_set(pose itarget, drive_directions dir, int speed) {
+  pid_turn_set(itarget, dir, speed, default_turn_type, slew_turn_get());
+}
+void Drive::pid_turn_set(pose itarget, drive_directions dir, int speed, bool slew_on) {
+  pid_turn_set(itarget, dir, speed, default_turn_type, slew_on);
+}
+void Drive::pid_turn_set(pose itarget, drive_directions dir, int speed, e_angle_behavior behavior) {
+  pid_turn_set(itarget, dir, speed, behavior, slew_turn_get());
+}
+
+/////
+// Turn to point base
+/////
+void Drive::pid_turn_set(pose itarget, drive_directions dir, int speed, e_angle_behavior behavior, bool slew_on) {
+  current_drive_direction = dir;
+
+  // Calculate the point to look at
+  point_to_face = find_point_to_face(odom_current, {itarget.x, itarget.y}, true);
+
+  double target = util::absolute_angle_to_point(point_to_face[!ptf1_running], odom_current);  // Calculate the point for angle to face
+  target += current_drive_direction == REV ? 180 : 0;                                         // Decide if going fwd or rev
+  // turnPID.target_set(util::wrap_angle(target - drive_imu_get()));                             // Constrain error to -180 to 180
+
+  // Compute new turn target based on new angle
+  current_angle_behavior = behavior;
+  angle_adder = (new_turn_target_compute(target, drive_imu_get(), current_angle_behavior)) - target;
+  ANGLE_ADDER_WAS_RESET = false;
+
+  if (print_toggle) printf("Turn to Point PID Started... Target Point: (%.2f, %.2f) \n", itarget.x, itarget.y);
+  pid_turn_set(target, speed, slew_on);
+
+  drive_mode_set(TURN_TO_POINT);
+}

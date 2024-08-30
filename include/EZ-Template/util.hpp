@@ -11,6 +11,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include <string.h>
 
 #include "api.h"
+#include "util.hpp"
 
 /**
  * Controller.
@@ -75,18 +76,33 @@ enum e_mode { DISABLE = 0,
               PURE_PURSUIT = 6 };
 
 /**
- * Enum for turn types
+ * Enum for drive directions
  */
 enum drive_directions { FWD = 0,
-                  FORWARD = FWD,
-                  fwd = FWD,
-                  forward = FWD,
-                  REV = 1,
-                  REVERSE = REV,
-                  rev = REV,
-                  reverse = REV };
+                        FORWARD = FWD,
+                        fwd = FWD,
+                        forward = FWD,
+                        REV = 1,
+                        REVERSE = REV,
+                        rev = REV,
+                        reverse = REV };
 
 const double ANGLE_NOT_SET = 0.0000000000000000000001;
+
+/**
+ * Enum for turn types
+ */
+enum e_angle_behavior { raw = 0,
+                        left_turn = 1,
+                        LEFT_TURN = 1,
+                        counterclockwise = 1,
+                        ccw = 1,
+                        right_turn = 2,
+                        RIGHT_TURN = 2,
+                        clockwise = 2,
+                        cw = 2,
+                        shortest = 3,
+                        longest = 4 };
 
 /**
  * Struct for coordinates
@@ -104,6 +120,7 @@ typedef struct odom {
   pose target;
   drive_directions drive_direction;
   int max_xy_speed;
+  e_angle_behavior turn_behavior = shortest;
 } odom;
 
 /**
@@ -145,6 +162,8 @@ double absolute_angle_to_point(pose itarget, pose icurrent);
 double wrap_angle(double theta);
 double distance_to_point(pose itarget, pose icurrent);
 pose vector_off_point(double added, pose icurrent);
+double turn_shortest(double target, double current, bool print = false);
+double turn_longest(double target, double current, bool print = false);
 
 }  // namespace util
 }  // namespace ez

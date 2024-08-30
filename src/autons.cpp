@@ -8,7 +8,7 @@
 // These are out of 127
 const int DRIVE_SPEED = 110;
 const int TURN_SPEED = 90;
-const int SWING_SPEED = 90;
+const int SWING_SPEED = 110;
 
 ///
 // Constants
@@ -32,6 +32,9 @@ void default_constants() {
   chassis.slew_turn_constants_set(3_deg, 70);
   chassis.slew_drive_constants_set(3_in, 70);
   chassis.slew_swing_constants_set(3_in, 80);
+
+  // Defaults the turn behavior to always go the shortest way
+  chassis.pid_angle_behavior_set(ez::shortest);
 }
 
 ///

@@ -94,18 +94,15 @@ void Drive::drive_pid_task() {
 
 // Turn PID task
 void Drive::turn_pid_task() {
-  // Compute PID
-  // turnPID.compute(drive_imu_get());
-
   // Compute PID if it's a normal turn
   if (mode == TURN) {
     turnPID.compute(drive_imu_get());
   }
   // Compute PID if we're turning to point
   else {
-    int add = current_drive_direction == REV ? 180 : 0;                                                 // Decide if going fwd or rev
-    double a_target = util::absolute_angle_to_point(point_to_face[!ptf1_running], odom_current) + add;  // Calculate the point for angle to face
-    double error = util::wrap_angle(a_target - drive_imu_get());
+    double a_target = util::absolute_angle_to_point(point_to_face[!ptf1_running], odom_current);  // Calculate the point for angle to face
+    a_target += current_drive_direction == REV ? 180 : 0;                                         // Decide if going fwd or rev
+    double error = (a_target + angle_adder) - drive_imu_get();
     turnPID.compute_error(error, drive_imu_get());
   }
 
@@ -178,9 +175,9 @@ void Drive::ptp_task() {
 
   // Compute angle
   pose ptf = point_to_face[!ptf1_running];
-  double a_target = util::absolute_angle_to_point(ptf, odom_current);      // Calculate the point for angle to face
-  a_target += current_drive_direction == REV ? 180 : 0;                    // Decide if going fwd or rev
-  double wrapped_a_target = util::wrap_angle(a_target - drive_imu_get());  // Constrain error to -180 to 180
+  double a_target = util::absolute_angle_to_point(ptf, odom_current);  // Calculate the point for angle to face
+  a_target += current_drive_direction == REV ? 180 : 0;                // Decide if going fwd or rev
+  double wrapped_a_target = (a_target + angle_adder) - drive_imu_get();
   aPID.compute_error(wrapped_a_target, drive_imu_get());
 
   // Prioritize turning by scaling xy_out down
