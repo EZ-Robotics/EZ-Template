@@ -252,6 +252,9 @@ void Drive::wait_until_turn_swing(double target) {
     return;
   }
 
+  // Create new target that is the shortest from current
+  target = new_turn_target_compute(target, drive_imu_get(), shortest);
+
   // Calculate error between current and target (target needs to be an in between position)
   double g_error = target - drive_imu_get();
   int g_sgn = util::sgn(g_error);
