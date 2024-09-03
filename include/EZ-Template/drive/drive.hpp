@@ -361,21 +361,46 @@ class Drive {
   void pid_turn_set(pose itarget, drive_directions dir, int speed, bool slew_on);
   void pid_turn_set(pose itarget, drive_directions dir, int speed, e_angle_behavior behavior);
   void pid_turn_set(pose itarget, drive_directions dir, int speed, e_angle_behavior behavior, bool slew_on);
+  void pid_turn_set(united_pose p_itarget, drive_directions dir, int speed);
+  void pid_turn_set(united_pose p_itarget, drive_directions dir, int speed, bool slew_on);
+  void pid_turn_set(united_pose p_itarget, drive_directions dir, int speed, e_angle_behavior behavior);
+  void pid_turn_set(united_pose p_itarget, drive_directions dir, int speed, e_angle_behavior behavior, bool slew_on);
 
   pose turn_to_point_target = {0, 0, 0};
 
   void pid_odom_ptp_set(odom imovement);
   void pid_odom_ptp_set(odom imovement, bool slew_on);
+  void pid_odom_ptp_set(united_odom p_imovement);
+  void pid_odom_ptp_set(united_odom p_imovement, bool slew_on);
+
   void pid_odom_set(odom imovement);
   void pid_odom_set(odom imovement, bool slew_on);
   void pid_odom_set(std::vector<odom> imovements);
   void pid_odom_set(std::vector<odom> imovements, bool slew_on);
+  void pid_odom_set(united_odom p_imovement);
+  void pid_odom_set(united_odom p_imovement, bool slew_on);
+  void pid_odom_set(std::vector<united_odom> p_imovements);
+  void pid_odom_set(std::vector<united_odom> p_imovements, bool slew_on);
+
   void pid_odom_pp_set(std::vector<odom> imovements);
   void pid_odom_pp_set(std::vector<odom> imovements, bool slew_on);
+  void pid_odom_pp_set(std::vector<united_odom> p_imovements);
+  void pid_odom_pp_set(std::vector<united_odom> p_imovements, bool slew_on);
+
   void pid_odom_injected_pp_set(std::vector<odom> imovements);
   void pid_odom_injected_pp_set(std::vector<odom> imovements, bool slew_on);
+  void pid_odom_injected_pp_set(std::vector<united_odom> p_imovements);
+  void pid_odom_injected_pp_set(std::vector<united_odom> p_imovements, bool slew_on);
+
   void pid_odom_smooth_pp_set(std::vector<odom> imovements);
   void pid_odom_smooth_pp_set(std::vector<odom> imovements, bool slew_on);
+  void pid_odom_smooth_pp_set(std::vector<united_odom> p_imovements);
+  void pid_odom_smooth_pp_set(std::vector<united_odom> p_imovements, bool slew_on);
+
+  void pid_odom_boomerang_set(odom imovement);
+  void pid_odom_boomerang_set(odom imovement, bool slew_on);
+  void pid_odom_boomerang_set(united_odom p_imovement);
+  void pid_odom_boomerang_set(united_odom p_imovement, bool slew_on);
 
   std::vector<odom> smooth_path(std::vector<odom> ipath, double weight_smooth = 0.75, double weight_data = 0.03, double tolerance = 0.0001);
   double is_past_target(pose target, pose current);
@@ -389,8 +414,6 @@ class Drive {
   void pid_wait_until_point(pose target);
   void pid_wait_until(pose target);
   double dlead = 0.375;
-  void pid_odom_boomerang_set(odom imovement);
-  void pid_odom_boomerang_set(odom imovement, bool slew_on);
   //  Odometry
   bool odometry_enabled = true;
   float track_width = 0.0;

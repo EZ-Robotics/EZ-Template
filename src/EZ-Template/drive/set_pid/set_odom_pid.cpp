@@ -17,6 +17,7 @@ ez::e_angle_behavior Drive::pid_odom_behavior_get() { return default_odom_type; 
 /////
 // pid_odom_set
 /////
+// No units
 void Drive::pid_odom_set(odom imovement) {
   bool slew_on = imovement.drive_direction == fwd ? slew_drive_forward_get() : slew_drive_backward_get();
   pid_odom_set(imovement, slew_on);
@@ -34,26 +35,64 @@ void Drive::pid_odom_set(std::vector<odom> imovements) {
 void Drive::pid_odom_set(std::vector<odom> imovements, bool slew_on) {
   pid_odom_smooth_pp_set(imovements, slew_on);
 }
+// Units
+void Drive::pid_odom_set(united_odom p_imovement) {
+  odom imovement = util::united_odom_to_odom(p_imovement);
+  pid_odom_set(imovement);
+}
+void Drive::pid_odom_set(united_odom p_imovement, bool slew_on) {
+  odom imovement = util::united_odom_to_odom(p_imovement);
+  pid_odom_set(imovement, slew_on);
+}
+void Drive::pid_odom_set(std::vector<united_odom> p_imovements) {
+  std::vector<odom> imovements = util::united_odoms_to_odoms(p_imovements);
+  pid_odom_set(imovements);
+}
+void Drive::pid_odom_set(std::vector<united_odom> p_imovements, bool slew_on) {
+  std::vector<odom> imovements = util::united_odoms_to_odoms(p_imovements);
+  pid_odom_set(imovements, slew_on);
+}
 
 /////
 // ptp
 /////
+// No units
 void Drive::pid_odom_ptp_set(odom imovement) {
   bool slew_on = imovement.drive_direction == fwd ? slew_drive_forward_get() : slew_drive_backward_get();
+  pid_odom_ptp_set(imovement, slew_on);
+}
+// Units
+void Drive::pid_odom_ptp_set(united_odom p_imovement) {
+  odom imovement = util::united_odom_to_odom(p_imovement);
+  pid_odom_ptp_set(imovement);
+}
+void Drive::pid_odom_ptp_set(united_odom p_imovement, bool slew_on) {
+  odom imovement = util::united_odom_to_odom(p_imovement);
   pid_odom_ptp_set(imovement, slew_on);
 }
 
 /////
 // pp
 /////
+// No units
 void Drive::pid_odom_pp_set(std::vector<odom> imovements) {
   bool slew_on = imovements[0].drive_direction == fwd ? slew_drive_forward_get() : slew_drive_backward_get();
+  pid_odom_pp_set(imovements, slew_on);
+}
+// Units
+void Drive::pid_odom_pp_set(std::vector<united_odom> p_imovements) {
+  std::vector<odom> imovements = util::united_odoms_to_odoms(p_imovements);
+  pid_odom_pp_set(imovements);
+}
+void Drive::pid_odom_pp_set(std::vector<united_odom> p_imovements, bool slew_on) {
+  std::vector<odom> imovements = util::united_odoms_to_odoms(p_imovements);
   pid_odom_pp_set(imovements, slew_on);
 }
 
 /////
 // injected pp
 /////
+// No units
 void Drive::pid_odom_injected_pp_set(std::vector<ez::odom> imovements) {
   bool slew_on = imovements[0].drive_direction == fwd ? slew_drive_forward_get() : slew_drive_backward_get();
   pid_odom_injected_pp_set(imovements, slew_on);
@@ -66,10 +105,20 @@ void Drive::pid_odom_injected_pp_set(std::vector<ez::odom> imovements, bool slew
   std::vector<odom> input_path = inject_points(imovements);
   raw_pid_odom_pp_set(input_path, slew_on);
 }
+// Units
+void Drive::pid_odom_injected_pp_set(std::vector<ez::united_odom> p_imovements) {
+  std::vector<odom> imovements = util::united_odoms_to_odoms(p_imovements);
+  pid_odom_injected_pp_set(imovements);
+}
+void Drive::pid_odom_injected_pp_set(std::vector<ez::united_odom> p_imovements, bool slew_on) {
+  std::vector<odom> imovements = util::united_odoms_to_odoms(p_imovements);
+  pid_odom_injected_pp_set(imovements, slew_on);
+}
 
 /////
 // smooth injected pp
 /////
+// No units
 void Drive::pid_odom_smooth_pp_set(std::vector<odom> imovements) {
   bool slew_on = imovements[0].drive_direction == fwd ? slew_drive_forward_get() : slew_drive_backward_get();
   pid_odom_smooth_pp_set(imovements, slew_on);
@@ -82,10 +131,20 @@ void Drive::pid_odom_smooth_pp_set(std::vector<odom> imovements, bool slew_on) {
   std::vector<odom> input_path = smooth_path(inject_points(imovements), 0.75, 0.03, 0.0001);
   raw_pid_odom_pp_set(input_path, slew_on);
 }
+// Units
+void Drive::pid_odom_smooth_pp_set(std::vector<united_odom> p_imovements) {
+  std::vector<odom> imovements = util::united_odoms_to_odoms(p_imovements);
+  pid_odom_smooth_pp_set(imovements);
+}
+void Drive::pid_odom_smooth_pp_set(std::vector<united_odom> p_imovements, bool slew_on) {
+  std::vector<odom> imovements = util::united_odoms_to_odoms(p_imovements);
+  pid_odom_smooth_pp_set(imovements, slew_on);
+}
 
 /////
 // boomerang
 /////
+// No units
 void Drive::pid_odom_boomerang_set(odom imovement) {
   bool slew_on = imovement.drive_direction == fwd ? slew_drive_forward_get() : slew_drive_backward_get();
   pid_odom_boomerang_set(imovement, slew_on);
@@ -93,6 +152,15 @@ void Drive::pid_odom_boomerang_set(odom imovement) {
 void Drive::pid_odom_boomerang_set(odom imovement, bool slew_on) {
   if (print_toggle) printf("Boomerang ");
   pid_odom_pp_set({imovement}, slew_on);
+}
+// Units
+void Drive::pid_odom_boomerang_set(united_odom p_imovement) {
+  odom imovement = util::united_odom_to_odom(p_imovement);
+  pid_odom_boomerang_set(imovement);
+}
+void Drive::pid_odom_boomerang_set(united_odom p_imovement, bool slew_on) {
+  odom imovement = util::united_odom_to_odom(p_imovement);
+  pid_odom_boomerang_set(imovement, slew_on);
 }
 
 /////

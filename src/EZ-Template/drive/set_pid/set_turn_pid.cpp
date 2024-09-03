@@ -139,6 +139,7 @@ void Drive::pid_turn_set(double target, int speed, e_angle_behavior behavior, bo
 /////
 // Turn to point wrappers
 /////
+// No units
 void Drive::pid_turn_set(pose itarget, drive_directions dir, int speed) {
   pid_turn_set(itarget, dir, speed, default_turn_type, slew_turn_get());
 }
@@ -147,6 +148,19 @@ void Drive::pid_turn_set(pose itarget, drive_directions dir, int speed, bool sle
 }
 void Drive::pid_turn_set(pose itarget, drive_directions dir, int speed, e_angle_behavior behavior) {
   pid_turn_set(itarget, dir, speed, behavior, slew_turn_get());
+}
+// Units
+void Drive::pid_turn_set(united_pose p_itarget, drive_directions dir, int speed) {
+  pid_turn_set(util::united_pose_to_pose(p_itarget), dir, speed);
+}
+void Drive::pid_turn_set(united_pose p_itarget, drive_directions dir, int speed, bool slew_on) {
+  pid_turn_set(util::united_pose_to_pose(p_itarget), dir, speed, slew_on);
+}
+void Drive::pid_turn_set(united_pose p_itarget, drive_directions dir, int speed, e_angle_behavior behavior) {
+  pid_turn_set(util::united_pose_to_pose(p_itarget), dir, speed, behavior);
+}
+void Drive::pid_turn_set(united_pose p_itarget, drive_directions dir, int speed, e_angle_behavior behavior, bool slew_on) {
+  pid_turn_set(util::united_pose_to_pose(p_itarget), dir, speed, behavior, slew_on);
 }
 
 /////

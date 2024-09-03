@@ -100,8 +100,8 @@ void autonomous() {
   chassis.dlead = 0.5;
   chassis.odometry_enabled = true;
 
-  chassis.pid_odom_set({{{0, 16}, fwd, 110},
-                        {{17, 16}, fwd, 110}},
+  chassis.pid_odom_set({{{0_in, 16_in}, fwd, 110},
+                        {{16_in, 16_in}, fwd, 110}},
                        true);
   chassis.pid_wait();
 
