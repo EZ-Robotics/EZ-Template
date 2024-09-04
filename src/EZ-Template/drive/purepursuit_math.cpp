@@ -28,7 +28,25 @@ double Drive::is_past_target(pose target, pose current) {
 }
 
 // Find the angle to face during movements
-std::vector<pose> Drive::find_point_to_face(pose current, pose target, bool set_global) {
+std::vector<pose> Drive::find_point_to_face(pose current, pose target, drive_directions dir, bool set_global) {
+  // rotate target around current 180deg if the robot wants to be reversed
+  if (dir == rev) {
+    pose new_target = target;
+    // Translate to origin
+    new_target.x -= current.x;
+    new_target.y -= current.y;
+
+    // Rotate 180
+    new_target.x *= -1;
+    new_target.y *= -1;
+
+    // Translate back to current
+    new_target.x += current.x;
+    new_target.y += current.y;
+
+    target = new_target;
+  }
+
   double tx_cx = target.x - current.x;
   double m = 0.0;
   double angle = 0.0;
@@ -223,12 +241,8 @@ std::vector<odom> Drive::smooth_path(std::vector<odom> ipath, double weight_smoo
 double Drive::turn_short(double target, double current, bool print) {
   if (print) printf("SHORTEST   Target: %.2f   Current: %.2f      New Target: ", target, current);
   double shortest = util::turn_shortest(target, current, false);
-  if (fabs(fabs(util::wrap_angle(shortest)) - 180.0) > turn_tolerance) {
-    if (print) printf("%.2f\n", shortest);
-    return shortest;
-  }
   double longest = util::turn_longest(target, current, false);
-  double output = turn_is_toleranced(target, current, longest, shortest);
+  double output = turn_is_toleranced(target, current, shortest, longest, shortest);
   if (print) printf("%.2f\n", output);
   return output;
 }
@@ -238,21 +252,24 @@ double Drive::turn_short(double target, double current, bool print) {
 double Drive::turn_long(double target, double current, bool print) {
   if (print) printf("LONGEST   Target: %.2f   Current: %.2f      New Target: ", target, current);
   double longest = util::turn_longest(target, current, false);
-  if (fabs(fabs(util::wrap_angle(longest)) - 180.0) > turn_tolerance) {
-    if (print) printf("%.2f\n", longest);
-    return longest;
-  }
   double shortest = util::turn_shortest(target, current, false);
-  double output = turn_is_toleranced(target, current, longest, shortest);
+  double output = turn_is_toleranced(target, current, longest, longest, shortest);
   if (print) printf("%.2f\n", output);
   return output;
 }
 
 // This figures out the tolerances
-double Drive::turn_is_toleranced(double target, double current, double longest, double shortest) {
-  double output = target;
-  int long_error_sgn = util::sgn(longest - current);
-  int short_error_sgn = util::sgn(shortest - current);
+double Drive::turn_is_toleranced(double target, double current, double input, double longest, double shortest) {
+  double output = input;
+
+  double long_error = longest - current;
+  double short_error = shortest - current;
+
+  if (fabs(long_error) - fabs(short_error) >= turn_tolerance * 2.0)
+    return output;
+
+  int long_error_sgn = util::sgn(long_error);
+  int short_error_sgn = util::sgn(short_error);
 
   if (turn_biased_left)
     output = long_error_sgn == -1 ? longest : shortest;

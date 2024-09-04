@@ -8,7 +8,6 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "main.h"
 
-
 pros::Controller master(pros::E_CONTROLLER_MASTER);
 
 namespace ez {
@@ -183,6 +182,11 @@ double turn_shortest(double target, double current, bool print) {
   while (error < -180) {
     new_target += 360;
     error = new_target - current;
+  }
+
+  if (new_target - current == 0.0) {
+    if (print) printf("%.2f\n", target);
+    return current;
   }
 
   if (print) printf("%.2f\n", new_target);

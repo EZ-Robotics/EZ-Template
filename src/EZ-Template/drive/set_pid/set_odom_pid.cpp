@@ -13,6 +13,37 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 /////
 void Drive::pid_odom_behavior_set(ez::e_angle_behavior behavior) { default_odom_type = behavior; }
 ez::e_angle_behavior Drive::pid_odom_behavior_get() { return default_odom_type; }
+// Flip all inputs so it works internally
+pose Drive::flip_pose(pose input) {
+  int flip_x = x_flipped ? -1 : 1;
+  int flip_y = y_flipped ? -1 : 1;
+
+  pose new_pose = input;
+  new_pose.x *= flip_x;
+  new_pose.y *= flip_y;
+
+  return new_pose;
+}
+std::vector<odom> Drive::set_odoms_direction(std::vector<odom> inputs) {
+  std::vector<odom> output;
+
+  for (int i = 0; i < inputs.size(); i++) {
+    pose new_pose = flip_pose(inputs[i].target);
+    output.push_back({new_pose,
+                      inputs[i].drive_direction,
+                      inputs[i].max_xy_speed,
+                      inputs[i].turn_behavior});
+  }
+
+  return output;
+}
+odom Drive::set_odom_direction(odom input) {
+  return set_odoms_direction({input})[0];
+}
+void Drive::odom_x_direction_flip(bool flip) { x_flipped = flip; }
+bool Drive::odom_x_direction_get() { return x_flipped; }
+void Drive::odom_y_direction_flip(bool flip) { y_flipped = flip; }
+bool Drive::odom_y_direction_get() { return y_flipped; }
 
 /////
 // pid_odom_set
@@ -102,7 +133,7 @@ void Drive::pid_odom_injected_pp_set(std::vector<ez::odom> imovements, bool slew
   aPID.timers_reset();
 
   if (print_toggle) printf("Injected ");
-  std::vector<odom> input_path = inject_points(imovements);
+  std::vector<odom> input_path = inject_points(set_odoms_direction(imovements));
   raw_pid_odom_pp_set(input_path, slew_on);
 }
 // Units
@@ -128,7 +159,7 @@ void Drive::pid_odom_smooth_pp_set(std::vector<odom> imovements, bool slew_on) {
   aPID.timers_reset();
 
   if (print_toggle) printf("Smooth Injected ");
-  std::vector<odom> input_path = smooth_path(inject_points(imovements), 0.75, 0.03, 0.0001);
+  std::vector<odom> input_path = smooth_path(inject_points(set_odoms_direction(imovements)), 0.75, 0.03, 0.0001);
   raw_pid_odom_pp_set(input_path, slew_on);
 }
 // Units
@@ -170,7 +201,7 @@ void Drive::pid_odom_pp_set(std::vector<odom> imovements, bool slew_on) {
   xyPID.timers_reset();
   aPID.timers_reset();
 
-  std::vector<odom> input = imovements;
+  std::vector<odom> input = set_odoms_direction(imovements);
   input.insert(input.begin(), {{{odom_current.x, odom_current.y, ANGLE_NOT_SET}, imovements[0].drive_direction, imovements[0].max_xy_speed}});
 
   int t = 0;
@@ -213,6 +244,8 @@ void Drive::pid_odom_pp_set(std::vector<odom> imovements, bool slew_on) {
 // External base ptp
 /////
 void Drive::pid_odom_ptp_set(odom imovement, bool slew_on) {
+  imovement = set_odom_direction(imovement);
+
   odom_second_to_last = odom_current;
   odom_target_start = imovement.target;
   odom_start = odom_current;
@@ -273,18 +306,13 @@ void Drive::raw_pid_odom_pp_set(std::vector<odom> imovements, bool slew_on) {
 void Drive::raw_pid_odom_ptp_set(odom imovement, bool slew_on) {
   // Update current drive/turn behavior
   current_drive_direction = imovement.drive_direction;
-  current_angle_behavior = imovement.turn_behavior;
 
   // Calculate the point to look at
-  point_to_face = find_point_to_face(odom_current, {imovement.target.x, imovement.target.y}, true);
+  point_to_face = find_point_to_face(odom_current, {imovement.target.x, imovement.target.y}, current_drive_direction, true);
   double target = util::absolute_angle_to_point(point_to_face[!ptf1_running], odom_current);  // Calculate the point for angle to face
-  target += current_drive_direction == REV ? 180 : 0;                                         // Decide if going fwd or rev
-  if (current_angle_behavior != raw) {
-    angle_adder = (new_turn_target_compute(target, drive_imu_get(), current_angle_behavior)) - target;
-    ANGLE_ADDER_WAS_RESET = true;
-  } else if (!ANGLE_ADDER_WAS_RESET) {
-    angle_adder = 0.0;
-    ANGLE_ADDER_WAS_RESET = true;
+  if (imovement.turn_behavior != raw) {
+    odom_imu_start = drive_imu_get();
+    current_angle_behavior = imovement.turn_behavior;
   }
 
   // Set max speed

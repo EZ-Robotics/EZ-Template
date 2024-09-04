@@ -402,6 +402,19 @@ class Drive {
   void pid_odom_boomerang_set(united_odom p_imovement);
   void pid_odom_boomerang_set(united_odom p_imovement, bool slew_on);
 
+  std::vector<odom> set_odoms_direction(std::vector<odom> inputs);
+  odom set_odom_direction(odom input);
+  pose flip_pose(pose input);
+  // true means left is positive x, false means right is positive x
+  void odom_x_direction_flip(bool flip = true);
+  bool odom_x_direction_get();
+  // true means down is positive y, false means up is positive y
+  void odom_y_direction_flip(bool flip = true);
+  bool odom_y_direction_get();
+  bool y_flipped = false;
+  bool x_flipped = false;
+  double odom_imu_start = 0.0;
+
   std::vector<odom> smooth_path(std::vector<odom> ipath, double weight_smooth = 0.75, double weight_data = 0.03, double tolerance = 0.0001);
   double is_past_target(pose target, pose current);
   void raw_pid_odom_pp_set(std::vector<odom> imovements, bool slew_on);
@@ -423,7 +436,7 @@ class Drive {
   // double Xx = 0, Yy = 0, Xy = 0, Yx = 0;
   drive_directions current_drive_direction = fwd;
   bool ptf1_running = false;
-  std::vector<pose> find_point_to_face(pose current, pose target, bool set_global = false);
+  std::vector<pose> find_point_to_face(pose current, pose target, drive_directions dir, bool set_global);
   void raw_pid_odom_ptp_set(odom imovement, bool slew_on);
   std::vector<odom> inject_points(std::vector<odom> imovements);
   void ptp_task();
@@ -474,14 +487,12 @@ class Drive {
   bool turn_biased_left = false;
   void pid_angle_behavior_bias_set(e_angle_behavior behavior);
   e_angle_behavior pid_angle_behavior_bias_get(e_angle_behavior);
-  double turn_is_toleranced(double target, double current, double longest, double shortest);
+  double turn_is_toleranced(double target, double current, double input, double longest, double shortest);
   double turn_short(double target, double current, bool print = false);
   double turn_long(double target, double current, bool print = false);
   double new_turn_target_compute(double target, double current, ez::e_angle_behavior behavior);
   double turn_left(double target, double current, bool print = false);
   double turn_right(double target, double current, bool print = false);
-  double angle_adder = 0.0;
-  bool ANGLE_ADDER_WAS_RESET = true;
 
   bool is_swing_slew_enabled(e_swing type, double target, double current);
 

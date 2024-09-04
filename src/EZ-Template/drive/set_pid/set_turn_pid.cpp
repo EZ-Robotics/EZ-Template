@@ -167,19 +167,20 @@ void Drive::pid_turn_set(united_pose p_itarget, drive_directions dir, int speed,
 // Turn to point base
 /////
 void Drive::pid_turn_set(pose itarget, drive_directions dir, int speed, e_angle_behavior behavior, bool slew_on) {
+  itarget = flip_pose(itarget);
+  odom_imu_start = drive_imu_get();
+
   current_drive_direction = dir;
+  current_angle_behavior = behavior;
 
   // Calculate the point to look at
-  point_to_face = find_point_to_face(odom_current, {itarget.x, itarget.y}, true);
+  point_to_face = find_point_to_face(odom_current, {itarget.x, itarget.y}, current_drive_direction, true);
 
   double target = util::absolute_angle_to_point(point_to_face[!ptf1_running], odom_current);  // Calculate the point for angle to face
-  target += current_drive_direction == REV ? 180 : 0;                                         // Decide if going fwd or rev
-  // turnPID.target_set(util::wrap_angle(target - drive_imu_get()));                             // Constrain error to -180 to 180
 
   // Compute new turn target based on new angle
-  current_angle_behavior = behavior;
-  angle_adder = (new_turn_target_compute(target, drive_imu_get(), current_angle_behavior)) - target;
-  ANGLE_ADDER_WAS_RESET = false;
+  // angle_adder = (new_turn_target_compute(target, odom_imu_start, current_angle_behavior)) - target;
+  // ANGLE_ADDER_WAS_RESET = false;
 
   if (print_toggle) printf("Turn to Point PID Started... Target Point: (%.2f, %.2f) \n", itarget.x, itarget.y);
   pid_turn_set(target, speed, slew_on);

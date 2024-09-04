@@ -105,7 +105,7 @@ void autonomous() {
                        true);
   chassis.pid_wait();
 
-  chassis.pid_odom_set({{0, 0, 0}, rev, 110}, true);
+  chassis.pid_odom_set({{0_in, 0_in, 0_deg}, rev, 110}, true);
   chassis.pid_wait();
 
   // ez::as::auton_selector.selected_auton_call();  // Calls selected auton from autonomous selector
