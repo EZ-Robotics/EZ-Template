@@ -97,8 +97,6 @@ void autonomous() {
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
   chassis.odom_pose_set({0, 0, 0});
   chassis.drive_width_set(11);  // just use a tape measure
-  chassis.dlead = 0.5;
-  chassis.odometry_enabled = true;
 
   chassis.pid_odom_set({{{0_in, 16_in}, fwd, 110},
                         {{16_in, 16_in}, fwd, 110}},

@@ -184,7 +184,7 @@ void Drive::ptp_task() {
   // Prioritize turning by scaling xy_out down
   double xy_out = xyPID.output;
   // xy_out = util::clamp(xy_out, max_slew_out, -max_slew_out);
-  xy_out *= cos(util::to_rad(aPID.error)) / 1.375;
+  xy_out *= cos(util::to_rad(aPID.error)) / odom_turn_bias_amount;
   double a_out = aPID.output;
   // a_out = util::clamp(a_out, max_slew_out, -max_slew_out);
 
@@ -231,7 +231,7 @@ void Drive::boomerang_task() {
   int dir = current_drive_direction == REV ? -1 : 1;
 
   double h = util::distance_to_point(target, odom_current) * dlead;
-  double max = 12.0;
+  double max = max_boomerang_distance;
   h = h > max ? max : h;
   h *= dir;
 

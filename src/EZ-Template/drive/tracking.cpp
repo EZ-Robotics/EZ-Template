@@ -8,30 +8,18 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 using namespace ez;
 
-void Drive::odom_pose_x_set(double x) {
-  // odom_target.x = x;
-  odom_current.x = x;
-}
-void Drive::odom_pose_y_set(double y) {
-  // odom_target.y = y;
-  odom_current.y = y;
-}
-
+void Drive::odom_pose_x_set(double x) { odom_current.x = x; }
+void Drive::odom_pose_y_set(double y) { odom_current.y = y; }
+void Drive::odom_pose_theta_set(double a) { drive_angle_set(a); }
+void Drive::odom_reset() { odom_pose_set({0, 0, 0}); }
+void Drive::drive_width_set(double input) { track_width = input; }
+double Drive::drive_width_get() { return track_width; }
+void Drive::drive_odom_enable(bool input) { odometry_enabled = input; }
 void Drive::odom_pose_set(pose itarget) {
   odom_pose_theta_set(itarget.theta);
   odom_pose_x_set(itarget.x);
   odom_pose_y_set(itarget.y);
 }
-
-void Drive::odom_pose_theta_set(double a) { drive_angle_set(a); }
-void Drive::odom_reset() { odom_pose_set({0, 0, 0}); }
-
-void Drive::drive_width_set(double input) {
-  track_width = input;
-}
-double Drive::drive_width_get() { return track_width; }
-
-void Drive::drive_odom_enable(bool input) { odometry_enabled = input; }
 
 // Tracking based on https://wiki.purduesigbots.com/software/odometry
 void Drive::ez_tracking_task() {

@@ -426,7 +426,15 @@ class Drive {
   void pid_wait_until_index(int index);
   void pid_wait_until_point(pose target);
   void pid_wait_until(pose target);
-  double dlead = 0.375;
+  double dlead = 0.5;
+  void odom_boomerang_dlead_set(double input);
+  double odom_boomerang_dlead_get();
+  double max_boomerang_distance = 12.0;
+  void odom_boomerang_distance_set(double distance);
+  double odom_boomerang_distance_get();
+  double odom_turn_bias_amount = 1.375;
+  void odom_turn_bias_set(double bias);
+  double odom_turn_bias_get();
   //  Odometry
   bool odometry_enabled = true;
   float track_width = 0.0;

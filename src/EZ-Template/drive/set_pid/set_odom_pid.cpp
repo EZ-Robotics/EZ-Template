@@ -44,6 +44,12 @@ void Drive::odom_x_direction_flip(bool flip) { x_flipped = flip; }
 bool Drive::odom_x_direction_get() { return x_flipped; }
 void Drive::odom_y_direction_flip(bool flip) { y_flipped = flip; }
 bool Drive::odom_y_direction_get() { return y_flipped; }
+void Drive::odom_boomerang_dlead_set(double input) { dlead = input; }
+double Drive::odom_boomerang_dlead_get() { return dlead; }
+void Drive::odom_boomerang_distance_set(double distance) { max_boomerang_distance = distance; }
+double Drive::odom_boomerang_distance_get() { return max_boomerang_distance; }
+void Drive::odom_turn_bias_set(double bias) { odom_turn_bias_amount = 1.375; }
+double Drive::odom_turn_bias_get() { return odom_turn_bias_amount; }
 
 /////
 // pid_odom_set
