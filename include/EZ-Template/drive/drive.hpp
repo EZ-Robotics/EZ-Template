@@ -12,10 +12,12 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "EZ-Template/PID.hpp"
 #include "EZ-Template/slew.hpp"
+#include "EZ-Template/tracking_wheel.hpp"
 #include "EZ-Template/util.hpp"
 #include "okapi/api/units/QAngle.hpp"
 #include "okapi/api/units/QLength.hpp"
 #include "okapi/api/units/QTime.hpp"
+#include "pros/motor_group.hpp"
 #include "pros/motors.h"
 
 using namespace ez;
@@ -234,6 +236,24 @@ class Drive {
   pros::Task ez_auto;
 
   /**
+   * Creates a Drive Controller using internal encoders and requires track width
+   *
+   * \param input_left_motors
+   *        pros::MotorGroup({-1, 2,...}) Make ports negative if reversed!
+   * \param input_right_motors
+   *        pros::MotorGroup({-3, 4,...})  Make ports negative if reversed!
+   * \param input_imu
+   *        pros::IMU(21) Port the IMU is plugged into.
+   * \param wheel_diameter
+   *        Diameter of your drive wheels.  Remember 4" is 4.125"!
+   * \param wheel_rpm
+   *        Motor cartridge RPM
+   * \param input_track_width
+   *        Distance between the center of your left wheel and the center of your right wheel.  You can measure this with a tape measure.
+   */
+  Drive(pros::MotorGroup input_left_motors, pros::MotorGroup input_right_motors, pros::IMU input_imu, double wheel_diameter, double wheel_rpm, double input_track_width);
+
+  /**
    * Creates a Drive Controller using internal encoders.
    *
    * \param left_motor_ports
@@ -349,11 +369,15 @@ class Drive {
   std::vector<odom> pp_movements;
   std::vector<int> injected_pp_index;
   int pp_index = 0;
-  void odom_pose_x_set(double x);
-  void odom_pose_y_set(double y);
+  void odom_x_set(double x);
+  void odom_y_set(double y);
   void odom_pose_set(pose itarget);
-  void odom_pose_theta_set(double a);
+  void odom_theta_set(double a);
   void odom_reset();
+  double odom_x_get();
+  double odom_y_get();
+  double odom_theta_get();
+  pose odom_pose_get();
   bool imu_calibration_complete = false;
   double angle_rad = 0.0;
 
@@ -437,8 +461,8 @@ class Drive {
   double odom_turn_bias_get();
   //  Odometry
   bool odometry_enabled = true;
-  float track_width = 0.0;
-  double l_last = 0, r_last = 0 /*, c_last = 0*/;
+  double track_width = 0.0;
+  double h_last = 0, v_last = 0 /*, c_last = 0*/;
   /*double h = 0, h2 = 0*/;  // rad for big circle
   double last_theta = 0;
   // double Xx = 0, Yy = 0, Xy = 0, Yx = 0;
@@ -501,8 +525,22 @@ class Drive {
   double new_turn_target_compute(double target, double current, ez::e_angle_behavior behavior);
   double turn_left(double target, double current, bool print = false);
   double turn_right(double target, double current, bool print = false);
-
   bool is_swing_slew_enabled(e_swing type, double target, double current);
+
+  tracking_wheel* odom_left_tracker;
+  tracking_wheel* odom_right_tracker;
+  tracking_wheel* odom_front_tracker;
+  tracking_wheel* odom_back_tracker;
+
+  bool odom_left_tracker_enabled = false;
+  bool odom_right_tracker_enabled = false;
+  bool odom_front_tracker_enabled = false;
+  bool odom_back_tracker_enabled = false;
+
+  void odom_tracker_left_set(tracking_wheel* input);
+  void odom_tracker_right_set(tracking_wheel* input);
+  void odom_tracker_front_set(tracking_wheel* input);
+  void odom_tracker_back_set(tracking_wheel* input);
 
   /////
   //
@@ -2243,7 +2281,7 @@ class Drive {
   bool pid_tuner_lcd_b = true;
   struct const_and_name {
     std::string name = "";
-    PID::Constants *consts;
+    PID::Constants* consts;
   };
   std::vector<const_and_name> constants;
   void pid_tuner_print();
@@ -2336,6 +2374,7 @@ class Drive {
 #define DRIVE_INTEGRATED 1
 #define DRIVE_ADI_ENCODER 2
 #define DRIVE_ROTATION 3
+#define ODOM_TRACKER 4
 
   /**
    * Is tracking?
@@ -2368,7 +2407,7 @@ class Drive {
   /**
    * Function for button presses.
    */
-  void button_press(button_ *input_name, int button, std::function<void()> changeCurve, std::function<void()> save);
+  void button_press(button_* input_name, int button, std::function<void()> changeCurve, std::function<void()> save);
 
   /**
    * The left and right curve scalers.

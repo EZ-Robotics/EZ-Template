@@ -8,74 +8,95 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 using namespace ez;
 
-void Drive::odom_pose_x_set(double x) { odom_current.x = x; }
-void Drive::odom_pose_y_set(double y) { odom_current.y = y; }
-void Drive::odom_pose_theta_set(double a) { drive_angle_set(a); }
+// Sets and gets
+void Drive::odom_x_set(double x) { odom_current.x = x; }
+void Drive::odom_y_set(double y) { odom_current.y = y; }
+void Drive::odom_theta_set(double a) { drive_angle_set(a); }
 void Drive::odom_reset() { odom_pose_set({0, 0, 0}); }
 void Drive::drive_width_set(double input) { track_width = input; }
 double Drive::drive_width_get() { return track_width; }
 void Drive::drive_odom_enable(bool input) { odometry_enabled = input; }
 void Drive::odom_pose_set(pose itarget) {
-  odom_pose_theta_set(itarget.theta);
-  odom_pose_x_set(itarget.x);
-  odom_pose_y_set(itarget.y);
+  odom_theta_set(itarget.theta);
+  odom_x_set(itarget.x);
+  odom_y_set(itarget.y);
 }
+
+double Drive::odom_x_get() { return odom_current.x; }
+double Drive::odom_y_get() { return odom_current.y; }
+double Drive::odom_theta_get() { return odom_current.theta; }
+pose Drive::odom_pose_get() { return odom_current; }
 
 // Tracking based on https://wiki.purduesigbots.com/software/odometry
 void Drive::ez_tracking_task() {
+  // Don't let this function run if odom is disabled
+  // and make sure all the "lasts" are 0
   if (!imu_calibration_complete || !odometry_enabled) {
-    l_last = 0;
-    r_last = 0;
+    v_last = 0;
+    h_last = 0;
     last_theta = 0;
     return;
   }
-  // pros::delay(3000);
-  // while (true) {
-  // printf("x: %.2f   y: %.2f   a: %.2f\n", odom_current.x, odom_current.y, odom_current.theta);
 
-  // float l_current = drive_sensor_left();
-  float r_current = drive_sensor_right();
-  // c_current = get_raw_center();
+  // Figure out what sensor to use for the vertical tracking
+  float vertical_current = 0.0;
+  float vertical_track_width = 0.0;
+  if (odom_right_tracker_enabled) {
+    vertical_current = odom_right_tracker->get();
+    vertical_track_width = odom_right_tracker->distance_to_center_get();
+  } else if (odom_left_tracker_enabled) {
+    vertical_current = odom_left_tracker->get();
+    vertical_track_width = odom_left_tracker->distance_to_center_get();
+  } else {
+    vertical_current = drive_sensor_right();
+    vertical_track_width = track_width / 2.0;
+  }
 
-  // float l_ = l_current - l_last;
-  float r_ = r_current - r_last;
-  // float c = c_current - c_last;
+  // Figure out what sensor to use for horizontal tracking
+  float horizontal_current = 0.0;
+  float horizontal_track_width = 0.0;
+  if (odom_back_tracker_enabled) {
+    horizontal_current = odom_back_tracker->get();
+    horizontal_track_width = odom_back_tracker->distance_to_center_get();
+  } else if (odom_front_tracker_enabled) {
+    horizontal_current = odom_front_tracker->get();
+    horizontal_track_width = odom_front_tracker->distance_to_center_get();
+  }
 
-  // l_last = l_current;
-  r_last = r_current;
-  // c_last = c_current;
+  // Vertical sensor and velocity
+  float v_ = vertical_current - v_last;
+  v_last = vertical_current;
 
-  // diff between wheels for correcting turning
+  // Horizontal sensor and velocity
+  float c_ = horizontal_current - h_last;
+  h_last = horizontal_current;
+
+  // Angle and velocity
   float current_global_theta = ez::util::to_rad(drive_imu_get());
-  float theta = current_global_theta - last_theta;  // imu theta
+  float theta = current_global_theta - last_theta;
   last_theta = current_global_theta;
 
+  // Figure out how far we've actually moved
   float beta = 0.0;
-  float h = r_;
+  float local_y = v_;
+  float local_x = c_;
   if (theta != 0) {
-    float radius_r = r_ / theta;
+    float v_radius = v_ / theta;
     beta = theta / 2.0;
-    h = ((radius_r + (track_width / 2.0)) * sin(beta)) * 2.0;
-    // radius_c = c / theta;
-    // h2 = (radius_c + CENTER_OFFSET) * 2.0 * sin(beta);
-  }  // ///else {
-     // ///h = l_;
-     // ///beta = 0;
-     // h2 = 0; // Used for perp wheel
-  // ///}
+    local_y = ((v_radius + vertical_track_width) * sin(beta)) * 2.0;
+    float h_radius = c_ / theta;
+    local_x = ((h_radius + horizontal_track_width) * sin(beta)) * 2.0;
+  }
 
   float alpha = angle_rad + beta;
 
-  // Xx = h2 * cos(alpha);
-  // Xy = h2 * -sin(alpha);
-  float Yx = h * sin(alpha);
-  float Yy = h * cos(alpha);
+  float x = local_x * cos(alpha);
+  x += local_y * sin(alpha);
+  float y = local_x * -sin(alpha);
+  y += local_y * cos(alpha);
 
-  odom_current.x += (/*Xx +*/ Yx);
-  odom_current.y += (/*Xy +*/ Yy);
+  odom_current.x += x;
+  odom_current.y += y;
   angle_rad = current_global_theta;
-  odom_current.theta = drive_imu_get();  // drive_imu_get();
-
-  // pros::delay(1);
-  // }
+  odom_current.theta = drive_imu_get();
 }

@@ -8,12 +8,20 @@
 // Chassis constructor
 ez::Drive chassis(
     // These are your drive motors, the first motor is used for sensing!
-    {-5, -6, -7, -8},  // Left Chassis Ports (negative port will reverse it!)
-    {11, 15, 16, 17},  // Right Chassis Ports (negative port will reverse it!)
+    pros::MotorGroup({-5, -6, -7, -8}),  // Left Chassis Ports (negative port will reverse it!)
+    pros::MotorGroup({11, 15, 16, 17}),  // Right Chassis Ports (negative port will reverse it!)
 
-    21,     // IMU Port
-    4.125,  // Wheel Diameter (Remember, 4" wheels without screw holes are actually 4.125!)
-    420);   // Wheel RPM
+    pros::IMU(21),  // IMU port
+    4.125,          // Wheel Diameter (Remember, 4" wheels without screw holes are actually 4.125!)
+    420.0,          // Wheel RPM = cartridge * (motor gear / wheel gear)
+    11.0);          // Width of your powered wheels.  Measure this with a tape measure, center-to-center
+
+// Are you using tracking wheels?  Comment out which ones you're using here!
+//  `2.75` is the wheel diameter
+//  `4.0` is the distance from the center of the wheel to the center of the robot
+// ez::tracking_wheel right_tracker({-'A', -'B'}, 2.75, 4.0);  // ADI Encoders
+// ez::tracking_wheel left_tracker(1, {'C', 'D'}, 2.75, 4.0);  // ADI Encoders plugged into a Smart port
+// ez::tracking_wheel horiz_tracker(1, 2.75, 4.0);             // Rotation sensors
 
 /**
  * Runs initialization code. This occurs as soon as the program is started.
@@ -26,6 +34,11 @@ void initialize() {
   ez::ez_template_print();
 
   pros::delay(500);  // Stop the user from doing anything while legacy ports configure
+
+  // Are you using tracking wheels?  Comment out which ones you're using here!
+  // chassis.odom_tracker_right_set(&right_tracker);
+  // chassis.odom_tracker_left_set(&left_tracker);
+  // chassis.odom_tracker_horiz_set(&horiz_tracker);
 
   // Configure your chassis controls
   chassis.opcontrol_curve_buttons_toggle(true);  // Enables modifying the controller curve with buttons on the joysticks
