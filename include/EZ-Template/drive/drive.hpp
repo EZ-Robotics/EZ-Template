@@ -358,28 +358,30 @@ class Drive {
   void pid_odom_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = true);
   void pid_odom_turn_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QAngle p_small_error, okapi::QTime p_big_exit_time, okapi::QAngle p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout, bool use_imu = true);
   void pid_odom_drive_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QLength p_small_error, okapi::QTime p_big_exit_time, okapi::QLength p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout, bool use_imu = true);
+  void drive_width_set(okapi::QLength p_input);
   void drive_width_set(double input);
   double drive_width_get();
+
   void drive_odom_enable(bool input);
-  pose odom_target = {0, 0, 0};
-  pose odom_current = {0, 0, 0};
-  pose odom_second_to_last = {0, 0, 0};
-  pose odom_start = {0, 0, 0};
-  pose odom_target_start = {0, 0, 0};
+  bool drive_odom_enabled();
+
   std::vector<odom> pp_movements;
   std::vector<int> injected_pp_index;
   int pp_index = 0;
   void odom_x_set(double x);
   void odom_y_set(double y);
-  void odom_pose_set(pose itarget);
   void odom_theta_set(double a);
+  void odom_x_set(okapi::QLength p_x);
+  void odom_y_set(okapi::QLength p_y);
+  void odom_theta_set(okapi::QAngle p_a);
+  void odom_pose_set(pose itarget);
+  void odom_pose_set(united_pose itarget);
   void odom_reset();
   double odom_x_get();
   double odom_y_get();
   double odom_theta_get();
   pose odom_pose_get();
   bool imu_calibration_complete = false;
-  double angle_rad = 0.0;
 
   void pid_turn_set(pose itarget, drive_directions dir, int speed);
   void pid_turn_set(pose itarget, drive_directions dir, int speed, bool slew_on);
@@ -390,12 +392,15 @@ class Drive {
   void pid_turn_set(united_pose p_itarget, drive_directions dir, int speed, e_angle_behavior behavior);
   void pid_turn_set(united_pose p_itarget, drive_directions dir, int speed, e_angle_behavior behavior, bool slew_on);
 
-  pose turn_to_point_target = {0, 0, 0};
-
   void pid_odom_ptp_set(odom imovement);
   void pid_odom_ptp_set(odom imovement, bool slew_on);
   void pid_odom_ptp_set(united_odom p_imovement);
   void pid_odom_ptp_set(united_odom p_imovement, bool slew_on);
+
+  void pid_odom_set(double target, int speed);
+  void pid_odom_set(okapi::QLength p_target, int speed, bool slew_on);
+  void pid_odom_set(okapi::QLength p_target, int speed);
+  void pid_odom_set(double target, int speed, bool slew_on);
 
   void pid_odom_set(odom imovement);
   void pid_odom_set(odom imovement, bool slew_on);
@@ -426,47 +431,44 @@ class Drive {
   void pid_odom_boomerang_set(united_odom p_imovement);
   void pid_odom_boomerang_set(united_odom p_imovement, bool slew_on);
 
-  std::vector<odom> set_odoms_direction(std::vector<odom> inputs);
-  odom set_odom_direction(odom input);
-  pose flip_pose(pose input);
   // true means left is positive x, false means right is positive x
   void odom_x_direction_flip(bool flip = true);
   bool odom_x_direction_get();
   // true means down is positive y, false means up is positive y
   void odom_y_direction_flip(bool flip = true);
   bool odom_y_direction_get();
-  bool y_flipped = false;
-  bool x_flipped = false;
-  double odom_imu_start = 0.0;
 
   std::vector<odom> smooth_path(std::vector<odom> ipath, double weight_smooth = 0.75, double weight_data = 0.03, double tolerance = 0.0001);
   double is_past_target(pose target, pose current);
   void raw_pid_odom_pp_set(std::vector<odom> imovements, bool slew_on);
-  int past_target = 0;
+
   std::vector<pose> point_to_face = {{0, 0, 0}, {0, 0, 0}};
-  double SPACING = 0.5;
-  double LOOK_AHEAD = 7.0;
-  // bool is_past_target_using_xy = false;
+
+  void odom_path_spacing_set(double spacing);
+  void odom_path_spacing_set(okapi::QLength p_spacing);
+  double odom_path_spacing_get();
+
+  void odom_look_ahead_set(okapi::QLength p_distance);
+  void odom_look_ahead_set(double distance);
+  double odom_look_ahead_get();
+
   void pid_wait_until_index(int index);
   void pid_wait_until_point(pose target);
   void pid_wait_until(pose target);
-  double dlead = 0.5;
+
   void odom_boomerang_dlead_set(double input);
+  void odom_boomerang_dlead_set(okapi::QLength p_input);
   double odom_boomerang_dlead_get();
-  double max_boomerang_distance = 12.0;
+
+  void odom_boomerang_distance_set(okapi::QLength p_distance);
   void odom_boomerang_distance_set(double distance);
   double odom_boomerang_distance_get();
-  double odom_turn_bias_amount = 1.375;
+
   void odom_turn_bias_set(double bias);
   double odom_turn_bias_get();
+
   //  Odometry
-  bool odometry_enabled = true;
-  double track_width = 0.0;
-  double h_last = 0, v_last = 0 /*, c_last = 0*/;
-  /*double h = 0, h2 = 0*/;  // rad for big circle
-  double last_theta = 0;
-  // double Xx = 0, Yy = 0, Xy = 0, Yx = 0;
-  drive_directions current_drive_direction = fwd;
+
   bool ptf1_running = false;
   std::vector<pose> find_point_to_face(pose current, pose target, drive_directions dir, bool set_global);
   void raw_pid_odom_ptp_set(odom imovement, bool slew_on);
@@ -478,33 +480,22 @@ class Drive {
   PID aPID;
   PID internal_leftPID;
   PID internal_rightPID;
-  bool was_last_pp_mode_boomerang = false;
 
-  bool global_forward_drive_slew_enabled = false;
-  bool global_backward_drive_slew_enabled = false;
   void slew_drive_set(bool slew_on);
   void slew_drive_forward_set(bool slew_on);
   bool slew_drive_forward_get();
   void slew_drive_backward_set(bool slew_on);
   bool slew_drive_backward_get();
 
-  bool global_forward_swing_slew_enabled = false;
-  bool global_backward_swing_slew_enabled = false;
   void slew_swing_set(bool slew_on);
   void slew_swing_forward_set(bool slew_on);
   bool slew_swing_forward_get();
   void slew_swing_backward_set(bool slew_on);
   bool slew_swing_backward_get();
 
-  bool global_turn_slew_enabled = false;
   void slew_turn_set(bool slew_on);
   bool slew_turn_get();
 
-  e_angle_behavior current_angle_behavior = raw;
-
-  e_angle_behavior default_swing_type = raw;
-  e_angle_behavior default_turn_type = raw;
-  e_angle_behavior default_odom_type = shortest;
   void pid_angle_behavior_set(e_angle_behavior behavior);
   void pid_turn_behavior_set(e_angle_behavior behavior);
   void pid_swing_behavior_set(e_angle_behavior behavior);
@@ -513,10 +504,10 @@ class Drive {
   e_angle_behavior pid_swing_behavior_get();
   e_angle_behavior pid_odom_behavior_get();
 
+  void pid_angle_behavior_tolerance_set(okapi::QAngle p_tolerance);
   void pid_angle_behavior_tolerance_set(double tolerance);
   double pid_angle_behavior_tolerance_get();
-  double turn_tolerance = 3.0;
-  bool turn_biased_left = false;
+
   void pid_angle_behavior_bias_set(e_angle_behavior behavior);
   e_angle_behavior pid_angle_behavior_bias_get(e_angle_behavior);
   double turn_is_toleranced(double target, double current, double input, double longest, double shortest);
@@ -532,15 +523,66 @@ class Drive {
   tracking_wheel* odom_front_tracker;
   tracking_wheel* odom_back_tracker;
 
-  bool odom_left_tracker_enabled = false;
-  bool odom_right_tracker_enabled = false;
-  bool odom_front_tracker_enabled = false;
-  bool odom_back_tracker_enabled = false;
-
   void odom_tracker_left_set(tracking_wheel* input);
   void odom_tracker_right_set(tracking_wheel* input);
   void odom_tracker_front_set(tracking_wheel* input);
   void odom_tracker_back_set(tracking_wheel* input);
+
+  void odom_slew_reenable(bool reenable);  // true reenables, false does not
+  bool odom_slew_reenables();
+
+  //
+  //
+  // odom private
+  //
+  //
+  bool slew_reenables_when_max_speed_changes = true;
+  int slew_min_when_it_enabled = 0;
+  bool slew_will_enable_later = false;
+  bool current_slew_on = false;
+  bool is_odom_turn_bias_enabled = true;
+  bool odom_turn_bias_enabled();
+  void odom_turn_bias_set(bool set);
+  double angle_rad = 0.0;
+  double track_width = 0.0;
+  bool odometry_enabled = true;
+  pose odom_target = {0, 0, 0};
+  pose odom_current = {0, 0, 0};
+  pose odom_second_to_last = {0, 0, 0};
+  pose odom_start = {0, 0, 0};
+  pose odom_target_start = {0, 0, 0};
+  pose turn_to_point_target = {0, 0, 0};
+  bool y_flipped = false;
+  bool x_flipped = false;
+  double odom_imu_start = 0.0;
+  int past_target = 0;
+  double SPACING = 0.5;
+  double LOOK_AHEAD = 7.0;
+  double dlead = 0.5;
+  double max_boomerang_distance = 12.0;
+  double odom_turn_bias_amount = 1.375;
+  drive_directions current_drive_direction = fwd;
+  double h_last = 0, v_last = 0;
+  double last_theta = 0;
+  bool was_last_pp_mode_boomerang = false;
+  bool global_forward_drive_slew_enabled = false;
+  bool global_backward_drive_slew_enabled = false;
+  bool global_forward_swing_slew_enabled = false;
+  bool global_backward_swing_slew_enabled = false;
+  double turn_tolerance = 3.0;
+  bool global_turn_slew_enabled = false;
+  e_angle_behavior current_angle_behavior = raw;
+  e_angle_behavior default_swing_type = raw;
+  e_angle_behavior default_turn_type = raw;
+  e_angle_behavior default_odom_type = shortest;
+  bool turn_biased_left = false;
+  std::vector<odom> set_odoms_direction(std::vector<odom> inputs);
+  odom set_odom_direction(odom input);
+  pose flip_pose(pose input);
+  bool odom_left_tracker_enabled = false;
+  bool odom_right_tracker_enabled = false;
+  bool odom_front_tracker_enabled = false;
+  bool odom_back_tracker_enabled = false;
 
   /////
   //

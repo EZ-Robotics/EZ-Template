@@ -45,11 +45,55 @@ bool Drive::odom_x_direction_get() { return x_flipped; }
 void Drive::odom_y_direction_flip(bool flip) { y_flipped = flip; }
 bool Drive::odom_y_direction_get() { return y_flipped; }
 void Drive::odom_boomerang_dlead_set(double input) { dlead = input; }
+void Drive::odom_boomerang_dlead_set(okapi::QLength p_input) { odom_boomerang_dlead_set(p_input.convert(okapi::inch)); }
 double Drive::odom_boomerang_dlead_get() { return dlead; }
 void Drive::odom_boomerang_distance_set(double distance) { max_boomerang_distance = distance; }
+void Drive::odom_boomerang_distance_set(okapi::QLength p_distance) { odom_boomerang_distance_set(p_distance.convert(okapi::inch)); }
 double Drive::odom_boomerang_distance_get() { return max_boomerang_distance; }
 void Drive::odom_turn_bias_set(double bias) { odom_turn_bias_amount = 1.375; }
 double Drive::odom_turn_bias_get() { return odom_turn_bias_amount; }
+void Drive::odom_path_spacing_set(double spacing) { SPACING = spacing; }
+void Drive::odom_path_spacing_set(okapi::QLength p_spacing) { odom_path_spacing_set(p_spacing.convert(okapi::inch)); }
+double Drive::odom_path_spacing_get() { return SPACING; }
+void Drive::odom_look_ahead_set(double distance) { LOOK_AHEAD = distance; }
+void Drive::odom_look_ahead_set(okapi::QLength p_distance) { odom_look_ahead_set(p_distance.convert(okapi::inch)); }
+double Drive::odom_look_ahead_get() { return LOOK_AHEAD; }
+bool Drive::odom_turn_bias_enabled() { return is_odom_turn_bias_enabled; }
+void Drive::odom_turn_bias_set(bool set) { is_odom_turn_bias_enabled = set; }
+void Drive::odom_slew_reenable(bool reenable) { slew_reenables_when_max_speed_changes = reenable; }
+bool Drive::odom_slew_reenables() { return slew_reenables_when_max_speed_changes; }
+
+/////
+// pid_odom_set but it looks like pid_drive_set
+/////
+void Drive::pid_odom_set(okapi::QLength p_target, int speed, bool slew_on) {
+  double target = p_target.convert(okapi::inch);
+  pid_odom_set(target, speed, slew_on);
+}
+void Drive::pid_odom_set(okapi::QLength p_target, int speed) {
+  double target = p_target.convert(okapi::inch);
+  pid_odom_set(target, speed);
+}
+void Drive::pid_odom_set(double target, int speed) {
+  bool slew_on = util::sgn(target) >= 0 ? slew_drive_forward_get() : slew_drive_backward_get();
+  pid_odom_set(target, speed, slew_on);
+}
+void Drive::pid_odom_set(double target, int speed, bool slew_on) {
+  drive_directions fwd_or_rev = util::sgn(target) >= 0 ? fwd : rev;
+  pose target_pose = util::vector_off_point(target, odom_pose_get());
+  odom path = {target_pose, fwd_or_rev, speed};
+
+  xyPID.timers_reset();
+  aPID.timers_reset();
+
+  if (print_toggle) printf("Injected ");
+  std::vector<odom> input_path = inject_points(set_odoms_direction({path}));
+  odom_turn_bias_set(false);
+  current_slew_on = slew_on;
+  slew_min_when_it_enabled = 0;
+  slew_will_enable_later = false;
+  raw_pid_odom_pp_set(input_path, slew_on);
+}
 
 /////
 // pid_odom_set
@@ -140,6 +184,10 @@ void Drive::pid_odom_injected_pp_set(std::vector<ez::odom> imovements, bool slew
 
   if (print_toggle) printf("Injected ");
   std::vector<odom> input_path = inject_points(set_odoms_direction(imovements));
+  odom_turn_bias_set(true);
+  current_slew_on = slew_on;
+  slew_min_when_it_enabled = 0;
+  slew_will_enable_later = false;
   raw_pid_odom_pp_set(input_path, slew_on);
 }
 // Units
@@ -166,6 +214,10 @@ void Drive::pid_odom_smooth_pp_set(std::vector<odom> imovements, bool slew_on) {
 
   if (print_toggle) printf("Smooth Injected ");
   std::vector<odom> input_path = smooth_path(inject_points(set_odoms_direction(imovements)), 0.75, 0.03, 0.0001);
+  odom_turn_bias_set(true);
+  current_slew_on = slew_on;
+  slew_min_when_it_enabled = 0;
+  slew_will_enable_later = false;
   raw_pid_odom_pp_set(input_path, slew_on);
 }
 // Units
@@ -242,6 +294,11 @@ void Drive::pid_odom_pp_set(std::vector<odom> imovements, bool slew_on) {
       injected_pp_index.push_back(i);
   }
 
+  odom_turn_bias_set(true);
+  current_slew_on = slew_on;
+  slew_min_when_it_enabled = 0;
+  slew_will_enable_later = false;
+
   if (print_toggle) printf("Pure Pursuit ");
   raw_pid_odom_pp_set(input, slew_on);
 }
@@ -263,6 +320,10 @@ void Drive::pid_odom_ptp_set(odom imovement, bool slew_on) {
   l_start = drive_sensor_left();
   r_start = drive_sensor_right();
 
+  odom_turn_bias_set(true);
+  current_slew_on = slew_on;
+  slew_min_when_it_enabled = 0;
+  slew_will_enable_later = false;
   raw_pid_odom_ptp_set(imovement, slew_on);
 
   // Initialize slew
@@ -321,8 +382,9 @@ void Drive::raw_pid_odom_ptp_set(odom imovement, bool slew_on) {
     current_angle_behavior = imovement.turn_behavior;
   }
 
-  // Set max speed
-  pid_speed_max_set(imovement.max_xy_speed);
+  if (current_slew_on && imovement.max_xy_speed > pid_speed_max_get() && odom_slew_reenables()) {
+    slew_will_enable_later = true;
+  }
 
   // Set targets
   odom_target.x = imovement.target.x;
@@ -344,8 +406,31 @@ void Drive::raw_pid_odom_ptp_set(odom imovement, bool slew_on) {
   // Set constants
   xyPID.constants_set(pid_consts.kp, pid_consts.ki, pid_consts.kd, pid_consts.start_i);
   aPID.constants_set(angle_consts.kp, angle_consts.ki, angle_consts.kd, angle_consts.start_i);
-  slew_left.constants_set(slew_consts.distance_to_travel, slew_consts.min_speed);
-  slew_right.constants_set(slew_consts.distance_to_travel, slew_consts.min_speed);
+
+  // Set max speed
+  pid_speed_max_set(imovement.max_xy_speed);
+
+  int slew_min = slew_consts.min_speed;
+  if (current_slew_on && slew_will_enable_later && !slew_on && odom_slew_reenables()) {
+    slew_on = true;
+    slew_will_enable_later = false;
+    if (slew_min_when_it_enabled > slew_consts.min_speed)
+      slew_min = slew_min_when_it_enabled;
+
+    slew_left.constants_set(slew_consts.distance_to_travel, slew_min);
+    slew_right.constants_set(slew_consts.distance_to_travel, slew_min);
+
+    // Initialize slew
+    int dir = current_drive_direction == REV ? -1 : 1;  // If we're going backwards, add a -1
+    double dist_to_target = 100.0 * dir;
+    slew_left.initialize(slew_on, max_speed, dist_to_target + drive_sensor_left(), drive_sensor_left());
+    slew_right.initialize(slew_on, max_speed, dist_to_target + drive_sensor_right(), drive_sensor_right());
+  }
+
+  if (slew_min_when_it_enabled == 0) {
+    slew_left.constants_set(slew_consts.distance_to_travel, slew_min);
+    slew_right.constants_set(slew_consts.distance_to_travel, slew_min);
+  }
 
   bool is_current_boomerang = false;
   if (mode == PURE_PURSUIT)
@@ -360,6 +445,8 @@ void Drive::raw_pid_odom_ptp_set(odom imovement, bool slew_on) {
 
   // Get the starting point for if we're positive or negative.  This is used to find if we've past target
   past_target = util::sgn(is_past_target(odom_target, odom_current));
+
+  slew_min_when_it_enabled = pid_speed_max_get();
 
   // This is used for wait_until
   int dir = current_drive_direction == REV ? -1 : 1;  // If we're going backwards, add a -1

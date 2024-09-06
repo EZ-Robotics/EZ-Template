@@ -184,7 +184,8 @@ void Drive::ptp_task() {
   // Prioritize turning by scaling xy_out down
   double xy_out = xyPID.output;
   // xy_out = util::clamp(xy_out, max_slew_out, -max_slew_out);
-  xy_out *= cos(util::to_rad(aPID.error)) / odom_turn_bias_amount;
+  if (is_odom_turn_bias_enabled)
+    xy_out *= cos(util::to_rad(aPID.error)) / odom_turn_bias_amount;
   double a_out = aPID.output;
   // a_out = util::clamp(a_out, max_slew_out, -max_slew_out);
 
@@ -209,7 +210,7 @@ void Drive::ptp_task() {
   }
 
   // printf("lr out (%.2f, %.2f)   fwd curveZ(%.2f, %.2f)   lr slew (%.2f, %.2f)\n", l_out, r_out, xy_out, a_out, slew_left.output(), slew_right.output());
-  // printf("cos %.2f   max_slew_out %.2f      headingerr: %.2f\n", cos_scale, max_slew_out, aPID.target_get());
+  // printf("max_slew_out %.2f      headingerr: %.2f\n", max_slew_out, aPID.error);
   // printf("lr(%.2f, %.2f)   xy_raw: %.2f   xy_out: %.2f   heading_out: %.2f      max_slew_out: %.2f\n", l_out, r_out, xyPID.output, xy_out, aPID.output, max_slew_out);
   // printf("xy(%.2f, %.2f, %.2f)   xyPID: %.2f   aPID: %.2f     dir: %i   sgn: %i   past_target: %i    is_past_target: %i   is_past_using_xy: %i      fake_xy(%.2f, %.2f, %.2f)\n", odom_current.x, odom_current.y, odom_current.theta, xyPID.target_get(), aPID.target_get(), dir, flipped, past_target, (int)is_past_target(odom_target, odom_current), is_past_target_using_xy, fake_x, fake_y, util::to_deg(fake_angle));
   // printf("xy(%.2f, %.2f, %.2f)   xyPID: %.2f   aPID: %.2f   ptf:(%.2f, %.2f)\n", odom_current.x, odom_current.y, odom_current.theta, xyPID.error, aPID.error, ptf.x, ptf.y);
@@ -256,6 +257,7 @@ void Drive::pp_task() {
     if (pp_index < pp_movements.size() - 1) {
       pp_index = pp_index >= pp_movements.size() - 1 ? pp_index : pp_index + 1;
       bool slew_on = slew_left.enabled() || slew_right.enabled() ? true : false;
+      if (!current_slew_on) slew_on = false;
       raw_pid_odom_ptp_set(pp_movements[pp_index], slew_on);
     }
   }

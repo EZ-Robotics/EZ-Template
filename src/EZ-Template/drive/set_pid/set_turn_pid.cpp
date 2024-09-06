@@ -131,6 +131,7 @@ void Drive::pid_turn_set(double target, int speed, e_angle_behavior behavior, bo
 
   // Initialize slew
   slew_turn.initialize(slew_on, max_speed, target, chain_sensor_start);
+  current_slew_on = slew_on;
 
   // Run task
   drive_mode_set(TURN);

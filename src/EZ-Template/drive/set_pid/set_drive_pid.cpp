@@ -142,6 +142,7 @@ void Drive::pid_drive_set(double target, int speed, bool slew_on, bool toggle_he
   // Initialize slew
   slew_left.initialize(slew_on, max_speed, l_target_encoder, drive_sensor_left());
   slew_right.initialize(slew_on, max_speed, r_target_encoder, drive_sensor_right());
+  current_slew_on = slew_on;
 
   // Make sure we're using normal PID
   leftPID.exit = internal_leftPID.exit;

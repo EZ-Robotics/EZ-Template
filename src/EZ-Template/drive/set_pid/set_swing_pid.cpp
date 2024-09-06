@@ -331,6 +331,7 @@ void Drive::pid_swing_set(e_swing type, double target, int speed, int opposite_s
   double slew_tar = slew_swing_using_angle ? target : direction * 100;
   if (!slew_swing_using_angle) slew_tar += current;
   slew_swing.initialize(slew_on, max_speed, slew_tar, current);
+  current_slew_on = slew_on;
 
   // Run task
   drive_mode_set(SWING);

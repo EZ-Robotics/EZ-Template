@@ -5,6 +5,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
 #include "EZ-Template/drive/drive.hpp"
+#include "EZ-Template/util.hpp"
 
 using namespace ez;
 
@@ -12,10 +13,16 @@ using namespace ez;
 void Drive::odom_x_set(double x) { odom_current.x = x; }
 void Drive::odom_y_set(double y) { odom_current.y = y; }
 void Drive::odom_theta_set(double a) { drive_angle_set(a); }
+void Drive::odom_x_set(okapi::QLength p_x) { odom_x_set(p_x.convert(okapi::inch)); }
+void Drive::odom_y_set(okapi::QLength p_y) { odom_y_set(p_y.convert(okapi::inch)); }
+void Drive::odom_theta_set(okapi::QAngle p_a) { odom_theta_set(p_a.convert(okapi::degree)); }
 void Drive::odom_reset() { odom_pose_set({0, 0, 0}); }
 void Drive::drive_width_set(double input) { track_width = input; }
+void Drive::drive_width_set(okapi::QLength p_input) { drive_width_set(p_input.convert(okapi::inch)); }
 double Drive::drive_width_get() { return track_width; }
 void Drive::drive_odom_enable(bool input) { odometry_enabled = input; }
+bool Drive::drive_odom_enabled() { return odometry_enabled; }
+void Drive::odom_pose_set(united_pose itarget) { odom_pose_set(util::united_pose_to_pose(itarget)); }
 void Drive::odom_pose_set(pose itarget) {
   odom_theta_set(itarget.theta);
   odom_x_set(itarget.x);

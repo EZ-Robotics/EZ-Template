@@ -6,6 +6,7 @@
 /////
 
 // Chassis constructor
+/*
 ez::Drive chassis(
     // These are your drive motors, the first motor is used for sensing!
     pros::MotorGroup({-5, -6, -7, -8}),  // Left Chassis Ports (negative port will reverse it!)
@@ -15,6 +16,15 @@ ez::Drive chassis(
     4.125,          // Wheel Diameter (Remember, 4" wheels without screw holes are actually 4.125!)
     420.0,          // Wheel RPM = cartridge * (motor gear / wheel gear)
     11.0);          // Width of your powered wheels.  Measure this with a tape measure, center-to-center
+*/
+ez::Drive chassis(
+    // These are your drive motors, the first motor is used for sensing!
+    {-5, -6, -7, -8},  // Left Chassis Ports (negative port will reverse it!)
+    {11, 15, 16, 17},  // Right Chassis Ports (negative port will reverse it!)
+
+    21,      // IMU port
+    4.125,   // Wheel Diameter (Remember, 4" wheels without screw holes are actually 4.125!)
+    420.0);  // Wheel RPM = cartridge * (motor gear / wheel gear)
 
 // Are you using tracking wheels?  Comment out which ones you're using here!
 //  `2.75` is the wheel diameter
@@ -34,6 +44,8 @@ void initialize() {
   ez::ez_template_print();
 
   pros::delay(500);  // Stop the user from doing anything while legacy ports configure
+
+  chassis.drive_width_set(11_in);
 
   // Are you using tracking wheels?  Comment out which ones you're using here!
   // chassis.odom_tracker_right_set(&right_tracker);
@@ -108,8 +120,7 @@ void autonomous() {
   chassis.drive_imu_reset();                  // Reset gyro position to 0
   chassis.drive_sensor_reset();               // Reset drive sensors to 0
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
-  chassis.odom_pose_set({0, 0, 0});
-  chassis.drive_width_set(11);  // just use a tape measure
+  chassis.odom_pose_set({0_in, 0_in, 0_deg});
 
   chassis.pid_odom_set({{{0_in, 16_in}, fwd, 110},
                         {{16_in, 16_in}, fwd, 110}},
