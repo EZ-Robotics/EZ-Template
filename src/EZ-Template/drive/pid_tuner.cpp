@@ -45,15 +45,6 @@ bool Drive::pid_tuner_print_brain_enabled() { return pid_tuner_lcd_b; }
 
 // Enable PID Tuner
 void Drive::pid_tuner_enable() {
-  // Set the constants
-  constants = {
-      {"Drive Forward PID Constants", &forward_drivePID.constants},
-      {"Drive Backward PID Constants", &backward_drivePID.constants},
-      {"Heading PID Constants", &headingPID.constants},
-      {"Turn PID Constants", &turnPID.constants},
-      {"Swing Forward PID Constants", &forward_swingPID.constants},
-      {"Swing Backward PID Constants", &backward_swingPID.constants}};
-
   pid_tuner_brain_init();
 
   // Keep track of the last state of this so we can set it back once PID Tuner is disables
@@ -88,11 +79,11 @@ void Drive::pid_tuner_toggle() {
 void Drive::pid_tuner_print() {
   if (!pid_tuner_on) return;
 
-  std::string name = constants[column].name + "\n";
-  std::string kp = "kp: " + std::to_string(constants[column].consts->kp);
-  std::string ki = "ki: " + std::to_string(constants[column].consts->ki);
-  std::string kd = "kd: " + std::to_string(constants[column].consts->kd);
-  std::string starti = "start i: " + std::to_string(constants[column].consts->start_i);
+  std::string name = pid_tuner_pids[column].name + "\n";
+  std::string kp = "kp: " + std::to_string(pid_tuner_pids[column].consts->kp);
+  std::string ki = "ki: " + std::to_string(pid_tuner_pids[column].consts->ki);
+  std::string kd = "kd: " + std::to_string(pid_tuner_pids[column].consts->kd);
+  std::string starti = "start i: " + std::to_string(pid_tuner_pids[column].consts->start_i);
 
   kp = row == 0 ? kp + arrow : kp + "\n";
   ki = row == 1 ? ki + arrow : ki + "\n";
@@ -121,16 +112,16 @@ void Drive::pid_tuner_value_modify(float p, float i, float d, float start) {
 
   switch (row) {
     case 0:
-      constants[column].consts->kp += p;
+      pid_tuner_pids[column].consts->kp += p;
       break;
     case 1:
-      constants[column].consts->ki += i;
+      pid_tuner_pids[column].consts->ki += i;
       break;
     case 2:
-      constants[column].consts->kd += d;
+      pid_tuner_pids[column].consts->kd += d;
       break;
     case 3:
-      constants[column].consts->start_i += start;
+      pid_tuner_pids[column].consts->start_i += start;
       break;
     default:
       break;
@@ -163,13 +154,13 @@ void Drive::pid_tuner_iterate() {
   // Up / Down for Rows
   if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_RIGHT)) {
     column++;
-    if (column > constants.size() - 1)
+    if (column > pid_tuner_pids.size() - 1)
       column = 0;
     pid_tuner_print();
   } else if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_LEFT)) {
     column--;
     if (column < 0)
-      column = constants.size() - 1;
+      column = pid_tuner_pids.size() - 1;
     pid_tuner_print();
   }
 

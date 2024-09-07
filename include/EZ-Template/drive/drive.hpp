@@ -2297,6 +2297,22 @@ class Drive {
    */
   double pid_tuner_increment_start_i_get();
 
+  struct const_and_name {
+    std::string name = "";
+    PID::Constants *consts;
+  };
+
+  /**
+   * Vector used for PID Tuner
+   */
+  std::vector<const_and_name> pid_tuner_pids = {
+      {"Drive Forward PID Constants", &forward_drivePID.constants},
+      {"Drive Backward PID Constants", &backward_drivePID.constants},
+      {"Heading PID Constants", &headingPID.constants},
+      {"Turn PID Constants", &turnPID.constants},
+      {"Swing Forward PID Constants", &forward_swingPID.constants},
+      {"Swing Backward PID Constants", &backward_swingPID.constants}};
+
  private:  // !Auton
   double chain_target_start = 0.0;
   double chain_sensor_start = 0.0;
