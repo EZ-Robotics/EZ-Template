@@ -2337,11 +2337,6 @@ class Drive {
   bool slew_swing_using_angle = false;
   bool pid_tuner_terminal_b = false;
   bool pid_tuner_lcd_b = true;
-  struct const_and_name {
-    std::string name = "";
-    PID::Constants* consts;
-  };
-  std::vector<const_and_name> constants;
   void pid_tuner_print();
   void pid_tuner_value_modify(float p, float i, float d, float start);
   void pid_tuner_value_increase();
