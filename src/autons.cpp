@@ -38,6 +38,11 @@ void default_constants() {
   chassis.slew_drive_constants_set(3_in, 70);
   chassis.slew_swing_constants_set(3_in, 80);
 
+  // The amount that turns are prioritized over driving in odom motions
+  // - this is fully disabled for straight motions
+  // - if you have tracking wheels, you can run this lower
+  chassis.odom_turn_bias_set(1.375);
+
   // Defaults the turn behavior to always go the shortest way
   chassis.pid_angle_behavior_set(ez::shortest);
 }
