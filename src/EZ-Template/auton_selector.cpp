@@ -28,7 +28,7 @@ void AutonSelector::selected_auton_print() {
 
 void AutonSelector::selected_auton_call() {
   if (auton_count == 0) return;
-  Autons[auton_page_current].auton_call();
+  Autons[last_auton_page_current].auton_call();
 }
 
 void AutonSelector::autons_add(std::vector<Auton> autons) {

@@ -20,8 +20,8 @@ void Drive::odom_reset() { odom_pose_set({0, 0, 0}); }
 void Drive::drive_width_set(double input) { track_width = input; }
 void Drive::drive_width_set(okapi::QLength p_input) { drive_width_set(p_input.convert(okapi::inch)); }
 double Drive::drive_width_get() { return track_width; }
-void Drive::drive_odom_enable(bool input) { odometry_enabled = input; }
-bool Drive::drive_odom_enabled() { return odometry_enabled; }
+void Drive::odom_enable(bool input) { odometry_enabled = input; }
+bool Drive::odom_enabled() { return odometry_enabled; }
 void Drive::odom_pose_set(united_pose itarget) { odom_pose_set(util::united_pose_to_pose(itarget)); }
 void Drive::odom_pose_set(pose itarget) {
   odom_theta_set(itarget.theta);

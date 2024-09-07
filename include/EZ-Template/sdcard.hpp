@@ -12,6 +12,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 namespace ez {
 namespace as {
 extern AutonSelector auton_selector;
+
 /**
  * Sets sd card to current page.
  */
@@ -53,8 +54,9 @@ extern bool turn_off;
 
 extern pros::adi::DigitalIn* limit_switch_left;
 extern pros::adi::DigitalIn* limit_switch_right;
+
 /**
- * Initialize two limitswithces to change pages on the lcd
+ * Initialize two limit switches to change pages on the lcd
  *
  * @param left_limit_port
  *        port for the left limit switch
@@ -67,5 +69,9 @@ void limit_switch_lcd_initialize(pros::adi::DigitalIn* right_limit, pros::adi::D
  * pre_auto_task
  */
 void limitSwitchTask();
+
+int page_blank_current();
+bool page_blank_is_on(int page);
+extern int amount_of_blank_pages;
 }  // namespace as
 }  // namespace ez

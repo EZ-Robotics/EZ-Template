@@ -362,8 +362,8 @@ class Drive {
   void drive_width_set(double input);
   double drive_width_get();
 
-  void drive_odom_enable(bool input);
-  bool drive_odom_enabled();
+  void odom_enable(bool input);
+  bool odom_enabled();
 
   std::vector<odom> pp_movements;
   std::vector<int> injected_pp_index;

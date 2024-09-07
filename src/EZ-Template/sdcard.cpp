@@ -51,21 +51,55 @@ void auton_selector_initialize() {
 }
 
 void page_up() {
+  auton_selector.last_auton_page_current = auton_selector.auton_page_current;
   if (auton_selector.auton_page_current == auton_selector.auton_count - 1)
     auton_selector.auton_page_current = 0;
   else
     auton_selector.auton_page_current++;
-  auto_sd_update();
-  auton_selector.selected_auton_print();
+  if (((auton_selector.auton_count - 1 - amount_of_blank_pages) - auton_selector.auton_page_current) >= 0) {
+    auto_sd_update();
+    auton_selector.selected_auton_print();
+  } else {
+    for (int i = 0; i < 8; i++)
+      pros::lcd::clear_line(i);
+    screen_print("Page " + std::to_string(auton_selector.auton_page_current + 1) + " - Blank page " + std::to_string(page_blank_current() + 1));
+  }
+  if (page_blank_current() < 0)
+    auton_selector.last_auton_page_current = auton_selector.auton_page_current;
 }
 
 void page_down() {
+  auton_selector.last_auton_page_current = auton_selector.auton_page_current;
   if (auton_selector.auton_page_current == 0)
     auton_selector.auton_page_current = auton_selector.auton_count - 1;
   else
     auton_selector.auton_page_current--;
-  auto_sd_update();
-  auton_selector.selected_auton_print();
+  if (((auton_selector.auton_count - 1 - amount_of_blank_pages) - auton_selector.auton_page_current) >= 0) {
+    auto_sd_update();
+    auton_selector.selected_auton_print();
+  } else {
+    for (int i = 0; i < 8; i++)
+      pros::lcd::clear_line(i);
+    screen_print("Page " + std::to_string(auton_selector.auton_page_current + 1) + " - Blank page " + std::to_string(page_blank_current() + 1));
+  }
+  if (page_blank_current() < 0)
+    auton_selector.last_auton_page_current = auton_selector.auton_page_current;
+}
+
+int page_blank_current() {
+  return (auton_selector.auton_count - amount_of_blank_pages - auton_selector.auton_page_current) * -1;
+}
+
+int amount_of_blank_pages = 0;
+bool page_blank_is_on(int page) {
+  if (page + 1 > amount_of_blank_pages) {
+    auton_selector.auton_count -= amount_of_blank_pages;
+    amount_of_blank_pages = page + 1;
+    auton_selector.auton_count += amount_of_blank_pages;
+  }
+  if (page_blank_current() == page)
+    return true;
+  return false;
 }
 
 void initialize() {

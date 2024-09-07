@@ -45,8 +45,6 @@ void initialize() {
 
   pros::delay(500);  // Stop the user from doing anything while legacy ports configure
 
-  chassis.drive_width_set(11_in);
-
   // Are you using tracking wheels?  Comment out which ones you're using here!
   // chassis.odom_tracker_right_set(&right_tracker);
   // chassis.odom_tracker_left_set(&left_tracker);
@@ -121,6 +119,7 @@ void autonomous() {
   chassis.drive_sensor_reset();               // Reset drive sensors to 0
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
   chassis.odom_pose_set({0_in, 0_in, 0_deg});
+  chassis.drive_width_set(11_in);  // Measure this with a tape measure
 
   chassis.pid_odom_set({{{0_in, 16_in}, fwd, 110},
                         {{16_in, 16_in}, fwd, 110}},
@@ -131,6 +130,70 @@ void autonomous() {
   chassis.pid_wait();
 
   // ez::as::auton_selector.selected_auton_call();  // Calls selected auton from autonomous selector
+}
+
+/**
+ * Gives you some extras to run in your opcontrol:
+ * - run your autonomous routine in opcontrol by pressing DOWN and B
+ *   - to prevent this from accidentally happening at a competition, this
+ *     is only enabled when you're not connected to competition control.
+ * - gives you a GUI to change your PID values live by pressing X
+ */
+void ez_template_etxras() {
+  if (!pros::competition::is_connected()) {
+    // PID Tuner
+    // - after you find values that you're happy with, you'll have to set them in auton.cpp
+
+    // Enable / Disable PID Tuner
+    //  When enabled:
+    //  * use A and Y to increment / decrement the constants
+    //  * use the arrow keys to navigate the constants
+    if (master.get_digital_new_press(DIGITAL_X))
+      chassis.pid_tuner_toggle();
+
+    // Trigger the selected autonomous routine
+    if (master.get_digital(DIGITAL_B) && master.get_digital(DIGITAL_DOWN)) {
+      pros::motor_brake_mode_e_t preference = chassis.drive_brake_get();
+      autonomous();
+      chassis.drive_brake_set(preference);
+    }
+
+    // Blank pages for Odom Debugging
+    if (chassis.odom_enabled()) {
+      // This is Blank Page 1, it will display X, Y, and Angle
+      if (ez::as::page_blank_is_on(0)) {
+        screen_print("x: " + std::to_string(chassis.odom_x_get()) +
+                         "\ny: " + std::to_string(chassis.odom_y_get()) +
+                         "\nangle: " + std::to_string(chassis.odom_theta_get()),
+                     1);  // Don't override the top Page line
+      }
+      // This is Blank Page 2, it will display every tracking wheel.
+      // Make sure the tracking wheels read POSITIVE going forwards or left.
+      else if (ez::as::page_blank_is_on(1)) {
+        if (chassis.odom_left_tracker != nullptr)
+          screen_print("left tracker: " + std::to_string(chassis.odom_left_tracker->get()), 1);
+        else
+          screen_print("no left tracker", 1);
+
+        if (chassis.odom_right_tracker != nullptr)
+          screen_print("right tracker: " + std::to_string(chassis.odom_right_tracker->get()), 2);
+        else
+          screen_print("no right tracker", 2);
+
+        if (chassis.odom_back_tracker != nullptr)
+          screen_print("back tracker: " + std::to_string(chassis.odom_back_tracker->get()), 3);
+        else
+          screen_print("no back tracker", 3);
+
+        if (chassis.odom_front_tracker != nullptr)
+          screen_print("front tracker: " + std::to_string(chassis.odom_front_tracker->get()), 4);
+        else
+          screen_print("no front tracker", 4);
+      }
+    }
+
+    chassis.pid_tuner_iterate();  // Allow PID Tuner to iterate
+  }
 }
 
 /**
@@ -148,32 +211,14 @@ void autonomous() {
  */
 void opcontrol() {
   // This is preference to what you like to drive on
-  pros::motor_brake_mode_e_t driver_preference_brake = MOTOR_BRAKE_COAST;
-
-  chassis.drive_brake_set(driver_preference_brake);
+  chassis.drive_brake_set(MOTOR_BRAKE_COAST);
 
   while (true) {
-    // PID Tuner
-    // After you find values that you're happy with, you'll have to set them in auton.cpp
-    if (!pros::competition::is_connected()) {
-      // Enable / Disable PID Tuner
-      //  When enabled:
-      //  * use A and Y to increment / decrement the constants
-      //  * use the arrow keys to navigate the constants
-      if (master.get_digital_new_press(DIGITAL_X))
-        chassis.pid_tuner_toggle();
-
-      // Trigger the selected autonomous routine
-      if (master.get_digital(DIGITAL_B) && master.get_digital(DIGITAL_DOWN)) {
-        autonomous();
-        chassis.drive_brake_set(driver_preference_brake);
-      }
-
-      chassis.pid_tuner_iterate();  // Allow PID Tuner to iterate
-    }
+    // Gives you some extras to make EZ-Template easier
+    ez_template_etxras();
 
     chassis.opcontrol_tank();  // Tank control
-    // chassis.opcontrol_arcade_standard(ez::SPLIT);  // Standard split arcade
+    // chassis.opcontrol_arcade_standard(ez::SPLIT);   // Standard split arcade
     // chassis.opcontrol_arcade_standard(ez::SINGLE);  // Standard single arcade
     // chassis.opcontrol_arcade_flipped(ez::SPLIT);    // Flipped split arcade
     // chassis.opcontrol_arcade_flipped(ez::SINGLE);   // Flipped single arcade
