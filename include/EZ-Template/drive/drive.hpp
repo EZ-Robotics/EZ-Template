@@ -66,24 +66,44 @@ class Drive {
   pros::Imu imu;
 
   /**
-   * Left tracking wheel.
+   * Deprecated left tracking wheel.
    */
   pros::adi::Encoder left_tracker;
 
   /**
-   * Right tracking wheel.
+   * Deprecated right tracking wheel.
    */
   pros::adi::Encoder right_tracker;
 
   /**
-   * Left rotation tracker.
+   * Deprecated left rotation tracker.
    */
   pros::Rotation left_rotation;
 
   /**
-   * Right rotation tracker.
+   * Deprecated right rotation tracker.
    */
   pros::Rotation right_rotation;
+
+  /**
+   * Left vertical tracking wheel.
+   */
+  tracking_wheel* odom_left_tracker;
+
+  /**
+   * Right vertical tracking wheel.
+   */
+  tracking_wheel* odom_right_tracker;
+
+  /**
+   * Front horizontal tracking wheel.
+   */
+  tracking_wheel* odom_front_tracker;
+
+  /**
+   * Back horizontal tracking wheel.
+   */
+  tracking_wheel* odom_back_tracker;
 
   /**
    * PID objects.
@@ -97,6 +117,10 @@ class Drive {
   PID swingPID;
   PID forward_swingPID;
   PID backward_swingPID;
+  PID xyPID;
+  PID aPID;
+  PID internal_leftPID;
+  PID internal_rightPID;
 
   /**
    * Slew objects.
@@ -209,6 +233,100 @@ class Drive {
    *        the starting speed for the movement
    */
   void slew_drive_constants_set(okapi::QLength distance, int min_speed);
+
+  /**
+   * Globally enables slew unless otherwise specified for that motion for driving forward and backwards.
+   *
+   * \param slew_on
+   *        true enables, false disables
+   */
+  void slew_drive_set(bool slew_on);
+
+  /**
+   * Globally enables slew unless otherwise specified for that motion for driving forward.
+   *
+   * \param slew_on
+   *        true enables, false disables
+   */
+  void slew_drive_forward_set(bool slew_on);
+
+  /**
+   * Returns if slew is globally enabled for driving forward.  True is, false isn't.
+   */
+  bool slew_drive_forward_get();
+
+  /**
+   * Globally enables slew unless otherwise specified for that motion for driving backwards.
+   *
+   * \param slew_on
+   *        true enables, false disables
+   */
+  void slew_drive_backward_set(bool slew_on);
+
+  /**
+   * Returns if slew is globally enabled for driving backward.  True is, false isn't.
+   */
+  bool slew_drive_backward_get();
+
+  /**
+   * Globally enables slew unless otherwise specified for that motion for swinging forward and backwards.
+   *
+   * \param slew_on
+   *        true enables, false disables
+   */
+  void slew_swing_set(bool slew_on);
+
+  /**
+   * Globally enables slew unless otherwise specified for that motion for swinging forward.
+   *
+   * \param slew_on
+   *        true enables, false disables
+   */
+  void slew_swing_forward_set(bool slew_on);
+
+  /**
+   * Returns if slew is globally enabled for swinging forward.  True is, false isn't.
+   */
+  bool slew_swing_forward_get();
+
+  /**
+   * Globally enables slew unless otherwise specified for that motion for swinging backwards.
+   *
+   * \param slew_on
+   *        true enables, false disables
+   */
+  void slew_swing_backward_set(bool slew_on);
+
+  /**
+   * Returns if slew is globally enabled for swinging backward.  True is, false isn't.
+   */
+  bool slew_swing_backward_get();
+
+  /**
+   * Globally enables slew unless otherwise specified for that motion for turns.
+   *
+   * \param slew_on
+   *        true enables, false disables
+   */
+  void slew_turn_set(bool slew_on);
+
+  /**
+   * Returns if slew is globally enabled for turns.  True is, false isn't.
+   */
+  bool slew_turn_get();
+
+  /**
+   * Allows slew to reenable when the new input speed is larger than the current speed during pure pursuits.
+   *
+   * \param slew_on
+   *        true enables, false disables
+   */
+  void slew_odom_reenable(bool reenable);
+
+  /**
+   * Returns if slew will reenable when the new input speed is larger than the current speed during pure pursuits.
+   */
+  bool slew_odom_reenabled();
 
   /**
    * Current mode of the drive.
@@ -344,245 +462,366 @@ class Drive {
 
   /////
   //
-  // Odometry
+  // General Odometry
   //
   /////
 
   /**
    * Tasks for tracking.
    */
-  // pros::Task ez_tracking;
   void ez_tracking_task();
 
-  void pid_odom_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = true);
-  void pid_odom_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = true);
-  void pid_odom_turn_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QAngle p_small_error, okapi::QTime p_big_exit_time, okapi::QAngle p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout, bool use_imu = true);
-  void pid_odom_drive_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QLength p_small_error, okapi::QTime p_big_exit_time, okapi::QLength p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout, bool use_imu = true);
-  void drive_width_set(okapi::QLength p_input);
-  void drive_width_set(double input);
-  double drive_width_get();
-
+  /**
+   * Enables / disables tracking.
+   *
+   * \param input
+   *        true enables tracking, false disables tracking
+   */
   void odom_enable(bool input);
+
+  /**
+   * True means tracking is enabled, false means tracking is disabled
+   */
   bool odom_enabled();
 
-  std::vector<odom> pp_movements;
-  std::vector<int> injected_pp_index;
-  int pp_index = 0;
+  /**
+   * Sets the width of the drive.  This is used for tracking.
+   *
+   * \param input
+   *        a unit in inches, from center of the wheel to center of the wheel.
+   */
+  void drive_width_set(double input);
+
+  /**
+   * Sets the width of the drive.  This is used for tracking.
+   *
+   * \param input
+   *        an okapi unit, from center of the wheel to center of the wheel.
+   */
+  void drive_width_set(okapi::QLength p_input);
+
+  /**
+   * Returns the width of the drive
+   */
+  double drive_width_get();
+
+  /**
+   * Sets new X coordinate.
+   *
+   * \param x
+   *        new x coordinate in inches
+   */
   void odom_x_set(double x);
-  void odom_y_set(double y);
-  void odom_theta_set(double a);
+
+  /**
+   * Sets new X coordinate.
+   *
+   * \param x
+   *        new x coordinate as an okapi unit
+   */
   void odom_x_set(okapi::QLength p_x);
-  void odom_y_set(okapi::QLength p_y);
-  void odom_theta_set(okapi::QAngle p_a);
-  void odom_pose_set(pose itarget);
-  void odom_pose_set(united_pose itarget);
-  void odom_reset();
+
+  /**
+   * Returns the current x coordinate of the robot
+   */
   double odom_x_get();
+
+  /**
+   * Sets new Y coordinate.
+   *
+   * \param y
+   *        new y coordinate in inches
+   */
+  void odom_y_set(double y);
+
+  /**
+   * Sets new Y coordinate.
+   *
+   * \param y
+   *        new y coordinate as an okapi unit
+   */
+  void odom_y_set(okapi::QLength p_y);
+
+  /**
+   * Returns the current y coordinate of the robot
+   */
   double odom_y_get();
+
+  /**
+   * Sets new angle.
+   *
+   * \param a
+   *        new angle in degrees
+   */
+  void odom_theta_set(double a);
+
+  /**
+   * Sets new angle.
+   *
+   * \param x
+   *        new angle as an okapi unit
+   */
+  void odom_theta_set(okapi::QAngle p_a);
+
+  /**
+   * Returns the current angle of the robot
+   */
   double odom_theta_get();
+
+  /**
+   * Sets a new pose for the robot
+   *
+   * \param x
+   *        {x, y, t} units in inches and degrees
+   */
+  void odom_pose_set(pose itarget);
+
+  /**
+   * Sets a new pose for the robot
+   *
+   * \param x
+   *        {x, y, t} as an okapi unit
+   */
+  void odom_pose_set(united_pose itarget);
+
+  /**
+   * Returns the current pose of the robot
+   */
   pose odom_pose_get();
-  bool imu_calibration_complete = false;
 
-  void pid_turn_set(pose itarget, drive_directions dir, int speed);
-  void pid_turn_set(pose itarget, drive_directions dir, int speed, bool slew_on);
-  void pid_turn_set(pose itarget, drive_directions dir, int speed, e_angle_behavior behavior);
-  void pid_turn_set(pose itarget, drive_directions dir, int speed, e_angle_behavior behavior, bool slew_on);
-  void pid_turn_set(united_pose p_itarget, drive_directions dir, int speed);
-  void pid_turn_set(united_pose p_itarget, drive_directions dir, int speed, bool slew_on);
-  void pid_turn_set(united_pose p_itarget, drive_directions dir, int speed, e_angle_behavior behavior);
-  void pid_turn_set(united_pose p_itarget, drive_directions dir, int speed, e_angle_behavior behavior, bool slew_on);
+  /**
+   * Resets xyt to 0
+   */
+  void odom_reset();
 
-  void pid_odom_ptp_set(odom imovement);
-  void pid_odom_ptp_set(odom imovement, bool slew_on);
-  void pid_odom_ptp_set(united_odom p_imovement);
-  void pid_odom_ptp_set(united_odom p_imovement, bool slew_on);
-
-  void pid_odom_set(double target, int speed);
-  void pid_odom_set(okapi::QLength p_target, int speed, bool slew_on);
-  void pid_odom_set(okapi::QLength p_target, int speed);
-  void pid_odom_set(double target, int speed, bool slew_on);
-
-  void pid_odom_set(odom imovement);
-  void pid_odom_set(odom imovement, bool slew_on);
-  void pid_odom_set(std::vector<odom> imovements);
-  void pid_odom_set(std::vector<odom> imovements, bool slew_on);
-  void pid_odom_set(united_odom p_imovement);
-  void pid_odom_set(united_odom p_imovement, bool slew_on);
-  void pid_odom_set(std::vector<united_odom> p_imovements);
-  void pid_odom_set(std::vector<united_odom> p_imovements, bool slew_on);
-
-  void pid_odom_pp_set(std::vector<odom> imovements);
-  void pid_odom_pp_set(std::vector<odom> imovements, bool slew_on);
-  void pid_odom_pp_set(std::vector<united_odom> p_imovements);
-  void pid_odom_pp_set(std::vector<united_odom> p_imovements, bool slew_on);
-
-  void pid_odom_injected_pp_set(std::vector<odom> imovements);
-  void pid_odom_injected_pp_set(std::vector<odom> imovements, bool slew_on);
-  void pid_odom_injected_pp_set(std::vector<united_odom> p_imovements);
-  void pid_odom_injected_pp_set(std::vector<united_odom> p_imovements, bool slew_on);
-
-  void pid_odom_smooth_pp_set(std::vector<odom> imovements);
-  void pid_odom_smooth_pp_set(std::vector<odom> imovements, bool slew_on);
-  void pid_odom_smooth_pp_set(std::vector<united_odom> p_imovements);
-  void pid_odom_smooth_pp_set(std::vector<united_odom> p_imovements, bool slew_on);
-
-  void pid_odom_boomerang_set(odom imovement);
-  void pid_odom_boomerang_set(odom imovement, bool slew_on);
-  void pid_odom_boomerang_set(united_odom p_imovement);
-  void pid_odom_boomerang_set(united_odom p_imovement, bool slew_on);
-
-  // true means left is positive x, false means right is positive x
+  /**
+   * Flips the X axis
+   *
+   * \param flip
+   *        true means left is positive x, false means right is positive x
+   */
   void odom_x_direction_flip(bool flip = true);
+
+  /**
+   * Checks if x axis is flipped.  True means left is positive x, false means right is positive x
+   */
   bool odom_x_direction_get();
-  // true means down is positive y, false means up is positive y
+
+  /**
+   * Flips the Y axis
+   *
+   * \param flip
+   *        true means down is positive Y, false means down is positive Y
+   */
   void odom_y_direction_flip(bool flip = true);
+
+  /**
+   * Checks if x axis is flipped.  True means down is positive Y, false means down is positive Y
+   */
   bool odom_y_direction_get();
 
-  std::vector<odom> smooth_path(std::vector<odom> ipath, double weight_smooth = 0.75, double weight_data = 0.03, double tolerance = 0.0001);
-  double is_past_target(pose target, pose current);
-  void raw_pid_odom_pp_set(std::vector<odom> imovements, bool slew_on);
-
-  std::vector<pose> point_to_face = {{0, 0, 0}, {0, 0, 0}};
-
-  void odom_path_spacing_set(double spacing);
-  void odom_path_spacing_set(okapi::QLength p_spacing);
-  double odom_path_spacing_get();
-
-  void odom_look_ahead_set(okapi::QLength p_distance);
-  void odom_look_ahead_set(double distance);
-  double odom_look_ahead_get();
-
-  void pid_wait_until_index(int index);
-  void pid_wait_until_point(pose target);
-  void pid_wait_until(pose target);
-
+  /**
+   * Sets a new dlead.  Dlead is a proportional value of how much to make the robot curve during boomerang motions.
+   *
+   * \param input
+   *        a value between 0 and 1.
+   */
   void odom_boomerang_dlead_set(double input);
-  void odom_boomerang_dlead_set(okapi::QLength p_input);
+
+  /**
+   * Returns the current dlead.
+   */
   double odom_boomerang_dlead_get();
 
-  void odom_boomerang_distance_set(okapi::QLength p_distance);
+  /**
+   * This maxes out how far away the carrot point can be from the target.
+   *
+   * \param distance
+   *        distance in inches
+   */
   void odom_boomerang_distance_set(double distance);
+
+  /**
+   * This maxes out how far away the carrot point can be from the target.
+   *
+   * \param distance
+   *        distance as an okapi unit
+   */
+  void odom_boomerang_distance_set(okapi::QLength p_distance);
+
+  /**
+   * Returns how far away the carrot point can be from target
+   */
   double odom_boomerang_distance_get();
 
+  /**
+   * A proportion of how prioritized turning is during odometry motions.  Turning is prioritized so the robot correctly slows down during turns.
+   *
+   * \param bias
+   *        some number probably less than 5
+   */
   void odom_turn_bias_set(double bias);
+
+  /**
+   * Returns the proportion of how prioritized turning is during odometry motions.
+   */
   double odom_turn_bias_get();
 
-  //  Odometry
+  /**
+   * The spacing between points when points get injected into the path
+   *
+   * \param spacing
+   *        a small number in inches
+   */
+  void odom_path_spacing_set(double spacing);
 
-  bool ptf1_running = false;
-  std::vector<pose> find_point_to_face(pose current, pose target, drive_directions dir, bool set_global);
-  void raw_pid_odom_ptp_set(odom imovement, bool slew_on);
-  std::vector<odom> inject_points(std::vector<odom> imovements);
-  void ptp_task();
-  void boomerang_task();
-  void pp_task();
-  PID xyPID;
-  PID aPID;
-  PID internal_leftPID;
-  PID internal_rightPID;
+  /**
+   * The spacing between points when points get injected into the path
+   *
+   * \param spacing
+   *        a small number in okapi units
+   */
+  void odom_path_spacing_set(okapi::QLength p_spacing);
 
-  void slew_drive_set(bool slew_on);
-  void slew_drive_forward_set(bool slew_on);
-  bool slew_drive_forward_get();
-  void slew_drive_backward_set(bool slew_on);
-  bool slew_drive_backward_get();
+  /**
+   * Returns the spacing between points when points get injected into the path
+   */
+  double odom_path_spacing_get();
 
-  void slew_swing_set(bool slew_on);
-  void slew_swing_forward_set(bool slew_on);
-  bool slew_swing_forward_get();
-  void slew_swing_backward_set(bool slew_on);
-  bool slew_swing_backward_get();
+  /**
+   * How far away the robot looks in the path during pure pursuits
+   *
+   * \param distance
+   *        how long the "carrot on a stick" is, in inches
+   */
+  void odom_look_ahead_set(double distance);
 
-  void slew_turn_set(bool slew_on);
-  bool slew_turn_get();
+  /**
+   * How far away the robot looks in the path during pure pursuits
+   *
+   * \param distance
+   *        how long the "carrot on a stick" is, in okapi units
+   */
+  void odom_look_ahead_set(okapi::QLength p_distance);
 
-  void pid_angle_behavior_set(e_angle_behavior behavior);
-  void pid_turn_behavior_set(e_angle_behavior behavior);
-  void pid_swing_behavior_set(e_angle_behavior behavior);
-  void pid_odom_behavior_set(e_angle_behavior behavior);
-  e_angle_behavior pid_turn_behavior_get();
-  e_angle_behavior pid_swing_behavior_get();
-  e_angle_behavior pid_odom_behavior_get();
+  /**
+   * Returns how far away the robot looks in the path during pure pursuits
+   */
+  double odom_look_ahead_get();
 
-  void pid_angle_behavior_tolerance_set(okapi::QAngle p_tolerance);
-  void pid_angle_behavior_tolerance_set(double tolerance);
-  double pid_angle_behavior_tolerance_get();
-
-  void pid_angle_behavior_bias_set(e_angle_behavior behavior);
-  e_angle_behavior pid_angle_behavior_bias_get(e_angle_behavior);
-  double turn_is_toleranced(double target, double current, double input, double longest, double shortest);
-  double turn_short(double target, double current, bool print = false);
-  double turn_long(double target, double current, bool print = false);
-  double new_turn_target_compute(double target, double current, ez::e_angle_behavior behavior);
-  double turn_left(double target, double current, bool print = false);
-  double turn_right(double target, double current, bool print = false);
-  bool is_swing_slew_enabled(e_swing type, double target, double current);
-
-  tracking_wheel* odom_left_tracker;
-  tracking_wheel* odom_right_tracker;
-  tracking_wheel* odom_front_tracker;
-  tracking_wheel* odom_back_tracker;
-
+  /**
+   * Sets the left tracking wheel for odometry
+   *
+   * \param input
+   *        an ez::tracking_wheel
+   */
   void odom_tracker_left_set(tracking_wheel* input);
+
+  /**
+   * Sets the right tracking wheel for odometry
+   *
+   * \param input
+   *        an ez::tracking_wheel
+   */
   void odom_tracker_right_set(tracking_wheel* input);
+
+  /**
+   * Sets the front tracking wheel for odometry
+   *
+   * \param input
+   *        an ez::tracking_wheel
+   */
   void odom_tracker_front_set(tracking_wheel* input);
+
+  /**
+   * Sets the back tracking wheel for odometry
+   *
+   * \param input
+   *        an ez::tracking_wheel
+   */
   void odom_tracker_back_set(tracking_wheel* input);
 
-  void odom_slew_reenable(bool reenable);  // true reenables, false does not
-  bool odom_slew_reenables();
+  /**
+   * Sets the default behavior for turns in odom, swinging, and turning.
+   *
+   * \param behavior
+   *        ez::shortest, ez::longest, ez::left, ez::right
+   */
+  void pid_angle_behavior_set(e_angle_behavior behavior);
 
-  //
-  //
-  // odom private
-  //
-  //
-  bool slew_reenables_when_max_speed_changes = true;
-  int slew_min_when_it_enabled = 0;
-  bool slew_will_enable_later = false;
-  bool current_slew_on = false;
-  bool is_odom_turn_bias_enabled = true;
-  bool odom_turn_bias_enabled();
-  void odom_turn_bias_set(bool set);
-  double angle_rad = 0.0;
-  double track_width = 0.0;
-  bool odometry_enabled = true;
-  pose odom_target = {0, 0, 0};
-  pose odom_current = {0, 0, 0};
-  pose odom_second_to_last = {0, 0, 0};
-  pose odom_start = {0, 0, 0};
-  pose odom_target_start = {0, 0, 0};
-  pose turn_to_point_target = {0, 0, 0};
-  bool y_flipped = false;
-  bool x_flipped = false;
-  double odom_imu_start = 0.0;
-  int past_target = 0;
-  double SPACING = 0.5;
-  double LOOK_AHEAD = 7.0;
-  double dlead = 0.5;
-  double max_boomerang_distance = 12.0;
-  double odom_turn_bias_amount = 1.375;
-  drive_directions current_drive_direction = fwd;
-  double h_last = 0, v_last = 0;
-  double last_theta = 0;
-  bool was_last_pp_mode_boomerang = false;
-  bool global_forward_drive_slew_enabled = false;
-  bool global_backward_drive_slew_enabled = false;
-  bool global_forward_swing_slew_enabled = false;
-  bool global_backward_swing_slew_enabled = false;
-  double turn_tolerance = 3.0;
-  bool global_turn_slew_enabled = false;
-  e_angle_behavior current_angle_behavior = raw;
-  e_angle_behavior default_swing_type = raw;
-  e_angle_behavior default_turn_type = raw;
-  e_angle_behavior default_odom_type = shortest;
-  bool turn_biased_left = false;
-  std::vector<odom> set_odoms_direction(std::vector<odom> inputs);
-  odom set_odom_direction(odom input);
-  pose flip_pose(pose input);
-  bool odom_left_tracker_enabled = false;
-  bool odom_right_tracker_enabled = false;
-  bool odom_front_tracker_enabled = false;
-  bool odom_back_tracker_enabled = false;
+  /**
+   * Sets the default behavior for turns in turns.
+   *
+   * \param behavior
+   *        ez::shortest, ez::longest, ez::left, ez::right
+   */
+  void pid_turn_behavior_set(e_angle_behavior behavior);
+
+  /**
+   * Sets the default behavior for turns in swings.
+   *
+   * \param behavior
+   *        ez::shortest, ez::longest, ez::left, ez::right
+   */
+  void pid_swing_behavior_set(e_angle_behavior behavior);
+
+  /**
+   * Sets the default behavior for turns in odom turns.
+   *
+   * \param behavior
+   *        ez::shortest, ez::longest, ez::left, ez::right
+   */
+  void pid_odom_behavior_set(e_angle_behavior behavior);
+
+  /**
+   * Returns the turn behavior for turns.
+   */
+  e_angle_behavior pid_turn_behavior_get();
+
+  /**
+   * Returns the turn behavior for swings.
+   */
+  e_angle_behavior pid_swing_behavior_get();
+
+  /**
+   * Returns the turn behavior for odom turns.
+   */
+  e_angle_behavior pid_odom_behavior_get();
+
+  /**
+   * Gives some wiggle room in shortest vs longest, so a 180.1 degree turn has consistent behavior.
+   *
+   * \param p_tolerance
+   *        angle wiggle room, an okapi unit
+   */
+  void pid_angle_behavior_tolerance_set(okapi::QAngle p_tolerance);
+
+  /**
+   * Gives some wiggle room in shortest vs longest, so a 180.1 degree turn has consistent behavior.
+   *
+   * \param p_tolerance
+   *        angle wiggle room, in degrees
+   */
+  void pid_angle_behavior_tolerance_set(double tolerance);
+
+  /**
+   * Returns the wiggle room in shortest vs longest, so a 180.1 degree turn has consistent behavior.
+   */
+  double pid_angle_behavior_tolerance_get();
+
+  /**
+   * When a turn is within its tolerance, you can have it bias left or right
+   *
+   * \param behavior
+   *        ez::left or ez::right
+   */
+  void pid_angle_behavior_bias_set(e_angle_behavior behavior);
+
+  /**
+   *
+   * Returns the behavior when a turn is within its tolerance, you can have it bias left or right
+   */
+  e_angle_behavior pid_angle_behavior_bias_get(e_angle_behavior);
 
   /////
   //
@@ -977,6 +1216,308 @@ class Drive {
   /////
 
   /**
+   * Sets the robot to move forward using PID without okapi units, only using slew if globally enabled.
+   *  This function is actually odom
+   *
+   * \param target
+   *        target value as a double, unit is inches
+   * \param speed
+   *        0 to 127, max speed during motion
+   */
+  void pid_odom_set(double target, int speed);
+
+  /**
+   * Sets the robot to move forward using PID without okapi units, using slew if enabled for this motion.
+   *  This function is actually odom
+   *
+   * \param target
+   *        target value as a double, unit is inches
+   * \param speed
+   *        0 to 127, max speed during motion
+   * \param slew_on
+   *        ramp up from a lower speed to your target speed
+   */
+  void pid_odom_set(double target, int speed, bool slew_on);
+
+  /**
+   * Sets the robot to move forward using PID with okapi units, only using slew if globally enabled.
+   *  This function is actually odom
+   *
+   * \param target
+   *        target value in inches
+   * \param speed
+   *        0 to 127, max speed during motion
+   */
+  void pid_odom_set(okapi::QLength p_target, int speed);
+
+  /**
+   * Sets the robot to move forward using PID with okapi units, using slew if enabled for this motion.
+   *  This function is actually odom
+   *
+   * \param target
+   *        target value in inches
+   * \param speed
+   *        0 to 127, max speed during motion
+   * \param slew_on
+   *        ramp up from a lower speed to your target speed
+   * \param toggle_heading
+   *        toggle for heading correction.  true enables, false disables
+   */
+  void pid_odom_set(okapi::QLength p_target, int speed, bool slew_on);
+
+  /**
+   * Takes in an odom movement to go to a single point.  If an angle is set, this will run boomerang.  Uses slew if globally enabled.
+   *
+   * \param imovement
+   *        {{x, y, t}, fwd/rev, 1-127}  an odom movement
+   */
+  void pid_odom_set(odom imovement);
+
+  /**
+   * Takes in an odom movement to go to a single point.  If an angle is set, this will run boomerang.  Uses slew if enabled for this motion.
+   *
+   * \param imovement
+   *        {{x, y, t}, fwd/rev, 1-127}  an odom movement
+   * \param slew_on
+   *        ramp up from a lower speed to your target speed
+   */
+  void pid_odom_set(odom imovement, bool slew_on);
+
+  /**
+   * Takes in an odom movement to go to a single point.  If an angle is set, this will run boomerang.  Uses slew if globally enabled.
+   *
+   * \param imovement
+   *        {{x, y, t}, fwd/rev, 1-127}  an odom movement
+   */
+  void pid_odom_ptp_set(odom imovement);
+
+  /**
+   * Takes in an odom movement to go to a single point.  If an angle is set, this will run boomerang.  Uses slew if enabled for this motion.
+   *
+   * \param imovement
+   *        {{x, y, t}, fwd/rev, 1-127}  an odom movement
+   * \param slew_on
+   *        ramp up from a lower speed to your target speed
+   */
+  void pid_odom_ptp_set(odom imovement, bool slew_on);
+
+  /**
+   * Takes in an odom movement to go to a single point using boomerang.  If an angle is set, this will run boomerang.  Uses slew if globally enabled.
+   *
+   * \param imovement
+   *        {{x, y, t}, fwd/rev, 1-127}  an odom movement
+   */
+  void pid_odom_boomerang_set(odom imovement);
+
+  /**
+   * Takes in an odom movement to go to a single point using boomerang.  If an angle is set, this will run boomerang.  Uses slew if enabled for this motion.
+   *
+   * \param imovement
+   *        {{x, y, t}, fwd/rev, 1-127}  an odom movement
+   * \param slew_on
+   *        ramp up from a lower speed to your target speed
+   */
+  void pid_odom_boomerang_set(odom imovement, bool slew_on);
+
+  /**
+   * Takes in an odom movement to go to a single point using boomerang.  If an angle is set, this will run boomerang.  Uses slew if globally enabled.
+   *
+   * \param imovement
+   *        {{x, y, t}, fwd/rev, 1-127}  an odom movement.  values are united here with okapi units
+   */
+  void pid_odom_boomerang_set(united_odom p_imovement);
+
+  /**
+   * Takes in an odom movement to go to a single point using boomerang.  If an angle is set, this will run boomerang.  Uses slew if enabled for this motion.
+   *
+   * \param imovement
+   *        {{x, y, t}, fwd/rev, 1-127}  an odom movement.  values are united here with okapi units
+   * \param slew_on
+   *        ramp up from a lower speed to your target speed
+   */
+  void pid_odom_boomerang_set(united_odom p_imovement, bool slew_on);
+
+  /**
+   * Takes in an odom movement to go to a single point.  If an angle is set, this will run boomerang.  Uses slew if globally enabled.
+   *
+   * \param imovement
+   *        {{x, y, t}, fwd/rev, 1-127}  an odom movement.  values are united here with okapi units
+   */
+  void pid_odom_ptp_set(united_odom p_imovement);
+
+  /**
+   * Takes in an odom movement to go to a single point.  If an angle is set, this will run boomerang.  Uses slew if enabled for this motion.
+   *
+   * \param imovement
+   *        {{x, y, t}, fwd/rev, 1-127}  an odom movement.  values are united here with okapi units
+   * \param slew_on
+   *        ramp up from a lower speed to your target speed
+   */
+  void pid_odom_ptp_set(united_odom p_imovement, bool slew_on);
+
+  /**
+   * Takes in an odom movement to go to a single point.  If an angle is set, this will run boomerang.  Uses slew if globally enabled.
+   *
+   * \param imovement
+   *        {{x, y, t}, fwd/rev, 1-127}  an odom movement.  values are united here with okapi units
+   */
+  void pid_odom_set(united_odom p_imovement);
+
+  /**
+   * Takes in an odom movement to go to a single point.  If an angle is set, this will run boomerang.  Uses slew if enabled for this motion.
+   *
+   * \param imovement
+   *        {{x, y, t}, fwd/rev, 1-127}  an odom movement.  values are united here with okapi units
+   * \param slew_on
+   *        ramp up from a lower speed to your target speed
+   */
+  void pid_odom_set(united_odom p_imovement, bool slew_on);
+
+  /**
+   * Takes in odom movements to go through multiple points, will inject and smooth the path.  If an angle is set, this will run boomerang for that point.  Uses slew if globally enabled.
+   *
+   * \param imovements
+   *        {{{x, y, t}, fwd/rev, 1-127}, {{x, y, t}, fwd/rev, 1-127}}  odom movements
+   */
+  void pid_odom_set(std::vector<odom> imovements);
+
+  /**
+   * Takes in odom movements to go through multiple points, will inject and smooth the path.  If an angle is set, this will run boomerang for that point.  Uses slew if enabled for this motion.
+   *
+   * \param imovements
+   *        {{{x, y, t}, fwd/rev, 1-127}, {{x, y, t}, fwd/rev, 1-127}}  odom movements
+   * \param slew_on
+   *        ramp up from a lower speed to your target speed
+   */
+  void pid_odom_set(std::vector<odom> imovements, bool slew_on);
+
+  /**
+   * Takes in odom movements to go through multiple points.  If an angle is set, this will run boomerang for that point.  Uses slew if globally enabled.
+   *
+   * \param imovements
+   *        {{{x, y, t}, fwd/rev, 1-127}, {{x, y, t}, fwd/rev, 1-127}}  odom movements
+   */
+  void pid_odom_pp_set(std::vector<odom> imovements);
+
+  /**
+   * Takes in odom movements to go through multiple points.  If an angle is set, this will run boomerang for that point.  Uses slew if enabled for this motion.
+   *
+   * \param imovements
+   *        {{{x, y, t}, fwd/rev, 1-127}, {{x, y, t}, fwd/rev, 1-127}}  odom movements
+   * \param slew_on
+   *        ramp up from a lower speed to your target speed
+   */
+  void pid_odom_pp_set(std::vector<odom> imovements, bool slew_on);
+
+  /**
+   * Takes in odom movements to go through multiple points, will inject into the path.  If an angle is set, this will run boomerang for that point.  Uses slew if globally enabled.
+   *
+   * \param imovements
+   *        {{{x, y, t}, fwd/rev, 1-127}, {{x, y, t}, fwd/rev, 1-127}}  odom movements
+   */
+  void pid_odom_injected_pp_set(std::vector<odom> imovements);
+
+  /**
+   * Takes in odom movements to go through multiple points, will inject into the path.  If an angle is set, this will run boomerang for that point.  Uses slew if enabled for this motion.
+   *
+   * \param imovements
+   *        {{{x, y, t}, fwd/rev, 1-127}, {{x, y, t}, fwd/rev, 1-127}}  odom movements
+   * \param slew_on
+   *        ramp up from a lower speed to your target speed
+   */
+  void pid_odom_injected_pp_set(std::vector<odom> imovements, bool slew_on);
+
+  /**
+   * Takes in odom movements to go through multiple points, will inject and smooth the path.  If an angle is set, this will run boomerang for that point.  Uses slew if globally enabled.
+   *
+   * \param imovements
+   *        {{{x, y, t}, fwd/rev, 1-127}, {{x, y, t}, fwd/rev, 1-127}}  odom movements
+   */
+  void pid_odom_smooth_pp_set(std::vector<odom> imovements);
+
+  /**
+   * Takes in odom movements to go through multiple points, will inject and smooth the path.  If an angle is set, this will run boomerang for that point.  Uses slew if enabled for this motion.
+   *
+   * \param imovements
+   *        {{{x, y, t}, fwd/rev, 1-127}, {{x, y, t}, fwd/rev, 1-127}}  odom movements
+   * \param slew_on
+   *        ramp up from a lower speed to your target speed
+   */
+  void pid_odom_smooth_pp_set(std::vector<odom> imovements, bool slew_on);
+
+  /**
+   * Takes in odom movements to go through multiple points, will inject and smooth the path.  If an angle is set, this will run boomerang for that point.  Uses slew if globally enabled.
+   *
+   * \param imovements
+   *        {{{x, y, t}, fwd/rev, 1-127}, {{x, y, t}, fwd/rev, 1-127}}  odom movements.  values are united here with okapi units
+   */
+  void pid_odom_smooth_pp_set(std::vector<united_odom> p_imovements);
+
+  /**
+   * Takes in odom movements to go through multiple points, will inject and smooth the path.  If an angle is set, this will run boomerang for that point.  Uses slew if enabled for this motion.
+   *
+   * \param imovements
+   *        {{{x, y, t}, fwd/rev, 1-127}, {{x, y, t}, fwd/rev, 1-127}}  odom movements.  values are united here with okapi units
+   * \param slew_on
+   *        ramp up from a lower speed to your target speed
+   */
+  void pid_odom_smooth_pp_set(std::vector<united_odom> p_imovements, bool slew_on);
+
+  /**
+   * Takes in odom movements to go through multiple points, will inject into the path.  If an angle is set, this will run boomerang for that point.  Uses slew if globally enabled.
+   *
+   * \param imovements
+   *        {{{x, y, t}, fwd/rev, 1-127}, {{x, y, t}, fwd/rev, 1-127}}  odom movements.  values are united here with okapi units
+   */
+  void pid_odom_injected_pp_set(std::vector<united_odom> p_imovements);
+
+  /**
+   * Takes in odom movements to go through multiple points, will inject into the path.  If an angle is set, this will run boomerang for that point.  Uses slew if enabled for this motion.
+   *
+   * \param imovements
+   *        {{{x, y, t}, fwd/rev, 1-127}, {{x, y, t}, fwd/rev, 1-127}}  odom movements.  values are united here with okapi units
+   * \param slew_on
+   *        ramp up from a lower speed to your target speed
+   */
+  void pid_odom_injected_pp_set(std::vector<united_odom> p_imovements, bool slew_on);
+
+  /**
+   * Takes in odom movements to go through multiple points.  If an angle is set, this will run boomerang for that point.  Uses slew if globally enabled.
+   *
+   * \param imovements
+   *        {{{x, y, t}, fwd/rev, 1-127}, {{x, y, t}, fwd/rev, 1-127}}  odom movements.  values are united here with okapi units
+   */
+  void pid_odom_pp_set(std::vector<united_odom> p_imovements);
+
+  /**
+   * Takes in odom movements to go through multiple points.  If an angle is set, this will run boomerang for that point.  Uses slew if enabled for this motion.
+   *
+   * \param imovements
+   *        {{{x, y, t}, fwd/rev, 1-127}, {{x, y, t}, fwd/rev, 1-127}}  odom movements.  values are united here with okapi units
+   * \param slew_on
+   *        ramp up from a lower speed to your target speed
+   */
+  void pid_odom_pp_set(std::vector<united_odom> p_imovements, bool slew_on);
+
+  /**
+   * Takes in odom movements to go through multiple points, will inject and smooth the path.  If an angle is set, this will run boomerang for that point.  Uses slew if globally enabled.
+   *
+   * \param imovements
+   *        {{{x, y, t}, fwd/rev, 1-127}, {{x, y, t}, fwd/rev, 1-127}}  odom movements.  values are united here with okapi units
+   */
+  void pid_odom_set(std::vector<united_odom> p_imovements);
+
+  /**
+   * Takes in odom movements to go through multiple points, will inject and smooth the path.  If an angle is set, this will run boomerang for that point.  Uses slew if enabled for this motion.
+   *
+   * \param imovements
+   *        {{{x, y, t}, fwd/rev, 1-127}, {{x, y, t}, fwd/rev, 1-127}}  odom movements.  values are united here with okapi units
+   * \param slew_on
+   *        ramp up from a lower speed to your target speed
+   */
+  void pid_odom_set(std::vector<united_odom> p_imovements, bool slew_on);
+
+  /**
    * Sets the robot to move forward using PID with okapi units, only using slew if globally enabled.
    *
    * \param target
@@ -1023,6 +1564,102 @@ class Drive {
    *        toggle for heading correction.  true enables, false disables
    */
   void pid_drive_set(double target, int speed, bool slew_on, bool toggle_heading = true);
+
+  /**
+   * Sets the robot to turn face a point using PID and odometry.
+   *
+   * \param target
+   *        {x, y}  a target point to face
+   * \param speed
+   *        0 to 127, max speed during motion
+   */
+  void pid_turn_set(pose itarget, drive_directions dir, int speed);
+
+  /**
+   * Sets the robot to turn face a point using PID and odometry.
+   *
+   * \param target
+   *        {x, y}  a target point to face
+   * \param speed
+   *        0 to 127, max speed during motion
+   * \param slew_on
+   *        ramp up from a lower speed to your target speed
+   */
+  void pid_turn_set(pose itarget, drive_directions dir, int speed, bool slew_on);
+
+  /**
+   * Sets the robot to turn face a point using PID and odometry.
+   *
+   * \param target
+   *        {x, y}  a target point to face
+   * \param speed
+   *        0 to 127, max speed during motion
+   * \param behavior
+   *        changes what direction the robot will turn.  can be left, right, shortest, longest, raw
+   */
+  void pid_turn_set(pose itarget, drive_directions dir, int speed, e_angle_behavior behavior);
+
+  /**
+   * Sets the robot to turn face a point using PID and odometry.
+   *
+   * \param target
+   *        {x, y}  a target point to face
+   * \param speed
+   *        0 to 127, max speed during motion
+   * \param behavior
+   *        changes what direction the robot will turn.  can be left, right, shortest, longest, raw
+   * \param slew_on
+   *        ramp up from a lower speed to your target speed
+   */
+  void pid_turn_set(pose itarget, drive_directions dir, int speed, e_angle_behavior behavior, bool slew_on);
+
+  /**
+   * Sets the robot to turn face a point using PID and odometry.
+   *
+   * \param target
+   *        {x, y}  a target point to face.  this uses okapi units
+   * \param speed
+   *        0 to 127, max speed during motion
+   */
+  void pid_turn_set(united_pose p_itarget, drive_directions dir, int speed);
+
+  /**
+   * Sets the robot to turn face a point using PID and odometry.
+   *
+   * \param target
+   *        {x, y}  a target point to face.  this uses okapi units
+   * \param speed
+   *        0 to 127, max speed during motion
+   * \param slew_on
+   *        ramp up from a lower speed to your target speed
+   */
+  void pid_turn_set(united_pose p_itarget, drive_directions dir, int speed, bool slew_on);
+
+  /**
+   * Sets the robot to turn face a point using PID and odometry.
+   *
+   * \param target
+   *        {x, y}  a target point to face.  this uses okapi units
+   * \param speed
+   *        0 to 127, max speed during motion
+   * \param behavior
+   *        changes what direction the robot will turn.  can be left, right, shortest, longest, raw
+   */
+  void pid_turn_set(united_pose p_itarget, drive_directions dir, int speed, e_angle_behavior behavior);
+
+  /**
+   * Sets the robot to turn face a point using PID and odometry.
+   *
+   * \param target
+   *        {x, y}  a target point to face.  this uses okapi units
+   * \param speed
+   *        0 to 127, max speed during motion
+   * \param behavior
+   *        changes what direction the robot will turn.  can be left, right, shortest, longest, raw
+   * \param slew_on
+   *        ramp up from a lower speed to your target speed
+   */
+  void pid_turn_set(united_pose p_itarget, drive_directions dir, int speed, e_angle_behavior behavior, bool slew_on);
 
   /**
    * Sets the robot to turn using PID.
@@ -1696,6 +2333,30 @@ class Drive {
   void pid_wait_quick_chain();
 
   /**
+   * Lock the code in a while loop until this point has been passed.
+   *
+   * \param index
+   *        index of your input points, 0 is the first point in the index.
+   */
+  void pid_wait_until_index(int index);
+
+  /**
+   * Lock the code in a while loop until this point has been passed.
+   *
+   * \param target
+   *        {x, y}  a pose for the robot to pass through before the while loop is released
+   */
+  void pid_wait_until_point(pose target);
+
+  /**
+   * Lock the code in a while loop until this point has been passed.  Wrapper for pid_wait_until_point
+   *
+   * \param target
+   *        {x, y}  a pose for the robot to pass through before the while loop is released
+   */
+  void pid_wait_until(pose target);
+
+  /**
    * Autonomous interference detection.  Returns true when interfered, and false when nothing happened.
    */
   bool interfered = false;
@@ -2077,6 +2738,78 @@ class Drive {
   int pid_turn_min_get();
 
   /**
+   * Set's constants for odom driving exit conditions.
+   *
+   * \param p_small_exit_time
+   *        Sets small_exit_time.  Timer for to exit within smalL_error.
+   * \param p_small_error
+   *        Sets smalL_error. Timer will start when error is within this.
+   * \param p_big_exit_time
+   *        Sets big_exit_time.  Timer for to exit within big_error.
+   * \param p_big_error
+   *        Sets big_error. Timer will start when error is within this.
+   * \param p_velocity_exit_time
+   *        Sets velocity_exit_time.  Timer will start when velocity is 0.
+   * \param use_imu
+   *        Adds the Imu for velocity calculation in conjunction with the main sensor.
+   */
+  void pid_odom_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = true);
+
+  /**
+   * Set's constants for odom turning exit conditions.
+   *
+   * \param p_small_exit_time
+   *        Sets small_exit_time.  Timer for to exit within smalL_error.
+   * \param p_small_error
+   *        Sets smalL_error. Timer will start when error is within this.
+   * \param p_big_exit_time
+   *        Sets big_exit_time.  Timer for to exit within big_error.
+   * \param p_big_error
+   *        Sets big_error. Timer will start when error is within this.
+   * \param p_velocity_exit_time
+   *        Sets velocity_exit_time.  Timer will start when velocity is 0.
+   * \param use_imu
+   *        Adds the Imu for velocity calculation in conjunction with the main sensor.
+   */
+  void pid_odom_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = true);
+
+  /**
+   * Set's constants for odom turning exit conditions.
+   *
+   * \param p_small_exit_time
+   *        Sets small_exit_time.  Timer for to exit within smalL_error.  In okapi units.
+   * \param p_small_error
+   *        Sets smalL_error. Timer will start when error is within this.  In okapi units.
+   * \param p_big_exit_time
+   *        Sets big_exit_time.  Timer for to exit within big_error.  In okapi units.
+   * \param p_big_error
+   *        Sets big_error. Timer will start when error is within this.  In okapi units.
+   * \param p_velocity_exit_time
+   *        Sets velocity_exit_time.  Timer will start when velocity is 0.  In okapi units.
+   * \param use_imu
+   *        Adds the Imu for velocity calculation in conjunction with the main sensor.
+   */
+  void pid_odom_turn_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QAngle p_small_error, okapi::QTime p_big_exit_time, okapi::QAngle p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout, bool use_imu = true);
+
+  /**
+   * Set's constants for odom driving exit conditions.
+   *
+   * \param p_small_exit_time
+   *        Sets small_exit_time.  Timer for to exit within smalL_error.  In okapi units.
+   * \param p_small_error
+   *        Sets smalL_error. Timer will start when error is within this.  In okapi units.
+   * \param p_big_exit_time
+   *        Sets big_exit_time.  Timer for to exit within big_error.  In okapi units.
+   * \param p_big_error
+   *        Sets big_error. Timer will start when error is within this.  In okapi units.
+   * \param p_velocity_exit_time
+   *        Sets velocity_exit_time.  Timer will start when velocity is 0.  In okapi units.
+   * \param use_imu
+   *        Adds the Imu for velocity calculation in conjunction with the main sensor.
+   */
+  void pid_odom_drive_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QLength p_small_error, okapi::QTime p_big_exit_time, okapi::QLength p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout, bool use_imu = true);
+
+  /**
    * Set's constants for drive exit conditions.
    *
    * \param p_small_exit_time
@@ -2299,7 +3032,7 @@ class Drive {
 
   struct const_and_name {
     std::string name = "";
-    PID::Constants *consts;
+    PID::Constants* consts;
   };
 
   /**
@@ -2313,7 +3046,75 @@ class Drive {
       {"Swing Forward PID Constants", &forward_swingPID.constants},
       {"Swing Backward PID Constants", &backward_swingPID.constants}};
 
- private:  // !Auton
+ private:
+  // odom privates
+  std::vector<odom> pp_movements;
+  std::vector<int> injected_pp_index;
+  int pp_index = 0;
+  std::vector<odom> smooth_path(std::vector<odom> ipath, double weight_smooth = 0.75, double weight_data = 0.03, double tolerance = 0.0001);
+  double is_past_target(pose target, pose current);
+  void raw_pid_odom_pp_set(std::vector<odom> imovements, bool slew_on);
+  bool ptf1_running = false;
+  std::vector<pose> find_point_to_face(pose current, pose target, drive_directions dir, bool set_global);
+  void raw_pid_odom_ptp_set(odom imovement, bool slew_on);
+  std::vector<odom> inject_points(std::vector<odom> imovements);
+  std::vector<pose> point_to_face = {{0, 0, 0}, {0, 0, 0}};
+  double turn_is_toleranced(double target, double current, double input, double longest, double shortest);
+  double turn_short(double target, double current, bool print = false);
+  double turn_long(double target, double current, bool print = false);
+  double new_turn_target_compute(double target, double current, ez::e_angle_behavior behavior);
+  double turn_left(double target, double current, bool print = false);
+  double turn_right(double target, double current, bool print = false);
+  bool imu_calibration_complete = false;
+  bool is_swing_slew_enabled(e_swing type, double target, double current);
+  bool slew_reenables_when_max_speed_changes = true;
+  int slew_min_when_it_enabled = 0;
+  bool slew_will_enable_later = false;
+  bool current_slew_on = false;
+  bool is_odom_turn_bias_enabled = true;
+  bool odom_turn_bias_enabled();
+  void odom_turn_bias_set(bool set);
+  double angle_rad = 0.0;
+  double track_width = 0.0;
+  bool odometry_enabled = true;
+  pose odom_target = {0, 0, 0};
+  pose odom_current = {0, 0, 0};
+  pose odom_second_to_last = {0, 0, 0};
+  pose odom_start = {0, 0, 0};
+  pose odom_target_start = {0, 0, 0};
+  pose turn_to_point_target = {0, 0, 0};
+  bool y_flipped = false;
+  bool x_flipped = false;
+  double odom_imu_start = 0.0;
+  int past_target = 0;
+  double SPACING = 0.5;
+  double LOOK_AHEAD = 7.0;
+  double dlead = 0.5;
+  double max_boomerang_distance = 12.0;
+  double odom_turn_bias_amount = 1.375;
+  drive_directions current_drive_direction = fwd;
+  double h_last = 0, v_last = 0;
+  double last_theta = 0;
+  bool was_last_pp_mode_boomerang = false;
+  bool global_forward_drive_slew_enabled = false;
+  bool global_backward_drive_slew_enabled = false;
+  bool global_forward_swing_slew_enabled = false;
+  bool global_backward_swing_slew_enabled = false;
+  double turn_tolerance = 3.0;
+  bool global_turn_slew_enabled = false;
+  e_angle_behavior current_angle_behavior = raw;
+  e_angle_behavior default_swing_type = raw;
+  e_angle_behavior default_turn_type = raw;
+  e_angle_behavior default_odom_type = shortest;
+  bool turn_biased_left = false;
+  std::vector<odom> set_odoms_direction(std::vector<odom> inputs);
+  odom set_odom_direction(odom input);
+  pose flip_pose(pose input);
+  bool odom_left_tracker_enabled = false;
+  bool odom_right_tracker_enabled = false;
+  bool odom_front_tracker_enabled = false;
+  bool odom_back_tracker_enabled = false;
+
   double chain_target_start = 0.0;
   double chain_sensor_start = 0.0;
   double drive_forward_motion_chain_scale = 0.0;
@@ -2407,6 +3208,9 @@ class Drive {
   void swing_pid_task();
   void turn_pid_task();
   void ez_auto_task();
+  void ptp_task();
+  void boomerang_task();
+  void pp_task();
 
   /**
    * Starting value for left/right

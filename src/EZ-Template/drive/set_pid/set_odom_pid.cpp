@@ -45,7 +45,6 @@ bool Drive::odom_x_direction_get() { return x_flipped; }
 void Drive::odom_y_direction_flip(bool flip) { y_flipped = flip; }
 bool Drive::odom_y_direction_get() { return y_flipped; }
 void Drive::odom_boomerang_dlead_set(double input) { dlead = input; }
-void Drive::odom_boomerang_dlead_set(okapi::QLength p_input) { odom_boomerang_dlead_set(p_input.convert(okapi::inch)); }
 double Drive::odom_boomerang_dlead_get() { return dlead; }
 void Drive::odom_boomerang_distance_set(double distance) { max_boomerang_distance = distance; }
 void Drive::odom_boomerang_distance_set(okapi::QLength p_distance) { odom_boomerang_distance_set(p_distance.convert(okapi::inch)); }
@@ -60,8 +59,8 @@ void Drive::odom_look_ahead_set(okapi::QLength p_distance) { odom_look_ahead_set
 double Drive::odom_look_ahead_get() { return LOOK_AHEAD; }
 bool Drive::odom_turn_bias_enabled() { return is_odom_turn_bias_enabled; }
 void Drive::odom_turn_bias_set(bool set) { is_odom_turn_bias_enabled = set; }
-void Drive::odom_slew_reenable(bool reenable) { slew_reenables_when_max_speed_changes = reenable; }
-bool Drive::odom_slew_reenables() { return slew_reenables_when_max_speed_changes; }
+void Drive::slew_odom_reenable(bool reenable) { slew_reenables_when_max_speed_changes = reenable; }
+bool Drive::slew_odom_reenabled() { return slew_reenables_when_max_speed_changes; }
 
 /////
 // pid_odom_set but it looks like pid_drive_set
@@ -382,7 +381,7 @@ void Drive::raw_pid_odom_ptp_set(odom imovement, bool slew_on) {
     current_angle_behavior = imovement.turn_behavior;
   }
 
-  if (current_slew_on && imovement.max_xy_speed > pid_speed_max_get() && odom_slew_reenables()) {
+  if (current_slew_on && imovement.max_xy_speed > pid_speed_max_get() && slew_odom_reenabled()) {
     slew_will_enable_later = true;
   }
 
@@ -411,7 +410,7 @@ void Drive::raw_pid_odom_ptp_set(odom imovement, bool slew_on) {
   pid_speed_max_set(imovement.max_xy_speed);
 
   int slew_min = slew_consts.min_speed;
-  if (current_slew_on && slew_will_enable_later && !slew_on && odom_slew_reenables()) {
+  if (current_slew_on && slew_will_enable_later && !slew_on && slew_odom_reenabled()) {
     slew_on = true;
     slew_will_enable_later = false;
     if (slew_min_when_it_enabled > slew_consts.min_speed)
