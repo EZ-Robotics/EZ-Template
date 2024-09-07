@@ -4,6 +4,8 @@ License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
+#include "util.hpp"
+
 #include "main.h"
 
 pros::Controller master(pros::E_CONTROLLER_MASTER);
@@ -62,9 +64,9 @@ void screen_print(std::string text, int line) {
         texts.push_back(temp);
         temp = text[i];
       } else {
-        int size = last_word.length(); 
+        int size = last_word.length();
 
-        auto rest_of_word = get_rest_of_the_word(text, i); 
+        auto rest_of_word = get_rest_of_the_word(text, i);
         temp.erase(temp.length() - size, size);
         texts.push_back(temp);
         last_word += rest_of_word;
@@ -74,7 +76,6 @@ void screen_print(std::string text, int line) {
           texts.push_back(temp);
           break;
         }
-        
       }
     }
     if (i >= text.length() - 1) {
@@ -143,6 +144,121 @@ double clamp(double input, double max, double min) {
   else if (input < min)
     return min;
   return input;
+}
+
+double clamp(double input, double max) {
+  return clamp(input, fabs(max), -fabs(max));
+}
+
+// Conversions from deg to rad and rad to deg
+double to_deg(double input) { return input * (180 / M_PI); }
+double to_rad(double input) { return input * (M_PI / 180); }
+
+// Finds error in shortest angle to point
+double absolute_angle_to_point(pose itarget, pose icurrent) {
+  // Difference in target to current (legs of triangle)
+  double x_error = itarget.x - icurrent.x;
+  double y_error = itarget.y - icurrent.y;
+
+  // Displacement of error
+  double error = to_deg(atan2(x_error, y_error));
+  return error;
+}
+
+// Outputs a target that will get you there the fastest
+double turn_shortest(double target, double current, bool print) {
+  if (print) printf("SHORTEST   Target: %.2f   Current: %.2f      New Target: ", target, current);
+  double error = target - current;
+  if (fabs(error) < 180.0) {
+    if (print) printf("%.2f\n", target);
+    return target;
+  }
+  double new_target = target;
+
+  while (error > 180) {
+    new_target -= 360;
+    error = new_target - current;
+  }
+  while (error < -180) {
+    new_target += 360;
+    error = new_target - current;
+  }
+
+  if (new_target - current == 0.0) {
+    if (print) printf("%.2f\n", target);
+    return current;
+  }
+
+  if (print) printf("%.2f\n", new_target);
+  return new_target;
+}
+
+// Outputs a target that will get you there the slowest
+double turn_longest(double target, double current, bool print) {
+  if (print) printf("LONGEST   Target: %.2f   Current: %.2f      New Target: ", target, current);
+  double shortest_target = turn_shortest(target, current, false);
+  double new_target = target;
+
+  double error = shortest_target - current;
+  new_target = shortest_target - (360 * util::sgn(error));
+
+  if (print) printf("%.2f\n", new_target);
+  return new_target;
+}
+
+// Outputs angle within 180 t0 -180
+double wrap_angle(double theta) {
+  while (theta > 180) theta -= 360;
+  while (theta < -180) theta += 360;
+  return theta;
+}
+
+// Find shortest distance to point
+double distance_to_point(pose itarget, pose icurrent) {
+  // Difference in target to current (legs of triangle)
+  double x_error = (itarget.x - icurrent.x);
+  double y_error = (itarget.y - icurrent.y);
+
+  // Hypotenuse of triangle
+  double distance = hypot(x_error, y_error);
+
+  return distance;
+}
+
+// Uses input as hypot to find the new xy
+pose vector_off_point(double added, pose icurrent) {
+  double x_error = sin(to_rad(icurrent.theta)) * added;
+  double y_error = cos(to_rad(icurrent.theta)) * added;
+
+  pose output;
+  output.x = x_error + icurrent.x;
+  output.y = y_error + icurrent.y;
+  output.theta = icurrent.theta;
+  return output;
+}
+
+pose united_pose_to_pose(united_pose input) {
+  pose output = {0, 0, 0};
+  output.x = input.x.convert(okapi::inch);
+  output.y = input.y.convert(okapi::inch);
+  if (input.theta == p_ANGLE_NOT_SET)
+    output.theta = ANGLE_NOT_SET;
+  else
+    output.theta = input.theta.convert(okapi::degree);
+  return output;
+}
+
+std::vector<odom> united_odoms_to_odoms(std::vector<united_odom> inputs) {
+  std::vector<odom> output;
+  for (int i = 0; i < inputs.size(); i++) {
+    pose new_pose = united_pose_to_pose(inputs[i].target);
+    output.push_back({{new_pose}, inputs[i].drive_direction, inputs[i].max_xy_speed, inputs[i].turn_behavior});
+  }
+  return output;
+}
+
+odom united_odom_to_odom(united_odom input) {
+  return united_odoms_to_odoms({input})[0];
 }
 
 }  // namespace util

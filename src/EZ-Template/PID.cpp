@@ -58,8 +58,7 @@ void PID::i_reset_toggle(bool toggle) { reset_i_sgn = toggle; }
 bool PID::i_reset_get() { return reset_i_sgn; };
 
 double PID::compute(double current) {
-  error = target - current;
-  return compute_error(error, current);
+  return compute_error(target - current, current);
 }
 
 double PID::compute_error(double err, double current) {

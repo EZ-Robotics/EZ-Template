@@ -264,7 +264,7 @@ class PID {
 
  private:
   double velocity_zero_main = 0.05;
-  double velocity_zero_secondary = 0.1;
+  double velocity_zero_secondary = 0.075;
   int i = 0, j = 0, k = 0, l = 0, m = 0;
   bool is_mA = false;
   double second_sensor = 0.0;
