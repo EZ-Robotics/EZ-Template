@@ -5,32 +5,46 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
 #include "EZ-Template/api.hpp"
+#include "EZ-Template/util.hpp"
 #include "pros/misc.hpp"
 
 using namespace ez;
 
 void Drive::ez_auto_task() {
+  int timer = 0;
   while (true) {
-    // Autonomous PID
-    switch (drive_mode_get()) {
-      case DRIVE:
-        drive_pid_task();
-        break;
-      case TURN:
-        turn_pid_task();
-        break;
-      case SWING:
-        swing_pid_task();
-        break;
-      case DISABLE:
-        break;
-      default:
-        break;
+    if (timer >= util::DELAY_TIME) {
+      // Autonomous PID
+      switch (drive_mode_get()) {
+        case DRIVE:
+          drive_pid_task();
+          break;
+        case TURN ... TURN_TO_POINT:
+          turn_pid_task();
+          break;
+        case SWING:
+          swing_pid_task();
+          break;
+        case POINT_TO_POINT:
+          ptp_task();
+          break;
+        case PURE_PURSUIT:
+          pp_task();
+          break;
+        case DISABLE:
+          break;
+        default:
+          break;
+      }
+
+      util::AUTON_RAN = drive_mode_get() != DISABLE ? true : false;
+
+      timer = 0;
     }
 
-    util::AUTON_RAN = drive_mode_get() != DISABLE ? true : false;
-
-    pros::delay(util::DELAY_TIME);
+    ez_tracking_task();
+    pros::delay(1);
+    timer += 1;
   }
 }
 
@@ -51,7 +65,7 @@ void Drive::drive_pid_task() {
   double r_drive_out = rightPID.output;
 
   // Scale leftPID and rightPID to slew (if slew is disabled, it returns max_speed)
-  double max_slew_out = fmin(slew_left.output(), slew_right.output());
+  double max_slew_out = fmax(slew_left.output(), slew_right.output());
   double faster_side = fmax(fabs(l_drive_out), fabs(r_drive_out));
   if (faster_side > max_slew_out) {
     l_drive_out = l_drive_out * (max_slew_out / faster_side);
@@ -65,8 +79,8 @@ void Drive::drive_pid_task() {
   double l_out = l_drive_out + imu_out;
   double r_out = r_drive_out - imu_out;
 
-  // Vector scaling when combining drive and imo
-  max_slew_out = fmin(slew_left.output(), slew_right.output());
+  // Vector scaling when combining drive and imu
+  max_slew_out = fmax(slew_left.output(), slew_right.output());
   faster_side = fmax(fabs(l_out), fabs(r_out));
   if (faster_side > max_slew_out) {
     l_out = l_out * (max_slew_out / faster_side);
@@ -80,8 +94,17 @@ void Drive::drive_pid_task() {
 
 // Turn PID task
 void Drive::turn_pid_task() {
-  // Compute PID
-  turnPID.compute(drive_imu_get());
+  // Compute PID if it's a normal turn
+  if (mode == TURN) {
+    turnPID.compute(drive_imu_get());
+  }
+  // Compute PID if we're turning to point
+  else {
+    double a_target = util::absolute_angle_to_point(point_to_face[!ptf1_running], odom_current);  // Calculate the point for angle to face
+    a_target = new_turn_target_compute(a_target, odom_imu_start, current_angle_behavior);
+    double error = a_target - drive_imu_get();
+    turnPID.compute_error(error, drive_imu_get());
+  }
 
   // Compute slew
   slew_turn.iterate(drive_imu_get());
@@ -132,5 +155,116 @@ void Drive::swing_pid_task() {
       opposite_output = swing_opposite_speed == 0 ? leftPID.output : -(swing_opposite_speed * scale);
       private_drive_set(opposite_output, -swing_out);
     }
+  }
+}
+
+// Odom To Point Task
+void Drive::ptp_task() {
+  // Compute slew
+  slew_left.iterate(drive_sensor_left());
+  slew_right.iterate(drive_sensor_right());
+  double max_slew_out = fmax(slew_left.output(), slew_right.output());
+
+  // Decide if we've past the target or not
+  int dir = (current_drive_direction == REV ? -1 : 1);                                                    // If we're going backwards, add a -1
+  int flipped = util::sgn(is_past_target(odom_target, odom_current)) != util::sgn(past_target) ? -1 : 1;  // Check if we've flipped directions to what we started
+
+  // Compute xy PID
+  double temp_target = fabs(is_past_target(odom_target, odom_current));  // Use this instead of distance formula to fix impossible movements
+  xyPID.compute_error(temp_target * dir * flipped, odom_current.x + odom_current.y);
+
+  // Compute angle
+  pose ptf = point_to_face[!ptf1_running];
+  double a_target = util::absolute_angle_to_point(ptf, odom_current);  // Calculate the point for angle to face
+  a_target = new_turn_target_compute(a_target, odom_imu_start, current_angle_behavior);
+  double wrapped_a_target = a_target - drive_imu_get();
+  aPID.compute_error(wrapped_a_target, drive_imu_get());
+  // printf("shortest_a_target: %.2f      error: %.2f\n", a_target, wrapped_a_target);
+
+  // Prioritize turning by scaling xy_out down
+  double xy_out = xyPID.output;
+  // xy_out = util::clamp(xy_out, max_slew_out, -max_slew_out);
+  if (is_odom_turn_bias_enabled)
+    xy_out *= cos(util::to_rad(aPID.error)) / odom_turn_bias_amount;
+  double a_out = aPID.output;
+  // a_out = util::clamp(a_out, max_slew_out, -max_slew_out);
+
+  // Scale xy_out and a_out to max speed
+  // this ensures no data is lost that would otherwise by lost in clamping
+  double faster_side = fmax(fabs(xy_out), fabs(a_out));
+  if (faster_side > max_slew_out) {
+    xy_out = xy_out * (max_slew_out / faster_side);
+    a_out = a_out * (max_slew_out / faster_side);
+  }
+
+  // Combine heading and drive
+  double l_out = xy_out + a_out;
+  double r_out = xy_out - a_out;
+
+  // Vector scaling when combining drive and imu
+  // this ensures no data is lost that would otherwise by lost in clamping
+  faster_side = fmax(fabs(l_out), fabs(r_out));
+  if (faster_side > max_slew_out) {
+    l_out = l_out * (max_slew_out / faster_side);
+    r_out = r_out * (max_slew_out / faster_side);
+  }
+
+  // printf("lr out (%.2f, %.2f)   fwd curveZ(%.2f, %.2f)   lr slew (%.2f, %.2f)\n", l_out, r_out, xy_out, a_out, slew_left.output(), slew_right.output());
+  // printf("max_slew_out %.2f      headingerr: %.2f\n", max_slew_out, aPID.error);
+  // printf("lr(%.2f, %.2f)   xy_raw: %.2f   xy_out: %.2f   heading_out: %.2f      max_slew_out: %.2f\n", l_out, r_out, xyPID.output, xy_out, aPID.output, max_slew_out);
+  // printf("xy(%.2f, %.2f, %.2f)   xyPID: %.2f   aPID: %.2f     dir: %i   sgn: %i   past_target: %i    is_past_target: %i   is_past_using_xy: %i      fake_xy(%.2f, %.2f, %.2f)\n", odom_current.x, odom_current.y, odom_current.theta, xyPID.target_get(), aPID.target_get(), dir, flipped, past_target, (int)is_past_target(odom_target, odom_current), is_past_target_using_xy, fake_x, fake_y, util::to_deg(fake_angle));
+  // printf("xy(%.2f, %.2f, %.2f)   xyPID: %.2f   aPID: %.2f   ptf:(%.2f, %.2f)\n", odom_current.x, odom_current.y, odom_current.theta, xyPID.error, aPID.error, ptf.x, ptf.y);
+
+  // Set motors
+  if (drive_toggle)
+    private_drive_set(l_out, r_out);
+
+  // This is for wait_until
+  leftPID.compute(drive_sensor_left());
+  rightPID.compute(drive_sensor_right());
+}
+
+void Drive::boomerang_task() {
+  int target_index = pp_index;
+  pose target = pp_movements[target_index].target;
+
+  // target.theta += current_drive_direction == REV ? 180 : 0;  // Decide if going fwd or rev
+  int dir = current_drive_direction == REV ? -1 : 1;
+
+  double h = util::distance_to_point(target, odom_current) * dlead;
+  double max = max_boomerang_distance;
+  h = h > max ? max : h;
+  h *= dir;
+
+  pose temp = util::vector_off_point(-h, pp_movements[target_index].target);
+  temp.theta = target.theta;
+
+  if (util::distance_to_point(target, odom_current) < LOOK_AHEAD / 2.0) {
+    temp = target;
+  }
+
+  if (odom_target.x != temp.x || odom_target.y != temp.y) {
+    raw_pid_odom_ptp_set({temp, pp_movements[target_index].drive_direction, pp_movements[target_index].max_xy_speed}, false);
+  }
+
+  // printf("cur(%.2f, %.2f, %.2f)   tar(%.2f, %.2f, %.2f)   h %.2f  \n", odom_current.x, odom_current.y, odom_current.theta, temp.x, temp.y, temp.theta, h);
+
+  ptp_task();
+}
+
+void Drive::pp_task() {
+  if (fabs(util::distance_to_point(pp_movements[pp_index].target, odom_current)) < LOOK_AHEAD) {
+    if (pp_index < pp_movements.size() - 1) {
+      pp_index = pp_index >= pp_movements.size() - 1 ? pp_index : pp_index + 1;
+      bool slew_on = slew_left.enabled() || slew_right.enabled() ? true : false;
+      if (!current_slew_on) slew_on = false;
+      raw_pid_odom_ptp_set(pp_movements[pp_index], slew_on);
+    }
+  }
+
+  if (pp_movements[pp_index].target.theta != ANGLE_NOT_SET) {
+    boomerang_task();
+  } else {
+    ptp_task();
   }
 }

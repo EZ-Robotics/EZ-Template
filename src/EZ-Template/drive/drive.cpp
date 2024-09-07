@@ -15,6 +15,46 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 using namespace ez;
 
+// Constructor for integrated encoders but with track width
+Drive::Drive(pros::MotorGroup input_left_motors, pros::MotorGroup input_right_motors,
+             pros::IMU input_imu, double wheel_diameter, double wheel_rpm, double input_track_width)
+    : imu(input_imu.get_port()),
+      left_tracker(-1, -1, false),   // Default value
+      right_tracker(-1, -1, false),  // Default value
+      left_rotation(-1),
+      right_rotation(-1),
+      ez_auto([this] { this->ez_auto_task(); }) {
+  is_tracker = DRIVE_INTEGRATED;
+
+  // Set motors to a global vector
+  for (int i = 0; i < input_left_motors.size(); i++) {
+    int port = input_left_motors.get_port(i);
+    // pros::Motor temp((std::int8_t)abs(port) * input_left_motors.get_direction(i));
+    pros::Motor temp((std::int8_t)abs(port));
+    bool is_reversed = input_left_motors.get_direction(i) == -1 ? true : false;
+    temp.set_reversed(is_reversed);
+    left_motors.push_back(temp);
+  }
+  for (int i = 0; i < input_right_motors.size(); i++) {
+    int port = input_right_motors.get_port(i);
+    // pros::Motor temp((std::int8_t)abs(port) * input_right_motors.get_direction(i));
+    pros::Motor temp((std::int8_t)abs(port));
+    bool is_reversed = input_right_motors.get_direction(i) == -1 ? true : false;
+    temp.set_reversed(is_reversed);
+    right_motors.push_back(temp);
+  }
+
+  // Set constants for tick_per_inch calculation
+  WHEEL_DIAMETER = wheel_diameter;
+  RATIO = 1.0;
+  CARTRIDGE = wheel_rpm;
+  TICK_PER_INCH = drive_tick_per_inch();
+
+  drive_width_set(input_track_width);
+
+  drive_defaults_set();
+}
+
 // Constructor for integrated encoders
 Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports,
              int imu_port, double wheel_diameter, double ticks, double ratio)
@@ -149,11 +189,13 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 }
 
 void Drive::drive_defaults_set() {
+  imu.set_data_rate(5);
+
   std::cout << std::fixed;
   std::cout << std::setprecision(2);
 
   // PID Constants
-  pid_heading_constants_set(11, 0, 20, 0);
+  pid_heading_constants_set(7, 0, 45, 0);
   pid_drive_constants_set(20, 0, 100, 0);
   pid_turn_constants_set(3, 0.05, 20, 15);
   pid_swing_constants_set(6, 0, 65);
@@ -161,12 +203,16 @@ void Drive::drive_defaults_set() {
   pid_swing_min_set(30);
 
   // Slew constants
-  slew_drive_constants_set(7_in, 80);
+  slew_turn_constants_set(3_deg, 70);
+  slew_drive_constants_set(3_in, 70);
+  slew_swing_constants_set(3_in, 80);
 
   // Exit condition constants
   pid_turn_exit_condition_set(80_ms, 3_deg, 250_ms, 7_deg, 500_ms, 500_ms);
   pid_swing_exit_condition_set(80_ms, 3_deg, 250_ms, 7_deg, 500_ms, 500_ms);
   pid_drive_exit_condition_set(80_ms, 1_in, 250_ms, 3_in, 500_ms, 500_ms);
+  pid_odom_turn_exit_condition_set(80_ms, 3_deg, 250_ms, 7_deg, 500_ms, 750_ms);
+  pid_odom_drive_exit_condition_set(80_ms, 1_in, 250_ms, 3_in, 500_ms, 750_ms);
 
   pid_turn_chain_constant_set(3_deg);
   pid_swing_chain_constant_set(5_deg);
@@ -188,11 +234,14 @@ void Drive::drive_defaults_set() {
 }
 
 double Drive::drive_tick_per_inch() {
+  if (is_tracker == ODOM_TRACKER)
+    return odom_right_tracker->ticks_per_inch();
+
   CIRCUMFERENCE = WHEEL_DIAMETER * M_PI;
 
   if (is_tracker == DRIVE_ADI_ENCODER || is_tracker == DRIVE_ROTATION)
     TICK_PER_REV = CARTRIDGE * RATIO;
-  else
+  else if (is_tracker == DRIVE_INTEGRATED)
     TICK_PER_REV = (50.0 * (3600.0 / CARTRIDGE)) * RATIO;  // with no cart, the encoder reads 50 counts per rotation
 
   TICK_PER_INCH = (TICK_PER_REV / CIRCUMFERENCE);
@@ -245,6 +294,8 @@ int Drive::drive_current_limit_get() {
 
 // Motor telemetry
 void Drive::drive_sensor_reset() {
+  v_last = 0;
+  h_last = 0;
   left_motors.front().tare_position();
   right_motors.front().tare_position();
   if (is_tracker == DRIVE_ADI_ENCODER) {
@@ -256,6 +307,10 @@ void Drive::drive_sensor_reset() {
     right_rotation.reset_position();
     return;
   }
+  if (odom_left_tracker_enabled) odom_left_tracker->reset();
+  if (odom_right_tracker_enabled) odom_right_tracker->reset();
+  if (odom_front_tracker_enabled) odom_front_tracker->reset();
+  if (odom_back_tracker_enabled) odom_back_tracker->reset();
 }
 
 int Drive::drive_sensor_right_raw() {
@@ -263,9 +318,15 @@ int Drive::drive_sensor_right_raw() {
     return right_tracker.get_value();
   else if (is_tracker == DRIVE_ROTATION)
     return right_rotation.get_position();
+  else if (is_tracker == ODOM_TRACKER)
+    return odom_right_tracker->get_raw();
   return right_motors.front().get_position();
 }
-double Drive::drive_sensor_right() { return drive_sensor_right_raw() / drive_tick_per_inch(); }
+double Drive::drive_sensor_right() {
+  if (is_tracker == ODOM_TRACKER)
+    return odom_right_tracker->get();
+  return drive_sensor_right_raw() / drive_tick_per_inch();
+}
 int Drive::drive_velocity_right() { return right_motors.front().get_actual_velocity(); }
 double Drive::drive_mA_right() { return right_motors.front().get_current_draw(); }
 bool Drive::drive_current_right_over() { return right_motors.front().is_over_current(); }
@@ -275,14 +336,24 @@ int Drive::drive_sensor_left_raw() {
     return left_tracker.get_value();
   else if (is_tracker == DRIVE_ROTATION)
     return left_rotation.get_position();
+  else if (is_tracker == ODOM_TRACKER)
+    return odom_left_tracker->get_raw();
   return left_motors.front().get_position();
 }
-double Drive::drive_sensor_left() { return drive_sensor_left_raw() / drive_tick_per_inch(); }
+double Drive::drive_sensor_left() {
+  if (is_tracker == ODOM_TRACKER)
+    return odom_left_tracker->get();
+  return drive_sensor_left_raw() / drive_tick_per_inch();
+}
 int Drive::drive_velocity_left() { return left_motors.front().get_actual_velocity(); }
 double Drive::drive_mA_left() { return left_motors.front().get_current_draw(); }
 bool Drive::drive_current_left_over() { return left_motors.front().is_over_current(); }
 
-void Drive::drive_imu_reset(double new_heading) { imu.set_rotation(new_heading); }
+void Drive::drive_imu_reset(double new_heading) {
+  imu.set_rotation(new_heading);
+  angle_rad = util::to_rad(new_heading);
+  last_theta = angle_rad;
+}
 double Drive::drive_imu_get() { return imu.get_rotation() * IMU_SCALER; }
 double Drive::drive_imu_accel_get() { return imu.get_accel().x + imu.get_accel().y; }
 
@@ -321,6 +392,7 @@ void Drive::drive_imu_display_loading(int iter) {
 }
 
 bool Drive::drive_imu_calibrate(bool run_loading_animation) {
+  imu_calibration_complete = false;
   imu.reset();
   int iter = 0;
   bool current_status = imu.is_calibrating();
@@ -349,6 +421,7 @@ bool Drive::drive_imu_calibrate(bool run_loading_animation) {
     pros::delay(util::DELAY_TIME);
   }
   printf("IMU is done calibrating (took %d ms)\n", iter);
+  imu_calibration_complete = true;
   return true;
 }
 
@@ -374,62 +447,43 @@ void Drive::initialize() {
   drive_sensor_reset();
 }
 
-void Drive::pid_drive_toggle(bool toggle) { drive_toggle = toggle; }
-void Drive::pid_print_toggle(bool toggle) { print_toggle = toggle; }
+void Drive::odom_tracker_left_set(tracking_wheel* input) {
+  if (input == nullptr) return;
 
-bool Drive::pid_drive_toggle_get() { return drive_toggle; }
-bool Drive::pid_print_toggle_get() { return print_toggle; }
+  odom_left_tracker = input;
+  odom_left_tracker_enabled = true;
 
-void Drive::slew_drive_constants_forward_set(okapi::QLength distance, int min_speed) {
-  double dist = distance.convert(okapi::inch);
-  slew_forward.constants_set(dist, min_speed);
+  // Assume the user input a positive number and set it to a negative number
+  odom_left_tracker->distance_to_center_flip_set(true);
+
+  // If the user has input a left and right tracking wheel,
+  // the tracking wheels become the new sensors always
+  if (odom_right_tracker_enabled)
+    is_tracker = ODOM_TRACKER;
 }
+void Drive::odom_tracker_right_set(tracking_wheel* input) {
+  if (input == nullptr) return;
 
-void Drive::slew_drive_constants_backward_set(okapi::QLength distance, int min_speed) {
-  double dist = distance.convert(okapi::inch);
-  slew_backward.constants_set(dist, min_speed);
+  odom_right_tracker = input;
+  odom_right_tracker_enabled = true;
+
+  // If the user has input a left and right tracking wheel,
+  // the tracking wheels become the new sensors always
+  if (odom_left_tracker_enabled)
+    is_tracker = ODOM_TRACKER;
 }
+void Drive::odom_tracker_front_set(tracking_wheel* input) {
+  if (input == nullptr) return;
 
-void Drive::slew_drive_constants_set(okapi::QLength distance, int min_speed) {
-  slew_drive_constants_backward_set(distance, min_speed);
-  slew_drive_constants_forward_set(distance, min_speed);
+  odom_front_tracker = input;
+  odom_front_tracker_enabled = true;
 }
+void Drive::odom_tracker_back_set(tracking_wheel* input) {
+  if (input == nullptr) return;
 
-void Drive::slew_turn_constants_set(okapi::QAngle distance, int min_speed) {
-  double dist = distance.convert(okapi::degree);
-  slew_turn.constants_set(dist, min_speed);
-}
+  odom_back_tracker = input;
+  odom_back_tracker_enabled = true;
 
-void Drive::slew_swing_constants_backward_set(okapi::QLength distance, int min_speed) {
-  slew_swing_rev_using_angle = false;
-  double dist = distance.convert(okapi::inch);
-  slew_swing_backward.constants_set(dist, min_speed);
-}
-
-void Drive::slew_swing_constants_forward_set(okapi::QLength distance, int min_speed) {
-  slew_swing_fwd_using_angle = false;
-  double dist = distance.convert(okapi::inch);
-  slew_swing_forward.constants_set(dist, min_speed);
-}
-
-void Drive::slew_swing_constants_set(okapi::QLength distance, int min_speed) {
-  slew_swing_constants_forward_set(distance, min_speed);
-  slew_swing_constants_backward_set(distance, min_speed);
-}
-
-void Drive::slew_swing_constants_backward_set(okapi::QAngle distance, int min_speed) {
-  slew_swing_rev_using_angle = true;
-  double dist = distance.convert(okapi::degree);
-  slew_swing_backward.constants_set(dist, min_speed);
-}
-
-void Drive::slew_swing_constants_forward_set(okapi::QAngle distance, int min_speed) {
-  slew_swing_fwd_using_angle = true;
-  double dist = distance.convert(okapi::degree);
-  slew_swing_forward.constants_set(dist, min_speed);
-}
-
-void Drive::slew_swing_constants_set(okapi::QAngle distance, int min_speed) {
-  slew_swing_constants_forward_set(distance, min_speed);
-  slew_swing_constants_backward_set(distance, min_speed);
+  // Set the center distance to be negative
+  odom_back_tracker->distance_to_center_flip_set(true);
 }
