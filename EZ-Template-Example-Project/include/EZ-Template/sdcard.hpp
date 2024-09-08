@@ -70,8 +70,34 @@ void limit_switch_lcd_initialize(pros::adi::DigitalIn* right_limit, pros::adi::D
  */
 void limitSwitchTask();
 
+/**
+ * Returns the current blank page that is on.  Negative value means the current page isn't blank.
+ */
 int page_blank_current();
+
+/**
+ * Checks if this blank page is open.  If this page doesn't exist, this will create it.
+ */
 bool page_blank_is_on(int page);
+
+/**
+ * Removes the blank page if it exists, and previous ones.
+ */
+void page_blank_remove(int page);
+
+/**
+ * Removes all blank pages.
+ */
+void page_blank_remove_all();
+
+/**
+ * Removes the current amount of blank pages.
+ */
+int page_blank_amount();
+
+/**
+ * Current amount of blank pages.
+ */
 extern int amount_of_blank_pages;
 }  // namespace as
 }  // namespace ez
