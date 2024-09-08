@@ -193,6 +193,10 @@ void ez_template_etxras() {
     }
 
     chassis.pid_tuner_iterate();  // Allow PID Tuner to iterate
+  } else {
+    // Remove all blank pages when connected to a comp switch
+    if (ez::as::page_blank_amount() > 0)
+      ez::as::page_blank_remove_all();
   }
 }
 
