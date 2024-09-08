@@ -39,6 +39,7 @@ tracking_wheel::tracking_wheel(int port, double wheel_diameter, double distance_
     : adi_encoder(-1, -1, false),
       smart_encoder(abs(port)) {
   IS_TRACKER = DRIVE_ROTATION;
+  smart_encoder.set_reversed(util::reversed_active(port));
 
   distance_to_center_set(distance_to_center);
   wheel_diameter_set(wheel_diameter);

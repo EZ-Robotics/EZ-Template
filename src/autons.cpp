@@ -43,7 +43,7 @@ void default_constants() {
   // - if you have tracking wheels, you can run this lower
   chassis.odom_turn_bias_set(1.375);
 
-// This sets the maximum distance away from target that the carrot point can be
+  // This sets the maximum distance away from target that the carrot point can be
   chassis.odom_boomerang_distance_set(12_in);
 
   // Defaults the turn behavior to always go the shortest way

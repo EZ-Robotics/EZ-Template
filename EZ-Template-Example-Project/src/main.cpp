@@ -157,7 +157,7 @@ void ez_template_etxras() {
                      1);  // Don't override the top Page line
       }
       // This is Blank Page 2, it will display every tracking wheel.
-      // Make sure the tracking wheels read POSITIVE going forwards or left.
+      // Make sure the tracking wheels read POSITIVE going forwards or right.
       else if (ez::as::page_blank_is_on(1)) {
         if (chassis.odom_left_tracker != nullptr)
           screen_print("left tracker: " + std::to_string(chassis.odom_left_tracker->get()), 1);
