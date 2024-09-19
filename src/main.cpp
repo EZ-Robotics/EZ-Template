@@ -33,6 +33,8 @@ ez::Drive chassis(
 // ez::tracking_wheel left_tracker(1, {'C', 'D'}, 2.75, 4.0);  // ADI Encoders plugged into a Smart port
 // ez::tracking_wheel horiz_tracker(1, 2.75, 4.0);             // Rotation sensors
 
+ez::tracking_wheel left_tracker({'A', 'B'}, 4.125, -(12.75 / 2.0), 1.4285);  // ADI Encoders
+
 /**
  * Runs initialization code. This occurs as soon as the program is started.
  *
@@ -114,19 +116,70 @@ void competition_initialize() {
  * from where it left off.
  */
 void autonomous() {
-  chassis.pid_targets_reset();                // Resets PID targets to 0
-  chassis.drive_imu_reset();                  // Reset gyro position to 0
-  chassis.drive_sensor_reset();               // Reset drive sensors to 0
-  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
-  chassis.odom_pose_set({0_in, 0_in, 0_deg});
-  chassis.drive_width_set(11_in);  // Measure this with a tape measure
+  chassis.pid_targets_reset();                 // Resets PID targets to 0
+  chassis.drive_imu_reset();                   // Reset gyro position to 0
+  chassis.drive_sensor_reset();                // Reset drive sensors to 0
+  chassis.odom_pose_set({0_in, 0_in, 0_deg});  // Reset XYT to (0, 0, 0)
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);   // Set motors to hold.  This helps autonomous consistency
+  // chassis.drive_width_set(0_in);  // Measure this with a tape measure
 
-  chassis.pid_odom_set({{{0_in, 16_in}, fwd, 110},
-                        {{16_in, 16_in}, fwd, 110}},
+  chassis.odom_ime_use_left = false;
+
+  // chassis.odom_ime_track_width_left = -6.21;
+  // chassis.odom_ime_track_width_right = 6.99;
+  chassis.drive_width_set(13.21);
+  chassis.odom_ime_track_width_left = -(chassis.drive_width_get() / 2.0);
+  chassis.odom_ime_track_width_right = (chassis.drive_width_get() / 2.0);
+
+  chassis.pid_turn_set(360_deg, 60, ez::raw);
+  long timer = 0;
+  while (true) {
+    printf("(%.2f, %.2f, %.2f)\n", chassis.odom_x_get(), chassis.odom_y_get(), chassis.odom_theta_get());
+    pros::delay(10);
+  }
+
+  // chassis.drive_width_set(12.75);
+  // chassis.default_center_distance = 0;  // 8.25
+
+  /*
+  chassis.odom_ime_use_left = true;
+  chassis.pid_turn_set(180_deg, 50, true);
+  chassis.pid_wait();
+  double left_offset = -(util::distance_to_point({0, 0, 0}, chassis.odom_pose_get()) / 2.0);
+  printf("left offset: %.2f   (%.2f, %.2f, %.2f)\n", left_offset, chassis.odom_x_get(), chassis.odom_y_get(), chassis.odom_theta_get());
+
+  chassis.pid_targets_reset();
+  chassis.drive_imu_reset();
+  chassis.drive_sensor_reset();
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);
+  chassis.odom_pose_set({0_in, 0_in, 0_deg});
+
+  chassis.odom_ime_use_left = false;
+  chassis.pid_turn_set(180_deg, 50, true);
+  chassis.pid_wait();
+  double right_offset = util::distance_to_point({0, 0, 0}, chassis.odom_pose_get()) / 2.0;
+  printf("right offset: %.2f   (%.2f, %.2f, %.2f)\n", right_offset, chassis.odom_x_get(), chassis.odom_y_get(), chassis.odom_theta_get());
+
+  printf("total track width: %.2f\n", fabs(left_offset) + right_offset);
+  */
+
+  /*
+  chassis.pid_turn_set(180_deg, 50, true);
+  chassis.pid_wait();
+  double track_width = (chassis.drive_sensor_left() - chassis.drive_sensor_right()) / (util::to_rad(chassis.drive_imu_get()));
+  printf("%.2f   (%.2f, %.2f, %.2f)\n", track_width, chassis.odom_x_get(), chassis.odom_y_get(), chassis.odom_theta_get());
+  */
+
+  // chassis.odom_x_direction_flip();
+
+  int speed = 60;
+
+  chassis.pid_odom_set({{{0_in, 16_in}, fwd, speed},
+                        {{16_in, 16_in}, fwd, speed}},
                        true);
   chassis.pid_wait();
 
-  chassis.pid_odom_set({{0_in, 0_in, 0_deg}, rev, 110}, true);
+  chassis.pid_odom_set({{0_in, 0_in, 0_deg}, rev, speed}, true);
   chassis.pid_wait();
 
   // ez::as::auton_selector.selected_auton_call();  // Calls selected auton from autonomous selector
@@ -217,9 +270,31 @@ void opcontrol() {
   // This is preference to what you like to drive on
   chassis.drive_brake_set(MOTOR_BRAKE_COAST);
 
+  chassis.odom_ime_use_left = false;
+
+  chassis.drive_width_set(13.21);
+  chassis.odom_ime_track_width_left = -6.21;
+  chassis.odom_ime_track_width_right = 6.99;
+  // chassis.drive_width_set(13.21);
+  // chassis.odom_ime_track_width_left = -(chassis.drive_width_get() / 2.0);
+  // chassis.odom_ime_track_width_right = (chassis.drive_width_get() / 2.0);
+
   while (true) {
     // Gives you some extras to make EZ-Template easier
     ez_template_etxras();
+
+    if (master.get_digital_new_press(DIGITAL_A)) {
+      chassis.odom_pose_set({0, 0, 0});
+      printf("pose reset to (%.2f, %.2f, %.2f)\n", chassis.odom_x_get(), chassis.odom_y_get(), chassis.odom_theta_get());
+    }
+
+    if (master.get_digital_new_press(DIGITAL_Y)) {
+      chassis.odom_ime_use_left = !chassis.odom_ime_use_left;
+      if (chassis.odom_ime_use_left)
+        printf("im using left!\n");
+      else
+        printf("im using right!\n");
+    }
 
     chassis.opcontrol_tank();  // Tank control
     // chassis.opcontrol_arcade_standard(ez::SPLIT);   // Standard split arcade

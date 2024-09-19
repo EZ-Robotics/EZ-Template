@@ -37,7 +37,7 @@ void initialize() {
   // Are you using tracking wheels?  Comment out which ones you're using here!
   // chassis.odom_tracker_right_set(&right_tracker);
   // chassis.odom_tracker_left_set(&left_tracker);
-  // chassis.odom_tracker_back_set(&horiz_tracker);
+  // chassis.odom_tracker_back_set(&horiz_tracker);  // Replace `back` to `front` if your tracker is in the front!
 
   // Configure your chassis controls
   chassis.opcontrol_curve_buttons_toggle(true);  // Enables modifying the controller curve with buttons on the joysticks

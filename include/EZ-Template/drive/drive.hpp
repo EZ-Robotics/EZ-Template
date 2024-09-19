@@ -3046,6 +3046,11 @@ class Drive {
       {"Swing Forward PID Constants", &forward_swingPID.constants},
       {"Swing Backward PID Constants", &backward_swingPID.constants}};
 
+  double odom_ime_track_width_left = 0.0;
+  double odom_ime_track_width_right = 0.0;
+  double default_center_distance = 0.0;
+  bool odom_ime_use_left = false;
+
  private:
   // odom privates
   std::vector<odom> pp_movements;

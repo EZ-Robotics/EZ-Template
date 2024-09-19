@@ -244,7 +244,9 @@ void Drive::boomerang_task() {
   }
 
   if (odom_target.x != temp.x || odom_target.y != temp.y) {
-    raw_pid_odom_ptp_set({temp, pp_movements[target_index].drive_direction, pp_movements[target_index].max_xy_speed}, false);
+    bool slew_on = slew_left.enabled() || slew_right.enabled() ? true : false;
+    if (!current_slew_on) slew_on = false;
+    raw_pid_odom_ptp_set({temp, pp_movements[target_index].drive_direction, pp_movements[target_index].max_xy_speed}, slew_on);
   }
 
   // printf("cur(%.2f, %.2f, %.2f)   tar(%.2f, %.2f, %.2f)   h %.2f  \n", odom_current.x, odom_current.y, odom_current.theta, temp.x, temp.y, temp.theta, h);
