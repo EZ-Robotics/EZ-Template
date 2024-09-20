@@ -32,6 +32,9 @@ preview: /img/embed.png
 - Exposed PID class for use with your other subsystems
 - Exposed slew class for gradual speed ramp-up for your other subsystems
 
+## [Support me on Patreon!](https://www.patreon.com/roboticsisez)
+Supporting me on Patreon will help guarantee that EZ-Template continues to get maintained and allow me to develop products for teams to use.  [Click here](https://www.patreon.com/roboticsisez) to see my Patreon!
+
 ## [Download](https://github.com/EZ-Robotics/EZ-Template/releases/latest/download/EZ-Template-Example-Project.zip)
 Download the latest example project [here](https://github.com/EZ-Robotics/EZ-Template/releases/latest/download/EZ-Template-Example-Project.zip).  
 
