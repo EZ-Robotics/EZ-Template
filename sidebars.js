@@ -141,6 +141,7 @@ const sidebars = {
       ],
     },
 
+    /*
     {
       type: 'category',
       label: 'Community',
@@ -171,6 +172,7 @@ const sidebars = {
         },
       ],
     },
+    */
 
   ],
 };

@@ -11,7 +11,7 @@ import lightCode from './src/utils/codeLight.ts';
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: 'EZ-Template',
+  title: 'ez-template',
   tagline: 'robotics is ez',
   favicon: 'img/favicon.ico',
 
@@ -19,12 +19,12 @@ const config = {
   url: 'https://ez-robotics.github.io',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: '/EZ-Template/',
+  baseUrl: '/ez-template/',
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
-  organizationName: 'EZ-Robotics', // Usually your GitHub org/user name.
-  projectName: 'EZ-Template', // Usually your repo name.
+  organizationName: 'robotics-is-ez', // Usually your GitHub org/user name.
+  projectName: 'ez-template', // Usually your repo name.
   trailingSlash: false,
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
@@ -78,17 +78,38 @@ const config = {
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl: ({ versionDocsDirPath, docPath }) =>
-            `https://github.com/EZ-Robotics/EZ-Template/tree/website/${versionDocsDirPath}/${docPath}`,
+            `https://github.com/ez-robotics/ez-template/tree/website/${versionDocsDirPath}/${docPath}`,
         },
+
         blog: false,
         theme: {
           customCss: './src/css/custom.css',
         },
       }),
     ],
+
+
   ],
 
-  themeConfig:
+
+  plugins: [
+    [
+      '@docusaurus/plugin-content-docs',
+      {
+        id: 'community',
+        path: 'community', // file path
+        routeBasePath: 'community', // url
+        sidebarPath: './sidebarsCommunity.js',
+        // ... other options
+      },
+    ],
+  ],
+
+
+
+
+
+    themeConfig:
 
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
@@ -101,7 +122,7 @@ const config = {
       // Replace with your project's social card
       image: 'img/embed.png',
       navbar: {
-        title: 'robotics is ez',
+        title: 'ez-template',
         items: [
           {
             type: 'docsVersionDropdown',
@@ -109,13 +130,13 @@ const config = {
             dropdownItemsAfter: [{ to: '/versions', label: 'Versions' }],
             dropdownActiveClassDisabled: true,
           },
-          { to: '/', label: 'EZ-Template', position: 'left' },
+          // { to: '/', label: 'EZ-Template', position: 'left' },
           { to: '/category/tutorials', label: 'Tutorials', position: 'left' },
           { to: '/category/docs', label: 'Docs', position: 'left' },
-          { to: '/category/showcase', label: 'Showcase', position: 'left' },
-          { to: '/support', label: 'Support', position: 'left' },
+          { to: '/community/category/showcase', label: 'Showcase', position: 'left' },
+          { to: '/community/support', label: 'Support', position: 'left' },
           { href: 'https://www.roboticsisez.com/', label: 'robotics is ez', position: 'right' },
-          { href: 'https://github.com/EZ-Robotics/EZ-Template', label: 'GitHub', position: 'right' },
+          { href: 'https://github.com/ez-robotics/ez-template', label: 'GitHub', position: 'right' },
         ],
       },
       footer: {
@@ -125,7 +146,7 @@ const config = {
             title: 'Learn',
             items: [
               {
-                label: 'EZ-Template',
+                label: 'ez-template',
                 to: '/',
               },
               {
@@ -151,11 +172,11 @@ const config = {
               },
               {
                 label: 'Support',
-                href: '/support',
+                href: '/community/support',
               },
               {
                 label: 'Showcase',
-                href: '/category/showcase',
+                href: '/community/category/showcase',
               },
             ],
           },
