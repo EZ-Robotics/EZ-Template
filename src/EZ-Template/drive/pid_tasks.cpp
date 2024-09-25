@@ -11,40 +11,40 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 using namespace ez;
 
 void Drive::ez_auto_task() {
-  int timer = 0;
+  // int timer = 0;
   while (true) {
-    if (timer >= util::DELAY_TIME) {
-      // Autonomous PID
-      switch (drive_mode_get()) {
-        case DRIVE:
-          drive_pid_task();
-          break;
-        case TURN ... TURN_TO_POINT:
-          turn_pid_task();
-          break;
-        case SWING:
-          swing_pid_task();
-          break;
-        case POINT_TO_POINT:
-          ptp_task();
-          break;
-        case PURE_PURSUIT:
-          pp_task();
-          break;
-        case DISABLE:
-          break;
-        default:
-          break;
-      }
-
-      util::AUTON_RAN = drive_mode_get() != DISABLE ? true : false;
-
-      timer = 0;
+    // if (timer >= util::DELAY_TIME) {
+    // Autonomous PID
+    switch (drive_mode_get()) {
+      case DRIVE:
+        drive_pid_task();
+        break;
+      case TURN ... TURN_TO_POINT:
+        turn_pid_task();
+        break;
+      case SWING:
+        swing_pid_task();
+        break;
+      case POINT_TO_POINT:
+        ptp_task();
+        break;
+      case PURE_PURSUIT:
+        pp_task();
+        break;
+      case DISABLE:
+        break;
+      default:
+        break;
     }
 
+    util::AUTON_RAN = drive_mode_get() != DISABLE ? true : false;
+
+    // timer = 0;
+    // }
+
     ez_tracking_task();
-    pros::delay(1);
-    timer += 1;
+    pros::delay(util::DELAY_TIME);  // pros::delay(1);
+    // timer += 1;
   }
 }
 

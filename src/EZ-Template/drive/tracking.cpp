@@ -41,7 +41,7 @@ void Drive::ez_tracking_task() {
   if (!imu_calibration_complete || !odometry_enabled) {
     v_last = 0;
     h_last = 0;
-    last_theta = 0;
+    t_last = 0;
     return;
   }
 
@@ -87,14 +87,13 @@ void Drive::ez_tracking_task() {
   h_last = h_current;
 
   // Angle and velocity
-  float current_global_theta = ez::util::to_rad(drive_imu_get());
-  float t_ = current_global_theta - last_theta;
-  last_theta = current_global_theta;
+  float t_current = -ez::util::to_rad(drive_imu_get());
+  float t_ = t_current - t_last;
+  t_last = t_current;
 
   // Figure out how far we've actually moved
-  float beta = 0.0;
-  float local_y = v_;
-  float local_x = h_;
+  float local_y = h_;
+  float local_x = v_;
   if (t_ != 0) {
     /*
     float v_radius = v_ / t_;
@@ -105,27 +104,36 @@ void Drive::ez_tracking_task() {
     */
 
     double i = sin(t_ / 2.0) * 2.0;
-    local_y = ((v_ / t_) + v_track_width) * i;
-    local_x = ((h_ / t_) + h_track_width) * i;
+    local_x = (v_ / t_ - v_track_width) * i;
+    local_y = (h_ / t_ + h_track_width) * i;
   }
 
-  float alpha = angle_rad + beta;
+  float alpha = angle_rad - t_ / 2.0;
 
   float x = 0.0, y = 0.0;
 
+  x += cos(alpha) * local_x - sin(alpha) * local_y;
+  y += sin(alpha) * local_x + cos(alpha) * local_y;
+
+  // odom_current.x += x;
+  // odom_current.y += y;
+  odom_current.x -= y;
+  odom_current.y += x;
+  angle_rad = t_current;
+  odom_current.theta = drive_imu_get();
+
+  /*
   x += local_x * cos(alpha);
   x += local_y * sin(alpha);
   y += local_y * cos(alpha);
   y += local_x * -sin(alpha);
+  */
 
   // LemLib localizer
-  // x += local_x * -cos(alpha);
-  // x += local_y * sin(alpha);
-  // y += local_y * cos(alpha);
-  // y += local_x * sin(alpha);
-
-  odom_current.x += x;
-  odom_current.y += y;
-  angle_rad = current_global_theta;
-  odom_current.theta = drive_imu_get();
+  /*
+  x += local_x * -cos(alpha);
+  x += local_y * sin(alpha);
+  y += local_y * cos(alpha);
+  y += local_x * sin(alpha);
+  */
 }

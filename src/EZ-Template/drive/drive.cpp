@@ -352,7 +352,7 @@ bool Drive::drive_current_left_over() { return left_motors.front().is_over_curre
 void Drive::drive_imu_reset(double new_heading) {
   imu.set_rotation(new_heading);
   angle_rad = util::to_rad(new_heading);
-  last_theta = angle_rad;
+  t_last = angle_rad;
 }
 double Drive::drive_imu_get() { return imu.get_rotation() * IMU_SCALER; }
 double Drive::drive_imu_accel_get() { return imu.get_accel().x + imu.get_accel().y; }

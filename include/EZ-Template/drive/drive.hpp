@@ -3099,7 +3099,7 @@ class Drive {
   double odom_turn_bias_amount = 1.375;
   drive_directions current_drive_direction = fwd;
   double h_last = 0, v_last = 0;
-  double last_theta = 0;
+  double t_last = 0;
   bool was_last_pp_mode_boomerang = false;
   bool global_forward_drive_slew_enabled = false;
   bool global_backward_drive_slew_enabled = false;
