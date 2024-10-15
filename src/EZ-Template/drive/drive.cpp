@@ -364,29 +364,29 @@ void Drive::drive_imu_display_loading(int iter) {
   // If the lcd is already initialized, don't run this function
   if (pros::lcd::is_initialized()) return;
 
-  // Boarder
-  int boarder = 50;
+  // Border
+  int border = 50;
 
-  // Create the boarder
+  // Create the border
   pros::screen::set_pen(pros::c::COLOR_WHITE);
   for (int i = 1; i < 3; i++) {
-    pros::screen::draw_rect(boarder + i, boarder + i, 480 - boarder - i, 240 - boarder - i);
+    pros::screen::draw_rect(border + i, border + i, 480 - border - i, 240 - border - i);
   }
 
   // While IMU is loading
   if (iter < 2000) {
-    static int last_x1 = boarder;
+    static int last_x1 = border;
     pros::screen::set_pen(0x00FF6EC7);  // EZ Pink
-    int x1 = (iter * ((480 - (boarder * 2)) / 2000.0)) + boarder;
-    pros::screen::fill_rect(last_x1, boarder, x1, 240 - boarder);
+    int x1 = (iter * ((480 - (border * 2)) / 2000.0)) + border;
+    pros::screen::fill_rect(last_x1, border, x1, 240 - border);
     last_x1 = x1;
   }
   // Failsafe time
   else {
-    static int last_x1 = boarder;
+    static int last_x1 = border;
     pros::screen::set_pen(pros::c::COLOR_RED);
-    int x1 = ((iter - 2000) * ((480 - (boarder * 2)) / 1000.0)) + boarder;
-    pros::screen::fill_rect(last_x1, boarder, x1, 240 - boarder);
+    int x1 = ((iter - 2000) * ((480 - (border * 2)) / 1000.0)) + border;
+    pros::screen::fill_rect(last_x1, border, x1, 240 - border);
     last_x1 = x1;
   }
 }
