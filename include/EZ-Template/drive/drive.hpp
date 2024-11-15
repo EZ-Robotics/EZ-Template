@@ -3049,7 +3049,7 @@ class Drive {
   float odom_ime_track_width_left = 0.0;
   float odom_ime_track_width_right = 0.0;
   float default_center_distance = 0.0;
-  bool odom_ime_use_left = false;
+  bool odom_ime_use_left = true;
 
  private:
   // odom privates
@@ -3101,6 +3101,9 @@ class Drive {
   float t_last = 0;
   float l_last = 0.0, r_last = 0.0;
   pose l_pose = {0.0, 0.0, 0.0}, r_pose = {0.0, 0.0, 0.0};
+  ez::pose solve_xy_horiz(float p_track_width, float current_t, float delta_horiz, float delta_t);
+  ez::pose solve_xy_vert(float p_track_width, float current_t, float delta_vert, float delta_t);
+  std::vector<float> decide_vert_sensor(ez::tracking_wheel* tracker, bool is_tracker_enabled, float ime = 0.0, float ime_track = 0.0);
   bool was_last_pp_mode_boomerang = false;
   bool global_forward_drive_slew_enabled = false;
   bool global_backward_drive_slew_enabled = false;

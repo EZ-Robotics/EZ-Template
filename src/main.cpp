@@ -35,7 +35,8 @@ ez::Drive chassis(
 // ez::tracking_wheel left_tracker(1, {'C', 'D'}, 2.75, 4.0);  // ADI Encoders plugged into a Smart port
 // ez::tracking_wheel horiz_tracker(1, 2.75, 4.0);             // Rotation sensors
 
-ez::tracking_wheel left_tracker({'A', 'B'}, 4.125, -(12.75 / 2.0), 1.4285);  // ADI Encoders
+// ez::tracking_wheel left_tracker({'C', 'D'}, 4.125, 6.06, 1.4285);  // ADI Encoders
+ez::tracking_wheel horiz_tracker({'A', 'B'}, 2.75, 7);             // ADI Encoders
 
 /**
  * Runs initialization code. This occurs as soon as the program is started.
@@ -52,7 +53,7 @@ void initialize() {
   // Are you using tracking wheels?  Comment out which ones you're using here!
   // chassis.odom_tracker_right_set(&right_tracker);
   // chassis.odom_tracker_left_set(&left_tracker);
-  // chassis.odom_tracker_back_set(&horiz_tracker);  // Replace `back` to `front` if your tracker is in the front!
+  chassis.odom_tracker_back_set(&horiz_tracker);  // Replace `back` to `front` if your tracker is in the front!
 
   // Configure your chassis controls
   chassis.opcontrol_curve_buttons_toggle(true);  // Enables modifying the controller curve with buttons on the joysticks

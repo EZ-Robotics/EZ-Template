@@ -42,7 +42,22 @@ double Drive::odom_y_get() { return odom_current.y; }
 double Drive::odom_theta_get() { return odom_current.theta; }
 pose Drive::odom_pose_get() { return odom_current; }
 
-ez::pose solve_xy_vert(float p_track_width, float current_t, float delta_vert, float delta_t) {
+std::vector<float> Drive::decide_vert_sensor(ez::tracking_wheel *tracker, bool is_tracker_enabled, float ime, float ime_track) {
+  pose output = {0.0, 0.0, 0.0};
+
+  float current = 0.0, track_width = 0.0;
+  if (is_tracker_enabled) {
+    current = tracker->get();
+    track_width = tracker->distance_to_center_get();
+  } else {
+    current = ime;
+    track_width = ime_track;
+  }
+
+  return {current, track_width};
+}
+
+ez::pose Drive::solve_xy_vert(float p_track_width, float current_t, float delta_vert, float delta_t) {
   pose output = {0.0, 0.0, 0.0};
 
   // Figure out how far we've actually moved
@@ -53,19 +68,18 @@ ez::pose solve_xy_vert(float p_track_width, float current_t, float delta_vert, f
   }
 
   float alpha = current_t - (delta_t / 2.0);
+  float x = cos(alpha) * local_x;
+  float y = sin(alpha) * local_x;
 
-  float x = 0.0, y = 0.0;
-
-  x = cos(alpha) * local_x;  // - sin(alpha) * local_y;
-  y = sin(alpha) * local_x;  // + cos(alpha) * local_y;
-
+  // xy is calculated internally using math standard but translated to what's intuitive
+  // where going forward from 0 degrees increases Y
   output.x = -y;
   output.y = x;
 
   return output;
 }
 
-ez::pose solve_xy_horiz(float p_track_width, float current_t, float delta_horiz, float delta_t) {
+ez::pose Drive::solve_xy_horiz(float p_track_width, float current_t, float delta_horiz, float delta_t) {
   pose output = {0.0, 0.0, 0.0};
 
   // Figure out how far we've actually moved
@@ -76,12 +90,11 @@ ez::pose solve_xy_horiz(float p_track_width, float current_t, float delta_horiz,
   }
 
   float alpha = current_t - (delta_t / 2.0);
+  float x = -sin(alpha) * local_y;
+  float y = cos(alpha) * local_y;
 
-  float x = 0.0, y = 0.0;
-
-  x = -sin(alpha) * local_y;
-  y = cos(alpha) * local_y;
-
+  // xy is calculated internally using math standard but translated to what's intuitive
+  // where going forward from 0 degrees increases Y
   output.x = -y;
   output.y = x;
 
@@ -101,74 +114,71 @@ void Drive::ez_tracking_task() {
     return;
   }
 
-  // Figure out what sensor to use for the vertical tracking
-  float v_current = 0.0;
-  float v_track_width = 0.0;
-  if (odom_right_tracker_enabled) {
-    v_current = odom_right_tracker->get();
-    v_track_width = odom_right_tracker->distance_to_center_get();
-  } else if (odom_left_tracker_enabled) {
-    v_current = odom_left_tracker->get();
-    v_track_width = odom_left_tracker->distance_to_center_get();
-  } else {
-    v_current = drive_sensor_right();
-    v_track_width = track_width / 2.0;
-  }
-
-  // Figure out what sensor to use for horizontal tracking
-  float h_current = 0.0;
-  float h_track_width = 0.0;
-  if (odom_back_tracker_enabled) {
-    h_current = odom_back_tracker->get();
-    h_track_width = odom_back_tracker->distance_to_center_get();
-  } else if (odom_front_tracker_enabled) {
-    h_current = odom_front_tracker->get();
-    h_track_width = odom_front_tracker->distance_to_center_get();
-  }
-
-  // Vertical sensor and velocity
-  float v_ = v_current - v_last;
-  v_last = v_current;
-
-  // Horizontal sensor and velocity
+  // Decide on using a horiz tracker vs not
+  std::vector<float> h_cur_and_track = decide_vert_sensor(odom_back_tracker, odom_back_tracker_enabled);
+  float h_current = h_cur_and_track[0];
+  float h_track_width = h_cur_and_track[1];
+  // Calculate velocity based on horiz value
   float h_ = h_current - h_last;
   h_last = h_current;
 
-  // Angle and velocity
-  float t_current = -ez::util::to_rad(drive_imu_get());
-  float t_ = t_current - t_last;
-  t_last = t_current;
-  pose h_pose = solve_xy_horiz(h_track_width, t_current, h_, t_);
-
-  float l_current = drive_sensor_left();
+  // Decide on left ime vs left tracker
+  std::vector<float> l_cur_and_track = decide_vert_sensor(odom_left_tracker, odom_left_tracker_enabled, drive_sensor_left(), odom_ime_track_width_left);
+  float l_current = l_cur_and_track[0];
+  float l_track_width = l_cur_and_track[1];
+  // Calculate velocity based on left value
   float l_ = l_current - l_last;
   l_last = l_current;
-  pose l_pose_ = solve_xy_vert(odom_ime_track_width_left, t_current, l_, t_);
 
-  float r_current = drive_sensor_right();
+  // Decide on right ime vs right tracker
+  std::vector<float> r_cur_and_track = decide_vert_sensor(odom_right_tracker, odom_right_tracker_enabled, drive_sensor_right(), odom_ime_track_width_right);
+  float r_current = r_cur_and_track[0];
+  float r_track_width = r_cur_and_track[1];
+  // Calculate velocity based on left value
   float r_ = r_current - r_last;
   r_last = r_current;
-  pose r_pose_ = solve_xy_vert(odom_ime_track_width_right, t_current, r_, t_);
+
+  // Angle and velocity
+  float t_current = -ez::util::to_rad(drive_imu_get());  // negative for math standard
+  float t_ = t_current - t_last;
+  t_last = t_current;
+
+  pose h_pose = solve_xy_horiz(h_track_width, t_current, h_, t_);
+  pose l_pose_ = solve_xy_vert(l_track_width, t_current, l_, t_);
+  pose r_pose_ = solve_xy_vert(r_track_width, t_current, r_, t_);
 
   r_pose.x += r_pose_.x;
   r_pose.y += r_pose_.y;
-  // r_pose.x += h_pose.x;
-  // r_pose.y += h_pose.y;
+  r_pose.x += h_pose.x;
+  r_pose.y += h_pose.y;
 
   l_pose.x += l_pose_.x;
   l_pose.y += l_pose_.y;
-  // l_pose.x += h_pose.x;
-  // l_pose.y += h_pose.y;
+  l_pose.x += h_pose.x;
+  l_pose.y += h_pose.y;
 
-  if (odom_ime_use_left) {
-    odom_current.x = l_pose.x;
-    odom_current.y = l_pose.y;
-  } else {
-    odom_current.x = r_pose.x;
-    odom_current.y = r_pose.y;
+  // If there is a vert tracker, use it
+  if (odom_left_tracker_enabled != odom_right_tracker_enabled) {
+    if (odom_left_tracker_enabled) {
+      odom_current.x = l_pose.x;
+      odom_current.y = l_pose.y;
+    } else if (odom_right_tracker_enabled) {
+      odom_current.x = r_pose.x;
+      odom_current.y = r_pose.y;
+    }
   }
-  // angle_rad = t_current;
-  odom_current.theta = drive_imu_get();  // -util::to_deg(t_current);  // drive_imu_get();
+  // If both sides have a sensor (2 vert trackers or 0 trackers), let the user pick what side
+  //  defaults to left
+  else {
+    if (odom_ime_use_left) {
+      odom_current.x = l_pose.x;
+      odom_current.y = l_pose.y;
+    } else {
+      odom_current.x = r_pose.x;
+      odom_current.y = r_pose.y;
+    }
+  }
+  odom_current.theta = drive_imu_get();
 
   // printf("odom_ime_track_width_left %f   l_ %f   t_ %f   t_current %f\n", odom_ime_track_width_left, r_, t_, t_current);
 
@@ -177,92 +187,3 @@ void Drive::ez_tracking_task() {
   printf("left (%.2f, %.2f, %.2f)", l_pose.x, l_pose.y, drive_imu_get());
   printf("   right (%.2f, %.2f, %.2f)\n", r_pose.x, r_pose.y, drive_imu_get());
 }
-
-/*
-
-  // Figure out what sensor to use for the vertical tracking
-  float v_current = 0.0;
-  float v_track_width = 0.0;
-  if (odom_right_tracker_enabled) {
-    v_current = odom_right_tracker->get();
-    v_track_width = odom_right_tracker->distance_to_center_get();
-  } else if (odom_left_tracker_enabled) {
-    v_current = odom_left_tracker->get();
-    v_track_width = odom_left_tracker->distance_to_center_get();
-  } else {
-    // Use left side IME
-    if (odom_ime_use_left) {
-      v_current = drive_sensor_left();
-      v_track_width = odom_ime_track_width_left;
-    }
-    // Use right side IME
-    else {
-      v_current = drive_sensor_right();
-      v_track_width = odom_ime_track_width_right;
-    }
-  }
-
-  // Figure out what sensor to use for horizontal tracking
-  float h_current = 0.0;
-  float h_track_width = default_center_distance;
-  if (odom_back_tracker_enabled) {
-    h_current = odom_back_tracker->get();
-    h_track_width = odom_back_tracker->distance_to_center_get();
-  } else if (odom_front_tracker_enabled) {
-    h_current = odom_front_tracker->get();
-    h_track_width = odom_front_tracker->distance_to_center_get();
-  }
-
-  // Vertical sensor and velocity
-  float v_ = v_current - v_last;
-  v_last = v_current;
-
-  // Horizontal sensor and velocity
-  float h_ = h_current - h_last;
-  h_last = h_current;
-
-  // Angle and velocity
-   float t_current = -ez::util::to_rad(drive_imu_get());
-  //float t_current = (drive_sensor_right() - drive_sensor_left()) / (fabs(odom_ime_track_width_left) + fabs(odom_ime_track_width_right));
-  float t_ = t_current - t_last;
-  t_last = t_current;
-
-  // Figure out how far we've actually moved
-  float local_y = h_;
-  float local_x = v_;
-  if (t_ != 0) {
-    double i = sin(t_ / 2.0) * 2.0;
-    local_x = (v_ / t_ - v_track_width) * i;
-    local_y = (h_ / t_ + h_track_width) * i;
-  }
-
-  float alpha = t_current - (t_ / 2.0);
-
-  float x = 0.0, y = 0.0;
-
-  x += cos(alpha) * local_x - sin(alpha) * local_y;
-  y += sin(alpha) * local_x + cos(alpha) * local_y;
-
-  // odom_current.x += x;
-  // odom_current.y += y;
-  odom_current.x -= y;
-  odom_current.y += x;
-  // angle_rad = t_current;
-  odom_current.theta = drive_imu_get();  // -util::to_deg(t_current);  // drive_imu_get();
-
-
-  x += local_x * cos(alpha);
-  x += local_y * sin(alpha);
-  y += local_y * cos(alpha);
-  y += local_x * -sin(alpha);
-
-
-  // LemLib localizer
-
-  x += local_x * -cos(alpha);
-  x += local_y * sin(alpha);
-  y += local_y * cos(alpha);
-  y += local_x * sin(alpha);
-
-
-*/
