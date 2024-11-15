@@ -294,8 +294,10 @@ int Drive::drive_current_limit_get() {
 
 // Motor telemetry
 void Drive::drive_sensor_reset() {
-  v_last = 0;
-  h_last = 0;
+  v_last = 0.0;
+  h_last = 0.0;
+  l_last = 0.0;
+  r_last = 0.0;
   left_motors.front().tare_position();
   right_motors.front().tare_position();
   if (is_tracker == DRIVE_ADI_ENCODER) {
@@ -351,8 +353,7 @@ bool Drive::drive_current_left_over() { return left_motors.front().is_over_curre
 
 void Drive::drive_imu_reset(double new_heading) {
   imu.set_rotation(new_heading);
-  angle_rad = util::to_rad(new_heading);
-  t_last = angle_rad;
+  t_last = util::to_rad(new_heading);
 }
 double Drive::drive_imu_get() { return imu.get_rotation() * IMU_SCALER; }
 double Drive::drive_imu_accel_get() { return imu.get_accel().x + imu.get_accel().y; }

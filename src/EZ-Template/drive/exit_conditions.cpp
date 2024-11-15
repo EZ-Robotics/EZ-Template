@@ -355,7 +355,7 @@ void Drive::pid_wait_until(double target) {
 void Drive::pid_wait_until_point(pose target) {
   pros::delay(10);
 
-  int xy_sgn = util::sgn(is_past_target(target, odom_current));
+  int xy_sgn = util::sgn(is_past_target(target, odom_pose_get()));
 
   exit_output xy_exit = RUNNING;
   exit_output a_exit = RUNNING;
@@ -368,15 +368,15 @@ void Drive::pid_wait_until_point(pose target) {
 
     if (xy_exit != RUNNING && a_exit != RUNNING) {
       if (print_toggle) {
-        std::cout << "  XY: " << exit_to_string(xy_exit) << " Wait Until Exit Failsafe, triggered at (" << odom_current.x << ", " << odom_current.y << ") instead of (" << target.x << ", " << target.y << ")\n";
+        std::cout << "  XY: " << exit_to_string(xy_exit) << " Wait Until Exit Failsafe, triggered at (" << odom_x_get() << ", " << odom_y_get() << ") instead of (" << target.x << ", " << target.y << ")\n";
         xyPID.timers_reset();
         aPID.timers_reset();
       }
       return;
     }
 
-    if (util::sgn((is_past_target(target, odom_current))) != xy_sgn) {
-      if (print_toggle) printf("  XY Wait Until Exit Success, triggered at (%.2f, %.2f).  Target: (%.2f, %.2f)\n", odom_current.x, odom_current.y, target.x, target.y);
+    if (util::sgn((is_past_target(target, odom_pose_get()))) != xy_sgn) {
+      if (print_toggle) printf("  XY Wait Until Exit Success, triggered at (%.2f, %.2f).  Target: (%.2f, %.2f)\n", odom_x_get(), odom_y_get(), target.x, target.y);
       xyPID.timers_reset();
       aPID.timers_reset();
       return;
@@ -409,7 +409,7 @@ void Drive::pid_wait_until_index(int index) {
 
     if (xy_exit != RUNNING && a_exit != RUNNING) {
       if (print_toggle) {
-        std::cout << "  XY: " << exit_to_string(xy_exit) << " Wait Until Exit Failsafe, triggered at (" << odom_current.x << ", " << odom_current.y << ") instead of (" << pp_movements[index].target.x << ", " << pp_movements[index].target.y << ")\n";
+        std::cout << "  XY: " << exit_to_string(xy_exit) << " Wait Until Exit Failsafe, triggered at (" << odom_x_get() << ", " << odom_y_get() << ") instead of (" << pp_movements[index].target.x << ", " << pp_movements[index].target.y << ")\n";
         xyPID.timers_reset();
         aPID.timers_reset();
       }

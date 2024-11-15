@@ -175,9 +175,9 @@ void Drive::pid_turn_set(pose itarget, drive_directions dir, int speed, e_angle_
   current_angle_behavior = behavior;
 
   // Calculate the point to look at
-  point_to_face = find_point_to_face(odom_current, {itarget.x, itarget.y}, current_drive_direction, true);
+  point_to_face = find_point_to_face(odom_pose_get(), {itarget.x, itarget.y}, current_drive_direction, true);
 
-  double target = util::absolute_angle_to_point(point_to_face[!ptf1_running], odom_current);  // Calculate the point for angle to face
+  double target = util::absolute_angle_to_point(point_to_face[!ptf1_running], odom_pose_get());  // Calculate the point for angle to face
 
   // Compute new turn target based on new angle
   // angle_adder = (new_turn_target_compute(target, odom_imu_start, current_angle_behavior)) - target;

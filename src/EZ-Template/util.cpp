@@ -151,8 +151,8 @@ double clamp(double input, double max) {
 }
 
 // Conversions from deg to rad and rad to deg
-double to_deg(double input) { return input * (180 / M_PI); }
-double to_rad(double input) { return input * (M_PI / 180); }
+double to_deg(double input) { return input * (180.0 / M_PI); }
+double to_rad(double input) { return input * (M_PI / 180.0); }
 
 // Finds error in shortest angle to point
 double absolute_angle_to_point(pose itarget, pose icurrent) {

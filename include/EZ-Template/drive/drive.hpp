@@ -3046,9 +3046,9 @@ class Drive {
       {"Swing Forward PID Constants", &forward_swingPID.constants},
       {"Swing Backward PID Constants", &backward_swingPID.constants}};
 
-  double odom_ime_track_width_left = 0.0;
-  double odom_ime_track_width_right = 0.0;
-  double default_center_distance = 0.0;
+  float odom_ime_track_width_left = 0.0;
+  float odom_ime_track_width_right = 0.0;
+  float default_center_distance = 0.0;
   bool odom_ime_use_left = false;
 
  private:
@@ -3079,7 +3079,6 @@ class Drive {
   bool is_odom_turn_bias_enabled = true;
   bool odom_turn_bias_enabled();
   void odom_turn_bias_set(bool set);
-  double angle_rad = 0.0;
   double track_width = 0.0;
   bool odometry_enabled = true;
   pose odom_target = {0, 0, 0};
@@ -3090,7 +3089,7 @@ class Drive {
   pose turn_to_point_target = {0, 0, 0};
   bool y_flipped = false;
   bool x_flipped = false;
-  double odom_imu_start = 0.0;
+  float odom_imu_start = 0.0;
   int past_target = 0;
   double SPACING = 0.5;
   double LOOK_AHEAD = 7.0;
@@ -3098,8 +3097,10 @@ class Drive {
   double max_boomerang_distance = 12.0;
   double odom_turn_bias_amount = 1.375;
   drive_directions current_drive_direction = fwd;
-  double h_last = 0, v_last = 0;
-  double t_last = 0;
+  float h_last = 0, v_last = 0;
+  float t_last = 0;
+  float l_last = 0.0, r_last = 0.0;
+  pose l_pose = {0.0, 0.0, 0.0}, r_pose = {0.0, 0.0, 0.0};
   bool was_last_pp_mode_boomerang = false;
   bool global_forward_drive_slew_enabled = false;
   bool global_backward_drive_slew_enabled = false;
@@ -3120,14 +3121,14 @@ class Drive {
   bool odom_front_tracker_enabled = false;
   bool odom_back_tracker_enabled = false;
 
-  double chain_target_start = 0.0;
-  double chain_sensor_start = 0.0;
-  double drive_forward_motion_chain_scale = 0.0;
-  double drive_backward_motion_chain_scale = 0.0;
-  double swing_forward_motion_chain_scale = 0.0;
-  double swing_backward_motion_chain_scale = 0.0;
-  double turn_motion_chain_scale = 0.0;
-  double used_motion_chain_scale = 0.0;
+  float chain_target_start = 0.0;
+  float chain_sensor_start = 0.0;
+  float drive_forward_motion_chain_scale = 0.0;
+  float drive_backward_motion_chain_scale = 0.0;
+  float swing_forward_motion_chain_scale = 0.0;
+  float swing_backward_motion_chain_scale = 0.0;
+  float turn_motion_chain_scale = 0.0;
+  float used_motion_chain_scale = 0.0;
   bool motion_chain_backward = false;
 
   double IMU_SCALER = 1.0;
@@ -3188,7 +3189,7 @@ class Drive {
   /**
    * Active brake kp constant.
    */
-  double active_brake_kp = 0;
+  float active_brake_kp = 0.0;
 
   /**
    * Tick per inch calculation.
@@ -3220,8 +3221,8 @@ class Drive {
   /**
    * Starting value for left/right
    */
-  double l_start = 0;
-  double r_start = 0;
+  float l_start = 0.0;
+  float r_start = 0.0;
 
   /**
    * Enable/disable modifying controller curve with controller.
@@ -3274,8 +3275,8 @@ class Drive {
   /**
    * The left and right curve scalers.
    */
-  double left_curve_scale;
-  double right_curve_scale;
+  float left_curve_scale;
+  float right_curve_scale;
 
   /**
    * Increase and decrease left and right curve scale.

@@ -82,6 +82,9 @@ void initialize() {
   chassis.initialize();
   ez::as::initialize();
   master.rumble(".");
+
+  chassis.odom_ime_track_width_right = 6.86;
+  chassis.odom_ime_track_width_left = -6.06;  //-6.33; // 9.8
 }
 
 /**
@@ -156,18 +159,18 @@ void autonomous() {
   chassis.drive_imu_reset();                   // Reset gyro position to 0
   chassis.drive_sensor_reset();                // Reset drive sensors to 0
   chassis.odom_pose_set({0_in, 0_in, 0_deg});  // Reset XYT to (0, 0, 0)
-  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);   // Set motors to hold.  This helps autonomous consistency
+  // chassis.drive_brake_set(MOTOR_BRAKE_HOLD);   // Set motors to hold.  This helps autonomous consistency
 
   chassis.pid_print_toggle(false);
   printf("auto ran\n");
 
-  chassis.odom_ime_track_width_right = 6.86;
-  chassis.odom_ime_track_width_left = -6.06;  //-6.33; // 9.8
+  // chassis.odom_ime_track_width_right = 6.86;
+  // chassis.odom_ime_track_width_left = -6.06;  //-6.33; // 9.8
   chassis.odom_ime_use_left = true;
 
-  int speed = 110;
-  chassis.pid_odom_set({{{0_in, 16_in}, fwd, speed},
-                        {{16_in, 16_in}, fwd, speed}},
+  int speed = 40;
+  chassis.pid_odom_set({{{0_in, 12_in}, fwd, speed},
+                        {{12_in, 12_in}, fwd, speed}},
                        true);
   chassis.pid_wait();
 

@@ -81,7 +81,7 @@ std::vector<odom> Drive::inject_points(std::vector<ez::odom> imovements) {
 
   // Create new vector that includes the starting point
   std::vector<odom> input = imovements;
-  input.insert(input.begin(), {{{odom_current.x, odom_current.y, ANGLE_NOT_SET}, imovements[0].drive_direction, imovements[0].max_xy_speed}});
+  input.insert(input.begin(), {{{odom_x_get(), odom_y_get(), ANGLE_NOT_SET}, imovements[0].drive_direction, imovements[0].max_xy_speed}});
 
   // Inject new parent points for boomerang
   int t = 0;
