@@ -52,7 +52,7 @@ void Drive::pid_targets_reset() {
   leftPID.target_set(0);
   rightPID.target_set(0);
   xyPID.target_set(0);
-  aPID.target_set(0);
+  current_a_odomPID.target_set(0);
   forward_drivePID.target_set(0);
   backward_drivePID.target_set(0);
   turnPID.target_set(0);

@@ -40,6 +40,12 @@ std::vector<odom> Drive::set_odoms_direction(std::vector<odom> inputs) {
 odom Drive::set_odom_direction(odom input) {
   return set_odoms_direction({input})[0];
 }
+void Drive::pid_odom_angular_constants_set(double p, double i, double d, double p_start_i) {
+  odom_angularPID.constants_set(p, i, d, p_start_i);
+}
+void Drive::pid_odom_boomerang_constants_set(double p, double i, double d, double p_start_i) {
+  boomerangPID.constants_set(p, i, d, p_start_i);
+}
 void Drive::odom_x_direction_flip(bool flip) { x_flipped = flip; }
 bool Drive::odom_x_direction_get() { return x_flipped; }
 void Drive::odom_y_direction_flip(bool flip) { y_flipped = flip; }
@@ -49,7 +55,7 @@ double Drive::odom_boomerang_dlead_get() { return dlead; }
 void Drive::odom_boomerang_distance_set(double distance) { max_boomerang_distance = distance; }
 void Drive::odom_boomerang_distance_set(okapi::QLength p_distance) { odom_boomerang_distance_set(p_distance.convert(okapi::inch)); }
 double Drive::odom_boomerang_distance_get() { return max_boomerang_distance; }
-void Drive::odom_turn_bias_set(double bias) { odom_turn_bias_amount = 1.375; }
+void Drive::odom_turn_bias_set(double bias) { odom_turn_bias_amount = bias; }
 double Drive::odom_turn_bias_get() { return odom_turn_bias_amount; }
 void Drive::odom_path_spacing_set(double spacing) { SPACING = spacing; }
 void Drive::odom_path_spacing_set(okapi::QLength p_spacing) { odom_path_spacing_set(p_spacing.convert(okapi::inch)); }
@@ -83,7 +89,7 @@ void Drive::pid_odom_set(double target, int speed, bool slew_on) {
   odom path = {target_pose, fwd_or_rev, speed};
 
   xyPID.timers_reset();
-  aPID.timers_reset();
+  current_a_odomPID.timers_reset();
 
   if (print_toggle) printf("Injected ");
   std::vector<odom> input_path = inject_points(set_odoms_direction({path}));
@@ -179,7 +185,7 @@ void Drive::pid_odom_injected_pp_set(std::vector<ez::odom> imovements) {
 }
 void Drive::pid_odom_injected_pp_set(std::vector<ez::odom> imovements, bool slew_on) {
   xyPID.timers_reset();
-  aPID.timers_reset();
+  current_a_odomPID.timers_reset();
 
   if (print_toggle) printf("Injected ");
   std::vector<odom> input_path = inject_points(set_odoms_direction(imovements));
@@ -209,10 +215,10 @@ void Drive::pid_odom_smooth_pp_set(std::vector<odom> imovements) {
 }
 void Drive::pid_odom_smooth_pp_set(std::vector<odom> imovements, bool slew_on) {
   xyPID.timers_reset();
-  aPID.timers_reset();
+  current_a_odomPID.timers_reset();
 
   if (print_toggle) printf("Smooth Injected ");
-  std::vector<odom> input_path = smooth_path(inject_points(set_odoms_direction(imovements)), 0.75, 0.03, 0.0001);
+  std::vector<odom> input_path = smooth_path(inject_points(set_odoms_direction(imovements)), 0.75, 0.015, 0.0001);
   odom_turn_bias_set(true);
   current_slew_on = slew_on;
   slew_min_when_it_enabled = 0;
@@ -256,10 +262,10 @@ void Drive::pid_odom_boomerang_set(united_odom p_imovement, bool slew_on) {
 /////
 void Drive::pid_odom_pp_set(std::vector<odom> imovements, bool slew_on) {
   xyPID.timers_reset();
-  aPID.timers_reset();
+  current_a_odomPID.timers_reset();
 
   std::vector<odom> input = set_odoms_direction(imovements);
-  input.insert(input.begin(), {{{odom_current.x, odom_current.y, ANGLE_NOT_SET}, imovements[0].drive_direction, imovements[0].max_xy_speed}});
+  input.insert(input.begin(), {{{odom_x_get(), odom_y_get(), ANGLE_NOT_SET}, imovements[0].drive_direction, imovements[0].max_xy_speed}});
 
   int t = 0;
   for (int i = 0; i < input.size() - 1; i++) {
@@ -270,7 +276,7 @@ void Drive::pid_odom_pp_set(std::vector<odom> imovements, bool slew_on) {
       // Calculate the new point with known information: hypot and angle
       double angle_to_point = input[j].target.theta;
       int dir = input[j].drive_direction == REV ? -1 : 1;
-      pose new_point = util::vector_off_point(LOOK_AHEAD * dir, {input[j].target.x, input[j].target.y, angle_to_point});
+      pose new_point = util::vector_off_point(odom_look_ahead_get() * dir, {input[j].target.x, input[j].target.y, angle_to_point});
       new_point.theta = ANGLE_NOT_SET;
 
       input.insert(input.cbegin() + j + 1, {new_point, input[j].drive_direction, input[j].max_xy_speed});
@@ -308,12 +314,12 @@ void Drive::pid_odom_pp_set(std::vector<odom> imovements, bool slew_on) {
 void Drive::pid_odom_ptp_set(odom imovement, bool slew_on) {
   imovement = set_odom_direction(imovement);
 
-  odom_second_to_last = odom_current;
+  odom_second_to_last = odom_pose_get();
   odom_target_start = imovement.target;
-  odom_start = odom_current;
+  odom_start = odom_pose_get();
 
   xyPID.timers_reset();
-  aPID.timers_reset();
+  current_a_odomPID.timers_reset();
 
   // This is used for wait_until and slew
   l_start = drive_sensor_left();
@@ -327,7 +333,7 @@ void Drive::pid_odom_ptp_set(odom imovement, bool slew_on) {
 
   // Initialize slew
   int dir = current_drive_direction == REV ? -1 : 1;  // If we're going backwards, add a -1
-  double dist_to_target = util::distance_to_point(odom_target, odom_current) * dir;
+  double dist_to_target = util::distance_to_point(odom_target, odom_pose_get()) * dir;
   slew_left.initialize(slew_on, max_speed, dist_to_target + l_start, l_start);
   slew_right.initialize(slew_on, max_speed, dist_to_target + r_start, r_start);
 
@@ -340,7 +346,7 @@ void Drive::pid_odom_ptp_set(odom imovement, bool slew_on) {
 void Drive::raw_pid_odom_pp_set(std::vector<odom> imovements, bool slew_on) {
   odom_second_to_last = imovements[imovements.size() - 2].target;
   odom_target_start = imovements[imovements.size() - 1].target;
-  odom_start = odom_current;
+  odom_start = odom_pose_get();
 
   was_last_pp_mode_boomerang = false;
 
@@ -359,7 +365,7 @@ void Drive::raw_pid_odom_pp_set(std::vector<odom> imovements, bool slew_on) {
 
   // Initialize slew
   int dir = current_drive_direction == REV ? -1 : 1;  // If we're going backwards, add a -1
-  double dist_to_target = util::distance_to_point(pp_movements.end()->target, odom_current) * dir;
+  double dist_to_target = util::distance_to_point(pp_movements.end()->target, odom_pose_get()) * dir;
   slew_left.initialize(slew_on, max_speed, dist_to_target + l_start, l_start);
   slew_right.initialize(slew_on, max_speed, dist_to_target + r_start, r_start);
 
@@ -374,8 +380,8 @@ void Drive::raw_pid_odom_ptp_set(odom imovement, bool slew_on) {
   current_drive_direction = imovement.drive_direction;
 
   // Calculate the point to look at
-  point_to_face = find_point_to_face(odom_current, {imovement.target.x, imovement.target.y}, current_drive_direction, true);
-  double target = util::absolute_angle_to_point(point_to_face[!ptf1_running], odom_current);  // Calculate the point for angle to face
+  point_to_face = find_point_to_face(odom_pose_get(), {imovement.target.x, imovement.target.y}, current_drive_direction, true);
+  double target = util::absolute_angle_to_point(point_to_face[!ptf1_running], odom_pose_get());  // Calculate the point for angle to face
   if (imovement.turn_behavior != raw) {
     odom_imu_start = drive_imu_get();
     current_angle_behavior = imovement.turn_behavior;
@@ -392,7 +398,6 @@ void Drive::raw_pid_odom_ptp_set(odom imovement, bool slew_on) {
   // Change constants if we're going fwd or rev
   PID::Constants pid_consts;
   slew::Constants slew_consts;
-  PID::Constants angle_consts = headingPID.constants_get();
   if (current_drive_direction == REV) {
     pid_consts = backward_drivePID.constants_get();
     slew_consts = slew_backward.constants_get();
@@ -404,7 +409,6 @@ void Drive::raw_pid_odom_ptp_set(odom imovement, bool slew_on) {
 
   // Set constants
   xyPID.constants_set(pid_consts.kp, pid_consts.ki, pid_consts.kd, pid_consts.start_i);
-  aPID.constants_set(angle_consts.kp, angle_consts.ki, angle_consts.kd, angle_consts.start_i);
 
   // Set max speed
   pid_speed_max_set(imovement.max_xy_speed);
@@ -442,15 +446,23 @@ void Drive::raw_pid_odom_ptp_set(odom imovement, bool slew_on) {
   if (mode == PURE_PURSUIT)
     was_last_pp_mode_boomerang = is_current_boomerang;
 
+  // Change angle constants if it's boomerang vs normal odom move
+  PID::Constants angle_const;
+  if (is_current_boomerang)
+    angle_const = boomerangPID.constants_get();
+  else
+    angle_const = odom_angularPID.constants_get();
+  current_a_odomPID.constants_set(angle_const.kp, angle_const.ki, angle_const.kd, angle_const.start_i);
+
   // Get the starting point for if we're positive or negative.  This is used to find if we've past target
-  past_target = util::sgn(is_past_target(odom_target, odom_current));
+  past_target = util::sgn(is_past_target(odom_target, odom_pose_get()));
 
   slew_min_when_it_enabled = pid_speed_max_get();
 
   // This is used for wait_until
   int dir = current_drive_direction == REV ? -1 : 1;  // If we're going backwards, add a -1
-  leftPID.target_set(l_start + (LOOK_AHEAD * dir));
-  rightPID.target_set(l_start + (LOOK_AHEAD * dir));
+  leftPID.target_set(l_start + (odom_look_ahead_get() * dir));
+  rightPID.target_set(l_start + (odom_look_ahead_get() * dir));
   leftPID.exit = xyPID.exit;  // Switch over to xy pid exits
   rightPID.exit = xyPID.exit;
 }

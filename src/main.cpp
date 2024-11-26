@@ -15,7 +15,7 @@ ez::Drive chassis(
     pros::IMU(21),  // IMU port
     4.125,          // Wheel Diameter (Remember, 4" wheels without screw holes are actually 4.125!)
     420.0,          // Wheel RPM = cartridge * (motor gear / wheel gear)
-    11.0);          // Width of your powered wheels.  Measure this with a tape measure, center-to-center
+    12.0);          // Width of your powered wheels.  Measure this with a tape measure, center-to-center
 */
 ez::Drive chassis(
     // These are your drive motors, the first motor is used for sensing!
@@ -45,6 +45,7 @@ void initialize() {
 
   pros::delay(500);  // Stop the user from doing anything while legacy ports configure
 
+  chassis.drive_width_set(12.0_in);
   // Are you using tracking wheels?  Comment out which ones you're using here!
   // chassis.odom_tracker_right_set(&right_tracker);
   // chassis.odom_tracker_left_set(&left_tracker);
@@ -119,15 +120,21 @@ void autonomous() {
   chassis.drive_sensor_reset();               // Reset drive sensors to 0
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
   chassis.odom_pose_set({0_in, 0_in, 0_deg});
-  chassis.drive_width_set(11_in);  // Measure this with a tape measure
 
-  chassis.pid_odom_set({{{0_in, 16_in}, fwd, 110},
-                        {{16_in, 16_in}, fwd, 110}},
+  int speed = 110;
+
+  // chassis.pid_odom_set({{0_in, 24_in, 90_deg}, fwd, speed});
+
+  chassis.pid_odom_set({{{0_in, 24_in}, fwd, speed},
+                        {{24_in, 24_in}, fwd, speed}},
                        true);
+  // chassis.pid_odom_set({{{16_in, 16_in}, fwd, speed}}, true);
   chassis.pid_wait();
+  pros::delay(250);
 
-  chassis.pid_odom_set({{0_in, 0_in, 0_deg}, rev, 110}, true);
-  chassis.pid_wait();
+  // chassis.pid_odom_set({{24_in, 24_in, 90_deg}, fwd, speed}, true);
+  // chassis.pid_wait();
+  // pros::delay(250);
 
   // ez::as::auton_selector.selected_auton_call();  // Calls selected auton from autonomous selector
 }
@@ -159,7 +166,7 @@ void ez_template_etxras() {
     }
 
     // Blank pages for Odom Debugging
-    if (chassis.odom_enabled()) {
+    if (chassis.odom_enabled() && !chassis.pid_tuner_enabled()) {
       // This is Blank Page 1, it will display X, Y, and Angle
       if (ez::as::page_blank_is_on(0)) {
         screen_print("x: " + std::to_string(chassis.odom_x_get()) +
