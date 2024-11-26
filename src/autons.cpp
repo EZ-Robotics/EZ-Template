@@ -20,16 +20,16 @@ void default_constants() {
   chassis.pid_heading_constants_set(11.0, 0.0, 20.0);        // Holds the robot straight while going forward without odom
   chassis.pid_turn_constants_set(3.0, 0.05, 20.0, 15.0);     // Turn in place constants
   chassis.pid_swing_constants_set(6.0, 0.0, 65.0);           // Swing constants
-  chassis.pid_odom_angular_constants_set(5.5, 0.0, 62.5);    // Angular control for odom motions // 5.5 62.5 // 6 72.5
-  chassis.pid_odom_boomerang_constants_set(3.5, 0.0, 35.0);  // Angular control for boomerang motions // 5.7 65.0 // 5.5 62.5 // 6 72.5
+  chassis.pid_odom_angular_constants_set(5.0, 0.0, 60.0);    // Angular control for odom motions
+  chassis.pid_odom_boomerang_constants_set(3.5, 0.0, 35.0);  // Angular control for boomerang motions
 
   // Exit conditions
   // https://ez-robotics.github.io/EZ-Template/tutorials/tuning_exit_conditions
   chassis.pid_turn_exit_condition_set(80_ms, 3_deg, 250_ms, 7_deg, 500_ms, 500_ms);
   chassis.pid_swing_exit_condition_set(80_ms, 3_deg, 250_ms, 7_deg, 500_ms, 500_ms);
   chassis.pid_drive_exit_condition_set(80_ms, 1_in, 250_ms, 3_in, 500_ms, 500_ms);
-  chassis.pid_odom_turn_exit_condition_set(80_ms, 3_deg, 250_ms, 7_deg, 500_ms, 750_ms);
-  chassis.pid_odom_drive_exit_condition_set(80_ms, 1_in, 250_ms, 3_in, 500_ms, 750_ms);
+  chassis.pid_odom_turn_exit_condition_set(90_ms, 3_deg, 250_ms, 7_deg, 500_ms, 750_ms);
+  chassis.pid_odom_drive_exit_condition_set(90_ms, 1_in, 250_ms, 3_in, 500_ms, 750_ms);
   chassis.pid_turn_chain_constant_set(3_deg);
   chassis.pid_swing_chain_constant_set(5_deg);
   chassis.pid_drive_chain_constant_set(3_in);

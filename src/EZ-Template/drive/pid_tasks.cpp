@@ -157,13 +157,10 @@ void Drive::swing_pid_task() {
 
 // Odom To Point Task
 void Drive::ptp_task() {
-  bool print_debug = false;
-
   // Compute slew
   slew_left.iterate(drive_sensor_left());
   slew_right.iterate(drive_sensor_right());
   double max_slew_out = fmax(slew_left.output(), slew_right.output());
-  // double new_max_slew_out = max_slew_out * 2.0;
 
   // Decide if we've past the target or not
   int dir = (current_drive_direction == REV ? -1 : 1);                                                       // If we're going backwards, add a -1
@@ -181,23 +178,14 @@ void Drive::ptp_task() {
   current_a_odomPID.compute_error(wrapped_a_target, odom_theta_get());
   // printf("shortest_a_target: %.2f      error: %.2f\n", a_target, wrapped_a_target);
 
-  // if (!print_debug) printf("kp: %.2f    ki: %.5f    kd: %.2f    start_i: %.2f        thratio: %.2f    hratio: %.2f    tratio: %.2f    angle err: %.2f\n", kp, ki, kd, kstart_i, turn_heading_ratio, heading_ratio, turning_ratio, current_a_odomPID.error);
-
-  double rawxyout = 0.0;
-  double rawaout = 0.0;
-
   // Prioritize turning by scaling xy_out down
   double xy_out = xyPID.output;
   xy_out = util::clamp(xy_out, max_slew_out);
-  if (print_debug) printf("xyt(%.2f, %.2f, %.2f)", odom_x_get(), odom_y_get(), odom_theta_get());
-  rawxyout = xy_out;
   // double scale = cos(util::to_rad(current_a_odomPID.error)) / odom_turn_bias_amount;
   double scale = 1.0 - ((1.0 - cos(util::to_rad(current_a_odomPID.error))) / odom_turn_bias_amount);  // 1 - ((1-0.7)/0.75)
   if (is_odom_turn_bias_enabled)
     xy_out *= scale;
-  if (print_debug) printf("   scaled xy out by %.2f: %.2f", scale, xy_out);
   double a_out = current_a_odomPID.output;
-  rawaout = a_out;
   // a_out = util::clamp(a_out, max_slew_out);
 
   // Scale xy_out and a_out to max speed
@@ -208,14 +196,9 @@ void Drive::ptp_task() {
     a_out *= (max_slew_out / faster_side);
   }
 
-  if (print_debug) printf("   raw xy/a(%.2f, %.2f)", rawxyout, rawaout);
-  if (print_debug) printf("   final xy/a(%.2f, %.2f)", xy_out, a_out);
-
   // Combine heading and drive
   double l_out = xy_out + a_out;
   double r_out = xy_out - a_out;
-
-  if (print_debug) printf("   raw lr(%.2f, %.2f)", l_out, r_out);
 
   // Vector scaling when combining drive and imu
   // this ensures no data is lost that would otherwise by lost in clamping
@@ -224,25 +207,6 @@ void Drive::ptp_task() {
     l_out *= (max_slew_out / faster_side);
     r_out *= (max_slew_out / faster_side);
   }
-
-  /*
-  double forward = xy_out / max_slew_out;
-  double curve = a_out / max_slew_out;
-  double left_speed = forward + fabs(forward) * curve;
-  double right_speed = forward - fabs(forward) * curve;
-  // normalizes output
-  double fasterr_side = fmax(fabs(left_speed), fabs(right_speed));
-  if (fasterr_side > 1.0) {
-    left_speed /= fasterr_side;
-    right_speed /= fasterr_side;
-  }
-  l_out = left_speed * max_slew_out;
-  r_out = right_speed * max_slew_out;
-  */
-
-  if (print_debug) printf("   final lr(%.2f, %.2f)", l_out, r_out);
-
-  if (print_debug) printf("      a err: %.2f\n", current_a_odomPID.error);
 
   // printf("lr out (%.2f, %.2f)   fwd curveZ(%.2f, %.2f)   lr slew (%.2f, %.2f)\n", l_out, r_out, xy_out, a_out, slew_left.output(), slew_right.output());
   // printf("max_slew_out %.2f      headingerr: %.2f\n", max_slew_out, aPID.error);
