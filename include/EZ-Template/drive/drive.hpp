@@ -88,22 +88,22 @@ class Drive {
   /**
    * Left vertical tracking wheel.
    */
-  tracking_wheel* odom_left_tracker;
+  tracking_wheel* odom_tracker_left;
 
   /**
    * Right vertical tracking wheel.
    */
-  tracking_wheel* odom_right_tracker;
+  tracking_wheel* odom_tracker_right;
 
   /**
    * Front horizontal tracking wheel.
    */
-  tracking_wheel* odom_front_tracker;
+  tracking_wheel* odom_tracker_front;
 
   /**
    * Back horizontal tracking wheel.
    */
-  tracking_wheel* odom_back_tracker;
+  tracking_wheel* odom_tracker_back;
 
   /**
    * PID objects.
@@ -118,7 +118,9 @@ class Drive {
   PID forward_swingPID;
   PID backward_swingPID;
   PID xyPID;
-  PID aPID;
+  PID current_a_odomPID;
+  PID boomerangPID;
+  PID odom_angularPID;
   PID internal_leftPID;
   PID internal_rightPID;
 
@@ -2738,6 +2740,26 @@ class Drive {
   int pid_turn_min_get();
 
   /**
+   * @brief Set the heading pid constants object
+   *
+   * @param p           kP
+   * @param i           kI
+   * @param d           kD
+   * @param p_start_i   start_I
+   */
+  void pid_odom_angular_constants_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
+
+  /**
+   * @brief Set the heading pid constants object
+   *
+   * @param p           kP
+   * @param i           kI
+   * @param d           kD
+   * @param p_start_i   start_I
+   */
+  void pid_odom_boomerang_constants_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
+
+  /**
    * Set's constants for odom driving exit conditions.
    *
    * \param p_small_exit_time
@@ -3041,10 +3063,16 @@ class Drive {
   std::vector<const_and_name> pid_tuner_pids = {
       {"Drive Forward PID Constants", &forward_drivePID.constants},
       {"Drive Backward PID Constants", &backward_drivePID.constants},
+      {"Odom Angular PID Constants", &odom_angularPID.constants},
+      {"Boomerang Angular PID Constants", &boomerangPID.constants},
       {"Heading PID Constants", &headingPID.constants},
       {"Turn PID Constants", &turnPID.constants},
       {"Swing Forward PID Constants", &forward_swingPID.constants},
       {"Swing Backward PID Constants", &backward_swingPID.constants}};
+
+  bool odom_use_left = true;
+  double odom_ime_track_width_left = 0.0;
+  double odom_ime_track_width_right = 0.0;
 
  private:
   // odom privates
@@ -3075,7 +3103,7 @@ class Drive {
   bool odom_turn_bias_enabled();
   void odom_turn_bias_set(bool set);
   double angle_rad = 0.0;
-  double track_width = 0.0;
+  double global_track_width = 0.0;
   bool odometry_enabled = true;
   pose odom_target = {0, 0, 0};
   pose odom_current = {0, 0, 0};
@@ -3093,8 +3121,13 @@ class Drive {
   double max_boomerang_distance = 12.0;
   double odom_turn_bias_amount = 1.375;
   drive_directions current_drive_direction = fwd;
-  double h_last = 0, v_last = 0;
-  double last_theta = 0;
+  double h_last = 0.0, t_last = 0.0, l_last = 0.0, r_last = 0.0;
+  pose l_pose{0.0, 0.0, 0.0};
+  pose r_pose{0.0, 0.0, 0.0};
+  pose central_pose{0.0, 0.0, 0.0};
+  std::pair<float, float> decide_vert_sensor(ez::tracking_wheel* tracker, bool is_tracker_enabled, float ime = 0.0, float ime_track = 0.0);
+  pose solve_xy_vert(float p_track_width, float current_t, float delta_vert, float delta_t);
+  pose solve_xy_horiz(float p_track_width, float current_t, float delta_horiz, float delta_t);
   bool was_last_pp_mode_boomerang = false;
   bool global_forward_drive_slew_enabled = false;
   bool global_backward_drive_slew_enabled = false;
@@ -3110,10 +3143,10 @@ class Drive {
   std::vector<odom> set_odoms_direction(std::vector<odom> inputs);
   odom set_odom_direction(odom input);
   pose flip_pose(pose input);
-  bool odom_left_tracker_enabled = false;
-  bool odom_right_tracker_enabled = false;
-  bool odom_front_tracker_enabled = false;
-  bool odom_back_tracker_enabled = false;
+  bool odom_tracker_left_enabled = false;
+  bool odom_tracker_right_enabled = false;
+  bool odom_tracker_front_enabled = false;
+  bool odom_tracker_back_enabled = false;
 
   double chain_target_start = 0.0;
   double chain_sensor_start = 0.0;

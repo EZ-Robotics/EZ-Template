@@ -54,8 +54,8 @@ std::vector<pose> Drive::find_point_to_face(pose current, pose target, drive_dir
     m = (target.y - current.y) / tx_cx;
     angle = 90.0 - util::to_deg(atan(m));
   }
-  pose ptf1 = util::vector_off_point(LOOK_AHEAD, {target.x, target.y, angle});
-  pose ptf2 = util::vector_off_point(-LOOK_AHEAD, {target.x, target.y, angle});
+  pose ptf1 = util::vector_off_point(odom_look_ahead_get(), {target.x, target.y, angle});
+  pose ptf2 = util::vector_off_point(-odom_look_ahead_get(), {target.x, target.y, angle});
 
   if (set_global) {
     double ptf1_dist = util::distance_to_point(ptf1, current);
@@ -81,7 +81,7 @@ std::vector<odom> Drive::inject_points(std::vector<ez::odom> imovements) {
 
   // Create new vector that includes the starting point
   std::vector<odom> input = imovements;
-  input.insert(input.begin(), {{{odom_current.x, odom_current.y, ANGLE_NOT_SET}, imovements[0].drive_direction, imovements[0].max_xy_speed}});
+  input.insert(input.begin(), {{{odom_x_get(), odom_y_get(), ANGLE_NOT_SET}, imovements[0].drive_direction, imovements[0].max_xy_speed}});
 
   // Inject new parent points for boomerang
   int t = 0;
@@ -92,7 +92,7 @@ std::vector<odom> Drive::inject_points(std::vector<ez::odom> imovements) {
       // Calculate the new point with known information: hypot and angle
       double angle_to_point = input[j].target.theta;
       int dir = input[j].drive_direction == REV ? -1 : 1;
-      pose new_point = util::vector_off_point(LOOK_AHEAD * dir, {input[j].target.x, input[j].target.y, angle_to_point});
+      pose new_point = util::vector_off_point(odom_look_ahead_get() * dir, {input[j].target.x, input[j].target.y, angle_to_point});
       new_point.theta = ANGLE_NOT_SET;
 
       input.insert(input.cbegin() + j + 1, {new_point, input[j].drive_direction, input[j].max_xy_speed});
@@ -140,7 +140,7 @@ std::vector<odom> Drive::inject_points(std::vector<ez::odom> imovements) {
 
         // A one time flag to stop points from being injected for LOOK_AHEAD from current
         // https://github.com/EZ-Robotics/EZ-Template/issues/152
-        if (util::distance_to_point(new_point, input[0].target) >= LOOK_AHEAD)
+        if (util::distance_to_point(new_point, input[0].target) >= odom_look_ahead_get())
           allow_injecting = true;
 
         // If the new point is basically the same as the parent point, remove it to save 10ms delay
@@ -180,6 +180,7 @@ std::vector<odom> Drive::smooth_path(std::vector<odom> ipath, double weight_smoo
   std::vector<bool> dont_touch;
   int t = 0;
   bool allow_injecting = false;
+  bool boomerang_after_not_done = false;
 
   // Convert odom to array
   for (int i = 0; i < ipath.size(); i++) {
@@ -187,18 +188,33 @@ std::vector<odom> Drive::smooth_path(std::vector<odom> ipath, double weight_smoo
     path[i][1] = new_path[i][1] = ipath[i].target.y;
     path[i][2] = new_path[i][2] = ipath[i].target.theta;
 
+    bool dont_touch_this_point = false;
+
     // A one time flag to stop points from being injected for LOOK_AHEAD from current
     // https://github.com/EZ-Robotics/EZ-Template/issues/152
-    if (util::distance_to_point(ipath[i].target, ipath[0].target) >= LOOK_AHEAD)
+    if (util::distance_to_point(ipath[i].target, ipath[0].target) >= odom_look_ahead_get())
       allow_injecting = true;
 
-    // Don't touch that extends after boomerang, or that are super close to start
-    if ((ipath[i].target.theta != ANGLE_NOT_SET || (t <= LOOK_AHEAD * 2 && t != 0)) || !allow_injecting) {
-      dont_touch.push_back(true);
+    // if (t <= odom_look_ahead_get() / SPACING && (prev_point_angle_not_set || t != 0)))
+    if (boomerang_after_not_done) {
       t++;
-    } else {
-      dont_touch.push_back(false);
-      t = 0;
+      dont_touch_this_point = true;
+      if (t >= odom_look_ahead_get() / SPACING) {
+        t = 0;
+        boomerang_after_not_done = false;
+      }
+    }
+
+    // Don't touch that extends after boomerang, or that are super close to start
+    if (ipath[i].target.theta != ANGLE_NOT_SET || !allow_injecting || i == 1) {
+      dont_touch_this_point = true;
+    }
+
+    dont_touch.push_back(dont_touch_this_point);
+
+    if (ipath[i].target.theta != ANGLE_NOT_SET) {
+      boomerang_after_not_done = true;
+      t++;
     }
   }
 

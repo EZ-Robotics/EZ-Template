@@ -15,14 +15,14 @@ ez::Drive chassis(
     pros::IMU(21),  // IMU port
     4.125,          // Wheel Diameter (Remember, 4" wheels without screw holes are actually 4.125!)
     420.0,          // Wheel RPM = cartridge * (motor gear / wheel gear)
-    11.0);          // Width of your powered wheels.  Measure this with a tape measure, center-to-center
+    12.0);          // Width of your powered wheels.  Measure this with a tape measure, center-to-center
 */
 ez::Drive chassis(
     // These are your drive motors, the first motor is used for sensing!
     {-5, -6, -7, -8},  // Left Chassis Ports (negative port will reverse it!)
     {11, 15, 16, 17},  // Right Chassis Ports (negative port will reverse it!)
 
-    21,      // IMU port
+    21,      // IMU Port
     4.125,   // Wheel Diameter (Remember, 4" wheels without screw holes are actually 4.125!)
     420.0);  // Wheel RPM = cartridge * (motor gear / wheel gear)
 
@@ -114,21 +114,35 @@ void competition_initialize() {
  * from where it left off.
  */
 void autonomous() {
-  chassis.pid_targets_reset();                // Resets PID targets to 0
-  chassis.drive_imu_reset();                  // Reset gyro position to 0
-  chassis.drive_sensor_reset();               // Reset drive sensors to 0
-  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
-  chassis.odom_pose_set({0_in, 0_in, 0_deg});
-  chassis.drive_width_set(11_in);  // Measure this with a tape measure
+  chassis.pid_targets_reset();                 // Resets PID targets to 0
+  chassis.drive_imu_reset();                   // Reset gyro position to 0
+  chassis.drive_sensor_reset();                // Reset drive sensors to 0
+  chassis.odom_pose_set({0_in, 0_in, 0_deg});  // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);   // Set motors to hold.  This helps autonomous consistency
+  chassis.drive_width_set(12.0_in);            // You can measure this with a tape measure
 
-  chassis.pid_odom_set({{{0_in, 16_in}, fwd, 110},
-                        {{16_in, 16_in}, fwd, 110}},
+  // Drive to 0, 24
+  chassis.pid_odom_set({{0_in, 24_in}, fwd, 110},
                        true);
   chassis.pid_wait();
 
-  chassis.pid_odom_set({{0_in, 0_in, 0_deg}, rev, 110}, true);
+  // Turn to face 24, 24
+  chassis.pid_turn_set({24_in, 24_in}, fwd, 110,
+                       true);
   chassis.pid_wait();
 
+  // Drive to 24, 24
+  chassis.pid_odom_set({{24_in, 24_in}, fwd, 110},
+                       true);
+  chassis.pid_wait();
+
+  // Drive backwards through 0, 24 and stop at 0, 0
+  chassis.pid_odom_set({{{0_in, 24_in}, rev, 110},
+                        {{0_in, 0_in}, rev, 110}},
+                       true);
+  chassis.pid_wait();
+
+  // Uncomment this to use the auton selector
   // ez::as::auton_selector.selected_auton_call();  // Calls selected auton from autonomous selector
 }
 
@@ -170,23 +184,23 @@ void ez_template_etxras() {
       // This is Blank Page 2, it will display every tracking wheel.
       // Make sure the tracking wheels read POSITIVE going forwards or right.
       else if (ez::as::page_blank_is_on(1)) {
-        if (chassis.odom_left_tracker != nullptr)
-          screen_print("left tracker: " + std::to_string(chassis.odom_left_tracker->get()), 1);
+        if (chassis.odom_tracker_left != nullptr)
+          screen_print("left tracker: " + std::to_string(chassis.odom_tracker_left->get()), 1);
         else
           screen_print("no left tracker", 1);
 
-        if (chassis.odom_right_tracker != nullptr)
-          screen_print("right tracker: " + std::to_string(chassis.odom_right_tracker->get()), 2);
+        if (chassis.odom_tracker_right != nullptr)
+          screen_print("right tracker: " + std::to_string(chassis.odom_tracker_right->get()), 2);
         else
           screen_print("no right tracker", 2);
 
-        if (chassis.odom_back_tracker != nullptr)
-          screen_print("back tracker: " + std::to_string(chassis.odom_back_tracker->get()), 3);
+        if (chassis.odom_tracker_back != nullptr)
+          screen_print("back tracker: " + std::to_string(chassis.odom_tracker_back->get()), 3);
         else
           screen_print("no back tracker", 3);
 
-        if (chassis.odom_front_tracker != nullptr)
-          screen_print("front tracker: " + std::to_string(chassis.odom_front_tracker->get()), 4);
+        if (chassis.odom_tracker_front != nullptr)
+          screen_print("front tracker: " + std::to_string(chassis.odom_tracker_front->get()), 4);
         else
           screen_print("no front tracker", 4);
       }
