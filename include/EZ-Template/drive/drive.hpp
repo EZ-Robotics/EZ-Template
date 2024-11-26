@@ -88,22 +88,22 @@ class Drive {
   /**
    * Left vertical tracking wheel.
    */
-  tracking_wheel* odom_left_tracker;
+  tracking_wheel* odom_tracker_left;
 
   /**
    * Right vertical tracking wheel.
    */
-  tracking_wheel* odom_right_tracker;
+  tracking_wheel* odom_tracker_right;
 
   /**
    * Front horizontal tracking wheel.
    */
-  tracking_wheel* odom_front_tracker;
+  tracking_wheel* odom_tracker_front;
 
   /**
    * Back horizontal tracking wheel.
    */
-  tracking_wheel* odom_back_tracker;
+  tracking_wheel* odom_tracker_back;
 
   /**
    * PID objects.
@@ -3070,7 +3070,7 @@ class Drive {
       {"Swing Forward PID Constants", &forward_swingPID.constants},
       {"Swing Backward PID Constants", &backward_swingPID.constants}};
 
-  bool odom_ime_use_left = true;
+  bool odom_use_left = true;
   double odom_ime_track_width_left = 0.0;
   double odom_ime_track_width_right = 0.0;
 
@@ -3121,8 +3121,7 @@ class Drive {
   double max_boomerang_distance = 12.0;
   double odom_turn_bias_amount = 1.375;
   drive_directions current_drive_direction = fwd;
-  double h_last = 0.0, v_last = 0.0, l_last = 0.0, r_last = 0.0;
-  double t_last = 0.0;
+  double h_last = 0.0, t_last = 0.0, l_last = 0.0, r_last = 0.0;
   pose l_pose{0.0, 0.0, 0.0};
   pose r_pose{0.0, 0.0, 0.0};
   pose central_pose{0.0, 0.0, 0.0};
@@ -3144,10 +3143,10 @@ class Drive {
   std::vector<odom> set_odoms_direction(std::vector<odom> inputs);
   odom set_odom_direction(odom input);
   pose flip_pose(pose input);
-  bool odom_left_tracker_enabled = false;
-  bool odom_right_tracker_enabled = false;
-  bool odom_front_tracker_enabled = false;
-  bool odom_back_tracker_enabled = false;
+  bool odom_tracker_left_enabled = false;
+  bool odom_tracker_right_enabled = false;
+  bool odom_tracker_front_enabled = false;
+  bool odom_tracker_back_enabled = false;
 
   double chain_target_start = 0.0;
   double chain_sensor_start = 0.0;
