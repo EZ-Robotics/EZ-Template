@@ -110,6 +110,19 @@ void autonomous() {
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);   // Set motors to hold.  This helps autonomous consistency
   chassis.drive_width_set(12.0_in);            // You can measure this with a tape measure
 
+  /*
+  Odometry and Pure Pursuit are not magic
+
+  It is possible to get perfectly consistent results without trackers,
+  but it is also possible to have extremely inconsistent results without trackers.
+  When you don't use trackers, you need to:
+   - avoid wheel slip
+   - avoid wheelies
+   - avoid throwing momentum around (super harsh turns, like in the example below)
+  You can do cool curved motions, but you have to give your robot the best chance
+  to be consistent
+  */
+
   // Drive to 0, 24
   chassis.pid_odom_set({{0_in, 24_in}, fwd, 110},
                        true);
