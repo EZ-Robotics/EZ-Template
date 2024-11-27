@@ -3070,15 +3070,35 @@ class Drive {
       {"Swing Forward PID Constants", &forward_swingPID.constants},
       {"Swing Backward PID Constants", &backward_swingPID.constants}};
 
+  /**
+   * Sets the max speed for user control
+   *
+   * \param int
+   *        the speed limit
+   */
   void opcontrol_speed_max_set(int speed);
+
+  /**
+   * Returns the max speed for user control
+   */
   int opcontrol_speed_max_get();
+
+  /**
+   * Toggles vector scaling for arcade control.  True enables, false disables.
+   *
+   * \param bool
+   *        true enables, false disables
+   */
+  void opcontrol_arcade_scaling(bool enable);
+
+  /**
+   * Returns if vector scaling for arcade control is enabled.  True enables, false disables.
+   */
+  bool opcontrol_arcade_scaling_enabled();
 
   bool odom_use_left = true;
   double odom_ime_track_width_left = 0.0;
   double odom_ime_track_width_right = 0.0;
-
-  void opcontrol_arcade_scaling(bool enable);
-  bool opcontrol_arcade_scaling_enabled();
 
  private:
   double opcontrol_speed_max = 127.0;
