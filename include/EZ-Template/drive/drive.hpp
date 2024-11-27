@@ -3074,7 +3074,11 @@ class Drive {
   double odom_ime_track_width_left = 0.0;
   double odom_ime_track_width_right = 0.0;
 
+  void opcontrol_arcade_scaling(bool enable);
+  bool opcontrol_arcade_scaling_enabled();
+
  private:
+  bool arcade_vector_scaling = false;
   // odom privates
   std::vector<odom> pp_movements;
   std::vector<int> injected_pp_index;

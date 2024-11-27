@@ -6,6 +6,9 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "main.h"
 
+void Drive::opcontrol_arcade_scaling(bool enable) { arcade_vector_scaling = enable; }
+bool Drive::opcontrol_arcade_scaling_enabled() { return arcade_vector_scaling; }
+
 // Set curve defaults
 void Drive::opcontrol_curve_default_set(double left, double right) {
   left_curve_scale = left;
@@ -230,20 +233,40 @@ void Drive::opcontrol_drive_reverse_set(bool toggle) { is_reversed = toggle; }
 bool Drive::opcontrol_drive_reverse_get() { return is_reversed; }
 
 void Drive::opcontrol_joystick_threshold_iterate(int l_stick, int r_stick) {
+  double l_out = 0.0, r_out = 0.0;
+
   // Check the motors are being set to power
   if (abs(l_stick) > 0 || abs(r_stick) > 0) {
-    if (practice_mode_is_on && (abs(l_stick) > 120 || abs(r_stick) > 120))
-      drive_set(0, 0);
-    else if (is_reversed == true)
-      drive_set(-r_stick, -l_stick);
-    else
-      drive_set(l_stick, r_stick);
-    if (active_brake_kp != 0) drive_sensor_reset();
+    if (active_brake_kp != 0) drive_sensor_reset();  // Reset sensor
+
+    if (practice_mode_is_on && (abs(l_stick) > 120 || abs(r_stick) > 120)) {
+      l_out = 0.0;
+      r_out = 0.0;
+    } else if (!is_reversed) {
+      l_out = l_stick;
+      r_out = r_stick;
+    } else {
+      l_out = -r_stick;
+      r_out = -l_stick;
+    }
+
   }
   // When joys are released, run active brake (P) on drive
   else {
-    drive_set((0 - drive_sensor_left()) * active_brake_kp, (0 - drive_sensor_right()) * active_brake_kp);
+    l_out = (0 - drive_sensor_left()) * active_brake_kp;
+    r_out = (0 - drive_sensor_right()) * active_brake_kp;
   }
+
+  // Constrain output between 127 and -127
+  if (arcade_vector_scaling) {
+    double faster_side = fmax(fabs(l_out), fabs(r_out));
+    if (faster_side > 127.0) {
+      l_out *= (127.0 / faster_side);
+      r_out *= (127.0 / faster_side);
+    }
+  }
+
+  drive_set(l_out, r_out);
 }
 
 // Clip joysticks based on joystick threshold
