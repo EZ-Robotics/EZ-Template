@@ -173,7 +173,7 @@ void ez_template_etxras() {
     }
 
     // Blank pages for Odom Debugging
-    if (chassis.odom_enabled()) {
+    if (chassis.odom_enabled() && !chassis.pid_tuner_enabled()) {
       // This is Blank Page 1, it will display X, Y, and Angle
       if (ez::as::page_blank_is_on(0)) {
         screen_print("x: " + std::to_string(chassis.odom_x_get()) +
