@@ -266,8 +266,20 @@ void Drive::opcontrol_joystick_threshold_iterate(int l_stick, int r_stick) {
     }
   }
 
+  // Constrain left and right outputs to the user set max speed
+  // the user set max speed is defaulted to 127
+  l_out *= (opcontrol_speed_max / 127.0);
+  r_out *= (opcontrol_speed_max / 127.0);
+
+  // Ensure output is within speed limit
+  l_out = l_out > opcontrol_speed_max ? opcontrol_speed_max : l_out;
+  r_out = r_out > opcontrol_speed_max ? opcontrol_speed_max : r_out;
+
   drive_set(l_out, r_out);
 }
+
+void Drive::opcontrol_speed_max_set(int speed) { opcontrol_speed_max = (double)speed; }
+int Drive::opcontrol_speed_max_get() { return (int)opcontrol_speed_max; }
 
 // Clip joysticks based on joystick threshold
 int Drive::clipped_joystick(int joystick) { return abs(joystick) < JOYSTICK_THRESHOLD ? 0 : joystick; }

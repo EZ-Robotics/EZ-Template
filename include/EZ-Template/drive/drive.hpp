@@ -3070,6 +3070,9 @@ class Drive {
       {"Swing Forward PID Constants", &forward_swingPID.constants},
       {"Swing Backward PID Constants", &backward_swingPID.constants}};
 
+  void opcontrol_speed_max_set(int speed);
+  int opcontrol_speed_max_get();
+
   bool odom_use_left = true;
   double odom_ime_track_width_left = 0.0;
   double odom_ime_track_width_right = 0.0;
@@ -3078,6 +3081,7 @@ class Drive {
   bool opcontrol_arcade_scaling_enabled();
 
  private:
+  double opcontrol_speed_max = 127.0;
   bool arcade_vector_scaling = false;
   // odom privates
   std::vector<odom> pp_movements;
