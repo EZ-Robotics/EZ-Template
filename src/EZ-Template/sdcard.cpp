@@ -121,7 +121,7 @@ void initialize() {
   ez::as::auton_selector_initialize();
 
   // Callbacks for auto selector
-  ez::as::auton_selector.selected_auton_print();
+  print_page();
   pros::lcd::register_btn0_cb(ez::as::page_down);
   pros::lcd::register_btn2_cb(ez::as::page_up);
 
