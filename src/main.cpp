@@ -12,7 +12,7 @@ ez::Drive chassis(
     pros::MotorGroup({-5, -6, -7, -8}),  // Left Chassis Ports (negative port will reverse it!)
     pros::MotorGroup({11, 15, 16, 17}),  // Right Chassis Ports (negative port will reverse it!)
 
-    pros::IMU(21),  // IMU port
+    pros::IMU(21),  // IMU Port
     4.125,          // Wheel Diameter (Remember, 4" wheels without screw holes are actually 4.125!)
     420.0,          // Wheel RPM = cartridge * (motor gear / wheel gear)
     12.0);          // Width of your powered wheels.  Measure this with a tape measure, center-to-center
@@ -172,7 +172,7 @@ void ez_template_etxras() {
       chassis.drive_brake_set(preference);
     }
 
-    // Blank pages for Odom Debugging
+    // Blank pages for odom debugging
     if (chassis.odom_enabled() && !chassis.pid_tuner_enabled()) {
       // This is Blank Page 1, it will display X, Y, and Angle
       if (ez::as::page_blank_is_on(0)) {
