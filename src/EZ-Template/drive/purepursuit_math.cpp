@@ -51,9 +51,8 @@ std::vector<pose> Drive::find_point_to_face(pose current, pose target, drive_dir
   double m = 0.0;
   double angle = 0.0;
   if (tx_cx != 0) {
-    // m = (target.y - current.y) / tx_cx;
-    // angle = 90.0 - util::to_deg(atan(m));
-    angle = 90.0 - util::to_deg(atan2(tx_cx, target.y - current.y));
+    m = (target.y - current.y) / tx_cx;
+    angle = 90.0 - util::to_deg(atan(m));
   }
   pose ptf1 = util::vector_off_point(odom_look_ahead_get(), {target.x, target.y, angle});
   pose ptf2 = util::vector_off_point(-odom_look_ahead_get(), {target.x, target.y, angle});
