@@ -3129,7 +3129,7 @@ class Drive {
   bool current_slew_on = false;
   bool is_odom_turn_bias_enabled = true;
   bool odom_turn_bias_enabled();
-  void odom_turn_bias_set(bool set);
+  void odom_turn_bias_enable(bool set);
   double angle_rad = 0.0;
   double global_track_width = 0.0;
   bool odometry_enabled = true;

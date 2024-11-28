@@ -22,10 +22,7 @@ void Drive::odom_y_set(double y) {
   r_pose.y = y;
   central_pose.y = y;
 }
-void Drive::odom_theta_set(double a) {
-  drive_angle_set(a);
-  central_pose.theta = a;
-}
+void Drive::odom_theta_set(double a) { drive_angle_set(a); }
 void Drive::odom_x_set(okapi::QLength p_x) { odom_x_set(p_x.convert(okapi::inch)); }
 void Drive::odom_y_set(okapi::QLength p_y) { odom_y_set(p_y.convert(okapi::inch)); }
 void Drive::odom_theta_set(okapi::QAngle p_a) { odom_theta_set(p_a.convert(okapi::degree)); }
