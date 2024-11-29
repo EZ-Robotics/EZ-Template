@@ -602,7 +602,7 @@ class Drive {
    * \param flip
    *        true means left is positive x, false means right is positive x
    */
-  void odom_x_direction_flip(bool flip = true);
+  void odom_x_flip(bool flip = true);
 
   /**
    * Checks if x axis is flipped.  True means left is positive x, false means right is positive x
@@ -613,14 +613,27 @@ class Drive {
    * Flips the Y axis
    *
    * \param flip
-   *        true means down is positive Y, false means down is positive Y
+   *        true means down is positive Y, false means up is positive Y
    */
-  void odom_y_direction_flip(bool flip = true);
+  void odom_y_flip(bool flip = true);
 
   /**
-   * Checks if x axis is flipped.  True means down is positive Y, false means down is positive Y
+   * Checks if y axis is flipped.  True means down is positive Y, false means up is positive Y
    */
   bool odom_y_direction_get();
+
+  /**
+   * Flips the rotation axis
+   *
+   * \param flip
+   *        true means clockwise is positive, false means counterclockwise is positive
+   */
+  void odom_theta_flip(bool flip = true);
+
+  /**
+   * Checks if the rotation axis is flipped.  True means clockwise is positive, false means counterclockwise is positive
+   */
+  bool odom_theta_direction_get();
 
   /**
    * Sets a new dlead.  Dlead is a proportional value of how much to make the robot curve during boomerang motions.
@@ -2343,12 +2356,28 @@ class Drive {
   void pid_wait_until_index(int index);
 
   /**
-   * Lock the code in a while loop until this point has been passed.
+   * Lock the code in a while loop until this point becomes the target
+   *
+   * \param index
+   *        index of your input points, 0 is the first point in the index.
+   */
+  void pid_wait_until_index_started(int index);
+
+      /**
+       * Lock the code in a while loop until this point has been passed.
+       *
+       * \param target
+       *        {x, y}  a pose for the robot to pass through before the while loop is released
+       */
+      void pid_wait_until_point(pose target);
+
+  /**
+   * Lock the code in a while loop until this point has been passed, with okapi units.
    *
    * \param target
-   *        {x, y}  a pose for the robot to pass through before the while loop is released
+   *        {x, y}  a pose with units for the robot to pass through before the while loop is released
    */
-  void pid_wait_until_point(pose target);
+  void pid_wait_until_point(united_pose target);
 
   /**
    * Lock the code in a while loop until this point has been passed.  Wrapper for pid_wait_until_point
@@ -2357,6 +2386,14 @@ class Drive {
    *        {x, y}  a pose for the robot to pass through before the while loop is released
    */
   void pid_wait_until(pose target);
+
+  /**
+   * Lock the code in a while loop until this point has been passed, with okapi units.  Wrapper for pid_wait_until_point
+   *
+   * \param target
+   *        {x, y}  a pose with units for the robot to pass through before the while loop is released
+   */
+  void pid_wait_until(united_pose target);
 
   /**
    * Autonomous interference detection.  Returns true when interfered, and false when nothing happened.
@@ -3141,6 +3178,8 @@ class Drive {
   pose turn_to_point_target = {0.0, 0.0, 0.0};
   bool y_flipped = false;
   bool x_flipped = false;
+  bool theta_flipped = false;
+  double flip_angle_target(double target);
   double odom_imu_start = 0.0;
   int past_target = 0;
   double SPACING = 0.5;
