@@ -2343,12 +2343,20 @@ class Drive {
   void pid_wait_until_index(int index);
 
   /**
-   * Lock the code in a while loop until this point has been passed.
+   * Lock the code in a while loop until this point becomes the target
    *
-   * \param target
-   *        {x, y}  a pose for the robot to pass through before the while loop is released
+   * \param index
+   *        index of your input points, 0 is the first point in the index.
    */
-  void pid_wait_until_point(pose target);
+  void pid_wait_until_index_started(int index);
+
+      /**
+       * Lock the code in a while loop until this point has been passed.
+       *
+       * \param target
+       *        {x, y}  a pose for the robot to pass through before the while loop is released
+       */
+      void pid_wait_until_point(pose target);
 
   /**
    * Lock the code in a while loop until this point has been passed.  Wrapper for pid_wait_until_point
