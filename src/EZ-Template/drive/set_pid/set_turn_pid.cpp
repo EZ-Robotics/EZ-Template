@@ -184,7 +184,7 @@ void Drive::pid_turn_set(pose itarget, drive_directions dir, int speed, e_angle_
   // ANGLE_ADDER_WAS_RESET = false;
 
   if (print_toggle) printf("Turn to Point PID Started... Target Point: (%.2f, %.2f) \n", itarget.x, itarget.y);
-  pid_turn_set(target, speed, slew_on);
+  pid_turn_set(target, speed, behavior, slew_on);
 
   drive_mode_set(TURN_TO_POINT);
 }
