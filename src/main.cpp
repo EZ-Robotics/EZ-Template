@@ -133,24 +133,24 @@ void autonomous() {
   to be consistent
   */
 
-  // Drive to 0, 24 and pass through -3, 8 and 0, 16 on the way, with slew
+  // Drive to 0, 30 and pass through 6, 10 and 0, 20 on the way, with slew
   chassis.pid_odom_set({{{6_in, 10_in}, fwd, 110},
                         {{0_in, 20_in}, fwd, 110},
                         {{0_in, 30_in}, fwd, 110}},
                        true);
   chassis.pid_wait();
 
-  // Turn to face -48, 48 with slew
+  // Turn to face -36, 48 with slew
   chassis.pid_turn_set({-36_in, 48_in}, fwd, 110,
                        true);
   chassis.pid_wait();
 
-  // Turn to face 48, 48 with slew
+  // Turn to face 36, 48 with slew
   chassis.pid_turn_set({36_in, 48_in}, fwd, 110,
                        true);
   chassis.pid_wait();
 
-  // Drive to 0, 0 and pass through 3, 16 and 0, 8 on the way, with slew
+  // Drive to 0, 0 and pass through -6, 20 and 0, 10 on the way, with slew
   chassis.pid_odom_set({{{-6_in, 20_in}, rev, 110},
                         {{0_in, 10_in}, rev, 110},
                         {{0_in, 0_in}, rev, 110}},
