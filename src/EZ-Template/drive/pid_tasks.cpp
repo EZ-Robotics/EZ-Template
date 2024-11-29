@@ -12,6 +12,9 @@ using namespace ez;
 
 void Drive::ez_auto_task() {
   while (true) {
+    // Run odom
+    ez_tracking_task();
+
     // Autonomous PID
     switch (drive_mode_get()) {
       case DRIVE:
@@ -37,9 +40,6 @@ void Drive::ez_auto_task() {
 
     // This is used to reset sensors for active braking
     util::AUTON_RAN = drive_mode_get() != DISABLE ? true : false;
-
-    // Run odom
-    ez_tracking_task();
 
     pros::delay(ez::util::DELAY_TIME);
   }
