@@ -190,9 +190,9 @@ std::vector<odom> Drive::smooth_path(std::vector<odom> ipath, double weight_smoo
 
     bool dont_touch_this_point = false;
 
-    // A one time flag to stop points from being injected for LOOK_AHEAD from current
+    // A one time flag to stop points from being smoothed for LOOK_AHEAD from current
     // https://github.com/EZ-Robotics/EZ-Template/issues/152
-    if (util::distance_to_point(ipath[i].target, ipath[0].target) >= odom_look_ahead_get())
+    if (util::distance_to_point(ipath[i].target, ipath[0].target) > odom_look_ahead_get() && !allow_injecting)
       allow_injecting = true;
 
     // if (t <= odom_look_ahead_get() / SPACING && (prev_point_angle_not_set || t != 0)))
