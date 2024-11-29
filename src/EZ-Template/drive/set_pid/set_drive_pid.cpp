@@ -52,6 +52,10 @@ void Drive::pid_heading_constants_set(double p, double i, double d, double p_sta
 void Drive::drive_angle_set(double angle) {
   headingPID.target_set(angle);
   drive_imu_reset(angle);
+  central_pose.theta = angle;
+  l_pose.theta = angle;
+  r_pose.theta = angle;
+  was_odom_just_set = true;
 }
 void Drive::drive_angle_set(okapi::QAngle p_angle) {
   double angle = p_angle.convert(okapi::degree);  // Convert okapi unit to degree

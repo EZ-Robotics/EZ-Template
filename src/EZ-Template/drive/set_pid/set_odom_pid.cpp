@@ -64,7 +64,7 @@ void Drive::odom_look_ahead_set(double distance) { LOOK_AHEAD = distance; }
 void Drive::odom_look_ahead_set(okapi::QLength p_distance) { odom_look_ahead_set(p_distance.convert(okapi::inch)); }
 double Drive::odom_look_ahead_get() { return LOOK_AHEAD; }
 bool Drive::odom_turn_bias_enabled() { return is_odom_turn_bias_enabled; }
-void Drive::odom_turn_bias_set(bool set) { is_odom_turn_bias_enabled = set; }
+void Drive::odom_turn_bias_enable(bool set) { is_odom_turn_bias_enabled = set; }
 void Drive::slew_odom_reenable(bool reenable) { slew_reenables_when_max_speed_changes = reenable; }
 bool Drive::slew_odom_reenabled() { return slew_reenables_when_max_speed_changes; }
 
@@ -93,7 +93,7 @@ void Drive::pid_odom_set(double target, int speed, bool slew_on) {
 
   if (print_toggle) printf("Injected ");
   std::vector<odom> input_path = inject_points(set_odoms_direction({path}));
-  odom_turn_bias_set(false);
+  odom_turn_bias_enable(false);
   current_slew_on = slew_on;
   slew_min_when_it_enabled = 0;
   slew_will_enable_later = false;
@@ -189,7 +189,7 @@ void Drive::pid_odom_injected_pp_set(std::vector<ez::odom> imovements, bool slew
 
   if (print_toggle) printf("Injected ");
   std::vector<odom> input_path = inject_points(set_odoms_direction(imovements));
-  odom_turn_bias_set(true);
+  odom_turn_bias_enable(true);
   current_slew_on = slew_on;
   slew_min_when_it_enabled = 0;
   slew_will_enable_later = false;
@@ -218,8 +218,8 @@ void Drive::pid_odom_smooth_pp_set(std::vector<odom> imovements, bool slew_on) {
   current_a_odomPID.timers_reset();
 
   if (print_toggle) printf("Smooth Injected ");
-  std::vector<odom> input_path = smooth_path(inject_points(set_odoms_direction(imovements)), 0.75, 0.015, 0.0001);
-  odom_turn_bias_set(true);
+  std::vector<odom> input_path = smooth_path(inject_points(set_odoms_direction(imovements)), 0.75, 0.03, 0.0001);
+  odom_turn_bias_enable(true);
   current_slew_on = slew_on;
   slew_min_when_it_enabled = 0;
   slew_will_enable_later = false;
@@ -299,7 +299,7 @@ void Drive::pid_odom_pp_set(std::vector<odom> imovements, bool slew_on) {
       injected_pp_index.push_back(i);
   }
 
-  odom_turn_bias_set(true);
+  odom_turn_bias_enable(true);
   current_slew_on = slew_on;
   slew_min_when_it_enabled = 0;
   slew_will_enable_later = false;
@@ -325,7 +325,7 @@ void Drive::pid_odom_ptp_set(odom imovement, bool slew_on) {
   l_start = drive_sensor_left();
   r_start = drive_sensor_right();
 
-  odom_turn_bias_set(true);
+  odom_turn_bias_enable(true);
   current_slew_on = slew_on;
   slew_min_when_it_enabled = 0;
   slew_will_enable_later = false;

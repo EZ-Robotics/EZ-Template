@@ -12,6 +12,9 @@ using namespace ez;
 
 void Drive::ez_auto_task() {
   while (true) {
+    // Run odom
+    ez_tracking_task();
+
     // Autonomous PID
     switch (drive_mode_get()) {
       case DRIVE:
@@ -37,9 +40,6 @@ void Drive::ez_auto_task() {
 
     // This is used to reset sensors for active braking
     util::AUTON_RAN = drive_mode_get() != DISABLE ? true : false;
-
-    // Run odom
-    ez_tracking_task();
 
     pros::delay(ez::util::DELAY_TIME);
   }
@@ -163,12 +163,13 @@ void Drive::ptp_task() {
   double max_slew_out = fmax(slew_left.output(), slew_right.output());
 
   // Decide if we've past the target or not
-  int dir = (current_drive_direction == REV ? -1 : 1);                                                       // If we're going backwards, add a -1
-  int flipped = util::sgn(is_past_target(odom_target, odom_pose_get())) != util::sgn(past_target) ? -1 : 1;  // Check if we've flipped directions to what we started
+  double temp_target = is_past_target(odom_target, odom_pose_get());        // Use this instead of distance formula to fix impossible movements
+  int dir = (current_drive_direction == REV ? -1 : 1);                      // If we're going backwards, add a -1
+  int flipped = util::sgn(temp_target) != util::sgn(past_target) ? -1 : 1;  // Check if we've flipped directions to what we started
 
   // Compute xy PID
-  double temp_target = fabs(is_past_target(odom_target, odom_pose_get()));  // Use this instead of distance formula to fix impossible movements
-  xyPID.compute_error(temp_target * dir * flipped, odom_x_get() + odom_y_get());
+  new_current_fake += xy_delta_fake * ((dir * flipped));  // Create a "current sensor value" for the PID to calculate off of
+  xyPID.compute_error(fabs(temp_target) * dir * flipped, new_current_fake);
 
   // Compute angle
   pose ptf = point_to_face[!ptf1_running];
@@ -183,7 +184,7 @@ void Drive::ptp_task() {
   xy_out = util::clamp(xy_out, max_slew_out);
   // double scale = cos(util::to_rad(current_a_odomPID.error)) / odom_turn_bias_amount;
   double scale = 1.0 - ((1.0 - cos(util::to_rad(current_a_odomPID.error))) / odom_turn_bias_amount);  // 1 - ((1-0.7)/0.75)
-  if (is_odom_turn_bias_enabled)
+  if (odom_turn_bias_enabled())
     xy_out *= scale;
   double a_out = current_a_odomPID.output;
   // a_out = util::clamp(a_out, max_slew_out);
@@ -208,11 +209,11 @@ void Drive::ptp_task() {
     r_out *= (max_slew_out / faster_side);
   }
 
-  // printf("lr out (%.2f, %.2f)   fwd curveZ(%.2f, %.2f)   lr slew (%.2f, %.2f)\n", l_out, r_out, xy_out, a_out, slew_left.output(), slew_right.output());
+  // printf("lr out (%.2f, %.2f)   xy/a(%.2f, %.2f)   lr slew (%.2f, %.2f)\n", l_out, r_out, xy_out, a_out, slew_left.output(), slew_right.output());
   // printf("max_slew_out %.2f      headingerr: %.2f\n", max_slew_out, aPID.error);
   // printf("lr(%.2f, %.2f)   xy_raw: %.2f   xy_out: %.2f   heading_out: %.2f      max_slew_out: %.2f\n", l_out, r_out, xyPID.output, xy_out, current_a_odomPID.output, max_slew_out);
   // printf("xy(%.2f, %.2f, %.2f)   xyPID: %.2f   aPID: %.2f     dir: %i   sgn: %i   past_target: %i    is_past_target: %i   is_past_using_xy: %i      fake_xy(%.2f, %.2f, %.2f)\n", odom_x_get(), odom_y_get(), odom_theta_get(), xyPID.target_get(), current_a_odomPID.target_get(), dir, flipped, past_target, (int)is_past_target(odom_target, odom_pose_get()), is_past_target_using_xy, fake_x, fake_y, util::to_deg(fake_angle));
-  // printf("xy(%.2f, %.2f, %.2f)   xyPID: %.2f   aPID: %.2f   ptf:(%.2f, %.2f)\n", odom_x_get(), odom_y_get(), odom_theta_get(), xyPID.error, current_a_odomPID.error, ptf.x, ptf.y);
+  // printf("xy(%.2f, %.2f, %.2f)   xyPID: %.2f   aPID: %.2f   ptf:(%.2f, %.2f)   xy/a(%.2f, %.2f)   lr(%.2f, %.2f)   fake xy: %.2f\n", odom_x_get(), odom_y_get(), odom_theta_get(), xyPID.error, current_a_odomPID.error, ptf.x, ptf.y, xy_out, a_out, l_out, r_out, new_current_fake);
 
   // Set motors
   if (drive_toggle)

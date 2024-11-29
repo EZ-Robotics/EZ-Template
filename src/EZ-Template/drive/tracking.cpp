@@ -15,17 +15,16 @@ void Drive::odom_x_set(double x) {
   l_pose.x = x;
   r_pose.x = x;
   central_pose.x = x;
+  was_odom_just_set = true;
 }
 void Drive::odom_y_set(double y) {
   odom_current.y = y;
   l_pose.y = y;
   r_pose.y = y;
   central_pose.y = y;
+  was_odom_just_set = true;
 }
-void Drive::odom_theta_set(double a) {
-  drive_angle_set(a);
-  central_pose.theta = a;
-}
+void Drive::odom_theta_set(double a) { drive_angle_set(a); }
 void Drive::odom_x_set(okapi::QLength p_x) { odom_x_set(p_x.convert(okapi::inch)); }
 void Drive::odom_y_set(okapi::QLength p_y) { odom_y_set(p_y.convert(okapi::inch)); }
 void Drive::odom_theta_set(okapi::QAngle p_a) { odom_theta_set(p_a.convert(okapi::degree)); }
@@ -211,6 +210,15 @@ void Drive::ez_tracking_task() {
   }
 
   odom_current.theta = drive_imu_get();
+
+  // This is used for PID as a "current" sensor value
+  // what this value actually is doesn't matter, it just needs to move with the correct sign
+  xy_current_fake = fabs(is_past_target({0.0, 0.0}, odom_pose_get()));
+  if (!was_odom_just_set)
+    xy_delta_fake = fabs(xy_current_fake - xy_last_fake);
+  else
+    was_odom_just_set = false;
+  xy_last_fake = xy_current_fake;
 
   // printf("odom_ime_track_width_left %f   l_ %f   r_ %f   t_current %f\n", odom_ime_track_width_left, r_, t_, t_current);
 

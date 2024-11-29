@@ -146,9 +146,7 @@ double clamp(double input, double max, double min) {
   return input;
 }
 
-double clamp(double input, double max) {
-  return clamp(input, fabs(max), -fabs(max));
-}
+double clamp(double input, double max) { return clamp(input, fabs(max), -fabs(max)); }
 
 // Conversions from deg to rad and rad to deg
 double to_deg(double input) { return input * (180 / M_PI); }
