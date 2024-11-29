@@ -280,6 +280,7 @@ void Drive::pid_swing_set(e_swing type, double target, int speed, int opposite_s
   current_angle_behavior = behavior;
 
   // Compute new turn target based on new angle
+  target = flip_angle_target(target);
   target = new_turn_target_compute(target, drive_imu_get(), current_angle_behavior);
 
   // Print targets

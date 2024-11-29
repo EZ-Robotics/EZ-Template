@@ -30,6 +30,13 @@ ez::e_angle_behavior Drive::pid_turn_behavior_get() { return default_turn_type; 
 void Drive::slew_turn_set(bool slew_on) { global_turn_slew_enabled = slew_on; }
 bool Drive::slew_turn_get() { return global_turn_slew_enabled; }
 
+double Drive::flip_angle_target(double target) {
+  int flip_theta = theta_flipped ? -1 : 1;
+  double new_target = target;
+  new_target *= flip_theta;
+  return new_target;
+}
+
 /////
 // Set turn PID basic wrappers
 /////
@@ -116,6 +123,7 @@ void Drive::pid_turn_set(double target, int speed, e_angle_behavior behavior, bo
   current_angle_behavior = behavior;
 
   // Compute new turn target based on new angle
+  target = flip_angle_target(target);
   target = new_turn_target_compute(target, drive_imu_get(), current_angle_behavior);
 
   // Print targets
