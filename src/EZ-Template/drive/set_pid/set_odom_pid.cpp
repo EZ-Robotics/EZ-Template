@@ -85,7 +85,7 @@ void Drive::pid_odom_set(double target, int speed) {
 }
 void Drive::pid_odom_set(double target, int speed, bool slew_on) {
   drive_directions fwd_or_rev = util::sgn(target) >= 0 ? fwd : rev;
-  pose target_pose = util::vector_off_point(target, odom_pose_get());
+  pose target_pose = util::vector_off_point(target, {odom_x_get(), odom_y_get(), headingPID.target_get()});
   odom path = {target_pose, fwd_or_rev, speed};
 
   xyPID.timers_reset();
@@ -390,6 +390,8 @@ void Drive::raw_pid_odom_ptp_set(odom imovement, bool slew_on) {
   if (current_slew_on && imovement.max_xy_speed > pid_speed_max_get() && slew_odom_reenabled()) {
     slew_will_enable_later = true;
   }
+  target = new_turn_target_compute(target, odom_imu_start, current_angle_behavior);
+  headingPID.target_set(target);
 
   // Set targets
   odom_target.x = imovement.target.x;
