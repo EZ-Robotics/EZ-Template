@@ -119,14 +119,13 @@ void autonomous() {
   chassis.drive_sensor_reset();                // Reset drive sensors to 0
   chassis.odom_pose_set({0_in, 0_in, 0_deg});  // Set the current position, you can start at a specific position with this
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);   // Set motors to hold.  This helps autonomous consistency
-  chassis.drive_width_set(12.0_in);            // You can measure this with a tape measure
 
   /*
   Odometry and Pure Pursuit are not magic
 
-  It is possible to get perfectly consistent results without trackers,
-  but it is also possible to have extremely inconsistent results without trackers.
-  When you don't use trackers, you need to:
+  It is possible to get perfectly consistent results without tracking wheels,
+  but it is also possible to have extremely inconsistent results without tracking wheels.
+  When you don't use tracking wheels, you need to:
    - avoid wheel slip
    - avoid wheelies
    - avoid throwing momentum around (super harsh turns, like in the example below)
@@ -134,23 +133,26 @@ void autonomous() {
   to be consistent
   */
 
-  // Drive to 0, 24
-  chassis.pid_odom_set({{0_in, 24_in}, fwd, 110},
+  // Drive to 0, 24 and pass through -3, 8 and 0, 16 on the way, with slew
+  chassis.pid_odom_set({{{6_in, 10_in}, fwd, 110},
+                        {{0_in, 20_in}, fwd, 110},
+                        {{0_in, 30_in}, fwd, 110}},
                        true);
   chassis.pid_wait();
 
-  // Turn to face 24, 24
-  chassis.pid_turn_set({24_in, 24_in}, fwd, 110,
+  // Turn to face -48, 48 with slew
+  chassis.pid_turn_set({-36_in, 48_in}, fwd, 110,
                        true);
   chassis.pid_wait();
 
-  // Drive to 24, 24
-  chassis.pid_odom_set({{24_in, 24_in}, fwd, 110},
+  // Turn to face 48, 48 with slew
+  chassis.pid_turn_set({36_in, 48_in}, fwd, 110,
                        true);
   chassis.pid_wait();
 
-  // Drive backwards through 0, 24 and stop at 0, 0
-  chassis.pid_odom_set({{{0_in, 24_in}, rev, 110},
+  // Drive to 0, 0 and pass through 3, 16 and 0, 8 on the way, with slew
+  chassis.pid_odom_set({{{-6_in, 20_in}, rev, 110},
+                        {{0_in, 10_in}, rev, 110},
                         {{0_in, 0_in}, rev, 110}},
                        true);
   chassis.pid_wait();
