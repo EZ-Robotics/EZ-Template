@@ -2364,12 +2364,28 @@ class Drive {
   void pid_wait_until_point(pose target);
 
   /**
+   * Lock the code in a while loop until this point has been passed, with okapi units.
+   *
+   * \param target
+   *        {x, y}  a pose with units for the robot to pass through before the while loop is released
+   */
+  void pid_wait_until_point(united_pose target);
+
+  /**
    * Lock the code in a while loop until this point has been passed.  Wrapper for pid_wait_until_point
    *
    * \param target
    *        {x, y}  a pose for the robot to pass through before the while loop is released
    */
   void pid_wait_until(pose target);
+
+  /**
+   * Lock the code in a while loop until this point has been passed, with okapi units.  Wrapper for pid_wait_until_point
+   *
+   * \param target
+   *        {x, y}  a pose with units for the robot to pass through before the while loop is released
+   */
+  void pid_wait_until(united_pose target);
 
   /**
    * Autonomous interference detection.  Returns true when interfered, and false when nothing happened.

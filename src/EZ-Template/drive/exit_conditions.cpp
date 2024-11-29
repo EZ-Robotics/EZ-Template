@@ -386,9 +386,9 @@ void Drive::pid_wait_until_point(pose target) {
   }
 }
 
-void Drive::pid_wait_until(pose target) {
-  pid_wait_until_point(target);
-}
+void Drive::pid_wait_until_point(united_pose target) { pid_wait_until_point(util::united_pose_to_pose(target)); }
+void Drive::pid_wait_until(pose target) { pid_wait_until_point(target); }
+void Drive::pid_wait_until(united_pose target) { pid_wait_until_point(target); }
 
 // wait for pp
 void Drive::pid_wait_until_index(int index) {
