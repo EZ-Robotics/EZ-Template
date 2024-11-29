@@ -209,6 +209,12 @@ void Drive::ez_tracking_task() {
 
   odom_current.theta = drive_imu_get();
 
+  // This is used for PID as a "current" sensor value
+  // what this value actually is doesn't matter, it just needs to move with the correct sign
+  xy_current_fake = fabs(is_past_target({0.0, 0.0}, odom_pose_get()));
+  xy_delta_fake = fabs(xy_current_fake - xy_last_fake);
+  xy_last_fake = xy_current_fake;
+
   // printf("odom_ime_track_width_left %f   l_ %f   r_ %f   t_current %f\n", odom_ime_track_width_left, r_, t_, t_current);
 
   // printf("left (%.2f, %.2f)", l_pose.x, l_pose.y);

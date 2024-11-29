@@ -3153,6 +3153,10 @@ class Drive {
   pose l_pose{0.0, 0.0, 0.0};
   pose r_pose{0.0, 0.0, 0.0};
   pose central_pose{0.0, 0.0, 0.0};
+  double xy_current_fake = 0.0;
+  double xy_last_fake = 0.0;
+  double xy_delta_fake = 0.0;
+  double new_current_fake = 0.0;
   std::pair<float, float> decide_vert_sensor(ez::tracking_wheel* tracker, bool is_tracker_enabled, float ime = 0.0, float ime_track = 0.0);
   pose solve_xy_vert(float p_track_width, float current_t, float delta_vert, float delta_t);
   pose solve_xy_horiz(float p_track_width, float current_t, float delta_horiz, float delta_t);
