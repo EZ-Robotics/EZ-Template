@@ -391,7 +391,7 @@ void Drive::pid_wait_until(pose target) { pid_wait_until_point(target); }
 void Drive::pid_wait_until(united_pose target) { pid_wait_until_point(target); }
 
 // wait for pp
-void Drive::pid_wait_until_index(int index) {
+void Drive::pid_wait_until_index_started(int index) {
   // Let the PID run at least 1 iteration
   pros::delay(util::DELAY_TIME);
 
@@ -418,8 +418,13 @@ void Drive::pid_wait_until_index(int index) {
 
     pros::delay(util::DELAY_TIME);
   }
+}
 
-  pid_wait_until_point(pp_movements[injected_pp_index[index]].target);
+void Drive::pid_wait_until_index(int index) {
+  pid_wait_until_index_started(index);
+  index += 1;
+  pose target = pp_movements[injected_pp_index[index]].target;
+  pid_wait_until_point(target);
 }
 
 // Pid wait, but quickly :)
