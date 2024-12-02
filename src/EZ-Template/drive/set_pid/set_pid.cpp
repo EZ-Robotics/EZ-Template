@@ -61,9 +61,9 @@ void Drive::pid_targets_reset() {
   backward_swingPID.target_set(0);
 }
 
-void Drive::drive_mode_set(e_mode p_mode) {
+void Drive::drive_mode_set(e_mode p_mode, bool stop_drive) {
   mode = p_mode;
-  if (mode == DISABLE)
+  if (mode == DISABLE && stop_drive)
     private_drive_set(0, 0);
 }
 e_mode Drive::drive_mode_get() { return mode; }
