@@ -110,13 +110,15 @@ class Drive {
    */
   PID headingPID;
   PID turnPID;
-  PID forward_drivePID;
   PID leftPID;
   PID rightPID;
+  PID forward_drivePID;
   PID backward_drivePID;
+  PID fwd_rev_drivePID;
   PID swingPID;
   PID forward_swingPID;
   PID backward_swingPID;
+  PID fwd_rev_swingPID;
   PID xyPID;
   PID current_a_odomPID;
   PID boomerangPID;
@@ -338,7 +340,7 @@ class Drive {
   /**
    * Sets current mode of drive.
    */
-  void drive_mode_set(e_mode p_mode);
+  void drive_mode_set(e_mode p_mode, bool stop_drive = true);
 
   /**
    * Returns current mode of drive.
@@ -626,12 +628,12 @@ class Drive {
    * Flips the rotation axis
    *
    * \param flip
-   *        true means clockwise is positive, false means counterclockwise is positive
+   *        true means counterclockwise is positive, false means clockwise is positive
    */
   void odom_theta_flip(bool flip = true);
 
   /**
-   * Checks if the rotation axis is flipped.  True means clockwise is positive, false means counterclockwise is positive
+   * Checks if the rotation axis is flipped.  True means counterclockwise is positive, false means clockwise is positive
    */
   bool odom_theta_direction_get();
 
@@ -2363,13 +2365,13 @@ class Drive {
    */
   void pid_wait_until_index_started(int index);
 
-      /**
-       * Lock the code in a while loop until this point has been passed.
-       *
-       * \param target
-       *        {x, y}  a pose for the robot to pass through before the while loop is released
-       */
-      void pid_wait_until_point(pose target);
+  /**
+   * Lock the code in a while loop until this point has been passed.
+   *
+   * \param target
+   *        {x, y}  a pose for the robot to pass through before the while loop is released
+   */
+  void pid_wait_until_point(pose target);
 
   /**
    * Lock the code in a while loop until this point has been passed, with okapi units.
@@ -3089,15 +3091,40 @@ class Drive {
    */
   double pid_tuner_increment_start_i_get();
 
+  /**
+   * Enables the full PID tuner with unique fwd/rev constants
+   *
+   * \param enable
+   *        bool, true will enable the full PID tuner, false will use the simplified PID tuner
+   */
+  void pid_tuner_full_enable(bool enable);
+
+  /**
+   * Returns if the full PID tuner with unique fwd/rev constants is enabled.
+   * True means the full PID tuner is enabled, false means the simplified PID tuner is enabled.
+   */
+  bool pid_tuner_full_enabled();
+
   struct const_and_name {
     std::string name = "";
     PID::Constants* consts;
   };
 
   /**
-   * Vector used for PID Tuner
+   * Vector used for a simplified PID Tuner
    */
   std::vector<const_and_name> pid_tuner_pids = {
+      {"Drive PID Constants", &fwd_rev_drivePID.constants},
+      {"Odom Angular PID Constants", &odom_angularPID.constants},
+      {"Boomerang Angular PID Constants", &boomerangPID.constants},
+      {"Heading PID Constants", &headingPID.constants},
+      {"Turn PID Constants", &turnPID.constants},
+      {"Swing PID Constants", &fwd_rev_swingPID.constants}};
+
+  /**
+   * Vector used for the full PID Tuner
+   */
+  std::vector<const_and_name> pid_tuner_full_pids = {
       {"Drive Forward PID Constants", &forward_drivePID.constants},
       {"Drive Backward PID Constants", &backward_drivePID.constants},
       {"Odom Angular PID Constants", &odom_angularPID.constants},
@@ -3138,6 +3165,8 @@ class Drive {
   double odom_ime_track_width_right = 0.0;
 
  private:
+  bool is_full_pid_tuner_enabled = false;
+  std::vector<const_and_name>* used_pid_tuner_pids;
   double opcontrol_speed_max = 127.0;
   bool arcade_vector_scaling = false;
   // odom privates
