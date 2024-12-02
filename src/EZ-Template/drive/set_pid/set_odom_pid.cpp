@@ -403,19 +403,24 @@ void Drive::raw_pid_odom_ptp_set(odom imovement, bool slew_on) {
   odom_target.y = imovement.target.y;
 
   // Change constants if we're going fwd or rev
-  PID::Constants pid_consts;
+  PID *new_drive_pid;
   slew::Constants slew_consts;
   if (current_drive_direction == REV) {
-    pid_consts = backward_drivePID.constants_get();
+    new_drive_pid = &backward_drivePID;
     slew_consts = slew_backward.constants_get();
 
   } else {
-    pid_consts = forward_drivePID.constants_get();
+    new_drive_pid = &forward_drivePID;
     slew_consts = slew_forward.constants_get();
   }
 
+  // Prioritize custom fwd/rev constants.  Otherwise, use the same for fwd and rev
+  if (fwd_rev_drivePID.constants_set_check() && !new_drive_pid->constants_set_check())
+    new_drive_pid = &fwd_rev_drivePID;
+
   // Set constants
-  xyPID.constants_set(pid_consts.kp, pid_consts.ki, pid_consts.kd, pid_consts.start_i);
+  PID::Constants pid_drive_consts = new_drive_pid->constants_get();
+  xyPID.constants_set(pid_drive_consts.kp, pid_drive_consts.ki, pid_drive_consts.kd, pid_drive_consts.start_i);
 
   // Set max speed
   pid_speed_max_set(imovement.max_xy_speed);
