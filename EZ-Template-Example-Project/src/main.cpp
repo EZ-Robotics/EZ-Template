@@ -122,27 +122,14 @@ void autonomous() {
   to be consistent
   */
 
-  // Drive to 0, 30 and pass through 6, 10 and 0, 20 on the way, with slew
-  chassis.pid_odom_set({{{6_in, 10_in}, fwd, 110},
-                        {{0_in, 20_in}, fwd, 110},
-                        {{0_in, 30_in}, fwd, 110}},
+  // Drive to 12, 24 and pass through -4, 8 on the way
+  chassis.pid_odom_set({{{-4_in, 8_in}, fwd, 110},
+                        {{12_in, 24_in}, fwd, 110}},
                        true);
   chassis.pid_wait();
 
-  // Turn to face -36, 48 with slew
-  chassis.pid_turn_set({-36_in, 48_in}, fwd, 110,
-                       true);
-  chassis.pid_wait();
-
-  // Turn to face 36, 48 with slew
-  chassis.pid_turn_set({36_in, 48_in}, fwd, 110,
-                       true);
-  chassis.pid_wait();
-
-  // Drive to 0, 0 and pass through -6, 20 and 0, 10 on the way, with slew
-  chassis.pid_odom_set({{{-6_in, 20_in}, rev, 110},
-                        {{0_in, 10_in}, rev, 110},
-                        {{0_in, 0_in}, rev, 110}},
+  // Drive to 0, 0 but make sure the final heading is 0 deg
+  chassis.pid_odom_set({{0_in, 0_in, 0_deg}, rev, 110},
                        true);
   chassis.pid_wait();
 
@@ -215,6 +202,10 @@ void ez_template_etxras() {
     // Remove all blank pages when connected to a comp switch
     if (ez::as::page_blank_amount() > 0)
       ez::as::page_blank_remove_all();
+
+    // Disable PID tuner
+    if (chassis.pid_tuner_enabled())
+      chassis.pid_tuner_disable();
   }
 }
 

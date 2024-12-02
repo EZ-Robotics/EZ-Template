@@ -199,8 +199,8 @@ void Drive::drive_defaults_set() {
   pid_heading_constants_set(11.0, 0.0, 20.0);
   pid_turn_constants_set(3.0, 0.05, 20.0, 15.0);
   pid_swing_constants_set(6.0, 0.0, 65.0);
-  pid_odom_angular_constants_set(4.7, 0.0, 60.0);
-  pid_odom_boomerang_constants_set(3.5, 0.0, 35.0);
+  pid_odom_angular_constants_set(6.5, 0.0, 52.5);
+  pid_odom_boomerang_constants_set(5.8, 0.0, 32.5);
   pid_turn_min_set(30);
   pid_swing_min_set(30);
 
