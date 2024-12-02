@@ -17,8 +17,9 @@ int Drive::pid_swing_min_get() { return swing_min; }
 
 // PID Constants
 void Drive::pid_swing_constants_set(double p, double i, double d, double p_start_i) {
-  pid_swing_constants_forward_set(p, i, d, p_start_i);
-  pid_swing_constants_backward_set(p, i, d, p_start_i);
+  pid_swing_constants_forward_set(0.0, 0.0, 0.0, 0.0);
+  pid_swing_constants_backward_set(0.0, 0.0, 0.0, 0.0);
+  fwd_rev_swingPID.constants_set(p, i, d, p_start_i);
 }
 void Drive::pid_swing_constants_forward_set(double p, double i, double d, double p_start_i) {
   forward_swingPID.constants_set(p, i, d, p_start_i);
@@ -295,31 +296,41 @@ void Drive::pid_swing_set(e_swing type, double target, int speed, int opposite_s
   int direction = util::sgn((target - chain_sensor_start) * side);
 
   // Set constants according to the robots direction
-  PID::Constants pid_consts;
-  PID::Constants pid_swing_consts;
+
+  PID *new_drive_pid;
+  PID *new_swing_pid;
   slew::Constants slew_consts;
 
   if (direction == -1) {
-    pid_consts = backward_drivePID.constants_get();
-    pid_swing_consts = backward_swingPID.constants_get();
+    new_drive_pid = &backward_drivePID;
+    new_swing_pid = &backward_swingPID;
     slew_consts = slew_swing_backward.constants_get();
     slew_swing_using_angle = slew_swing_rev_using_angle;
     motion_chain_backward = true;
   } else {
-    pid_consts = forward_drivePID.constants_get();
-    pid_swing_consts = forward_swingPID.constants_get();
+    new_drive_pid = &forward_drivePID;
+    new_swing_pid = &forward_swingPID;
     slew_consts = slew_swing_forward.constants_get();
     slew_swing_using_angle = slew_swing_fwd_using_angle;
     motion_chain_backward = false;
   }
 
-  // Set targets for the side that isn't moving
+  // Prioritize custom fwd/rev constants.  Otherwise, use the same for fwd and rev
+  if (fwd_rev_drivePID.constants_set_check() && (!new_drive_pid->constants_set_check()))
+    new_drive_pid = &fwd_rev_drivePID;
+  if (fwd_rev_swingPID.constants_set_check() && !new_swing_pid->constants_set_check())
+    new_swing_pid = &fwd_rev_swingPID;
+
+  PID::Constants pid_drive_consts = new_drive_pid->constants_get();
+  PID::Constants pid_swing_consts = new_swing_pid->constants_get();
   swingPID.constants_set(pid_swing_consts.kp, pid_swing_consts.ki, pid_swing_consts.kd, pid_swing_consts.start_i);
-  leftPID.constants_set(pid_consts.kp, pid_consts.ki, pid_consts.kd, pid_consts.start_i);
-  rightPID.constants_set(pid_consts.kp, pid_consts.ki, pid_consts.kd, pid_consts.start_i);
+  leftPID.constants_set(pid_drive_consts.kp, pid_drive_consts.ki, pid_drive_consts.kd, pid_drive_consts.start_i);
+  rightPID.constants_set(pid_drive_consts.kp, pid_drive_consts.ki, pid_drive_consts.kd, pid_drive_consts.start_i);
+  slew_swing.constants_set(slew_consts.distance_to_travel, slew_consts.min_speed);
+
+  // Set targets for the side that isn't moving
   leftPID.target_set(drive_sensor_left());
   rightPID.target_set(drive_sensor_right());
-  slew_swing.constants_set(slew_consts.distance_to_travel, slew_consts.min_speed);
 
   // Set PID targets
   swingPID.target_set(target);
