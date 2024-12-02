@@ -12,6 +12,10 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 // Is the PID Tuner enabled?
 bool Drive::pid_tuner_enabled() { return pid_tuner_on; }
 
+// Enable/disabling the full PID tuner
+void Drive::pid_tuner_full_enable(bool enable) { is_full_pid_tuner_enabled = enable; }
+bool Drive::pid_tuner_full_enabled() { return is_full_pid_tuner_enabled; }
+
 // Toggle printing to terminal
 void Drive::pid_tuner_print_terminal_set(bool input) { pid_tuner_terminal_b = input; }
 bool Drive::pid_tuner_print_terminal_enabled() { return pid_tuner_terminal_b; }
@@ -47,6 +51,11 @@ bool Drive::pid_tuner_print_brain_enabled() { return pid_tuner_lcd_b; }
 void Drive::pid_tuner_enable() {
   pid_tuner_brain_init();
 
+  if (pid_tuner_full_enabled())
+    used_pid_tuner_pids = &pid_tuner_full_pids;
+  else
+    used_pid_tuner_pids = &pid_tuner_pids;
+
   // Keep track of the last state of this so we can set it back once PID Tuner is disables
   last_controller_curve_state = opcontrol_curve_buttons_toggle_get();
   opcontrol_curve_buttons_toggle(false);
@@ -79,11 +88,11 @@ void Drive::pid_tuner_toggle() {
 void Drive::pid_tuner_print() {
   if (!pid_tuner_on) return;
 
-  std::string name = pid_tuner_pids[column].name + "\n";
-  std::string kp = "kp: " + std::to_string(pid_tuner_pids[column].consts->kp);
-  std::string ki = "ki: " + std::to_string(pid_tuner_pids[column].consts->ki);
-  std::string kd = "kd: " + std::to_string(pid_tuner_pids[column].consts->kd);
-  std::string starti = "start i: " + std::to_string(pid_tuner_pids[column].consts->start_i);
+  std::string name = used_pid_tuner_pids->at(column).name + "\n";
+  std::string kp = "kp: " + std::to_string(used_pid_tuner_pids->at(column).consts->kp);
+  std::string ki = "ki: " + std::to_string(used_pid_tuner_pids->at(column).consts->ki);
+  std::string kd = "kd: " + std::to_string(used_pid_tuner_pids->at(column).consts->kd);
+  std::string starti = "start i: " + std::to_string(used_pid_tuner_pids->at(column).consts->start_i);
 
   kp = row == 0 ? kp + arrow : kp + "\n";
   ki = row == 1 ? ki + arrow : ki + "\n";
@@ -112,24 +121,24 @@ void Drive::pid_tuner_value_modify(float p, float i, float d, float start) {
 
   switch (row) {
     case 0:
-      pid_tuner_pids[column].consts->kp += p;
-      if (pid_tuner_pids[column].consts->kp < 0.0)
-        pid_tuner_pids[column].consts->kp = 0.0;
+      used_pid_tuner_pids->at(column).consts->kp += p;
+      if (used_pid_tuner_pids->at(column).consts->kp < 0.0)
+        used_pid_tuner_pids->at(column).consts->kp = 0.0;
       break;
     case 1:
-      pid_tuner_pids[column].consts->ki += i;
-      if (pid_tuner_pids[column].consts->ki < 0.0)
-        pid_tuner_pids[column].consts->ki = 0.0;
+      used_pid_tuner_pids->at(column).consts->ki += i;
+      if (used_pid_tuner_pids->at(column).consts->ki < 0.0)
+        used_pid_tuner_pids->at(column).consts->ki = 0.0;
       break;
     case 2:
-      pid_tuner_pids[column].consts->kd += d;
-      if (pid_tuner_pids[column].consts->kd < 0.0)
-        pid_tuner_pids[column].consts->kd = 0.0;
+      used_pid_tuner_pids->at(column).consts->kd += d;
+      if (used_pid_tuner_pids->at(column).consts->kd < 0.0)
+        used_pid_tuner_pids->at(column).consts->kd = 0.0;
       break;
     case 3:
-      pid_tuner_pids[column].consts->start_i += start;
-      if (pid_tuner_pids[column].consts->start_i < 0.0)
-        pid_tuner_pids[column].consts->start_i = 0.0;
+      used_pid_tuner_pids->at(column).consts->start_i += start;
+      if (used_pid_tuner_pids->at(column).consts->start_i < 0.0)
+        used_pid_tuner_pids->at(column).consts->start_i = 0.0;
       break;
     default:
       break;
@@ -162,13 +171,13 @@ void Drive::pid_tuner_iterate() {
   // Up / Down for Rows
   if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_RIGHT)) {
     column++;
-    if (column > pid_tuner_pids.size() - 1)
+    if (column > used_pid_tuner_pids->size() - 1)
       column = 0;
     pid_tuner_print();
   } else if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_LEFT)) {
     column--;
     if (column < 0)
-      column = pid_tuner_pids.size() - 1;
+      column = used_pid_tuner_pids->size() - 1;
     pid_tuner_print();
   }
 
