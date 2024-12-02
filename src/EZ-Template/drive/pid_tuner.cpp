@@ -113,15 +113,23 @@ void Drive::pid_tuner_value_modify(float p, float i, float d, float start) {
   switch (row) {
     case 0:
       pid_tuner_pids[column].consts->kp += p;
+      if (pid_tuner_pids[column].consts->kp < 0.0)
+        pid_tuner_pids[column].consts->kp = 0.0;
       break;
     case 1:
       pid_tuner_pids[column].consts->ki += i;
+      if (pid_tuner_pids[column].consts->ki < 0.0)
+        pid_tuner_pids[column].consts->ki = 0.0;
       break;
     case 2:
       pid_tuner_pids[column].consts->kd += d;
+      if (pid_tuner_pids[column].consts->kd < 0.0)
+        pid_tuner_pids[column].consts->kd = 0.0;
       break;
     case 3:
       pid_tuner_pids[column].consts->start_i += start;
+      if (pid_tuner_pids[column].consts->start_i < 0.0)
+        pid_tuner_pids[column].consts->start_i = 0.0;
       break;
     default:
       break;

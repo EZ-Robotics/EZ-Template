@@ -37,8 +37,9 @@ bool Drive::slew_drive_backward_get() { return global_backward_drive_slew_enable
 
 // PID Constants
 void Drive::pid_drive_constants_set(double p, double i, double d, double p_start_i) {
-  pid_drive_constants_forward_set(p, i, d, p_start_i);
-  pid_drive_constants_backward_set(p, i, d, p_start_i);
+  pid_drive_constants_forward_set(0.0, 0.0, 0.0, 0.0);
+  pid_drive_constants_backward_set(0.0, 0.0, 0.0, 0.0);
+  fwd_rev_drivePID.constants_set(p, i, d, p_start_i);
 }
 void Drive::pid_drive_constants_forward_set(double p, double i, double d, double p_start_i) {
   forward_drivePID.constants_set(p, i, d, p_start_i);
@@ -121,21 +122,27 @@ void Drive::pid_drive_set(double target, int speed, bool slew_on, bool toggle_he
   l_target_encoder = l_start + target;
   r_target_encoder = r_start + target;
 
-  PID::Constants pid_consts;
+  PID *new_drive_pid;
   slew::Constants slew_consts;
 
   // Figure out if going forward or backward and set constants accordingly
   if (l_target_encoder < l_start && r_target_encoder < r_start) {
-    pid_consts = backward_drivePID.constants_get();
+    new_drive_pid = &backward_drivePID;
     slew_consts = slew_backward.constants_get();
     motion_chain_backward = true;
   } else {
-    pid_consts = forward_drivePID.constants_get();
+    new_drive_pid = &forward_drivePID;
     slew_consts = slew_forward.constants_get();
     motion_chain_backward = false;
   }
-  leftPID.constants_set(pid_consts.kp, pid_consts.ki, pid_consts.kd, pid_consts.start_i);
-  rightPID.constants_set(pid_consts.kp, pid_consts.ki, pid_consts.kd, pid_consts.start_i);
+
+  // Prioritize custom fwd/rev constants.  Otherwise, use the same for fwd and rev
+  if (fwd_rev_drivePID.constants_set_check() && !new_drive_pid->constants_set_check())
+    new_drive_pid = &fwd_rev_drivePID;
+    
+  PID::Constants pid_drive_consts = new_drive_pid->constants_get();
+  leftPID.constants_set(pid_drive_consts.kp, pid_drive_consts.ki, pid_drive_consts.kd, pid_drive_consts.start_i);
+  rightPID.constants_set(pid_drive_consts.kp, pid_drive_consts.ki, pid_drive_consts.kd, pid_drive_consts.start_i);
   slew_left.constants_set(slew_consts.distance_to_travel, slew_consts.min_speed);
   slew_right.constants_set(slew_consts.distance_to_travel, slew_consts.min_speed);
 

@@ -123,6 +123,11 @@ class PID {
   Constants constants_get();
 
   /**
+   * Returns true if PID constants are set, returns false if they're all 0
+   */
+  bool constants_set_check();
+
+  /**
    * Resets all variables to 0.  This does not reset constants.
    */
   void variables_reset();

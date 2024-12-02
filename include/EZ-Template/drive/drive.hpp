@@ -110,13 +110,15 @@ class Drive {
    */
   PID headingPID;
   PID turnPID;
-  PID forward_drivePID;
   PID leftPID;
   PID rightPID;
+  PID forward_drivePID;
   PID backward_drivePID;
+  PID fwd_rev_drivePID;
   PID swingPID;
   PID forward_swingPID;
   PID backward_swingPID;
+  PID fwd_rev_swingPID;
   PID xyPID;
   PID current_a_odomPID;
   PID boomerangPID;
@@ -2363,13 +2365,13 @@ class Drive {
    */
   void pid_wait_until_index_started(int index);
 
-      /**
-       * Lock the code in a while loop until this point has been passed.
-       *
-       * \param target
-       *        {x, y}  a pose for the robot to pass through before the while loop is released
-       */
-      void pid_wait_until_point(pose target);
+  /**
+   * Lock the code in a while loop until this point has been passed.
+   *
+   * \param target
+   *        {x, y}  a pose for the robot to pass through before the while loop is released
+   */
+  void pid_wait_until_point(pose target);
 
   /**
    * Lock the code in a while loop until this point has been passed, with okapi units.
@@ -3098,14 +3100,12 @@ class Drive {
    * Vector used for PID Tuner
    */
   std::vector<const_and_name> pid_tuner_pids = {
-      {"Drive Forward PID Constants", &forward_drivePID.constants},
-      {"Drive Backward PID Constants", &backward_drivePID.constants},
+      {"Drive PID Constants", &fwd_rev_drivePID.constants},
       {"Odom Angular PID Constants", &odom_angularPID.constants},
       {"Boomerang Angular PID Constants", &boomerangPID.constants},
       {"Heading PID Constants", &headingPID.constants},
       {"Turn PID Constants", &turnPID.constants},
-      {"Swing Forward PID Constants", &forward_swingPID.constants},
-      {"Swing Backward PID Constants", &backward_swingPID.constants}};
+      {"Swing PID Constants", &fwd_rev_swingPID.constants}};
 
   /**
    * Sets the max speed for user control

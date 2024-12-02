@@ -41,6 +41,12 @@ void PID::constants_set(double p, double i, double d, double p_start_i) {
   constants.start_i = p_start_i;
 }
 
+bool PID::constants_set_check() {
+  if (constants.kp == 0.0 && constants.ki == 0.0 && constants.kd == 0.0 && constants.start_i == 0.0)
+    return false;
+  return true;
+}
+
 // Set exit condition timeouts
 void PID::exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout) {
   exit.small_exit_time = p_small_exit_time;
