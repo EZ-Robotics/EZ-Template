@@ -626,12 +626,12 @@ class Drive {
    * Flips the rotation axis
    *
    * \param flip
-   *        true means clockwise is positive, false means counterclockwise is positive
+   *        true means counterclockwise is positive, false means clockwise is positive
    */
   void odom_theta_flip(bool flip = true);
 
   /**
-   * Checks if the rotation axis is flipped.  True means clockwise is positive, false means counterclockwise is positive
+   * Checks if the rotation axis is flipped.  True means counterclockwise is positive, false means clockwise is positive
    */
   bool odom_theta_direction_get();
 
