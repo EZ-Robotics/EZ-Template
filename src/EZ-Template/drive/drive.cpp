@@ -267,7 +267,7 @@ void Drive::private_drive_set(int left, int right) {
 }
 
 void Drive::drive_set(int left, int right) {
-  drive_mode_set(DISABLE);
+  drive_mode_set(DISABLE, false);
   private_drive_set(left, right);
 }
 

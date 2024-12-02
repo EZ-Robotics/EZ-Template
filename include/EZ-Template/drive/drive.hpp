@@ -338,7 +338,7 @@ class Drive {
   /**
    * Sets current mode of drive.
    */
-  void drive_mode_set(e_mode p_mode);
+  void drive_mode_set(e_mode p_mode, bool stop_drive = true);
 
   /**
    * Returns current mode of drive.
