@@ -3,6 +3,10 @@ title: versions
 ---
 
 # 3.x
+#### [v3.2.0-beta.8](https://github.com/EZ-Robotics/EZ-Template/releases/tag/v3.2.0-beta.8)
+#### [v3.2.0-beta.7](https://github.com/EZ-Robotics/EZ-Template/releases/tag/v3.2.0-beta.7)
+#### [v3.2.0-beta.6](https://github.com/EZ-Robotics/EZ-Template/releases/tag/v3.2.0-beta.6)
+#### [v3.2.0-beta.5](https://github.com/EZ-Robotics/EZ-Template/releases/tag/v3.2.0-beta.5)
 #### [v3.2.0-beta.4](https://github.com/EZ-Robotics/EZ-Template/releases/tag/v3.2.0-beta.4)
 #### [v3.2.0-beta.3](https://github.com/EZ-Robotics/EZ-Template/releases/tag/v3.2.0-beta.3)
 #### [v3.2.0-beta.2](https://github.com/EZ-Robotics/EZ-Template/releases/tag/v3.2.0-beta.2)
