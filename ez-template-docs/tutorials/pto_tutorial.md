@@ -32,8 +32,8 @@ void pto_toggle_intake(bool toggle) {
 
 void set_intake(int input) {
   if (!pto_intake_enabled) return;
-  chassis.left_motors[LEFT_INTAKE].move(input;
-  chassis.right_motors[RIGHT_INTAKE].move(input;
+  chassis.left_motors[LEFT_INTAKE].move(input);
+  chassis.right_motors[RIGHT_INTAKE].move(input);
 }
 
 // User control code
