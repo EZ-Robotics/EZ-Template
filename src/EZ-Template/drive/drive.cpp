@@ -4,11 +4,9 @@ License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-#include "drive.hpp"
-
 #include <list>
 
-#include "EZ-Template/sdcard.hpp"
+#include "EZ-Template/api.hpp"
 #include "okapi/api/units/QAngle.hpp"
 #include "pros/llemu.hpp"
 #include "pros/screen.hpp"
@@ -379,6 +377,7 @@ bool Drive::drive_imu_calibrate(bool run_loading_animation) {
       }
       if (iter >= 3000) {
         printf("No IMU plugged in, (took %d ms to realize that)\n", iter);
+        imu_calibrate_weird = true;
         return false;
       }
     }
@@ -386,7 +385,14 @@ bool Drive::drive_imu_calibrate(bool run_loading_animation) {
   }
   printf("IMU is done calibrating (took %d ms)\n", iter);
   imu_calibration_complete = true;
+  imu_calibrate_weird = iter > 2000 ? true : false;
   return true;
+}
+
+bool Drive::drive_imu_calibrated() {
+  if (imu_calibration_complete && !imu_calibrate_weird)
+    return true;
+  return false;
 }
 
 // Brake modes
