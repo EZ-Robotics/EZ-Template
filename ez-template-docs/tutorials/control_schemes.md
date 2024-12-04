@@ -65,7 +65,7 @@ chassis.opcontrol_arcade_flipped(ez::SPLIT); // Flipped split arcade
 ### Single Stick Arcade 
 EZ-Template lets you call "standard" arcade or "flipped" arcade.  Standard is where the left stick does fwd/rev and flipped is where the right stick does fwd/rev.  With single stick arcade, turning is done on the same joystick as fwd/rev.   
 <Tabs
-  groupId="split_standard_unstandard"
+  groupId="split_standard_unstandardh"
   defaultValue="example"
   values={[
     { label: 'Standard',  value: 'example', },

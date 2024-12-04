@@ -3,16 +3,15 @@ title: Wheel Diameter
 description: Ensure 24" is truly 24"
 ---
 
-:::note
-
-Most robots will work perfectly fine without tuning your wheel diameter.  You can visit this page if you start to see the undesired behavior described below.  
-
-:::
 
 ## What is it?
 Tuning wheel diameter will change how far the robot goes when you input 1".  The larger this number is, the less 1" will be.  This can be useful in making very precise autonomous routines easier to get working first try by guaranteeing 1" is truly 1".   
 
+:::note
+
 This is not required for consistent autonomous routines, it only makes the correlation between what the robot thinks it's doing and what it's actually doing match more closely.  
+
+:::
 
 ## Tuning 
 We'll print our drive sensors to the terminal, so these tests will have to be done while plugged into either the controller or the robot.  The line of code below will go in the while loop in opcontrol.  

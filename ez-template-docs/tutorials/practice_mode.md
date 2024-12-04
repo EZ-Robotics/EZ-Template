@@ -3,6 +3,7 @@ title: Practice Mode
 description: How to use Practice Mode to improve your driving
 ---
 
+## What is it?
 The best drivers are able to use the entire range of the joystick to its fullest extent.  New drivers like to treat the joysticks as binary.  Practice mode is here to help train binary joystick users by shutting the entire drive off when the joystick is maxed out.  
 
 ## Enabling
