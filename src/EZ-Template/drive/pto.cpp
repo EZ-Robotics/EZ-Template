@@ -8,7 +8,6 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include <vector>
 
 #include "drive.hpp"
-#include "main.h"
 
 bool Drive::pto_check(pros::Motor check_if_pto) {
   auto does_exist = std::find(pto_active.begin(), pto_active.end(), check_if_pto.get_port());

@@ -8,7 +8,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include <list>
 
-#include "main.h"
+#include "EZ-Template/sdcard.hpp"
 #include "okapi/api/units/QAngle.hpp"
 #include "pros/llemu.hpp"
 #include "pros/screen.hpp"

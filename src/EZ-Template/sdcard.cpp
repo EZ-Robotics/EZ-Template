@@ -9,6 +9,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include <filesystem>
 
 #include "auton_selector.hpp"
+#include "liblvgl/llemu.hpp"
 #include "pros/llemu.hpp"
 #include "util.hpp"
 
