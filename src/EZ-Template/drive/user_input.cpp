@@ -171,12 +171,8 @@ void Drive::opcontrol_curve_buttons_iterate() {
     button_press(&r_decrease_, master.get_digital(r_decrease_.button), ([this] { this->r_decrease(); }), ([this] { this->save_r_curve_sd(); }));
   }
 
-  std::ostringstream short_sl, short_sr;
-  short_sl << std::fixed << std::setprecision(1) << left_curve_scale;
-  short_sr << std::fixed << std::setprecision(1) << right_curve_scale;
-
-  auto sr = short_sr.str();
-  auto sl = short_sl.str();
+  auto sl = util::to_string_with_precision(left_curve_scale, 1);
+  auto sr = util::to_string_with_precision(right_curve_scale, 1);
   if (!is_tank)
     master.set_text(2, 0, sl + "         " + sr);
   else

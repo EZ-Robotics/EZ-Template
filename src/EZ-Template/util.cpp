@@ -126,6 +126,27 @@ std::string exit_to_string(exit_output input) {
 namespace util {
 bool AUTON_RAN = true;
 
+int places_after_decimal(double input, int min) {
+  std::string in = std::to_string(input);
+  int places_after_decimal = 6;
+  for (int i = in.length() - 1; i > 0; i--) {
+    if (in[i] == '.')
+      break;
+
+    if (in[i] == '0')
+      places_after_decimal--;
+    else
+      break;
+  }
+  return places_after_decimal < min ? min : places_after_decimal;
+}
+
+std::string to_string_with_precision(double input, int n) {
+  std::ostringstream out;
+  out << std::fixed << std::setprecision(n) << input;
+  return out.str();
+}
+
 bool reversed_active(double input) {
   if (input < 0) return true;
   return false;

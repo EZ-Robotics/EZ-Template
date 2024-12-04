@@ -40,9 +40,9 @@ void initialize() {
   // chassis.odom_tracker_back_set(&horiz_tracker);  // Replace `back` to `front` if your tracker is in the front!
 
   // Configure your chassis controls
-  chassis.opcontrol_curve_buttons_toggle(true);  // Enables modifying the controller curve with buttons on the joysticks
-  chassis.opcontrol_drive_activebrake_set(0);    // Sets the active brake kP. We recommend ~2.  0 will disable.
-  chassis.opcontrol_curve_default_set(0, 0);     // Defaults for curve. If using tank, only the first parameter is used. (Comment this line out if you have an SD card!)
+  chassis.opcontrol_curve_buttons_toggle(true);   // Enables modifying the controller curve with buttons on the joysticks
+  chassis.opcontrol_drive_activebrake_set(0.0);   // Sets the active brake kP. We recommend ~2.  0 will disable.
+  chassis.opcontrol_curve_default_set(0.0, 0.0);  // Defaults for curve. If using tank, only the first parameter is used. (Comment this line out if you have an SD card!)
 
   // Set the drive to your own constants from autons.cpp!
   default_constants();
@@ -53,14 +53,14 @@ void initialize() {
 
   // Autonomous Selector using LLEMU
   ez::as::auton_selector.autons_add({
-      Auton("Example Drive\n\nDrive forward and come back.", drive_example),
-      Auton("Example Turn\n\nTurn 3 times.", turn_example),
-      Auton("Drive and Turn\n\nDrive forward, turn, come back. ", drive_and_turn),
-      Auton("Drive and Turn\n\nSlow down during drive.", wait_until_change_speed),
-      Auton("Swing Example\n\nSwing in an 'S' curve", swing_example),
-      Auton("Motion Chaining\n\nDrive forward, turn, and come back, but blend everything together :D", motion_chaining),
-      Auton("Combine all 3 movements", combining_movements),
-      Auton("Interference\n\nAfter driving forward, robot performs differently if interfered or not.", interfered_example),
+      {"Example Drive\n\nDrive forward and come back.", drive_example},
+      {"Example Turn\n\nTurn 3 times.", turn_example},
+      {"Drive and Turn\n\nDrive forward, turn, come back. ", drive_and_turn},
+      {"Drive and Turn\n\nSlow down during drive.", wait_until_change_speed},
+      {"Swing Example\n\nSwing in an 'S' curve", swing_example},
+      {"Motion Chaining\n\nDrive forward, turn, and come back, but blend everything together :D", motion_chaining},
+      {"Combine all 3 movements", combining_movements},
+      {"Interference\n\nAfter driving forward, robot performs differently if interfered or not.", interfered_example},
   });
 
   // Initialize chassis and auton selector
@@ -138,6 +138,25 @@ void autonomous() {
 }
 
 /**
+ * Simplifies printing tracker values to the brain screen
+ */
+void screen_print_trackers(std::vector<std::pair<ez::tracking_wheel*, std::string>> tracker, int line) {
+  int amount_of_trackers = 0;
+  std::string output = "";
+  for (auto i : tracker) {
+    if (i.first == nullptr) continue;  // Exit if there's no tracker
+
+    // Create text for tracker and width values
+    output += (i.second + " tracker: " + util::to_string_with_precision(i.first->get()) +
+               "  width: " + util::to_string_with_precision(i.first->distance_to_center_get()) + "\n");
+    amount_of_trackers++;
+  }
+
+  // Print tracker + width to the screen, but push the text to the bottom of the screen
+  ez::screen_print(output, (tracker.size() - amount_of_trackers) + line);
+}
+
+/**
  * Gives you some extras to run in your opcontrol:
  * - run your autonomous routine in opcontrol by pressing DOWN and B
  *   - to prevent this from accidentally happening at a competition, this
@@ -165,45 +184,32 @@ void ez_template_extras() {
 
     // Blank pages for odom debugging
     if (chassis.odom_enabled() && !chassis.pid_tuner_enabled()) {
-      // This is Blank Page 1, it will display X, Y, and Angle
+      // If we're on the first blank page...
       if (ez::as::page_blank_is_on(0)) {
-        ez::screen_print("x: " + std::to_string(chassis.odom_x_get()) +
-                             "\ny: " + std::to_string(chassis.odom_y_get()) +
-                             "\nangle: " + std::to_string(chassis.odom_theta_get()),
+        // Display X, Y, and Angle
+        ez::screen_print("x: " + util::to_string_with_precision(chassis.odom_x_get()) +
+                             "\ny: " + util::to_string_with_precision(chassis.odom_y_get()) +
+                             "\na: " + util::to_string_with_precision(chassis.odom_theta_get()),
                          1);  // Don't override the top Page line
-      }
-      // This is Blank Page 2, it will display every tracking wheel.
-      // Make sure the tracking wheels read POSITIVE going forwards or right.
-      else if (ez::as::page_blank_is_on(1)) {
-        if (chassis.odom_tracker_left != nullptr)
-          ez::screen_print("left tracker: " + std::to_string(chassis.odom_tracker_left->get()), 1);
-        else
-          ez::screen_print("no left tracker", 1);
 
-        if (chassis.odom_tracker_right != nullptr)
-          ez::screen_print("right tracker: " + std::to_string(chassis.odom_tracker_right->get()), 2);
-        else
-          ez::screen_print("no right tracker", 2);
-
-        if (chassis.odom_tracker_back != nullptr)
-          ez::screen_print("back tracker: " + std::to_string(chassis.odom_tracker_back->get()), 3);
-        else
-          ez::screen_print("no back tracker", 3);
-
-        if (chassis.odom_tracker_front != nullptr)
-          ez::screen_print("front tracker: " + std::to_string(chassis.odom_tracker_front->get()), 4);
-        else
-          ez::screen_print("no front tracker", 4);
+        // Display all trackers that are being used
+        screen_print_trackers(
+            {{chassis.odom_tracker_left, "l"},
+             {chassis.odom_tracker_right, "r"},
+             {chassis.odom_tracker_back, "b"},
+             {chassis.odom_tracker_front, "f"}},
+            4);  // Start printing on line 4
       }
     }
 
-    chassis.pid_tuner_iterate();  // Allow PID Tuner to iterate
+    // Allow PID Tuner to iterate
+    chassis.pid_tuner_iterate();
   } else {
     // Remove all blank pages when connected to a comp switch
     if (ez::as::page_blank_amount() > 0)
       ez::as::page_blank_remove_all();
 
-    // Disable PID tuner
+    // Disable PID Tuner when connected to a comp switch
     if (chassis.pid_tuner_enabled())
       chassis.pid_tuner_disable();
   }
@@ -227,7 +233,7 @@ void opcontrol() {
   chassis.drive_brake_set(MOTOR_BRAKE_COAST);
 
   while (true) {
-    // Gives you some extras to make EZ-Template easier
+    // Gives you some extras to make EZ-Template ezier
     ez_template_extras();
 
     chassis.opcontrol_tank();  // Tank control
