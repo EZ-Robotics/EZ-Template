@@ -167,33 +167,33 @@ void ez_template_extras() {
     if (chassis.odom_enabled() && !chassis.pid_tuner_enabled()) {
       // This is Blank Page 1, it will display X, Y, and Angle
       if (ez::as::page_blank_is_on(0)) {
-        screen_print("x: " + std::to_string(chassis.odom_x_get()) +
-                         "\ny: " + std::to_string(chassis.odom_y_get()) +
-                         "\nangle: " + std::to_string(chassis.odom_theta_get()),
-                     1);  // Don't override the top Page line
+        ez::screen_print("x: " + std::to_string(chassis.odom_x_get()) +
+                             "\ny: " + std::to_string(chassis.odom_y_get()) +
+                             "\nangle: " + std::to_string(chassis.odom_theta_get()),
+                         1);  // Don't override the top Page line
       }
       // This is Blank Page 2, it will display every tracking wheel.
       // Make sure the tracking wheels read POSITIVE going forwards or right.
       else if (ez::as::page_blank_is_on(1)) {
         if (chassis.odom_tracker_left != nullptr)
-          screen_print("left tracker: " + std::to_string(chassis.odom_tracker_left->get()), 1);
+          ez::screen_print("left tracker: " + std::to_string(chassis.odom_tracker_left->get()), 1);
         else
-          screen_print("no left tracker", 1);
+          ez::screen_print("no left tracker", 1);
 
         if (chassis.odom_tracker_right != nullptr)
-          screen_print("right tracker: " + std::to_string(chassis.odom_tracker_right->get()), 2);
+          ez::screen_print("right tracker: " + std::to_string(chassis.odom_tracker_right->get()), 2);
         else
-          screen_print("no right tracker", 2);
+          ez::screen_print("no right tracker", 2);
 
         if (chassis.odom_tracker_back != nullptr)
-          screen_print("back tracker: " + std::to_string(chassis.odom_tracker_back->get()), 3);
+          ez::screen_print("back tracker: " + std::to_string(chassis.odom_tracker_back->get()), 3);
         else
-          screen_print("no back tracker", 3);
+          ez::screen_print("no back tracker", 3);
 
         if (chassis.odom_tracker_front != nullptr)
-          screen_print("front tracker: " + std::to_string(chassis.odom_tracker_front->get()), 4);
+          ez::screen_print("front tracker: " + std::to_string(chassis.odom_tracker_front->get()), 4);
         else
-          screen_print("no front tracker", 4);
+          ez::screen_print("no front tracker", 4);
       }
     }
 
