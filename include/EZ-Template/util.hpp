@@ -156,6 +156,9 @@ std::string exit_to_string(exit_output input);
 namespace util {
 extern bool AUTON_RAN;
 
+int places_after_decimal(double input, int min = 0);
+std::string to_string_with_precision(double input, int n = 2);
+
 /**
  * Returns 1 if input is positive and -1 if input is negative
  */

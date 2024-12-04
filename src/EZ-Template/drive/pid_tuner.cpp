@@ -5,6 +5,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
 #include "EZ-Template/api.hpp"
+#include "EZ-Template/util.hpp"
 #include "liblvgl/llemu.hpp"
 #include "pros/llemu.hpp"
 #include "pros/misc.h"
@@ -88,18 +89,23 @@ void Drive::pid_tuner_toggle() {
 void Drive::pid_tuner_print() {
   if (!pid_tuner_on) return;
 
-  std::string name = used_pid_tuner_pids->at(column).name + "\n";
-  std::string kp = "kp: " + std::to_string(used_pid_tuner_pids->at(column).consts->kp);
-  std::string ki = "ki: " + std::to_string(used_pid_tuner_pids->at(column).consts->ki);
-  std::string kd = "kd: " + std::to_string(used_pid_tuner_pids->at(column).consts->kd);
-  std::string starti = "start i: " + std::to_string(used_pid_tuner_pids->at(column).consts->start_i);
+  double kp = used_pid_tuner_pids->at(column).consts->kp;
+  double ki = used_pid_tuner_pids->at(column).consts->ki;
+  double kd = used_pid_tuner_pids->at(column).consts->kd;
+  double starti = used_pid_tuner_pids->at(column).consts->start_i;
 
-  kp = row == 0 ? kp + arrow : kp + "\n";
-  ki = row == 1 ? ki + arrow : ki + "\n";
-  kd = row == 2 ? kd + arrow : kd + "\n";
-  starti = row == 3 ? starti + arrow : starti + "\n";
+  std::string sname = used_pid_tuner_pids->at(column).name + "\n";
+  std::string skp = "kp: " + util::to_string_with_precision(kp, util::places_after_decimal(kp, 2));
+  std::string ski = "ki: " + util::to_string_with_precision(ki, util::places_after_decimal(ki, 2));
+  std::string skd = "kd: " + util::to_string_with_precision(kd, util::places_after_decimal(kd, 2));
+  std::string sstarti = "start i: " + util::to_string_with_precision(starti, util::places_after_decimal(starti, 2));
 
-  complete_pid_tuner_output = name + "\n" + kp + ki + kd + starti + "\n";
+  skp = row == 0 ? skp + arrow : skp + "\n";
+  ski = row == 1 ? ski + arrow : ski + "\n";
+  skd = row == 2 ? skd + arrow : skd + "\n";
+  sstarti = row == 3 ? sstarti + arrow : sstarti + "\n";
+
+  complete_pid_tuner_output = sname + "\n" + skp + ski + skd + sstarti + "\n";
 
   pid_tuner_print_brain();
   pid_tuner_print_terminal();
