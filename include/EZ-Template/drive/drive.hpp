@@ -3193,11 +3193,10 @@ class Drive {
    */
   bool opcontrol_arcade_scaling_enabled();
 
+ private:
   bool odom_use_left = true;
   double odom_ime_track_width_left = 0.0;
   double odom_ime_track_width_right = 0.0;
-
- private:
   bool imu_calibrate_took_too_long = false;
   bool is_full_pid_tuner_enabled = false;
   std::vector<const_and_name>* used_pid_tuner_pids;

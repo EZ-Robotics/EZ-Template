@@ -156,26 +156,61 @@ std::string exit_to_string(exit_output input);
 namespace util {
 extern bool AUTON_RAN;
 
+/**
+ * Returns the amount of places after a decimal, maxing out at 6
+ *
+ * \param input
+ *        double, your input value with decimals
+ * \param min
+ *        int, minimum number of decimal places to print, this is defaulted to 0
+ */
 int places_after_decimal(double input, int min = 0);
+
+/**
+ * Returns a string with a specific number of decimal points
+ *
+ * \param input
+ *        double, your input value
+ * \param n
+ *        int, amount of decimals you want to display
+ */
 std::string to_string_with_precision(double input, int n = 2);
 
 /**
  * Returns 1 if input is positive and -1 if input is negative
+ *
+ * \param input
+ *        double, your input value
  */
 int sgn(double input);
 
 /**
  * Returns true if the input is < 0
+ *
+ * \param input
+ *        double, your input value
  */
 bool reversed_active(double input);
 
 /**
  * Returns input restricted to min-max threshold
+ *
+ * \param input
+ *        double, your input value
+ * \param max
+ *        double, the maximum input can be
+ * \param min
+ *        double, the minimum input can be
  */
 double clamp(double input, double max, double min);
 
 /**
  * Returns input restricted to min-max threshold.  The minimum used is -max
+ *
+ * \param input
+ *        double, your input value
+ * \param max
+ *        double, the absolute value maximum input can be
  */
 double clamp(double input, double max);
 
@@ -185,20 +220,110 @@ double clamp(double input, double max);
 const bool SD_CARD_ACTIVE = pros::usd::is_installed();
 
 /**
- * Delay time for tasks
+ * Delay time for tasks, this is set to 10 ms.
  */
 const int DELAY_TIME = 10;
 
+/**
+ * Converts radians to degrees
+ *
+ * \param input
+ *        double, your input radian
+ */
 double to_deg(double input);
+
+/**
+ * Converts degrees to radians
+ *
+ * \param input
+ *        double, your input degree
+ */
 double to_rad(double input);
+
+/**
+ * Returns the angle between two points
+ *
+ * \param itarget
+ *        pose, target position
+ * \param icurrent
+ *        pose, current position
+ */
 double absolute_angle_to_point(pose itarget, pose icurrent);
-double wrap_angle(double theta);
+
+/**
+ * Returns the distance between two points
+ *
+ * \param itarget
+ *        pose, target position
+ * \param icurrent
+ *        pose, current position
+ */
 double distance_to_point(pose itarget, pose icurrent);
+
+/**
+ * Constrains an angle between 180 and -180
+ *
+ * \param theta
+ *        double, input angle in degrees
+ */
+double wrap_angle(double theta);
+
+/**
+ * Returns a new pose that is projected off of the current pose.
+ *
+ * \param added
+ *        double, how far to project a new point
+ * \param icurrent
+ *        pose, current position
+ */
 pose vector_off_point(double added, pose icurrent);
+
+/**
+ * Returns the shortest angle for the robot to turn to in order to get to target
+ *
+ * \param target
+ *        double, target value in degrees
+ * \param current
+ *        double, current value in degrees
+ * \param print = false
+ *        bool, will print the new value if this is true
+ */
 double turn_shortest(double target, double current, bool print = false);
+
+/**
+ * Returns the farthest away angle for the robot to turn to in order to get to target
+ *
+ * \param target
+ *        double, target value in degrees
+ * \param current
+ *        double, current value in degrees
+ * \param print = false
+ *        bool, will print the new value if this is true
+ */
 double turn_longest(double target, double current, bool print = false);
+
+/**
+ * Converts pose with okapi units to a pose without okapi units
+ *
+ * \param input
+ *        united_pose, a pose with units
+ */
 pose united_pose_to_pose(united_pose input);
+
+/**
+ * Converts vector of poses with okapi units to a vector of poses without okapi units
+ *
+ * \param inputs
+ *        std::vector<united_pose>, poses with units
+ */
 std::vector<odom> united_odoms_to_odoms(std::vector<united_odom> inputs);
+
+/**
+ * Converts odom movement with united pose to an odom movement without united pose
+ *
+ * \param input
+ *        united_odom, odom movement with units
+ */
 odom united_odom_to_odom(united_odom input);
 
 }  // namespace util
