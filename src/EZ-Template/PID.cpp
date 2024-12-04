@@ -250,3 +250,11 @@ exit_output PID::exit_condition(std::vector<pros::Motor> sensor, bool print) {
 
   return exit_condition(print);
 }
+
+exit_output PID::exit_condition(pros::MotorGroup sensor, bool print) {
+  std::vector<pros::Motor> vector_sensor;
+  for (i = 0; i < sensor.size(); i++) {
+    vector_sensor.push_back(pros::Motor(sensor.get_port(i)));
+  }
+  return exit_condition(vector_sensor, print);
+}
