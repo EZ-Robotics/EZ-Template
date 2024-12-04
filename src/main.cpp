@@ -6,17 +6,6 @@
 /////
 
 // Chassis constructor
-/*
-ez::Drive chassis(
-    // These are your drive motors, the first motor is used for sensing!
-    pros::MotorGroup({-5, -6, -7, -8}),  // Left Chassis Ports (negative port will reverse it!)
-    pros::MotorGroup({11, 15, 16, 17}),  // Right Chassis Ports (negative port will reverse it!)
-
-    pros::IMU(21),  // IMU Port
-    4.125,          // Wheel Diameter (Remember, 4" wheels without screw holes are actually 4.125!)
-    420.0,          // Wheel RPM = cartridge * (motor gear / wheel gear)
-    12.0);          // Width of your powered wheels.  Measure this with a tape measure, center-to-center
-*/
 ez::Drive chassis(
     // These are your drive motors, the first motor is used for sensing!
     {-5, -6, -7, -8},  // Left Chassis Ports (negative port will reverse it!)

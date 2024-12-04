@@ -15,46 +15,6 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 using namespace ez;
 
-// Constructor for integrated encoders but with track width
-Drive::Drive(pros::MotorGroup input_left_motors, pros::MotorGroup input_right_motors,
-             pros::IMU input_imu, double wheel_diameter, double wheel_rpm, double input_track_width)
-    : imu(input_imu.get_port()),
-      left_tracker(-1, -1, false),   // Default value
-      right_tracker(-1, -1, false),  // Default value
-      left_rotation(-1),
-      right_rotation(-1),
-      ez_auto([this] { this->ez_auto_task(); }) {
-  is_tracker = DRIVE_INTEGRATED;
-
-  // Set motors to a global vector
-  for (int i = 0; i < input_left_motors.size(); i++) {
-    int port = input_left_motors.get_port(i);
-    // pros::Motor temp((std::int8_t)abs(port) * input_left_motors.get_direction(i));
-    pros::Motor temp((std::int8_t)abs(port));
-    bool is_reversed = input_left_motors.get_direction(i) == -1 ? true : false;
-    temp.set_reversed(is_reversed);
-    left_motors.push_back(temp);
-  }
-  for (int i = 0; i < input_right_motors.size(); i++) {
-    int port = input_right_motors.get_port(i);
-    // pros::Motor temp((std::int8_t)abs(port) * input_right_motors.get_direction(i));
-    pros::Motor temp((std::int8_t)abs(port));
-    bool is_reversed = input_right_motors.get_direction(i) == -1 ? true : false;
-    temp.set_reversed(is_reversed);
-    right_motors.push_back(temp);
-  }
-
-  // Set constants for tick_per_inch calculation
-  WHEEL_DIAMETER = wheel_diameter;
-  RATIO = 1.0;
-  CARTRIDGE = wheel_rpm;
-  TICK_PER_INCH = drive_tick_per_inch();
-
-  drive_width_set(input_track_width);
-
-  drive_defaults_set();
-}
-
 // Constructor for integrated encoders
 Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports,
              int imu_port, double wheel_diameter, double ticks, double ratio)

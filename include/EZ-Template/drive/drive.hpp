@@ -358,24 +358,6 @@ class Drive {
   pros::Task ez_auto;
 
   /**
-   * Creates a Drive Controller using internal encoders and requires track width
-   *
-   * \param input_left_motors
-   *        pros::MotorGroup({-1, 2,...}) Make ports negative if reversed!
-   * \param input_right_motors
-   *        pros::MotorGroup({-3, 4,...})  Make ports negative if reversed!
-   * \param input_imu
-   *        pros::IMU(21) Port the IMU is plugged into.
-   * \param wheel_diameter
-   *        Diameter of your drive wheels.  Remember 4" is 4.125"!
-   * \param wheel_rpm
-   *        Motor cartridge RPM
-   * \param input_track_width
-   *        Distance between the center of your left wheel and the center of your right wheel.  You can measure this with a tape measure.
-   */
-  Drive(pros::MotorGroup input_left_motors, pros::MotorGroup input_right_motors, pros::IMU input_imu, double wheel_diameter, double wheel_rpm, double input_track_width);
-
-  /**
    * Creates a Drive Controller using internal encoders.
    *
    * \param left_motor_ports
