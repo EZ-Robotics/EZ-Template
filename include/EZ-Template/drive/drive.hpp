@@ -575,7 +575,7 @@ class Drive {
    *
    * \param x
    *        new x value, in inches
-   * \param x
+   * \param y
    *        new y value, in inches
    */
   void odom_xy_set(double x, double y);
@@ -583,12 +583,36 @@ class Drive {
   /**
    * Sets a new X and Y value for the robot
    *
-   * \param x
+   * \param p_x
    *        new x value, okapi unit
-   * \param x
+   * \param p_y
    *        new y value, okapi unit
    */
   void odom_xy_set(okapi::QLength p_x, okapi::QLength p_y);
+
+  /**
+   * Sets a new X, Y, and Theta value for the robot
+   *
+   * \param x
+   *        new x value, in inches
+   * \param y
+   *        new y value, in inches
+   * \param t
+   *        new theta value, in degrees
+   */
+  void odom_xyt_set(double x, double y, double t);
+
+  /**
+   * Sets a new X, Y, and Theta value for the robot
+   *
+   * \param p_x
+   *        new x value, okapi unit
+   * \param p_y
+   *        new y value, okapi unit
+   * \param p_t
+   *        new theta value, okapi unit
+   */
+  void odom_xyt_set(okapi::QLength p_x, okapi::QLength p_y, okapi::QAngle p_t);
 
   /**
    * Returns the current pose of the robot
