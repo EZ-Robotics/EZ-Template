@@ -17,6 +17,7 @@ void Drive::odom_x_set(double x) {
   central_pose.x = x;
   was_odom_just_set = true;
 }
+void Drive::odom_x_set(okapi::QLength p_x) { odom_x_set(p_x.convert(okapi::inch)); }
 void Drive::odom_y_set(double y) {
   odom_current.y = y;
   l_pose.y = y;
@@ -24,11 +25,9 @@ void Drive::odom_y_set(double y) {
   central_pose.y = y;
   was_odom_just_set = true;
 }
-void Drive::odom_theta_set(double a) { drive_angle_set(a); }
-void Drive::odom_x_set(okapi::QLength p_x) { odom_x_set(p_x.convert(okapi::inch)); }
 void Drive::odom_y_set(okapi::QLength p_y) { odom_y_set(p_y.convert(okapi::inch)); }
+void Drive::odom_theta_set(double a) { drive_angle_set(a); }
 void Drive::odom_theta_set(okapi::QAngle p_a) { odom_theta_set(p_a.convert(okapi::degree)); }
-void Drive::odom_reset() { odom_pose_set({0.0, 0.0, 0.0}); }
 void Drive::drive_width_set(double input) {
   global_track_width = fabs(input);
   if (input != 0.0) {
@@ -40,20 +39,26 @@ void Drive::drive_width_set(double input) {
   odom_ime_track_width_right = 0.0;
 }
 void Drive::drive_width_set(okapi::QLength p_input) { drive_width_set(p_input.convert(okapi::inch)); }
-double Drive::drive_width_get() { return global_track_width; }
-void Drive::odom_enable(bool input) { odometry_enabled = input; }
-bool Drive::odom_enabled() { return odometry_enabled; }
-void Drive::odom_pose_set(united_pose itarget) { odom_pose_set(util::united_pose_to_pose(itarget)); }
+void Drive::odom_xy_set(double x, double y) {
+  odom_x_set(x);
+  odom_y_set(y);
+}
+void Drive::odom_xy_set(okapi::QLength p_x, okapi::QLength p_y) { odom_xy_set(p_x.convert(okapi::inch), p_y.convert(okapi::inch)); }
 void Drive::odom_pose_set(pose itarget) {
   odom_theta_set(itarget.theta);
   odom_x_set(itarget.x);
   odom_y_set(itarget.y);
 }
+void Drive::odom_pose_set(united_pose itarget) { odom_pose_set(util::united_pose_to_pose(itarget)); }
+void Drive::odom_reset() { odom_pose_set({0.0, 0.0, 0.0}); }
+void Drive::odom_enable(bool input) { odometry_enabled = input; }
+bool Drive::odom_enabled() { return odometry_enabled; }
 
 double Drive::odom_x_get() { return odom_current.x; }
 double Drive::odom_y_get() { return odom_current.y; }
 double Drive::odom_theta_get() { return odom_current.theta; }
 pose Drive::odom_pose_get() { return odom_current; }
+double Drive::drive_width_get() { return global_track_width; }
 
 std::pair<float, float> Drive::decide_vert_sensor(ez::tracking_wheel *tracker, bool is_tracker_enabled, float ime, float ime_track) {
   float current = ime;
