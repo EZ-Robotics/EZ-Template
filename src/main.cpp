@@ -155,7 +155,7 @@ void autonomous() {
  *     is only enabled when you're not connected to competition control.
  * - gives you a GUI to change your PID values live by pressing X
  */
-void ez_template_etxras() {
+void ez_template_extras() {
   if (!pros::competition::is_connected()) {
     // PID Tuner
     // - after you find values that you're happy with, you'll have to set them in auton.cpp
@@ -239,7 +239,7 @@ void opcontrol() {
 
   while (true) {
     // Gives you some extras to make EZ-Template easier
-    ez_template_etxras();
+    ez_template_extras();
 
     chassis.opcontrol_tank();  // Tank control
     // chassis.opcontrol_arcade_standard(ez::SPLIT);   // Standard split arcade
