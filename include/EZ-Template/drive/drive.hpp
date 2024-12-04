@@ -1180,6 +1180,13 @@ class Drive {
   bool drive_imu_calibrate(bool run_loading_animation = true);
 
   /**
+   * Checks if the imu calibrated successfully or if it took longer than expected.
+   *
+   * Returns true if calibrated successfully, and false if unsuccessful.
+   */
+  bool drive_imu_calibrated();
+
+  /**
    * Loading display while the IMU calibrates.
    */
   void drive_imu_display_loading(int iter);
@@ -3147,6 +3154,7 @@ class Drive {
   double odom_ime_track_width_right = 0.0;
 
  private:
+  bool imu_calibrate_took_too_long = false;
   bool is_full_pid_tuner_enabled = false;
   std::vector<const_and_name>* used_pid_tuner_pids;
   double opcontrol_speed_max = 127.0;
