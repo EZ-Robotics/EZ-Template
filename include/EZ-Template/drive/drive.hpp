@@ -557,7 +557,7 @@ class Drive {
   /**
    * Sets a new pose for the robot
    *
-   * \param x
+   * \param pose
    *        {x, y, t} units in inches and degrees
    */
   void odom_pose_set(pose itarget);
@@ -565,10 +565,30 @@ class Drive {
   /**
    * Sets a new pose for the robot
    *
-   * \param x
+   * \param uited pose
    *        {x, y, t} as an okapi unit
    */
   void odom_pose_set(united_pose itarget);
+
+  /**
+   *Sets a new X and Y value for the robot
+   *
+   * \param x
+   *        new x value, in inches
+   * \param x
+   *        new y value, in inches
+   */
+  void odom_xy_set(double x, double y);
+
+  /**
+   * Sets a new X and Y value for the robot
+   *
+   * \param x
+   *        new x value, okapi unit
+   * \param x
+   *        new y value, okapi unit
+   */
+  void odom_xy_set(okapi::QLength p_x, okapi::QLength p_y);
 
   /**
    * Returns the current pose of the robot

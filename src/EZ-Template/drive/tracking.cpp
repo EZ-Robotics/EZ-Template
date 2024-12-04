@@ -43,6 +43,14 @@ void Drive::drive_width_set(okapi::QLength p_input) { drive_width_set(p_input.co
 double Drive::drive_width_get() { return global_track_width; }
 void Drive::odom_enable(bool input) { odometry_enabled = input; }
 bool Drive::odom_enabled() { return odometry_enabled; }
+void Drive::odom_xy_set(double x, double y) {
+  odom_x_set(x);
+  odom_y_set(y);
+}
+void Drive::odom_xy_set(okapi::QLength p_x, okapi::QLength p_y) {
+  odom_x_set(p_x.convert(okapi::inch));
+  odom_y_set(p_y.convert(okapi::inch));
+}
 void Drive::odom_pose_set(united_pose itarget) { odom_pose_set(util::united_pose_to_pose(itarget)); }
 void Drive::odom_pose_set(pose itarget) {
   odom_theta_set(itarget.theta);
