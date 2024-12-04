@@ -377,7 +377,7 @@ bool Drive::drive_imu_calibrate(bool run_loading_animation) {
       }
       if (iter >= 3000) {
         printf("No IMU plugged in, (took %d ms to realize that)\n", iter);
-        imu_calibrate_weird = true;
+        imu_calibrate_took_too_long = true;
         return false;
       }
     }
@@ -385,12 +385,12 @@ bool Drive::drive_imu_calibrate(bool run_loading_animation) {
   }
   printf("IMU is done calibrating (took %d ms)\n", iter);
   imu_calibration_complete = true;
-  imu_calibrate_weird = iter > 2000 ? true : false;
+  imu_calibrate_took_too_long = iter > 2000 ? true : false;
   return true;
 }
 
 bool Drive::drive_imu_calibrated() {
-  if (imu_calibration_complete && !imu_calibrate_weird)
+  if (imu_calibration_complete && !imu_calibrate_took_too_long)
     return true;
   return false;
 }

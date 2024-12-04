@@ -3154,7 +3154,7 @@ class Drive {
   double odom_ime_track_width_right = 0.0;
 
  private:
-  bool imu_calibrate_weird = false;
+  bool imu_calibrate_took_too_long = false;
   bool is_full_pid_tuner_enabled = false;
   std::vector<const_and_name>* used_pid_tuner_pids;
   double opcontrol_speed_max = 127.0;
