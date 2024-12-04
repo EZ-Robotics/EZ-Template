@@ -565,13 +565,13 @@ class Drive {
   /**
    * Sets a new pose for the robot
    *
-   * \param uited pose
+   * \param united pose
    *        {x, y, t} as an okapi unit
    */
   void odom_pose_set(united_pose itarget);
 
   /**
-   *Sets a new X and Y value for the robot
+   * Sets a new X and Y value for the robot
    *
    * \param x
    *        new x value, in inches
