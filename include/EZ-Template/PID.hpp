@@ -223,6 +223,16 @@ class PID {
   ez::exit_output exit_condition(std::vector<pros::Motor> sensor, bool print = false);
 
   /**
+   * Iterative exit condition for PID.
+   *
+   * \param sensor
+   *        Pros motor group on your mechanism.
+   * \param print = false
+   *        if true, prints when complete.
+   */
+  ez::exit_output exit_condition(pros::MotorGroup sensor, bool print = false);
+
+  /**
    * Sets the name of the PID that prints during exit conditions.
    *
    * \param name
