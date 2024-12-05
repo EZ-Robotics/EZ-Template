@@ -112,6 +112,7 @@ const sidebars = {
         */
 
         // Remove these when above is uncommented
+        'tutorials/tracking_wheels',
         'tutorials/pid',
         'tutorials/pto_tutorial',
       ],
@@ -127,7 +128,27 @@ const sidebars = {
       collapsible: true,
       items: [
         'docs/constructor',
-        'docs/auton_functions',
+
+        // Tuning Constants
+        {
+          type: 'category',
+          label: 'Autonomous Functions',
+          link: {
+            type: 'generated-index',
+          },
+          collapsed: true,
+          collapsible: true,
+          items: [
+            'docs/general_autonomous',
+            'docs/drive_movements',
+            'docs/turn_movements',
+            'docs/swing_movements',
+            'docs/odom_movements',
+            // gain scheduling?
+          ],
+        },
+
+        
         'docs/user_control',
         'docs/auton_selector',
         'docs/set_and_get_drive',

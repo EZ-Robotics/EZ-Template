@@ -1,0 +1,936 @@
+---
+layout: default
+title: General Functions
+description:  ""
+---
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+
+## Functions with Okapi Units
+
+### drive_angle_set()
+Sets the angle of the robot.  This is useful when your robot is setup in at an unconventional angle and you want 0 to be when you're square with the field.         
+
+`p_angle` an okapi angle unit, angle that the robot will think it's now facing.
+<Tabs
+  groupId="drive_angle_set_okapi"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="proto">
+
+```cpp
+void drive_angle_set(okapi::QAngle p_angle);
+```
+
+
+</TabItem>
+
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset(); // Resets PID targets to 0
+  chassis.drive_imu_reset(); // Reset gyro position to 0
+  chassis.drive_sensor_reset(); // Reset drive sensors to 0
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD); // Set motors to hold.  This helps autonomous consistency.
+
+  chassis.drive_angle_set(45_deg);
+
+  chassis.pid_turn_set(0, TURN_SPEED);
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+### drive_angle_set()
+Sets the angle of the robot.  This is useful when your robot is setup in at an unconventional angle and you want 0 to be when you're square with the field.         
+
+`angle` is in degrees, angle that the robot will think it's now facing.
+<Tabs
+  groupId="drive_angle_set_double"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="proto">
+
+```cpp
+void drive_angle_set(double angle);
+```
+
+
+</TabItem>
+
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset(); // Resets PID targets to 0
+  chassis.drive_imu_reset(); // Reset gyro position to 0
+  chassis.drive_sensor_reset(); // Reset drive sensors to 0
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD); // Set motors to hold.  This helps autonomous consistency.
+
+  chassis.drive_angle_set(45);
+
+  chassis.pid_turn_set(0, TURN_SPEED);
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+### pid_wait_until()
+Locks the code in place until the drive has passed the input parameter.  This uses the exit conditions from the PID class.  This only works for drive motions.             
+
+`target` the distance the robot needs to travel before unlocking the code as an okapi length unit.     
+<Tabs
+  groupId="pid_wait_until_distance"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.drive_imu_reset(); 
+  chassis.drive_sensor_reset(); 
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD); 
+
+  chassis.pid_drive_set(48_in, 110);
+  chassis.pid_wait_until(24_in);
+  chassis.pid_speed_max_set(40);
+  chassis.pid_wait();
+}
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+void pid_wait_until(okapi::QLength target);
+```
+
+
+</TabItem>
+</Tabs>
+
+
+
+### pid_wait_until()
+Locks the code in place until the drive has passed the input parameter.  This uses the exit conditions from the PID class.  This only works for turn and swing motions.             
+
+`target` the distance the robot needs to travel before unlocking the code as an okapi angle unit.     
+<Tabs
+  groupId="pid_wait_until_angle"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.drive_imu_reset(); 
+  chassis.drive_sensor_reset(); 
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD); 
+
+  chassis.pid_turn_set(90_deg, 110);
+  chassis.pid_wait_until(45_deg);
+  chassis.pid_speed_max_set(40);
+  chassis.pid_wait();
+}
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+void pid_wait_until(okapi::QAngle target);
+```
+
+
+</TabItem>
+</Tabs>
+
+
+
+
+### pid_speed_max_set()
+Sets the max speed of the drive.  
+
+`speed` an integer between -127 and 127.     
+<Tabs
+  groupId="pid_speed_max_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+
+```cpp
+void autonomous() {
+  chassis.drive_imu_reset(); 
+  chassis.drive_sensor_reset(); 
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD); 
+
+  chassis.pid_drive_set(48, 110);
+  chassis.pid_wait_until(24);
+  chassis.pid_speed_max_set(40);
+  chassis.pid_wait();
+}
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+void pid_speed_max_set(int speed);
+```
+
+
+</TabItem>
+</Tabs>
+
+
+
+
+## Functions without Okapi Units
+
+
+
+### drive_mode_set()
+Sets the current mode of the drive.  
+
+`p_mode` the current task running for the drive.  accepts `ez::DISABLE`, `ez::SWING`, `ez::TURN`, `ez::DRIVE`           
+<Tabs
+  groupId="examples13"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_drive_set(12, DRIVE_SPEED);
+  chassis.pid_wait();
+
+  chassis.drive_mode_set(ez::DISABLE); // Disable drive
+
+  chassis.drive_set(-127, -127); // Run drive motors myself
+  pros::delay(2000);
+  chassis.drive_set(0, 0);
+}
+```
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+void drive_mode_set(e_mode p_mode);
+```
+
+
+</TabItem>
+</Tabs>
+
+
+### drive_rpm_set()
+Sets a new RPM for the drive.  This is can be used when a drive has a transmission.  
+
+`rpm` the rpm of the wheel
+<Tabs
+  groupId="drive_rpm_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void drive_example() {
+  chassis.pid_drive_set(24_in, DRIVE_SPEED);
+  chassis.pid_wait();
+
+  chassis.drive_rpm_set(50);  // Engage torque rpm
+
+  chassis.pid_drive_set(-24_in, DRIVE_SPEED);
+  chassis.pid_wait();
+
+  chassis.drive_rpm_set(343);  // Return back to normal rpm
+}
+```
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+void drive_rpm_set(double rpm);
+```
+
+
+</TabItem>
+</Tabs>
+
+
+### drive_ratio_set()
+Sets a new ratio for the drive.  This is can be used when a drive has a transmission.  This should be `wheel / motor`.  
+
+`ratio` the new of the drive   
+<Tabs
+  groupId="drive_ratio_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void drive_example() {
+  chassis.pid_drive_set(24_in, DRIVE_SPEED);
+  chassis.pid_wait();
+
+  chassis.drive_ratio_set(0.083);  // Engage torque rpm
+
+  chassis.pid_drive_set(-24_in, DRIVE_SPEED);
+  chassis.pid_wait();
+
+  chassis.drive_ratio_set(1.79);  // Return back to normal rpm
+}
+```
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+void drive_ratio_set(double ratio);
+```
+
+
+</TabItem>
+</Tabs>
+
+
+
+### pid_drive_toggle()
+Enables/disables the drive from moving in autonomous.  This is useful for debugging and checking PID variables.     
+
+`toggle` true enables the drive, false disables the drive     
+<Tabs
+  groupId="examples14"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_drive_set(12, DRIVE_SPEED);
+  chassis.pid_wait();
+
+  pid_drive_toggle(false); // Disable drive
+
+  chassis.pid_drive_set(-12, DRIVE_SPEED);
+  while (true) {
+    printf(" Left Error: %f  Right Error: %f\n", chassis.leftPID.error, chassis.rightPID.error);
+    pros::delay(ez::util::DELAY_TIME);
+  }
+}
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+void pid_drive_toggle(bool toggle);
+```
+
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+
+
+
+### pid_print_toggle()
+Enables/disables the drive functions printing every drive motion.  This is useful when you're debugging something and don't want terminal cluttered.  
+
+`toggle` true enables printing, false disables
+<Tabs
+  groupId="examples15"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_drive_set(12, DRIVE_SPEED); // This will print
+  chassis.pid_wait(); // This will print
+
+  pid_print_toggle(false); // Disable prints
+
+  chassis.pid_drive_set(-12, DRIVE_SPEED); // This won't print
+  chassis.pid_wait(); // This won't print
+}
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+void pid_print_toggle(bool toggle);
+```
+
+
+</TabItem>
+</Tabs>
+
+
+### pid_wait_until()
+Locks the code in place until the drive has passed the input parameter.  This uses the exit conditions from the PID class.           
+
+`target` the distance the robot needs to travel before unlocking the code.  This is degrees if turning or swinging, and inches if driving.  
+<Tabs
+  groupId="pid_wait_until_double"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.drive_imu_reset(); 
+  chassis.drive_sensor_reset(); 
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD); 
+
+  chassis.pid_drive_set(48, 110);
+  chassis.pid_wait_until(24);
+  chassis.pid_speed_max_set(40);
+  chassis.pid_wait();
+}
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+void pid_wait_until(double target);
+```
+
+
+</TabItem>
+</Tabs>
+
+
+
+
+## Getter
+
+
+
+### drive_mode_get()
+Returns the current drive mode that the task is running.  Returns `ez::DISABLE`, `ez::SWING`, `ez::TURN`, `ez::DRIVE`.           
+
+<Tabs
+  groupId="examples19"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_drive_set(12, DRIVE_SPEED);
+  chassis.pid_wait();
+
+  if (chassis.interfered)
+    chassis.drive_mode_set(ez::DISABLE);
+  
+  if (chassis.drive_mode_get() == ez::DISABLE) {
+    chassis.drive_set(-127, -127); // Run drive motors myself
+    pros::delay(2000);
+    chassis.drive_set(0, 0);
+  }
+}
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+e_mode drive_mode_get();
+```
+
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+
+
+
+
+
+
+
+
+### drive_tick_per_inch()
+Returns the conversion between raw sensor value and inches.
+<Tabs
+  groupId="examples20"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  printf("Tick Per Inch: %f\n", chassis.drive_tick_per_inch());
+}
+```
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+double drive_tick_per_inch();
+```
+
+
+</TabItem>
+</Tabs>
+
+
+
+### drive_rpm_get()
+Returns RPM for the drive.  This is can be used when a drive has a transmission.  
+<Tabs
+  groupId="drive_rpm_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void drive_example() {
+  chassis.pid_drive_set(24_in, DRIVE_SPEED);
+  chassis.pid_wait();
+
+  chassis.drive_rpm_set(50);  // Engage torque rpm
+  printf("%.2f\n", chassis.drive_rpm_get());
+
+  chassis.pid_drive_set(-24_in, DRIVE_SPEED);
+  chassis.pid_wait();
+
+  chassis.drive_rpm_set(343);  // Return back to normal 
+  printf("%.2f\n", chassis.drive_rpm_get());
+}
+```
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+double drive_rpm_get();
+```
+
+
+</TabItem>
+</Tabs>
+
+
+### drive_ratio_get()
+Returns ratio for the drive.  This is can be used when a drive has a transmission.  This should be `wheel / motor`.   
+<Tabs
+  groupId="drive_ratio_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void drive_example() {
+  chassis.pid_drive_set(24_in, DRIVE_SPEED);
+  chassis.pid_wait();
+
+  chassis.drive_ratio_set(0.083);  // Engage torque rpm
+  printf("%.2f\n", chassis.drive_ratio_get());
+
+  chassis.pid_drive_set(-24_in, DRIVE_SPEED);
+  chassis.pid_wait();
+
+  chassis.drive_ratio_set(1.79);  // Return back to normal rpm
+  printf("%.2f\n", chassis.drive_ratio_get());
+}
+```
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+double drive_ratio_get();
+```
+
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+
+
+
+## Misc.
+
+### pid_wait()
+Locks the code in place until the drive has settled.  This uses the exit conditions from the PID class.      
+
+<Tabs
+  groupId="examples21"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.drive_imu_reset(); 
+  chassis.drive_sensor_reset(); 
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD); 
+
+  chassis.pid_turn_set(90, 110);
+  chassis.pid_wait();
+
+  chassis.pid_turn_set(0, 110);
+  chassis.pid_wait();
+}
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+void pid_wait();
+```
+
+
+</TabItem>
+</Tabs>
+
+
+### pid_wait_quick()
+Locks the code in place until the drive passes target.  This function exits quicker then `pid_wait()`, and is effectively using `pid_wait_until(target)`, where `target` is the most recent targe  value that was set.  If `target` is not overshot, this will use the normal exit conditions from the PID class.      
+
+<Tabs
+  groupId="pid_wait_quick"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.drive_imu_reset(); 
+  chassis.drive_sensor_reset(); 
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD); 
+
+  chassis.pid_turn_set(90, 110);
+  chassis.pid_wait_quick();
+
+  chassis.pid_turn_set(0, 110);
+  chassis.pid_wait_quick();
+}
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+void pid_wait_quick();
+```
+
+
+</TabItem>
+</Tabs>
+
+
+### pid_wait_quick_chain()
+Locks the code in place until the drive passes target.  To ensure that the robot will pass the target, this function will add some amount, such as `pid_turn_chain_constant_set(3_deg);`, to target, then will act as a wrapper for `pid_wait_quick()`.  If target is not overshot, this will use the normal exit conditions from the PID class.   
+
+Because this function adds to target, this should **not** be used as a final wait.  This should be used between motions.     
+
+<Tabs
+  groupId="pid_wait_quick_chain"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.drive_imu_reset(); 
+  chassis.drive_sensor_reset(); 
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD); 
+
+  chassis.pid_turn_set(90, 110);
+  chassis.pid_wait_quick_chain();
+
+  chassis.pid_turn_set(0, 110);
+  chassis.pid_wait_quick();
+}
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+void pid_wait_quick_chain();
+```
+
+
+</TabItem>
+</Tabs>
+
+
+
+
+### pid_targets_reset()
+Resets all drive PID targets to 0.       
+
+<Tabs
+  groupId="pid_targets_reset"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset(); // Resets PID targets to 0
+  chassis.drive_imu_reset(); // Reset gyro position to 0
+  chassis.drive_sensor_reset(); // Reset drive sensors to 0
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD); // Set motors to hold.  This helps autonomous consistency.
+
+  ez::as::auton_selector.selected_auton_call(); // Calls selected auton from autonomous selector.
+}
+```
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+void pid_targets_reset();
+```
+
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+
+### interfered
+Boolean that returns true when `pid_wait()` or `pid_wait_until()` exit with velocity or is_over_current.  This can be used to detect unwanted motion and stop the drive motors from overheating during autonomous.     
+
+<Tabs
+  groupId="examples18"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+ void tug (int attempts) {
+   for (int i=0; i<attempts-1; i++) {
+     // Attempt to drive backwards
+     printf("i - %i", i);
+     chassis.pid_drive_set(-12, 127);
+     chassis.pid_wait();
+
+     // If failsafed...
+     if (chassis.interfered) {
+       chassis.drive_sensor_reset();
+       chassis.pid_drive_set(-2, 20);
+       pros::delay(1000);
+     }
+     // If robot successfully drove back, return
+     else {
+       return;
+     }
+   }
+ }
+
+void auto1() {
+  chassis.pid_drive_set(24, 110, true);
+  chassis.pid_wait();
+
+  if (chassis.interfered) {
+    tug(3);
+    return;
+  }
+
+  chassis.pid_turn_set(90, 90);
+  chassis.pid_wait();
+}
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+bool interfered = false;
+```
+
+
+</TabItem>
+</Tabs>

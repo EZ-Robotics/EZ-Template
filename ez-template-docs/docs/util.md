@@ -63,7 +63,7 @@ extern pros::Controller master();
  
 
 
-## print_to_screen() 
+## screen_print() 
 Prints to the LLEMU.  This function handles text that's too long for a line by finding the last word and starting it on a new line, and takes `\n` to set a new line.   
 
 `text` input string  
@@ -87,7 +87,7 @@ Prints to the LLEMU.  This function handles text that's too long for a line by f
 
 ```cpp
 void initialize() {
-  ez::print_to_screen("hello, this is line 0\nthis is line 1");
+  ez::screen_print("hello, this is line 0\nthis is line 1");
 }
 ```
 
@@ -97,7 +97,7 @@ void initialize() {
 <TabItem value="proto">
 
 ```cpp
-void print_to_screen(std::string text, int line)
+void screen_print(std::string text, int line)
 ```
 
 
