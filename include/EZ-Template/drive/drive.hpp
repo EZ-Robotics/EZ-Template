@@ -743,7 +743,7 @@ class Drive {
   void pid_drive_set(double target, int speed, bool slew_on = false, bool toggle_heading = true);
 
   /**
-   * Sets the robot to turn using PID.
+   * Sets the robot to turn relative to initial heading using PID.
    *
    * \param target
    *        target value as a double, unit is degrees
@@ -755,10 +755,10 @@ class Drive {
   void pid_turn_set(double target, int speed, bool slew_on = false);
 
   /**
-   * Sets the robot to turn using PID with okapi units.
+   * Sets the robot to turn relative to initial heading using PID with okapi units.
    *
    * \param p_target
-   *        target value in degrees
+   *        target value in okapi angle units
    * \param speed
    *        0 to 127, max speed during motion
    * \param slew_on
