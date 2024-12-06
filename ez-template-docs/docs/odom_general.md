@@ -12,7 +12,7 @@ import TabItem from '@theme/TabItem';
 
 
 ### odom_tracker_left_set()
-Sets a tracker that's on the left side of the robot.   
+Sets a parallel tracker that's on the left side of the robot.   
 
 `input` an ez tracking wheel
 <Tabs
@@ -62,7 +62,7 @@ void initialize() {
 
 
 ### odom_tracker_right_set()
-Sets a tracker that's on the left side of the robot.   
+Sets a parallel tracker that's on the right side of the robot.  
 
 `input` an ez tracking wheel
 <Tabs
@@ -140,7 +140,7 @@ void initialize() {
 
   chassis.odom_tracker_right_set(&right_tracker);
   chassis.odom_tracker_left_set(&left_tracker);
-  chassis.odom_tracker_back_set(&horiz_tracker);  // Replace `back` to `front` if your tracker is in the front!
+  chassis.odom_tracker_front_set(&horiz_tracker);  // Replace `back` to `front` if your tracker is in the front!
 }
 ```
 
@@ -162,7 +162,7 @@ void odom_tracker_front_set(tracking_wheel* input);
 
 
 ### odom_tracker_back_set()
-Sets a tracker that's on the left side of the robot.   
+Sets a horizontal tracker that's at the back of the robot.   
 
 `input` an ez tracking wheel
 
@@ -208,7 +208,6 @@ void initialize() {
 
 
 
-## General
 
 
 
@@ -221,7 +220,7 @@ void initialize() {
 
 
 
-  ## Pose
+## Pose
 
 ### odom_x_set()
 Sets the current x position of the robot.     
@@ -523,217 +522,1222 @@ void autonomous() {
 
 
 
-  /**
-   * Sets a new pose for the robot
-   *
-   * \param pose
-   *        {x, y, t} units in inches and degrees
-   */
-  void odom_pose_set(pose itarget);
-
-  /**
-   * Sets a new pose for the robot
-   *
-   * \param united pose
-   *        {x, y, t} as an okapi unit
-   */
-  void odom_pose_set(united_pose itarget);
-
-  /**
-   * Sets a new X and Y value for the robot
-   *
-   * \param x
-   *        new x value, in inches
-   * \param y
-   *        new y value, in inches
-   */
-  void odom_xy_set(double x, double y);
-
-  /**
-   * Sets a new X and Y value for the robot
-   *
-   * \param p_x
-   *        new x value, okapi unit
-   * \param p_y
-   *        new y value, okapi unit
-   */
-  void odom_xy_set(okapi::QLength p_x, okapi::QLength p_y);
-
-  /**
-   * Sets a new X, Y, and Theta value for the robot
-   *
-   * \param x
-   *        new x value, in inches
-   * \param y
-   *        new y value, in inches
-   * \param t
-   *        new theta value, in degrees
-   */
-  void odom_xyt_set(double x, double y, double t);
-
-  /**
-   * Sets a new X, Y, and Theta value for the robot
-   *
-   * \param p_x
-   *        new x value, okapi unit
-   * \param p_y
-   *        new y value, okapi unit
-   * \param p_t
-   *        new theta value, okapi unit
-   */
-  void odom_xyt_set(okapi::QLength p_x, okapi::QLength p_y, okapi::QAngle p_t);
-
-  /**
-   * Returns the current pose of the robot
-   */
-  pose odom_pose_get();
-
-  /**
-   * Resets xyt to 0
-   */
-  void odom_reset();
-
-  /**
-   * Flips the X axis
-   *
-   * \param flip
-   *        true means left is positive x, false means right is positive x
-   */
-  void odom_x_flip(bool flip = true);
-
-  /**
-   * Checks if x axis is flipped.  True means left is positive x, false means right is positive x
-   */
-  bool odom_x_direction_get();
-
-  /**
-   * Flips the Y axis
-   *
-   * \param flip
-   *        true means down is positive Y, false means up is positive Y
-   */
-  void odom_y_flip(bool flip = true);
-
-  /**
-   * Checks if y axis is flipped.  True means down is positive Y, false means up is positive Y
-   */
-  bool odom_y_direction_get();
-
-  /**
-   * Flips the rotation axis
-   *
-   * \param flip
-   *        true means counterclockwise is positive, false means clockwise is positive
-   */
-  void odom_theta_flip(bool flip = true);
-
-  /**
-   * Checks if the rotation axis is flipped.  True means counterclockwise is positive, false means clockwise is positive
-   */
-  bool odom_theta_direction_get();
-
-
-
-
-
-  /**
-   * Returns the current x coordinate of the robot
-   */
-  double odom_x_get();
-    /**
-   * Returns the current y coordinate of the robot
-   */
-  double odom_y_get();
-    /**
-   * Returns the current angle of the robot
-   */
-  double odom_theta_get();
-
-
-
-
-
-  ## Boomerang Behavior
-    /**
-   * Sets a new dlead.  Dlead is a proportional value of how much to make the robot curve during boomerang motions.
-   *
-   * \param input
-   *        a value between 0 and 1.
-   */
-  void odom_boomerang_dlead_set(double input);
-
-  /**
-   * Returns the current dlead.
-   */
-  double odom_boomerang_dlead_get();
-
-  /**
-   * This maxes out how far away the carrot point can be from the target.
-   *
-   * \param distance
-   *        distance in inches
-   */
-  void odom_boomerang_distance_set(double distance);
-
-  /**
-   * This maxes out how far away the carrot point can be from the target.
-   *
-   * \param distance
-   *        distance as an okapi unit
-   */
-  void odom_boomerang_distance_set(okapi::QLength p_distance);
-
-  /**
-   * Returns how far away the carrot point can be from target
-   */
-  double odom_boomerang_distance_get();
 
 
 
 
 
 
-
-
-
-  ## Movement Constants
-    /**
-   * A proportion of how prioritized turning is during odometry motions.  Turning is prioritized so the robot correctly slows down during turns.
-   *
-   * \param bias
-   *        some number probably less than 5
-   */
-  void odom_turn_bias_set(double bias);
-
-  /**
-   * Returns the proportion of how prioritized turning is during odometry motions.
-   */
-  double odom_turn_bias_get();
-
-  /**
-   * The spacing between points when points get injected into the path
-   *
-   * \param spacing
-   *        a small number in inches
-   */
-  void odom_path_spacing_set(double spacing);
-
-  /**
-   * How far away the robot looks in the path during pure pursuits
-   *
-   * \param distance
-   *        how long the "carrot on a stick" is, in inches
-   */
-  void odom_look_ahead_set(double distance);
-
-  /**
-   * How far away the robot looks in the path during pure pursuits
-   *
-   * \param distance
-   *        how long the "carrot on a stick" is, in okapi units
-   */
-  void odom_look_ahead_set(okapi::QLength p_distance);
   
+
+### odom_xy_set()
+Sets the current x and y position of the robot.     
+
+`x` double, expecting inches  
+`y` double, expecting inches    
+<Tabs
+  groupId="odom_xy_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="proto">
+
+```cpp
+void odom_xy_set(double x, double y);
+```
+
+
+</TabItem>
+
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.pid_odom_set({{24_in, 24_in}, fwd, 110});
+  chassis.pid_wait();
+
+  chassis.odom_xy_set(0, 0);  // Set current x and y to 0
+
+  // This will go back to the starting location
+  chassis.pid_odom_set({{-24_in, -24_in}, rev, 110});
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+</Tabs>
+
+ 
+
+ 
+  
+
+
+### odom_xy_set()
+Sets the current x and y position of the robot.     
+
+`p_x` okapi length unit   
+`p_y` okapi length unit    
+<Tabs
+  groupId="odom_xy_set_oka"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="proto">
+
+```cpp
+void odom_xy_set(okapi::QLength p_x, okapi::QLength p_y);
+```
+
+
+</TabItem>
+
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.pid_odom_set({{24_in, 24_in}, fwd, 110});
+  chassis.pid_wait();
+
+  chassis.odom_xy_set(0_in, 0_in);  // Set current x and y to 0
+
+  // This will go back to the starting location
+  chassis.pid_odom_set({{-24_in, -24_in}, rev, 110});
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+ 
+
+
+### odom_xyt_set()
+Sets the current x and y position of the robot, and the current angle.     
+
+`x` double, expecting inches  
+`y` double, expecting inches     
+`t` double, expecting inches
+<Tabs
+  groupId="odom_xyt_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="proto">
+
+```cpp
+void odom_xyt_set(double x, double y, double t);
+```
+
+
+</TabItem>
+
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.pid_odom_set({{24_in, 24_in, 45_deg}, fwd, 110});
+  chassis.pid_wait();
+
+  chassis.odom_xyt_set(0, 0, -45);  
+
+  // This will go back to the starting location
+  chassis.pid_odom_set({{-24_in, -24_in}, rev, 110});
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+</Tabs>
+
+ 
+
+ 
+  
+
+
+### odom_xy_set()
+Sets the current x and y position of the robot, and the current angle.     
+
+`p_x` okapi length unit   
+`p_y` okapi length unit  
+`p_t` okapi angle unit   
+<Tabs
+  groupId="odom_xy_set_oka"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="proto">
+
+```cpp
+void odom_xyt_set(okapi::QLength p_x, okapi::QLength p_y, okapi::QAngle p_t);
+```
+
+
+</TabItem>
+
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.pid_odom_set({{24_in, 24_in, 45_deg}, fwd, 110});
+  chassis.pid_wait();
+
+  chassis.odom_xyt_set(0_in, 0_in, -45_deg);  
+
+  // This will go back to the starting location
+  chassis.pid_odom_set({{-24_in, -24_in}, rev, 110});
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+
+
+
+### odom_pose_set()
+Set the current pose of the robot.        
+
+`itarget` pose, expecting `{0, 0, 0}`     
+<Tabs
+  groupId="odom_pose_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="proto">
+
+```cpp
+void odom_pose_set(pose itarget);
+```
+
+
+</TabItem>
+
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.pid_odom_set({{24_in, 24_in, 45_deg}, fwd, 110});
+  chassis.pid_wait();
+
+  ez::pose new_pose = {0, 0, -45};
+  chassis.odom_xyt_set(new_pose);  
+
+  // This will go back to the starting location
+  chassis.pid_odom_set({{-24_in, -24_in}, rev, 110});
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+</Tabs>
+
+ 
+
+  
+
+
+### odom_pose_set()
+Set the current pose of the robot.        
+
+`itarget` pose with okapi units, expecting `{0_in, 0_in, 0_deg}`     
+<Tabs
+  groupId="odom_pose_set_oka"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="proto">
+
+```cpp
+void odom_pose_set(united_pose itarget);
+```
+
+
+</TabItem>
+
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.pid_odom_set({{24_in, 24_in, 45_deg}, fwd, 110});
+  chassis.pid_wait();
+
+  ez::united_pose new_pose = {0_in, 0_in, -45_deg};
+  chassis.odom_xyt_set(new_pose);  
+
+  // This will go back to the starting location
+  chassis.pid_odom_set({{-24_in, -24_in}, rev, 110});
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+</Tabs>
+ 
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+### odom_x_flip()
+Flips the x axis.  By default, right is positive x.  True makes left positive x, false makes right positive x.  
+
+`flip` bool to flip x axis
+<Tabs
+  groupId="odom_x_flip"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="proto">
+
+```cpp
+void odom_x_flip(bool flip = true);
+```
+
+
+</TabItem>
+
+
+<TabItem value="example">
+
+```cpp
+void base() {
+  ez::united_pose start_intaking_here;
+
+  if (chassis.odom_x_direction_get() == false)
+    start_intaking_here = {12_in, 24_in};  // If red
+  else
+    start_intaking_here = {15_in, 24_in};  // If blue
+
+  chassis.pid_odom_set({{{0_in, 24_in}, fwd, 110},
+                        {start_intaking_here, rev, 110},
+                        {{24_in, 24_in}, rev, 110}},
+                       true);
+  chassis.pid_wait_until_index(1);  // Waits until the robot passes 12, 24
+  Intake.move(127);
+  chassis.pid_wait();
+
+  chassis.pid_odom_set({{24_in, 48_in, 45_deg}, fwd, 110},
+                       true);
+  chassis.pid_wait();
+
+  chassis.pid_turn_set(90_deg, 110, true);
+  chassis.pid_wait();
+}
+
+void red() {
+  base();
+}
+
+void blue() {
+  chassis.odom_x_flip();
+  chassis.odom_theta_flip();
+  base();
+}
+
+
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  red(); 
+  // blue();
+}
+```
+
+</TabItem>
+</Tabs>
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+### odom_y_flip()
+Flips the y axis.  By default, forward is positive y.  True makes backwards positive y, false makes forward positive y.  
+
+`flip` bool to flip y axis
+<Tabs
+  groupId="odom_y_flip"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="proto">
+
+```cpp
+void odom_y_flip(bool flip = true);
+```
+
+
+</TabItem>
+
+
+<TabItem value="example">
+
+```cpp
+void base() {
+  ez::united_pose start_intaking_here;
+
+  if (chassis.odom_y_direction_get() == false)
+    start_intaking_here = {12_in, 24_in};  // If red
+  else
+    start_intaking_here = {15_in, 24_in};  // If blue
+
+  chassis.pid_odom_set({{{0_in, 24_in}, fwd, 110},
+                        {start_intaking_here, rev, 110},
+                        {{24_in, 24_in}, rev, 110}},
+                       true);
+  chassis.pid_wait_until_index(1);  // Waits until the robot passes 12, 24
+  Intake.move(127);
+  chassis.pid_wait();
+
+  chassis.pid_odom_set({{24_in, 48_in, 45_deg}, fwd, 110},
+                       true);
+  chassis.pid_wait();
+
+  chassis.pid_turn_set(90_deg, 110, true);
+  chassis.pid_wait();
+}
+
+void red() {
+  base();
+}
+
+void blue() {
+  chassis.odom_y_flip();
+  chassis.odom_theta_flip();
+  base();
+}
+
+
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 90_deg);   // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  red(); 
+  // blue();
+}
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+### odom_theta_flip()
+Flips the rotation axis.  By default, clockwise is positive angle.  True makes clockwise positive angle, false makes counter clockwise positive angle.  
+
+`flip` bool to flip rotation axis
+<Tabs
+  groupId="odom_theta_flip"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="proto">
+
+```cpp
+void odom_theta_flip(bool flip = true);
+```
+
+
+</TabItem>
+
+
+<TabItem value="example">
+
+```cpp
+void base() {
+  ez::united_pose start_intaking_here;
+
+  if (chassis.odom_theta_direction_get() == false)
+    start_intaking_here = {12_in, 24_in};  // If red
+  else
+    start_intaking_here = {15_in, 24_in};  // If blue
+
+  chassis.pid_odom_set({{{0_in, 24_in}, fwd, 110},
+                        {start_intaking_here, rev, 110},
+                        {{24_in, 24_in}, rev, 110}},
+                       true);
+  chassis.pid_wait_until_index(1);  // Waits until the robot passes 12, 24
+  Intake.move(127);
+  chassis.pid_wait();
+
+  chassis.pid_odom_set({{24_in, 48_in, 45_deg}, fwd, 110},
+                       true);
+  chassis.pid_wait();
+
+  chassis.pid_turn_set(90_deg, 110, true);
+  chassis.pid_wait();
+}
+
+void red() {
+  base();
+}
+
+void blue() {
+  chassis.odom_x_flip();
+  chassis.odom_theta_flip();
+  base();
+}
+
+
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  red(); 
+  // blue();
+}
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+
+
+
+
+
+
+
+
+### odom_pose_get()
+Returns the current pose of the robot.           
+<Tabs
+  groupId="odom_pose_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="proto">
+
+```cpp
+pose odom_pose_get();
+```
+
+
+</TabItem>
+
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.pid_odom_set({{24_in, 24_in, 45_deg}, fwd, 110});
+  chassis.pid_wait();
+
+  ez::pose c_pose = chassis.odom_pose_get();
+  printf("X: %.2f  Y: %.2f  T: %.2f\n", c_pose.x, c_pose.y, c_pose.theta);
+}
+```
+
+</TabItem>
+</Tabs>
+
+### odom_x_direction_get()
+Returns the direction of the x axis.  False means right is positive x, true means left is positive x.  
+<Tabs
+  groupId="odom_x_direction_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="proto">
+
+```cpp
+bool odom_x_direction_get();
+```
+
+
+</TabItem>
+
+
+<TabItem value="example">
+
+```cpp
+void base() {
+  ez::united_pose start_intaking_here;
+
+  if (chassis.odom_x_direction_get() == false)
+    start_intaking_here = {12_in, 24_in};  // If red
+  else
+    start_intaking_here = {15_in, 24_in};  // If blue
+
+  chassis.pid_odom_set({{{0_in, 24_in}, fwd, 110},
+                        {start_intaking_here, rev, 110},
+                        {{24_in, 24_in}, rev, 110}},
+                       true);
+  chassis.pid_wait_until_index(1);  // Waits until the robot passes 12, 24
+  Intake.move(127);
+  chassis.pid_wait();
+
+  chassis.pid_odom_set({{24_in, 48_in, 45_deg}, fwd, 110},
+                       true);
+  chassis.pid_wait();
+
+  chassis.pid_turn_set(90_deg, 110, true);
+  chassis.pid_wait();
+}
+
+void red() {
+  base();
+}
+
+void blue() {
+  chassis.odom_x_flip();
+  chassis.odom_theta_flip();
+  base();
+}
+
+
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  red(); 
+  // blue();
+}
+```
+
+</TabItem>
+</Tabs>
+### odom_y_direction_get()
+Returns the direction of the y axis.  False means forward is positive y, false means backward is positive y.   
+<Tabs
+  groupId="odom_y_direction_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="proto">
+
+```cpp
+bool odom_y_direction_get();
+```
+
+
+</TabItem>
+
+
+<TabItem value="example">
+
+```cpp
+void base() {
+  ez::united_pose start_intaking_here;
+
+  if (chassis.odom_y_direction_get() == false)
+    start_intaking_here = {12_in, 24_in};  // If red
+  else
+    start_intaking_here = {15_in, 24_in};  // If blue
+
+  chassis.pid_odom_set({{{0_in, 24_in}, fwd, 110},
+                        {start_intaking_here, rev, 110},
+                        {{24_in, 24_in}, rev, 110}},
+                       true);
+  chassis.pid_wait_until_index(1);  // Waits until the robot passes 12, 24
+  Intake.move(127);
+  chassis.pid_wait();
+
+  chassis.pid_odom_set({{24_in, 48_in, 45_deg}, fwd, 110},
+                       true);
+  chassis.pid_wait();
+
+  chassis.pid_turn_set(90_deg, 110, true);
+  chassis.pid_wait();
+}
+
+void red() {
+  base();
+}
+
+void blue() {
+  chassis.odom_y_flip();
+  chassis.odom_theta_flip();
+  base();
+}
+
+
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 90_deg);   // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  red(); 
+  // blue();
+}
+```
+
+</TabItem>
+</Tabs>
+### odom_theta_direction_get()
+Returns the direction of the rotation axis.  False means counter clockwise is positive angle, true means clockwise is positive angle.    
+<Tabs
+  groupId="odom_theta_direction_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="proto">
+
+```cpp
+bool odom_theta_direction_get();
+```
+
+
+</TabItem>
+
+
+<TabItem value="example">
+
+```cpp
+void base() {
+  ez::united_pose start_intaking_here;
+
+  if (chassis.odom_theta_direction_get() == false)
+    start_intaking_here = {12_in, 24_in};  // If red
+  else
+    start_intaking_here = {15_in, 24_in};  // If blue
+
+  chassis.pid_odom_set({{{0_in, 24_in}, fwd, 110},
+                        {start_intaking_here, rev, 110},
+                        {{24_in, 24_in}, rev, 110}},
+                       true);
+  chassis.pid_wait_until_index(1);  // Waits until the robot passes 12, 24
+  Intake.move(127);
+  chassis.pid_wait();
+
+  chassis.pid_odom_set({{24_in, 48_in, 45_deg}, fwd, 110},
+                       true);
+  chassis.pid_wait();
+
+  chassis.pid_turn_set(90_deg, 110, true);
+  chassis.pid_wait();
+}
+
+void red() {
+  base();
+}
+
+void blue() {
+  chassis.odom_x_flip();
+  chassis.odom_theta_flip();
+  base();
+}
+
+
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  red(); 
+  // blue();
+}
+```
+
+</TabItem>
+</Tabs>
+  
+### odom_x_get()
+Returns the current x position of the robot in inches.             
+<Tabs
+  groupId="odom_x_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="proto">
+
+```cpp
+double odom_x_get();
+```
+
+
+</TabItem>
+
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.pid_odom_set({{24_in, 24_in, 45_deg}, fwd, 110});
+  chassis.pid_wait();
+
+  printf("X: %.2f  Y: %.2f  T: %.2f\n", chassis.odom_x_get(), chassis.odom_y_get(), chassis.odom_theta_get());
+}
+```
+
+</TabItem>
+</Tabs>
+
+### odom_y_get()
+Returns the current y position of the robot in inches.             
+<Tabs
+  groupId="odom_y_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="proto">
+
+```cpp
+double odom_y_get();
+```
+
+
+</TabItem>
+
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.pid_odom_set({{24_in, 24_in, 45_deg}, fwd, 110});
+  chassis.pid_wait();
+
+  printf("X: %.2f  Y: %.2f  T: %.2f\n", chassis.odom_x_get(), chassis.odom_y_get(), chassis.odom_theta_get());
+}
+```
+
+</TabItem>
+</Tabs>
+
+### odom_theta_get()
+Returns the current angle of the robot in degrees.             
+<Tabs
+  groupId="odom_theta_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="proto">
+
+```cpp
+double odom_theta_get();
+```
+
+
+</TabItem>
+
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.pid_odom_set({{24_in, 24_in, 45_deg}, fwd, 110});
+  chassis.pid_wait();
+
+  printf("X: %.2f  Y: %.2f  T: %.2f\n", chassis.odom_x_get(), chassis.odom_y_get(), chassis.odom_theta_get());
+}
+```
+
+</TabItem>
+</Tabs>
+ 
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+## Movement Constants
+
+
+
+### odom_turn_bias_set()
+By default, EZ-Template uses cosine scaling.  This is a scaling value that amplifies what cosine scaling does.  `1.0` is the least turn priority, and smaller numbers give more turn priority.   
+
+`bias` double, a number between 0 and 1
+<Tabs
+  groupId="odom_turn_bias_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="proto">
+
+```cpp
+void odom_turn_bias_set(double bias);
+```
+
+
+</TabItem>
+
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.odom_turn_bias_set(1.0);  // Set turn bias to 1
+
+  // Go to 24, 24
+  chassis.pid_odom_set({{24_in, 24_in}, fwd, 110});
+  chassis.pid_wait();
+
+  // Reset your angle and position
+  chassis.pid_turn_set(0_deg, 110);
+  chassis.pid_wait();
+  chassis.odom_xyt_set(0_in, 0_in);
+
+  chassis.odom_turn_bias_set(0.5);  // Set turn bias to 0
+
+  // Go to 24, 24 relative to where the robot ended, but with a new turn bias
+  chassis.pid_odom_set({{24_in, 24_in}, fwd, 110});
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+</Tabs>
+ 
+
+
+
+
+
+
+
+
+ 
+### odom_look_ahead_set()
+Sets the look ahead distance.  This is how far ahead in the path the robot looks at.  Larger numbers will result in worse path following.   
+
+`distance` double, expecting inches
+<Tabs
+  groupId="odom_look_ahead_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="proto">
+
+```cpp
+void odom_look_ahead_set(double distance);
+```
+
+
+</TabItem>
+
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.odom_look_ahead_set(7.0);  // Set look ahead to 7in
+
+  // Go to 24, 24
+  chassis.pid_odom_set({{24_in, 24_in}, fwd, 110});
+  chassis.pid_wait();
+
+  // Reset your angle and position
+  chassis.pid_turn_set(0_deg, 110);
+  chassis.pid_wait();
+  chassis.odom_xyt_set(0_in, 0_in);
+
+  chassis.odom_look_ahead_set(14.0);  // Set look ahead to 14in
+
+  // Go to 24, 24 relative to where the robot ended, but with a new look ahead
+  chassis.pid_odom_set({{24_in, 24_in}, fwd, 110});
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+</Tabs>
+ 
+
+
+
+### odom_look_ahead_set()
+Sets the look ahead distance.  This is how far ahead in the path the robot looks at.  Larger numbers will result in worse path following.   
+
+`distance` okapi distance unit
+<Tabs
+  groupId="odom_look_ahead_se_okat"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="proto">
+
+```cpp
+void odom_look_ahead_set(okapi::QLength p_distance);
+```
+
+
+</TabItem>
+
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.odom_look_ahead_set(7_in);  // Set look ahead to 7in
+
+  // Go to 24, 24
+  chassis.pid_odom_set({{24_in, 24_in}, fwd, 110});
+  chassis.pid_wait();
+
+  // Reset your angle and position
+  chassis.pid_turn_set(0_deg, 110);
+  chassis.pid_wait();
+  chassis.odom_xyt_set(0_in, 0_in);
+
+  chassis.odom_look_ahead_set(14_in);  // Set look ahead to 14in
+
+  // Go to 24, 24 relative to where the robot ended, but with a new look ahead
+  chassis.pid_odom_set({{24_in, 24_in}, fwd, 110});
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
 
 
 ### pid_odom_behavior_set()
@@ -822,16 +1826,320 @@ e_angle_behavior pid_odom_behavior_get();
 
 
 
-  ## Path
-    /**
-   * The spacing between points when points get injected into the path
-   *
-   * \param spacing
-   *        a small number in okapi units
-   */
-  void odom_path_spacing_set(okapi::QLength p_spacing);
+### odom_turn_bias_get()
+Returns the current turn bias.  
+<Tabs
+  groupId="odom_turn_bias_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
 
-  /**
-   * Returns the spacing between points when points get injected into the path
-   */
-  double odom_path_spacing_get();
+<TabItem value="proto">
+
+```cpp
+double odom_turn_bias_get();
+```
+
+
+</TabItem>
+
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.odom_turn_bias_set(1.0);  // Set turn bias to 1
+  printf("Turn Bias: %.2f\n", chassis.odom_turn_bias_get());
+
+  // Go to 24, 24
+  chassis.pid_odom_set({{24_in, 24_in}, fwd, 110});
+  chassis.pid_wait();
+
+  // Reset your angle and position
+  chassis.pid_turn_set(0_deg, 110);
+  chassis.pid_wait();
+  chassis.odom_xyt_set(0_in, 0_in);
+
+  chassis.odom_turn_bias_set(0.5);  // Set turn bias to 0
+  printf("Turn Bias: %.2f\n", chassis.odom_turn_bias_get());
+
+  // Go to 24, 24 relative to where the robot ended, but with a new turn bias
+  chassis.pid_odom_set({{24_in, 24_in}, fwd, 110});
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+</Tabs>
+ 
+### odom_look_ahead_get()
+Returns the current look ahead distance.   
+<Tabs
+  groupId="odom_look_ahead_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="proto">
+
+```cpp
+double odom_look_ahead_get();
+```
+
+
+</TabItem>
+
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.odom_look_ahead_set(7_in);  // Set look ahead to 7in
+  printf("Look Ahead: %.2f\n", chassis.odom_look_ahead_get());
+
+  // Go to 24, 24
+  chassis.pid_odom_set({{24_in, 24_in}, fwd, 110});
+  chassis.pid_wait();
+
+  // Reset your angle and position
+  chassis.pid_turn_set(0_deg, 110);
+  chassis.pid_wait();
+  chassis.odom_xyt_set(0_in, 0_in);
+
+  chassis.odom_look_ahead_set(14_in);  // Set look ahead to 14in
+  printf("Look Ahead: %.2f\n", chassis.odom_look_ahead_get());
+
+  // Go to 24, 24 relative to where the robot ended, but with a new look ahead
+  chassis.pid_odom_set({{24_in, 24_in}, fwd, 110});
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+ 
+
+ 
+
+## Boomerang Behavior
+
+
+
+
+### odom_boomerang_dlead_set()
+Sets the dlead for boomerang.  Dlead is a value you'll tune that sets how the carrot point reacts relative to where the robot is currently.  You can play with [this demos](https://www.desmos.com/calculator/sptjw5szex) to get a better idea on how it works.   
+
+`input` double, a number between 0-1
+<Tabs
+  groupId="odom_boomerang_dlead_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="proto">
+
+```cpp
+void odom_boomerang_dlead_set(double input);
+```
+
+
+</TabItem>
+
+
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  chassis.odom_boomerang_dlead_set(0.5);
+}
+```
+
+</TabItem>
+</Tabs>
+ 
+
+
+
+
+
+
+
+
+
+
+
+### odom_boomerang_distance_set()
+Sets a maximum distance that the carrot point can be away from the target.  This helps bring consistency in how boomerang behaves across multiple target points.  You can play with [this demos](https://www.desmos.com/calculator/sptjw5szex) to get a better idea on how boomerang works.   
+
+`distance` double, expecting inches
+<Tabs
+  groupId="odom_boomerang_distance_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="proto">
+
+```cpp
+void odom_boomerang_distance_set(double distance);
+```
+
+
+</TabItem>
+
+
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  chassis.odom_boomerang_dlead_set(0.5);
+  chassis.odom_boomerang_distance_set(12);
+}
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+
+
+### odom_boomerang_distance_set()
+Sets a maximum distance that the carrot point can be away from the target.  This helps bring consistency in how boomerang behaves across multiple target points.  You can play with [this demos](https://www.desmos.com/calculator/sptjw5szex) to get a better idea on how boomerang works.   
+
+`distance` okapi length unit
+<Tabs
+  groupId="odom_boomerang_distance_set_oka"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="proto">
+
+```cpp
+void odom_boomerang_distance_set(okapi::QLength p_distance);
+```
+
+
+</TabItem>
+
+
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  chassis.odom_boomerang_dlead_set(0.5);
+  chassis.odom_boomerang_distance_set(12_in);
+}
+```
+
+</TabItem>
+</Tabs>
+ 
+
+
+
+
+
+
+### odom_boomerang_dlead_get()
+Returns the dlead for boomerang.  
+<Tabs
+  groupId="odom_boomerang_dlead_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="proto">
+
+```cpp
+double odom_boomerang_dlead_get();
+```
+
+
+</TabItem>
+
+
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  chassis.odom_boomerang_dlead_set(0.5);
+
+  printf("dlead: %.2f\n", chassis.odom_boomerang_dlead_get());
+}
+```
+
+</TabItem>
+</Tabs>
+
+### odom_boomerang_distance_get()
+Returns the maximum distance the carrot point can be away from the target point.   
+<Tabs
+  groupId="odom_boomerang_distance_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="proto">
+
+```cpp
+double odom_boomerang_distance_get();
+```
+
+
+</TabItem>
+
+
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  chassis.odom_boomerang_dlead_set(0.5);
+  chassis.odom_boomerang_distance_set(12_in);
+
+  printf("Max Distance: %.2f\n", chassis.odom_boomerang_distance_get());
+}
+```
+
+</TabItem>
+</Tabs>
