@@ -222,6 +222,7 @@ void initialize() {
 
 ## Pose
 
+
 ### odom_x_set()
 Sets the current x position of the robot.     
 
@@ -1140,6 +1141,133 @@ void autonomous() {
 
 
 
+### odom_x_get()
+Returns the current x position of the robot in inches.             
+<Tabs
+  groupId="odom_x_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="proto">
+
+```cpp
+double odom_x_get();
+```
+
+
+</TabItem>
+
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.pid_odom_set({{24_in, 24_in, 45_deg}, fwd, 110});
+  chassis.pid_wait();
+
+  printf("X: %.2f  Y: %.2f  T: %.2f\n", chassis.odom_x_get(), chassis.odom_y_get(), chassis.odom_theta_get());
+}
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+### odom_y_get()
+Returns the current y position of the robot in inches.             
+<Tabs
+  groupId="odom_y_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="proto">
+
+```cpp
+double odom_y_get();
+```
+
+
+</TabItem>
+
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.pid_odom_set({{24_in, 24_in, 45_deg}, fwd, 110});
+  chassis.pid_wait();
+
+  printf("X: %.2f  Y: %.2f  T: %.2f\n", chassis.odom_x_get(), chassis.odom_y_get(), chassis.odom_theta_get());
+}
+```
+
+</TabItem>
+</Tabs>
+
+### odom_theta_get()
+Returns the current angle of the robot in degrees.             
+<Tabs
+  groupId="odom_theta_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="proto">
+
+```cpp
+double odom_theta_get();
+```
+
+
+</TabItem>
+
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.pid_odom_set({{24_in, 24_in, 45_deg}, fwd, 110});
+  chassis.pid_wait();
+
+  printf("X: %.2f  Y: %.2f  T: %.2f\n", chassis.odom_x_get(), chassis.odom_y_get(), chassis.odom_theta_get());
+}
+```
+
+</TabItem>
+</Tabs>
+ 
+ 
 
 
 
@@ -1331,6 +1459,7 @@ void autonomous() {
 
 </TabItem>
 </Tabs>
+
 ### odom_theta_direction_get()
 Returns the direction of the rotation axis.  False means counter clockwise is positive angle, true means clockwise is positive angle.    
 <Tabs
@@ -1405,134 +1534,6 @@ void autonomous() {
 </TabItem>
 </Tabs>
   
-### odom_x_get()
-Returns the current x position of the robot in inches.             
-<Tabs
-  groupId="odom_x_get"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-
-<TabItem value="proto">
-
-```cpp
-double odom_x_get();
-```
-
-
-</TabItem>
-
-
-<TabItem value="example">
-
-```cpp
-void autonomous() {
-  chassis.pid_targets_reset();                // Resets PID targets to 0
-  chassis.drive_imu_reset();                  // Reset gyro position to 0
-  chassis.drive_sensor_reset();               // Reset drive sensors to 0
-  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
-  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
-
-  chassis.pid_odom_set({{24_in, 24_in, 45_deg}, fwd, 110});
-  chassis.pid_wait();
-
-  printf("X: %.2f  Y: %.2f  T: %.2f\n", chassis.odom_x_get(), chassis.odom_y_get(), chassis.odom_theta_get());
-}
-```
-
-</TabItem>
-</Tabs>
-
-### odom_y_get()
-Returns the current y position of the robot in inches.             
-<Tabs
-  groupId="odom_y_get"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-
-<TabItem value="proto">
-
-```cpp
-double odom_y_get();
-```
-
-
-</TabItem>
-
-
-<TabItem value="example">
-
-```cpp
-void autonomous() {
-  chassis.pid_targets_reset();                // Resets PID targets to 0
-  chassis.drive_imu_reset();                  // Reset gyro position to 0
-  chassis.drive_sensor_reset();               // Reset drive sensors to 0
-  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
-  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
-
-  chassis.pid_odom_set({{24_in, 24_in, 45_deg}, fwd, 110});
-  chassis.pid_wait();
-
-  printf("X: %.2f  Y: %.2f  T: %.2f\n", chassis.odom_x_get(), chassis.odom_y_get(), chassis.odom_theta_get());
-}
-```
-
-</TabItem>
-</Tabs>
-
-### odom_theta_get()
-Returns the current angle of the robot in degrees.             
-<Tabs
-  groupId="odom_theta_get"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-
-<TabItem value="proto">
-
-```cpp
-double odom_theta_get();
-```
-
-
-</TabItem>
-
-
-<TabItem value="example">
-
-```cpp
-void autonomous() {
-  chassis.pid_targets_reset();                // Resets PID targets to 0
-  chassis.drive_imu_reset();                  // Reset gyro position to 0
-  chassis.drive_sensor_reset();               // Reset drive sensors to 0
-  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
-  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
-
-  chassis.pid_odom_set({{24_in, 24_in, 45_deg}, fwd, 110});
-  chassis.pid_wait();
-
-  printf("X: %.2f  Y: %.2f  T: %.2f\n", chassis.odom_x_get(), chassis.odom_y_get(), chassis.odom_theta_get());
-}
-```
-
-</TabItem>
-</Tabs>
- 
- 
-
-
-
-
 
 
 
@@ -1822,7 +1823,50 @@ e_angle_behavior pid_odom_behavior_get();
 
 
 
+### odom_path_spacing_set()
+Sets the spacing between injected points in a path.   
 
+`p_spacing` okapi length unit
+<Tabs
+  groupId="odom_path_spacing_set_oka"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="proto">
+
+```cpp
+void odom_path_spacing_set(okapi::QLength p_spacing);
+```
+
+
+</TabItem>
+
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.odom_path_spacing_set(0.5_in);  // Set path spacing to 0.5 inches
+  printf("Path Spacing: %.2f\n", chassis.odom_path_spacing_get());
+
+  // Go to 24, 24
+  chassis.pid_odom_set({{24_in, 24_in}, fwd, 110});
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+</Tabs>
 
 
 
@@ -1928,6 +1972,62 @@ void autonomous() {
   printf("Look Ahead: %.2f\n", chassis.odom_look_ahead_get());
 
   // Go to 24, 24 relative to where the robot ended, but with a new look ahead
+  chassis.pid_odom_set({{24_in, 24_in}, fwd, 110});
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### odom_path_spacing_get()
+Returns the current spacing between injected points.    
+<Tabs
+  groupId="odom_path_spacing_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="proto">
+
+```cpp
+double odom_path_spacing_get();
+```
+
+
+</TabItem>
+
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.odom_path_spacing_set(0.5_in);  // Set path spacing to 0.5 inches
+  printf("Path Spacing: %.2f\n", chassis.odom_path_spacing_get());
+
+  // Go to 24, 24
   chassis.pid_odom_set({{24_in, 24_in}, fwd, 110});
   chassis.pid_wait();
 }
@@ -2143,3 +2243,59 @@ void initialize() {
 
 </TabItem>
 </Tabs>
+
+
+
+
+
+
+### odom_path_spacing_set()
+Sets the spacing between injected points in a path.   
+
+`spacing` double, expecting inches
+<Tabs
+  groupId="odom_path_spacing_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="proto">
+
+```cpp
+void odom_path_spacing_set(double spacing);
+```
+
+
+</TabItem>
+
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.odom_path_spacing_set(0.5_in);  // Set path spacing to 0.5 inches
+  printf("Path Spacing: %.2f\n", chassis.odom_path_spacing_get());
+
+  // Go to 24, 24
+  chassis.pid_odom_set({{24_in, 24_in}, fwd, 110});
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+

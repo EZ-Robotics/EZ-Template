@@ -507,6 +507,191 @@ void pid_wait_until(double target);
 
 
 
+
+
+### pid_angle_behavior_set()
+Changes the default behavior for turns, swings, and odom motions.   
+
+`behavior` the default behavior for all motions.  This can be `ez::shortest`, `ez::longest`, `ez::cw`, `ez::ccw`, or `ez::raw`.     
+<Tabs
+  groupId="pid_angle_behavior_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.pid_angle_behavior_set(ez::longest);  // Set the robot to take the longest path there
+
+  // This will make the robot go the long way around to get to 90 degrees
+  chassis.pid_turn_set(90_deg, 110);
+  chassis.pid_wait();
+
+  // This will make the robot go the long way around to get to 0 degrees
+  chassis.pid_swing_set(ez::LEFT_SWING, 0_deg, 110);
+  chassis.pid_wait();
+
+  // This will make the robot go the long way around to get to 24, 0
+  chassis.pid_odom_set({{24_in, 0_in}, fwd, 110});
+  chassis.pid_wait();
+}
+```
+</TabItem>
+<TabItem value="proto">
+
+```cpp
+void pid_angle_behavior_set(e_angle_behavior behavior);
+```
+</TabItem>
+</Tabs>
+
+
+
+
+
+
+
+### pid_angle_behavior_tolerance_set()
+Sets a tolerance when dealing with shortest/longest angle edge cases.  If the robot is at 180 + the tolerance you set, and you're trying to go take the shortest/longest path to 0, the robot will go your decided default direction.  
+
+`p_tolerance` an okapi angle unit    
+<Tabs
+  groupId="pid_angle_behavior_tolerance_set_oka"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.pid_angle_behavior_tolerance_set(3_deg);  // Set the behavior tolerance to 3 degrees
+  chassis.pid_angle_behavior_bias_set(ez::cw);      // When a turn is within the tolerance above, the behavior will default to this
+
+  chassis.odom_theta_set(-1_deg);
+
+  // Even though the fastest way here is to go counter clockwise, the robot will go clockwise 
+  chassis.pid_turn_set(180_deg, 110);
+  chassis.pid_wait();
+}
+```
+</TabItem>
+<TabItem value="proto">
+
+```cpp
+void pid_angle_behavior_tolerance_set(okapi::QAngle p_tolerance);
+```
+</TabItem>
+</Tabs>
+
+
+
+
+### pid_angle_behavior_tolerance_set()
+Sets a tolerance when dealing with shortest/longest angle edge cases.  If the robot is at 180 + the tolerance you set, and you're trying to go take the shortest/longest path to 0, the robot will go your decided default direction.  
+
+`tolerance` double, expecting degrees  
+<Tabs
+  groupId="pid_angle_behavior_tolerance_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.pid_angle_behavior_tolerance_set(3);  // Set the behavior tolerance to 3 degrees
+  chassis.pid_angle_behavior_bias_set(ez::cw);  // When a turn is within the tolerance above, the behavior will default to this
+
+  chassis.odom_theta_set(-1_deg);
+
+  // Even though the fastest way here is to go counter clockwise, the robot will go clockwise 
+  chassis.pid_turn_set(180_deg, 110);
+  chassis.pid_wait();
+}
+```
+</TabItem>
+<TabItem value="proto">
+
+```cpp
+void pid_angle_behavior_tolerance_set(double tolerance);
+```
+</TabItem>
+</Tabs>
+
+
+### pid_angle_behavior_bias_set()
+Sets the default direction when dealing with shortest/longest angle edge cases.  If the robot is at 180 + the tolerance you set, and you're trying to go take the shortest/longest path to 0, the robot will go your decided default direction.   
+
+`behavior` the default behavior when within tolerance.  This can be `ez::shortest`, `ez::longest`, `ez::cw`, `ez::ccw`, or `ez::raw`.  
+<Tabs
+  groupId="pid_angle_behavior_bias_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.pid_angle_behavior_tolerance_set(3_deg);  // Set the behavior tolerance to 3 degrees
+  chassis.pid_angle_behavior_bias_set(ez::cw);      // When a turn is within the tolerance above, the behavior will default to this
+
+  chassis.odom_theta_set(-1_deg);
+
+  // Even though the fastest way here is to go counter clockwise, the robot will go clockwise 
+  chassis.pid_turn_set(180_deg, 110);
+  chassis.pid_wait();
+}
+```
+</TabItem>
+<TabItem value="proto">
+
+```cpp
+void pid_angle_behavior_bias_set(e_angle_behavior behavior);
+```
+</TabItem>
+</Tabs>
+
+
+
+
+
 ## Getter
 
 
@@ -941,148 +1126,7 @@ bool interfered = false;
 
 
 
-### pid_angle_behavior_set()
-Changes the default behavior for turns, swings, and odom motions.   
 
-`behavior` the default behavior for all motions.  This can be `ez::shortest`, `ez::longest`, `ez::cw`, `ez::ccw`, or `ez::raw`.     
-<Tabs
-  groupId="pid_angle_behavior_set"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-<TabItem value="example">
-
-```cpp
-void autonomous() {
-  chassis.pid_targets_reset();                // Resets PID targets to 0
-  chassis.drive_imu_reset();                  // Reset gyro position to 0
-  chassis.drive_sensor_reset();               // Reset drive sensors to 0
-  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
-  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
-
-  chassis.pid_angle_behavior_set(ez::longest);  // Set the robot to take the longest path there
-
-  // This will make the robot go the long way around to get to 90 degrees
-  chassis.pid_turn_set(90_deg, 110);
-  chassis.pid_wait();
-
-  // This will make the robot go the long way around to get to 0 degrees
-  chassis.pid_swing_set(ez::LEFT_SWING, 0_deg, 110);
-  chassis.pid_wait();
-
-  // This will make the robot go the long way around to get to 24, 0
-  chassis.pid_odom_set({{24_in, 0_in}, fwd, 110});
-  chassis.pid_wait();
-}
-```
-</TabItem>
-<TabItem value="proto">
-
-```cpp
-void pid_angle_behavior_set(e_angle_behavior behavior);
-```
-</TabItem>
-</Tabs>
-
-
-
-
-
-    /**
-   * Gives some wiggle room in shortest vs longest, so a 180.1 degree turn has consistent behavior.
-   *
-   * \param p_tolerance
-   *        angle wiggle room, an okapi unit
-   */
-  void pid_angle_behavior_tolerance_set(okapi::QAngle p_tolerance);
-
-### pid_angle_behavior_tolerance_set()
-Sets a tolerance when dealing with shortest/longest angle edge cases.  If the robot is at 180 + the tolerance you set, and you're trying to go take the shortest/longest path to 0, the robot will go your decided default direction.  
-
-`p_tolerance` an okapi angle unit    
-<Tabs
-  groupId="pid_angle_behavior_tolerance_set_oka"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-<TabItem value="example">
-
-```cpp
-void autonomous() {
-  chassis.pid_targets_reset();                // Resets PID targets to 0
-  chassis.drive_imu_reset();                  // Reset gyro position to 0
-  chassis.drive_sensor_reset();               // Reset drive sensors to 0
-  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
-  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
-
-  chassis.pid_angle_behavior_tolerance_set(3_deg);  // Set the behavior tolerance to 3 degrees
-  chassis.pid_angle_behavior_bias_set(ez::cw);      // When a turn is within the tolerance above, the behavior will default to this
-
-  chassis.odom_theta_set(-1_deg);
-
-  // Even though the fastest way here is to go counter clockwise, the robot will go clockwise 
-  chassis.pid_turn_set(180_deg, 110);
-  chassis.pid_wait();
-}
-```
-</TabItem>
-<TabItem value="proto">
-
-```cpp
-void pid_angle_behavior_tolerance_set(okapi::QAngle p_tolerance);
-```
-</TabItem>
-</Tabs>
-
-
-
-
-### pid_angle_behavior_tolerance_set()
-Sets a tolerance when dealing with shortest/longest angle edge cases.  If the robot is at 180 + the tolerance you set, and you're trying to go take the shortest/longest path to 0, the robot will go your decided default direction.  
-
-`tolerance` double, expecting degrees  
-<Tabs
-  groupId="pid_angle_behavior_tolerance_set"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-<TabItem value="example">
-
-```cpp
-void autonomous() {
-  chassis.pid_targets_reset();                // Resets PID targets to 0
-  chassis.drive_imu_reset();                  // Reset gyro position to 0
-  chassis.drive_sensor_reset();               // Reset drive sensors to 0
-  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
-  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
-
-  chassis.pid_angle_behavior_tolerance_set(3);  // Set the behavior tolerance to 3 degrees
-  chassis.pid_angle_behavior_bias_set(ez::cw);  // When a turn is within the tolerance above, the behavior will default to this
-
-  chassis.odom_theta_set(-1_deg);
-
-  // Even though the fastest way here is to go counter clockwise, the robot will go clockwise 
-  chassis.pid_turn_set(180_deg, 110);
-  chassis.pid_wait();
-}
-```
-</TabItem>
-<TabItem value="proto">
-
-```cpp
-void pid_angle_behavior_tolerance_set(double tolerance);
-```
-</TabItem>
-</Tabs>
 
 
 
@@ -1135,47 +1179,6 @@ double pid_angle_behavior_tolerance_get();
 
 
 
-
-### pid_angle_behavior_bias_set()
-Sets the default direction when dealing with shortest/longest angle edge cases.  If the robot is at 180 + the tolerance you set, and you're trying to go take the shortest/longest path to 0, the robot will go your decided default direction.   
-
-`behavior` the default behavior when within tolerance.  This can be `ez::shortest`, `ez::longest`, `ez::cw`, `ez::ccw`, or `ez::raw`.  
-<Tabs
-  groupId="pid_angle_behavior_bias_set"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-<TabItem value="example">
-
-```cpp
-void autonomous() {
-  chassis.pid_targets_reset();                // Resets PID targets to 0
-  chassis.drive_imu_reset();                  // Reset gyro position to 0
-  chassis.drive_sensor_reset();               // Reset drive sensors to 0
-  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
-  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
-
-  chassis.pid_angle_behavior_tolerance_set(3_deg);  // Set the behavior tolerance to 3 degrees
-  chassis.pid_angle_behavior_bias_set(ez::cw);      // When a turn is within the tolerance above, the behavior will default to this
-
-  chassis.odom_theta_set(-1_deg);
-
-  // Even though the fastest way here is to go counter clockwise, the robot will go clockwise 
-  chassis.pid_turn_set(180_deg, 110);
-  chassis.pid_wait();
-}
-```
-</TabItem>
-<TabItem value="proto">
-
-```cpp
-void pid_angle_behavior_bias_set(e_angle_behavior behavior);
-```
-</TabItem>
-</Tabs>
 
 
 
