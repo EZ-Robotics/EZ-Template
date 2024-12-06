@@ -108,7 +108,47 @@ void autonomous() {
 </TabItem>
 </Tabs>
 
+### pid_swing_exit_condition_set()
+Sets the exit condition constants for swing turns. This uses the exit conditions from the PID class.  
 
+This function can also be used without okapi units.  
+`p_small_exit_time` time, in ms, before exiting `p_small_error`  
+`p_small_error` small error threshold, assumed degrees  
+`p_big_exit_time` time, in ms, before exiting `p_big_error`  
+`p_big_error` big error threshold, assumed degrees  
+`p_velocity_exit_time` time, in ms, for velocity to be 0  
+`p_mA_timeout` time, in ms, for `is_over_current` to be true   
+`use_imu` boolean, true adds the IMU to velocity timeouts, false only uses the PID sensor.  This defaults to `true`     
+<Tabs
+  groupId="pid_swing_exit_set_double"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+
+```cpp
+void initialize() {
+  chassis.pid_swing_exit_condition_set(300, 1, 500, 3, 750, 750);
+}
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+void pid_swing_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, use_imu = true);
+```
+
+</TabItem>
+</Tabs>
 
 
 ### pid_swing_exit_condition_set()
