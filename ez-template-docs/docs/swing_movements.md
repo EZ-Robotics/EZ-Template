@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Swing Movements
+title: Swinging
 description:  Turns but only using one side of the drive
 ---
 import Tabs from '@theme/Tabs';
@@ -701,6 +701,104 @@ void initialize() {
 
 ```cpp
 double pid_swing_chain_backward_constant_get();
+```
+</TabItem>
+</Tabs>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### pid_swing_behavior_set()
+Changes the default behavior for swinging.   
+
+`behavior` the default behavior for swings.  This can be `ez::shortest`, `ez::longest`, `ez::cw`, `ez::ccw`, or `ez::raw`.     
+<Tabs
+  groupId="pid_swing_behavior_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.pid_swing_behavior_set(ez::longest);  // Set the robot to take the longest path there
+
+  // This will make the robot go the long way around to get to 90 degrees
+  chassis.pid_swing_set(ez::LEFT_SWING, 90_deg, 110);
+  chassis.pid_wait();
+}
+```
+</TabItem>
+<TabItem value="proto">
+
+```cpp
+void pid_swing_behavior_set(e_angle_behavior behavior);
+```
+</TabItem>
+</Tabs>
+
+### pid_swing_behavior_get()
+Returns the default behavior for swinging.  This can be `ez::shortest`, `ez::longest`, `ez::cw`, `ez::ccw`, or `ez::raw`.    
+<Tabs
+  groupId="pid_swing_behavior_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.pid_swing_behavior_set(ez::longest);  // Set the robot to take the longest path there
+
+  if (chassis.pid_swing_behavior_get() == ez::longest) {
+    printf("Current behavior is ez::longest!\n");
+  } else {
+    printf("Current behavior is not ez::longest!\n");
+  }
+
+  // This will make the robot go the long way around to get to 90 degrees
+  chassis.pid_swing_set(ez::LEFT_SWING, 90_deg, 110);
+  chassis.pid_wait();
+}
+```
+</TabItem>
+<TabItem value="proto">
+
+```cpp
+e_angle_behavior pid_swing_behavior_get();
 ```
 </TabItem>
 </Tabs>

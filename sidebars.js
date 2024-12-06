@@ -129,7 +129,7 @@ const sidebars = {
       items: [
         'docs/constructor',
 
-        // Tuning Constants
+        // Auton Specific Docs
         {
           type: 'category',
           label: 'Autonomous Functions',
@@ -143,8 +143,21 @@ const sidebars = {
             'docs/drive_movements',
             'docs/turn_movements',
             'docs/swing_movements',
-            'docs/odom_movements',
-            // gain scheduling?
+            
+            {
+              type: 'category',
+              label: 'Odometry',
+              link: {
+                type: 'generated-index',
+              },
+              collapsed: true,
+              collapsible: true,
+              items: [
+                'docs/odom_general',
+                'docs/odom_movements',
+              ],
+            },
+
           ],
         },
 
