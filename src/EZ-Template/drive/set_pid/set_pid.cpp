@@ -29,7 +29,7 @@ void Drive::pid_angle_behavior_bias_set(e_angle_behavior behavior) {
   else
     printf("Must input 'left' or 'right' for angle behavior bias!\n");
 }
-e_angle_behavior Drive::pid_angle_behavior_bias_get(e_angle_behavior) { return turn_biased_left ? ez::LEFT_TURN : ez::RIGHT_TURN; }
+e_angle_behavior Drive::pid_angle_behavior_bias_get() { return turn_biased_left ? ez::LEFT_TURN : ez::RIGHT_TURN; }
 void Drive::pid_angle_behavior_tolerance_set(double tolerance) { turn_tolerance = tolerance; }
 void Drive::pid_angle_behavior_tolerance_set(okapi::QAngle p_tolerance) { pid_angle_behavior_tolerance_set(p_tolerance.convert(okapi::degree)); }
 double Drive::pid_angle_behavior_tolerance_get() { return turn_tolerance; }
