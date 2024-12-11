@@ -5,6 +5,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
 #include "EZ-Template/drive/drive.hpp"
+#include "EZ-Template/tracking_wheel.hpp"
 #include "EZ-Template/util.hpp"
 
 using namespace ez;
@@ -139,7 +140,9 @@ void Drive::ez_tracking_task() {
 
   // Decide on using a horiz tracker vs not
 
-  std::pair<float, float> h_cur_and_track = decide_vert_sensor(odom_tracker_back != nullptr ? odom_tracker_back : odom_tracker_front, odom_tracker_back_enabled);
+  ez::tracking_wheel* h_sensor = odom_tracker_back != nullptr ? odom_tracker_back : odom_tracker_front;
+  bool h_tracker_enabled = h_sensor == odom_tracker_back ? odom_tracker_back_enabled : odom_tracker_front_enabled;
+  std::pair<float, float> h_cur_and_track = decide_vert_sensor(h_sensor, h_tracker_enabled);
   float h_current = h_cur_and_track.first;
   float h_track_width = h_cur_and_track.second;
   // Calculate velocity based on horiz value
