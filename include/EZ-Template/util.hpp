@@ -26,18 +26,19 @@ extern pros::Controller master;
 namespace ez {
 
 /**
- * Prints our branding all over your pros terminal
+ * Prints our branding all over your pros terminal.
  */
 void ez_template_print();
 
 /**
- * Prints to the brain screen in one string.  Splits input between lines with
- * '\n' or when text longer then 32 characters.
+ * Prints to the brain screen in one string.
  *
- * @param text
- *        Input string.  Use '\n' for a new line
- * @param line
- *        Starting line to print on, defaults to 0
+ * Splits input between lines with '\n' or when text longer then 32 characters.
+ *
+ * \param text
+ *        input string
+ * \param line
+ *        starting line to print on, defaults to 0
  */
 void screen_print(std::string text, int line = 0);
 
@@ -81,7 +82,7 @@ enum e_mode { DISABLE = 0,
               PURE_PURSUIT = 6 };
 
 /**
- * Enum for drive directions
+ * Enum for drive directions.
  */
 enum drive_directions { FWD = 0,
                         FORWARD = FWD,
@@ -93,7 +94,7 @@ enum drive_directions { FWD = 0,
                         reverse = REV };
 
 /**
- * Enum for turn types
+ * Enum for turn types.
  */
 enum e_angle_behavior { raw = 0,
                         left_turn = 1,
@@ -111,7 +112,7 @@ const double ANGLE_NOT_SET = 0.0000000000000000000001;
 const okapi::QAngle p_ANGLE_NOT_SET = 0.0000000000000000000001_deg;
 
 /**
- * Struct for coordinates
+ * Struct for coordinates.
  */
 typedef struct pose {
   double x;
@@ -120,7 +121,7 @@ typedef struct pose {
 } pose;
 
 /**
- * Struct for united coordinates
+ * Struct for united coordinates.
  */
 typedef struct united_pose {
   okapi::QLength x;
@@ -129,7 +130,7 @@ typedef struct united_pose {
 } united_pose;
 
 /**
- * Struct for odom movements
+ * Struct for odom movements.
  */
 typedef struct odom {
   pose target;
@@ -139,7 +140,7 @@ typedef struct odom {
 } odom;
 
 /**
- * Struct for united odom movements
+ * Struct for united odom movements.
  */
 typedef struct united_odom {
   united_pose target;
@@ -157,60 +158,62 @@ namespace util {
 extern bool AUTON_RAN;
 
 /**
- * Returns the amount of places after a decimal, maxing out at 6
+ * Returns the amount of places after a decimal, maxing out at 6.
  *
  * \param input
- *        double, your input value with decimals
+ *        your input value with decimals
  * \param min
- *        int, minimum number of decimal places to print, this is defaulted to 0
+ *        minimum number of decimal places to print, this is defaulted to 0
  */
 int places_after_decimal(double input, int min = 0);
 
 /**
- * Returns a string with a specific number of decimal points
+ * Returns a string with a specific number of decimal points.
  *
  * \param input
- *        double, your input value
+ *        your input value
  * \param n
- *        int, amount of decimals you want to display
+ *        the amount of decimals you want to display
  */
 std::string to_string_with_precision(double input, int n = 2);
 
 /**
- * Returns 1 if input is positive and -1 if input is negative
+ * Returns 1 if input is positive and -1 if input is negative.
  *
  * \param input
- *        double, your input value
+ *        your input value
  */
 int sgn(double input);
 
 /**
- * Returns true if the input is < 0
+ * Returns true if the input is < 0.
  *
  * \param input
- *        double, your input value
+ *        your input value
  */
 bool reversed_active(double input);
 
 /**
- * Returns input restricted to min-max threshold
+ * Returns input restricted to min-max threshold.
  *
  * \param input
- *        double, your input value
+ *        your input value
  * \param max
- *        double, the maximum input can be
+ *        the maximum input can be
  * \param min
- *        double, the minimum input can be
+ *        the minimum input can be
  */
 double clamp(double input, double max, double min);
 
 /**
- * Returns input restricted to min-max threshold.  The minimum used is -max
+ * Returns input restricted to min-max threshold.
+ *
+ * The minimum used is negative max.
  *
  * \param input
- *        double, your input value
+ *        your input value
  * \param max
- *        double, the absolute value maximum input can be
+ *        the absolute value maximum input can be
  */
 double clamp(double input, double max);
 
@@ -225,46 +228,46 @@ const bool SD_CARD_ACTIVE = pros::usd::is_installed();
 const int DELAY_TIME = 10;
 
 /**
- * Converts radians to degrees
+ * Converts radians to degrees.
  *
  * \param input
- *        double, your input radian
+ *        your input radian
  */
 double to_deg(double input);
 
 /**
- * Converts degrees to radians
+ * Converts degrees to radians.
  *
  * \param input
- *        double, your input degree
+ *        your input degree
  */
 double to_rad(double input);
 
 /**
- * Returns the angle between two points
+ * Returns the angle between two points.
  *
  * \param itarget
- *        pose, target position
+ *        target position
  * \param icurrent
- *        pose, current position
+ *        current position
  */
 double absolute_angle_to_point(pose itarget, pose icurrent);
 
 /**
- * Returns the distance between two points
+ * Returns the distance between two points.
  *
  * \param itarget
- *        pose, target position
+ *        target position
  * \param icurrent
- *        pose, current position
+ *        current position
  */
 double distance_to_point(pose itarget, pose icurrent);
 
 /**
- * Constrains an angle between 180 and -180
+ * Constrains an angle between 180 and -180.
  *
  * \param theta
- *        double, input angle in degrees
+ *        input angle in degrees
  */
 double wrap_angle(double theta);
 
@@ -272,57 +275,57 @@ double wrap_angle(double theta);
  * Returns a new pose that is projected off of the current pose.
  *
  * \param added
- *        double, how far to project a new point
+ *        how far to project a new point
  * \param icurrent
- *        pose, current position
+ *        point to project off of
  */
 pose vector_off_point(double added, pose icurrent);
 
 /**
- * Returns the shortest angle for the robot to turn to in order to get to target
+ * Returns the shortest angle for the robot to turn to in order to get to target.
  *
  * \param target
- *        double, target value in degrees
+ *        target value in degrees
  * \param current
- *        double, current value in degrees
+ *        current value in degrees
  * \param print = false
- *        bool, will print the new value if this is true
+ *        will print the new value if this is true, defaults to false
  */
 double turn_shortest(double target, double current, bool print = false);
 
 /**
- * Returns the farthest away angle for the robot to turn to in order to get to target
+ * Returns the farthest away angle for the robot to turn to in order to get to target.
  *
  * \param target
- *        double, target value in degrees
+ *        target value in degrees
  * \param current
- *        double, current value in degrees
+ *        current value in degrees
  * \param print = false
- *        bool, will print the new value if this is true
+ *        will print the new value if this is true, defaults to false
  */
 double turn_longest(double target, double current, bool print = false);
 
 /**
- * Converts pose with okapi units to a pose without okapi units
+ * Converts pose with okapi units to a pose without okapi units.
  *
  * \param input
- *        united_pose, a pose with units
+ *        a pose with units
  */
 pose united_pose_to_pose(united_pose input);
 
 /**
- * Converts vector of poses with okapi units to a vector of poses without okapi units
+ * Converts vector of poses with okapi units to a vector of poses without okapi units.
  *
  * \param inputs
- *        std::vector<united_pose>, poses with units
+ *        poses with units
  */
 std::vector<odom> united_odoms_to_odoms(std::vector<united_odom> inputs);
 
 /**
- * Converts odom movement with united pose to an odom movement without united pose
+ * Converts odom movement with united pose to an odom movement without united pose.
  *
  * \param input
- *        united_odom, odom movement with units
+ *        odom movement with units
  */
 odom united_odom_to_odom(united_odom input);
 

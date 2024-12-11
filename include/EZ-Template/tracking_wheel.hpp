@@ -19,13 +19,13 @@ class tracking_wheel {
    * Creates a new tracking wheel with an ADI Encoder.
    *
    * \param ports
-   *        {'A', 'B'}.  Make the encoder negative if reversed!
+   *        {'A', 'B'}. make the encoder negative if reversed
    * \param wheel_diameter
-   *        Assumed inches, this is the diameter of your wheel.
+   *        assumed inches, this is the diameter of your wheel
    * \param distance_to_center
-   *        The distance to the center of your robot.  this is used for tracking.
+   *        the distance to the center of your robot, this is used for tracking
    * \param ratio
-   *        The gear ratio of your tracking wheel.  If it's not geared, this should be 1.0.
+   *        the gear ratio of your tracking wheel. if it's not geared, this should be 1.0
    */
   tracking_wheel(std::vector<int> ports, double wheel_diameter, double distance_to_center = 0.0, double ratio = 1.0);
 
@@ -33,15 +33,15 @@ class tracking_wheel {
    * Creates a new tracking wheel with an ADI Encoder plugged into a 3-wire expander.
    *
    * \param smart_port
-   *        The smart port your ADI Expander is plugged into.
+   *        the smart port your ADI Expander is plugged into
    * \param ports
-   *        {'A', 'B'}.  Make the encoder negative if reversed!
+   *        {'A', 'B'}. make the encoder negative if reversed
    * \param wheel_diameter
-   *        Assumed inches, this is the diameter of your wheel.
+   *        assumed inches, this is the diameter of your wheel
    * \param distance_to_center
-   *        The distance to the center of your robot.  this is used for tracking.
+   *        the distance to the center of your robot, this is used for tracking
    * \param ratio
-   *        The gear ratio of your tracking wheel.  If it's not geared, this should be 1.0.
+   *        the gear ratio of your tracking wheel. if it's not geared, this should be 1.0
    */
   tracking_wheel(int smart_port, std::vector<int> ports, double wheel_diameter, double distance_to_center = 0.0, double ratio = 1.0);
 
@@ -49,13 +49,13 @@ class tracking_wheel {
    * Creates a new tracking wheel with a Rotation sensor.
    *
    * \param port
-   *        The port your Rotation sensor is plugged into.
+   *        the port your Rotation sensor is plugged into
    * \param wheel_diameter
-   *        Assumed inches, this is the diameter of your wheel.
+   *        assumed inches, this is the diameter of your wheel
    * \param distance_to_center
-   *        The distance to the center of your robot.  this is used for tracking.
+   *        the distance to the center of your robot, this is used for tracking
    * \param ratio
-   *        The gear ratio of your tracking wheel.  If it's not geared, this should be 1.0.
+   *        the gear ratio of your tracking wheel. if it's not geared, this should be 1.0
    */
   tracking_wheel(int port, double wheel_diameter, double distance_to_center = 0.0, double ratio = 1.0);
 
@@ -73,7 +73,7 @@ class tracking_wheel {
    * Sets the distance to the center of the robot.
    *
    * \param input
-   *        Distance to the center of your robot in inches.
+   *        distance to the center of your robot in inches
    */
   void distance_to_center_set(double input);
 
@@ -86,7 +86,7 @@ class tracking_wheel {
    * Sets the distance to the center to be flipped to negative or not.
    *
    * \param input
-   *        flips distance to center to negative.  false leaves it alone, true flips it.  
+   *        flips distance to center to negative. false leaves it alone, true flips it
    */
   void distance_to_center_flip_set(bool input);
 
@@ -106,7 +106,9 @@ class tracking_wheel {
   double ticks_per_inch();
 
   /**
-   * Sets the amount of ticks per revolution of your sensor.  This is useful for custom encoders.
+   * Sets the amount of ticks per revolution of your sensor. 
+   * 
+   * This is useful for custom encoders.
    *
    * \param input
    *        Ticks per revolution

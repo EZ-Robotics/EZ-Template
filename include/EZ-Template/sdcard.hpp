@@ -44,7 +44,7 @@ void initialize();
 void shutdown();
 
 /**
- * Returns true if the auton selector is running
+ * Returns true if the auton selector is running.
  */
 bool enabled();
 
@@ -56,7 +56,7 @@ extern pros::adi::DigitalIn* limit_switch_left;
 extern pros::adi::DigitalIn* limit_switch_right;
 
 /**
- * Initialize two limit switches to change pages on the lcd
+ * Initialize two limit switches to change pages on the lcd.
  *
  * @param left_limit_port
  *        port for the left limit switch
