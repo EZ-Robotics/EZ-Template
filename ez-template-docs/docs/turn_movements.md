@@ -6,102 +6,6 @@ description:  Turning in place
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-## Overview
-:::note
-
-This overview section is not intended to be a full tutorial.  Check the Tutorial section for our tutorials!
-
-:::
-`pid_turn_set()` has many ways of calling it with many default values you can configure and override in specific motions.  This is a quick overview of how you can use them.  
-
-
-### Default Turning
-
-At minimum, you need to give the robot an angle to go to and a speed limit.  You can do this with and without okapi units.  
-```cpp
-// Turn to 45deg
-chassis.pid_turn_set(45_deg, 90);
-chassis.pid_wait();
-
-// Turn to 0deg
-chassis.pid_turn_set(0, 90);
-chassis.pid_wait();
-```
-### Turn Paths
-You can set the robot to always take a specific path.  
-```cpp
-chassis.pid_turn_behavior_set(ez::shortest);
-
-// This will turn 1 degree to the right
-chassis.pid_turn_set(361_deg, 90);
-chassis.pid_wait();
-```
-
-But you can override these defaults in each motion.  
-```cpp
-chassis.pid_turn_behavior_set(ez::shortest);
-
-// This will turn 361 degrees to the left
-chassis.pid_turn_set(361_deg, 90, ez::longest);
-chassis.pid_wait();
-```
-
-You can also pick between turning clockwise and counterclockwise.  
-```cpp
-chassis.pid_turn_behavior_set(ez::shortest);
-
-// This will turn to 180deg counter clockwise
-chassis.pid_turn_set(180_deg, 90, ez::ccw);
-chassis.pid_wait();
-
-// This will turn to 0 deg clockwise
-chassis.pid_turn_set(180_deg, 90, ez::cw);
-chassis.pid_wait();
-```
-
-### Slew
-Slew ramps up the speed limit of the robot to give smoother accelerations.  
-```cpp
-chassis.slew_turn_set(true);  // Enables global slew
-chassis.slew_turn_constants_set(5_deg, 50);
-
-// Over the first 5 degrees, the robot will ramp the speed limit from 50 to 110 
-chassis.pid_turn_set(90_deg, 110);
-chassis.pid_wait();
-```
-
-You can change the behavior of slew for each motion.  In the example below, slew is disabled globally but is enabled in one of the motions.   
-```cpp
-chassis.slew_turn_set(false);  // Disables global slew
-chassis.slew_turn_constants_set(5_deg, 50);
-
-// Over the first 5 degrees, the robot will ramp the speed limit from 50 to 110 
-chassis.pid_turn_set(90_deg, 110, true);  // Slew will be enabled for this motion
-chassis.pid_wait();
-
-// This will not use slew to return to 0 degrees
-chassis.pid_turn_set(0_deg, 110, true);  
-chassis.pid_wait();
-```
-
-### Turn Paths and Slew
-
-You can use slew in conjunction with different turn behavior.  
-```cpp
-chassis.pid_turn_behavior_set(ez::shortest);
-chassis.slew_turn_set(false);  // Enables global slew
-chassis.slew_turn_constants_set(5_deg, 50);
-
-// This will turn to 270 deg clockwise while slewing
-chassis.pid_turn_set(270_deg, 90, ez::cw, true);
-chassis.pid_wait();
-
-// This will take the shortest path to 0 degrees without slew
-chassis.pid_turn_set(3600_deg, 90);
-chassis.pid_wait();
-```
-
----
 
 
 
@@ -658,6 +562,57 @@ void pid_turn_chain_constant_set(okapi::QAngle input);
 
 
 
+### slew_turn_constants_set()
+Sets constants for slew for turns.
+
+Slew ramps up the speed of the robot until the set distance is traveled.
+
+`distance` the distance the robot travels before reaching max speed, an okapi angle unit   
+`min_speed` the starting speed for the movement, 0 - 127   
+<Tabs
+  groupId="slew_turn_constant_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency 
+
+  chassis.slew_turn_constants_set(5_deg, 50);
+
+  chassis.pid_turn_set(-90_deg, 110, true);
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+
+<TabItem value="proto">
+
+```cpp
+void slew_turn_constants_set(okapi::QAngle distance, int min_speed);
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+
+
+
 
 
 
@@ -879,6 +834,54 @@ void pid_turn_chain_constant_set(double input);
 
 
 
+### slew_turn_set()
+Sets the default slew for turn motions, can be overwritten in movement functions.        
+ 
+`slew_on` true enables, false disables  
+<Tabs
+  groupId="slew_turn_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="proto">
+
+```cpp
+void slew_turn_set(bool slew_on);
+```
+</TabItem>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  // Set the default slew state to true
+  chassis.slew_turn_set(true);
+
+  // This will not use slew because we explicitly told the robot to not slew
+  chassis.pid_turn_set(90_deg, 90, false);
+  chassis.pid_wait();
+
+  // This will slew because it's the default state
+  chassis.pid_drive_set(0_deg, 90);
+  chassis.pid_wait();
+}
+```
+</TabItem>
+</Tabs>
+
+
+
+
 
 ### pid_turn_min_set()
 Sets the max power of the drive when the robot is within `start_i`.  This only enables when `i` is enabled, and when the movement is greater then `start_i`.        
@@ -975,42 +978,6 @@ void pid_turn_behavior_set(e_angle_behavior behavior);
 ## Getter
 
 
-### pid_turn_min_get()
-Returns the minimum power the robot will turn at while integral is enabled.         
-<Tabs
-  groupId="examples17"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-
-<TabItem value="example">
-
-```cpp
-void autonomous() {
-  chassis.pid_turn_min_set(30);
-
-  printf("Turn Min: %i", chassis.pid_turn_min_get());
-}
-```
-
-
-</TabItem>
-
-
-<TabItem value="proto">
-
-```cpp
-int pid_turn_min_get();
-```
-
-
-</TabItem>
-</Tabs>
-
-
 
 ### pid_turn_chain_constant_get()
 Returns a double that's the amount that the PID will overshoot target by to maintain momentum into the next motion when using `pid_wait_quick_chain()` for turns.         
@@ -1047,15 +1014,92 @@ double pid_turn_chain_constant_get();
 
 
 
+### slew_turn_get()
+Returns true if slew is enabled for all turn motions, false otherwise.        
+<Tabs
+  groupId="slew_turn_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="proto">
+
+```cpp
+bool slew_turn_get();
+```
+</TabItem>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  // Set the default slew state to true
+  chassis.slew_turn_set(true);
+  if (chassis.slew_turn_get())
+    printf("Turn Slew is Enabled!\n");
+
+  // This will not use slew because we explicitly told the robot to not slew
+  chassis.pid_turn_set(90_deg, 90, false);
+  chassis.pid_wait();
+
+  // This will slew because it's the default state
+  chassis.pid_drive_set(0_deg, 90);
+  chassis.pid_wait();
+}
+```
+</TabItem>
+</Tabs>
 
 
+### pid_turn_min_get()
+Returns the minimum power the robot will turn at while integral is enabled.         
+<Tabs
+  groupId="examples17"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.pid_turn_min_set(30);
+
+  printf("Turn Min: %i", chassis.pid_turn_min_get());
+}
+```
 
 
+</TabItem>
 
 
+<TabItem value="proto">
+
+```cpp
+int pid_turn_min_get();
+```
 
 
-
+</TabItem>
+</Tabs>
 
 
 
@@ -1120,3 +1164,22 @@ e_angle_behavior pid_turn_behavior_get();
 ```
 </TabItem>
 </Tabs>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+

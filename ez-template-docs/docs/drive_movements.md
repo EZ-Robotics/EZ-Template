@@ -30,9 +30,11 @@ Sets the drive to go forward using PID and heading correction.
 
 ```cpp
 void autonomous() {
-  chassis.drive_imu_reset(); 
-  chassis.drive_sensor_reset(); 
-  chassis.drive_brake_set(MOTOR_BRAKE_HOLD); 
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
 
   chassis.pid_drive_set(24_in, 110, true);
   chassis.pid_wait();
@@ -266,6 +268,155 @@ void pid_drive_chain_backward_constant_set(okapi::QLength input);
 
 
 
+### slew_drive_constants_set()
+Sets constants for slew for driving.     
+
+Slew ramps up the speed of the robot until the set distance is traveled.     
+
+`distance` the distance the robot travels before reaching max speed, an okapi distance unit   
+`min_speed` the starting speed for the movement, 0 - 127   
+<Tabs
+  groupId="slew_backward_constant_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.slew_drive_constants_set(5_in, 50);
+
+  chassis.pid_drive_set(12_in, 110, true);
+  chassis.pid_wait();
+
+  chassis.pid_drive_set(-12_in, 110, true);
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+
+<TabItem value="proto">
+
+```cpp
+void slew_drive_constants_set(okapi::QLength distance, int min_speed);
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+### slew_drive_constants_forward_set()
+Sets constants for slew for driving forward.     
+
+Slew ramps up the speed of the robot until the set distance is traveled.     
+
+`distance` the distance the robot travels before reaching max speed, an okapi distance unit   
+`min_speed` the starting speed for the movement, 0 - 127   
+<Tabs
+  groupId="slew_forward_constant_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.slew_drive_constants_forward_set(5_in, 50);
+
+  chassis.pid_drive_set(12_in, 110, true);
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+
+<TabItem value="proto">
+
+```cpp
+void slew_drive_constants_forward_set(okapi::QLength distance, int min_speed);
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+### slew_drive_constants_backward_set()
+Sets constants for slew for driving backward.     
+
+Slew ramps up the speed of the robot until the set distance is traveled.     
+
+`distance` the distance the robot travels before reaching max speed, an okapi distance unit   
+`min_speed` the starting speed for the movement, 0 - 127   
+<Tabs
+  groupId="slew_backward_constant_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.slew_drive_constants_backward_set(5_in, 50);
+
+  chassis.pid_drive_set(-12_in, 110, true);
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+
+<TabItem value="proto">
+
+```cpp
+void slew_drive_constants_backward_set(okapi::QLength distance, int min_speed);
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+
+
+
+
 
 
 
@@ -293,9 +444,11 @@ Sets the drive to go forward using PID and heading correction.
 
 ```cpp
 void autonomous() {
-  chassis.drive_imu_reset(); 
-  chassis.drive_sensor_reset(); 
-  chassis.drive_brake_set(MOTOR_BRAKE_HOLD); 
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
 
   chassis.pid_drive_set(24, 110, true);
   chassis.pid_wait();
@@ -627,6 +780,14 @@ Sets the amount that the PID will overshoot target by to maintain momentum into 
     { label: 'Example',  value: 'example', },
   ]
 }>
+
+<TabItem value="proto">
+
+```cpp
+void pid_drive_chain_backward_constant_set(double input);
+```
+</TabItem>
+
 <TabItem value="example">
 
 ```cpp
@@ -635,18 +796,156 @@ void initialize() {
 }
 ```
 </TabItem>
+</Tabs>
+
+
+
+
+### slew_drive_set()
+Sets the default slew for drive forwards and backwards motions, can be overwritten in movement functions.      
+ 
+`slew_on` true enables, false disables  
+<Tabs
+  groupId="slew_drive_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
 <TabItem value="proto">
 
 ```cpp
-void pid_drive_chain_backward_constant_set(double input);
+void slew_drive_set(bool slew_on);
+```
+</TabItem>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  // Set the default slew state to true
+  chassis.slew_drive_set(true);
+
+  // This will not use slew because we explicitly told the robot to not slew
+  chassis.pid_drive_set(24_in, 110, false);
+  chassis.pid_wait();
+
+  // This will slew because it's the default state
+  chassis.pid_drive_set(-24_in, 110);
+  chassis.pid_wait();
+}
 ```
 </TabItem>
 </Tabs>
 
 
 
+### slew_drive_forward_set()
+Sets the default slew for drive forwards motions, can be overwritten in movement functions.      
+ 
+`slew_on` true enables, false disables  
+<Tabs
+  groupId="slew_drive_forward_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="proto">
+
+```cpp
+void slew_drive_forward_set(bool slew_on);
+```
+</TabItem>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  // Set the default slew state to true
+  chassis.slew_drive_forward_set(true);
+
+  // This will not use slew because we explicitly told the robot to not slew
+  chassis.pid_drive_set(24_in, 110, false);
+  chassis.pid_wait();
+
+  // This will slew because it's the default state going forward
+  chassis.pid_drive_set(24_in, 110);
+  chassis.pid_wait();
+
+  // This will not slew because we haven't set a default state for going backward
+  chassis.pid_drive_set(-48_in, 110);
+  chassis.pid_wait();
+}
+```
+</TabItem>
+</Tabs>
 
 
+### slew_drive_backward_set()
+Sets the default slew for drive forwards motions, can be overwritten in movement functions.      
+ 
+`slew_on` true enables, false disables  
+<Tabs
+  groupId="slew_drive_backward_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="proto">
+
+```cpp
+void slew_drive_backward_set(bool slew_on);
+```
+</TabItem>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  // Set the default slew state to true
+  chassis.slew_drive_backward_set(true);
+
+  // This will not use slew because we explicitly told the robot to not slew
+  chassis.pid_drive_set(-24_in, 110, false);
+  chassis.pid_wait();
+
+  // This will slew because it's the default state going backward
+  chassis.pid_drive_set(-24_in, 110);
+  chassis.pid_wait();
+
+  // This will not slew because we haven't set a default state for going forward
+  chassis.pid_drive_set(48_in, 110);
+  chassis.pid_wait();
+}
+```
+</TabItem>
+</Tabs>
 
 
 
@@ -738,3 +1037,120 @@ double pid_drive_chain_backward_constant_get();
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### slew_drive_forward_get()
+Returns true if slew is enabled for all drive forward movements, false otherwise.    
+<Tabs
+  groupId="slew_drive_forward_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="proto">
+
+```cpp
+bool slew_drive_forward_get();
+```
+</TabItem>
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  // Set the default slew state to true
+  chassis.slew_drive_forward_set(true);
+  if (chassis.slew_drive_forward_get())
+    printf("Slew Forward is Enabled!\n");
+
+  // This will not use slew because we explicitly told the robot to not slew
+  chassis.pid_drive_set(24_in, 110, false);
+  chassis.pid_wait();
+
+  // This will slew because it's the default state going forward
+  chassis.pid_drive_set(24_in, 110);
+  chassis.pid_wait();
+
+  // This will not slew because we haven't set a default state for going backward
+  chassis.pid_drive_set(-48_in, 110);
+  chassis.pid_wait();
+}
+```
+</TabItem>
+</Tabs>
+
+
+
+
+### slew_drive_backward_get()
+Returns true if slew is enabled for all drive forward movements, false otherwise.    
+<Tabs
+  groupId="slew_drive_backward_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="proto">
+
+```cpp
+bool slew_drive_backward_get();
+```
+</TabItem>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  // Set the default slew state to true
+  chassis.slew_drive_backward_set(true);
+  if (chassis.slew_drive_backward_get())
+    printf("Slew Backward is Enabled!\n");
+
+  // This will not use slew because we explicitly told the robot to not slew
+  chassis.pid_drive_set(-24_in, 110, false);
+  chassis.pid_wait();
+
+  // This will slew because it's the default state going backward
+  chassis.pid_drive_set(-24_in, 110);
+  chassis.pid_wait();
+
+  // This will not slew because we haven't set a default state for going forward
+  chassis.pid_drive_set(48_in, 110);
+  chassis.pid_wait();
+}
+```
+</TabItem>
+</Tabs>
