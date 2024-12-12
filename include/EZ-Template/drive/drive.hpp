@@ -416,7 +416,7 @@ class Drive {
    * \param wheel_diameter
    *        diameter of your sensored wheel
    * \param ticks
-   *        Ticks per revolution of your encoder.
+   *        ticks per revolution of your encoder
    * \param ratio
    *        external gear ratio, wheel gear / sensor gear
    * \param left_tracker_ports
@@ -438,7 +438,7 @@ class Drive {
    * \param wheel_diameter
    *        diameter of your sensored wheel
    * \param ticks
-   *        Ticks per revolution of your encoder.
+   *        ticks per revolution of your encoder
    * \param ratio
    *        external gear ratio, wheel gear / sensor gear
    * \param left_tracker_ports
