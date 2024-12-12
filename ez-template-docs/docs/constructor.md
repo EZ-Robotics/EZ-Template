@@ -13,12 +13,12 @@ import TabItem from '@theme/TabItem';
 ## Integrated Encoders
 This is the standard setup that uses built in motor encoders.    
 
-`left_motor_ports` a vector of left motor ports, negative reverses the port.  first motor is used for sensing   
-`right_motor_ports` a vector of right motor ports, negative reverses the port.  first motor is used for sensing   
-`imu_port` the port an imu is in   
-`wheel_diameter` diameter of your drive wheel   
-`ticks` cartridge rpm   
-`ratio` external ratio of your drive.  should be wheel gear / motor gear.  this is defaulted to 1.0   
+`left_motor_ports` input {1, -2...}. make ports negative if reversed      
+`right_motor_ports` input {-3, 4...}. make ports negative if reversed         
+`imu_port` port the IMU is plugged into       
+`wheel_diameter` diameter of your drive wheels      
+`ticks` motor cartridge RPM   
+`ratio` external gear ratio, wheel gear / motor gear       
 <Tabs
   groupId="ex1"
   defaultValue="proto"
@@ -97,14 +97,14 @@ This only support two parallel trackers that are equidistant from the center of 
 
 :::
 
-`left_motor_ports` a vector of left motor ports, negative reverses the port   
-`right_motor_ports` a vector of right motor ports, negative reverses the port   
-`imu_port` the port an imu is in   
-`wheel_diameter` diameter of your tracking wheel   
-`ticks` ticks per rotation of your sensor.  360 if using ADI quadrature encoders   
-`ratio` external ratio of your tracking wheel.  should be wheel gear / motor gear   
-`left_tracker_ports` vector of left tracker ports, negative will reverse the encoder   
-`right_tracker_ports` vector of right tracker ports, negative will reverse the encoder   
+`left_motor_ports` input {1, -2...}. make ports negative if reversed      
+`right_motor_ports` input {-3, 4...}. make ports negative if reversed         
+`imu_port` port the IMU is plugged into       
+`wheel_diameter` diameter of your sensored wheel       
+`ticks` ticks per revolution of your encoder   
+`ratio` external gear ratio, wheel gear / sensor gear      
+`left_tracker_ports` input {1, 2}. make ports negative if reversed      
+`right_tracker_ports` input {3, 4}. make ports negative if reversed      
 <Tabs
   groupId="ex2"
   defaultValue="proto"
@@ -170,15 +170,15 @@ This only support two parallel trackers that are equidistant from the center of 
 
 :::
 
-`left_motor_ports` a vector of left motor ports, negative reverses the port   
-`right_motor_ports` a vector of right motor ports, negative reverses the port   
-`imu_port` the port an imu is in   
-`wheel_diameter` diameter of your tracking wheel   
-`ticks` ticks per rotation of your sensor.  360 if using ADI quadrature encoders   
-`ratio` external ratio of your tracking wheel.  should be wheel gear / motor gear   
-`left_tracker_ports` vector of left tracker ports, negative will reverse the encoder   
-`right_tracker_ports` vector of right tracker ports, negative will reverse the encoder   
-`expander_smart_port` port of the 3 wire expander
+`left_motor_ports` input {1, -2...}. make ports negative if reversed      
+`right_motor_ports` input {-3, 4...}. make ports negative if reversed         
+`imu_port` port the IMU is plugged into       
+`wheel_diameter` diameter of your sensored wheel       
+`ticks` ticks per revolution of your encoder   
+`ratio` external gear ratio, wheel gear / sensor gear      
+`left_tracker_ports` input {1, 2}. make ports negative if reversed      
+`right_tracker_ports` input {3, 4}. make ports negative if reversed     
+`expander_smart_port` port the expander is plugged into   
 <Tabs
   groupId="ex3"
   defaultValue="proto"
@@ -246,14 +246,13 @@ This only support two parallel trackers that are equidistant from the center of 
 
 :::
 
-`left_motor_ports` a vector of left motor ports, negative reverses the port   
-`right_motor_ports` a vector of right motor ports, negative reverses the port   
-`imu_port` the port an imu is in   
-`wheel_diameter` diameter of your tracking wheel   
-`ticks` ticks per rotation of your sensor.  360 if using ADI quadrature encoders   
-`ratio` external ratio of your tracking wheel.  should be wheel gear / motor gear   
-`left_rotation_port` port for left rotation sensor, negative reverses the port    
-`right_rotation_port` port for right rotation sensor, negative reverses the port    
+`left_motor_ports` input {1, -2...}. make ports negative if reversed      
+`right_motor_ports` input {-3, 4...}. make ports negative if reversed         
+`imu_port` port the IMU is plugged into       
+`wheel_diameter` diameter of your sensored wheel       
+`ratio` external gear ratio, wheel gear / sensor gear      
+`left_rotation_port` make ports negative if reversed       
+`right_rotation_port` make ports negative if reversed        
 <Tabs
   groupId="ex4"
   defaultValue="proto"
