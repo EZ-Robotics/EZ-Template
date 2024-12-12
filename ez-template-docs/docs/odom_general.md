@@ -29,11 +29,7 @@ Sets a parallel tracker that's on the left side of the robot.
 ```cpp
 void odom_tracker_left_set(tracking_wheel* input);
 ```
-
-
 </TabItem>
-
-
 <TabItem value="example">
 
 ```cpp
@@ -52,7 +48,6 @@ void initialize() {
   chassis.odom_tracker_back_set(&horiz_tracker);  // Replace `back` to `front` if your tracker is in the front!
 }
 ```
-
 </TabItem>
 </Tabs>
 
@@ -221,6 +216,83 @@ void initialize() {
 
 
 ## Pose
+
+
+### odom_enable()
+Enables / disables tracking.     
+
+`input` true enables tracking, false disables tracking
+<Tabs
+  groupId="odom_enable"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="proto">
+
+```cpp
+void odom_enable(bool input);
+```
+</TabItem>
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  // Print our branding over your terminal :D
+  ez::ez_template_print();
+
+  pros::delay(500);  // Stop the user from doing anything while legacy ports configure
+
+  // Enable tracking
+  chassis.odom_enable(true);
+}
+```
+</TabItem>
+</Tabs>
+
+
+
+
+### odom_enabled()
+Returns whether the bot is tracking with odometry.   
+
+True means tracking is enabled, false means tracking is disabled.    
+<Tabs
+  groupId="odom_tracker_left_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="proto">
+
+```cpp
+bool odom_enabled();
+```
+</TabItem>
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  // Print our branding over your terminal :D
+  ez::ez_template_print();
+
+  pros::delay(500);  // Stop the user from doing anything while legacy ports configure
+
+  // Enable tracking
+  chassis.odom_enable(true);
+
+  if (chassis.odom_enabled()) 
+    printf("Odom is enabled!\n");
+}
+```
+</TabItem>
+</Tabs>
 
 
 ### odom_x_set()
