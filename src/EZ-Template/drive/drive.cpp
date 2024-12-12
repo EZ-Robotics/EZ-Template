@@ -162,6 +162,14 @@ void Drive::drive_defaults_set() {
   pid_turn_min_set(30);
   pid_swing_min_set(30);
 
+  // Path Constants
+  odom_path_smooth_constants_set(0.75, 0.03, 0.0001);
+  odom_path_spacing_set(0.5_in);
+  odom_turn_bias_set(0.9);
+  odom_look_ahead_set(7_in);
+  odom_boomerang_distance_set(16_in);
+  odom_boomerang_dlead_set(0.625);
+
   // Slew constants
   slew_turn_constants_set(3_deg, 70);
   slew_drive_constants_set(3_in, 70);
@@ -174,6 +182,9 @@ void Drive::drive_defaults_set() {
   pid_odom_turn_exit_condition_set(90_ms, 3_deg, 250_ms, 7_deg, 500_ms, 750_ms);
   pid_odom_drive_exit_condition_set(90_ms, 1_in, 250_ms, 3_in, 500_ms, 750_ms);
 
+  pid_odom_behavior_set(ez::shortest);  // Default odom turning to shortest
+
+  // Motion chaining
   pid_turn_chain_constant_set(3_deg);
   pid_swing_chain_constant_set(5_deg);
   pid_drive_chain_constant_set(3_in);
