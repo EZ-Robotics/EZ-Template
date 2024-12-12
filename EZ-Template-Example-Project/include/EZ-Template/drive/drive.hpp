@@ -26,7 +26,9 @@ namespace ez {
 class Drive {
  public:
   /**
-   * Joysticks will return 0 when they are within this number.  Set with opcontrol_joystick_threshold_set()
+   * Joysticks will return 0 when they are within this number.
+   *
+   * Set with opcontrol_joystick_threshold_set()
    */
   int JOYSTICK_THRESHOLD;
 
@@ -125,6 +127,8 @@ class Drive {
   PID odom_angularPID;
   PID internal_leftPID;
   PID internal_rightPID;
+  PID left_activebrakePID;
+  PID right_activebrakePID;
 
   /**
    * Slew objects.
@@ -139,7 +143,9 @@ class Drive {
   ez::slew slew_swing;
 
   /**
-   * Sets constants for slew for turns.  Slew ramps up the speed of the robot until the set distance is traveled.
+   * Sets constants for slew for swing movements.
+   *
+   * Slew ramps up the speed of the robot until the set distance is traveled.
    *
    * \param distance
    *        the distance the robot travels before reaching max speed, an okapi distance unit
@@ -149,7 +155,9 @@ class Drive {
   void slew_swing_constants_set(okapi::QLength distance, int min_speed);
 
   /**
-   * Sets constants for slew for turns.  Slew ramps up the speed of the robot until the set distance is traveled.
+   * Sets constants for slew for forward swing movements.
+   *
+   * Slew ramps up the speed of the robot until the set distance is traveled.
    *
    * \param distance
    *        the distance the robot travels before reaching max speed, an okapi distance unit
@@ -159,7 +167,9 @@ class Drive {
   void slew_swing_constants_forward_set(okapi::QLength distance, int min_speed);
 
   /**
-   * Sets constants for slew for turns.  Slew ramps up the speed of the robot until the set distance is traveled.
+   * Sets constants for slew for backward swing movements.
+   *
+   * Slew ramps up the speed of the robot until the set distance is traveled.
    *
    * \param distance
    *        the distance the robot travels before reaching max speed, an okapi distance unit
@@ -169,7 +179,9 @@ class Drive {
   void slew_swing_constants_backward_set(okapi::QLength distance, int min_speed);
 
   /**
-   * Sets constants for slew for turns.  Slew ramps up the speed of the robot until the set distance is traveled.
+   * Sets constants for slew for swing movements.
+   *
+   * Slew ramps up the speed of the robot until the set distance is traveled.
    *
    * \param distance
    *        the distance the robot travels before reaching max speed, an okapi angle unit
@@ -179,7 +191,9 @@ class Drive {
   void slew_swing_constants_set(okapi::QAngle distance, int min_speed);
 
   /**
-   * Sets constants for slew for turns.  Slew ramps up the speed of the robot until the set distance is traveled.
+   * Sets constants for slew for swing forward movements.
+   *
+   * Slew ramps up the speed of the robot until the set distance is traveled.
    *
    * \param distance
    *        the distance the robot travels before reaching max speed, an okapi angle unit
@@ -189,7 +203,9 @@ class Drive {
   void slew_swing_constants_forward_set(okapi::QAngle distance, int min_speed);
 
   /**
-   * Sets constants for slew for turns.  Slew ramps up the speed of the robot until the set distance is traveled.
+   * Sets constants for slew for swing backward movements.
+   *
+   * Slew ramps up the speed of the robot until the set distance is traveled.
    *
    * \param distance
    *        the distance the robot travels before reaching max speed, an okapi angle unit
@@ -199,7 +215,9 @@ class Drive {
   void slew_swing_constants_backward_set(okapi::QAngle distance, int min_speed);
 
   /**
-   * Sets constants for slew for turns.  Slew ramps up the speed of the robot until the set distance is traveled.
+   * Sets constants for slew for turns.
+   *
+   * Slew ramps up the speed of the robot until the set distance is traveled.
    *
    * \param distance
    *        the distance the robot travels before reaching max speed, an okapi angle unit
@@ -209,7 +227,9 @@ class Drive {
   void slew_turn_constants_set(okapi::QAngle distance, int min_speed);
 
   /**
-   * Sets constants for slew for driving forward.  Slew ramps up the speed of the robot until the set distance is traveled.
+   * Sets constants for slew for driving forward.
+   *
+   * Slew ramps up the speed of the robot until the set distance is traveled.
    *
    * \param distance
    *        the distance the robot travels before reaching max speed, an okapi distance unit
@@ -219,7 +239,9 @@ class Drive {
   void slew_drive_constants_forward_set(okapi::QLength distance, int min_speed);
 
   /**
-   * Sets constants for slew for driving backward.  Slew ramps up the speed of the robot until the set distance is traveled.
+   * Sets constants for slew for driving backward.
+   *
+   * Slew ramps up the speed of the robot until the set distance is traveled.
    *
    * \param distance
    *        the distance the robot travels before reaching max speed, an okapi distance unit
@@ -229,7 +251,9 @@ class Drive {
   void slew_drive_constants_backward_set(okapi::QLength distance, int min_speed);
 
   /**
-   * Sets constants for slew for driving.  Slew ramps up the speed of the robot until the set distance is traveled.
+   * Sets constants for slew for driving.
+   *
+   * Slew ramps up the speed of the robot until the set distance is traveled.
    *
    * \param distance
    *        the distance the robot travels before reaching max speed, an okapi distance unit
@@ -239,7 +263,7 @@ class Drive {
   void slew_drive_constants_set(okapi::QLength distance, int min_speed);
 
   /**
-   * Globally enables slew unless otherwise specified for that motion for driving forward and backwards.
+   * Sets the default slew for drive forwards and backwards motions, can be overwritten in movement functions.
    *
    * \param slew_on
    *        true enables, false disables
@@ -247,7 +271,7 @@ class Drive {
   void slew_drive_set(bool slew_on);
 
   /**
-   * Globally enables slew unless otherwise specified for that motion for driving forward.
+   * Sets the default slew for drive forward motions, can be overwritten in movement functions.
    *
    * \param slew_on
    *        true enables, false disables
@@ -255,12 +279,12 @@ class Drive {
   void slew_drive_forward_set(bool slew_on);
 
   /**
-   * Returns if slew is globally enabled for driving forward.  True is, false isn't.
+   * Returns true if slew is enabled for all drive forward movements, false otherwise.
    */
   bool slew_drive_forward_get();
 
   /**
-   * Globally enables slew unless otherwise specified for that motion for driving backwards.
+   * Sets the default slew for drive backward motions, can be overwritten in movement functions.
    *
    * \param slew_on
    *        true enables, false disables
@@ -268,12 +292,12 @@ class Drive {
   void slew_drive_backward_set(bool slew_on);
 
   /**
-   * Returns if slew is globally enabled for driving backward.  True is, false isn't.
+   * Returns true if slew is enabled for all drive backward movements, false otherwise.
    */
   bool slew_drive_backward_get();
 
   /**
-   * Globally enables slew unless otherwise specified for that motion for swinging forward and backwards.
+   * Sets the default slew for swing forward and backward motions, can be overwritten in movement functions.
    *
    * \param slew_on
    *        true enables, false disables
@@ -281,7 +305,7 @@ class Drive {
   void slew_swing_set(bool slew_on);
 
   /**
-   * Globally enables slew unless otherwise specified for that motion for swinging forward.
+   * Sets the default slew for swing forward motions, can be overwritten in movement functions.
    *
    * \param slew_on
    *        true enables, false disables
@@ -289,12 +313,12 @@ class Drive {
   void slew_swing_forward_set(bool slew_on);
 
   /**
-   * Returns if slew is globally enabled for swinging forward.  True is, false isn't.
+   * Returns true if slew is enabled for all swing forward motions, false otherwise.
    */
   bool slew_swing_forward_get();
 
   /**
-   * Globally enables slew unless otherwise specified for that motion for swinging backwards.
+   * Sets the default slew for swing backward motions, can be overwritten in movement functions.
    *
    * \param slew_on
    *        true enables, false disables
@@ -302,12 +326,12 @@ class Drive {
   void slew_swing_backward_set(bool slew_on);
 
   /**
-   * Returns if slew is globally enabled for swinging backward.  True is, false isn't.
+   * Returns true if slew is enabled for all swing backward motions, false otherwise.
    */
   bool slew_swing_backward_get();
 
   /**
-   * Globally enables slew unless otherwise specified for that motion for turns.
+   * Sets the default slew for turn motions, can be overwritten in movement functions.
    *
    * \param slew_on
    *        true enables, false disables
@@ -315,7 +339,7 @@ class Drive {
   void slew_turn_set(bool slew_on);
 
   /**
-   * Returns if slew is globally enabled for turns.  True is, false isn't.
+   * Returns true if slew is enabled for all turn motions, false otherwise.
    */
   bool slew_turn_get();
 
@@ -339,6 +363,11 @@ class Drive {
 
   /**
    * Sets current mode of drive.
+   *
+   * \param p_mode
+   *        the new drive mode
+   * \param stop_drive
+   *        if the drive will stop when p_mode is DISABLED
    */
   void drive_mode_set(e_mode p_mode, bool stop_drive = true);
 
@@ -358,38 +387,20 @@ class Drive {
   pros::Task ez_auto;
 
   /**
-   * Creates a Drive Controller using internal encoders and requires track width
-   *
-   * \param input_left_motors
-   *        pros::MotorGroup({-1, 2,...}) Make ports negative if reversed!
-   * \param input_right_motors
-   *        pros::MotorGroup({-3, 4,...})  Make ports negative if reversed!
-   * \param input_imu
-   *        pros::IMU(21) Port the IMU is plugged into.
-   * \param wheel_diameter
-   *        Diameter of your drive wheels.  Remember 4" is 4.125"!
-   * \param wheel_rpm
-   *        Motor cartridge RPM
-   * \param input_track_width
-   *        Distance between the center of your left wheel and the center of your right wheel.  You can measure this with a tape measure.
-   */
-  Drive(pros::MotorGroup input_left_motors, pros::MotorGroup input_right_motors, pros::IMU input_imu, double wheel_diameter, double wheel_rpm, double input_track_width);
-
-  /**
    * Creates a Drive Controller using internal encoders.
    *
    * \param left_motor_ports
-   *        Input {1, -2...}.  Make ports negative if reversed!
+   *        input {1, -2...}. make ports negative if reversed
    * \param right_motor_ports
-   *        Input {-3, 4...}.  Make ports negative if reversed!
+   *        input {-3, 4...}. make ports negative if reversed
    * \param imu_port
-   *        Port the IMU is plugged into.
+   *        port the IMU is plugged into
    * \param wheel_diameter
-   *        Diameter of your drive wheels.  Remember 4" is 4.125"!
+   *        diameter of your drive wheels
    * \param ticks
-   *        Motor cartridge RPM
+   *        motor cartridge RPM
    * \param ratio
-   *        External gear ratio, wheel gear / motor gear.
+   *        external gear ratio, wheel gear / motor gear
    */
   Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks, double ratio = 1.0);
 
@@ -397,67 +408,67 @@ class Drive {
    * Creates a Drive Controller using encoders plugged into the brain.
    *
    * \param left_motor_ports
-   *        Input {1, -2...}.  Make ports negative if reversed!
+   *        input {1, -2...}. make ports negative if reversed
    * \param right_motor_ports
-   *        Input {-3, 4...}.  Make ports negative if reversed!
+   *        input {-3, 4...}. make ports negative if reversed
    * \param imu_port
-   *        Port the IMU is plugged into.
+   *        port the IMU is plugged into
    * \param wheel_diameter
-   *        Diameter of your sensored wheels.  Remember 4" is 4.125"!
+   *        diameter of your sensored wheel
    * \param ticks
    *        Ticks per revolution of your encoder.
    * \param ratio
-   *        External gear ratio, wheel gear / sensor gear.
+   *        external gear ratio, wheel gear / sensor gear
    * \param left_tracker_ports
-   *        Input {1, 2}.  Make ports negative if reversed!
+   *        input {1, 2}. make ports negative if reversed
    * \param right_tracker_ports
-   *        Input {3, 4}.  Make ports negative if reversed!
+   *        input {3, 4}. make ports negative if reversed
    */
-  Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks, double ratio, std::vector<int> left_tracker_ports, std::vector<int> right_tracker_ports);
+  Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks, double ratio, std::vector<int> left_tracker_ports, std::vector<int> right_tracker_ports) __attribute__((deprecated("Use the integrated encoder constructor with odom_tracker_left_set() and odom_tracker_right_set() instead!")));
 
   /**
    * Creates a Drive Controller using encoders plugged into a 3 wire expander.
    *
    * \param left_motor_ports
-   *        Input {1, -2...}.  Make ports negative if reversed!
+   *        input {1, -2...}. make ports negative if reversed
    * \param right_motor_ports
-   *        Input {-3, 4...}.  Make ports negative if reversed!
+   *        input {-3, 4...}. make ports negative if reversed
    * \param imu_port
-   *        Port the IMU is plugged into.
+   *        port the IMU is plugged into
    * \param wheel_diameter
-   *        Diameter of your sensored wheels.  Remember 4" is 4.125"!
+   *        diameter of your sensored wheel
    * \param ticks
    *        Ticks per revolution of your encoder.
    * \param ratio
-   *        External gear ratio, wheel gear / sensor gear.
+   *        external gear ratio, wheel gear / sensor gear
    * \param left_tracker_ports
-   *        Input {1, 2}.  Make ports negative if reversed!
+   *        input {1, 2}. make ports negative if reversed
    * \param right_tracker_ports
-   *        Input {3, 4}.  Make ports negative if reversed!
+   *        input {3, 4}. make ports negative if reversed
    * \param expander_smart_port
-   *        Port the expander is plugged into.
+   *        port the expander is plugged into
    */
-  Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks, double ratio, std::vector<int> left_tracker_ports, std::vector<int> right_tracker_ports, int expander_smart_port);
+  Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks, double ratio, std::vector<int> left_tracker_ports, std::vector<int> right_tracker_ports, int expander_smart_port) __attribute__((deprecated("Use the integrated encoder constructor with odom_tracker_left_set() and odom_tracker_right_set() instead!")));
 
   /**
    * Creates a Drive Controller using rotation sensors.
    *
    * \param left_motor_ports
-   *        Input {1, -2...}.  Make ports negative if reversed!
+   *        input {1, -2...}. make ports negative if reversed
    * \param right_motor_ports
-   *        Input {-3, 4...}.  Make ports negative if reversed!
+   *        input {-3, 4...}. make ports negative if reversed
    * \param imu_port
-   *        Port the IMU is plugged into.
+   *        port the IMU is plugged into
    * \param wheel_diameter
-   *        Diameter of your sensored wheels.  Remember 4" is 4.125"!
+   *        diameter of your sensored wheel
    * \param ratio
-   *        External gear ratio, wheel gear / sensor gear.
+   *        external gear ratio, wheel gear / sensor gear
    * \param left_tracker_port
-   *        Make ports negative if reversed!
+   *        make ports negative if reversed
    * \param right_tracker_port
-   *        Make ports negative if reversed!
+   *        make ports negative if reversed
    */
-  Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ratio, int left_rotation_port, int right_rotation_port);
+  Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ratio, int left_rotation_port, int right_rotation_port) __attribute__((deprecated("Use the integrated encoder constructor with odom_tracker_left_set() and odom_tracker_right_set() instead!")));
 
   /**
    * Sets drive defaults.
@@ -484,23 +495,29 @@ class Drive {
   void odom_enable(bool input);
 
   /**
+   * Returns whether the bot is tracking with odometry.
+   *
    * True means tracking is enabled, false means tracking is disabled
    */
   bool odom_enabled();
 
   /**
-   * Sets the width of the drive.  This is used for tracking.
+   * Sets the width of the drive.
+   *
+   * This is used for tracking.
    *
    * \param input
-   *        a unit in inches, from center of the wheel to center of the wheel.
+   *        a unit in inches, from center of the wheel to center of the wheel
    */
   void drive_width_set(double input);
 
   /**
-   * Sets the width of the drive.  This is used for tracking.
+   * Sets the width of the drive.
+   *
+   * This is used for tracking.
    *
    * \param input
-   *        an okapi unit, from center of the wheel to center of the wheel.
+   *        an okapi unit, from center of the wheel to center of the wheel
    */
   void drive_width_set(okapi::QLength p_input);
 
@@ -562,44 +579,88 @@ class Drive {
   /**
    * Sets new angle.
    *
-   * \param x
+   * \param p_a
    *        new angle as an okapi unit
    */
   void odom_theta_set(okapi::QAngle p_a);
 
   /**
-   * Returns the current angle of the robot
+   * Returns the current angle of the robot.
    */
   double odom_theta_get();
 
   /**
-   * Sets a new pose for the robot
+   * Sets a new pose for the robot.
    *
-   * \param x
+   * \param itarget
    *        {x, y, t} units in inches and degrees
    */
   void odom_pose_set(pose itarget);
 
   /**
-   * Sets a new pose for the robot
+   * Sets a new pose for the robot.
    *
-   * \param x
+   * \param itarget
    *        {x, y, t} as an okapi unit
    */
   void odom_pose_set(united_pose itarget);
 
   /**
-   * Returns the current pose of the robot
+   * Sets a new X and Y value for the robot.
+   *
+   * \param x
+   *        new x value, in inches
+   * \param y
+   *        new y value, in inches
+   */
+  void odom_xy_set(double x, double y);
+
+  /**
+   * Sets a new X and Y value for the robot.
+   *
+   * \param p_x
+   *        new x value, okapi unit
+   * \param p_y
+   *        new y value, okapi unit
+   */
+  void odom_xy_set(okapi::QLength p_x, okapi::QLength p_y);
+
+  /**
+   * Sets a new X, Y, and Theta value for the robot.
+   *
+   * \param x
+   *        new x value, in inches
+   * \param y
+   *        new y value, in inches
+   * \param t
+   *        new theta value, in degrees
+   */
+  void odom_xyt_set(double x, double y, double t);
+
+  /**
+   * Sets a new X, Y, and Theta value for the robot.
+   *
+   * \param p_x
+   *        new x value, okapi unit
+   * \param p_y
+   *        new y value, okapi unit
+   * \param p_t
+   *        new theta value, okapi unit
+   */
+  void odom_xyt_set(okapi::QLength p_x, okapi::QLength p_y, okapi::QAngle p_t);
+
+  /**
+   * Returns the current pose of the robot.
    */
   pose odom_pose_get();
 
   /**
-   * Resets xyt to 0
+   * Resets xyt to 0.
    */
   void odom_reset();
 
   /**
-   * Flips the X axis
+   * Flips the X axis.
    *
    * \param flip
    *        true means left is positive x, false means right is positive x
@@ -607,7 +668,9 @@ class Drive {
   void odom_x_flip(bool flip = true);
 
   /**
-   * Checks if x axis is flipped.  True means left is positive x, false means right is positive x
+   * Checks if x axis is flipped.
+   *
+   * True means left is positive x, false means right is positive x.
    */
   bool odom_x_direction_get();
 
@@ -620,7 +683,9 @@ class Drive {
   void odom_y_flip(bool flip = true);
 
   /**
-   * Checks if y axis is flipped.  True means down is positive Y, false means up is positive Y
+   * Checks if y axis is flipped.
+   *
+   * True means down is positive Y, false means up is positive Y
    */
   bool odom_y_direction_get();
 
@@ -633,12 +698,16 @@ class Drive {
   void odom_theta_flip(bool flip = true);
 
   /**
-   * Checks if the rotation axis is flipped.  True means counterclockwise is positive, false means clockwise is positive
+   * Checks if the rotation axis is flipped.
+   *
+   * True means counterclockwise is positive, false means clockwise is positive.
    */
   bool odom_theta_direction_get();
 
   /**
-   * Sets a new dlead.  Dlead is a proportional value of how much to make the robot curve during boomerang motions.
+   * Sets a new dlead.
+   *
+   * Dlead is a proportional value of how much to make the robot curve during boomerang motions.
    *
    * \param input
    *        a value between 0 and 1.
@@ -667,15 +736,17 @@ class Drive {
   void odom_boomerang_distance_set(okapi::QLength p_distance);
 
   /**
-   * Returns how far away the carrot point can be from target
+   * Returns how far away the carrot point can be from target.
    */
   double odom_boomerang_distance_get();
 
   /**
-   * A proportion of how prioritized turning is during odometry motions.  Turning is prioritized so the robot correctly slows down during turns.
+   * A proportion of how prioritized turning is during odometry motions.
+   *
+   * Turning is prioritized so the robot correctly slows down during turns.
    *
    * \param bias
-   *        some number probably less than 5
+   *        some number likely less than 5
    */
   void odom_turn_bias_set(double bias);
 
@@ -685,7 +756,7 @@ class Drive {
   double odom_turn_bias_get();
 
   /**
-   * The spacing between points when points get injected into the path
+   * The spacing between points when points get injected into the path.
    *
    * \param spacing
    *        a small number in inches
@@ -693,7 +764,7 @@ class Drive {
   void odom_path_spacing_set(double spacing);
 
   /**
-   * The spacing between points when points get injected into the path
+   * The spacing between points when points get injected into the path.
    *
    * \param spacing
    *        a small number in okapi units
@@ -701,12 +772,41 @@ class Drive {
   void odom_path_spacing_set(okapi::QLength p_spacing);
 
   /**
-   * Returns the spacing between points when points get injected into the path
+   * Returns the spacing between points when points get injected into the path.
    */
   double odom_path_spacing_get();
 
   /**
-   * How far away the robot looks in the path during pure pursuits
+   * Sets the constants for smoothing out a path.
+   *
+   * Path smoothing based on https://medium.com/@jaems33/understanding-robot-motion-path-smoothing-5970c8363bc4
+   *
+   * \param weight_smooth
+   *        how much weight to update the data
+   * \param weight_data
+   *        how much weight to smooth the coordinates
+   * \param tolerance
+   *        how much change per iteration is necessary to keep iterating
+   */
+  void odom_path_smooth_constants_set(double weight_smooth, double weight_data, double tolerance);
+
+  /**
+   * Returns the constants for smoothing out a path.
+   *
+   * In order of:
+   *  - weight_smooth
+   *  - weight_data
+   *  - tolerance
+   */
+  std::vector<double> odom_path_smooth_constants_get();
+
+  /**
+   * Prints the current path the robot is following.
+   */
+  void odom_path_print();
+
+  /**
+   * How far away the robot looks in the path during pure pursuits.
    *
    * \param distance
    *        how long the "carrot on a stick" is, in inches
@@ -714,7 +814,7 @@ class Drive {
   void odom_look_ahead_set(double distance);
 
   /**
-   * How far away the robot looks in the path during pure pursuits
+   * How far away the robot looks in the path during pure pursuits.
    *
    * \param distance
    *        how long the "carrot on a stick" is, in okapi units
@@ -722,12 +822,12 @@ class Drive {
   void odom_look_ahead_set(okapi::QLength p_distance);
 
   /**
-   * Returns how far away the robot looks in the path during pure pursuits
+   * Returns how far away the robot looks in the path during pure pursuits.
    */
   double odom_look_ahead_get();
 
   /**
-   * Sets the left tracking wheel for odometry
+   * Sets the left tracking wheel for odometry.
    *
    * \param input
    *        an ez::tracking_wheel
@@ -735,7 +835,7 @@ class Drive {
   void odom_tracker_left_set(tracking_wheel* input);
 
   /**
-   * Sets the right tracking wheel for odometry
+   * Sets the right tracking wheel for odometry.
    *
    * \param input
    *        an ez::tracking_wheel
@@ -743,7 +843,7 @@ class Drive {
   void odom_tracker_right_set(tracking_wheel* input);
 
   /**
-   * Sets the front tracking wheel for odometry
+   * Sets the front tracking wheel for odometry.
    *
    * \param input
    *        an ez::tracking_wheel
@@ -751,7 +851,7 @@ class Drive {
   void odom_tracker_front_set(tracking_wheel* input);
 
   /**
-   * Sets the back tracking wheel for odometry
+   * Sets the back tracking wheel for odometry.
    *
    * \param input
    *        an ez::tracking_wheel
@@ -767,7 +867,7 @@ class Drive {
   void pid_angle_behavior_set(e_angle_behavior behavior);
 
   /**
-   * Sets the default behavior for turns in turns.
+   * Sets the default behavior for turns in turning movements.
    *
    * \param behavior
    *        ez::shortest, ez::longest, ez::left, ez::right
@@ -775,7 +875,7 @@ class Drive {
   void pid_turn_behavior_set(e_angle_behavior behavior);
 
   /**
-   * Sets the default behavior for turns in swings.
+   * Sets the default behavior for turns in swinging movements.
    *
    * \param behavior
    *        ez::shortest, ez::longest, ez::left, ez::right
@@ -783,7 +883,7 @@ class Drive {
   void pid_swing_behavior_set(e_angle_behavior behavior);
 
   /**
-   * Sets the default behavior for turns in odom turns.
+   * Sets the default behavior for turns in odom turning movements.
    *
    * \param behavior
    *        ez::shortest, ez::longest, ez::left, ez::right
@@ -827,7 +927,7 @@ class Drive {
   double pid_angle_behavior_tolerance_get();
 
   /**
-   * When a turn is within its tolerance, you can have it bias left or right
+   * When a turn is within its tolerance, you can have it bias left or right.
    *
    * \param behavior
    *        ez::left or ez::right
@@ -835,10 +935,9 @@ class Drive {
   void pid_angle_behavior_bias_set(e_angle_behavior behavior);
 
   /**
-   *
-   * Returns the behavior when a turn is within its tolerance, you can have it bias left or right
+   * Returns the behavior when a turn is within its tolerance, you can have it bias left or right.
    */
-  e_angle_behavior pid_angle_behavior_bias_get(e_angle_behavior);
+  e_angle_behavior pid_angle_behavior_bias_get();
 
   /////
   //
@@ -847,14 +946,20 @@ class Drive {
   /////
 
   /**
-   * Sets the chassis to controller joysticks using tank control.  Run is usercontrol.
-   * This passes the controller through the curve functions, but is disabled by default.  Use opcontrol_curve_buttons_toggle() to enable it.
+   * Sets the chassis to controller joysticks using tank control.
+   * Run in usercontrol.
+   *
+   * This passes the controller through the curve functions, but is disabled by default.
+   * Use opcontrol_curve_buttons_toggle() to enable it.
    */
   void opcontrol_tank();
 
   /**
-   * Sets the chassis to controller joysticks using standard arcade control.  Run is usercontrol.
-   * This passes the controller through the curve functions, but is disabled by default.  Use opcontrol_curve_buttons_toggle() to enable it.
+   * Sets the chassis to controller joysticks using standard arcade control.
+   * Run in usercontrol.
+   *
+   * This passes the controller through the curve functions, but is disabled by default.
+   * Use opcontrol_curve_buttons_toggle() to enable it.
    *
    * \param stick_type
    *        ez::SINGLE or ez::SPLIT control
@@ -862,8 +967,11 @@ class Drive {
   void opcontrol_arcade_standard(e_type stick_type);
 
   /**
-   * Sets the chassis to controller joysticks using flipped arcade control.  Run is usercontrol.
-   * This passes the controller through the curve functions, but is disabled by default.  Use opcontrol_curve_buttons_toggle() to enable it.
+   * Sets the chassis to controller joysticks using flipped arcade control.
+   * Run in usercontrol.
+   *
+   * This passes the controller through the curve functions, but is disabled by default.
+   * Use opcontrol_curve_buttons_toggle() to enable it.
    *
    * \param stick_type
    *        ez::SINGLE or ez::SPLIT control
@@ -879,9 +987,9 @@ class Drive {
    * Sets the default joystick curves.
    *
    * \param left
-   *        Left default curve.
+   *        left default curve
    * \param right
-   *        Right default curve.
+   *        right default curve
    */
   void opcontrol_curve_default_set(double left, double right = 0);
 
@@ -891,12 +999,18 @@ class Drive {
   std::vector<double> opcontrol_curve_default_get();
 
   /**
-   * Runs a P loop on the drive when the joysticks are released.
+   * Runs a PID loop on the drive when the joysticks are released.
    *
-   * \param kp
-   *        Constant for the p loop.
+   * \param p
+   *        kP
+   * \param i
+   *        kI, defaulted to 0
+   * \param d
+   *        kD, defaulted to 0
+   * \param p_start_i
+   *        start_I, defaulted to 0
    */
-  void opcontrol_drive_activebrake_set(double kp);
+  void opcontrol_drive_activebrake_set(double kp, double ki = 0.0, double kd = 0.0, double start_i = 0.0);
 
   /**
    * Returns kP for active brake.
@@ -904,15 +1018,21 @@ class Drive {
   double opcontrol_drive_activebrake_get();
 
   /**
-   * Enables/disables modifying the joystick input curves with the controller.  True enables, false disables.
+   * Returns all PID constants for active brake.
+   */
+  PID::Constants opcontrol_drive_activebrake_constants_get();
+
+  /**
+   * Enables/disables modifying the joystick input curves with the controller.
    *
    * \param input
-   *        bool input
+   *        true enables, false disables
    */
   void opcontrol_curve_buttons_toggle(bool toggle);
 
   /**
-   * Gets the current state of the toggle. Enables/disables modifying the joystick input curves with the controller.  True enables, false disables.
+   * Gets the current state of the toggle. Enables/disables modifying the joystick input curves with the controller.
+   * True enabled, false disabled.
    */
   bool opcontrol_curve_buttons_toggle_get();
 
@@ -947,23 +1067,30 @@ class Drive {
   std::vector<pros::controller_digital_e_t> opcontrol_curve_buttons_right_get();
 
   /**
-   * Outputs a curve from 5225A In the Zone.  This gives more control over the robot at lower speeds.  https://www.desmos.com/calculator/rcfjjg83zx
+   * Outputs a curve from 5225A In the Zone.
+   * This gives more control over the robot at lower speeds.
    *
    * \param x
    *        joystick input
+   *
+   * https://www.desmos.com/calculator/rcfjjg83zx
    */
   double opcontrol_curve_left(double x);
 
   /**
-   * Outputs a curve from 5225A In the Zone.  This gives more control over the robot at lower speeds.  https://www.desmos.com/calculator/rcfjjg83zx
+   * Outputs a curve from 5225A In the Zone.
+   * This gives more control over the robot at lower speeds.
    *
    * \param x
    *        joystick input
+   *
+   * https://www.desmos.com/calculator/rcfjjg83zx
    */
   double opcontrol_curve_right(double x);
 
   /**
-   * Sets a new threshold for the joystick.  The joysticks wil not return a value if they are within this.
+   * Sets a new threshold for the joystick.
+   * The joysticks wil not return a value if they are within this.
    *
    * \param threshold
    *        new threshold
@@ -971,7 +1098,8 @@ class Drive {
   void opcontrol_joystick_threshold_set(int threshold);
 
   /**
-   * Gets a new threshold for the joystick.  The joysticks wil not return a value if they are within this.
+   * Gets the threshold for the joystick.
+   * The joysticks wil not return a value if they are within this.
    */
   int opcontrol_joystick_threshold_get();
 
@@ -1000,7 +1128,7 @@ class Drive {
    * Checks if the motor is currently in pto_list.  Returns true if it's already in pto_list.
    *
    * \param check_if_pto
-   *        motor to check.
+   *        motor to check
    */
   bool pto_check(pros::Motor check_if_pto);
 
@@ -1008,7 +1136,7 @@ class Drive {
    * Adds motors to the pto list, removing them from the drive.
    *
    * \param pto_list
-   *        list of motors to remove from the drive.
+   *        list of motors to remove from the drive
    */
   void pto_add(std::vector<pros::Motor> pto_list);
 
@@ -1016,7 +1144,7 @@ class Drive {
    * Removes motors from the pto list, adding them to the drive.  You cannot use the first index in a pto.
    *
    * \param pto_list
-   *        list of motors to add to the drive.
+   *        list of motors to add to the drive
    */
   void pto_remove(std::vector<pros::Motor> pto_list);
 
@@ -1024,20 +1152,21 @@ class Drive {
    * Adds/removes motors from drive.  You cannot use the first index in a pto.
    *
    * \param pto_list
-   *        list of motors to add/remove from the drive.
+   *        list of motors to add/remove from the drive
    * \param toggle
-   *        if true, adds to list.  if false, removes from list.
+   *        if true, adds to list.  if false, removes from list
    */
   void pto_toggle(std::vector<pros::Motor> pto_list, bool toggle);
 
   /////
   //
-  // PROS Wrapers
+  // PROS Wrappers
   //
   /////
 
   /**
-   * Sets the chassis to voltage.  Disables PID when called.
+   * Sets the chassis to voltage.
+   * Disables PID when called.
    *
    * \param left
    *        voltage for left side, -127 to 127
@@ -1047,7 +1176,7 @@ class Drive {
   void drive_set(int left, int right);
 
   /**
-   * Gets the chassis to voltage, -127 to 127.  Returns {left, right}
+   * Gets the chassis to voltage, -127 to 127.  Returns {left, right}.
    */
   std::vector<int> drive_get();
 
@@ -1060,7 +1189,7 @@ class Drive {
   void drive_brake_set(pros::motor_brake_mode_e_t brake_type);
 
   /**
-   * Returns the brake mode of the drive in pros_brake_mode_e_t_
+   * Returns the brake mode of the drive in pros_brake_mode_e_t_.
    */
   pros::motor_brake_mode_e_t drive_brake_get();
 
@@ -1078,22 +1207,34 @@ class Drive {
   int drive_current_limit_get();
 
   /**
-   * Toggles set drive in autonomous. True enables, false disables.
+   * Toggles set drive in autonomous.
+   *
+   * True enables, false disables.
    */
   void pid_drive_toggle(bool toggle);
 
   /**
-   * Gets the current state of the toggle. This toggles set drive in autonomous. True enables, false disables.
+   * Gets the current state of the toggle.
+   *
+   * This toggles set drive in autonomous.
+   *
+   * True enabled, false disabled.
    */
   bool pid_drive_toggle_get();
 
   /**
-   * Toggles printing in autonomous. True enables, false disables.
+   * Toggles printing in autonomous.
+   *
+   * True enables, false disables.
    */
   void pid_print_toggle(bool toggle);
 
   /**
-   * Gets the current state of the toggle.  This toggles printing in autonomous. True enables, false disables.
+   * Gets the current state of the toggle.
+   *
+   * This toggles printing in autonomous.
+   *
+   * True enabled, false disabled.
    */
   bool pid_print_toggle_get();
 
@@ -1162,7 +1303,7 @@ class Drive {
    * Resets the current imu value.  Defaults to 0, recommended to run at the start of your autonomous routine.
    *
    * \param new_heading
-   *        New heading value.
+   *        new heading value
    */
   void drive_imu_reset(double new_heading = 0);
 
@@ -1177,10 +1318,12 @@ class Drive {
   double drive_imu_accel_get();
 
   /**
-   * Sets a new imu scaling factor.  This value is multiplied by the imu to change its output.
+   * Sets a new imu scaling factor.
+   *
+   * This value is multiplied by the imu to change its output.
    *
    * \param scaler
-   *        Factor to scale the imu by.
+   *        Factor to scale the imu by
    */
   void drive_imu_scaler_set(double scaler);
 
@@ -1198,6 +1341,13 @@ class Drive {
   bool drive_imu_calibrate(bool run_loading_animation = true);
 
   /**
+   * Checks if the imu calibrated successfully or if it took longer than expected.
+   *
+   * Returns true if calibrated successfully, and false if unsuccessful.
+   */
+  bool drive_imu_calibrated();
+
+  /**
    * Loading display while the IMU calibrates.
    */
   void drive_imu_display_loading(int iter);
@@ -1205,24 +1355,30 @@ class Drive {
   /**
    * Practice mode for driver practice that shuts off the drive if you go max speed.
    *
-   * @param toggle True if you want this mode enables and False if you want it disabled.
+   * \param toggle
+   *        true if you want this mode enables and False if you want it disabled
    */
   void opcontrol_joystick_practicemode_toggle(bool toggle);
 
   /**
-   * Gets current state of the toggle.  Practice mode for driver practice that shuts off the drive if you go max speed.
+   * Gets current state of the toggle.
+   *
+   * Practice mode for driver practice that shuts off the drive if you go max speed.
    */
   bool opcontrol_joystick_practicemode_toggle_get();
 
   /**
-   * Reversal for drivetrain in opcontrol that flips the left and right side and the direction of the drive
+   * Reversal for drivetrain in opcontrol that flips the left and right side and the direction of the drive.
    *
-   * @param toggle True if you want your drivetrain reversed and False if you do not.
+   * \param toggle
+   *        true if you want your drivetrain reversed and False if you do not.
    */
   void opcontrol_drive_reverse_set(bool toggle);
 
   /**
-   * Gets current state of the toggle.  Reversal for drivetrain in opcontrol that flips the left and right side and the direction of the drive.
+   * Gets current state of the toggle.
+   *
+   * Reversal for drivetrain in opcontrol that flips the left and right side and the direction of the drive.
    */
   bool opcontrol_drive_reverse_get();
 
@@ -1234,7 +1390,8 @@ class Drive {
 
   /**
    * Sets the robot to move forward using PID without okapi units, only using slew if globally enabled.
-   *  This function is actually odom
+   *
+   * This function is actually odom.
    *
    * \param target
    *        target value as a double, unit is inches
@@ -1245,7 +1402,8 @@ class Drive {
 
   /**
    * Sets the robot to move forward using PID without okapi units, using slew if enabled for this motion.
-   *  This function is actually odom
+   *
+   * This function is actually odom
    *
    * \param target
    *        target value as a double, unit is inches
@@ -1258,7 +1416,8 @@ class Drive {
 
   /**
    * Sets the robot to move forward using PID with okapi units, only using slew if globally enabled.
-   *  This function is actually odom
+   *
+   * This function is actually odom
    *
    * \param target
    *        target value in inches
@@ -1269,7 +1428,8 @@ class Drive {
 
   /**
    * Sets the robot to move forward using PID with okapi units, using slew if enabled for this motion.
-   *  This function is actually odom
+   *
+   * This function is actually odom
    *
    * \param target
    *        target value in inches
@@ -1679,7 +1839,7 @@ class Drive {
   void pid_turn_set(united_pose p_itarget, drive_directions dir, int speed, e_angle_behavior behavior, bool slew_on);
 
   /**
-   * Sets the robot to turn using PID.
+   * Sets the robot to turn relative to initial heading using PID.
    *
    * \param target
    *        target value as a double, unit is degrees
@@ -1691,7 +1851,7 @@ class Drive {
   void pid_turn_set(double target, int speed);
 
   /**
-   * Sets the robot to turn using PID.
+   * Sets the robot to turn relative to initial heading using PID.
    *
    * \param target
    *        target value as a double, unit is degrees
@@ -1703,7 +1863,7 @@ class Drive {
   void pid_turn_set(double target, int speed, e_angle_behavior behavior);
 
   /**
-   * Sets the robot to turn using PID, using slew if enabled for this motion.
+   * Sets the robot to turn relative to initial heading using PID, using slew if enabled for this motion.
    *
    * \param target
    *        target value as a double, unit is degrees
@@ -1715,7 +1875,7 @@ class Drive {
   void pid_turn_set(double target, int speed, bool slew_on);
 
   /**
-   * Sets the robot to turn using PID, using slew if enabled for this motion.
+   * Sets the robot to turn relative to initial heading using PID, using slew if enabled for this motion.
    *
    * \param target
    *        target value as a double, unit is degrees
@@ -1729,20 +1889,20 @@ class Drive {
   void pid_turn_set(double target, int speed, e_angle_behavior behavior, bool slew_on);
 
   /**
-   * Sets the robot to turn using PID with okapi units.
+   * Sets the robot to turn relative to initial heading using PID with okapi units.
    *
    * \param p_target
-   *        target value in degrees
+   *        target value in okapi angle units
    * \param speed
    *        0 to 127, max speed during motion
    */
   void pid_turn_set(okapi::QAngle p_target, int speed);
 
   /**
-   * Sets the robot to turn using PID with okapi units.
+   * Sets the robot to turn relative to initial heading using PID with okapi units.
    *
    * \param p_target
-   *        target value in degrees
+   *        target value in okapi angle units
    * \param speed
    *        0 to 127, max speed during motion
    * \param behavior
@@ -1751,10 +1911,10 @@ class Drive {
   void pid_turn_set(okapi::QAngle p_target, int speed, e_angle_behavior behavior);
 
   /**
-   * Sets the robot to turn using PID with okapi units, using slew if enabled for this motion.
+   * Sets the robot to turn relative to initial heading using PID with okapi units, using slew if enabled for this motion.
    *
    * \param p_target
-   *        target value in degrees
+   *        target value in okapi angle units
    * \param speed
    *        0 to 127, max speed during motion
    * \param slew_on
@@ -1763,10 +1923,10 @@ class Drive {
   void pid_turn_set(okapi::QAngle p_target, int speed, bool slew_on);
 
   /**
-   * Sets the robot to turn using PID with okapi units, using slew if enabled for this motion.
+   * Sets the robot to turn relative to initial heading using PID with okapi units, using slew if enabled for this motion.
    *
    * \param p_target
-   *        target value in degrees
+   *        target value in okapi angle units
    * \param speed
    *        0 to 127, max speed during motion
    * \param behavior
@@ -1873,7 +2033,7 @@ class Drive {
   void pid_turn_relative_set(double target, int speed, e_angle_behavior behavior, bool slew_on);
 
   /**
-   * Turn using only the left or right side without okapi units, only using slew if globally enabled.
+   * Sets the robot to turn using only the left or right side relative to initial heading without okapi units, only using slew if globally enabled.
    *
    * \param type
    *        L_SWING or R_SWING
@@ -1885,7 +2045,7 @@ class Drive {
   void pid_swing_set(e_swing type, double target, int speed);
 
   /**
-   * Turn using only the left or right side without okapi units, only using slew if globally enabled.
+   * Sets the robot to turn using only the left or right side relative to initial heading without okapi units, only using slew if globally enabled.
    *
    * \param type
    *        L_SWING or R_SWING
@@ -1897,7 +2057,7 @@ class Drive {
   void pid_swing_set(e_swing type, double target, int speed, e_angle_behavior behavior);
 
   /**
-   * Turn using only the left or right side without okapi units, using slew if enabled for this motion.
+   * Sets the robot to turn using only the left or right side relative to initial heading without okapi units, using slew if enabled for this motion.
    *
    * \param type
    *        L_SWING or R_SWING
@@ -1909,7 +2069,7 @@ class Drive {
   void pid_swing_set(e_swing type, double target, int speed, bool slew_on);
 
   /**
-   * Turn using only the left or right side without okapi units, using slew if enabled for this motion.
+   * Sets the robot to turn using only the left or right side relative to initial heading without okapi units, using slew if enabled for this motion.
    *
    * \param type
    *        L_SWING or R_SWING
@@ -1921,7 +2081,7 @@ class Drive {
   void pid_swing_set(e_swing type, double target, int speed, e_angle_behavior behavior, bool slew_on);
 
   /**
-   * Turn using only the left or right side without okapi units, only using slew if globally enabled.
+   * Sets the robot to turn using only the left or right side relative to initial heading without okapi units, only using slew if globally enabled.
    *
    * \param type
    *        L_SWING or R_SWING
@@ -1930,12 +2090,12 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing.  This is used for arcs, and is defaulted to 0.
+   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
    */
   void pid_swing_set(e_swing type, double target, int speed, int opposite_speed);
 
   /**
-   * Turn using only the left or right side without okapi units, only using slew if globally enabled.
+   * Sets the robot to turn using only the left or right side relative to initial heading without okapi units, only using slew if globally enabled.
    *
    * \param type
    *        L_SWING or R_SWING
@@ -1944,12 +2104,12 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing.  This is used for arcs, and is defaulted to 0.
+   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
    */
   void pid_swing_set(e_swing type, double target, int speed, int opposite_speed, e_angle_behavior behavior);
 
   /**
-   * Turn using only the left or right side without okapi units, using slew if enabled for this motion.
+   * Sets the robot to turn using only the left or right side relative to initial heading without okapi units, using slew if enabled for this motion.
    *
    * \param type
    *        L_SWING or R_SWING
@@ -1958,12 +2118,12 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing.  This is used for arcs, and is defaulted to 0.
+   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
    */
   void pid_swing_set(e_swing type, double target, int speed, int opposite_speed, bool slew_on);
 
   /**
-   * Turn using only the left or right side without okapi units, using slew if enabled for this motion.
+   * Sets the robot to turn using only the left or right side relative to initial heading without okapi units, using slew if enabled for this motion.
    *
    * \param type
    *        L_SWING or R_SWING
@@ -1972,115 +2132,115 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing.  This is used for arcs, and is defaulted to 0.
+   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
    */
   void pid_swing_set(e_swing type, double target, int speed, int opposite_speed, e_angle_behavior behavior, bool slew_on);
 
   /**
-   * Turn using only the left or right side with okapi units, only using slew if globally enabled.
+   * Sets the robot to turn using only the left or right side relative to initial heading with okapi units, only using slew if globally enabled.
    *
    * \param type
    *        L_SWING or R_SWING
    * \param p_target
-   *        target value in degrees
+   *        target value in okapi angle units
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing.  This is used for arcs, and is defaulted to 0.
+   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
    */
   void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed);
 
   /**
-   * Turn using only the left or right side with okapi units, only using slew if globally enabled.
+   * Sets the robot to turn using only the left or right side relative to initial heading with okapi units, only using slew if globally enabled.
    *
    * \param type
    *        L_SWING or R_SWING
    * \param p_target
-   *        target value in degrees
+   *        target value in okapi angle units
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing.  This is used for arcs, and is defaulted to 0.
+   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
    */
   void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, e_angle_behavior behavior);
 
   /**
-   * Turn using only the left or right side with okapi units, using slew if enabled for this motion.
+   * Sets the robot to turn using only the left or right side relative to initial heading with okapi units, using slew if enabled for this motion.
    *
    * \param type
    *        L_SWING or R_SWING
    * \param p_target
-   *        target value in degrees
+   *        target value in okapi angle units
    * \param speed
    *        0 to 127, max speed during motion
    */
   void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, bool slew_on);
 
   /**
-   * Turn using only the left or right side with okapi units, using slew if enabled for this motion.
+   * Sets the robot to turn using only the left or right side relative to initial heading with okapi units, using slew if enabled for this motion.
    *
    * \param type
    *        L_SWING or R_SWING
    * \param p_target
-   *        target value in degrees
+   *        target value in okapi angle units
    * \param speed
    *        0 to 127, max speed during motion
    */
   void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, e_angle_behavior behavior, bool slew_on);
 
   /**
-   * Turn using only the left or right side with okapi units, only using slew if globally enabled.
+   * Sets the robot to turn using only the left or right side relative to initial heading with okapi units, only using slew if globally enabled.
    *
    * \param type
    *        L_SWING or R_SWING
    * \param p_target
-   *        target value in degrees
+   *        target value in okapi angle units
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing.  This is used for arcs, and is defaulted to 0.
+   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
    */
   void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed);
 
   /**
-   * Turn using only the left or right side with okapi units, only using slew if globally enabled.
+   * Sets the robot to turn using only the left or right side relative to initial heading with okapi units, only using slew if globally enabled.
    *
    * \param type
    *        L_SWING or R_SWING
    * \param p_target
-   *        target value in degrees
+   *        target value in okapi angle units
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing.  This is used for arcs, and is defaulted to 0.
+   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
    */
   void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed, e_angle_behavior behavior);
 
   /**
-   * Turn using only the left or right side with okapi units, using slew if enabled for this motion.
+   * Sets the robot to turn using only the left or right side relative to initial heading with okapi units, using slew if enabled for this motion.
    *
    * \param type
    *        L_SWING or R_SWING
    * \param p_target
-   *        target value in degrees
+   *        target value in okapi angle units
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing.  This is used for arcs, and is defaulted to 0.
+   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
    */
   void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed, bool slew_on);
 
   /**
-   * Turn using only the left or right side with okapi units, using slew if enabled for this motion.
+   * Sets the robot to turn only using the left or right side relative to initial heading using PID with okapi units, using slew if enabled for this motion.
    *
    * \param type
    *        L_SWING or R_SWING
    * \param p_target
-   *        target value in degrees
+   *        target value in okapi angle units
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing.  This is used for arcs, and is defaulted to 0.
+   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
    */
   void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed, e_angle_behavior behavior, bool slew_on);
 
@@ -2142,7 +2302,7 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing.  This is used for arcs, and is defaulted to 0.
+   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
    */
   void pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed);
 
@@ -2156,7 +2316,7 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing.  This is used for arcs, and is defaulted to 0.
+   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
    */
   void pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed, e_angle_behavior behavior);
 
@@ -2170,7 +2330,7 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing.  This is used for arcs, and is defaulted to 0.
+   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
    */
   void pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed, bool slew_on);
 
@@ -2184,7 +2344,7 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing.  This is used for arcs, and is defaulted to 0.
+   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
    */
   void pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed, e_angle_behavior behavior, bool slew_on);
 
@@ -2246,7 +2406,7 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing.  This is used for arcs, and is defaulted to 0.
+   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
    */
   void pid_swing_relative_set(e_swing type, double target, int speed, int opposite_speed);
 
@@ -2260,7 +2420,7 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing.  This is used for arcs, and is defaulted to 0.
+   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
    */
   void pid_swing_relative_set(e_swing type, double target, int speed, int opposite_speed, e_angle_behavior behavior);
 
@@ -2274,7 +2434,7 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing.  This is used for arcs, and is defaulted to 0.
+   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
    */
   void pid_swing_relative_set(e_swing type, double target, int speed, int opposite_speed, bool slew_on);
 
@@ -2288,7 +2448,7 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing.  This is used for arcs, and is defaulted to 0.
+   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
    */
   void pid_swing_relative_set(e_swing type, double target, int speed, int opposite_speed, e_angle_behavior behavior, bool slew_on);
 
@@ -2298,12 +2458,12 @@ class Drive {
   void pid_targets_reset();
 
   /**
-   * Sets heading of imo and target of PID, okapi angle.
+   * Sets heading of imu and target of PID, okapi angle.
    */
   void drive_angle_set(okapi::QAngle p_angle);
 
   /**
-   * Sets heading of imo and target of PID, takes double as an angle.
+   * Sets heading of imu and target of PID, takes double as an angle.
    */
   void drive_angle_set(double angle);
 
@@ -2338,13 +2498,16 @@ class Drive {
 
   /**
    * Lock the code in a while loop until the robot has settled.
-   * Wrapper for pid_wait_until(target), target is your previously input target
+   *
+   * Wrapper for pid_wait_until(target), target is your previously input target.
    */
   void pid_wait_quick();
 
   /**
    * Lock the code in a while loop until the robot has settled.
-   * This also adds distance to target, and then exits with pid_wait_quick
+   *
+   * This also adds distance to target, and then exits with pid_wait_quick.
+   *
    * This will exit the motion while carrying momentum into the next motion.
    */
   void pid_wait_quick_chain();
@@ -2382,7 +2545,9 @@ class Drive {
   void pid_wait_until_point(united_pose target);
 
   /**
-   * Lock the code in a while loop until this point has been passed.  Wrapper for pid_wait_until_point
+   * Lock the code in a while loop until this point has been passed.
+   *
+   * Wrapper for pid_wait_until_point.
    *
    * \param target
    *        {x, y}  a pose for the robot to pass through before the while loop is released
@@ -2390,7 +2555,9 @@ class Drive {
   void pid_wait_until(pose target);
 
   /**
-   * Lock the code in a while loop until this point has been passed, with okapi units.  Wrapper for pid_wait_until_point
+   * Lock the code in a while loop until this point has been passed, with okapi units.
+   *
+   * Wrapper for pid_wait_until_point.
    *
    * \param target
    *        {x, y}  a pose with units for the robot to pass through before the while loop is released
@@ -2398,22 +2565,24 @@ class Drive {
   void pid_wait_until(united_pose target);
 
   /**
-   * Autonomous interference detection.  Returns true when interfered, and false when nothing happened.
+   * Autonomous interference detection.
+   *
+   * Returns true when interfered, and false when nothing happened.
    */
   bool interfered = false;
 
   /**
-   * @brief Set the ratio of the robot
+   * Set the ratio of the robot.
    *
-   * @param ratio
+   * \param ratio
    *        ratio of the gears
    */
   void drive_ratio_set(double ratio);
 
   /**
-   * @brief Set the cartridge/wheel rpm of the robot
+   * Set the cartridge/wheel rpm of the robot.
    *
-   * @param rpm
+   * \param rpm
    *        rpm of the cartridge or wheel
    */
   void drive_rpm_set(double rpm);
@@ -2442,27 +2611,36 @@ class Drive {
   int pid_speed_max_get();
 
   /**
-   * @brief Set the turn pid constants object
+   * Set the turn pid constants object.
    *
-   * @param p           kP
-   * @param i           kI
-   * @param d           kD
-   * @param p_start_i   start_I
+   * \param p
+   *        kP
+   * \param i
+   *        kI
+   * \param d
+   *        kD
+   * \param p_start_i
+   *        start_I
    */
   void pid_turn_constants_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
   /**
-   * @brief returns PID constants with PID::Constants.
+   * Returns PID constants with PID::Constants.
    *
-   * @param p           kP
-   * @param i           kI
-   * @param d           kD
-   * @param p_start_i   start_I
+   * \param p
+   *        kP
+   * \param i
+   *        kI
+   * \param d
+   *        kD
+   * \param p_start_i
+   *        start_I
    */
   PID::Constants pid_turn_constants_get();
 
   /**
    * Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.
+   *
    * This sets turning constants.
    *
    * \param input
@@ -2472,6 +2650,7 @@ class Drive {
 
   /**
    * Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.
+   *
    * This sets turning constants.
    *
    * \param input
@@ -2485,67 +2664,90 @@ class Drive {
   double pid_turn_chain_constant_get();
 
   /**
-   * @brief Set the swing pid constants object
+   * Set the swing pid constants object.
    *
-   * @param p           kP
-   * @param i           kI
-   * @param d           kD
-   * @param p_start_i   start_I
+   * \param p
+   *        kP
+   * \param i
+   *        kI
+   * \param d
+   *        kD
+   * \param p_start_i
+   *        start_i
    */
   void pid_swing_constants_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
   /**
-   * @brief returns PID constants with PID::Constants. Returns -1 if fwd and rev constants aren't the same!
+   * Returns PID constants with PID::Constants.
    *
-   * @param p           kP
-   * @param i           kI
-   * @param d           kD
-   * @param p_start_i   start_I
+   * Returns -1 if fwd and rev constants aren't the same!
+   *
+   * \param p
+   *        kP
+   * \param i
+   *        kI
+   * \param d
+   *        kD
+   * \param p_start_i
+   *        start_I
    */
   PID::Constants pid_swing_constants_get();
 
   /**
-   * @brief Set the forward swing pid constants object
+   * Set the forward swing pid constants object.
    *
-   * @param p           kP
-   * @param i           kI
-   * @param d           kD
-   * @param p_start_i   start_I
+   * \param p
+   *        kP
+   * \param i
+   *        kI
+   * \param d
+   *        kD
+   * \param p_start_i
+   *        start_I
    */
   void pid_swing_constants_forward_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
   /**
-   * @brief returns PID constants with PID::Constants.
+   * Returns PID constants with PID::Constants.
    *
-   * @param p           kP
-   * @param i           kI
-   * @param d           kD
-   * @param p_start_i   start_I
+   * \param p
+   *        kP
+   * \param i
+   *        kI
+   * \param d
+   *        kD
+   * \param p_start_i
+   *        start_I
    */
   PID::Constants pid_swing_constants_forward_get();
 
   /**
-   * @brief Set the backward swing pid constants object
+   * Set the backward swing pid constants object.
    *
-   * @param p           kP
-   * @param i           kI
-   * @param d           kD
-   * @param p_start_i   start_I
+   * \param p           kP
+   * \param i           kI
+   * \param d           kD
+   * \param p_start_i   start_I
    */
   void pid_swing_constants_backward_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
   /**
-   * @brief returns PID constants with PID::Constants.
+   * Returns PID constants with PID::Constants.
    *
-   * @param p           kP
-   * @param i           kI
-   * @param d           kD
-   * @param p_start_i   start_I
+   * \param p
+   *        kP
+   * \param i
+   *        kI
+   * \param d
+   *        kD
+   * \param p_start_i
+   *        start_I
    */
   PID::Constants pid_swing_constants_backward_get();
 
   /**
    * Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.
+   *
    * This sets forward and backwards swing constants.
    *
    * \param input
@@ -2555,6 +2757,7 @@ class Drive {
 
   /**
    * Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.
+   *
    * This only sets forward swing constants.
    *
    * \param input
@@ -2564,6 +2767,7 @@ class Drive {
 
   /**
    * Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.
+   *
    * This only sets backward swing constants.
    *
    * \param input
@@ -2573,6 +2777,7 @@ class Drive {
 
   /**
    * Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.
+   *
    * This sets forward and backwards swing constants.
    *
    * \param input
@@ -2582,6 +2787,7 @@ class Drive {
 
   /**
    * Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.
+   *
    * This only sets forward constants.
    *
    * \param input
@@ -2596,6 +2802,7 @@ class Drive {
 
   /**
    * Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.
+   *
    * This only sets backwards swing constants.
    *
    * \param input
@@ -2609,87 +2816,122 @@ class Drive {
   double pid_swing_chain_backward_constant_get();
 
   /**
-   * @brief Set the heading pid constants object
+   * Set the heading pid constants object.
    *
-   * @param p           kP
-   * @param i           kI
-   * @param d           kD
-   * @param p_start_i   start_I
+   * \param p
+   *        kP
+   * \param i
+   *        kI
+   * \param d
+   *        kD
+   * \param p_start_i
+   *        start_I
    */
   void pid_heading_constants_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
   /**
-   * @brief returns PID constants with PID::Constants.
+   * Returns PID constants with PID::Constants.
    *
-   * @param p           kP
-   * @param i           kI
-   * @param d           kD
-   * @param p_start_i   start_I
+   * \param p
+   *        kP
+   * \param i
+   *        kI
+   * \param d
+   *        kD
+   * \param p_start_i
+   *        start_I
    */
   PID::Constants pid_heading_constants_get();
 
   /**
-   * @brief Set the drive pid constants object
+   * Set the drive pid constants object.
    *
-   * @param p           kP
-   * @param i           kI
-   * @param d           kD
-   * @param p_start_i   start_I
+   * \param p
+   *        kP
+   * \param i
+   *        kI
+   * \param d
+   *        kD
+   * \param p_start_i
+   *        start_I
    */
   void pid_drive_constants_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
   /**
-   * @brief returns PID constants with PID::Constants.  Returns -1 if fwd and rev constants aren't the same!
+   * Returns PID constants with PID::Constants.
    *
-   * @param p           kP
-   * @param i           kI
-   * @param d           kD
-   * @param p_start_i   start_I
+   * Returns -1 if fwd and rev constants aren't the same!
+   *
+   * \param p
+   *        kP
+   * \param i
+   *        kI
+   * \param d
+   *        kD
+   * \param p_start_i
+   *        start_I
    */
   PID::Constants pid_drive_constants_get();
 
   /**
-   * @brief Set the forward pid constants object
+   * Set the forward pid constants object.
    *
-   * @param p           kP
-   * @param i           kI
-   * @param d           kD
-   * @param p_start_i   start_I
+   * \param p
+   *        kP
+   * \param i
+   *        kI
+   * \param d
+   *        kD
+   * \param p_start_i
+   *        start_I
    */
   void pid_drive_constants_forward_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
   /**
-   * @brief returns PID constants with PID::Constants.
+   * Returns PID constants with PID::Constants.
    *
-   * @param p           kP
-   * @param i           kI
-   * @param d           kD
-   * @param p_start_i   start_I
+   * \param p
+   *        kP
+   * \param i
+   *        kI
+   * \param d
+   *        kD
+   * \param p_start_i
+   *        start_I
    */
   PID::Constants pid_drive_constants_forward_get();
 
   /**
-   * @brief Set the backwards pid constants object
+   * Set the backwards pid constants object.
    *
-   * @param p           kP
-   * @param i           kI
-   * @param d           kD
-   * @param p_start_i   start_I
+   * \param p
+   *        kP
+   * \param i
+   *        kI
+   * \param d
+   *        kD
+   * \param p_start_i
+   *        start_I
    */
   void pid_drive_constants_backward_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
   /**
-   * @brief returns PID constants with PID::Constants.
+   * Returns PID constants with PID::Constants.
    *
-   * @param p           kP
-   * @param i           kI
-   * @param d           kD
-   * @param p_start_i   start_I
+   * \param p
+   *        kP
+   * \param i
+   *        kI
+   * \param d
+   *        kD
+   * \param p_start_i
+   *        start_I
    */
   PID::Constants pid_drive_constants_backward_get();
 
   /**
    * Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.
+   *
    * This sets forward and backwards driving constants.
    *
    * \param input
@@ -2699,6 +2941,7 @@ class Drive {
 
   /**
    * Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.
+   *
    * This only sets forward driving constants.
    *
    * \param input
@@ -2708,6 +2951,7 @@ class Drive {
 
   /**
    * Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.
+   *
    * This only sets backward driving constants.
    *
    * \param input
@@ -2717,6 +2961,7 @@ class Drive {
 
   /**
    * Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.
+   *
    * This sets forward and backwards driving constants.
    *
    * \param input
@@ -2726,6 +2971,7 @@ class Drive {
 
   /**
    * Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.
+   *
    * This only sets forward driving constants.
    *
    * \param input
@@ -2740,6 +2986,7 @@ class Drive {
 
   /**
    * Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.
+   *
    * This only sets backward driving constants.
    *
    * \param input
@@ -2779,22 +3026,30 @@ class Drive {
   int pid_turn_min_get();
 
   /**
-   * @brief Set the heading pid constants object
+   * Set the heading pid constants object.
    *
-   * @param p           kP
-   * @param i           kI
-   * @param d           kD
-   * @param p_start_i   start_I
+   * \param p
+   *        kP
+   * \param i
+   *        kI
+   * \param d
+   *        kD
+   * \param p_start_i
+   *        start_I
    */
   void pid_odom_angular_constants_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
   /**
-   * @brief Set the heading pid constants object
+   * Set the heading pid constants object.
    *
-   * @param p           kP
-   * @param i           kI
-   * @param d           kD
-   * @param p_start_i   start_I
+   * \param p
+   *        kP
+   * \param i
+   *        kI
+   * \param d
+   *        kD
+   * \param p_start_i
+   *        start_I
    */
   void pid_odom_boomerang_constants_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
@@ -2802,17 +3057,17 @@ class Drive {
    * Set's constants for odom driving exit conditions.
    *
    * \param p_small_exit_time
-   *        Sets small_exit_time.  Timer for to exit within smalL_error.
+   *        sets small_exit_time, timer for to exit within smalL_error
    * \param p_small_error
-   *        Sets smalL_error. Timer will start when error is within this.
+   *        sets smalL_error, timer will start when error is within this
    * \param p_big_exit_time
-   *        Sets big_exit_time.  Timer for to exit within big_error.
+   *        sets big_exit_time, timer for to exit within big_error
    * \param p_big_error
-   *        Sets big_error. Timer will start when error is within this.
+   *        sets big_error, timer will start when error is within this
    * \param p_velocity_exit_time
-   *        Sets velocity_exit_time.  Timer will start when velocity is 0.
+   *        sets velocity_exit_time, timer will start when velocity is 0
    * \param use_imu
-   *        Adds the Imu for velocity calculation in conjunction with the main sensor.
+   *        adds the Imu for velocity calculation in conjunction with the main sensor
    */
   void pid_odom_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = true);
 
@@ -2820,17 +3075,17 @@ class Drive {
    * Set's constants for odom turning exit conditions.
    *
    * \param p_small_exit_time
-   *        Sets small_exit_time.  Timer for to exit within smalL_error.
+   *        sets small_exit_time, timer for to exit within smalL_error
    * \param p_small_error
-   *        Sets smalL_error. Timer will start when error is within this.
+   *        sets smalL_error, timer will start when error is within this
    * \param p_big_exit_time
-   *        Sets big_exit_time.  Timer for to exit within big_error.
+   *        sets big_exit_time, timer for to exit within big_error
    * \param p_big_error
-   *        Sets big_error. Timer will start when error is within this.
+   *        sets big_error, timer will start when error is within this
    * \param p_velocity_exit_time
-   *        Sets velocity_exit_time.  Timer will start when velocity is 0.
+   *        sets velocity_exit_time, timer will start when velocity is 0
    * \param use_imu
-   *        Adds the Imu for velocity calculation in conjunction with the main sensor.
+   *        adds the Imu for velocity calculation in conjunction with the main sensor
    */
   void pid_odom_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = true);
 
@@ -2838,17 +3093,17 @@ class Drive {
    * Set's constants for odom turning exit conditions.
    *
    * \param p_small_exit_time
-   *        Sets small_exit_time.  Timer for to exit within smalL_error.  In okapi units.
+   *        sets small_exit_time, timer for to exit within smalL_error, in okapi units
    * \param p_small_error
-   *        Sets smalL_error. Timer will start when error is within this.  In okapi units.
+   *        sets smalL_error, timer will start when error is within this, in okapi units
    * \param p_big_exit_time
-   *        Sets big_exit_time.  Timer for to exit within big_error.  In okapi units.
+   *        sets big_exit_time, timer for to exit within big_error, in okapi units
    * \param p_big_error
-   *        Sets big_error. Timer will start when error is within this.  In okapi units.
+   *        sets big_error, timer will start when error is within this, in okapi units
    * \param p_velocity_exit_time
-   *        Sets velocity_exit_time.  Timer will start when velocity is 0.  In okapi units.
+   *        sets velocity_exit_time, timer will start when velocity is 0, in okapi units
    * \param use_imu
-   *        Adds the Imu for velocity calculation in conjunction with the main sensor.
+   *        adds the Imu for velocity calculation in conjunction with the main sensor
    */
   void pid_odom_turn_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QAngle p_small_error, okapi::QTime p_big_exit_time, okapi::QAngle p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout, bool use_imu = true);
 
@@ -2856,17 +3111,17 @@ class Drive {
    * Set's constants for odom driving exit conditions.
    *
    * \param p_small_exit_time
-   *        Sets small_exit_time.  Timer for to exit within smalL_error.  In okapi units.
+   *        sets small_exit_time, timer for to exit within smalL_error, in okapi units
    * \param p_small_error
-   *        Sets smalL_error. Timer will start when error is within this.  In okapi units.
+   *        sets smalL_error, timer will start when error is within this, in okapi units
    * \param p_big_exit_time
-   *        Sets big_exit_time.  Timer for to exit within big_error.  In okapi units.
+   *        sets big_exit_time, timer for to exit within big_error, in okapi units
    * \param p_big_error
-   *        Sets big_error. Timer will start when error is within this.  In okapi units.
+   *        sets big_error, timer will start when error is within this, in okapi units
    * \param p_velocity_exit_time
-   *        Sets velocity_exit_time.  Timer will start when velocity is 0.  In okapi units.
+   *        sets velocity_exit_time, timer will start when velocity is 0, in okapi units
    * \param use_imu
-   *        Adds the Imu for velocity calculation in conjunction with the main sensor.
+   *        adds the Imu for velocity calculation in conjunction with the main sensor
    */
   void pid_odom_drive_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QLength p_small_error, okapi::QTime p_big_exit_time, okapi::QLength p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout, bool use_imu = true);
 
@@ -2874,17 +3129,17 @@ class Drive {
    * Set's constants for drive exit conditions.
    *
    * \param p_small_exit_time
-   *        Sets small_exit_time.  Timer for to exit within smalL_error.  In okapi units.
+   *        sets small_exit_time, timer for to exit within smalL_error, in okapi units
    * \param p_small_error
-   *        Sets smalL_error. Timer will start when error is within this.  In okapi units.
+   *        sets smalL_error, timer will start when error is within this, in okapi units
    * \param p_big_exit_time
-   *        Sets big_exit_time.  Timer for to exit within big_error.  In okapi units.
+   *        sets big_exit_time, timer for to exit within big_error, in okapi units
    * \param p_big_error
-   *        Sets big_error. Timer will start when error is within this.  In okapi units.
+   *        sets big_error, timer will start when error is within this, in okapi units
    * \param p_velocity_exit_time
-   *        Sets velocity_exit_time.  Timer will start when velocity is 0.  In okapi units.
+   *        sets velocity_exit_time, timer will start when velocity is 0, in okapi units
    * \param use_imu
-   *        Adds the Imu for velocity calculation in conjunction with the main sensor.
+   *        adds the Imu for velocity calculation in conjunction with the main sensor
    */
   void pid_drive_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QLength p_small_error, okapi::QTime p_big_exit_time, okapi::QLength p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout, bool use_imu = true);
 
@@ -2892,17 +3147,17 @@ class Drive {
    * Set's constants for turn exit conditions.
    *
    * \param p_small_exit_time
-   *        Sets small_exit_time.  Timer for to exit within smalL_error.  In okapi units.
+   *        sets small_exit_time, timer for to exit within smalL_error, in okapi units
    * \param p_small_error
-   *        Sets smalL_error. Timer will start when error is within this.  In okapi units.
+   *        sets smalL_error, timer will start when error is within this, in okapi units
    * \param p_big_exit_time
-   *        Sets big_exit_time.  Timer for to exit within big_error.  In okapi units.
+   *        sets big_exit_time, timer for to exit within big_error, in okapi units
    * \param p_big_error
-   *        Sets big_error. Timer will start when error is within this.  In okapi units.
+   *        sets big_error, timer will start when error is within this, in okapi units
    * \param p_velocity_exit_time
-   *        Sets velocity_exit_time.  Timer will start when velocity is 0.  In okapi units.
+   *        sets velocity_exit_time, timer will start when velocity is 0, in okapi units
    * \param use_imu
-   *        Adds the Imu for velocity calculation in conjunction with the main sensor.
+   *        adds the Imu for velocity calculation in conjunction with the main sensor
    */
   void pid_turn_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QAngle p_small_error, okapi::QTime p_big_exit_time, okapi::QAngle p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout, bool use_imu = true);
 
@@ -2910,17 +3165,17 @@ class Drive {
    * Set's constants for swing exit conditions.
    *
    * \param p_small_exit_time
-   *        Sets small_exit_time.  Timer for to exit within smalL_error.  In okapi units.
+   *        sets small_exit_time, timer for to exit within smalL_error, in okapi units
    * \param p_small_error
-   *        Sets smalL_error. Timer will start when error is within this.  In okapi units.
+   *        sets smalL_error, timer will start when error is within this, in okapi units
    * \param p_big_exit_time
-   *        Sets big_exit_time.  Timer for to exit within big_error.  In okapi units.
+   *        sets big_exit_time, timer for to exit within big_error, in okapi units
    * \param p_big_error
-   *        Sets big_error. Timer will start when error is within this.  In okapi units.
+   *        sets big_error, timer will start when error is within this, in okapi units
    * \param p_velocity_exit_time
-   *        Sets velocity_exit_time.  Timer will start when velocity is 0.  In okapi units.
+   *        sets velocity_exit_time, timer will start when velocity is 0, in okapi units
    * \param use_imu
-   *        Adds the Imu for velocity calculation in conjunction with the main sensor.
+   *        adds the Imu for velocity calculation in conjunction with the main sensor
    */
   void pid_swing_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QAngle p_small_error, okapi::QTime p_big_exit_time, okapi::QAngle p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout, bool use_imu = true);
 
@@ -2928,17 +3183,17 @@ class Drive {
    * Set's constants for drive exit conditions.
    *
    * \param p_small_exit_time
-   *        Sets small_exit_time.  Timer for to exit within smalL_error.
+   *        sets small_exit_time, timer for to exit within smalL_error
    * \param p_small_error
-   *        Sets smalL_error. Timer will start when error is within this.
+   *        sets smalL_error, timer will start when error is within this
    * \param p_big_exit_time
-   *        Sets big_exit_time.  Timer for to exit within big_error.
+   *        sets big_exit_time, timer for to exit within big_error
    * \param p_big_error
-   *        Sets big_error. Timer will start when error is within this.
+   *        sets big_error, timer will start when error is within this
    * \param p_velocity_exit_time
-   *        Sets velocity_exit_time.  Timer will start when velocity is 0.
+   *        sets velocity_exit_time, timer will start when velocity is 0
    * \param use_imu
-   *        Adds the Imu for velocity calculation in conjunction with the main sensor.
+   *        adds the Imu for velocity calculation in conjunction with the main sensor
    */
   void pid_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = true);
 
@@ -2946,17 +3201,17 @@ class Drive {
    * Set's constants for turn exit conditions.
    *
    * \param p_small_exit_time
-   *        Sets small_exit_time.  Timer for to exit within smalL_error.
+   *        sets small_exit_time, timer for to exit within smalL_error
    * \param p_small_error
-   *        Sets smalL_error. Timer will start when error is within this.
+   *        sets smalL_error, timer will start when error is within this
    * \param p_big_exit_time
-   *        Sets big_exit_time.  Timer for to exit within big_error.
+   *        sets big_exit_time, timer for to exit within big_error
    * \param p_big_error
-   *        Sets big_error. Timer will start when error is within this.
+   *        sets big_error, timer will start when error is within this
    * \param p_velocity_exit_time
-   *        Sets velocity_exit_time.  Timer will start when velocity is 0.
+   *        sets velocity_exit_time, timer will start when velocity is 0
    * \param use_imu
-   *        Adds the Imu for velocity calculation in conjunction with the main sensor.
+   *        adds the Imu for velocity calculation in conjunction with the main sensor
    */
   void pid_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = true);
 
@@ -2964,42 +3219,42 @@ class Drive {
    * Set's constants for swing exit conditions.
    *
    * \param p_small_exit_time
-   *        Sets small_exit_time.  Timer for to exit within smalL_error.
+   *        sets small_exit_time, timer for to exit within smalL_error
    * \param p_small_error
-   *        Sets smalL_error. Timer will start when error is within this.
+   *        sets smalL_error, timer will start when error is within this
    * \param p_big_exit_time
-   *        Sets big_exit_time.  Timer for to exit within big_error.
+   *        sets big_exit_time, timer for to exit within big_error
    * \param p_big_error
-   *        Sets big_error. Timer will start when error is within this.
+   *        sets big_error, timer will start when error is within this
    * \param p_velocity_exit_time
-   *        Sets velocity_exit_time.  Timer will start when velocity is 0.
+   *        sets velocity_exit_time, timer will start when velocity is 0
    * \param use_imu
-   *        Adds the Imu for velocity calculation in conjunction with the main sensor.
+   *        adds the Imu for velocity calculation in conjunction with the main sensor
    */
   void pid_swing_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = true);
 
   /**
-   * Returns current tick_per_inch()
+   * Returns current tick_per_inch.
    */
   double drive_tick_per_inch();
 
   /**
-   * Returns current tick_per_inch()
+   * Iterates modifying controller curves with the controller.
    */
   void opcontrol_curve_buttons_iterate();
 
   /**
-   * Enables PID Tuner
+   * Enables PID Tuner.
    */
   void pid_tuner_enable();
 
   /**
-   * Disables PID Tuner
+   * Disables PID Tuner.
    */
   void pid_tuner_disable();
 
   /**
-   * Toggles PID tuner between enabled and disables
+   * Toggles PID tuner between enabled and disables.
    */
   void pid_tuner_toggle();
 
@@ -3009,12 +3264,12 @@ class Drive {
   bool pid_tuner_enabled();
 
   /**
-   * Iterates through controller inputs to modify PID constants
+   * Iterates through controller inputs to modify PID constants.
    */
   void pid_tuner_iterate();
 
   /**
-   * Toggle for printing the display of the PID Tuner to the brain
+   * Toggle for printing the display of the PID Tuner to the brain.
    *
    * \param input
    *        true prints to brain, false doesn't
@@ -3022,7 +3277,7 @@ class Drive {
   void pid_tuner_print_brain_set(bool input);
 
   /**
-   * Toggle for printing the display of the PID Tuner to the terminal
+   * Toggle for printing the display of the PID Tuner to the terminal.
    *
    * \param input
    *        true prints to terminal, false doesn't
@@ -3030,77 +3285,78 @@ class Drive {
   void pid_tuner_print_terminal_set(bool input);
 
   /**
-   * Returns true if printing to terminal is enabled
+   * Returns true if printing to terminal is enabled.
    */
   bool pid_tuner_print_terminal_enabled();
 
   /**
-   * Returns true if printing to brain is enabled
+   * Returns true if printing to brain is enabled.
    */
   bool pid_tuner_print_brain_enabled();
 
   /**
-   * Sets the value that PID Tuner increments P
+   * Sets the value that PID Tuner increments P.
    *
    * \param p
-   *        double, p will increase by this
+   *        p will increase by this
    */
   void pid_tuner_increment_p_set(double p);
 
   /**
-   * Sets the value that PID Tuner increments I
+   * Sets the value that PID Tuner increments I.
    *
    * \param p
-   *        double, i will increase by this
+   *        i will increase by this
    */
   void pid_tuner_increment_i_set(double i);
 
   /**
-   * Sets the value that PID Tuner increments D
+   * Sets the value that PID Tuner increments D.
    *
    * \param p
-   *        double, d will increase by this
+   *        d will increase by this
    */
   void pid_tuner_increment_d_set(double d);
 
   /**
-   * Sets the value that PID Tuner increments Start I
+   * Sets the value that PID Tuner increments Start I.
    *
    * \param p
-   *        double, start i will increase by this
+   *        start i will increase by this
    */
   void pid_tuner_increment_start_i_set(double start_i);
 
   /**
-   * Returns the value that PID Tuner increments P
+   * Returns the value that PID Tuner increments P.
    */
   double pid_tuner_increment_p_get();
 
   /**
-   * Returns the value that PID Tuner increments I
+   * Returns the value that PID Tuner increments I.
    */
   double pid_tuner_increment_i_get();
 
   /**
-   * Returns the value that PID Tuner increments D
+   * Returns the value that PID Tuner increments D.
    */
   double pid_tuner_increment_d_get();
 
   /**
-   * Returns the value that PID Tuner increments Start I
+   * Returns the value that PID Tuner increments Start I.
    */
   double pid_tuner_increment_start_i_get();
 
   /**
-   * Enables the full PID tuner with unique fwd/rev constants
+   * Enables the full PID tuner with unique fwd/rev constants.
    *
    * \param enable
-   *        bool, true will enable the full PID tuner, false will use the simplified PID tuner
+   *        true will enable the full PID tuner, false will use the simplified PID tuner
    */
   void pid_tuner_full_enable(bool enable);
 
   /**
    * Returns if the full PID tuner with unique fwd/rev constants is enabled.
+   *
    * True means the full PID tuner is enabled, false means the simplified PID tuner is enabled.
    */
   bool pid_tuner_full_enabled();
@@ -3135,7 +3391,7 @@ class Drive {
       {"Swing Backward PID Constants", &backward_swingPID.constants}};
 
   /**
-   * Sets the max speed for user control
+   * Sets the max speed for user control.
    *
    * \param int
    *        the speed limit
@@ -3143,7 +3399,7 @@ class Drive {
   void opcontrol_speed_max_set(int speed);
 
   /**
-   * Returns the max speed for user control
+   * Returns the max speed for user control.
    */
   int opcontrol_speed_max_get();
 
@@ -3160,11 +3416,15 @@ class Drive {
    */
   bool opcontrol_arcade_scaling_enabled();
 
+ private:
+  void opcontrol_drive_activebrake_targets_set();
+  double odom_smooth_weight_smooth = 0.0;
+  double odom_smooth_weight_data = 0.0;
+  double odom_smooth_tolerance = 0.0;
   bool odom_use_left = true;
   double odom_ime_track_width_left = 0.0;
   double odom_ime_track_width_right = 0.0;
-
- private:
+  bool imu_calibrate_took_too_long = false;
   bool is_full_pid_tuner_enabled = false;
   std::vector<const_and_name>* used_pid_tuner_pids;
   double opcontrol_speed_max = 127.0;
@@ -3173,7 +3433,7 @@ class Drive {
   std::vector<odom> pp_movements;
   std::vector<int> injected_pp_index;
   int pp_index = 0;
-  std::vector<odom> smooth_path(std::vector<odom> ipath, double weight_smooth = 0.75, double weight_data = 0.03, double tolerance = 0.0001);
+  std::vector<odom> smooth_path(std::vector<odom> ipath, double weight_smooth, double weight_data, double tolerance);
   double is_past_target(pose target, pose current);
   void raw_pid_odom_pp_set(std::vector<odom> imovements, bool slew_on);
   bool ptf1_running = false;
@@ -3313,11 +3573,6 @@ class Drive {
    * Heading bool.
    */
   bool heading_on = true;
-
-  /**
-   * Active brake kp constant.
-   */
-  double active_brake_kp = 0;
 
   /**
    * Tick per inch calculation.
