@@ -150,7 +150,7 @@ class Drive {
    * \param distance
    *        the distance the robot travels before reaching max speed, an okapi distance unit
    * \param min_speed
-   *        the starting speed for the movement
+   *        the starting speed for the movement, 0 - 127
    */
   void slew_swing_constants_set(okapi::QLength distance, int min_speed);
 
@@ -162,7 +162,7 @@ class Drive {
    * \param distance
    *        the distance the robot travels before reaching max speed, an okapi distance unit
    * \param min_speed
-   *        the starting speed for the movement
+   *        the starting speed for the movement, 0 - 127
    */
   void slew_swing_constants_forward_set(okapi::QLength distance, int min_speed);
 
@@ -174,7 +174,7 @@ class Drive {
    * \param distance
    *        the distance the robot travels before reaching max speed, an okapi distance unit
    * \param min_speed
-   *        the starting speed for the movement
+   *        the starting speed for the movement, 0 - 127
    */
   void slew_swing_constants_backward_set(okapi::QLength distance, int min_speed);
 
@@ -186,7 +186,7 @@ class Drive {
    * \param distance
    *        the distance the robot travels before reaching max speed, an okapi angle unit
    * \param min_speed
-   *        the starting speed for the movement
+   *        the starting speed for the movement, 0 - 127
    */
   void slew_swing_constants_set(okapi::QAngle distance, int min_speed);
 
@@ -198,7 +198,7 @@ class Drive {
    * \param distance
    *        the distance the robot travels before reaching max speed, an okapi angle unit
    * \param min_speed
-   *        the starting speed for the movement
+   *        the starting speed for the movement, 0 - 127
    */
   void slew_swing_constants_forward_set(okapi::QAngle distance, int min_speed);
 
@@ -210,7 +210,7 @@ class Drive {
    * \param distance
    *        the distance the robot travels before reaching max speed, an okapi angle unit
    * \param min_speed
-   *        the starting speed for the movement
+   *        the starting speed for the movement, 0 - 127
    */
   void slew_swing_constants_backward_set(okapi::QAngle distance, int min_speed);
 
@@ -222,7 +222,7 @@ class Drive {
    * \param distance
    *        the distance the robot travels before reaching max speed, an okapi angle unit
    * \param min_speed
-   *        the starting speed for the movement
+   *        the starting speed for the movement, 0 - 127
    */
   void slew_turn_constants_set(okapi::QAngle distance, int min_speed);
 
@@ -234,7 +234,7 @@ class Drive {
    * \param distance
    *        the distance the robot travels before reaching max speed, an okapi distance unit
    * \param min_speed
-   *        the starting speed for the movement
+   *        the starting speed for the movement, 0 - 127
    */
   void slew_drive_constants_forward_set(okapi::QLength distance, int min_speed);
 
@@ -246,7 +246,7 @@ class Drive {
    * \param distance
    *        the distance the robot travels before reaching max speed, an okapi distance unit
    * \param min_speed
-   *        the starting speed for the movement
+   *        the starting speed for the movement, 0 - 127
    */
   void slew_drive_constants_backward_set(okapi::QLength distance, int min_speed);
 
@@ -258,7 +258,7 @@ class Drive {
    * \param distance
    *        the distance the robot travels before reaching max speed, an okapi distance unit
    * \param min_speed
-   *        the starting speed for the movement
+   *        the starting speed for the movement, 0 - 127
    */
   void slew_drive_constants_set(okapi::QLength distance, int min_speed);
 
