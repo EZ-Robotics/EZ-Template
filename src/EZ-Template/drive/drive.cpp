@@ -254,10 +254,17 @@ int Drive::drive_current_limit_get() {
 
 // Motor telemetry
 void Drive::drive_sensor_reset() {
+  // Update active brake constants
+  left_activebrakePID.target_set(0.0);
+  right_activebrakePID.target_set(0.0);
+
+  // Reset odom stuff
   h_last = 0.0;
   l_last = 0.0;
   r_last = 0.0;
   t_last = 0.0;
+
+  // Reset sensors
   left_motors.front().tare_position();
   right_motors.front().tare_position();
   if (odom_tracker_left_enabled) odom_tracker_left->reset();
