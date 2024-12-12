@@ -777,6 +777,35 @@ class Drive {
   double odom_path_spacing_get();
 
   /**
+   * Sets the constants for smoothing out a path.
+   *
+   * Path smoothing based on https://medium.com/@jaems33/understanding-robot-motion-path-smoothing-5970c8363bc4
+   *
+   * \param weight_smooth
+   *        how much weight to update the data
+   * \param weight_data
+   *        how much weight to smooth the coordinates
+   * \param tolerance
+   *        how much change per iteration is necessary to keep iterating
+   */
+  void odom_path_smooth_constants_set(double weight_smooth, double weight_data, double tolerance);
+
+  /**
+   * Returns the constants for smoothing out a path.
+   *
+   * In order of:
+   *  - weight_smooth
+   *  - weight_data
+   *  - tolerance
+   */
+  std::vector<double> odom_path_smooth_constants_get();
+
+  /**
+   * Prints the current path the robot is following.
+   */
+  void odom_path_print();
+
+  /**
    * How far away the robot looks in the path during pure pursuits.
    *
    * \param distance
@@ -3389,6 +3418,9 @@ class Drive {
 
  private:
   void opcontrol_drive_activebrake_targets_set();
+  double odom_smooth_weight_smooth = 0.0;
+  double odom_smooth_weight_data = 0.0;
+  double odom_smooth_tolerance = 0.0;
   bool odom_use_left = true;
   double odom_ime_track_width_left = 0.0;
   double odom_ime_track_width_right = 0.0;
@@ -3401,7 +3433,7 @@ class Drive {
   std::vector<odom> pp_movements;
   std::vector<int> injected_pp_index;
   int pp_index = 0;
-  std::vector<odom> smooth_path(std::vector<odom> ipath, double weight_smooth = 0.75, double weight_data = 0.03, double tolerance = 0.0001);
+  std::vector<odom> smooth_path(std::vector<odom> ipath, double weight_smooth, double weight_data, double tolerance);
   double is_past_target(pose target, pose current);
   void raw_pid_odom_pp_set(std::vector<odom> imovements, bool slew_on);
   bool ptf1_running = false;

@@ -4,12 +4,17 @@ License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-#include "EZ-Template/api.hpp"
+#include "EZ-Template/drive/drive.hpp"
 #include "okapi/api/units/QAngle.hpp"
 
 /////
 // Set constants
 /////
+void Drive::odom_path_print() {
+  for (int i = 0; i < pp_movements.size(); i++) {
+    printf("Point %i: (%.2f, %.2f, %.2f)\n", i, pp_movements[i].target.x, pp_movements[i].target.y, pp_movements[i].target.theta);
+  }
+}
 void Drive::pid_odom_behavior_set(ez::e_angle_behavior behavior) { default_odom_type = behavior; }
 ez::e_angle_behavior Drive::pid_odom_behavior_get() { return default_odom_type; }
 // Flip all inputs so it works internally
@@ -48,6 +53,16 @@ void Drive::pid_odom_angular_constants_set(double p, double i, double d, double 
 void Drive::pid_odom_boomerang_constants_set(double p, double i, double d, double p_start_i) {
   boomerangPID.constants_set(p, i, d, p_start_i);
 }
+
+void Drive::odom_path_smooth_constants_set(double weight_smooth, double weight_data, double tolerance) {
+  odom_smooth_weight_smooth = weight_smooth;
+  odom_smooth_weight_data = weight_data;
+  odom_smooth_tolerance = tolerance;
+}
+std::vector<double> Drive::odom_path_smooth_constants_get() {
+  return {odom_smooth_weight_smooth, odom_smooth_weight_data, odom_smooth_tolerance};
+}
+
 void Drive::odom_x_flip(bool flip) { x_flipped = flip; }
 bool Drive::odom_x_direction_get() { return x_flipped; }
 void Drive::odom_y_flip(bool flip) { y_flipped = flip; }
@@ -222,7 +237,7 @@ void Drive::pid_odom_smooth_pp_set(std::vector<odom> imovements, bool slew_on) {
   current_a_odomPID.timers_reset();
 
   if (print_toggle) printf("Smooth Injected ");
-  std::vector<odom> input_path = smooth_path(inject_points(set_odoms_direction(imovements)), 0.75, 0.03, 0.0001);
+  std::vector<odom> input_path = smooth_path(inject_points(set_odoms_direction(imovements)), odom_smooth_weight_smooth, odom_smooth_weight_data, odom_smooth_tolerance);
   odom_turn_bias_enable(true);
   current_slew_on = slew_on;
   slew_min_when_it_enabled = 0;
