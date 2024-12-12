@@ -497,7 +497,7 @@ class Drive {
   /**
    * Returns whether the bot is tracking with odometry.
    *
-   * True means tracking is enabled, false means tracking is disabled
+   * True means tracking is enabled, false means tracking is disabled.
    */
   bool odom_enabled();
 
