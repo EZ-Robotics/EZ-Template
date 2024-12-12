@@ -4,7 +4,8 @@ License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-#include "drive.hpp"
+#include "EZ-Template/PID.hpp"
+#include "EZ-Template/drive/drive.hpp"
 #include "pros/misc.h"
 
 void Drive::opcontrol_arcade_scaling(bool enable) { arcade_vector_scaling = enable; }
@@ -202,23 +203,30 @@ double Drive::opcontrol_curve_right(double x) {
 }
 
 // Set active brake constant
-void Drive::opcontrol_drive_activebrake_set(double kp) {
-  active_brake_kp = kp;
-  drive_sensor_reset();
+void Drive::opcontrol_drive_activebrake_set(double kp, double ki, double kd, double start_i) {
+  left_activebrakePID.constants_set(kp, ki, kd, start_i);
+  right_activebrakePID.constants_set(kp, ki, kd, start_i);
+  opcontrol_drive_activebrake_targets_set();
 }
 
-// Get active brake constant
-double Drive::opcontrol_drive_activebrake_get() {
-  return active_brake_kp;
-}
+// Get active brake kp constant
+double Drive::opcontrol_drive_activebrake_get() { return left_activebrakePID.constants.kp; }
+
+// Get active brake kp constant
+PID::Constants Drive::opcontrol_drive_activebrake_constants_get() { return left_activebrakePID.constants; }
 
 // Set joystick threshold
 void Drive::opcontrol_joystick_threshold_set(int threshold) { JOYSTICK_THRESHOLD = abs(threshold); }
 int Drive::opcontrol_joystick_threshold_get() { return JOYSTICK_THRESHOLD; }
 
+void Drive::opcontrol_drive_activebrake_targets_set() {
+  left_activebrakePID.target_set(drive_sensor_left());
+  right_activebrakePID.target_set(drive_sensor_right());
+}
+
 void Drive::opcontrol_drive_sensors_reset() {
   if (util::AUTON_RAN) {
-    drive_sensor_reset();
+    opcontrol_drive_activebrake_targets_set();
     util::AUTON_RAN = false;
   }
 }
@@ -234,7 +242,7 @@ void Drive::opcontrol_joystick_threshold_iterate(int l_stick, int r_stick) {
 
   // Check the motors are being set to power
   if (abs(l_stick) > 0 || abs(r_stick) > 0) {
-    if (active_brake_kp != 0) drive_sensor_reset();  // Reset sensor
+    if (left_activebrakePID.constants_set_check()) opcontrol_drive_activebrake_targets_set();  // Update active brake PID targets
 
     if (practice_mode_is_on && (abs(l_stick) > 120 || abs(r_stick) > 120)) {
       l_out = 0.0;
@@ -250,8 +258,8 @@ void Drive::opcontrol_joystick_threshold_iterate(int l_stick, int r_stick) {
   }
   // When joys are released, run active brake (P) on drive
   else {
-    l_out = (0 - drive_sensor_left()) * active_brake_kp;
-    r_out = (0 - drive_sensor_right()) * active_brake_kp;
+    l_out = left_activebrakePID.compute(drive_sensor_left());
+    r_out = right_activebrakePID.compute(drive_sensor_right());
   }
 
   // Constrain output between 127 and -127
