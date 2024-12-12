@@ -13,8 +13,8 @@ import TabItem from '@theme/TabItem';
 ## Integrated Encoders
 This is the standard setup that uses built in motor encoders.    
 
-`left_motor_ports` input {1, -2...}. make ports negative if reversed      
-`right_motor_ports` input {-3, 4...}. make ports negative if reversed         
+`left_motor_ports` input `{1, -2...}`. make ports negative if reversed      
+`right_motor_ports` input `{-3, 4...}`. make ports negative if reversed         
 `imu_port` port the IMU is plugged into       
 `wheel_diameter` diameter of your drive wheels      
 `ticks` motor cartridge RPM   
@@ -97,14 +97,14 @@ This only support two parallel trackers that are equidistant from the center of 
 
 :::
 
-`left_motor_ports` input {1, -2...}. make ports negative if reversed      
-`right_motor_ports` input {-3, 4...}. make ports negative if reversed         
+`left_motor_ports` input `{1, -2...}`. make ports negative if reversed      
+`right_motor_ports` input `{-3, 4...}`. make ports negative if reversed         
 `imu_port` port the IMU is plugged into       
 `wheel_diameter` diameter of your sensored wheel       
 `ticks` ticks per revolution of your encoder   
 `ratio` external gear ratio, wheel gear / sensor gear      
-`left_tracker_ports` input {1, 2}. make ports negative if reversed      
-`right_tracker_ports` input {3, 4}. make ports negative if reversed      
+`left_tracker_ports` input `{1, 2}`. make ports negative if reversed      
+`right_tracker_ports` input `{3, 4}`. make ports negative if reversed      
 <Tabs
   groupId="ex2"
   defaultValue="proto"
@@ -170,14 +170,14 @@ This only support two parallel trackers that are equidistant from the center of 
 
 :::
 
-`left_motor_ports` input {1, -2...}. make ports negative if reversed      
-`right_motor_ports` input {-3, 4...}. make ports negative if reversed         
+`left_motor_ports` input `{1, -2...}`. make ports negative if reversed      
+`right_motor_ports` input `{-3, 4...}`. make ports negative if reversed         
 `imu_port` port the IMU is plugged into       
 `wheel_diameter` diameter of your sensored wheel       
 `ticks` ticks per revolution of your encoder   
 `ratio` external gear ratio, wheel gear / sensor gear      
-`left_tracker_ports` input {1, 2}. make ports negative if reversed      
-`right_tracker_ports` input {3, 4}. make ports negative if reversed     
+`left_tracker_ports` input `{1, 2}`. make ports negative if reversed      
+`right_tracker_ports` input `{3, 4}`. make ports negative if reversed     
 `expander_smart_port` port the expander is plugged into   
 <Tabs
   groupId="ex3"
@@ -246,8 +246,8 @@ This only support two parallel trackers that are equidistant from the center of 
 
 :::
 
-`left_motor_ports` input {1, -2...}. make ports negative if reversed      
-`right_motor_ports` input {-3, 4...}. make ports negative if reversed         
+`left_motor_ports` input `{1, -2...}`. make ports negative if reversed      
+`right_motor_ports` input `{-3, 4...}`. make ports negative if reversed         
 `imu_port` port the IMU is plugged into       
 `wheel_diameter` diameter of your sensored wheel       
 `ratio` external gear ratio, wheel gear / sensor gear      
