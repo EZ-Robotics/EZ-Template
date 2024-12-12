@@ -87,13 +87,13 @@ double wheel_diameter, double ticks, double ratio = 1.0);
 ## ADI Encoders in Brain
 :::warning
 
-This only support two parallel trackers that are equidistant from the center of the robot.  
+This function is deprecated!  You can learn how to add different tracking wheel configurations [here](ez-template-docs/tutorials/tracking_wheels.md).
 
 :::
 
 :::note
 
-You can learn how to add different tracking wheel configurations [here](ez-template-docs/tutorials/tracking_wheels.md).
+This only support two parallel trackers that are equidistant from the center of the robot.  
 
 :::
 
@@ -160,13 +160,13 @@ std::vector<int> right_tracker_ports);
 ## ADI Encoders in Expander
 :::warning
 
-This only support two parallel trackers that are equidistant from the center of the robot.  
+This function is deprecated!  You can learn how to add different tracking wheel configurations [here](ez-template-docs/tutorials/tracking_wheels.md).
 
 :::
 
 :::note
 
-You can learn how to add different tracking wheel configurations [here](ez-template-docs/tutorials/tracking_wheels.md).
+This only support two parallel trackers that are equidistant from the center of the robot.  
 
 :::
 
@@ -236,13 +236,13 @@ std::vector<int> right_tracker_ports, int expander_smart_port);
 ## Rotation Sensor 
 :::warning
 
-This only support two parallel trackers that are equidistant from the center of the robot.  
+This function is deprecated!  You can learn how to add different tracking wheel configurations [here](ez-template-docs/tutorials/tracking_wheels.md).
 
 :::
 
 :::note
 
-You can learn how to add different tracking wheel configurations [here](ez-template-docs/tutorials/tracking_wheels.md).
+This only support two parallel trackers that are equidistant from the center of the robot.  
 
 :::
 

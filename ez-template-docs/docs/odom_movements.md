@@ -157,7 +157,7 @@ Go to an xy coordinate with slew.  This is a wrapper for `pid_odom_ptp_set()`.
 `p_imovement` united_pose, expecting `{0_in, 0_in}`
 `slew_on` increases the speed of the drive gradually.  You must set slew constants for this to work!  
 <Tabs
-  groupId="as0d98f0f"
+  groupId="as0d9809asdf0f"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -200,7 +200,7 @@ Create and smooth out a path from the given points without slew.  The path will 
 
 `p_imovements` vector of united_pose
 <Tabs
-  groupId="as0d98f0f"
+  groupId="as0d9123jsad8f0f"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -245,7 +245,7 @@ Create and smooth out a path from the given points.  The path will switch to boo
 `p_imovements` vector of united_pose
 `slew_on` increases the speed of the drive gradually.  You must set slew constants for this to work!  
 <Tabs
-  groupId="as0d98f0f"
+  groupId="as0d9809z123f0f"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
