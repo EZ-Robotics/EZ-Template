@@ -127,6 +127,8 @@ class Drive {
   PID odom_angularPID;
   PID internal_leftPID;
   PID internal_rightPID;
+  PID left_activebrakePID;
+  PID right_activebrakePID;
 
   /**
    * Slew objects.
@@ -968,17 +970,28 @@ class Drive {
   std::vector<double> opcontrol_curve_default_get();
 
   /**
-   * Runs a P loop on the drive when the joysticks are released.
+   * Runs a PID loop on the drive when the joysticks are released.
    *
-   * \param kp
-   *        constant for the p loop
+   * \param p
+   *        kP
+   * \param i
+   *        kI, defaulted to 0
+   * \param d
+   *        kD, defaulted to 0
+   * \param p_start_i
+   *        start_I, defaulted to 0
    */
-  void opcontrol_drive_activebrake_set(double kp);
+  void opcontrol_drive_activebrake_set(double kp, double ki = 0.0, double kd = 0.0, double start_i = 0.0);
 
   /**
    * Returns kP for active brake.
    */
   double opcontrol_drive_activebrake_get();
+
+  /**
+   * Returns all PID constants for active brake.
+   */
+  PID::Constants opcontrol_drive_activebrake_constants_get();
 
   /**
    * Enables/disables modifying the joystick input curves with the controller.
@@ -3375,6 +3388,7 @@ class Drive {
   bool opcontrol_arcade_scaling_enabled();
 
  private:
+  void opcontrol_drive_activebrake_targets_set();
   bool odom_use_left = true;
   double odom_ime_track_width_left = 0.0;
   double odom_ime_track_width_right = 0.0;
@@ -3527,11 +3541,6 @@ class Drive {
    * Heading bool.
    */
   bool heading_on = true;
-
-  /**
-   * Active brake kp constant.
-   */
-  double active_brake_kp = 0;
 
   /**
    * Tick per inch calculation.
