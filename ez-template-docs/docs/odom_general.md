@@ -2041,6 +2041,104 @@ void autonomous() {
 
  
 
+### slew_odom_reenable()
+Allows slew to reenable when the new input speed is larger than the current speed during pure pursuits.        
+
+`slew_on` true enables, false disables   
+<Tabs
+  groupId="slew_odom_reenable"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="proto">
+
+```cpp
+void slew_odom_reenable(bool reenable);
+```
+</TabItem>
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  // Allow slew to reenable when speed dips too low
+  chassis.slew_odom_reenable(true);
+
+  // This will slew from the start to 110, 
+  // and once the speed dips down to 50 it'll slew again up to 90
+  chassis.pid_odom_set({{{6_in, 10_in}, fwd, 110},
+                        {{0_in, 20_in}, fwd, 50},
+                        {{0_in, 30_in}, fwd, 90}},
+                       true);
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+### slew_odom_reenabled()
+Allows slew to reenable when the new input speed is larger than the current speed during pure pursuits.          
+<Tabs
+  groupId="slew_odom_reenabled"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="proto">
+
+```cpp
+bool slew_odom_reenabled();
+```
+</TabItem>
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  // Allow slew to reenable when speed dips too low
+  chassis.slew_odom_reenable(true);
+  if (chassis.slew_odom_reenabled()) 
+    printf("Slew will Reenable in Odom!\n");
+
+  // This will slew from the start to 110, 
+  // and once the speed dips down to 50 it'll slew again up to 90
+  chassis.pid_odom_set({{{6_in, 10_in}, fwd, 110},
+                        {{0_in, 20_in}, fwd, 50},
+                        {{0_in, 30_in}, fwd, 90}},
+                       true);
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
  
 
 ## Boomerang Behavior
@@ -2293,6 +2391,14 @@ void autonomous() {
 
 </TabItem>
 </Tabs>
+
+
+
+
+
+
+
+
 
 
 
