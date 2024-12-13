@@ -3222,12 +3222,14 @@ class Drive {
   void pid_tuner_disable();
 
   /**
-   * Toggles PID tuner between enabled and disables.
+   * Toggles PID tuner between enabled and disabled.
    */
   void pid_tuner_toggle();
 
   /**
-   * Checks if PID Tuner is enabled.  True is enabled, false is disables.
+   * Checks if PID Tuner is enabled.
+   * 
+   * True is enabled, false is disabled.
    */
   bool pid_tuner_enabled();
 
