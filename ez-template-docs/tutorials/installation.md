@@ -1,6 +1,7 @@
 ---
+layout: default
 title: Installation
-description: How to install EZ-Template
+description: getting started with ez template
 ---
 
 :::note
@@ -40,6 +41,35 @@ ez::Drive chassis(
     343.0);  // Wheel RPM = cartridge * (motor gear / wheel gear)
 ```
 
+## Configure Tracking Wheels
+Are you using tracking wheels?  You can configure them here!
+
+The examples below show you how to create tracking wheels using ADI Encoders, ADI Encoders plugged into 3-wire Expanders, and Rotation Sensors.  
+
+`2.75`  is the wheel diameter, and `4.0` is the distance to the center of the robot.  You can use a tape measure to find this value.  
+```cpp
+ez::tracking_wheel right_tracker({-'A', -'B'}, 2.75, 4.0);  // ADI Encoders
+ez::tracking_wheel left_tracker(1, {'C', 'D'}, 2.75, 4.0);  // ADI Encoders plugged into a Smart port
+ez::tracking_wheel horiz_tracker(1, 2.75, 4.0);             // Rotation sensors
+```
+
+You'll now need to tell EZ-Template what tracking wheels to use.  
+```cpp
+void initialize() {
+  // Print our branding over your terminal :D
+  ez::ez_template_print();
+
+  pros::delay(500);  // Stop the user from doing anything while legacy ports configure
+
+  // Are you using tracking wheels?  Comment out which ones you're using here!
+  chassis.odom_tracker_right_set(&right_tracker);
+  chassis.odom_tracker_left_set(&left_tracker);
+  chassis.odom_tracker_back_set(&horiz_tracker);  // Replace `back` to `front` if your tracker is in the front!
+
+  // . . .
+}
+```
+
 ## Build and Upload 
 :::warning
 
@@ -61,6 +91,13 @@ Run the program on the brain.  You should see a loading bar come up on the brai
 The default drive mode for EZ-Template is tank drive, where the left stick controls the left side of the drive and the right stick controls the right side of the drive.  If all of the ports are set up correctly, the robot will drive!  
 
 If the motors sound like they're running but they get locked up, you have a motor going in the wrong direction.  I suggest unplugging motors until you find the 1 going the wrong way, find out which port is going the wrong way, and update your drive constructor accordingly.  
+
+## Making Sure Tracking Wheels are Reversed Correctly
+Once you start up your code, go left on the autonomous selector once.  This will bring you to a blank page that ships with the example project.  
+
+Ensure that your left/right tracking wheels increase positively when pushing the robot forward, and your front/back tracking wheels increase positively when pushing the robot to the right.  
+
+If any sensor is reading the wrong way, make the port negative in the constructor.  
 
 ## You're Setup!
 🥳🥳You're all set up!  The next page will show you how to run the built-in example autonomous routines.  

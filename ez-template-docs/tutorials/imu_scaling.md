@@ -1,16 +1,17 @@
 ---
+layout: default
 title: IMU Scaling
-description: Ensure 90° is truly 90°
+description: mess with what the imu thinks a degree is
 ---
-
-## What is it?
-IMU scaling is a number that the IMU value gets multiplied by.  If this is set to 2, then when you turn 90°, the robot will turn ~45°, but it will think it has traveled 90°.  This can be useful in autonomous routines that require your robot to turn fully throughout a run, to guarantee -360° is the same place as 360°.  
 
 :::note
 
 This is not required for consistent autonomous routines, it only makes the correlation between what the robot thinks it's doing and what it's actually doing match more closely.  
 
 :::
+
+## What is it?
+IMU scaling is a number that the IMU value gets multiplied by.  If this is set to 2, then when you turn 90°, the robot will turn ~45°, but it will think it has traveled 90°.  This can be useful in autonomous routines that require your robot to turn fully throughout a run, to guarantee -360° is the same place as 360°. 
 
 ## Tuning 
 If we tell the robot to turn 360°, the robot will look like it's close enough.  We can see the error accumulation multiplied if we turn 10 times to 3600°, and this will happen with the line of code below being run in autonomous.  

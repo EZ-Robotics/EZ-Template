@@ -40,7 +40,6 @@ const sidebars = {
             'tutorials/using_auton_selector',
             'tutorials/autons',
             'tutorials/example_autons',
-            'tutorials/intake_control'
           ],
         },
 
@@ -61,6 +60,7 @@ const sidebars = {
           ],
         },
 
+        'tutorials/blank_pages',
 
         // Tuning Constants
         {
@@ -77,6 +77,23 @@ const sidebars = {
             'tutorials/slew_constants',
             'tutorials/imu_scaling',
             'tutorials/wheel_diameter_tuning',
+            'tutorials/tuning_tracking_wheel_width',
+            // gain scheduling?
+          ],
+        },
+
+        // Subsystems
+        {
+          type: 'category',
+          label: 'Susbsystems',
+          link: {
+            type: 'generated-index',
+          },
+          collapsed: true,
+          collapsible: true,
+          items: [
+            'tutorials/intake_control',
+            'tutorials/piston_tutorial',
             // gain scheduling?
           ],
         },
@@ -112,12 +129,14 @@ const sidebars = {
         */
 
         // Remove these when above is uncommented
-        'tutorials/tracking_wheels',
         'tutorials/pid',
         'tutorials/pto_tutorial',
       ],
 
     },
+
+
+    // Docs
     {
       type: 'category',
       label: 'Docs',

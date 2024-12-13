@@ -1,6 +1,7 @@
 ---
+layout: default
 title: Using Autonomous Selector
-description: How to have multiple autonomous routines in one program
+description: multiple autons, one program?  how to use it
 ---
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';

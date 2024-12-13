@@ -1,6 +1,7 @@
 ---
+layout: default
 title: Upgrading
-description: How to upgrade EZ-Template
+description: honey!  new version released!  time to upgrade!
 ---
 
 :::warning

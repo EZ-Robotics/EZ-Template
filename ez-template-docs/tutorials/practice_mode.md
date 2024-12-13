@@ -1,6 +1,7 @@
 ---
+layout: default
 title: Practice Mode 
-description: How to use Practice Mode to improve your driving
+description: please stop flicking the joysticks
 ---
 
 ## What is it?
@@ -15,6 +16,7 @@ void opcontrol() {
   
   // Enable practice mode
   chassis.opcontrol_joystick_practicemode_toggle(true);
+
   while (true) {
     chassis.opcontrol_tank(); // Tank control
 
@@ -32,6 +34,7 @@ void opcontrol() {
   
   // Disable practice mode
   chassis.opcontrol_joystick_practicemode_toggle(false);
+
   while (true) {
     chassis.opcontrol_tank(); // Tank control
 

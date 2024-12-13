@@ -1,4 +1,5 @@
 ---
+layout: default
 title: Example Autonomous Routines
 description: Some examples and test routines
 ---

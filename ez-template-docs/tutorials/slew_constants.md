@@ -1,6 +1,7 @@
 ---
+layout: default
 title: Slew Constants
-description: Ramping up speed so your robot doesn't tip
+description: ramp up speed slowly
 ---
 
 :::note

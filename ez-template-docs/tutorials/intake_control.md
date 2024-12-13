@@ -1,6 +1,7 @@
 ---
+layout: default
 title: Intake Control
-description: Example implementation of intake control
+description: taking in control, but sometimes out...
 ---
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
@@ -27,6 +28,7 @@ We want to create a motor and have it accessible by `main.cpp` and `autons.cpp`.
 ```cpp
 #pragma once
 
+#include "EZ-Template/api.hpp"
 #include "api.h"
 
 inline pros::Motor intake(10);  // Make this number negative if you want to reverse the motor
@@ -44,6 +46,7 @@ inline pros::Motor intake(10);  // Make this number negative if you want to rev
 ```cpp
 #pragma once
 
+#include "EZ-Template/api.hpp"
 #include "api.h"
 
 inline pros::MotorGroup intake({10, -11});  // Negative port will reverse the motor
@@ -58,7 +61,15 @@ inline pros::MotorGroup intake({10, -11});  // Negative port will reverse the m
 
 
 ## Button Control
-To move a motor we type `motor name.move(a number between -127 and 127);`.  So to make the intake spin at full speed forward, we would type `intake.move(127);`.
+To move a motor we type 
+```cpp
+motor name.move(a number between -127 and 127);
+```
+
+So to make the intake spin at full speed forward, we would type 
+```cpp
+intake.move(127);
+```
 
 EZ-Template has a controller object already made for you that you can access with `master`.  You can read controller inputs with `master.get_digital(DIGITAL_button)`.  With an if/else statement, we can have the intake go full speed forward when L1 is pressed, and go full speed backward when L2 is pressed.  When neither button is pressed the intake will stop moving.  
 ```cpp
@@ -80,8 +91,8 @@ void opcontrol() {
   chassis.drive_brake_set(MOTOR_BRAKE_COAST);
 
   while (true) {
-    // Gives you some extras to make EZ-Template easier
-    ez_template_etxras();
+    // Gives you some extras to make EZ-Template ezier
+    ez_template_extras();
 
     chassis.opcontrol_tank();  // Tank control
     // chassis.opcontrol_arcade_standard(ez::SPLIT);   // Standard split arcade
@@ -109,7 +120,9 @@ void opcontrol() {
 ```
 
 ## Using it in Autonomous
-Now that the motor is created in `subsystems.hpp` we can access it in our autonomous routines.  It's used the same, where we'll set `intake` equal to something throughout our run.   In the example below, the robot will start to intake after driving 6" and will stop once it's driven 24".  The intake will not spin again until it starts to come back and will outtake until it's back where it started.  
+Because the motor is created in `subsystmes.hpp`, we can access is in autonomous exactly the same way!  
+
+In the example below, the robot will start to intake after driving 6" and will stop once it's driven 24".  The intake will not spin again until it starts to come back and will outtake until it's back where it started.  
 ```cpp
 void intake_autonomous() {
   chassis.pid_drive_set(24_in, DRIVE_SPEED, true);

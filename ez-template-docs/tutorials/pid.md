@@ -1,4 +1,5 @@
 ---
+layout: default
 title: PID Tutorial
 description: How to add a feedback loop to motors and increase their accuracy
 ---

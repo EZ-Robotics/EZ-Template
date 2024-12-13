@@ -1,6 +1,7 @@
 ---
+layout: default
 title: Exit Condition Constants
-description: Making the robot stop moving when we want it to 
+description: tune constants so the robot actually knows when it's there
 ---
 
 # Tuning Exit Conditions
@@ -25,7 +26,8 @@ Once the robot has "exited" the PID **does not** stop running.  EZ-Template wil
 
 ## How Does it Work?
 ### pid_wait()
-EZ-Template's exit conditions are a little more special than that though.  We run timers to tell how long the robot has been within X of your target, and then exit once it's reached a threshold you've set.  This is what our exit conditions look like at their simplest.   
+
+EZ-Template's exit conditions are a little more special than the code above.  We run timers to tell how long the robot has been within X of your target, and then exit once it's reached a threshold you've set.  This is what our exit conditions look like at their simplest.   
 ![](images/small_timeout.gif) 
 
 You can add another layer to this where it'll also check for a larger area.  Now 2 timers will run, one when you're within X of target and one when you're within Y of target.     
@@ -34,13 +36,13 @@ You can add another layer to this where it'll also check for a larger area.  No
 But when the robot enters the smaller exit zone, the big timer will not continue.  If the big timer was not reset to 0 and we overshot target, big timer would be starting from a very high number and we would exit before correctly confirming the robot has settled.  This can be seen here.     
 ![](images/big_timeout_reset_small_timeout.gif) 
 
-There are 2 more timers that you can add on as well.  These are intended to be **failsafes** for when the previous two don't trigger fast enough or don't trigger at all.  One timer will start to increase when the velocity of the robot is 0, so if the robot is still for too long it'll exit.  Another timer will start once the robot sees it's pulling on the motors too hard (ie, you're fighting your opponent for a mobile goal), and if it's doing this for too long it'll exit.  
+There are two more exit timers that you can add that are intended to be **failsafes** for when the previous two don't trigger.  One timer will start to increase when the velocity of the robot is 0, so if the robot is still for too long it'll exit.  Another timer will start once the robot sees it's pulling on the motors too hard (ie, you're fighting your opponent for a mobile goal), and if it's doing this for too long it'll exit.  
 
 `pid_wait()` will be your safest way to exit, but with that, it's also going to be the slowest way to exit.  
 
 ### pid_wait_until()
+
 `pid_wait_until()` is very similar to typing the code below.  This code will exit as soon as the robot has traveled 6 inches.  
-```cpp
 ```cpp
 double first_value = chassis.drive_sensor_left();
 chassis.pid_drive_set(24_in, 110);
@@ -63,14 +65,14 @@ The intended use case for this is if you want to do stuff during drive motions. 
 `pid_wait_quick()` is exactly the same as writing the code below.  It will `pid_wait_until(target)` but it'll replace `target` with wherever the last target you set was.  This way of exiting has a chance at being faster, because if the robot overshoots at all then the code will exit.  If you undershoot then it'll be as if you ran a normal `pid_wait()`.   
 ```cpp
 chassis.pid_drive_set(24_in, 110);
-chassis.pid_wait_until(24);
+chassis.pid_wait_until(24_in);
 ```
 
 ### pid_wait_quick_chain()
 `pid_wait_quick_chain()` is your fastest way of exiting.  The code below is what happens internally.  You will tell the robot to go 24 inches, internally X will get added to target, and `pid_wait_until()` will get called with the target YOU entered.  The code below is what happens for you internally.   
 ```cpp
 chassis.pid_drive_set(27_in, 110);  // You really want to go 24in
-chassis.pid_wait_until(24);
+chassis.pid_wait_until(24_in);
 ```
 
 While being the fastest way of exiting, this should be used carefully to avoid inconsistencies.  Make sure your PID is well-tuned and do enough testing that you're confident your results are consistent.  

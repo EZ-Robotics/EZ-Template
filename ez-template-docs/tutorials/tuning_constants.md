@@ -1,6 +1,7 @@
 ---
+layout: default
 title: PID Constants
-description: Tuning the PID system to accurately move the desired amount
+description: tune pid constants so the robot does what you want it to do
 ---
 
 For more information on how PID controllers work, [reference this document made by George Gillard](http://georgegillard.com/documents/2-introduction-to-pid-controllers). 

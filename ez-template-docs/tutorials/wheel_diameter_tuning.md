@@ -1,11 +1,8 @@
 ---
+layout: default
 title: Wheel Diameter
-description: Ensure 24" is truly 24"
+description: mess with what the robot thinks an inch is
 ---
-
-
-## What is it?
-Tuning wheel diameter will change how far the robot goes when you input 1".  The larger this number is, the less 1" will be.  This can be useful in making very precise autonomous routines easier to get working first try by guaranteeing 1" is truly 1".   
 
 :::note
 
@@ -13,17 +10,30 @@ This is not required for consistent autonomous routines, it only makes the corre
 
 :::
 
+## What is it?
+Tuning wheel diameter will change how far the robot goes when you input 1".  The larger this number is, the less 1" will be.  This can be useful in making very precise autonomous routines easier to get working first try by guaranteeing 1" is truly 1".  
+
 ## Tuning 
-We'll print our drive sensors to the terminal, so these tests will have to be done while plugged into either the controller or the robot.  The line of code below will go in the while loop in opcontrol.  
+:::note
+
+Blank pages are a feature of v3.2.0.  Please upgrade if you're on an older version!
+
+:::
+We'll print our drive sensors to a new blank page on the brain.  The code below will go in the screen task that starting shipping with the 3.2.0 example project.  
 ```cpp
-printf("Left: %.2f   Right: %.2f\n", chassis.drive_sensor_left(), chassis.drive_sensor_right());
+else if (ez::as::page_blank_is_on(1)) {
+  ez::screen_print("Left: " + util::to_string_with_precision(chassis.drive_sensor_left()) +
+                   "\nRight: " + util::to_string_with_precision(chassis.drive_sensor_right()), 1);
+}
 ```
 
-To open the pros terminal, we'll first select the pros icon on the left.  
-![](images/pros-icon.png)
-
-Then we'll select `Integrated Terminal`.  This will bring up a menu at the bottom of VS Code, and it will populate when you're plugged into the robot or controller while it's running.  
-![](images/integrated_terminal.png)
+If you're using tracking wheels, you can replace `chassis.drive_sensor_left()` and `chassis.drive_sensor_right()` with the following:
+```cpp
+chassis.odom_tracker_left->get();
+chassis.odom_tracker_right->get();
+chassis.odom_tracker_back->get();
+chassis.odom_tracker_front->get();
+```
 
 To ensure our results can be trusted, let's give ourselves the ability to reset the drive sensors to 0.  In `while(true) { }` in opcontrol, we can add the chunk of code below.  
 ```cpp

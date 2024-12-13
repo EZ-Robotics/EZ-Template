@@ -1,6 +1,7 @@
 ---
+layout: default
 title: Control Schemes
-description: Examples and explanations of each way of controlling the chassis
+description: all the different ways to make your wheels spin with joysticks
 ---
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';

@@ -1,6 +1,7 @@
 ---
+layout: default
 title: Active Brake
-description: Powerful, tunable brake for driver control
+description: tunable brake for driver control
 ---
 
 By default, the drivetrain is on `coast` where if you let go of the joysticks the robot will continue to move a bit.  Generally, this seems like the preferred way the community likes to control their robots, and people don't really like the feel of driving on `brake` or `hold` (which is a decision that's fully preference-based).  
