@@ -1372,14 +1372,14 @@ class Drive {
    * Practice mode for driver practice that shuts off the drive if you go max speed.
    *
    * \param toggle
-   *        true if you want this mode enables and False if you want it disabled
+   *        true enables, false disables
    */
   void opcontrol_joystick_practicemode_toggle(bool toggle);
 
   /**
    * Gets current state of the toggle.
    *
-   * Practice mode for driver practice that shuts off the drive if you go max speed.
+   * True is enabled, false is disabled.
    */
   bool opcontrol_joystick_practicemode_toggle_get();
 
@@ -2532,15 +2532,15 @@ class Drive {
    * Lock the code in a while loop until this point has been passed.
    *
    * \param index
-   *        index of your input points, 0 is the first point in the index.
+   *        index of your input points, 0 is the first point in the index
    */
   void pid_wait_until_index(int index);
 
   /**
-   * Lock the code in a while loop until this point becomes the target
+   * Lock the code in a while loop until this point becomes the target.
    *
    * \param index
-   *        index of your input points, 0 is the first point in the index.
+   *        index of your input points, 0 is the first point in the index
    */
   void pid_wait_until_index_started(int index);
 
@@ -2548,7 +2548,7 @@ class Drive {
    * Lock the code in a while loop until this point has been passed.
    *
    * \param target
-   *        {x, y}  a pose for the robot to pass through before the while loop is released
+   *        {x, y} pose for the robot to pass through before the while loop is released
    */
   void pid_wait_until_point(pose target);
 
@@ -2556,7 +2556,7 @@ class Drive {
    * Lock the code in a while loop until this point has been passed, with okapi units.
    *
    * \param target
-   *        {x, y}  a pose with units for the robot to pass through before the while loop is released
+   *        {x, y} pose with units for the robot to pass through before the while loop is released
    */
   void pid_wait_until_point(united_pose target);
 
