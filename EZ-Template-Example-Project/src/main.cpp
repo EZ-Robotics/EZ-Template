@@ -135,31 +135,26 @@ void autonomous() {
 /**
  * Simplifies printing tracker values to the brain screen
  */
-void screen_print_trackers(std::vector<std::pair<ez::tracking_wheel*, std::string>> tracker, int line) {
-  int amount_of_trackers = 0;
-  std::string output = "";
-  for (auto i : tracker) {
-    if (i.first == nullptr) continue;  // Exit if there's no tracker
-
-    // Create text for tracker and width values
-    output += (i.second + " tracker: " + util::to_string_with_precision(i.first->get()) +
-               "  width: " + util::to_string_with_precision(i.first->distance_to_center_get()) + "\n");
-    amount_of_trackers++;
+void screen_print_tracker(ez::tracking_wheel *tracker, std::string name, int line) {
+  std::string tracker_value = "", tracker_width = "";
+  // Check if the tracker exists
+  if (tracker != nullptr) {
+    tracker_value = name + " tracker: " + util::to_string_with_precision(tracker->get());             // Make text for the tracker value
+    tracker_width = "  width: " + util::to_string_with_precision(tracker->distance_to_center_get());  // Make text for the distance to center
   }
-
-  // Print tracker + width to the screen, but push the text to the bottom of the screen
-  ez::screen_print(output, (tracker.size() - amount_of_trackers) + line);
+  ez::screen_print(tracker_value + tracker_width, line);  // Print final tracker text
 }
 
 /**
- * Blank Page Screen Task
+ * Ez screen task
  * Adding new pages here will let you view them during user control or autonomous
+ * and will help you debug problems you're having
  */
 void ez_screen_task() {
   while (true) {
     // Only run this when not connected to a competition switch
     if (!pros::competition::is_connected()) {
-      // Blank pages for odom debugging
+      // Blank page for odom debugging
       if (chassis.odom_enabled() && !chassis.pid_tuner_enabled()) {
         // If we're on the first blank page...
         if (ez::as::page_blank_is_on(0)) {
@@ -170,12 +165,10 @@ void ez_screen_task() {
                            1);  // Don't override the top Page line
 
           // Display all trackers that are being used
-          screen_print_trackers(
-              {{chassis.odom_tracker_left, "l"},
-               {chassis.odom_tracker_right, "r"},
-               {chassis.odom_tracker_back, "b"},
-               {chassis.odom_tracker_front, "f"}},
-              4);  // Start printing on line 4
+          screen_print_tracker(chassis.odom_tracker_left, "l", 4);
+          screen_print_tracker(chassis.odom_tracker_right, "r", 5);
+          screen_print_tracker(chassis.odom_tracker_back, "b", 6);
+          screen_print_tracker(chassis.odom_tracker_front, "f", 7);
         }
       }
     }
