@@ -152,6 +152,46 @@ void screen_print_trackers(std::vector<std::pair<ez::tracking_wheel*, std::strin
 }
 
 /**
+ * Blank Page Screen Task
+ * Adding new pages here will let you view them during user control or autonomous
+ */
+void ez_screen_task() {
+  while (true) {
+    // Only run this when not connected to a competition switch
+    if (!pros::competition::is_connected()) {
+      // Blank pages for odom debugging
+      if (chassis.odom_enabled() && !chassis.pid_tuner_enabled()) {
+        // If we're on the first blank page...
+        if (ez::as::page_blank_is_on(0)) {
+          // Display X, Y, and Theta
+          ez::screen_print("x: " + util::to_string_with_precision(chassis.odom_x_get()) +
+                               "\ny: " + util::to_string_with_precision(chassis.odom_y_get()) +
+                               "\na: " + util::to_string_with_precision(chassis.odom_theta_get()),
+                           1);  // Don't override the top Page line
+
+          // Display all trackers that are being used
+          screen_print_trackers(
+              {{chassis.odom_tracker_left, "l"},
+               {chassis.odom_tracker_right, "r"},
+               {chassis.odom_tracker_back, "b"},
+               {chassis.odom_tracker_front, "f"}},
+              4);  // Start printing on line 4
+        }
+      }
+    }
+
+    // Remove all blank pages when connected to a comp switch
+    else {
+      if (ez::as::page_blank_amount() > 0)
+        ez::as::page_blank_remove_all();
+    }
+
+    pros::delay(ez::util::DELAY_TIME);
+  }
+}
+pros::Task ezScreenTask(ez_screen_task);
+
+/**
  * Gives you some extras to run in your opcontrol:
  * - run your autonomous routine in opcontrol by pressing DOWN and B
  *   - to prevent this from accidentally happening at a competition, this
@@ -159,6 +199,7 @@ void screen_print_trackers(std::vector<std::pair<ez::tracking_wheel*, std::strin
  * - gives you a GUI to change your PID values live by pressing X
  */
 void ez_template_extras() {
+  // Only run this when not connected to a competition switch
   if (!pros::competition::is_connected()) {
     // PID Tuner
     // - after you find values that you're happy with, you'll have to set them in auton.cpp
@@ -177,34 +218,12 @@ void ez_template_extras() {
       chassis.drive_brake_set(preference);
     }
 
-    // Blank pages for odom debugging
-    if (chassis.odom_enabled() && !chassis.pid_tuner_enabled()) {
-      // If we're on the first blank page...
-      if (ez::as::page_blank_is_on(0)) {
-        // Display X, Y, and Angle
-        ez::screen_print("x: " + util::to_string_with_precision(chassis.odom_x_get()) +
-                             "\ny: " + util::to_string_with_precision(chassis.odom_y_get()) +
-                             "\na: " + util::to_string_with_precision(chassis.odom_theta_get()),
-                         1);  // Don't override the top Page line
-
-        // Display all trackers that are being used
-        screen_print_trackers(
-            {{chassis.odom_tracker_left, "l"},
-             {chassis.odom_tracker_right, "r"},
-             {chassis.odom_tracker_back, "b"},
-             {chassis.odom_tracker_front, "f"}},
-            4);  // Start printing on line 4
-      }
-    }
-
     // Allow PID Tuner to iterate
     chassis.pid_tuner_iterate();
-  } else {
-    // Remove all blank pages when connected to a comp switch
-    if (ez::as::page_blank_amount() > 0)
-      ez::as::page_blank_remove_all();
+  }
 
-    // Disable PID Tuner when connected to a comp switch
+  // Disable PID Tuner when connected to a comp switch
+  else {
     if (chassis.pid_tuner_enabled())
       chassis.pid_tuner_disable();
   }
