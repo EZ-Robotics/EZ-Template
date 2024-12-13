@@ -14,7 +14,6 @@ import TabItem from '@theme/TabItem';
 
 ## controller
 The pros controller is defined globally in our library as `master`.     
-
 <Tabs
   groupId="ex2"
   defaultValue="proto"
@@ -65,8 +64,7 @@ extern pros::Controller master();
 Prints to the LLEMU.  This function handles text that's too long for a line by finding the last word and starting it on a new line, and takes `\n` to set a new line.   
 
 `text` input string  
-`line` starting line  
-
+`line` starting line   
 <Tabs
   groupId="ex3"
   defaultValue="proto"
@@ -129,8 +127,7 @@ void initialize() {
 
 
 ## print_ez_template() 
-Prints our branding on your terimnal :D.   
-
+Prints our branding on your terminal :D.   
 <Tabs
   groupId="ex4"
   defaultValue="proto"
@@ -270,7 +267,6 @@ double clip_num(double input, double max, double min);
 
 ## DELAY_TIME 
 Standard delay time for loops in ms.    
-
 <Tabs
   groupId="ex7"
   defaultValue="proto"
@@ -316,7 +312,6 @@ const int DELAY_TIME = 10;
 
 ## IS_SD_CARD
 Boolean that checks if an SD card is installed.  True if there is one, false if there isn't.    
-
 <Tabs
   groupId="ex8"
   defaultValue="proto"

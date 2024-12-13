@@ -66,8 +66,7 @@ Run in usercontrol.
 This passes the controller through the curve functions, but is disabled by default.    
 Use opcontrol_curve_buttons_toggle() to enable it.    
 
-`stick_type` ez::SINGLE or ez::SPLIT control
-
+`stick_type` ez::SINGLE or ez::SPLIT control  
 <Tabs
   groupId="opcontrol_arcade_standard"
   defaultValue="proto"
@@ -116,8 +115,8 @@ Run in usercontrol.
 
 This passes the controller through the curve functions, but is disabled by default.   
 Use opcontrol_curve_buttons_toggle() to enable it.   
-`stick_type` ez::SINGLE or ez::SPLIT control  
 
+`stick_type` ez::SINGLE or ez::SPLIT control   
 <Tabs
   groupId="opcontrol_arcade_flipped"
   defaultValue="proto"
@@ -217,7 +216,6 @@ Sets the default joystick curves.
 
 `left` left default curve  
 `right` right default curve  
-
 <Tabs
   groupId="opcontrol_curve_default_sets"
   defaultValue="proto"
@@ -523,7 +521,6 @@ double opcontrol_curve_right(double x);
 
 ### opcontrol_curve_buttons_iterate()
 Allows the user to modify the curve with the controller.      
-
 <Tabs
   groupId="opcontrol_curve_buttons_iterate"
   defaultValue="proto"
@@ -907,8 +904,7 @@ void opcontrol_drive_reverse_set(bool toggle);
 
 
 ### opcontrol_drive_reverse_get()
-Returns `true` if the drive is currently reversed, and `false` if it isn't.  
-
+Returns `true` if the drive is currently reversed, and `false` if it isn't.   
 <Tabs
   groupId="drive_reverse_get"
   defaultValue="proto"

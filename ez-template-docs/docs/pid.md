@@ -272,7 +272,6 @@ Sets the exit condition constants.  To disable one of the conditions, set the co
 `p_big_error` big error threshold  
 `p_velocity_exit_time` time, in ms, for velocity to be 0  
 `p_mA_timeout` time, in ms, for `is_over_current` to be true       
-
 <Tabs
   groupId="ex5"
   defaultValue="proto"
@@ -573,7 +572,6 @@ double target_set();
 
 ### velocity_sensor_secondary_toggle_get()
 Returns the value for the secondary sensor.  The secondary sensor is used in addition to the main sensor for determining velocity exits, if enabled.   
-
 <Tabs
   groupId="velocity_sensor_secondary_toggle_get()"
   defaultValue="proto"
@@ -693,7 +691,6 @@ double velocity_sensor_secondary_exit_get();
 
 ### velocity_sensor_secondary_get()
 Returns if the secondary sensor is enabled or disables.  True means this is enabled and the secondary sensor is in use, false means disabled.    
-
 <Tabs
   groupId="velocity_sensor_secondary_get()"
   defaultValue="proto"
@@ -746,8 +743,7 @@ enum exit_output { RUNNING = 1,
 ### No Motor
 Exit conditions without a motor will check if the error is small for X amount of time, if error is a little bigger for Y amount of time, or if velocity is 0 for Z amount of time, if you have constants enabled for them in [exit_condition_set()](https://ez-robotics.github.io/EZ-Template/docs/pid#exit_condition_set).
 
-Outputs one of the `exit_output` states.  This exit condition checks `small_error`, `big_error` and `velocity` if they are enabled. 
-
+Outputs one of the `exit_output` states.  This exit condition checks `small_error`, `big_error` and `velocity` if they are enabled.  
 <Tabs
   groupId="ex8"
   defaultValue="proto"
@@ -806,8 +802,7 @@ ez::exit_output exit_condition(bool print = false);
 ### One Motor
 Exit conditions with a motor will check if the error is small for X amount of time, if error is a little bigger for Y amount of time, if velocity is 0 for Z amount of time, then they will check if the motor is pulling too many amps for A amount of time, only if you have constants enabled for them in [exit_condition_set()](https://ez-robotics.github.io/EZ-Template/docs/pid#exit_condition_set).
 
-Outputs one of the `exit_output` states.  This exit condition checks `small_error`, `big_error`, `velocity` and `mA` if they are enabled.    
-
+Outputs one of the `exit_output` states.  This exit condition checks `small_error`, `big_error`, `velocity` and `mA` if they are enabled.     
 <Tabs
   groupId="ex9"
   defaultValue="proto"
@@ -866,7 +861,6 @@ ez::exit_output exit_condition(pros::Motor sensor, bool print = false);
 This checks the same thing as one motor, except it will check through multiple motors instead of 1.  If any of the motors are pulling too many amps the function will start the timer for mA. 
 
 Outputs one of the `exit_output` states.  This exit condition checks `small_error`, `big_error`, `velocity` and `mA` if they are enabled.  When any of the motors trip `mA`, it returns `mA_EXIT`.    
-
 <Tabs
   groupId="ex10"
   defaultValue="proto"

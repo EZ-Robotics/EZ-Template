@@ -13,7 +13,6 @@ import TabItem from '@theme/TabItem';
 
 ### initialize()
 Runs `opcontrol_curve_sd_initialize()` and `drive_imu_calibrate()`.    
-
 <Tabs
   groupId="drive_init"
   defaultValue="proto"
@@ -57,7 +56,6 @@ Disables PID when called.
 
 `left` voltage for left side, -127 to 127  
 `right` voltage for right side, -127 to 127  
-
 <Tabs
   groupId="drive_set"
   defaultValue="proto"
@@ -270,7 +268,6 @@ int drive_sensor_right();
 
 ### drive_velocity_right()
 The velocity of the right motor.      
-
 <Tabs
   groupId="drive_velocity_right"
   defaultValue="proto"
@@ -772,7 +769,6 @@ bool drive_imu_calibrate(bool run_loading_animation = true);
 
 ### drive_imu_get()
 Gets IMU sensor scaler.  This number is multiplied by the imu so users can tune what a "degree" means.     
-
 <Tabs
   groupId="drive_imu_get"
   defaultValue="proto"

@@ -187,8 +187,7 @@ double iterate(double current);
 
 
 ### output()
-Returns what the current max speed should be.  
-
+Returns what the current max speed should be.   
 <Tabs
   groupId="slew_output"
   defaultValue="proto"
@@ -236,8 +235,7 @@ double output();
 
 
 ### enabled()
-Returns if slew is currently active or not.  
-
+Returns if slew is currently active or not.   
 <Tabs
   groupId="slew_enabled"
   defaultValue="proto"

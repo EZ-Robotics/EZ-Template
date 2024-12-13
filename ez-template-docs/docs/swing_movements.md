@@ -1222,10 +1222,8 @@ void autonomous() {
 </TabItem>
 </Tabs>
 
-  /**
-   * Returns true if slew is enabled for all swing backward motions, false otherwise.
-   */
-  bool slew_swing_backward_get();
+
+
 ### slew_swing_backward_get()
 Returns true if slew is enabled for all swing backward motions, false otherwise.       
 <Tabs

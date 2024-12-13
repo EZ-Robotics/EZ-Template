@@ -159,8 +159,7 @@ void odom_tracker_front_set(tracking_wheel* input);
 ### odom_tracker_back_set()
 Sets the perpendicular back tracking wheel for odometry.   
 
-`input` an ez::tracking_wheel
-
+`input` an ez::tracking_wheel  
 <Tabs
   groupId="odom_tracker_back_set"
   defaultValue="proto"

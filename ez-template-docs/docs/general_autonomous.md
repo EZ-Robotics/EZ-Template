@@ -697,8 +697,9 @@ void pid_angle_behavior_bias_set(e_angle_behavior behavior);
 
 
 ### drive_mode_get()
-Returns the current drive mode that the task is running.  Returns `ez::DISABLE`, `ez::SWING`, `ez::TURN`, `ez::DRIVE`.           
+Returns the current drive mode that the task is running.  
 
+Returns `ez::DISABLE`, `ez::SWING`, `ez::TURN`, `ez::DRIVE`.           
 <Tabs
   groupId="examples19"
   defaultValue="proto"
@@ -1110,7 +1111,6 @@ void pid_wait_quick_chain();
 
 ### pid_targets_reset()
 Resets all drive PID targets to 0.       
-
 <Tabs
   groupId="pid_targets_reset"
   defaultValue="proto"
@@ -1154,7 +1154,6 @@ void pid_targets_reset();
 
 ### interfered
 Boolean that returns true when `pid_wait()` or `pid_wait_until()` exit with velocity or is_over_current.  This can be used to detect unwanted motion and stop the drive motors from overheating during autonomous.     
-
 <Tabs
   groupId="examples18"
   defaultValue="proto"
