@@ -7,10 +7,7 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
 
-# **Autonomous Selector**
-
-
-## initialize() 
+### initialize() 
 Initializes the autonomous selector.  If an SD card is plugged in, the current page will set to what's on the SD card.  
 <Tabs
   groupId="initialize_auto_selector"
@@ -46,7 +43,7 @@ void initialize();
 
 
 
-## limit_switch_lcd_initialize() 
+### limit_switch_lcd_initialize() 
 Sets external buttons to increase/decrease the current autonomous page.  
 
 `right_limit` a button to go forward a page
@@ -93,7 +90,7 @@ void limit_switch_lcd_initialize(pros::adi::DigitalIn* right_limit, pros::adi::D
 
 
 
-## shutdown() 
+### shutdown() 
 Wrapper for `pros::lcd::shutdown()` [found here](https://pros.cs.purdue.edu/v5/api/cpp/llemu.html#shutdown).    
 <Tabs
   groupId="shutdown"
@@ -137,7 +134,7 @@ void shutdown();
  
 
 
-## autons_add();
+### autons_add();
 Adds autonomous routines to the autonomous selector. Uses `ez::print_to_screen()` to display to the brain.  
 
 `autons` accepts an object of a string and a function
@@ -192,7 +189,7 @@ void autons_add(std::vector<Auton> autons);
 
 
 
-## selected_auton_print();
+### selected_auton_print();
 Prints the current autonomous mode to the screen.    
 <Tabs
   groupId="selected_auton_print"
@@ -232,7 +229,7 @@ void selected_auton_print();
 
 
 
-## page_down()
+### page_down()
 Decreases the page number. Best used with the lcd callback functions.   
 <Tabs
   groupId="page_down"
@@ -273,7 +270,7 @@ void page_down();
 
 
 
-## page_up()
+### page_up()
 Increases the page number. Best used with the lcd callback functions  
 <Tabs
   groupId="page_up"
@@ -315,7 +312,7 @@ void page_up();
 
 
 
-## selected_auton_call()
+### selected_auton_call()
 Runs the current autonomous that's selected.    
 <Tabs
   groupId="selected_auton_call"
@@ -356,7 +353,7 @@ void selected_auton_call();
 
 
 
-## enabled()
+### enabled()
 Returns true if the auton selector is enabled and false if it isn't.  
 <Tabs
   groupId="enabled"
@@ -394,3 +391,89 @@ bool ez::as::enabled();
 
 
 
+
+
+### page_blank_is_on()
+Checks if this blank page is open.  If this page doesn't exist, this will create it.  
+
+`page` blank page index
+<Tabs
+  groupId="page_blank_is_on"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="proto">
+
+```cpp
+bool page_blank_is_on(int page);
+```
+</TabItem>
+<TabItem value="example">
+
+```cpp
+void opcontrol() {
+  while (true) {
+    chassis.opcontrol_tank();  // Tank control
+
+    if (ez::as::page_blank_is_on(0)) {
+      ez::screen_print("Hello World!", 1);
+      ez::screen_print(std::to_string(3.1415) + " <- is pie!", 2);
+    }
+
+    pros::delay(ez::util::DELAY_TIME);  // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
+  }
+}
+```
+</TabItem>
+</Tabs>
+
+
+
+
+
+
+
+void page_blank_remove_all();
+### page_blank_remove_all()
+Removes all blank pages.     
+<Tabs
+  groupId="page_blank_remove_all"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="proto">
+
+```cpp
+void page_blank_remove_all();
+```
+</TabItem>
+<TabItem value="example">
+
+```cpp
+void opcontrol() {
+  while (true) {
+    chassis.opcontrol_tank();  // Tank control
+
+    if (ez::as::page_blank_is_on(0)) {
+      ez::screen_print("Hello World!", 1);
+      ez::screen_print(std::to_string(3.1415) + " <- is pie!", 2);
+    }
+
+    if (master.get_digital_new_press(DIGITAL_L1)) {
+      ez::as::pagE_blank_remove_all();
+    }
+
+    pros::delay(ez::util::DELAY_TIME);  // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
+  }
+}
+```
+</TabItem>
+</Tabs>
