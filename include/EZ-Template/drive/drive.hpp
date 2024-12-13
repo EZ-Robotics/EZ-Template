@@ -527,7 +527,7 @@ class Drive {
   double drive_width_get();
 
   /**
-   * Sets new X coordinate.
+   * Sets the current X coordinate of the robot.
    *
    * \param x
    *        new x coordinate in inches
@@ -535,20 +535,20 @@ class Drive {
   void odom_x_set(double x);
 
   /**
-   * Sets new X coordinate.
+   * Sets the current X coordinate of the robot.
    *
-   * \param x
+   * \param p_x
    *        new x coordinate as an okapi unit
    */
   void odom_x_set(okapi::QLength p_x);
 
   /**
-   * Returns the current x coordinate of the robot
+   * Returns the current X coordinate of the robot in inches.
    */
   double odom_x_get();
 
   /**
-   * Sets new Y coordinate.
+   * Sets the current Y coordinate of the robot.
    *
    * \param y
    *        new y coordinate in inches
@@ -556,20 +556,20 @@ class Drive {
   void odom_y_set(double y);
 
   /**
-   * Sets new Y coordinate.
+   * Sets the current Y coordinate of the robot.
    *
-   * \param y
+   * \param p_y
    *        new y coordinate as an okapi unit
    */
   void odom_y_set(okapi::QLength p_y);
 
   /**
-   * Returns the current y coordinate of the robot
+   * Returns the current Y coordinate of the robot in inches.
    */
   double odom_y_get();
 
   /**
-   * Sets new angle.
+   * Sets the current angle of the robot.
    *
    * \param a
    *        new angle in degrees
@@ -577,7 +577,7 @@ class Drive {
   void odom_theta_set(double a);
 
   /**
-   * Sets new angle.
+   * Sets the current Theta of the robot.
    *
    * \param p_a
    *        new angle as an okapi unit
@@ -585,12 +585,12 @@ class Drive {
   void odom_theta_set(okapi::QAngle p_a);
 
   /**
-   * Returns the current angle of the robot.
+   * Returns the current Theta of the robot in degrees.
    */
   double odom_theta_get();
 
   /**
-   * Sets a new pose for the robot.
+   * Sets the current pose of the robot.
    *
    * \param itarget
    *        {x, y, t} units in inches and degrees
@@ -598,7 +598,7 @@ class Drive {
   void odom_pose_set(pose itarget);
 
   /**
-   * Sets a new pose for the robot.
+   * Sets the current pose of the robot.
    *
    * \param itarget
    *        {x, y, t} as an okapi unit
@@ -606,7 +606,7 @@ class Drive {
   void odom_pose_set(united_pose itarget);
 
   /**
-   * Sets a new X and Y value for the robot.
+   * Sets the current X and Y coordinate for the robot.
    *
    * \param x
    *        new x value, in inches
@@ -616,7 +616,7 @@ class Drive {
   void odom_xy_set(double x, double y);
 
   /**
-   * Sets a new X and Y value for the robot.
+   * Sets the current X and Y coordinate for the robot.
    *
    * \param p_x
    *        new x value, okapi unit
@@ -626,7 +626,7 @@ class Drive {
   void odom_xy_set(okapi::QLength p_x, okapi::QLength p_y);
 
   /**
-   * Sets a new X, Y, and Theta value for the robot.
+   * Sets the current X, Y, and Theta values for the robot.
    *
    * \param x
    *        new x value, in inches
@@ -638,7 +638,7 @@ class Drive {
   void odom_xyt_set(double x, double y, double t);
 
   /**
-   * Sets a new X, Y, and Theta value for the robot.
+   * Sets the current X, Y, and Theta values for the robot.
    *
    * \param p_x
    *        new x value, okapi unit
@@ -668,29 +668,29 @@ class Drive {
   void odom_x_flip(bool flip = true);
 
   /**
-   * Checks if x axis is flipped.
+   * Checks if X axis is flipped.
    *
-   * True means left is positive x, false means right is positive x.
+   * True means left is positive X, false means right is positive X.
    */
   bool odom_x_direction_get();
 
   /**
-   * Flips the Y axis
+   * Flips the Y axis.
    *
    * \param flip
-   *        true means down is positive Y, false means up is positive Y
+   *        true means down is positive y, false means up is positive y
    */
   void odom_y_flip(bool flip = true);
 
   /**
-   * Checks if y axis is flipped.
+   * Checks if Y axis is flipped.
    *
-   * True means down is positive Y, false means up is positive Y
+   * True means down is positive Y, false means up is positive Y.
    */
   bool odom_y_direction_get();
 
   /**
-   * Flips the rotation axis
+   * Flips the rotation axis.
    *
    * \param flip
    *        true means counterclockwise is positive, false means clockwise is positive
@@ -710,7 +710,7 @@ class Drive {
    * Dlead is a proportional value of how much to make the robot curve during boomerang motions.
    *
    * \param input
-   *        a value between 0 and 1.
+   *        a value between 0 and 1
    */
   void odom_boomerang_dlead_set(double input);
 
@@ -720,7 +720,7 @@ class Drive {
   double odom_boomerang_dlead_get();
 
   /**
-   * This maxes out how far away the carrot point can be from the target.
+   * Sets how far away the carrot point can be from the target point.
    *
    * \param distance
    *        distance in inches
@@ -728,7 +728,7 @@ class Drive {
   void odom_boomerang_distance_set(double distance);
 
   /**
-   * This maxes out how far away the carrot point can be from the target.
+   * Sets how far away the carrot point can be from the target point.
    *
    * \param distance
    *        distance as an okapi unit
@@ -743,10 +743,10 @@ class Drive {
   /**
    * A proportion of how prioritized turning is during odometry motions.
    *
-   * Turning is prioritized so the robot correctly slows down during turns.
+   * Turning is prioritized so the robot "applies brakes" while turning.  Lower number means more braking.
    *
    * \param bias
-   *        some number likely less than 5
+   *        a number between 0 and 1
    */
   void odom_turn_bias_set(double bias);
 
@@ -756,7 +756,7 @@ class Drive {
   double odom_turn_bias_get();
 
   /**
-   * The spacing between points when points get injected into the path.
+   * Sets the spacing between points when points get injected into the path.
    *
    * \param spacing
    *        a small number in inches
@@ -764,7 +764,7 @@ class Drive {
   void odom_path_spacing_set(double spacing);
 
   /**
-   * The spacing between points when points get injected into the path.
+   * Sets the spacing between points when points get injected into the path.
    *
    * \param spacing
    *        a small number in okapi units
@@ -806,7 +806,7 @@ class Drive {
   void odom_path_print();
 
   /**
-   * How far away the robot looks in the path during pure pursuits.
+   * Sets how far away the robot looks in the path during pure pursuits.
    *
    * \param distance
    *        how long the "carrot on a stick" is, in inches
@@ -814,7 +814,7 @@ class Drive {
   void odom_look_ahead_set(double distance);
 
   /**
-   * How far away the robot looks in the path during pure pursuits.
+   * Sets how far away the robot looks in the path during pure pursuits.
    *
    * \param distance
    *        how long the "carrot on a stick" is, in okapi units
@@ -827,7 +827,7 @@ class Drive {
   double odom_look_ahead_get();
 
   /**
-   * Sets the left tracking wheel for odometry.
+   * Sets the parallel left tracking wheel for odometry.
    *
    * \param input
    *        an ez::tracking_wheel
@@ -835,7 +835,7 @@ class Drive {
   void odom_tracker_left_set(tracking_wheel* input);
 
   /**
-   * Sets the right tracking wheel for odometry.
+   * Sets the parallel right tracking wheel for odometry.
    *
    * \param input
    *        an ez::tracking_wheel
@@ -843,7 +843,7 @@ class Drive {
   void odom_tracker_right_set(tracking_wheel* input);
 
   /**
-   * Sets the front tracking wheel for odometry.
+   * Sets the perpendicular front tracking wheel for odometry.
    *
    * \param input
    *        an ez::tracking_wheel
@@ -851,7 +851,7 @@ class Drive {
   void odom_tracker_front_set(tracking_wheel* input);
 
   /**
-   * Sets the back tracking wheel for odometry.
+   * Sets the perpendicular back tracking wheel for odometry.
    *
    * \param input
    *        an ez::tracking_wheel
@@ -862,7 +862,7 @@ class Drive {
    * Sets the default behavior for turns in odom, swinging, and turning.
    *
    * \param behavior
-   *        ez::shortest, ez::longest, ez::left, ez::right
+   *        ez::shortest, ez::longest, ez::left, ez::right, ez::raw
    */
   void pid_angle_behavior_set(e_angle_behavior behavior);
 
@@ -870,7 +870,7 @@ class Drive {
    * Sets the default behavior for turns in turning movements.
    *
    * \param behavior
-   *        ez::shortest, ez::longest, ez::left, ez::right
+   *        ez::shortest, ez::longest, ez::left, ez::right, ez::raw
    */
   void pid_turn_behavior_set(e_angle_behavior behavior);
 
@@ -878,7 +878,7 @@ class Drive {
    * Sets the default behavior for turns in swinging movements.
    *
    * \param behavior
-   *        ez::shortest, ez::longest, ez::left, ez::right
+   *        ez::shortest, ez::longest, ez::left, ez::right, ez::raw
    */
   void pid_swing_behavior_set(e_angle_behavior behavior);
 
@@ -886,7 +886,7 @@ class Drive {
    * Sets the default behavior for turns in odom turning movements.
    *
    * \param behavior
-   *        ez::shortest, ez::longest, ez::left, ez::right
+   *        ez::shortest, ez::longest, ez::left, ez::right, ez::raw
    */
   void pid_odom_behavior_set(e_angle_behavior behavior);
 
@@ -906,7 +906,7 @@ class Drive {
   e_angle_behavior pid_odom_behavior_get();
 
   /**
-   * Gives some wiggle room in shortest vs longest, so a 180.1 degree turn has consistent behavior.
+   * Gives some wiggle room in shortest vs longest, so a 180.1 and 179.9 degree turns have consistent behavior.
    *
    * \param p_tolerance
    *        angle wiggle room, an okapi unit
@@ -914,7 +914,7 @@ class Drive {
   void pid_angle_behavior_tolerance_set(okapi::QAngle p_tolerance);
 
   /**
-   * Gives some wiggle room in shortest vs longest, so a 180.1 degree turn has consistent behavior.
+   * Gives some wiggle room in shortest vs longest, so a 180.1 and 179.9 degree turns have consistent behavior.
    *
    * \param p_tolerance
    *        angle wiggle room, in degrees
@@ -922,7 +922,7 @@ class Drive {
   void pid_angle_behavior_tolerance_set(double tolerance);
 
   /**
-   * Returns the wiggle room in shortest vs longest, so a 180.1 degree turn has consistent behavior.
+   * Returns the wiggle room in shortest vs longest, so a 180.1 and 179.9 degree turns have consistent behavior.
    */
   double pid_angle_behavior_tolerance_get();
 
@@ -955,7 +955,7 @@ class Drive {
   void opcontrol_tank();
 
   /**
-   * Sets the chassis to controller joysticks using standard arcade control.
+   * Sets the chassis to controller joysticks using standard arcade control, where left stick is fwd/rev.
    * Run in usercontrol.
    *
    * This passes the controller through the curve functions, but is disabled by default.
@@ -967,7 +967,7 @@ class Drive {
   void opcontrol_arcade_standard(e_type stick_type);
 
   /**
-   * Sets the chassis to controller joysticks using flipped arcade control.
+   * Sets the chassis to controller joysticks using flipped arcade control, where right stick is fwd/rev.
    * Run in usercontrol.
    *
    * This passes the controller through the curve functions, but is disabled by default.
@@ -1001,14 +1001,14 @@ class Drive {
   /**
    * Runs a PID loop on the drive when the joysticks are released.
    *
-   * \param p
-   *        kP
-   * \param i
-   *        kI, defaulted to 0
-   * \param d
-   *        kD, defaulted to 0
-   * \param p_start_i
-   *        start_I, defaulted to 0
+   * \param kp
+   *        proportional term
+   * \param ki
+   *        integral term
+   * \param kd
+   *        derivative term
+   * \param start_i
+   *        error threshold to start integral
    */
   void opcontrol_drive_activebrake_set(double kp, double ki = 0.0, double kd = 0.0, double start_i = 0.0);
 
@@ -1032,6 +1032,7 @@ class Drive {
 
   /**
    * Gets the current state of the toggle. Enables/disables modifying the joystick input curves with the controller.
+   *
    * True enabled, false disabled.
    */
   bool opcontrol_curve_buttons_toggle_get();
@@ -1068,28 +1069,27 @@ class Drive {
 
   /**
    * Outputs a curve from 5225A In the Zone.
+   *
    * This gives more control over the robot at lower speeds.
    *
    * \param x
    *        joystick input
-   *
-   * https://www.desmos.com/calculator/rcfjjg83zx
    */
   double opcontrol_curve_left(double x);
 
   /**
    * Outputs a curve from 5225A In the Zone.
+   *
    * This gives more control over the robot at lower speeds.
    *
    * \param x
    *        joystick input
-   *
-   * https://www.desmos.com/calculator/rcfjjg83zx
    */
   double opcontrol_curve_right(double x);
 
   /**
    * Sets a new threshold for the joystick.
+   *
    * The joysticks wil not return a value if they are within this.
    *
    * \param threshold
@@ -1099,7 +1099,6 @@ class Drive {
 
   /**
    * Gets the threshold for the joystick.
-   * The joysticks wil not return a value if they are within this.
    */
   int opcontrol_joystick_threshold_get();
 
@@ -1125,7 +1124,9 @@ class Drive {
   /////
 
   /**
-   * Checks if the motor is currently in pto_list.  Returns true if it's already in pto_list.
+   * Checks if the motor is currently in pto_list.
+   *
+   * Returns true if it's already in pto_list.
    *
    * \param check_if_pto
    *        motor to check
@@ -1135,13 +1136,15 @@ class Drive {
   /**
    * Adds motors to the pto list, removing them from the drive.
    *
+   * You cannot add the first index because it's used for autonomous.
+   *
    * \param pto_list
    *        list of motors to remove from the drive
    */
   void pto_add(std::vector<pros::Motor> pto_list);
 
   /**
-   * Removes motors from the pto list, adding them to the drive.  You cannot use the first index in a pto.
+   * Removes motors from the pto list, adding them to the drive.
    *
    * \param pto_list
    *        list of motors to add to the drive
@@ -1149,12 +1152,14 @@ class Drive {
   void pto_remove(std::vector<pros::Motor> pto_list);
 
   /**
-   * Adds/removes motors from drive.  You cannot use the first index in a pto.
+   * Adds/removes motors from drive.
+   * 
+   * You cannot add the first index because it's used for autonomous.
    *
    * \param pto_list
    *        list of motors to add/remove from the drive
    * \param toggle
-   *        if true, adds to list.  if false, removes from list
+   *        list of motors to add/remove from the drive
    */
   void pto_toggle(std::vector<pros::Motor> pto_list, bool toggle);
 
@@ -1166,6 +1171,7 @@ class Drive {
 
   /**
    * Sets the chassis to voltage.
+   *
    * Disables PID when called.
    *
    * \param left
@@ -1181,7 +1187,7 @@ class Drive {
   std::vector<int> drive_get();
 
   /**
-   * Changes the way the drive behaves when it is not under active user control
+   * Changes the way the drive behaves when it is not under active user control.
    *
    * \param brake_type
    *        the 'brake mode' of the motor e.g. 'pros::E_MOTOR_BRAKE_COAST' 'pros::E_MOTOR_BRAKE_BRAKE' 'pros::E_MOTOR_BRAKE_HOLD'
@@ -1209,7 +1215,8 @@ class Drive {
   /**
    * Toggles set drive in autonomous.
    *
-   * True enables, false disables.
+   * \param toggle
+   *        true enables, false disables
    */
   void pid_drive_toggle(bool toggle);
 
@@ -1225,7 +1232,8 @@ class Drive {
   /**
    * Toggles printing in autonomous.
    *
-   * True enables, false disables.
+   * \param toggle
+   *        true enables, false disables
    */
   void pid_print_toggle(bool toggle);
 
@@ -1245,12 +1253,16 @@ class Drive {
   /////
 
   /**
-   * The position of the right motor.
+   * The position of the right sensor in inches.
+   *
+   * If you have two parallel tracking wheels, this will return tracking wheel position.  Otherwise this returns motor position.
    */
   double drive_sensor_right();
 
   /**
-   * The position of the right motor.
+   * The position of the right sensor.
+   *
+   * If you have two parallel tracking wheels, this will return tracking wheel position.  Otherwise this returns motor position.
    */
   int drive_sensor_right_raw();
 
@@ -1265,17 +1277,21 @@ class Drive {
   double drive_mA_right();
 
   /**
-   * Return TRUE when the motor is over current.
+   * Return true when the motor is over current.
    */
   bool drive_current_right_over();
 
   /**
-   * The position of the left motor.
+   * The position of the left sensor in inches.
+   *
+   * If you have two parallel tracking wheels, this will return tracking wheel position.  Otherwise this returns motor position.
    */
   double drive_sensor_left();
 
   /**
-   * The position of the left motor.
+   * The position of the left sensor.
+   *
+   * If you have two parallel tracking wheels, this will return tracking wheel position.  Otherwise this returns motor position.
    */
   int drive_sensor_left_raw();
 
@@ -1290,12 +1306,12 @@ class Drive {
   double drive_mA_left();
 
   /**
-   * Return TRUE when the motor is over current.
+   * Return true when the motor is over current.
    */
   bool drive_current_left_over();
 
   /**
-   * Reset all the chassis motors, recommended to run at the start of your autonomous routine.
+   * Reset all the chassis motors and tracking wheels, recommended to run at the start of your autonomous routine.
    */
   void drive_sensor_reset();
 
@@ -1308,7 +1324,7 @@ class Drive {
   void drive_imu_reset(double new_heading = 0);
 
   /**
-   * Returns the current imu rotation value.
+   * Returns the current imu rotation value in degrees.
    */
   double drive_imu_get();
 
@@ -1323,7 +1339,7 @@ class Drive {
    * This value is multiplied by the imu to change its output.
    *
    * \param scaler
-   *        Factor to scale the imu by
+   *        factor to scale the imu by
    */
   void drive_imu_scaler_set(double scaler);
 
@@ -1336,7 +1352,7 @@ class Drive {
    * Calibrates the IMU, recommended to run in initialize().
    *
    * \param run_loading_animation
-   *        bool for running loading animation
+   *        true runs the animation, false doesn't
    */
   bool drive_imu_calibrate(bool run_loading_animation = true);
 
@@ -1371,7 +1387,7 @@ class Drive {
    * Reversal for drivetrain in opcontrol that flips the left and right side and the direction of the drive.
    *
    * \param toggle
-   *        true if you want your drivetrain reversed and False if you do not.
+   *        true if you want your drivetrain reversed and false if you do not
    */
   void opcontrol_drive_reverse_set(bool toggle);
 
@@ -2492,7 +2508,7 @@ class Drive {
    * Lock the code in a while loop until this position has passed for driving without okapi units.
    *
    * \param target
-   *        for driving or turning, using a double.  degrees for turns/swings, inches for driving.
+   *        for driving or turning, using a double.  degrees for turns/swings, inches for driving
    */
   void pid_wait_until(double target);
 
@@ -2601,7 +2617,7 @@ class Drive {
    * Changes max speed during a drive motion.
    *
    * \param speed
-   *        new clipped speed
+   *        new clipped speed, between 0 and 127     
    */
   void pid_speed_max_set(int speed);
 
@@ -2614,27 +2630,18 @@ class Drive {
    * Set the turn pid constants object.
    *
    * \param p
-   *        kP
+   *        proportional term
    * \param i
-   *        kI
+   *        integral term
    * \param d
-   *        kD
+   *        derivative term
    * \param p_start_i
-   *        start_I
+   *        error threshold to start integral
    */
   void pid_turn_constants_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
   /**
    * Returns PID constants with PID::Constants.
-   *
-   * \param p
-   *        kP
-   * \param i
-   *        kI
-   * \param d
-   *        kD
-   * \param p_start_i
-   *        start_I
    */
   PID::Constants pid_turn_constants_get();
 
@@ -2667,13 +2674,13 @@ class Drive {
    * Set the swing pid constants object.
    *
    * \param p
-   *        kP
+   *        proportional term
    * \param i
-   *        kI
+   *        integral term
    * \param d
-   *        kD
+   *        derivative term
    * \param p_start_i
-   *        start_i
+   *        error threshold to start integral
    */
   void pid_swing_constants_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
@@ -2681,15 +2688,6 @@ class Drive {
    * Returns PID constants with PID::Constants.
    *
    * Returns -1 if fwd and rev constants aren't the same!
-   *
-   * \param p
-   *        kP
-   * \param i
-   *        kI
-   * \param d
-   *        kD
-   * \param p_start_i
-   *        start_I
    */
   PID::Constants pid_swing_constants_get();
 
@@ -2697,51 +2695,37 @@ class Drive {
    * Set the forward swing pid constants object.
    *
    * \param p
-   *        kP
+   *        proportional term
    * \param i
-   *        kI
+   *        integral term
    * \param d
-   *        kD
+   *        derivative term
    * \param p_start_i
-   *        start_I
+   *        error threshold to start integral
    */
   void pid_swing_constants_forward_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
   /**
    * Returns PID constants with PID::Constants.
-   *
-   * \param p
-   *        kP
-   * \param i
-   *        kI
-   * \param d
-   *        kD
-   * \param p_start_i
-   *        start_I
    */
   PID::Constants pid_swing_constants_forward_get();
 
   /**
    * Set the backward swing pid constants object.
    *
-   * \param p           kP
-   * \param i           kI
-   * \param d           kD
-   * \param p_start_i   start_I
+   * \param p
+   *        proportional term
+   * \param i
+   *        integral term
+   * \param d
+   *        derivative term
+   * \param p_start_i
+   *        error threshold to start integral
    */
   void pid_swing_constants_backward_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
   /**
    * Returns PID constants with PID::Constants.
-   *
-   * \param p
-   *        kP
-   * \param i
-   *        kI
-   * \param d
-   *        kD
-   * \param p_start_i
-   *        start_I
    */
   PID::Constants pid_swing_constants_backward_get();
 
@@ -2819,27 +2803,18 @@ class Drive {
    * Set the heading pid constants object.
    *
    * \param p
-   *        kP
+   *        proportional term
    * \param i
-   *        kI
+   *        integral term
    * \param d
-   *        kD
+   *        derivative term
    * \param p_start_i
-   *        start_I
+   *        error threshold to start integral
    */
   void pid_heading_constants_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
   /**
    * Returns PID constants with PID::Constants.
-   *
-   * \param p
-   *        kP
-   * \param i
-   *        kI
-   * \param d
-   *        kD
-   * \param p_start_i
-   *        start_I
    */
   PID::Constants pid_heading_constants_get();
 
@@ -2847,13 +2822,13 @@ class Drive {
    * Set the drive pid constants object.
    *
    * \param p
-   *        kP
+   *        proportional term
    * \param i
-   *        kI
+   *        integral term
    * \param d
-   *        kD
+   *        derivative term
    * \param p_start_i
-   *        start_I
+   *        error threshold to start integral
    */
   void pid_drive_constants_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
@@ -2861,15 +2836,6 @@ class Drive {
    * Returns PID constants with PID::Constants.
    *
    * Returns -1 if fwd and rev constants aren't the same!
-   *
-   * \param p
-   *        kP
-   * \param i
-   *        kI
-   * \param d
-   *        kD
-   * \param p_start_i
-   *        start_I
    */
   PID::Constants pid_drive_constants_get();
 
@@ -2877,27 +2843,18 @@ class Drive {
    * Set the forward pid constants object.
    *
    * \param p
-   *        kP
+   *        proportional term
    * \param i
-   *        kI
+   *        integral term
    * \param d
-   *        kD
+   *        derivative term
    * \param p_start_i
-   *        start_I
+   *        error threshold to start integral
    */
   void pid_drive_constants_forward_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
   /**
    * Returns PID constants with PID::Constants.
-   *
-   * \param p
-   *        kP
-   * \param i
-   *        kI
-   * \param d
-   *        kD
-   * \param p_start_i
-   *        start_I
    */
   PID::Constants pid_drive_constants_forward_get();
 
@@ -2905,27 +2862,18 @@ class Drive {
    * Set the backwards pid constants object.
    *
    * \param p
-   *        kP
+   *        proportional term
    * \param i
-   *        kI
+   *        integral term
    * \param d
-   *        kD
+   *        derivative term
    * \param p_start_i
-   *        start_I
+   *        error threshold to start integral
    */
   void pid_drive_constants_backward_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
   /**
    * Returns PID constants with PID::Constants.
-   *
-   * \param p
-   *        kP
-   * \param i
-   *        kI
-   * \param d
-   *        kD
-   * \param p_start_i
-   *        start_I
    */
   PID::Constants pid_drive_constants_backward_get();
 
@@ -3029,13 +2977,13 @@ class Drive {
    * Set the heading pid constants object.
    *
    * \param p
-   *        kP
+   *        proportional term
    * \param i
-   *        kI
+   *        integral term
    * \param d
-   *        kD
+   *        derivative term
    * \param p_start_i
-   *        start_I
+   *        error threshold to start integral
    */
   void pid_odom_angular_constants_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
@@ -3043,13 +2991,13 @@ class Drive {
    * Set the heading pid constants object.
    *
    * \param p
-   *        kP
+   *        proportional term
    * \param i
-   *        kI
+   *        integral term
    * \param d
-   *        kD
+   *        derivative term
    * \param p_start_i
-   *        start_I
+   *        error threshold to start integral
    */
   void pid_odom_boomerang_constants_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
