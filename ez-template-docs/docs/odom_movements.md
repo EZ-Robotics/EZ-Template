@@ -798,6 +798,185 @@ void autonomous() {
 
 
 
+### pid_turn_set()
+Sets the robot to turn face a point using PID and odometry.  
+
+`p_itarget` `{x, y}` a target point to face.  this uses okapi units
+`dir` face the point fwd or rev
+`speed` 0 to 127, max speed during motion   
+<Tabs
+  groupId="pid_turn_set_okapasdasdasi"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.pid_turn_set({12_in, 12_in}, fwd, 110);
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+
+<TabItem value="proto">
+
+```cpp
+void pid_turn_set(united_pose p_itarget, drive_directions dir, int speed);
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+### pid_turn_set()
+Sets the robot to turn face a point using PID and odometry.  
+
+`p_itarget` `{x, y}` a target point to face.  this uses okapi units
+`dir` face the point fwd or rev
+`speed` 0 to 127, max speed during motion   
+`slew_on` ramp up from a lower speed to your target speed   
+<Tabs
+  groupId="pid_turn_set_okapasdasdasi"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.pid_turn_set({12_in, 12_in}, fwd, 110, true);
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+
+<TabItem value="proto">
+
+```cpp
+void pid_turn_set(united_pose p_itarget, drive_directions dir, int speed, bool slew_on);
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+### pid_turn_set()
+Sets the robot to turn face a point using PID and odometry.  
+
+`p_itarget` `{x, y}` a target point to face.  this uses okapi units
+`dir` face the point fwd or rev
+`speed` 0 to 127, max speed during motion   
+`behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
+<Tabs
+  groupId="pid_turn_set_okapasdasdasi"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.pid_turn_set({12_in, 12_in}, fwd, 110, ez::longest);
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+
+<TabItem value="proto">
+
+```cpp
+void pid_turn_set(united_pose p_itarget, drive_directions dir, int speed, e_angle_behavior behavior);
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+### pid_turn_set()
+Sets the robot to turn face a point using PID and odometry.  
+
+`p_itarget` `{x, y}` a target point to face.  this uses okapi units
+`dir` face the point fwd or rev
+`speed` 0 to 127, max speed during motion   
+`behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
+`slew_on` ramp up from a lower speed to your target speed   
+<Tabs
+  groupId="pid_turn_set_okapasdasdasi"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.pid_turn_set({12_in, 12_in}, fwd, 110, ez::longest, true);
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+
+<TabItem value="proto">
+
+```cpp
+void pid_turn_set(united_pose p_itarget, drive_directions dir, int speed, e_angle_behavior behavior, bool slew_on);
+```
+
+</TabItem>
+</Tabs>
+
 
 
 
@@ -1659,6 +1838,193 @@ void autonomous() {
 
 
 
+### pid_turn_set()
+Sets the robot to turn face a point using PID and odometry.  
+
+`p_itarget` `{x, y`} a target point to face
+`dir` face the point fwd or rev
+`speed` 0 to 127, max speed during motion   
+<Tabs
+  groupId="pid_turn_set_okapasdasdasi"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.pid_turn_set({12, 12}, fwd, 110);
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+
+<TabItem value="proto">
+
+```cpp
+void pid_turn_set(pose itarget, drive_directions dir, int speed);
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+### pid_turn_set()
+Sets the robot to turn face a point using PID and odometry.  
+
+`p_itarget` `{x, y`} a target point to face
+`dir` face the point fwd or rev
+`speed` 0 to 127, max speed during motion   
+`slew_on` ramp up from a lower speed to your target speed   
+<Tabs
+  groupId="pid_turn_set_okapasdasdasi"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.pid_turn_set({12, 12}, fwd, 110, true);
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+
+<TabItem value="proto">
+
+```cpp
+void pid_turn_set(pose p_itarget, drive_directions dir, int speed, bool slew_on);
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+### pid_turn_set()
+Sets the robot to turn face a point using PID and odometry.  
+
+`p_itarget` `{x, y`} a target point to face
+`dir` face the point fwd or rev
+`speed` 0 to 127, max speed during motion   
+`behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
+<Tabs
+  groupId="pid_turn_set_okapasdasdasi"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.pid_turn_set({12, 12}, fwd, 110, ez::longest);
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+
+<TabItem value="proto">
+
+```cpp
+void pid_turn_set(pose p_itarget, drive_directions dir, int speed, e_angle_behavior behavior);
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+### pid_turn_set()
+Sets the robot to turn face a point using PID and odometry.  
+
+`p_itarget` `{x, y`} a target point to face
+`dir` face the point fwd or rev
+`speed` 0 to 127, max speed during motion   
+`behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
+`slew_on` ramp up from a lower speed to your target speed   
+<Tabs
+  groupId="pid_turn_set_okapasdasdasi"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.pid_turn_set({12, 12}, fwd, 110, ez::longest, true);
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+
+<TabItem value="proto">
+
+```cpp
+void pid_turn_set(pose p_itarget, drive_directions dir, int speed, e_angle_behavior behavior, bool slew_on);
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1892,3 +2258,46 @@ void autonomous() {
 
 </TabItem>
 </Tabs>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

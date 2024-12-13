@@ -36,10 +36,10 @@ import TabItem from '@theme/TabItem';
 
 
 ### pid_turn_set()
-Sets the drive to turn using PID.  
+Sets the robot to turn using PID relative to initial heading.  
 
-`p_target` is an okapi angle unit.  
-`speed` is 0 to 127.  
+`p_target` target value in okapi angle units   
+`speed` 0 to 127, max speed during motion   
 <Tabs
   groupId="pid_turn_0a9sk1k2jhset_okapi"
   defaultValue="proto"
@@ -81,11 +81,11 @@ void pid_turn_set(okapi::QAngle p_target, int speed);
 
 
 ### pid_turn_set()
-Sets the drive to turn using PID.  
+Sets the robot to turn using PID relative to initial heading.  
 
-`p_target` is an okapi angle unit.  
-`speed` is 0 to 127.  
-`behavior` the default behavior for turns.  This can be `ez::shortest`, `ez::longest`, `ez::cw`, `ez::ccw`, or `ez::raw`.   
+`p_target` target value in okapi angle units   
+`speed` 0 to 127, max speed during motion   
+`behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
 <Tabs
   groupId="pid_turn_s098sfa8et_okapi"
   defaultValue="proto"
@@ -128,11 +128,11 @@ void pid_turn_set(okapi::QAngle p_target, int speed, e_angle_behavior behavior);
 
 
 ### pid_turn_set()
-Sets the drive to turn using PID.  
+Sets the robot to turn using PID relative to initial heading.  
 
-`p_target` is an okapi angle unit.  
-`speed` is 0 to 127.  
-`slew_on` increases the speed of the drive gradually.  You must set slew constants for this to work!
+`p_target` target value in okapi angle units   
+`speed` 0 to 127, max speed during motion   
+`slew_on` ramp up from a lower speed to your target speed   
 <Tabs
   groupId="pid_tur1234jkh134n_set_okapi"
   defaultValue="proto"
@@ -173,12 +173,12 @@ void pid_turn_set(okapi::QAngle p_target, int speed, bool slew_on);
 
 
 ### pid_turn_set()
-Sets the drive to turn using PID.  
+Sets the robot to turn using PID relative to initial heading.  
 
-`p_target` is an okapi angle unit.  
-`speed` is 0 to 127.  
-`behavior` the default behavior for turns.  This can be `ez::shortest`, `ez::longest`, `ez::cw`, `ez::ccw`, or `ez::raw`.   
-`slew_on` increases the speed of the drive gradually.  You must set slew constants for this to work!    
+`p_target` target value in okapi angle units   
+`speed` 0 to 127, max speed during motion   
+`behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
+`slew_on` ramp up from a lower speed to your target speed   
 <Tabs
   groupId="pid_turn_set_okapasdasdasi"
   defaultValue="proto"
@@ -252,10 +252,10 @@ void pid_turn_set(okapi::QAngle p_target, int speed, e_angle_behavior behavior, 
 
 
 ### pid_turn_relative_set()
-Sets the drive to turn using PID.  Target is relative here, the robot will add the target to your current angle.  
+Sets the robot to turn using PID relative to the current heading.  
 
-`p_target` is an okapi angle unit.  
-`speed` is 0 to 127.  
+`p_target` target value in okapi angle units   
+`speed` 0 to 127, max speed during motion   
 <Tabs
   groupId="pid_turn_re098asd12l_set_okapi"
   defaultValue="proto"
@@ -304,11 +304,11 @@ void pid_turn_relative_set(okapi::QAngle p_target, int speed);
 
 
 ### pid_turn_relative_set()
-Sets the drive to turn using PID.  Target is relative here, the robot will add the target to your current angle.  
+Sets the robot to turn using PID relative to the current heading.  
 
-`p_target` is an okapi angle unit.  
-`speed` is 0 to 127.  
-`slew_on` increases the speed of the drive gradually.  You must set slew constants for this to work!
+`p_target` target value in okapi angle units   
+`speed` 0 to 127, max speed during motion   
+`slew_on` ramp up from a lower speed to your target speed   
 <Tabs
   groupId="pid_turn_1lj235drel_set_okapi"
   defaultValue="proto"
@@ -357,11 +357,11 @@ void pid_turn_relative_set(okapi::QAngle p_target, int speed, bool slew_on);
 
 
 ### pid_turn_relative_set()
-Sets the drive to turn using PID.  Target is relative here, the robot will add the target to your current angle.  
+Sets the robot to turn using PID relative to the current heading.  
 
-`p_target` is an okapi angle unit.  
-`speed` is 0 to 127.  
-`behavior` the default behavior for turns.  This can be `ez::shortest`, `ez::longest`, `ez::cw`, `ez::ccw`, or `ez::raw`.   
+`p_target` target value in okapi angle units   
+`speed` 0 to 127, max speed during motion   
+`behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
 <Tabs
   groupId="pid_tu09aarn_rel_set_okapi"
   defaultValue="proto"
@@ -404,12 +404,12 @@ void pid_turn_relative_set(okapi::QAngle p_target, int speed, e_angle_behavior b
 
 
 ### pid_turn_relative_set()
-Sets the drive to turn using PID.  Target is relative here, the robot will add the target to your current angle.  
+Sets the robot to turn using PID relative to the current heading.  
 
-`p_target` is an okapi angle unit.  
-`speed` is 0 to 127.  
-`behavior` the default behavior for turns.  This can be `ez::shortest`, `ez::longest`, `ez::cw`, `ez::ccw`, or `ez::raw`.     
-`slew_on` increases the speed of the drive gradually.  You must set slew constants for this to work!      
+`p_target` target value in okapi angle units   
+`speed` 0 to 127, max speed during motion   
+`behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
+`slew_on` ramp up from a lower speed to your target speed     
 <Tabs
   groupId="pid_turn_rel_set1231235_okapi"
   defaultValue="proto"
@@ -622,13 +622,105 @@ void slew_turn_constants_set(okapi::QAngle distance, int min_speed);
 
 ## Functions without Okapi Units
 ### pid_turn_set()
-Sets the drive to turn using PID.  
+Sets the robot to turn using PID relative to initial heading.  
 
-`target` is in degrees.  
-`speed` is 0 to 127.  
-`slew_on` increases the speed of the drive gradually.  You must set slew constants for this to work! 
+`target` target value in degrees  
+`speed` 0 to 127, max speed during motion   
 <Tabs
-  groupId="pid_turn_set"
+  groupId="pid_turn_0a9sk1k2jhset_okapi"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.pid_turn_set(24, 110);
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+
+<TabItem value="proto">
+
+```cpp
+void pid_turn_set(double target, int speed);
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+
+### pid_turn_set()
+Sets the robot to turn using PID relative to initial heading.  
+
+`target` target value in degrees  
+`speed` 0 to 127, max speed during motion   
+`behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
+<Tabs
+  groupId="pid_turn_s098sfa8et_okapi"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.pid_turn_set(22.5, 110, ez::longest);
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+
+<TabItem value="proto">
+
+```cpp
+void pid_turn_set(double target, int speed, e_angle_behavior behavior);
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+
+
+### pid_turn_set()
+Sets the robot to turn using PID relative to initial heading.  
+
+`target` target value in degrees  
+`speed` 0 to 127, max speed during motion   
+`slew_on` ramp up from a lower speed to your target speed   
+<Tabs
+  groupId="pid_tur1234jkh134n_set_okapi"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -656,20 +748,155 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void pid_turn_set(double target, int speed, bool slew_on = false);
+void pid_turn_set(double target, int speed, bool slew_on);
 ```
 
 </TabItem>
 </Tabs>
 
-### pid_turn_relative_set()
-Sets the drive to turn using PID.  Target is relative here, the robot will add the target to your current angle.  
 
-`target` is in degrees.  
-`speed` is 0 to 127.  
-`slew_on` increases the speed of the drive gradually.  You must set slew constants for this to work!
+
+
+
+### pid_turn_set()
+Sets the robot to turn using PID relative to initial heading.  
+
+`target` target value in degrees  
+`speed` 0 to 127, max speed during motion   
+`behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
+`slew_on` ramp up from a lower speed to your target speed   
 <Tabs
-  groupId="pid_turn_rel_set"
+  groupId="pid_turn_set_okapasdasdasi"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.pid_turn_set(22.5, 110, ez::longest, true);
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+
+<TabItem value="proto">
+
+```cpp
+void pid_turn_set(double target, int speed, e_angle_behavior behavior, bool slew_on);
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### pid_turn_relative_set()
+Sets the robot to turn using PID relative to the current heading.  
+
+`target` target value in degrees  
+`speed` 0 to 127, max speed during motion   
+<Tabs
+  groupId="pid_turn_re098asd12l_set_okapi"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  // Turns to 90 deg
+  chassis.pid_turn_relative_set(90, 110);
+  chassis.pid_wait();
+
+  // Turns backwards by 45 degrees
+  chassis.pid_turn_relative_set(-45, 110);
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+
+<TabItem value="proto">
+
+```cpp
+void pid_turn_relative_set(double target, int speed);
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+
+
+
+### pid_turn_relative_set()
+Sets the robot to turn using PID relative to the current heading.  
+
+`target` target value in degrees  
+`speed` 0 to 127, max speed during motion   
+`slew_on` ramp up from a lower speed to your target speed   
+<Tabs
+  groupId="pid_turn_1lj235drel_set_okapi"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -702,11 +929,123 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void pid_turn_relative_set(double target, int speed, bool slew_on = false);
+void pid_turn_relative_set(double target, int speed, bool slew_on);
 ```
 
 </TabItem>
 </Tabs>
+
+
+
+
+
+
+
+
+### pid_turn_relative_set()
+Sets the robot to turn using PID relative to the current heading.  
+
+`target` target value in degrees  
+`speed` 0 to 127, max speed during motion   
+`behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
+<Tabs
+  groupId="pid_tu09aarn_rel_set_okapi"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  // Turns to 90 deg
+  chassis.pid_turn_relative_set(90, 110, ez::shortest);
+  chassis.pid_wait();
+
+  // Turns the long way around to go -45 from where it started
+  chassis.pid_turn_relative_set(-45, 110, ez::longest);
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+
+<TabItem value="proto">
+
+```cpp
+void pid_turn_relative_set(double target, int speed, e_angle_behavior behavior);
+```
+
+</TabItem>
+</Tabs>
+
+
+### pid_turn_relative_set()
+Sets the robot to turn using PID relative to the current heading.  
+
+`target` target value in degrees  
+`speed` 0 to 127, max speed during motion   
+`behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
+`slew_on` ramp up from a lower speed to your target speed     
+<Tabs
+  groupId="pid_turn_rel_set1231235_okapi"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  // Turns to 90 deg
+  chassis.pid_turn_relative_set(90, 110, ez::shortest, true);
+  chassis.pid_wait();
+
+  // Turns the long way around to go -45 from where it started
+  chassis.pid_turn_relative_set(-45, 110, ez::longest, true);
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+
+<TabItem value="proto">
+
+```cpp
+void pid_turn_relative_set((double target, int speed, e_angle_behavior behavior, bool slew_on);
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+
+
+
+
+
+
 
 
 
