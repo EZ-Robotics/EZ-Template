@@ -49,7 +49,7 @@ class tracking_wheel {
    * Creates a new tracking wheel with a Rotation sensor.
    *
    * \param port
-   *        the port your Rotation sensor is plugged into
+   *        the port your Rotation sensor is plugged into, make this negative if reversed
    * \param wheel_diameter
    *        assumed inches, this is the diameter of your wheel
    * \param distance_to_center
@@ -111,7 +111,7 @@ class tracking_wheel {
    * This is useful for custom encoders.
    *
    * \param input
-   *        Ticks per revolution
+   *        ticks per revolution
    */
   void ticks_per_rev_set(double input);
 
@@ -124,7 +124,7 @@ class tracking_wheel {
    * Sets the gear ratio for your tracking wheel.
    *
    * \param input
-   *        Gear ratio of tracking wheel
+   *        gear ratio of tracking wheel
    */
   void ratio_set(double input);
 
@@ -137,7 +137,7 @@ class tracking_wheel {
    * Sets the diameter of your wheel.
    *
    * \param input
-   *        Wheel diameter
+   *        wheel diameter
    */
   void wheel_diameter_set(double input);
 
