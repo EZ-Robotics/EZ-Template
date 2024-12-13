@@ -2974,7 +2974,7 @@ class Drive {
   int pid_turn_min_get();
 
   /**
-   * Set the heading pid constants object.
+   * Set the odom angular pid constants object.
    *
    * \param p
    *        proportional term
@@ -2988,7 +2988,7 @@ class Drive {
   void pid_odom_angular_constants_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
   /**
-   * Set the heading pid constants object.
+   * Set the odom boomerang pid constants object.
    *
    * \param p
    *        proportional term
@@ -3005,17 +3005,19 @@ class Drive {
    * Set's constants for odom driving exit conditions.
    *
    * \param p_small_exit_time
-   *        sets small_exit_time, timer for to exit within smalL_error
+   *        time to exit when within smalL_error, in ms
    * \param p_small_error
-   *        sets smalL_error, timer will start when error is within this
+   *        small timer will start when error is within this, in inches
    * \param p_big_exit_time
-   *        sets big_exit_time, timer for to exit within big_error
+   *        time to exit when within big_error, in ms
    * \param p_big_error
-   *        sets big_error, timer will start when error is within this
+   *        big timer will start when error is within this, in inches
    * \param p_velocity_exit_time
-   *        sets velocity_exit_time, timer will start when velocity is 0
+   *        velocity timer will start when velocity is 0, in ms
+   * \param p_mA_timeout
+   *        mA timer will start when the motors are pulling too much current, in ms
    * \param use_imu
-   *        adds the Imu for velocity calculation in conjunction with the main sensor
+   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
    */
   void pid_odom_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = true);
 
@@ -3023,17 +3025,19 @@ class Drive {
    * Set's constants for odom turning exit conditions.
    *
    * \param p_small_exit_time
-   *        sets small_exit_time, timer for to exit within smalL_error
+   *        time to exit when within smalL_error, in ms
    * \param p_small_error
-   *        sets smalL_error, timer will start when error is within this
+   *        small timer will start when error is within this, in degrees
    * \param p_big_exit_time
-   *        sets big_exit_time, timer for to exit within big_error
+   *        time to exit when within big_error, in ms
    * \param p_big_error
-   *        sets big_error, timer will start when error is within this
+   *        big timer will start when error is within this, in degrees
    * \param p_velocity_exit_time
-   *        sets velocity_exit_time, timer will start when velocity is 0
+   *        velocity timer will start when velocity is 0, in ms
+   * \param p_mA_timeout
+   *        mA timer will start when the motors are pulling too much current, in ms
    * \param use_imu
-   *        adds the Imu for velocity calculation in conjunction with the main sensor
+   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
    */
   void pid_odom_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = true);
 
@@ -3041,17 +3045,19 @@ class Drive {
    * Set's constants for odom turning exit conditions.
    *
    * \param p_small_exit_time
-   *        sets small_exit_time, timer for to exit within smalL_error, in okapi units
+   *        time to exit when within smalL_error, okapi unit
    * \param p_small_error
-   *        sets smalL_error, timer will start when error is within this, in okapi units
+   *        small timer will start when error is within this, okapi unit
    * \param p_big_exit_time
-   *        sets big_exit_time, timer for to exit within big_error, in okapi units
+   *        time to exit when within big_error, okapi unit
    * \param p_big_error
-   *        sets big_error, timer will start when error is within this, in okapi units
+   *        big timer will start when error is within this, okapi unit
    * \param p_velocity_exit_time
-   *        sets velocity_exit_time, timer will start when velocity is 0, in okapi units
+   *        velocity timer will start when velocity is 0, okapi unit
+   * \param p_mA_timeout
+   *        mA timer will start when the motors are pulling too much current, okapi unit
    * \param use_imu
-   *        adds the Imu for velocity calculation in conjunction with the main sensor
+   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
    */
   void pid_odom_turn_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QAngle p_small_error, okapi::QTime p_big_exit_time, okapi::QAngle p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout, bool use_imu = true);
 
@@ -3059,17 +3065,19 @@ class Drive {
    * Set's constants for odom driving exit conditions.
    *
    * \param p_small_exit_time
-   *        sets small_exit_time, timer for to exit within smalL_error, in okapi units
+   *        time to exit when within smalL_error, okapi unit
    * \param p_small_error
-   *        sets smalL_error, timer will start when error is within this, in okapi units
+   *        small timer will start when error is within this, okapi unit
    * \param p_big_exit_time
-   *        sets big_exit_time, timer for to exit within big_error, in okapi units
+   *        time to exit when within big_error, okapi unit
    * \param p_big_error
-   *        sets big_error, timer will start when error is within this, in okapi units
+   *        big timer will start when error is within this, okapi unit
    * \param p_velocity_exit_time
-   *        sets velocity_exit_time, timer will start when velocity is 0, in okapi units
+   *        velocity timer will start when velocity is 0, okapi unit
+   * \param p_mA_timeout
+   *        mA timer will start when the motors are pulling too much current, okapi unit
    * \param use_imu
-   *        adds the Imu for velocity calculation in conjunction with the main sensor
+   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
    */
   void pid_odom_drive_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QLength p_small_error, okapi::QTime p_big_exit_time, okapi::QLength p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout, bool use_imu = true);
 
@@ -3077,17 +3085,19 @@ class Drive {
    * Set's constants for drive exit conditions.
    *
    * \param p_small_exit_time
-   *        sets small_exit_time, timer for to exit within smalL_error, in okapi units
+   *        time to exit when within smalL_error, okapi unit
    * \param p_small_error
-   *        sets smalL_error, timer will start when error is within this, in okapi units
+   *        small timer will start when error is within this, okapi unit
    * \param p_big_exit_time
-   *        sets big_exit_time, timer for to exit within big_error, in okapi units
+   *        time to exit when within big_error, okapi unit
    * \param p_big_error
-   *        sets big_error, timer will start when error is within this, in okapi units
+   *        big timer will start when error is within this, okapi unit
    * \param p_velocity_exit_time
-   *        sets velocity_exit_time, timer will start when velocity is 0, in okapi units
+   *        velocity timer will start when velocity is 0, okapi unit
+   * \param p_mA_timeout
+   *        mA timer will start when the motors are pulling too much current, okapi unit
    * \param use_imu
-   *        adds the Imu for velocity calculation in conjunction with the main sensor
+   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
    */
   void pid_drive_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QLength p_small_error, okapi::QTime p_big_exit_time, okapi::QLength p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout, bool use_imu = true);
 
@@ -3095,17 +3105,19 @@ class Drive {
    * Set's constants for turn exit conditions.
    *
    * \param p_small_exit_time
-   *        sets small_exit_time, timer for to exit within smalL_error, in okapi units
+   *        time to exit when within smalL_error, okapi unit
    * \param p_small_error
-   *        sets smalL_error, timer will start when error is within this, in okapi units
+   *        small timer will start when error is within this, okapi unit
    * \param p_big_exit_time
-   *        sets big_exit_time, timer for to exit within big_error, in okapi units
+   *        time to exit when within big_error, okapi unit
    * \param p_big_error
-   *        sets big_error, timer will start when error is within this, in okapi units
+   *        big timer will start when error is within this, okapi unit
    * \param p_velocity_exit_time
-   *        sets velocity_exit_time, timer will start when velocity is 0, in okapi units
+   *        velocity timer will start when velocity is 0, okapi unit
+   * \param p_mA_timeout
+   *        mA timer will start when the motors are pulling too much current, okapi unit
    * \param use_imu
-   *        adds the Imu for velocity calculation in conjunction with the main sensor
+   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
    */
   void pid_turn_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QAngle p_small_error, okapi::QTime p_big_exit_time, okapi::QAngle p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout, bool use_imu = true);
 
@@ -3113,17 +3125,19 @@ class Drive {
    * Set's constants for swing exit conditions.
    *
    * \param p_small_exit_time
-   *        sets small_exit_time, timer for to exit within smalL_error, in okapi units
+   *        time to exit when within smalL_error, okapi unit
    * \param p_small_error
-   *        sets smalL_error, timer will start when error is within this, in okapi units
+   *        small timer will start when error is within this, okapi unit
    * \param p_big_exit_time
-   *        sets big_exit_time, timer for to exit within big_error, in okapi units
+   *        time to exit when within big_error, okapi unit
    * \param p_big_error
-   *        sets big_error, timer will start when error is within this, in okapi units
+   *        big timer will start when error is within this, okapi unit
    * \param p_velocity_exit_time
-   *        sets velocity_exit_time, timer will start when velocity is 0, in okapi units
+   *        velocity timer will start when velocity is 0, okapi unit
+   * \param p_mA_timeout
+   *        mA timer will start when the motors are pulling too much current, okapi unit
    * \param use_imu
-   *        adds the Imu for velocity calculation in conjunction with the main sensor
+   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
    */
   void pid_swing_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QAngle p_small_error, okapi::QTime p_big_exit_time, okapi::QAngle p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout, bool use_imu = true);
 
@@ -3131,17 +3145,19 @@ class Drive {
    * Set's constants for drive exit conditions.
    *
    * \param p_small_exit_time
-   *        sets small_exit_time, timer for to exit within smalL_error
+   *        time to exit when within smalL_error, in ms
    * \param p_small_error
-   *        sets smalL_error, timer will start when error is within this
+   *        small timer will start when error is within this, in inches
    * \param p_big_exit_time
-   *        sets big_exit_time, timer for to exit within big_error
+   *        time to exit when within big_error, in ms
    * \param p_big_error
-   *        sets big_error, timer will start when error is within this
+   *        big timer will start when error is within this, in inches
    * \param p_velocity_exit_time
-   *        sets velocity_exit_time, timer will start when velocity is 0
+   *        velocity timer will start when velocity is 0, in ms
+   * \param p_mA_timeout
+   *        mA timer will start when the motors are pulling too much current, in ms
    * \param use_imu
-   *        adds the Imu for velocity calculation in conjunction with the main sensor
+   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
    */
   void pid_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = true);
 
@@ -3149,17 +3165,19 @@ class Drive {
    * Set's constants for turn exit conditions.
    *
    * \param p_small_exit_time
-   *        sets small_exit_time, timer for to exit within smalL_error
+   *        time to exit when within smalL_error, in ms
    * \param p_small_error
-   *        sets smalL_error, timer will start when error is within this
+   *        small timer will start when error is within this, in degrees
    * \param p_big_exit_time
-   *        sets big_exit_time, timer for to exit within big_error
+   *        time to exit when within big_error, in ms
    * \param p_big_error
-   *        sets big_error, timer will start when error is within this
+   *        big timer will start when error is within this, in degrees
    * \param p_velocity_exit_time
-   *        sets velocity_exit_time, timer will start when velocity is 0
+   *        velocity timer will start when velocity is 0, in ms
+   * \param p_mA_timeout
+   *        mA timer will start when the motors are pulling too much current, in ms
    * \param use_imu
-   *        adds the Imu for velocity calculation in conjunction with the main sensor
+   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
    */
   void pid_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = true);
 
@@ -3167,17 +3185,19 @@ class Drive {
    * Set's constants for swing exit conditions.
    *
    * \param p_small_exit_time
-   *        sets small_exit_time, timer for to exit within smalL_error
+   *        time to exit when within smalL_error, in ms
    * \param p_small_error
-   *        sets smalL_error, timer will start when error is within this
+   *        small timer will start when error is within this, in degrees
    * \param p_big_exit_time
-   *        sets big_exit_time, timer for to exit within big_error
+   *        time to exit when within big_error, in ms
    * \param p_big_error
-   *        sets big_error, timer will start when error is within this
+   *        big timer will start when error is within this, in degrees
    * \param p_velocity_exit_time
-   *        sets velocity_exit_time, timer will start when velocity is 0
+   *        velocity timer will start when velocity is 0, in ms
+   * \param p_mA_timeout
+   *        mA timer will start when the motors are pulling too much current, in ms
    * \param use_imu
-   *        adds the Imu for velocity calculation in conjunction with the main sensor
+   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
    */
   void pid_swing_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = true);
 
