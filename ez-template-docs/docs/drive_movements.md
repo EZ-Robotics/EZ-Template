@@ -10,13 +10,62 @@ import TabItem from '@theme/TabItem';
 
 ## Functions with Okapi Units
 
-### pid_drive_set()
-Sets the drive to go forward using PID and heading correction.  
 
-`p_target` is in an okapi length unit.  
-`speed` is 0 to 127.  It's recommended to keep this at 110.  
-`slew_on` increases the speed of the drive gradually.  You must set slew constants for this to work!  
-`toggle_heading` will disable heading correction when false. 
+
+### pid_drive_set()
+Sets the robot to move forward using PID with okapi units, using slew if enabled for this motion.  
+
+`p_target` target okapi unit 
+`speed` 0 to 127, max speed during motion   
+<Tabs
+  groupId="pid_drive_set_okapi"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.pid_drive_set(24_in, 110);
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+void pid_drive_set(okapi::QLength p_target, int speed);
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+
+
+### pid_drive_set()
+Sets the robot to move forward using PID with okapi units, using slew if enabled for this motion.  
+
+`p_target` target okapi unit 
+`speed` 0 to 127, max speed during motion  
+`slew_on` ramp up from a lower speed to your target speed   
+`toggle_heading` toggle for heading correction.  true enables, false disables   
 <Tabs
   groupId="pid_drive_set_okapi"
   defaultValue="proto"
@@ -47,11 +96,12 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void pid_drive_set(okapi::QLength p_target, int speed, bool slew_on = false, bool toggle_heading = true);
+void pid_drive_set(okapi::QLength p_target, int speed, bool slew_on, bool toggle_heading = true);
 ```
 
 </TabItem>
 </Tabs>
+
 
 
 
@@ -430,13 +480,60 @@ void slew_drive_constants_backward_set(okapi::QLength distance, int min_speed);
 
 ## Functions without Okapi Units
 
-### pid_drive_set()
-Sets the drive to go forward using PID and heading correction.  
 
-`target` is in inches.  
-`speed` is 0 to 127.  It's recommended to keep this at 110.  
-`slew_on` increases the speed of the drive gradually.  You must set slew constants for this to work!  
-`toggle_heading` will disable heading correction when false. 
+
+### pid_drive_set()
+Sets the robot to move forward using PID with okapi units, using slew if enabled for this motion.  
+
+`target` target in inches
+`speed` 0 to 127, max speed during motion   
+<Tabs
+  groupId="pid_drive_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.pid_drive_set(24, 110);
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+void pid_drive_set(double target, int speed);
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+### pid_drive_set()
+Sets the robot to move forward using PID with okapi units, using slew if enabled for this motion.  
+
+`target` target in inches
+`speed` 0 to 127, max speed during motion  
+`slew_on` ramp up from a lower speed to your target speed   
+`toggle_heading` toggle for heading correction.  true enables, false disables   
 <Tabs
   groupId="pid_drive_set"
   defaultValue="proto"
@@ -467,11 +564,18 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void pid_drive_set(double target, int speed, bool slew_on = false, bool toggle_heading = true);
+void pid_drive_set(double target, int speed, bool slew_on, bool toggle_heading = true);
 ```
 
 </TabItem>
 </Tabs>
+
+
+
+
+
+
+
 
 
 
