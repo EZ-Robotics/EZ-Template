@@ -10,30 +10,19 @@ import TabItem from '@theme/TabItem';
 ## Functions with Okapi Units
 
 ### pid_swing_set()
-Sets the robot to swing using PID.  The robot will turn using one side of the drive, either the left or right.  The opposite side of the drive can be set to a value for wider or tighter arcs.  
+Sets the robot to turn using only one side of the drive with PID relative to initial heading.  
 
-`type` is either `ez::LEFT_SWING` or `ez::RIGHT_SWING`.  
-`p_target` is an okapi angle unit.  
-`speed` is 0 to 127.        
-`opposite_speed` is -127 to 127.  
-`slew_on` increases the speed of the drive gradually.  You must set slew constants for this to work!  
+`type` L_SWING or R_SWING  
+`p_target` target value okapi unit  
+`speed` 0 to 127, max speed during motion   
 <Tabs
-  groupId="pid_swing_set_okapi"
+  groupId="pid_turn_0a9s09sd09d098123zk1k2jhset_okapi"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
     { label: 'Example',  value: 'example', },
   ]
 }>
-
-<TabItem value="proto">
-
-```cpp
-void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed = 0, bool slew_on = false);
-```
-
-</TabItem>
-
 
 <TabItem value="example">
 
@@ -45,16 +34,194 @@ void autonomous() {
   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
 
-  chassis.pid_swing_set(ez::LEFT_SWING, 45_deg, 110, 0, true);
-  chassis.pid_wait();
-
-  chassis.pid_swing_set(ez::RIGHT_SWING, 0_deg, 110, 50, true);
+  chassis.pid_swing_set(ez::LEFT_SWING, 22.5, 110);
   chassis.pid_wait();
 }
 ```
 
 </TabItem>
+
+<TabItem value="proto">
+
+```cpp
+void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed);
+```
+
+</TabItem>
 </Tabs>
+
+
+
+
+
+
+### pid_swing_set()
+Sets the robot to turn using only one side of the drive with PID relative to initial heading.  
+
+`type` L_SWING or R_SWING  
+`p_target` target value okapi unit  
+`speed` 0 to 127, max speed during motion   
+`behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
+<Tabs
+  groupId="pi12kj3hkcd872913z_turn_s098sfa8et_okapi"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.pid_swing_set(ez::LEFT_SWING, 22.5, 110, ez::longest);
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+
+<TabItem value="proto">
+
+```cpp
+void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, e_angle_behavior behavior);
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+
+
+### pid_swing_set()
+Sets the robot to turn using only one side of the drive with PID relative to initial heading.  
+
+`type` L_SWING or R_SWING  
+`p_target` target value okapi unit  
+`speed` 0 to 127, max speed during motion   
+`slew_on` ramp up from a lower speed to your target speed   
+<Tabs
+  groupId="pid_tur1234jkh134n_908zdset_okapi"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.pid_swing_set(ez::LEFT_SWING, 22.5, 110, true);
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+
+<TabItem value="proto">
+
+```cpp
+void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, bool slew_on);
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+### pid_swing_set()
+Sets the robot to turn using only one side of the drive with PID relative to initial heading.  
+
+`type` L_SWING or R_SWING  
+`p_target` target value okapi unit  
+`speed` 0 to 127, max speed during motion   
+`behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
+`slew_on` ramp up from a lower speed to your target speed   
+<Tabs
+  groupId="pid_tkjh123gurn_set_okapa09123zsdasdasi"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.pid_swing_set(ez::LEFT_SWING, 22.5, 110, ez::longest, true);
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+
+<TabItem value="proto">
+
+```cpp
+void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, e_angle_behavior behavior, bool slew_on);
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -63,31 +230,19 @@ void autonomous() {
 
 
 ### pid_swing_relative_set()
-Sets the robot to swing using PID.  The robot will turn using one side of the drive, either the left or right.  The opposite side of the drive can be set to a value for wider or tighter arcs.  Target is relative here, the robot will add the target to your current angle.  
+Sets the robot to turn using only one side of the drive with PID relative to the current heading.  
 
-`type` is either `ez::LEFT_SWING` or `ez::RIGHT_SWING`.  
-`p_target` is an okapi angle unit.  
-`speed` is 0 to 127.        
-`opposite_speed` is -127 to 127.  
-`slew_on` increases the speed of the drive gradually.  You must set slew constants for this to work!  
+`type` L_SWING or R_SWING  
+`p_target` target value okapi unit  
+`speed` 0 to 127, max speed during motion   
 <Tabs
-  groupId="pid_swing_rel_set_okapi"
+  groupId="pid123z4_turn_re098asd12l_set_o098zx12kapi"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
     { label: 'Example',  value: 'example', },
   ]
 }>
-
-<TabItem value="proto">
-
-```cpp
-void pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed = 0, bool slew_on = false);
-
-```
-
-</TabItem>
-
 
 <TabItem value="example">
 
@@ -99,18 +254,199 @@ void autonomous() {
   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
 
-  // This will turn to 90 degrees
-  chassis.pid_swing_relative_set(ez::LEFT_SWING, 90_deg, 110);
+  // Swing to 90 deg
+  chassis.pid_swing_relative_set(ez::LEFT_SWING, 90, 110);
   chassis.pid_wait();
 
-  // This will go backwards by 45 degrees
-  chassis.pid_swing_relative_set(ez::RIGHT_SWING, -45_deg, 110);
+  // Swing the long way around to go -45 from where it started
+  chassis.pid_swing_relative_set(ez::RIGHT_SWING, -45, 110);
   chassis.pid_wait();
 }
 ```
 
 </TabItem>
+
+<TabItem value="proto">
+
+```cpp
+void pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed);
+```
+
+</TabItem>
 </Tabs>
+
+
+
+
+
+
+
+
+### pid_swing_relative_set()
+Sets the robot to turn using only one side of the drive with PID relative to the current heading.  
+
+`type` L_SWING or R_SWING  
+`p_target` target value okapi unit  
+`speed` 0 to 127, max speed during motion   
+`slew_on` ramp up from a lower speed to your target speed   
+<Tabs
+  groupId="pid_turn_1lj7z123235drel_09zx12set_okapi"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  // Swing to 90 deg
+  chassis.pid_swing_relative_set(ez::LEFT_SWING, 90, 110, true);
+  chassis.pid_wait();
+
+  // Swing the long way around to go -45 from where it started
+  chassis.pid_swing_relative_set(ez::RIGHT_SWING, -45, 110, true);
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+
+<TabItem value="proto">
+
+```cpp
+void pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, bool slew_on);
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+
+
+
+### pid_swing_relative_set()
+Sets the robot to turn using only one side of the drive with PID relative to the current heading.  
+
+`type` L_SWING or R_SWING  
+`p_target` target value okapi unit  
+`speed` 0 to 127, max speed during motion   
+`behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
+<Tabs
+  groupId="pid_tu09aarn_rel0091z29zx12_set_okapi"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  // Swing to 90 deg
+  chassis.pid_swing_relative_set(ez::LEFT_SWING, 90, 110, ez::shortest);
+  chassis.pid_wait();
+
+  // Swing the long way around to go -45 from where it started
+  chassis.pid_swing_relative_set(ez::RIGHT_SWING, -45, 110, ez::longest);
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+
+<TabItem value="proto">
+
+```cpp
+void pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, e_angle_behavior behavior);
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+### pid_swing_relative_set()
+Sets the robot to turn using only one side of the drive with PID relative to the current heading.  
+
+`type` L_SWING or R_SWING  
+`p_target` target value okapi unit  
+`speed` 0 to 127, max speed during motion   
+`behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
+`slew_on` ramp up from a lower speed to your target speed     
+<Tabs
+  groupId="pid_t123surn_rel_se182735ct1231235_okapi"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  // Swing to 90 deg
+  chassis.pid_swing_relative_set(ez::LEFT_SWING, 90, 110, ez::shortest, true);
+  chassis.pid_wait();
+
+  // Swing the long way around to go -45 from where it started
+  chassis.pid_swing_relative_set(ez::RIGHT_SWING, -45, 110, ez::longest, true);
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+
+<TabItem value="proto">
+
+```cpp
+void pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, e_angle_behavior behavior, bool slew_on);
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ### pid_swing_exit_condition_set()
 Set's constants for swing exit conditions.  
@@ -596,31 +932,22 @@ void slew_swing_constants_backward_set(okapi::QAngle distance, int min_speed);
 
 
 ## Functions without Okapi Units
-### pid_swing_set()
-Sets the robot to swing using PID.  The robot will turn using one side of the drive, either the left or right.  The opposite side of the drive can be set to a value for wider or tighter arcs.  
 
-`type` is either `ez::LEFT_SWING` or `ez::RIGHT_SWING`.  
-`target` is in degrees.  
-`speed` is 0 to 127.        
-`opposite_speed` is -127 to 127.  
-`slew_on` increases the speed of the drive gradually.  You must set slew constants for this to work!  
+
+### pid_swing_set()
+Sets the robot to turn using only one side of the drive with PID relative to initial heading.  
+
+`type` L_SWING or R_SWING  
+`target` target value in degrees  
+`speed` 0 to 127, max speed during motion   
 <Tabs
-  groupId="pid_swing_set_double"
+  groupId="pid_turn_0a9s09sd09dk1k2jhset_okapi"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
     { label: 'Example',  value: 'example', },
   ]
 }>
-
-<TabItem value="proto">
-
-```cpp
-void pid_swing_set(e_swing type, double target, int speed, int opposite_speed = 0, bool slew_on = false);
-```
-
-</TabItem>
-
 
 <TabItem value="example">
 
@@ -632,43 +959,42 @@ void autonomous() {
   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
 
-  chassis.pid_swing_set(ez::LEFT_SWING, 45, 110, 0, true);
-  chassis.pid_wait();
-
-  chassis.pid_swing_set(ez::RIGHT_SWING, 0, 110, 50, true);
+  chassis.pid_swing_set(ez::LEFT_SWING, 22.5, 110);
   chassis.pid_wait();
 }
+```
+
+</TabItem>
+
+<TabItem value="proto">
+
+```cpp
+void pid_swing_set(e_swing type, double target, int speed);
 ```
 
 </TabItem>
 </Tabs>
 
 
-### pid_swing_relative_set()
-Sets the robot to swing using PID.  The robot will turn using one side of the drive, either the left or right.  The opposite side of the drive can be set to a value for wider or tighter arcs.  Target is relative here, the robot will add the target to your current angle.  
 
-`type` is either `ez::LEFT_SWING` or `ez::RIGHT_SWING`.  
-`p_target` is in degrees.  
-`speed` is 0 to 127.        
-`opposite_speed` is -127 to 127.  
-`slew_on` increases the speed of the drive gradually.  You must set slew constants for this to work!  
+
+
+
+### pid_swing_set()
+Sets the robot to turn using only one side of the drive with PID relative to initial heading.  
+
+`type` L_SWING or R_SWING  
+`target` target value in degrees  
+`speed` 0 to 127, max speed during motion   
+`behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
 <Tabs
-  groupId="pid_swing_relative_set"
+  groupId="pi12kj3hkcd_turn_s098sfa8et_okapi"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
     { label: 'Example',  value: 'example', },
   ]
 }>
-
-<TabItem value="proto">
-
-```cpp
-void pid_swing_relative_set(e_swing type, double target, int speed, int opposite_speed = 0, bool slew_on = false);
-```
-
-</TabItem>
-
 
 <TabItem value="example">
 
@@ -680,18 +1006,379 @@ void autonomous() {
   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
 
-  // This will turn to 90 degrees
+  chassis.pid_swing_set(ez::LEFT_SWING, 22.5, 110, ez::longest);
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+
+<TabItem value="proto">
+
+```cpp
+void pid_swing_set(e_swing type, double target, int speed, e_angle_behavior behavior);
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+
+
+### pid_swing_set()
+Sets the robot to turn using only one side of the drive with PID relative to initial heading.  
+
+`type` L_SWING or R_SWING  
+`target` target value in degrees  
+`speed` 0 to 127, max speed during motion   
+`slew_on` ramp up from a lower speed to your target speed   
+<Tabs
+  groupId="pid_tur1234jkh134n_908zdset_okapi"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.pid_swing_set(ez::LEFT_SWING, 22.5, 110, true);
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+
+<TabItem value="proto">
+
+```cpp
+void pid_swing_set(e_swing type, double target, int speed, bool slew_on);
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+### pid_swing_set()
+Sets the robot to turn using only one side of the drive with PID relative to initial heading.  
+
+`type` L_SWING or R_SWING  
+`target` target value in degrees  
+`speed` 0 to 127, max speed during motion   
+`behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
+`slew_on` ramp up from a lower speed to your target speed   
+<Tabs
+  groupId="pid_tkjh123gurn_set_okapasdasdasi"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.pid_swing_set(ez::LEFT_SWING, 22.5, 110, ez::longest, true);
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+
+<TabItem value="proto">
+
+```cpp
+void pid_swing_set(e_swing type, double target, int speed, e_angle_behavior behavior, bool slew_on);
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### pid_swing_relative_set()
+Sets the robot to turn using only one side of the drive with PID relative to the current heading.  
+
+`type` L_SWING or R_SWING  
+`target` target value in degrees  
+`speed` 0 to 127, max speed during motion   
+<Tabs
+  groupId="pid_turn_re098asd12l_set_o098zx12kapi"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  // Swing to 90 deg
   chassis.pid_swing_relative_set(ez::LEFT_SWING, 90, 110);
   chassis.pid_wait();
 
-  // This will go backwards by 45 degrees
+  // Swing the long way around to go -45 from where it started
   chassis.pid_swing_relative_set(ez::RIGHT_SWING, -45, 110);
   chassis.pid_wait();
 }
 ```
 
 </TabItem>
+
+<TabItem value="proto">
+
+```cpp
+void pid_swing_relative_set(e_swing type, double target, int speed);
+```
+
+</TabItem>
 </Tabs>
+
+
+
+
+
+
+
+
+### pid_swing_relative_set()
+Sets the robot to turn using only one side of the drive with PID relative to the current heading.  
+
+`type` L_SWING or R_SWING  
+`target` target value in degrees  
+`speed` 0 to 127, max speed during motion   
+`slew_on` ramp up from a lower speed to your target speed   
+<Tabs
+  groupId="pid_turn_1lj235drel_09zx12set_okapi"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  // Swing to 90 deg
+  chassis.pid_swing_relative_set(ez::LEFT_SWING, 90, 110, true);
+  chassis.pid_wait();
+
+  // Swing the long way around to go -45 from where it started
+  chassis.pid_swing_relative_set(ez::RIGHT_SWING, -45, 110, true);
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+
+<TabItem value="proto">
+
+```cpp
+void pid_swing_relative_set(e_swing type, double target, int speed, bool slew_on);
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+
+
+
+### pid_swing_relative_set()
+Sets the robot to turn using only one side of the drive with PID relative to the current heading.  
+
+`type` L_SWING or R_SWING  
+`target` target value in degrees  
+`speed` 0 to 127, max speed during motion   
+`behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
+<Tabs
+  groupId="pid_tu09aarn_rel09zx12_set_okapi"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  // Swing to 90 deg
+  chassis.pid_swing_relative_set(ez::LEFT_SWING, 90, 110, ez::shortest);
+  chassis.pid_wait();
+
+  // Swing the long way around to go -45 from where it started
+  chassis.pid_swing_relative_set(ez::RIGHT_SWING, -45, 110, ez::longest);
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+
+<TabItem value="proto">
+
+```cpp
+void pid_swing_relative_set(e_swing type, double target, int speed, e_angle_behavior behavior);
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+### pid_swing_relative_set()
+Sets the robot to turn using only one side of the drive with PID relative to the current heading.  
+
+`type` L_SWING or R_SWING  
+`target` target value in degrees  
+`speed` 0 to 127, max speed during motion   
+`behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
+`slew_on` ramp up from a lower speed to your target speed     
+<Tabs
+  groupId="pid_turn_rel_se182735ct1231235_okapi"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  // Swing to 90 deg
+  chassis.pid_swing_relative_set(ez::LEFT_SWING, 90, 110, ez::shortest, true);
+  chassis.pid_wait();
+
+  // Swing the long way around to go -45 from where it started
+  chassis.pid_swing_relative_set(ez::RIGHT_SWING, -45, 110, ez::longest, true);
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+
+<TabItem value="proto">
+
+```cpp
+void pid_swing_relative_set(e_swing type, double target, int speed, e_angle_behavior behavior, bool slew_on);
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1441,6 +2128,43 @@ e_angle_behavior pid_swing_behavior_get();
 ```
 </TabItem>
 </Tabs>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
