@@ -18,7 +18,7 @@ Sets the robot to move forward using PID with okapi units, using slew if enabled
 `p_target` target okapi unit 
 `speed` 0 to 127, max speed during motion   
 <Tabs
-  groupId="pid_drive_set_okapi"
+  groupId="pid_driv09873214ze_set_okapi"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -67,7 +67,7 @@ Sets the robot to move forward using PID with okapi units, using slew if enabled
 `slew_on` ramp up from a lower speed to your target speed   
 `toggle_heading` toggle for heading correction.  true enables, false disables   
 <Tabs
-  groupId="pid_drive_set_okapi"
+  groupId="pid_dri987475zve_set_okapi"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -488,7 +488,7 @@ Sets the robot to move forward using PID with okapi units, using slew if enabled
 `target` target in inches
 `speed` 0 to 127, max speed during motion   
 <Tabs
-  groupId="pid_drive_set"
+  groupId="pid_d98709321874z5rive_set"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -535,7 +535,7 @@ Sets the robot to move forward using PID with okapi units, using slew if enabled
 `slew_on` ramp up from a lower speed to your target speed   
 `toggle_heading` toggle for heading correction.  true enables, false disables   
 <Tabs
-  groupId="pid_drive_set"
+  groupId="987093214zpid_drive_set"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
