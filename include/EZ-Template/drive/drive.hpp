@@ -1713,8 +1713,8 @@ class Drive {
   /**
    * Sets the robot to move forward using PID with okapi units, only using slew if globally enabled.
    *
-   * \param target
-   *        target value in inches
+   * \param p_target
+   *        target okapi unit
    * \param speed
    *        0 to 127, max speed during motion
    */
@@ -1723,8 +1723,8 @@ class Drive {
   /**
    * Sets the robot to move forward using PID with okapi units, using slew if enabled for this motion.
    *
-   * \param target
-   *        target value in inches
+   * \param p_target
+   *        target okapi unit
    * \param speed
    *        0 to 127, max speed during motion
    * \param slew_on
@@ -1738,7 +1738,7 @@ class Drive {
    * Sets the robot to move forward using PID without okapi units, only using slew if globally enabled.
    *
    * \param target
-   *        target value as a double, unit is inches
+   *        target value in inches
    * \param speed
    *        0 to 127, max speed during motion
    */
@@ -1748,7 +1748,7 @@ class Drive {
    * Sets the robot to move forward using PID without okapi units, using slew if enabled for this motion.
    *
    * \param target
-   *        target value as a double, unit is inches
+   *        target value in inches
    * \param speed
    *        0 to 127, max speed during motion
    * \param slew_on
