@@ -200,7 +200,9 @@ void pid_swing_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QAngle 
 
 
 ### pid_swing_chain_constant_set()
-Sets the amount that the PID will overshoot target by to maintain momentum into the next motion when using `pid_wait_quick_chain()` for swings.    
+Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.  
+
+This sets forward and backwards swing constants.     
  
 `input` okapi angle unit      
 <Tabs
@@ -228,7 +230,9 @@ void pid_swing_chain_constant_set(okapi::QAngle input);
 </Tabs>
 
 ### pid_swing_chain_forward_constant_set()
-Sets the amount that the PID will overshoot target by to maintain momentum into the next motion when using `pid_wait_quick_chain()` for forward swings.    
+Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.   
+
+This only sets forward swing constants.      
  
 `input` okapi angle unit      
 <Tabs
@@ -257,7 +261,9 @@ void pid_swing_chain_forward_constant_set(okapi::QAngle input);
 
 
 ### pid_swing_chain_backward_constant_set()
-Sets the amount that the PID will overshoot target by to maintain momentum into the next motion when using `pid_wait_quick_chain()` for backward swings.    
+Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.   
+
+This only sets backward swing constants.     
  
 `input` okapi angle unit      
 <Tabs
@@ -817,9 +823,11 @@ void pid_swing_constants_backward_set(double p, double i = 0.0, double d = 0.0, 
 
 
 ### pid_swing_chain_constant_set()
-Sets the amount that the PID will overshoot target by to maintain momentum into the next motion when using `pid_wait_quick_chain()` for swings.    
+Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.  
+
+This sets forward and backwards swing constants.    
  
-`input` double, angle in degrees   
+`input` angle in degrees   
 <Tabs
   groupId="pid_swing_chain_constant_set"
   defaultValue="proto"
@@ -846,9 +854,11 @@ void pid_swing_chain_constant_set(double input);
 
 
 ### pid_swing_chain_forward_constant_set()
-Sets the amount that the PID will overshoot target by to maintain momentum into the next motion when using `pid_wait_quick_chain()` for forward swings.    
+Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.   
+
+This only sets forward swing constants.    
  
-`input` double, angle in degrees   
+`input` angle in degrees   
 <Tabs
   groupId="pid_swing_chain_forward_constant_set"
   defaultValue="proto"
@@ -875,9 +885,11 @@ void pid_swing_chain_forward_constant_set(double input);
 
 
 ### pid_swing_chain_backward_constant_set()
-Sets the amount that the PID will overshoot target by to maintain momentum into the next motion when using `pid_wait_quick_chain()` for backward swings.    
+Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.   
+
+This only sets backward swing constants.       
  
-`input` double, angle in degrees   
+`input` angle in degrees   
 <Tabs
   groupId="pid_swing_chain_backward_constant_set"
   defaultValue="proto"
@@ -1065,9 +1077,9 @@ void autonomous() {
 
 
 ### pid_swing_min_set()
-Sets the max power of the drive when the robot is within `start_i`.  This only enables when `i` is enabled, and when the movement is greater then `start_i`.  
+Sets minimum power for swings when kI and startI are enabled.    
 
-`min` the minimum speed the robot will turn at when integral is being used
+`min` new clipped speed
 <Tabs
   groupId="examples11"
   defaultValue="proto"
@@ -1266,7 +1278,7 @@ void autonomous() {
 
 
 ### pid_swing_chain_forward_constant_get()
-Returns a double that's the amount that the PID will overshoot target by to maintain momentum into the next motion when using `pid_wait_quick_chain()` for forward swings.      
+Returns the amount that the PID will overshoot target by to maintain momentum into the next motion for swinging forward.         
 <Tabs
   groupId="pid_swing_chain_forward_constant_get"
   defaultValue="proto"
@@ -1294,7 +1306,7 @@ double pid_swing_chain_forward_constant_get();
 
 
 ### pid_swing_chain_backward_constant_get()
-Returns a double that's the amount that the PID will overshoot target by to maintain momentum into the next motion when using `pid_wait_quick_chain()` for backward swings.      
+Returns the amount that the PID will overshoot target by to maintain momentum into the next motion for swinging backward.        
 <Tabs
   groupId="pid_swing_chain_backward_constant_get"
   defaultValue="proto"
@@ -1325,8 +1337,7 @@ double pid_swing_chain_backward_constant_get();
 
 
 ### pid_swing_min_get()
-Returns the minimum power the robot will swing at while integral is enabled.         
-
+Returns minimum power for swings when kI and startI are enabled.         
 <Tabs
   groupId="examples16"
   defaultValue="proto"

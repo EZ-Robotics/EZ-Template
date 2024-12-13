@@ -524,11 +524,13 @@ void pid_turn_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QAngle p
 
 
 ### pid_turn_chain_constant_set()
-Sets the amount that the PID will overshoot target by to maintain momentum into the next motion when using `pid_wait_quick_chain()` for turns.    
+Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.  
+
+This sets turning constants.     
  
 `input` okapi angle unit      
 <Tabs
-  groupId="pid_turn_chain_constant_set"
+  groupId="pid_turn_chain_constant_set_oka"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -803,9 +805,11 @@ void pid_turn_constants_set(double p, double i = 0.0, double d = 0.0, double p_s
 
 
 ### pid_turn_chain_constant_set()
-Sets the amount that the PID will overshoot target by to maintain momentum into the next motion when using `pid_wait_quick_chain()` for turns.    
+Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.  
+
+This sets turning constants.   
  
-`input` double, angle in degrees      
+`input` angle in degrees      
 <Tabs
   groupId="pid_turn_chain_constant_set"
   defaultValue="proto"
@@ -883,9 +887,9 @@ void autonomous() {
 
 
 ### pid_turn_min_set()
-Sets the max power of the drive when the robot is within `start_i`.  This only enables when `i` is enabled, and when the movement is greater then `start_i`.        
+The minimum power for turns when kI and startI are enabled.        
 
-`min` the minimum speed the robot will turn at when integral is being used
+`min` new clipped speed
 <Tabs
   groupId="examples12"
   defaultValue="proto"
@@ -979,7 +983,7 @@ void pid_turn_behavior_set(e_angle_behavior behavior);
 
 
 ### pid_turn_chain_constant_get()
-Returns a double that's the amount that the PID will overshoot target by to maintain momentum into the next motion when using `pid_wait_quick_chain()` for turns.         
+Returns the amount that the PID will overshoot target by to maintain momentum into the next motion for turning.            
 <Tabs
   groupId="pid_turn_chain_constant_set"
   defaultValue="proto"
@@ -1060,7 +1064,7 @@ void autonomous() {
 
 
 ### pid_turn_min_get()
-Returns the minimum power the robot will turn at while integral is enabled.         
+Returns minimum power for turns when kI and startI are enabled.         
 <Tabs
   groupId="examples17"
   defaultValue="proto"

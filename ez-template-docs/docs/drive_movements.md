@@ -175,7 +175,9 @@ void pid_drive_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QLength
 
 
 ### pid_drive_chain_constant_set()
-Sets the amount that the PID will overshoot target by to maintain momentum into the next motion when using `pid_wait_quick_chain()` for drive motions.    
+Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.   
+
+This sets forward and backwards driving constants.      
  
 `input` okapi length unit       
 <Tabs
@@ -204,7 +206,9 @@ void pid_drive_chain_constant_set(okapi::QLength input);
 
 
 ### pid_drive_chain_forward_constant_set()
-Sets the amount that the PID will overshoot target by to maintain momentum into the next motion when using `pid_wait_quick_chain()` for forward drive motions.    
+Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.   
+
+This only sets forward driving constants.         
  
 `input` okapi length unit    
 <Tabs
@@ -233,7 +237,9 @@ void pid_drive_chain_forward_constant_set(okapi::QLength input);
 
 
 ### pid_drive_chain_backward_constant_set()
-Sets the amount that the PID will overshoot target by to maintain momentum into the next motion when using `pid_wait_quick_chain()` for backward drive motions.    
+Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.   
+
+This only sets backward driving constants.         
  
 `input` okapi length unit    
 <Tabs
@@ -710,9 +716,11 @@ void pid_heading_constants_set(double p, double i = 0.0, double d = 0.0, double 
 
 
 ### pid_drive_chain_constant_set()
-Sets the amount that the PID will overshoot target by to maintain momentum into the next motion when using `pid_wait_quick_chain()` for drive motions.    
+Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.   
+
+This sets forward and backwards driving constants.          
  
-`input` double, length in inches   
+`input` length in inches   
 <Tabs
   groupId="pid_drive_chain_constant_set"
   defaultValue="proto"
@@ -739,9 +747,11 @@ void pid_drive_chain_constant_set(double input);
 
 
 ### pid_drive_chain_forward_constant_set()
-Sets the amount that the PID will overshoot target by to maintain momentum into the next motion when using `pid_wait_quick_chain()` for forward drive motions.    
+Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.   
+
+This only sets forward driving constants.     
  
-`input` double, length in inches   
+`input` length in inches   
 <Tabs
   groupId="pid_drive_chain_forward_constant_set"
   defaultValue="proto"
@@ -768,9 +778,11 @@ void pid_drive_chain_forward_constant_set(double input);
 
 
 ### pid_drive_chain_backward_constant_set()
-Sets the amount that the PID will overshoot target by to maintain momentum into the next motion when using `pid_wait_quick_chain()` for backward drive motions.    
+Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.   
+
+This only sets backward driving constants.        
  
-`input` double, length in inches   
+`input` length in inches   
 <Tabs
   groupId="pid_drive_chain_backward_constant_set"
   defaultValue="proto"
@@ -977,7 +989,7 @@ void autonomous() {
 
 
 ### pid_drive_chain_forward_constant_get()
-Returns a double that's the amount that the PID will overshoot target by to maintain momentum into the next motion when using `pid_wait_quick_chain()` for forward drive motions.      
+Returns the amount that the PID will overshoot target by to maintain momentum into the next motion for driving forward.         
 <Tabs
   groupId="pid_drive_chain_forward_constant_get"
   defaultValue="proto"
@@ -1005,7 +1017,7 @@ double pid_drive_chain_forward_constant_get();
 
 
 ### pid_drive_chain_backward_constant_get()
-Returns a double that's the amount that the PID will overshoot target by to maintain momentum into the next motion when using `pid_wait_quick_chain()` for backward drive motions.      
+Returns the amount that the PID will overshoot target by to maintain momentum into the next motion for driving backward.      
 <Tabs
   groupId="pid_drive_chain_backward_constant_get"
   defaultValue="proto"
