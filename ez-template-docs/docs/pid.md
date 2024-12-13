@@ -1,9 +1,7 @@
 ---
 layout: default
 title: PID
-parent: Docs
 description:  ""
-nav_order: 6
 ---
 
 

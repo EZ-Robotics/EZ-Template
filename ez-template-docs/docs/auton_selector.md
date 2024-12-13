@@ -1,9 +1,7 @@
 ---
 layout: default
 title: Autonomous Selector
-parent: Docs
 description:  ""
-nav_order: 5
 ---
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';

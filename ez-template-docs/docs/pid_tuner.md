@@ -1,9 +1,7 @@
 ---
 layout: default
 title: PID Tuner
-parent: Docs
 description:  ""
-nav_order: 4
 ---
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';

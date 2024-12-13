@@ -822,7 +822,91 @@ void autonomous() {
 
 
 
+### pid_wait_until_point()
+Lock the code in a while loop until this point has been passed.
 
+`target` `{x, y}` pose with units for the robot to pass through before the while loop is released  
+<Tabs
+  groupId="pid_wait_until_oka_point_"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+<TabItem value="proto">
+
+```cpp
+void pid_wait_until_point(united_pose target);
+```
+</TabItem>
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.pid_odom_set({{{0_in, 24_in}, fwd, 110},
+                        {{12_in, 24_in}, rev, 110},
+                        {{24_in, 24_in}, rev, 110}},
+                       true);
+  chassis.pid_wait_until_point({12_in, 24_in});  // Waits until the robot passes 12, 24
+  Intake.move(127);
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+### pid_wait_until()
+Lock the code in a while loop until this point has been passed.
+
+`target` `{x, y}` pose with units for the robot to pass through before the while loop is released  
+<Tabs
+  groupId="pid_wait_until_point_oka"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+<TabItem value="proto">
+
+```cpp
+void pid_wait_until(united_pose target);
+```
+</TabItem>
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.pid_odom_set({{{0_in, 24_in}, fwd, 110},
+                        {{12_in, 24_in}, rev, 110},
+                        {{24_in, 24_in}, rev, 110}},
+                       true);
+  chassis.pid_wait_until({12_in, 24_in});  // Waits until the robot passes 12, 24
+  Intake.move(127);
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+</Tabs>
 
 
 
@@ -1562,4 +1646,249 @@ void autonomous() {
 </TabItem>
 
 
+</Tabs>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### pid_wait_until_index()
+Lock the code in a while loop until this point has been passed.  
+
+`index` index of your input points, 0 is the first point in the index   
+<Tabs
+  groupId="pid_wait_until_index"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+<TabItem value="proto">
+
+```cpp
+void pid_wait_until_index(int index);
+```
+</TabItem>
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.pid_odom_set({{{0_in, 24_in}, fwd, 110},
+                        {{12_in, 24_in}, rev, 110},
+                        {{24_in, 24_in}, rev, 110}},
+                       true);
+  chassis.pid_wait_until_index(1);  // Waits until the robot passes 12, 24
+  Intake.move(127);
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+
+### pid_wait_until_index_started()
+Lock the code in a while loop until this point becomes the target. 
+
+`index` index of your input points, 0 is the first point in the index   
+<Tabs
+  groupId="pid_wait_until_index_started"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+<TabItem value="proto">
+
+```cpp
+void pid_wait_until_index_started(int index);
+```
+</TabItem>
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.pid_odom_set({{{0_in, 24_in}, fwd, 110},
+                        {{12_in, 24_in}, rev, 110},
+                        {{24_in, 24_in}, rev, 110}},
+                       true);
+  chassis.pid_wait_until_index_started(1);  // Waits until the target becomes 12, 24
+  Intake.move(127);
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+### pid_wait_until_point()
+Lock the code in a while loop until this point has been passed.
+
+`target` `{x, y}` pose for the robot to pass through before the while loop is released  
+<Tabs
+  groupId="pid_wait_until_point_no_oka"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+<TabItem value="proto">
+
+```cpp
+void pid_wait_until_point(pose target);
+```
+</TabItem>
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.pid_odom_set({{{0_in, 24_in}, fwd, 110},
+                        {{12_in, 24_in}, rev, 110},
+                        {{24_in, 24_in}, rev, 110}},
+                       true);
+  chassis.pid_wait_until_point({12, 24});  // Waits until the robot passes 12, 24
+  Intake.move(127);
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+
+
+
+
+
+### pid_wait_until()
+Lock the code in a while loop until this point has been passed.
+
+`target` `{x, y}` pose for the robot to pass through before the while loop is released  
+<Tabs
+  groupId="pid_wait_until_no_oka_pose"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+<TabItem value="proto">
+
+```cpp
+void pid_wait_until(pose target);
+```
+</TabItem>
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.pid_odom_set({{{0_in, 24_in}, fwd, 110},
+                        {{12_in, 24_in}, rev, 110},
+                        {{24_in, 24_in}, rev, 110}},
+                       true);
+  chassis.pid_wait_until({12, 24});  // Waits until the robot passes 12, 24
+  Intake.move(127);
+  chassis.pid_wait();
+}
+```
+
+</TabItem>
 </Tabs>

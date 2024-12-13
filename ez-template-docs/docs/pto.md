@@ -1,9 +1,7 @@
 ---
 layout: default
 title: PTO
-parent: Docs
 description:  ""
-nav_order: 7
 ---
 
 
@@ -15,9 +13,11 @@ import TabItem from '@theme/TabItem';
 
 
 ## pto_check()
-Checks if the port is in the pto_list.     
+Checks if the motor is currently in pto_list.     
 
-`check_if_pto` a PROS motor that is in the drive
+Returns true if it's already in pto_list.        
+
+`check_if_pto` motor to check   
 <Tabs
   groupId="ex1"
   defaultValue="proto"
@@ -61,9 +61,11 @@ bool pto_check(pros::Motor check_if_pto);
 
 
 ## pto_add()
-Adds motors to the pto_list.  You cannot add the first index because it's used for autonomous.     
+Adds motors to the pto list, removing them from the drive.   
 
-`pto_list` a vector of motors to remove from the drive
+You cannot add the first index because it's used for autonomous.       
+
+`pto_list` list of motors to remove from the drive   
 <Tabs
   groupId="ex2"
   defaultValue="proto"
@@ -107,9 +109,9 @@ void pto_add(std::vector<pros::Motor> pto_list);
 
 
 ## pto_remove()
-Removes motors from the pto_list.      
+Removes motors from the pto list, adding them to the drive.          
 
-`pto_list` a vector of motors to add back to the drive
+`pto_list` list of motors to add to the drive   
 <Tabs
   groupId="ex3"
   defaultValue="proto"
@@ -156,10 +158,12 @@ void pto_remove(std::vector<pros::Motor> pto_list);
 
 
 ## pto_toggle()
-Runs `pto_add` if `toggle` is true, and `pto_remove` if `toggle` is false.       
+Adds/removes motors from drive.   
 
-`pto_list` a vector of motors to add / remove to the drive
-`toggle` boolean to add / remove motors to drive
+You cannot add the first index because it's used for autonomous.         
+
+`pto_list` list of motors to add/remove from the drive   
+`toggle` list of motors to add/remove from the drive   
 <Tabs
   groupId="ex4"
   defaultValue="proto"

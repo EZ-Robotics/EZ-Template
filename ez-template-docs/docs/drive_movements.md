@@ -117,15 +117,15 @@ void pid_drive_set(okapi::QLength p_target, int speed, bool slew_on = false, boo
 
 
 ### pid_drive_exit_condition_set()
-Sets the exit condition constants for driving. This uses the exit conditions from the PID class.  
+Set's constants for drive exit conditions.     
  
-`p_small_exit_time` time, in okapi units, before exiting `p_small_error`  
-`p_small_error` small error threshold in okapi length unit  
-`p_big_exit_time` time, in okapi units, before exiting `p_big_error`  
-`p_big_error` big error threshold, in okapi length unit  
-`p_velocity_exit_time` time, in okapi units, for velocity to be 0  
-`p_mA_timeout` time, in okapi units, for `is_over_current` to be true   
-`use_imu` boolean, true adds the IMU to velocity timeouts, false only uses the PID sensor.  This defaults to `true`     
+`p_small_exit_time` time to exit when within smalL_error, okapi unit     
+`p_small_error` small timer will start when error is within this, okapi unit     
+`p_big_exit_time` time to exit when within big_error, okapi unit             
+`p_big_error` big timer will start when error is within this, okapi unit        
+`p_velocity_exit_time` time, in okapi units, for velocity to be 0          
+`p_mA_timeout` velocity timer will start when velocity is 0, okapi unit     
+`use_imu` true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't         
 <Tabs
   groupId="pid_drive_Exit_set_okapi"
   defaultValue="proto"
@@ -479,16 +479,15 @@ void pid_drive_set(double target, int speed, bool slew_on = false, bool toggle_h
 
 
 ### pid_drive_exit_condition_set()
-Sets the exit condition constants for driving. This uses the exit conditions from the PID class.  
+Set's constants for drive exit conditions.   
 
-This function can also be used without okapi units.  
-`p_small_exit_time` time, in ms, before exiting `p_small_error`  
-`p_small_error` small error threshold, assumed inches  
-`p_big_exit_time` time, in ms, before exiting `p_big_error`  
-`p_big_error` big error threshold, assumed inches  
-`p_velocity_exit_time` time, in ms, for velocity to be 0  
-`p_mA_timeout` time, in ms, for `is_over_current` to be true   
-`use_imu` boolean, true adds the IMU to velocity timeouts, false only uses the PID sensor.  This defaults to `true`     
+`p_small_exit_time` time to exit when within smalL_error, in ms     
+`p_small_error` small timer will start when error is within this, in inches     
+`p_big_exit_time` time to exit when within big_error, in ms             
+`p_big_error` big timer will start when error is within this, in inches        
+`p_velocity_exit_time` velocity timer will start when velocity is 0, in ms   
+`p_mA_timeout` mA timer will start when the motors are pulling too much current, in ms      
+`use_imu` true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't         
 <Tabs
   groupId="pid_drive_exit_set_double"
   defaultValue="proto"
@@ -538,10 +537,10 @@ void pid_drive_exit_condition_set(int p_small_exit_time, double p_small_error, i
 ### pid_drive_constants_set()
 Set PID drive constants for forwards and backwards.   
  
-`p` proportion constant  
-`i` integral constant  
-`d` derivative constant  
-`p_start_i` error needs to be within this for i to start      
+`p` proportional term   
+`i` integral term  
+`d` derivative term   
+`p_start_i` error threshold to start integral    
 <Tabs
   groupId="pid_drive_constants_Set"
   defaultValue="proto"
@@ -579,10 +578,10 @@ void pid_drive_constants_set(double p, double i = 0.0, double d = 0.0, double p_
 ### pid_drive_constants_forward_set()
 Set PID drive constants for forwards movements.   
  
-`p` proportion constant  
-`i` integral constant  
-`d` derivative constant  
-`p_start_i` error needs to be within this for i to start      
+`p` proportional term   
+`i` integral term  
+`d` derivative term   
+`p_start_i` error threshold to start integral  
 <Tabs
   groupId="pid_drive_constants_forward_Set"
   defaultValue="proto"
@@ -620,10 +619,10 @@ void pid_drive_constants_forward_set(double p, double i = 0.0, double d = 0.0, d
 ### pid_drive_constants_backward_set()
 Set PID drive constants for backwards movements.   
  
-`p` proportion constant  
-`i` integral constant  
-`d` derivative constant  
-`p_start_i` error needs to be within this for i to start      
+`p` proportional term   
+`i` integral term  
+`d` derivative term   
+`p_start_i` error threshold to start integral  
 <Tabs
   groupId="pid_drive_constants_backward_set"
   defaultValue="proto"

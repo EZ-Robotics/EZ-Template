@@ -480,15 +480,15 @@ void pid_turn_relative_set(okapi::QAngle p_target, int speed, e_angle_behavior b
 
 
 ### pid_turn_exit_condition_set()
-Sets the exit condition constants for turning. This uses the exit conditions from the PID class.  
+Set's constants for turn exit conditions.  
  
-`p_small_exit_time` time, in okapi units, before exiting `p_small_error`  
-`p_small_error` small error threshold in okapi angle unit  
-`p_big_exit_time` time, in okapi units, before exiting `p_big_error`  
-`p_big_error` big error threshold, in okapi angle unit  
-`p_velocity_exit_time` time, in okapi units, for velocity to be 0  
-`p_mA_timeout` time, in okapi units, for `is_over_current` to be true   
-`use_imu` boolean, true adds the IMU to velocity timeouts, false only uses the PID sensor.  This defaults to `true`     
+`p_small_exit_time` time to exit when within smalL_error, okapi unit     
+`p_small_error` small timer will start when error is within this, okapi unit     
+`p_big_exit_time` time to exit when within big_error, okapi unit             
+`p_big_error` big timer will start when error is within this, okapi unit        
+`p_velocity_exit_time` velocity timer will start when velocity is 0, okapi unit   
+`p_mA_timeout` mA timer will start when the motors are pulling too much current, okapi unit      
+`use_imu` true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't         
 <Tabs
   groupId="pid_turn_Exit_set_okapi"
   defaultValue="proto"
@@ -713,16 +713,15 @@ void pid_turn_relative_set(double target, int speed, bool slew_on = false);
 
 
 ### pid_turn_exit_condition_set()
-Sets the exit condition constants for turning. This uses the exit conditions from the PID class.  
+Set's constants for turn exit conditions.  
 
-This function can also be used without okapi units.  
-`p_small_exit_time` time, in ms, before exiting `p_small_error`  
-`p_small_error` small error threshold, assumed degrees  
-`p_big_exit_time` time, in ms, before exiting `p_big_error`  
-`p_big_error` big error threshold, assumed degrees  
-`p_velocity_exit_time` time, in ms, for velocity to be 0  
-`p_mA_timeout` time, in ms, for `is_over_current` to be true   
-`use_imu` boolean, true adds the IMU to velocity timeouts, false only uses the PID sensor.  This defaults to `true`     
+`p_small_exit_time` time to exit when within smalL_error, in ms  
+`p_small_error` small timer will start when error is within this, in degrees
+`p_big_exit_time` time to exit when within big_error, in ms
+`p_big_error` big timer will start when error is within this, in degrees
+`p_velocity_exit_time`  velocity timer will start when velocity is 0, in ms
+`p_mA_timeout` mA timer will start when the motors are pulling too much current, in ms   
+`use_imu` true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't    
 <Tabs
   groupId="pid_turn_exit_set_double"
   defaultValue="proto"
@@ -766,10 +765,10 @@ void pid_turn_exit_condition_set(int p_small_exit_time, double p_small_error, in
 ### pid_turn_constants_set()
 Set PID drive constants for turns.   
  
-`p` proportion constant  
-`i` integral constant  
-`d` derivative constant  
-`p_start_i` error needs to be within this for i to start      
+`p` proportional term   
+`i` integral term  
+`d` derivative term   
+`p_start_i` error threshold to start integral  
 <Tabs
   groupId="pid_turn_constants_set"
   defaultValue="proto"
@@ -928,9 +927,9 @@ void pid_turn_min_set(int min);
 
 
 ### pid_turn_behavior_set()
-Changes the default behavior for turning.   
+Sets the default behavior for turns in turning movements.   
 
-`behavior` the default behavior for turns.  This can be `ez::shortest`, `ez::longest`, `ez::cw`, `ez::ccw`, or `ez::raw`.     
+`behavior` ez::shortest, ez::longest, ez::left, ez::right, ez::raw        
 <Tabs
   groupId="pid_turn_behavior_set"
   defaultValue="proto"
@@ -1124,7 +1123,7 @@ int pid_turn_min_get();
 
 
 ### pid_turn_behavior_get()
-Returns the default behavior for turning.  This can be `ez::shortest`, `ez::longest`, `ez::cw`, `ez::ccw`, or `ez::raw`.    
+Returns the turn behavior for turns.   
 <Tabs
   groupId="pid_turn_behavior_get"
   defaultValue="proto"

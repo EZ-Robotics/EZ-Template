@@ -1,9 +1,7 @@
 ---
 layout: default
 title: Drive and Telemetry
-parent: Docs
 description:  ""
-nav_order: 3
 ---
 
 
@@ -53,10 +51,12 @@ void Drive::initialize();
 ## Set Drive
 
 ### drive_set()
-Sets the drive to voltage.  Sets mode to `ez::DISABLE`.  
+Sets the chassis to voltage.   
 
-`left` an integer between -127 and 127  
-`right` an integer between -127 and 127  
+Disables PID when called.     
+
+`left` voltage for left side, -127 to 127  
+`right` voltage for right side, -127 to 127  
 
 <Tabs
   groupId="drive_set"
@@ -97,10 +97,9 @@ void drive_set(int left, int right);
 
 
 ### drive_brake_set()
-Sets brake mode for all drive motors.  
+Changes the way the drive behaves when it is not under active user control.  
 
-`brake_type`  takes either `MOTOR_BRAKE_COAST`, `MOTOR_BRAKE_BRAKE`, and `MOTOR_BRAKE_HOLD` as parameters   
-
+`brake_type` the 'brake mode' of the motor e.g. 'pros::E_MOTOR_BRAKE_COAST' 'pros::E_MOTOR_BRAKE_BRAKE' 'pros::E_MOTOR_BRAKE_HOLD'   
 <Tabs
   groupId="drive_brake_set"
   defaultValue="proto"
@@ -139,10 +138,9 @@ void drive_brake_set(pros::motor_brake_mode_e_t brake_type);
 
 
 ### drive_current_limit_set()
-Sets mA limit to the drive.  Default is 2500.  
+Sets the limit for the current on the drive.  
 
-`mA` input miliamps  
-
+`mA` input in miliamps    
 <Tabs
   groupId="drive_current_limit_set"
   defaultValue="proto"
@@ -174,9 +172,11 @@ void drive_current_limit_set(int mA);
 
 
 ### drive_imu_scaler_set()
-Sets a scaler for the imu.  This number is multiplied by the imu so users can tune what a "degree" is.   
+Sets a new imu scaling factor.   
 
-`scaler`  a small double   
+This value is multiplied by the imu to change its output.     
+
+`scaler`  factor to scale the imu by   
 <Tabs
   groupId="drive_imu_scaler_set"
   defaultValue="proto"
@@ -224,8 +224,9 @@ void drive_imu_scaler_set(double scaler);
 ## Telemetry
 
 ### drive_sensor_right()
-Returns right sensor value, either integrated encoder or external encoder.   
+The position of the right sensor in inches.  
 
+If you have two parallel tracking wheels, this will return tracking wheel position.  Otherwise this returns motor position.  
 <Tabs
   groupId="drive_sensor_right"
   defaultValue="proto"
@@ -268,7 +269,7 @@ int drive_sensor_right();
 
 
 ### drive_velocity_right()
-Returns integrated encoder velocity.      
+The velocity of the right motor.      
 
 <Tabs
   groupId="drive_velocity_right"
@@ -312,8 +313,7 @@ int drive_velocity_right();
 
 
 ### drive_mA_right()
-Returns current mA being used.      
-
+The watts of the right motor.      
 <Tabs
   groupId="edrive_mA_rightx7"
   defaultValue="proto"
@@ -357,8 +357,7 @@ double drive_mA_right();
 
 
 ### drive_current_right_over()
-Returns `true` when the motor is pulling too many amps.     
-
+Return true when the motor is over current.       
 <Tabs
   groupId="drive_current_right_over"
   defaultValue="proto"
@@ -402,8 +401,9 @@ bool drive_current_right_over();
 
 
 ### drive_sensor_left()
-Returns left sensor value, either integrated encoder or external encoder.   
+The position of the left sensor in inches.   
 
+If you have two parallel tracking wheels, this will return tracking wheel position.  Otherwise this returns motor position.   
 <Tabs
   groupId="drive_sensor_left"
   defaultValue="proto"
@@ -447,8 +447,7 @@ int drive_sensor_left();
 
 
 ### drive_velocity_left()
-Returns integrated encoder velocity.      
-
+The velocity of the left motor.      
 <Tabs
   groupId="drive_velocity_left"
   defaultValue="proto"
@@ -492,8 +491,7 @@ int drive_velocity_left();
 
 
 ### drive_mA_left()
-Returns current mA being used.      
-
+The watts of the left motor.      
 <Tabs
   groupId="drive_mA_left"
   defaultValue="proto"
@@ -537,8 +535,7 @@ double drive_mA_left();
 
 
 ### drive_current_left_over()
-Returns `true` when the motor is pulling too many amps.     
-
+Return true when the motor is over current.     
 <Tabs
   groupId="drive_current_left_over"
   defaultValue="proto"
@@ -581,8 +578,7 @@ bool drive_current_left_over();
  
 
 ### drive_sensor_reset()
-Resets integrated encoders and trackers if applicable.   
-
+Reset all the chassis motors and tracking wheels, recommended to run at the start of your autonomous routine.   
 <Tabs
   groupId="drive_sensor_reset"
   defaultValue="proto"
@@ -620,8 +616,9 @@ void drive_sensor_reset();
 
 
 ### drive_imu_reset()
-Sets current gyro position to parameter, defaulted to 0.    
+Resets the current imu value.  Defaults to 0, recommended to run at the start of your autonomous routine.   
 
+`new_heading_value` new heading value
 <Tabs
   groupId="drive_imu_reset"
   defaultValue="proto"
@@ -659,8 +656,7 @@ void drive_imu_reset(double new_heading = 0);
 
 
 ### drive_imu_get()
-Gets IMU sensor, value is degrees.    
-
+Returns the current imu rotation value in degrees.    
 <Tabs
   groupId="drive_imu_get"
   defaultValue="proto"
@@ -699,8 +695,7 @@ double drive_imu_get();
 
 
 ### drive_imu_accel_get()
-Gets imu x + y acceleration.  This is (optionally) used internally as the secondary sensor for velocity exiting.  
-
+Returns the current imu accel x + accel y value.  
 <Tabs
   groupId="drive_imu_accel_get"
   defaultValue="proto"
@@ -741,8 +736,9 @@ double drive_imu_accel_get();
 
 
 ### drive_imu_calibrate()
-Calibrates IMU, and vibrates the controller after a successful calibration.      
+Calibrates the IMU, recommended to run in initialize().   
 
+`run_loading_animation` true runs the animation, false doesn't      
 <Tabs
   groupId="drive_imu_calibrate"
   defaultValue="proto"
@@ -766,7 +762,7 @@ void initialize() {
 <TabItem value="proto">
 
 ```cpp
-bool drive_imu_calibrate();
+bool drive_imu_calibrate(bool run_loading_animation = true);
 ```
 
 </TabItem>
@@ -807,7 +803,7 @@ double drive_imu_scaler_get();
 
 
 ### drive_imu_scaler_get()
-Gets the scaler for the imu.  This number is multiplied by the imu so users can tune what a "degree" is.     
+Returns the current imu scaling factor.        
 <Tabs
   groupId="drive_imu_scaler_get"
   defaultValue="proto"
@@ -845,6 +841,56 @@ void turn_example() {
 
 ```cpp
 double drive_imu_scaler_get();
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+
+ 
+
+
+### drive_imu_scaler_get()
+Checks if the imu calibrated successfully or if it took longer than expected.  
+
+Returns true if calibrated successfully, and false if unsuccessful.        
+<Tabs
+  groupId="drive_imu_scaler_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  // Print our branding over your terminal :D
+  ez::ez_template_print();
+
+  pros::delay(500);  // Stop the user from doing anything while legacy ports configure
+
+  // Initialize chassis and auton selector
+  chassis.initialize();
+  ez::as::initialize();
+  master.rumble(chassis.drive_imu_calibrated() ? "." : "---");
+}
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+bool drive_imu_calibrated();
 ```
 
 </TabItem>

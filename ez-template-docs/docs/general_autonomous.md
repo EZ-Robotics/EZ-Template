@@ -102,9 +102,9 @@ void autonomous() {
 
 
 ### pid_wait_until()
-Locks the code in place until the drive has passed the input parameter.  This uses the exit conditions from the PID class.  This only works for drive motions.             
+Lock the code in a while loop until this position has passed for driving with okapi units.               
 
-`target` the distance the robot needs to travel before unlocking the code as an okapi length unit.     
+`target` for driving and swings, using okapi units     
 <Tabs
   groupId="pid_wait_until_distance"
   defaultValue="proto"
@@ -146,9 +146,9 @@ void pid_wait_until(okapi::QLength target);
 
 
 ### pid_wait_until()
-Locks the code in place until the drive has passed the input parameter.  This uses the exit conditions from the PID class.  This only works for turn and swing motions.             
+Lock the code in a while loop until this position has passed for turning or swinging with okapi units.             
 
-`target` the distance the robot needs to travel before unlocking the code as an okapi angle unit.     
+`target` for turning, using okapi units     
 <Tabs
   groupId="pid_wait_until_angle"
   defaultValue="proto"
@@ -191,9 +191,9 @@ void pid_wait_until(okapi::QAngle target);
 
 
 ### pid_speed_max_set()
-Sets the max speed of the drive.  
+Changes max speed during a drive motion.  
 
-`speed` an integer between -127 and 127.     
+`speed` new clipped speed, between 0 and 127     
 <Tabs
   groupId="pid_speed_max_set"
   defaultValue="proto"
@@ -283,9 +283,9 @@ void drive_mode_set(e_mode p_mode);
 
 
 ### drive_rpm_set()
-Sets a new RPM for the drive.  This is can be used when a drive has a transmission.  
+Set the cartridge/wheel rpm of the robot.     
 
-`rpm` the rpm of the wheel
+`rpm` rpm of the cartridge or wheel
 <Tabs
   groupId="drive_rpm_set"
   defaultValue="proto"
@@ -326,9 +326,9 @@ void drive_rpm_set(double rpm);
 
 
 ### drive_ratio_set()
-Sets a new ratio for the drive.  This is can be used when a drive has a transmission.  This should be `wheel / motor`.  
+Set the ratio of the robot.  
 
-`ratio` the new of the drive   
+`ratio` ratio of the gears  
 <Tabs
   groupId="drive_ratio_set"
   defaultValue="proto"
@@ -370,9 +370,9 @@ void drive_ratio_set(double ratio);
 
 
 ### pid_drive_toggle()
-Enables/disables the drive from moving in autonomous.  This is useful for debugging and checking PID variables.     
+Toggles set drive in autonomous.       
 
-`toggle` true enables the drive, false disables the drive     
+`toggle` true enables, false disables       
 <Tabs
   groupId="examples14"
   defaultValue="proto"
@@ -421,9 +421,9 @@ void pid_drive_toggle(bool toggle);
 
 
 ### pid_print_toggle()
-Enables/disables the drive functions printing every drive motion.  This is useful when you're debugging something and don't want terminal cluttered.  
+Toggles printing in autonomous.  
 
-`toggle` true enables printing, false disables
+`toggle` true enables, false disables  
 <Tabs
   groupId="examples15"
   defaultValue="proto"
@@ -463,9 +463,9 @@ void pid_print_toggle(bool toggle);
 
 
 ### pid_wait_until()
-Locks the code in place until the drive has passed the input parameter.  This uses the exit conditions from the PID class.           
+Lock the code in a while loop until this position has passed for driving without okapi units.           
 
-`target` the distance the robot needs to travel before unlocking the code.  This is degrees if turning or swinging, and inches if driving.  
+`target` for driving or turning, using a double.  degrees for turns/swings, inches for driving  
 <Tabs
   groupId="pid_wait_until_double"
   defaultValue="proto"
@@ -510,9 +510,9 @@ void pid_wait_until(double target);
 
 
 ### pid_angle_behavior_set()
-Changes the default behavior for turns, swings, and odom motions.   
+Sets the default behavior for turns in odom, swinging, and turning.   
 
-`behavior` the default behavior for all motions.  This can be `ez::shortest`, `ez::longest`, `ez::cw`, `ez::ccw`, or `ez::raw`.     
+`behavior` ez::shortest, ez::longest, ez::left, ez::right, ez::raw    
 <Tabs
   groupId="pid_angle_behavior_set"
   defaultValue="proto"
@@ -561,10 +561,10 @@ void pid_angle_behavior_set(e_angle_behavior behavior);
 
 
 
-### pid_angle_behavior_tolerance_set()
-Sets a tolerance when dealing with shortest/longest angle edge cases.  If the robot is at 180 + the tolerance you set, and you're trying to go take the shortest/longest path to 0, the robot will go your decided default direction.  
+### pid_angle_behavior_tolerance_set() 
+Gives some wiggle room in shortest vs longest, so a 180.1 and 179.9 degree turns have consistent behavior.   
 
-`p_tolerance` an okapi angle unit    
+`p_tolerance` angle wiggle room, an okapi unit    
 <Tabs
   groupId="pid_angle_behavior_tolerance_set_oka"
   defaultValue="proto"
@@ -606,9 +606,9 @@ void pid_angle_behavior_tolerance_set(okapi::QAngle p_tolerance);
 
 
 ### pid_angle_behavior_tolerance_set()
-Sets a tolerance when dealing with shortest/longest angle edge cases.  If the robot is at 180 + the tolerance you set, and you're trying to go take the shortest/longest path to 0, the robot will go your decided default direction.  
+Gives some wiggle room in shortest vs longest, so a 180.1 and 179.9 degree turns have consistent behavior.  
 
-`tolerance` double, expecting degrees  
+`tolerance` angle wiggle room, in degrees  
 <Tabs
   groupId="pid_angle_behavior_tolerance_set"
   defaultValue="proto"
@@ -648,9 +648,9 @@ void pid_angle_behavior_tolerance_set(double tolerance);
 
 
 ### pid_angle_behavior_bias_set()
-Sets the default direction when dealing with shortest/longest angle edge cases.  If the robot is at 180 + the tolerance you set, and you're trying to go take the shortest/longest path to 0, the robot will go your decided default direction.   
+When a turn is within its tolerance, you can have it bias left or right.   
 
-`behavior` the default behavior when within tolerance.  This can be `ez::shortest`, `ez::longest`, `ez::cw`, `ez::ccw`, or `ez::raw`.  
+`behavior` ez::left or ez::right  
 <Tabs
   groupId="pid_angle_behavior_bias_set"
   defaultValue="proto"
@@ -787,7 +787,7 @@ double drive_tick_per_inch();
 
 
 ### drive_rpm_get()
-Returns RPM for the drive.  This is can be used when a drive has a transmission.  
+Returns the current cartridge / wheel rpm.     
 <Tabs
   groupId="drive_rpm_get"
   defaultValue="proto"
@@ -830,7 +830,7 @@ double drive_rpm_get();
 
 
 ### drive_ratio_get()
-Returns ratio for the drive.  This is can be used when a drive has a transmission.  This should be `wheel / motor`.   
+Returns the ratio of the drive.    
 <Tabs
   groupId="drive_ratio_get"
   defaultValue="proto"
@@ -872,7 +872,101 @@ double drive_ratio_get();
 </Tabs>
 
 
+### pid_angle_behavior_tolerance_get()
+Returns the wiggle room in shortest vs longest, so a 180.1 and 179.9 degree turns have consistent behavior.   
+<Tabs
+  groupId="pid_angle_behavior_tolerance_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+<TabItem value="example">
 
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.pid_angle_behavior_tolerance_set(3_deg);  // Set the behavior tolerance to 3 degrees
+  chassis.pid_angle_behavior_bias_set(ez::cw);      // When a turn is within the tolerance above, the behavior will default to this
+
+  printf("Tolerance is: %.2f\n", chassis.pid_angle_behavior_tolerance_get());  // This will print 3
+
+  chassis.odom_theta_set(-1_deg);
+
+  // Even though the fastest way here is to go counter clockwise, the robot will go clockwise 
+  chassis.pid_turn_set(180_deg, 110);
+  chassis.pid_wait();
+}
+```
+</TabItem>
+<TabItem value="proto">
+
+```cpp
+double pid_angle_behavior_tolerance_get();
+```
+</TabItem>
+</Tabs>
+
+
+
+
+
+
+
+
+
+
+
+### pid_angle_behavior_bias_get()
+Returns the behavior when a turn is within its tolerance, you can have it bias left or right.    
+<Tabs
+  groupId="pid_angle_behavior_bias_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+<TabItem value="example">
+
+```cpp
+void autonomous() {
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+
+  chassis.pid_angle_behavior_tolerance_set(3);  // Set the behavior tolerance to 3 degrees
+  chassis.pid_angle_behavior_bias_set(ez::cw);  // When a turn is within the tolerance above, the behavior will default to this
+
+  if (chassis.pid_angle_behavior_bias_get() == ez::cw) {
+    printf("Behavior bias is cw!\n");
+  } else {
+    printf("Behavior bias is not cw!\n");
+  }
+
+  chassis.odom_theta_set(-1_deg);
+
+  // Even though the fastest way here is to go counter clockwise, the robot will go clockwise 
+  chassis.pid_turn_set(180_deg, 110);
+  chassis.pid_wait();
+}
+```
+</TabItem>
+<TabItem value="proto">
+
+```cpp
+e_angle_behavior pid_angle_behavior_bias_get(e_angle_behavior);
+```
+</TabItem>
+</Tabs>
 
 
 
@@ -881,8 +975,7 @@ double drive_ratio_get();
 ## Misc.
 
 ### pid_wait()
-Locks the code in place until the drive has settled.  This uses the exit conditions from the PID class.      
-
+Lock the code in a while loop until the robot has settled.     
 <Tabs
   groupId="examples21"
   defaultValue="proto"
@@ -924,8 +1017,9 @@ void pid_wait();
 
 
 ### pid_wait_quick()
-Locks the code in place until the drive passes target.  This function exits quicker then `pid_wait()`, and is effectively using `pid_wait_until(target)`, where `target` is the most recent targe  value that was set.  If `target` is not overshot, this will use the normal exit conditions from the PID class.      
+Lock the code in a while loop until the robot has settled.   
 
+Wrapper for pid_wait_until(target), target is your previously input target.        
 <Tabs
   groupId="pid_wait_quick"
   defaultValue="proto"
@@ -967,10 +1061,11 @@ void pid_wait_quick();
 
 
 ### pid_wait_quick_chain()
-Locks the code in place until the drive passes target.  To ensure that the robot will pass the target, this function will add some amount, such as `pid_turn_chain_constant_set(3_deg);`, to target, then will act as a wrapper for `pid_wait_quick()`.  If target is not overshot, this will use the normal exit conditions from the PID class.   
+Lock the code in a while loop until the robot has settled.   
 
-Because this function adds to target, this should **not** be used as a final wait.  This should be used between motions.     
+This also adds distance to target, and then exits with pid_wait_quick.   
 
+This will exit the motion while carrying momentum into the next motion.   
 <Tabs
   groupId="pid_wait_quick_chain"
   defaultValue="proto"
@@ -1135,100 +1230,3 @@ bool interfered = false;
 
 
 
-### pid_angle_behavior_tolerance_get()
-Returns the tolerance when dealing with shortest/longest angle edge cases.  If the robot is at 180 + the tolerance you set, and you're trying to go take the shortest/longest path to 0, the robot will go your decided default direction.   
-<Tabs
-  groupId="pid_angle_behavior_tolerance_get"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-<TabItem value="example">
-
-```cpp
-void autonomous() {
-  chassis.pid_targets_reset();                // Resets PID targets to 0
-  chassis.drive_imu_reset();                  // Reset gyro position to 0
-  chassis.drive_sensor_reset();               // Reset drive sensors to 0
-  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
-  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
-
-  chassis.pid_angle_behavior_tolerance_set(3_deg);  // Set the behavior tolerance to 3 degrees
-  chassis.pid_angle_behavior_bias_set(ez::cw);      // When a turn is within the tolerance above, the behavior will default to this
-
-  printf("Tolerance is: %.2f\n", chassis.pid_angle_behavior_tolerance_get());  // This will print 3
-
-  chassis.odom_theta_set(-1_deg);
-
-  // Even though the fastest way here is to go counter clockwise, the robot will go clockwise 
-  chassis.pid_turn_set(180_deg, 110);
-  chassis.pid_wait();
-}
-```
-</TabItem>
-<TabItem value="proto">
-
-```cpp
-double pid_angle_behavior_tolerance_get();
-```
-</TabItem>
-</Tabs>
-
-
-
-
-
-
-
-
-
-
-
-### pid_angle_behavior_bias_get()
-Sets the default direction when dealing with shortest/longest angle edge cases.  If the robot is at 180 + the tolerance you set, and you're trying to go take the shortest/longest path to 0, the robot will go your decided default direction.   
-
-`behavior` the default behavior when within tolerance.  This can be `ez::shortest`, `ez::longest`, `ez::cw`, `ez::ccw`, or `ez::raw`.  
-<Tabs
-  groupId="pid_angle_behavior_bias_get"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-<TabItem value="example">
-
-```cpp
-void autonomous() {
-  chassis.pid_targets_reset();                // Resets PID targets to 0
-  chassis.drive_imu_reset();                  // Reset gyro position to 0
-  chassis.drive_sensor_reset();               // Reset drive sensors to 0
-  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
-  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
-
-  chassis.pid_angle_behavior_tolerance_set(3);  // Set the behavior tolerance to 3 degrees
-  chassis.pid_angle_behavior_bias_set(ez::cw);  // When a turn is within the tolerance above, the behavior will default to this
-
-  if (chassis.pid_angle_behavior_bias_get() == ez::cw) {
-    printf("Behavior bias is cw!\n");
-  } else {
-    printf("Behavior bias is not cw!\n");
-  }
-
-  chassis.odom_theta_set(-1_deg);
-
-  // Even though the fastest way here is to go counter clockwise, the robot will go clockwise 
-  chassis.pid_turn_set(180_deg, 110);
-  chassis.pid_wait();
-}
-```
-</TabItem>
-<TabItem value="proto">
-
-```cpp
-e_angle_behavior pid_angle_behavior_bias_get(e_angle_behavior);
-```
-</TabItem>
-</Tabs>
