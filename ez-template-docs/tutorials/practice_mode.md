@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Practice Mode 
-description: please stop flicking the joysticks
+description: please stop flicking joysticks
 ---
 
 ## What is it?
@@ -26,7 +26,7 @@ void opcontrol() {
 ```
 
 ## Disabling 
-Removing `chassis.opcontrol_joystick_practicemode_toggle(true);` to your code, or setting it to `false`, will disable practice mode.    
+Removing `chassis.opcontrol_joystick_practicemode_toggle(true);` from your code, or setting it to `false`, will disable practice mode.    
 ```cpp
 void opcontrol() {
   // This is preference to what you like to drive on

@@ -85,7 +85,7 @@ double wheel_diameter, double ticks, double ratio = 1.0);
 ## ADI Encoders in Brain
 :::warning
 
-This function is deprecated!  You can learn how to add different tracking wheel configurations [here](ez-template-docs/tutorials/tracking_wheels.md).
+This function is deprecated!  You can learn how to add different tracking wheel configurations [here](ez-template-docs/tutorials/installation.md).
 
 :::
 
@@ -158,7 +158,7 @@ std::vector<int> right_tracker_ports);
 ## ADI Encoders in Expander
 :::warning
 
-This function is deprecated!  You can learn how to add different tracking wheel configurations [here](ez-template-docs/tutorials/tracking_wheels.md).
+This function is deprecated!  You can learn how to add different tracking wheel configurations [here](ez-template-docs/tutorials/installation.md).
 
 :::
 
@@ -234,7 +234,7 @@ std::vector<int> right_tracker_ports, int expander_smart_port);
 ## Rotation Sensor 
 :::warning
 
-This function is deprecated!  You can learn how to add different tracking wheel configurations [here](ez-template-docs/tutorials/tracking_wheels.md).
+This function is deprecated!  You can learn how to add different tracking wheel configurations [here](ez-template-docs/tutorials/installation.md).
 
 :::
 
