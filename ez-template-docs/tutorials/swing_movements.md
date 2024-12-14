@@ -6,7 +6,9 @@ description: make robor arc by itself
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-These are swing turns, the robot will turn with one side of the drive.  The opposite side of the drive can be set to whatever you want, making the robot travel in an arc.  
+These are swing turns, the robot will turn with one side of the drive with PID.  The opposite side of the drive can be set to whatever you want, making the robot travel in an arc.  
+
+
 
 ## Absolute Swing Turns
 
@@ -56,7 +58,7 @@ chassis.pid_wait();
 ```
 
 ### Swing Paths
-You can set the robot to always take a specific path.  
+You can set the robot to always turn a specific direction.    
 ```cpp
 chassis.pid_swing_behavior_set(ez::shortest);
 
@@ -113,7 +115,6 @@ chassis.pid_wait();
 ```
 
 ### Arcs and Swing Paths
-
 You can use slew in conjunction with different turn behavior.  
 ```cpp
 chassis.pid_swing_behavior_set(ez::shortest);
@@ -146,7 +147,6 @@ chassis.pid_wait();
 
 
 ### Arcs, Turn Paths, and Slew
-
 You can use slew in conjunction with different turn behavior.  
 ```cpp
 chassis.pid_swing_behavior_set(ez::shortest);

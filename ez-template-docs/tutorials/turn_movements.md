@@ -6,7 +6,7 @@ description: make robor spin by itself
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-These are point turns, the robot will turn by having one side go forward and one side go backward.  
+These are point turns, the robot will turn by having one side go forward and one side go backward using PID.  
 
 
 ## Absolute Turns
@@ -28,7 +28,7 @@ chassis.pid_turn_set(0, 90);
 chassis.pid_wait();
 ```
 ### Turn Paths
-You can set the robot to always take a specific path.  
+You can set the robot to always turn a specific direction.  
 ```cpp
 chassis.pid_turn_behavior_set(ez::shortest);
 
@@ -85,7 +85,6 @@ chassis.pid_wait();
 ```
 
 ### Turn Paths and Slew
-
 You can use slew in conjunction with different turn behavior.  
 ```cpp
 chassis.pid_turn_behavior_set(ez::shortest);
