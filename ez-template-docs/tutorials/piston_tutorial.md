@@ -15,6 +15,20 @@ As of v3.1.0, example projects come with `include/subsystems.hpp`.  If you do n
 
 ## Creating the Piston
 We want to create a piston and have it accessible by `main.cpp` and `autons.cpp`.  To do this we can create the piston in `include/subsystems.hpp` with the code below.  
+
+
+
+<Tabs
+  groupId="piston_ex"
+  defaultValue="example"
+  values={[
+    { label: 'ADI Port',  value: 'example', },
+    { label: '3-wire Expander',  value: 'proto', },
+  ]
+}>
+
+<TabItem value="example">
+
 ```cpp
 #pragma once
 
@@ -28,6 +42,26 @@ ez::Piston doinker('A');
 // inline pros::Motor intake(1);
 // inline pros::adi::DigitalIn limit_switch('A');
 ```
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+#pragma once
+
+#include "EZ-Template/api.hpp"
+#include "api.h"
+
+ez::Piston doinker('A', 3);  // Creates a piston in 'A' of a 3-wire Expander in port 3
+
+// Your motors, sensors, etc. should go here.  Below are examples
+
+// inline pros::Motor intake(1);
+// inline pros::adi::DigitalIn limit_switch('A');
+```
+</TabItem>
+</Tabs>
 
 
 ## Button Control
