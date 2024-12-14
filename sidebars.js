@@ -37,9 +37,14 @@ const sidebars = {
           items: [
             'tutorials/installation',
             'tutorials/upgrading',
-            'tutorials/using_auton_selector',
-            'tutorials/autons',
-            'tutorials/example_autons',
+            'tutorials/using_autonomous_selector',
+            'tutorials/adding_autonomous_routines',
+            // 'tutorials/example_autons',
+            'tutorials/drive_movements',
+            'tutorials/turn_movements',
+            'tutorials/swing_movements',
+            'tutorials/odom_movements',
+            'tutorials/exiting_movements',
           ],
         },
 
@@ -72,11 +77,11 @@ const sidebars = {
           collapsed: true,
           collapsible: true,
           items: [
-            'tutorials/tuning_constants',
-            'tutorials/tuning_exit_conditions',
-            'tutorials/slew_constants',
-            'tutorials/imu_scaling',
-            'tutorials/wheel_diameter_tuning',
+            'tutorials/tuning_pid_constants',
+            'tutorials/tuning_exit_condition_constants',
+            'tutorials/tuning_slew_constants',
+            'tutorials/tuning_imu_scale',
+            'tutorials/tuning_wheel_diameter',
             'tutorials/tuning_tracking_wheel_width',
             // gain scheduling?
           ],
@@ -85,14 +90,14 @@ const sidebars = {
         // Subsystems
         {
           type: 'category',
-          label: 'Susbsystems',
+          label: 'Subsystems',
           link: {
             type: 'generated-index',
           },
           collapsed: true,
           collapsible: true,
           items: [
-            'tutorials/intake_control',
+            'tutorials/intake_tutorial',
             'tutorials/piston_tutorial',
             // gain scheduling?
           ],
