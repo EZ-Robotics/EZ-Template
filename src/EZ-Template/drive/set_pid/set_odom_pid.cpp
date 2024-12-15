@@ -410,7 +410,7 @@ void Drive::raw_pid_odom_ptp_set(odom imovement, bool slew_on) {
     slew_will_enable_later = true;
   }
   target = new_turn_target_compute(target, odom_imu_start, current_angle_behavior);
-  headingPID.target_set(target);
+  headingPID.target_set(flip_angle_target(target));
 
   // Set targets
   odom_target.x = imovement.target.x;
