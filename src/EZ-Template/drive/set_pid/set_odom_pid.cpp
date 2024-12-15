@@ -111,7 +111,7 @@ void Drive::pid_odom_set(double target, int speed, bool slew_on) {
   current_a_odomPID.timers_reset();
 
   if (print_toggle) printf("Injected ");
-  std::vector<odom> input_path = inject_points(set_odoms_direction({path}));
+  std::vector<odom> input_path = inject_points({path});
   odom_turn_bias_enable(false);
   current_slew_on = slew_on;
   slew_min_when_it_enabled = 0;
@@ -410,7 +410,7 @@ void Drive::raw_pid_odom_ptp_set(odom imovement, bool slew_on) {
     slew_will_enable_later = true;
   }
   target = new_turn_target_compute(target, odom_imu_start, current_angle_behavior);
-  headingPID.target_set(flip_angle_target(target));
+  headingPID.target_set(target);
 
   // Set targets
   odom_target.x = imovement.target.x;
