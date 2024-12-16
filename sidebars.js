@@ -195,9 +195,29 @@ const sidebars = {
         'docs/pid',
         'docs/slew',
         'docs/util',
-        'migration',
+
+        {
+          type: 'category',
+          label: 'Migration',
+          link: {
+            type: 'generated-index',
+          },
+          collapsed: true,
+          collapsible: true,
+          items: [
+            'migration/2.2-3.0',
+            'migration/3.1-3.2',
+          ],
+        },
+        
       ],
+      
+
+
+          
     },
+
+
 
     /*
     {
