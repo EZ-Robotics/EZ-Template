@@ -112,7 +112,7 @@ void NeutralStealPlatUp();
 ```
 
 ### Add it to the Autonomous Selector
-To add the autonomous mode to the on-screen selector, in `src/main.cpp` go to `void initialize()` and either replace an existing autonomous mode or add new pages.  [Click here](https://ez-robotics.github.io/EZ-Template/tutorials/using_auton_selector) to learn how to use the autonomous selector.    
+To add the autonomous mode to the on-screen selector, in `src/main.cpp` go to `void initialize()` and either replace an existing autonomous mode or add new pages.
 ```cpp
 void initialize() {
  // . . . 
