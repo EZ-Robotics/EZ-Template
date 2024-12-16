@@ -44,6 +44,7 @@ const sidebars = {
             'tutorials/swing_movements',
             'tutorials/odom_movements',
             'tutorials/exiting_movements',
+            'tutorials/github',
           ],
         },
 
