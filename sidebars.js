@@ -37,8 +37,7 @@ const sidebars = {
           items: [
             'tutorials/installation',
             'tutorials/upgrading',
-            'tutorials/using_autonomous_selector',
-            'tutorials/adding_autonomous_routines',
+            'tutorials/using_ez',
             // 'tutorials/example_autons',
             'tutorials/drive_movements',
             'tutorials/turn_movements',
