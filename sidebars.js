@@ -65,8 +65,6 @@ const sidebars = {
           ],
         },
 
-        'tutorials/blank_pages',
-
         // Tuning Constants
         {
           type: 'category',
@@ -134,6 +132,8 @@ const sidebars = {
         */
 
         // Remove these when above is uncommented
+        'tutorials/blank_pages',
+        'tutorials/mirror_autons',
         'tutorials/pid',
         'tutorials/pto_tutorial',
       ],
