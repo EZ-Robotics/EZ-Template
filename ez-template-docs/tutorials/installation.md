@@ -76,6 +76,13 @@ void initialize() {
 If you see a white dot at the top of your file name, this means your code is not saved!  Please save your code with `ctrl + s` on Windows or `command + s` on Mac.  Only your most recent saved code will build!
 
 :::
+
+:::tip
+
+Go to `File` -> `Auto Save` to enable automatic saving!
+
+:::
+
 First, take a micro-USB cable and connect it between your computer and the robot.  You may also connect it to the controller, but only if your controller is already linked to the robot.  If you're unsure if your controller is paired or not, [read this article](https://kb.vex.com/hc/en-us/articles/360035592532-Pairing-the-V5-Controller-with-the-V5-Brain-for-a-Wireless-Connection).  
 
 At the left of your screen, select this icon.   
