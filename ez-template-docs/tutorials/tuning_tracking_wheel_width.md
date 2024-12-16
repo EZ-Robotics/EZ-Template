@@ -16,8 +16,11 @@ tldr of what tracking wheels are should be here, the different configs, why use 
 Track width is calculated at your tracking wheel by default.  Modifying tracking wheel width offsets your "tracking center", and the goal is to get this as close to the center of rotation of your robot as possible.  
 
 Modifying width on left/right trackers will move your tracking center to the left/right.  
+ - If this isn't accurate, the robot may behave differently when moving to the right vs moving to the left
+ - The more accurate this is, the closer your autons will be after mirroring them
 
 Modifying width on front/back trackers will move your tracking center forwards and backwards.  
+- If this isn't accurate, the robot's XY position will change during turns and will make where the robot currently is unintuitive
 
 ## measure_offsets()
 As of 3.2.0, the example project ships with an autonomous routine called `measure_offsets()` that will turn the robot 10 times and calculate out what your offsets should be.    

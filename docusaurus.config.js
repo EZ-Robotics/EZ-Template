@@ -110,9 +110,20 @@ const config = {
 
 
     themeConfig:
+    
 
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
+      
+      announcementBar: {
+        id: 'new_version',
+        content:
+          '🥳 <a target="_blank" rel="noopener noreferrer" href="https://github.com/EZ-Robotics/EZ-Template/releases/tag/v3.2.0">EZ-Template v3.2.0</a> is out! 🥳',
+        backgroundColor: '#FDFD96',
+        textColor: '#000000',
+        isCloseable: true,
+      },
+
       colorMode: {
         defaultMode: 'dark',
         disableSwitch: true,

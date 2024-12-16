@@ -6,18 +6,40 @@ description: make robor arc by itself
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-These are swing turns, the robot will turn with one side of the drive with PID.  The opposite side of the drive can be set to whatever you want, making the robot travel in an arc.  
+`pid_swing_set()` has many ways of calling it with many default values you can configure and override in specific motions.  
 
 
+## How does it work?
+`pid_swing_set()` turns the robot by moving one side of the drive with PID and the other side to a fixed amount.  This is called a swing turn because the robot "swings" around a point.  
+
+Clockwise is positive and counter-clockwise is negative by default:
+- going to 90 degree is clockwise
+- going to -90 degrees is counter-clockwise 
+
+<!---
+IMAGE
+
+maybe the above bullet point becomes an image?
+-->
+
+PID is an algorithm that tries to damp momentum.  PID is very good at dampening a consistent amount of momentum, but every angle a robot turns to produces a pretty different amount of momentum.  EZ-Template tries to help this by having a `kI` set in the default constants, but what EZ-Template takes this a step further.  If there is a `kI` set, and there is a `start_i` set, and the turn distance is larger than `start_i`, the robot will limit its max speed once it's within `start_i`.  This helps dampen excess momentum on larger turns.  
+
+In EZ-Template, you decide what side of the drive you'd like to move the robot to the desired target.  You can also decide at what speed the opposite side of the drives moves at.  
+
+By default this is 0.  When that side if set to not move, it will use your drive PID constants to lock itself in place and ensure it stays still.  You can also set this to any number between -127 and 127.  By setting this you change the size of the arc that the robot takes to get to your target angle.  
 
 ## Absolute Swing Turns
-
-`pid_swing_set()` has many ways of calling it with many default values you can configure and override in specific motions.   
-
 All of the normal swing turn functions use absolute heading.  This means turning to 0 degrees will always turn to face the direction the robot initially started in.  
 
-### Simplest Swing
+<!---
+IMAGE
 
+maybe some images get added here that showcase absolute angle:
+- one that is like a compass with a robot in the center, just showing all the degrees around the robot.  it would be cool if this image could show that 90 and -270 are the same thing
+- the same image with the robot rotated, so it can be explained that where the robot currently is doesn't matter for this function
+-->
+
+### Simplest Swing
 At minimum, you need to give the robot an angle to go to and a speed limit (0-127).  You can do this with and without okapi units.  
 ```cpp
 // Turn to 45deg with the left side of the drive
@@ -130,7 +152,6 @@ chassis.pid_wait();
 ```
 
 ### Arcs and Slew
-
 You can use slew in conjunction with different turn behavior.  
 ```cpp
 chassis.slew_swing_set(false);  // Enables global slew
@@ -175,6 +196,14 @@ chassis.pid_wait();
 All of the syntax for absolute swing turns above applies to relative turns, use `pid_swing_relative_set()` instead.  
 
 "Relative" means the robot will swing turn X degrees relative to where it is before it starts the swing turn.  The two code blocks below do the same thing.  
+
+<!---
+IMAGE
+
+maybe some images get added here that showcase relative angle:
+- one that is like a compass with a robot in the center, just showing all the degrees around the robot.  it would be cool if this image could show that 90 and -270 are the same thing
+- the same image with the robot rotated, so it can be explained that where the robot currently is does matter for this function
+-->
 
 :::note
 

@@ -4,19 +4,37 @@ title: Turn Movements
 description: make robor spin by itself
 ---
 import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-
-These are point turns, the robot will turn by having one side go forward and one side go backward using PID.  
-
-
-## Absolute Turns
+import TabItem from '@theme/TabItem'; 
 
 `pid_turn_set()` has many ways of calling it with many default values you can configure and override in specific motions.   
 
+## How does it work?
+`pid_turn_set()` turns the robot by moving one side of the drive forward and one side backwards with PID.  This is called a point turn because the robot turns "on a point".  
+
+Clockwise is positive and counter-clockwise is negative by default:
+- going to 90 degree is clockwise
+- going to -90 degrees is counter-clockwise  
+
+<!---
+IMAGE
+
+maybe the above bullet point becomes an image?
+-->
+
+PID is an algorithm that tries to damp momentum.  PID is very good at dampening a consistent amount of momentum, but every angle a robot turns to produces a pretty different amount of momentum.  EZ-Template tries to help this by having a `kI` set in the default constants, but what EZ-Template takes this a step further.  If there is a `kI` set, and there is a `start_i` set, and the turn distance is larger than `start_i`, the robot will limit its max speed once it's within `start_i`.  This helps dampen excess momentum on larger turns.  
+
+## Absolute Turns
 All of the normal turn functions use absolute heading.  This means turning to 0 degrees will always turn to face the direction the robot initially started in.  
 
-### Simplest Turn
+<!---
+IMAGE
 
+maybe some images get added here that showcase absolute angle:
+- one that is like a compass with a robot in the center, just showing all the degrees around the robot.  it would be cool if this image could show that 90 and -270 are the same thing
+- the same image with the robot rotated, so it can be explained that where the robot currently is doesn't matter for this function
+-->
+
+### Simplest Turn
 At minimum, you need to give the robot an angle to go to and a speed limit (0-127).  You can do this with and without okapi units.  
 ```cpp
 // Turn to 45deg
@@ -110,6 +128,14 @@ chassis.pid_wait();
 All of the syntax for absolute turns above applies to relative turns, use `pid_turn_relative_set()` instead.  
 
 "Relative" means the robot will turn X degrees relative to where it is before it starts the turn.  The two code blocks below do the same thing.  
+
+<!---
+IMAGE
+
+maybe some images get added here that showcase relative angle:
+- one that is like a compass with a robot in the center, just showing all the degrees around the robot.  it would be cool if this image could show that 90 and -270 are the same thing
+- the same image with the robot rotated, so it can be explained that where the robot currently is does matter for this function
+-->
 
 :::note
 
@@ -278,7 +304,7 @@ chassis.pid_wait();
 </Tabs>
 
 
-In order to make the Tuned auton below do the same thing as the Tuned auton above, an additional line of code is needs modifying.  This isn't a huge deal, but I don't want to add another thing to remember to do while tuning an autonomous under the stress of a tournament.  
+In order to make the Tuned auton below do the same thing as the Tuned auton above, an additional line of code needs modifying.  This isn't a huge deal, but I don't want to add another thing to remember to do while tuning an autonomous under the stress of a tournament.  
 <Tabs
   groupId="turn_absolute_vs_relative_ex4"
   defaultValue="example"
@@ -359,24 +385,4 @@ chassis.pid_wait();
 
 
 ## Turn to Point
-
-At minimum, you need to give the robot a point to face, if it's facing it forward or backward, and a speed limit.  You can do this with and without okapi units.  
-```cpp
-// Turn to face 12, 12 forward
-chassis.pid_turn_set({24, 24}, fwd,  90);
-chassis.pid_wait();
-
-// Turn to 0, 24 forward
-chassis.pid_turn_set({0_in, 24_in}, fwd, 90);
-chassis.pid_wait();
-
-// Turn to face 12, 12 backward
-chassis.pid_turn_set({24, 24}, rev,  90);
-chassis.pid_wait();
-
-// Turn to 0, 24 backward
-chassis.pid_turn_set({0_in, 24_in}, rev, 90);
-chassis.pid_wait();
-```
-
-Beyond this, all of the syntax for absolute turns applies to turning to a point, just give a point and a direction before speed.  
+This function uses odometry to face a target point.  You can view how it works [here](/tutorials/odom_movements).

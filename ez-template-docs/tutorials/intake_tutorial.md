@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Intake Control
-description: taking in control, but sometimes out...
+description: taking in control, but sometimes out
 ---
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
@@ -58,7 +58,6 @@ inline pros::MotorGroup intake({10, -11});  // Negative port will reverse the m
 ```
 </TabItem>
 </Tabs>
-
 
 ## Button Control
 To move a motor we type 
