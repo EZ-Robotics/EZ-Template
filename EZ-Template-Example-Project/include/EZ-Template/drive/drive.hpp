@@ -1153,7 +1153,7 @@ class Drive {
 
   /**
    * Adds/removes motors from drive.
-   * 
+   *
    * You cannot add the first index because it's used for autonomous.
    *
    * \param pto_list
@@ -2069,6 +2069,8 @@ class Drive {
    *        target value as a double, unit is degrees
    * \param speed
    *        0 to 127, max speed during motion
+   * \param behavior
+   *        changes what direction the robot will turn.  can be left, right, shortest, longest, raw
    */
   void pid_swing_set(e_swing type, double target, int speed, e_angle_behavior behavior);
 
@@ -2081,6 +2083,8 @@ class Drive {
    *        target value as a double, unit is degrees
    * \param speed
    *        0 to 127, max speed during motion
+   * \param slew_on
+   *        ramp up from a lower speed to your target speed
    */
   void pid_swing_set(e_swing type, double target, int speed, bool slew_on);
 
@@ -2093,6 +2097,8 @@ class Drive {
    *        target value as a double, unit is degrees
    * \param speed
    *        0 to 127, max speed during motion
+   * \param slew_on
+   *        ramp up from a lower speed to your target speed
    */
   void pid_swing_set(e_swing type, double target, int speed, e_angle_behavior behavior, bool slew_on);
 
@@ -2135,6 +2141,8 @@ class Drive {
    *        0 to 127, max speed during motion
    * \param opposite_speed
    *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
+   * \param slew_on
+   *        ramp up from a lower speed to your target speed
    */
   void pid_swing_set(e_swing type, double target, int speed, int opposite_speed, bool slew_on);
 
@@ -2149,6 +2157,10 @@ class Drive {
    *        0 to 127, max speed during motion
    * \param opposite_speed
    *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
+   * \param behavior
+   *        changes what direction the robot will turn.  can be left, right, shortest, longest, raw
+   * \param slew_on
+   *        ramp up from a lower speed to your target speed
    */
   void pid_swing_set(e_swing type, double target, int speed, int opposite_speed, e_angle_behavior behavior, bool slew_on);
 
@@ -2161,8 +2173,6 @@ class Drive {
    *        target value in okapi angle units
    * \param speed
    *        0 to 127, max speed during motion
-   * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
    */
   void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed);
 
@@ -2175,8 +2185,8 @@ class Drive {
    *        target value in okapi angle units
    * \param speed
    *        0 to 127, max speed during motion
-   * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
+   * \param behavior
+   *        changes what direction the robot will turn.  can be left, right, shortest, longest, raw
    */
   void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, e_angle_behavior behavior);
 
@@ -2189,6 +2199,8 @@ class Drive {
    *        target value in okapi angle units
    * \param speed
    *        0 to 127, max speed during motion
+   * \param slew_on
+   *        ramp up from a lower speed to your target speed
    */
   void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, bool slew_on);
 
@@ -2201,6 +2213,10 @@ class Drive {
    *        target value in okapi angle units
    * \param speed
    *        0 to 127, max speed during motion
+   * \param behavior
+   *        changes what direction the robot will turn.  can be left, right, shortest, longest, raw
+   * \param slew_on
+   *        ramp up from a lower speed to your target speed
    */
   void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, e_angle_behavior behavior, bool slew_on);
 
@@ -2229,6 +2245,8 @@ class Drive {
    *        0 to 127, max speed during motion
    * \param opposite_speed
    *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
+   * \param behavior
+   *        changes what direction the robot will turn.  can be left, right, shortest, longest, raw
    */
   void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed, e_angle_behavior behavior);
 
@@ -2243,6 +2261,8 @@ class Drive {
    *        0 to 127, max speed during motion
    * \param opposite_speed
    *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
+   * \param slew_on
+   *        ramp up from a lower speed to your target speed
    */
   void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed, bool slew_on);
 
@@ -2257,6 +2277,10 @@ class Drive {
    *        0 to 127, max speed during motion
    * \param opposite_speed
    *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
+   * \param behavior
+   *        changes what direction the robot will turn.  can be left, right, shortest, longest, raw
+   * \param slew_on
+   *        ramp up from a lower speed to your target speed
    */
   void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed, e_angle_behavior behavior, bool slew_on);
 
@@ -2617,7 +2641,7 @@ class Drive {
    * Changes max speed during a drive motion.
    *
    * \param speed
-   *        new clipped speed, between 0 and 127     
+   *        new clipped speed, between 0 and 127
    */
   void pid_speed_max_set(int speed);
 
@@ -3228,7 +3252,7 @@ class Drive {
 
   /**
    * Checks if PID Tuner is enabled.
-   * 
+   *
    * True is enabled, false is disabled.
    */
   bool pid_tuner_enabled();
