@@ -1,8 +1,10 @@
 ---
+layout: default
 title: Practice Mode 
-description: How to use Practice Mode to improve your driving
+description: please stop flicking joysticks
 ---
 
+## What is it?
 The best drivers are able to use the entire range of the joystick to its fullest extent.  New drivers like to treat the joysticks as binary.  Practice mode is here to help train binary joystick users by shutting the entire drive off when the joystick is maxed out.  
 
 ## Enabling
@@ -14,6 +16,7 @@ void opcontrol() {
   
   // Enable practice mode
   chassis.opcontrol_joystick_practicemode_toggle(true);
+
   while (true) {
     chassis.opcontrol_tank(); // Tank control
 
@@ -23,7 +26,7 @@ void opcontrol() {
 ```
 
 ## Disabling 
-Removing `chassis.opcontrol_joystick_practicemode_toggle(true);` to your code, or setting it to `false`, will disable practice mode.    
+Removing `chassis.opcontrol_joystick_practicemode_toggle(true);` from your code, or setting it to `false`, will disable practice mode.    
 ```cpp
 void opcontrol() {
   // This is preference to what you like to drive on
@@ -31,6 +34,7 @@ void opcontrol() {
   
   // Disable practice mode
   chassis.opcontrol_joystick_practicemode_toggle(false);
+
   while (true) {
     chassis.opcontrol_tank(); // Tank control
 

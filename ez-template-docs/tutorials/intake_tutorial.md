@@ -1,6 +1,7 @@
 ---
+layout: default
 title: Intake Control
-description: Example implementation of intake control
+description: taking in control, but sometimes out
 ---
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
@@ -27,6 +28,7 @@ We want to create a motor and have it accessible by `main.cpp` and `autons.cpp`.
 ```cpp
 #pragma once
 
+#include "EZ-Template/api.hpp"
 #include "api.h"
 
 inline pros::Motor intake(10);  // Make this number negative if you want to reverse the motor
@@ -44,6 +46,7 @@ inline pros::Motor intake(10);  // Make this number negative if you want to rev
 ```cpp
 #pragma once
 
+#include "EZ-Template/api.hpp"
 #include "api.h"
 
 inline pros::MotorGroup intake({10, -11});  // Negative port will reverse the motor
@@ -56,9 +59,16 @@ inline pros::MotorGroup intake({10, -11});  // Negative port will reverse the m
 </TabItem>
 </Tabs>
 
-
 ## Button Control
-To move a motor we type `motor name.move(a number between -127 and 127);`.  So to make the intake spin at full speed forward, we would type `intake.move(127);`.
+To move a motor we type 
+```cpp
+motor name.move(a number between -127 and 127);
+```
+
+So to make the intake spin at full speed forward, we would type 
+```cpp
+intake.move(127);
+```
 
 EZ-Template has a controller object already made for you that you can access with `master`.  You can read controller inputs with `master.get_digital(DIGITAL_button)`.  With an if/else statement, we can have the intake go full speed forward when L1 is pressed, and go full speed backward when L2 is pressed.  When neither button is pressed the intake will stop moving.  
 ```cpp
@@ -77,29 +87,11 @@ Adding this into the default `opcontrol()` function looks like this.
 ```cpp
 void opcontrol() {
   // This is preference to what you like to drive on
-  pros::motor_brake_mode_e_t driver_preference_brake = MOTOR_BRAKE_COAST;
-
-  chassis.drive_brake_set(driver_preference_brake);
+  chassis.drive_brake_set(MOTOR_BRAKE_COAST);
 
   while (true) {
-    // PID Tuner
-    // After you find values that you're happy with, you'll have to set them in auton.cpp
-    if (!pros::competition::is_connected()) {
-      // Enable / Disable PID Tuner
-      //  When enabled:
-      //  * use A and Y to increment / decrement the constants
-      //  * use the arrow keys to navigate the constants
-      if (master.get_digital_new_press(DIGITAL_X))
-        chassis.pid_tuner_toggle();
-
-      // Trigger the selected autonomous routine
-      if (master.get_digital(DIGITAL_B) && master.get_digital(DIGITAL_DOWN)) {
-        autonomous();
-        chassis.drive_brake_set(driver_preference_brake);
-      }
-
-      chassis.pid_tuner_iterate();  // Allow PID Tuner to iterate
-    }
+    // Gives you some extras to make EZ-Template ezier
+    ez_template_extras();
 
     chassis.opcontrol_tank();  // Tank control
     // chassis.opcontrol_arcade_standard(ez::SPLIT);   // Standard split arcade
@@ -110,16 +102,16 @@ void opcontrol() {
     // . . .
     // Put more user control code here!
     // . . .
-
+    
     if (master.get_digital(DIGITAL_L1)) {
       intake.move(127);
-    } 
-    else if (master.get_digital(DIGITAL_L2)) {
+    } 
+    else if (master.get_digital(DIGITAL_L2)) {
       intake.move(-127);
-    } 
-    else {
+    } 
+    else {
       intake.move(0);
-    }
+    }
 
     pros::delay(ez::util::DELAY_TIME);  // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
   }
@@ -127,7 +119,9 @@ void opcontrol() {
 ```
 
 ## Using it in Autonomous
-Now that the motor is created in `subsystems.hpp` we can access it in our autonomous routines.  It's used the same, where we'll set `intake` equal to something throughout our run.   In the example below, the robot will start to intake after driving 6" and will stop once it's driven 24".  The intake will not spin again until it starts to come back and will outtake until it's back where it started.  
+Because the motor is created in `subsystmes.hpp`, we can access is in autonomous exactly the same way!  
+
+In the example below, the robot will start to intake after driving 6" and will stop once it's driven 24".  The intake will not spin again until it starts to come back and will outtake until it's back where it started.  
 ```cpp
 void intake_autonomous() {
   chassis.pid_drive_set(24_in, DRIVE_SPEED, true);

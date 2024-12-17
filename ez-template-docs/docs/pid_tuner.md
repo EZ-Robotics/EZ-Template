@@ -1,9 +1,7 @@
 ---
 layout: default
 title: PID Tuner
-parent: Docs
-description:  ""
-nav_order: 4
+description:  tuning pid live :O
 ---
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
@@ -15,7 +13,6 @@ import TabItem from '@theme/TabItem';
 
 ### pid_tuner_enable()
 Enables PID Tuner.  
-
 <Tabs
   groupId="pid_tuner_enable"
   defaultValue="proto"
@@ -67,7 +64,6 @@ void pid_tuner_enable();
 
 ### pid_tuner_disable()
 Disables PID Tuner.  
-
 <Tabs
   groupId="pid_tuner_disbale"
   defaultValue="proto"
@@ -121,8 +117,7 @@ void pid_tuner_disable();
 
 
 ### pid_tuner_toggle()
-Toggles PID Tuner.  If it's enabled, it will disable.  If it's disabled, it will enable.
-
+Toggles PID tuner between enabled and disables.  
 <Tabs
   groupId="pid_tuner_toggle"
   defaultValue="proto"
@@ -177,8 +172,7 @@ void pid_tuner_toggle();
 
 
 ### pid_tuner_iterate()
-Iterates through PID Tuner to allow gui navigation and constant changing.  
-
+Iterates through controller inputs to modify PID constants.     
 <Tabs
   groupId="pid_tuner_iterate"
   defaultValue="proto"
@@ -233,9 +227,9 @@ void pid_tuner_iterate();
 
 
 ### pid_tuner_print_brain_set()
-Enables or disables the PID Tuner from printing to the brain screen.  To use the PID Tuner, this or `pid_tuner_print_terminal_set()` must be set to true.  
+Toggle for printing the display of the PID Tuner to the brain.    
 
-`input` true enables printing to brain, false disables. 
+`input` true prints to brain, false doesn't  
 <Tabs
   groupId="pid_tuner_print_brain_set"
   defaultValue="proto"
@@ -292,9 +286,9 @@ void pid_tuner_print_brain_set(bool input);
 
 
 ### pid_tuner_print_terminal_set()
-Enables or disables the PID Tuner from printing to the terminal.  To use the PID Tuner, this or `pid_tuner_print_brain_set()` must be set to true.  
+Toggle for printing the display of the PID Tuner to the terminal.    
 
-`input` true enables printing to terminal, false disables. 
+`input` true prints to terminal, false doesn't
 <Tabs
   groupId="pid_tuner_print_terminal_set"
   defaultValue="proto"
@@ -351,9 +345,9 @@ void pid_tuner_print_terminal_set(bool input);
 
 
 ### pid_tuner_increment_p_set()
-Sets the amount that P will change when increasing or decreasing it.
+Sets the value that PID Tuner increments P.
 
-`p` new value to increment and decrement by.
+`p` p will increase by this
 <Tabs
   groupId="set_p_increment"
   defaultValue="proto"
@@ -409,9 +403,9 @@ void pid_tuner_increment_p_set(double p);
 
 
 ### pid_tuner_increment_i_set()
-Sets the amount that I will change when increasing or decreasing it.
+Sets the value that PID Tuner increments I.
 
-`i` new value to increment and decrement by.
+`i` i will increase by this
 <Tabs
   groupId="set_i_increment"
   defaultValue="proto"
@@ -467,9 +461,9 @@ void pid_tuner_increment_i_set(double i);
 
 
 ### pid_tuner_increment_d_set()
-Sets the amount that D will change when increasing or decreasing it.
+Sets the value that PID Tuner increments D.
 
-`d` new value to increment and decrement by.
+`d` d will increase by this
 <Tabs
   groupId="set_d_increment"
   defaultValue="proto"
@@ -525,9 +519,9 @@ void pid_tuner_increment_d_set(double d);
 
 
 ### pid_tuner_increment_start_i_set()
-Sets the amount that Start I will change when increasing or decreasing it.
+Sets the value that PID Tuner increments Start I.
 
-`start_i` new value to increment and decrement by.
+`start_i` start i will increase by this
 <Tabs
   groupId="set_starti_increment"
   defaultValue="proto"
@@ -591,8 +585,9 @@ void pid_tuner_increment_start_i_set(double start_i);
 ## Getter Functions 
 
 ### pid_tuner_enabled()
-Returns the state of the PID Tuner.  True is enabled, false is disabled. 
+Checks if PID Tuner is enabled.  
 
+True is enabled, false is disabled.   
 <Tabs
   groupId="pid_tuner_enabled"
   defaultValue="proto"
@@ -652,8 +647,7 @@ bool pid_tuner_enabled();
 
 
 ### pid_tuner_print_terminal_enabled()
-Returns the state of printing the PID Tuner to terminal.  True is enabled, false is disabled. 
-
+Returns true if printing to terminal is enabled.   
 <Tabs
   groupId="pid_tuner_print_terminal_enabled"
   defaultValue="proto"
@@ -714,8 +708,7 @@ bool pid_tuner_print_terminal_enabled();
 
 
 ### pid_tuner_print_brain_enabled()
-Returns the state of printing the PID Tuner to the brain.  True is enabled, false is disabled. 
-
+Returns true if printing to brain is enabled.  
 <Tabs
   groupId="pid_tuner_print_brain_enabled"
   defaultValue="proto"
@@ -777,8 +770,7 @@ bool pid_tuner_print_brain_enabled();
 
 
 ### pid_tuner_increment_p_get()
-Returns the amount that P will change when increasing or decreasing it.
-
+Returns the value that PID Tuner increments P.  
 <Tabs
   groupId="get_p_increment"
   defaultValue="proto"
@@ -835,8 +827,7 @@ double pid_tuner_increment_p_set();
 
 
 ### pid_tuner_increment_i_set()
-Gets the amount that I will change when increasing or decreasing it.
-
+Returns the value that PID Tuner increments I.  
 <Tabs
   groupId="get_i_increment"
   defaultValue="proto"
@@ -893,8 +884,7 @@ double pid_tuner_increment_i_set();
 
 
 ### pid_tuner_increment_d_set()
-Gets the amount that D will change when increasing or decreasing it.
-
+Returns the value that PID Tuner increments D.  
 <Tabs
   groupId="get_d_increment"
   defaultValue="proto"
@@ -951,8 +941,7 @@ double pid_tuner_increment_d_set();
 
 
 ### pid_tuner_increment_start_i_set()
-Gets the amount that Start I will change when increasing or decreasing it.
-
+Returns the value that PID Tuner increments Start I.  
 <Tabs
   groupId="get_starti_increment"
   defaultValue="proto"

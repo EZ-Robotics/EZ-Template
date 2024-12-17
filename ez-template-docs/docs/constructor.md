@@ -1,9 +1,7 @@
 ---
 layout: default
 title: Drive Constructors
-parent: Docs
-description:  ""
-nav_order: 1
+description: make the drive
 ---
 
 import Tabs from '@theme/Tabs';
@@ -13,12 +11,12 @@ import TabItem from '@theme/TabItem';
 ## Integrated Encoders
 This is the standard setup that uses built in motor encoders.    
 
-`left_motor_ports` a vector of left motor ports, negative reverses the port.  first motor is used for sensing   
-`right_motor_ports` a vector of right motor ports, negative reverses the port.  first motor is used for sensing   
-`imu_port` the port an imu is in   
-`wheel_diameter` diameter of your drive wheel   
-`ticks` cartridge rpm   
-`ratio` external ratio of your drive.  should be wheel gear / motor gear.  this is defaulted to 1.0   
+`left_motor_ports` input `{1, -2...}`. make ports negative if reversed      
+`right_motor_ports` input `{-3, 4...}`. make ports negative if reversed         
+`imu_port` port the IMU is plugged into       
+`wheel_diameter` diameter of your drive wheels      
+`ticks` motor cartridge RPM   
+`ratio` external gear ratio, wheel gear / motor gear       
 <Tabs
   groupId="ex1"
   defaultValue="proto"
@@ -34,12 +32,12 @@ This is the standard setup that uses built in motor encoders.
  ```cpp
 ez::Drive chassis(
     // These are your drive motors, the first motor is used for sensing!
-    {1, 2, 3},     // Left Chassis Ports (negative port will reverse it!)
-    {-4, -5, -6},  // Right Chassis Ports (negative port will reverse it!)
+    {-5, -6, -7, -8},  // Left Chassis Ports (negative port will reverse it!)
+    {11, 15, 16, 17},  // Right Chassis Ports (negative port will reverse it!)
 
-    7,      // IMU Port
-    4.125,  // Wheel Diameter (Remember, 4" wheels without screw holes are actually 4.125!)
-    343);   // Wheel RPM
+    21,      // IMU Port
+    4.125,   // Wheel Diameter (Remember, 4" wheels without screw holes are actually 4.125!)
+    420.0);  // Wheel RPM = cartridge * (motor gear / wheel gear)
 ```
 
 </TabItem>
@@ -60,7 +58,7 @@ ez::Drive chassis(
     // External Gear Ratio (MUST BE DECIMAL) This is WHEEL GEAR / MOTOR GEAR
     // eg. if your drive is 84:36 where the 36t is powered, your RATIO would be 84/36 which is 2.333
     // eg. if your drive is 36:60 where the 60t is powered, your RATIO would be 36/60 which is 0.6
-    1.43);
+    2.333);
 ```
 
 </TabItem>
@@ -70,7 +68,7 @@ ez::Drive chassis(
 
 ```cpp
 Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, 
-double wheel_diameter, double ticks, double ratio);
+double wheel_diameter, double ticks, double ratio = 1.0);
 ```
 
 </TabItem>
@@ -85,16 +83,26 @@ double wheel_diameter, double ticks, double ratio);
 
 
 ## ADI Encoders in Brain
-Only supports parallel trackers.   
+:::warning
 
-`left_motor_ports` a vector of left motor ports, negative reverses the port   
-`right_motor_ports` a vector of right motor ports, negative reverses the port   
-`imu_port` the port an imu is in   
-`wheel_diameter` diameter of your tracking wheel   
-`ticks` ticks per rotation of your sensor.  360 if using ADI quadrature encoders   
-`ratio` external ratio of your tracking wheel.  should be wheel gear / motor gear   
-`left_tracker_ports` vector of left tracker ports, negative will reverse the encoder   
-`right_tracker_ports` vector of right tracker ports, negative will reverse the encoder   
+This function is deprecated!  You can learn how to add different tracking wheel configurations [here](ez-template-docs/tutorials/installation.md).
+
+:::
+
+:::note
+
+This only support two parallel trackers that are equidistant from the center of the robot.  
+
+:::
+
+`left_motor_ports` input `{1, -2...}`. make ports negative if reversed      
+`right_motor_ports` input `{-3, 4...}`. make ports negative if reversed         
+`imu_port` port the IMU is plugged into       
+`wheel_diameter` diameter of your sensored wheel       
+`ticks` ticks per revolution of your encoder   
+`ratio` external gear ratio, wheel gear / sensor gear      
+`left_tracker_ports` input `{1, 2}`. make ports negative if reversed      
+`right_tracker_ports` input `{3, 4}`. make ports negative if reversed      
 <Tabs
   groupId="ex2"
   defaultValue="proto"
@@ -114,12 +122,12 @@ ez::Drive chassis(
 
     7,      // IMU Port
     4.125,  // Wheel Diameter (Remember, 4" wheels without screw holes are actually 4.125!)
-    360,    // Ticks per Rotation of Encoder
+    360,    // Ticks Per Rotation of your encoder.  This is 360 for the red encoders
 
     // External Gear Ratio (MUST BE DECIMAL) This is WHEEL GEAR / SENSOR GEAR
     // eg. if your drive is 84:36 where the 36t is sensored, your RATIO would be 84/36 which is 2.333
     // eg. if your drive is 36:60 where the 60t is sensored, your RATIO would be 36/60 which is 0.6
-    1,
+    1.0,
 
     {1, 2},     // Left Tracking Wheel Ports (negative port will reverse it!)
     {-3, -4});  // Right Tracking Wheel Ports (negative port will reverse it!)
@@ -148,17 +156,27 @@ std::vector<int> right_tracker_ports);
 
 
 ## ADI Encoders in Expander
-Only supports parallel trackers.     
+:::warning
 
-`left_motor_ports` a vector of left motor ports, negative reverses the port   
-`right_motor_ports` a vector of right motor ports, negative reverses the port   
-`imu_port` the port an imu is in   
-`wheel_diameter` diameter of your tracking wheel   
-`ticks` ticks per rotation of your sensor.  360 if using ADI quadrature encoders   
-`ratio` external ratio of your tracking wheel.  should be wheel gear / motor gear   
-`left_tracker_ports` vector of left tracker ports, negative will reverse the encoder   
-`right_tracker_ports` vector of right tracker ports, negative will reverse the encoder   
-`expander_smart_port` port of the 3 wire expander
+This function is deprecated!  You can learn how to add different tracking wheel configurations [here](ez-template-docs/tutorials/installation.md).
+
+:::
+
+:::note
+
+This only support two parallel trackers that are equidistant from the center of the robot.  
+
+:::
+
+`left_motor_ports` input `{1, -2...}`. make ports negative if reversed      
+`right_motor_ports` input `{-3, 4...}`. make ports negative if reversed         
+`imu_port` port the IMU is plugged into       
+`wheel_diameter` diameter of your sensored wheel       
+`ticks` ticks per revolution of your encoder   
+`ratio` external gear ratio, wheel gear / sensor gear      
+`left_tracker_ports` input `{1, 2}`. make ports negative if reversed      
+`right_tracker_ports` input `{3, 4}`. make ports negative if reversed     
+`expander_smart_port` port the expander is plugged into   
 <Tabs
   groupId="ex3"
   defaultValue="proto"
@@ -178,13 +196,12 @@ ez::Drive chassis(
 
     7,      // IMU Port
     4.125,  // Wheel Diameter (Remember, 4" wheels without screw holes are actually 4.125!)
-    360,    // Ticks per Rotation of Encoder
+    360,    // Ticks Per Rotation of your encoder.  This is 360 for the red encoders
 
     // External Gear Ratio (MUST BE DECIMAL) This is WHEEL GEAR / SENSOR GEAR
     // eg. if your drive is 84:36 where the 36t is sensored, your RATIO would be 84/36 which is 2.333
     // eg. if your drive is 36:60 where the 60t is sensored, your RATIO would be 36/60 which is 0.6
-
-    1,
+    1.0,
 
     {1, 2},    // Left Tracking Wheel Ports (negative port will reverse it!)
     {-3, -4},  // Right Tracking Wheel Ports (negative port will reverse it!)
@@ -215,16 +232,25 @@ std::vector<int> right_tracker_ports, int expander_smart_port);
 
 
 ## Rotation Sensor 
-Only supports parallel trackers.     
+:::warning
 
-`left_motor_ports` a vector of left motor ports, negative reverses the port   
-`right_motor_ports` a vector of right motor ports, negative reverses the port   
-`imu_port` the port an imu is in   
-`wheel_diameter` diameter of your tracking wheel   
-`ticks` ticks per rotation of your sensor.  360 if using ADI quadrature encoders   
-`ratio` external ratio of your tracking wheel.  should be wheel gear / motor gear   
-`left_rotation_port` port for left rotation sensor, negative reverses the port    
-`right_rotation_port` port for right rotation sensor, negative reverses the port    
+This function is deprecated!  You can learn how to add different tracking wheel configurations [here](ez-template-docs/tutorials/installation.md).
+
+:::
+
+:::note
+
+This only support two parallel trackers that are equidistant from the center of the robot.  
+
+:::
+
+`left_motor_ports` input `{1, -2...}`. make ports negative if reversed      
+`right_motor_ports` input `{-3, 4...}`. make ports negative if reversed         
+`imu_port` port the IMU is plugged into       
+`wheel_diameter` diameter of your sensored wheel       
+`ratio` external gear ratio, wheel gear / sensor gear      
+`left_rotation_port` make ports negative if reversed       
+`right_rotation_port` make ports negative if reversed        
 <Tabs
   groupId="ex4"
   defaultValue="proto"
@@ -248,7 +274,7 @@ ez::Drive chassis(
     // External Gear Ratio (MUST BE DECIMAL) This is WHEEL GEAR / SENSOR GEAR
     // eg. if your drive is 84:36 where the 36t is sensored, your RATIO would be 84/36 which is 2.333
     // eg. if your drive is 36:60 where the 60t is sensored, your RATIO would be 36/60 which is 0.6
-    1,
+    11.0,
 
     8,    // Left Rotation Port (negative port will reverse it!)
     -9);  // Right Rotation Port (negative port will reverse it!)

@@ -1,6 +1,7 @@
 ---
+layout: default
 title: Slew Constants
-description: Ramping up speed so your robot doesn't tip
+description: ramp up speed slowly
 ---
 
 :::note
@@ -52,7 +53,7 @@ void tuning_slew() {
 
 
 ### Driving
-Sometimes robots aren't symmetrical and can be tippier in one direction than the other.  This can be solved by choosing one of the following functions to place in `default_constants()`.  
+Sometimes robots aren't symmetrical and can be "tippier" in one direction than the other.  This can be solved by choosing one of the following functions to place in `default_constants()`.  
 ```cpp
 chassis.slew_drive_constants_set(7_in, 80);  // This sets forwards and backwards constants
 chassis.slew_drive_constants_forward_set(7_in, 80);

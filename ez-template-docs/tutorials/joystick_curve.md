@@ -1,6 +1,7 @@
 ---
+layout: default
 title: Joystick Curves
-description: Adjusting the joystick's behavior to make it exponential
+description: joysticks are straight, we make them curve
 ---
 import APITable from '@site/src/components/APITable';
 import Tabs from '@theme/Tabs';
@@ -9,7 +10,7 @@ import TabItem from '@theme/TabItem';
 ## Why?
 Typically, moving the joystick halfway means the robot goes half speed. With an input curve, pushing the joystick halfway may only move the robot at 1/4 power. This means more of the joystick movement goes to lower speeds and gives you more control of the robot.
 
-**This is fully driver preference.** Some drivers will really like curves, some drivers hate them.  I loved them when I started using them, but as I got more used to driving fast robots I would turn them down or off completely.  Because of this, EZ-Template supports very easily adjustable curves fully through the controller.   
+**This is fully driver preference.**  Some drivers will really like curves, some drivers hate them.  I loved them when I started using them, but as I got more used to driving fast robots I would turn them down or off completely.  Because of this, EZ-Template supports easily adjusting curves live through the controller.   
 
 ## What's the Equation?
 EZ-Template uses [this curve](https://www.desmos.com/calculator/7oyvwwpmed) that [5225A](https://www.vexforum.com/t/team-5225a-in-the-zone-code-release-yes-you-read-that-right/63199/10) used during In the Zone.  The x-axis is the joystick input and the y-axis is the motor output.
@@ -75,13 +76,13 @@ If you have an SD card installed, you'll actually want to **delete this line of 
 ```cpp
 void initialize() {
   // . . .
-  chassis.opcontrol_curve_default_set(2.1);  // Delete this line if you're using an SD card
+  // chassis.opcontrol_curve_default_set(2.1);  // Delete this line if you're using an SD card
   // . . .
 }
 ```
 
 ## Disabling Modifying Curves Through the Controller
-You can disable modifying curves through the controller by calling `chassis.opcontrol_curve_buttons_toggle(false);`.  
+You can disable modifying curves through the controller by calling `chassis.opcontrol_curve_buttons_toggle(false);`.  This does not turn off the curve, only the ability to modify them live.  
 
 <Tabs
   groupId="tank_arcade"

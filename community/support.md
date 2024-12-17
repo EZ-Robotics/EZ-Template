@@ -3,8 +3,6 @@ title: Support
 description: ez support
 ---
 
-# Support
-
 ## [Discord Server](https://discord.gg/EHjXBcK2Gy)
 Need extra assistance using EZ-Template?  Feel free to join our [Discord Server](https://discord.gg/EHjXBcK2Gy)! 
 
@@ -13,7 +11,7 @@ Have a cool new feature idea?  Open a [GitHub Issue](https://github.com/EZ-Robot
 
 
 ## [Instagram](https://www.instagram.com/roboticsisez)
-For the latest news about ez, [follow **@roboticsisez** on Instagram](https://www.instagram.com/roboticsisez)!
+For the latest news about ez, follow [**@roboticsisez**](https://www.instagram.com/roboticsisez) on Instagram!
 
 ## Email
-For other inquires, you can email me at `jess@roboticsisez.com`.     
+For other inquires, feel free to email me at `jess@roboticsisez.com`.     

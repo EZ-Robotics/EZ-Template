@@ -27,7 +27,7 @@ const sidebars = {
       items: [
 
         'showcase/hall_of_fame',
-        // 'showcase/highstakes',  // Bring this back once autos actually exist
+        'showcase/highstakes',
         'showcase/overunder',
         'showcase/spinup',
         'showcase/tippingpoint',

@@ -1,9 +1,7 @@
 ---
 layout: default
 title: Piston
-parent: Docs
-description:  ""
-nav_order: 4
+description:  some people say these are cylinders and not pistons
 ---
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';

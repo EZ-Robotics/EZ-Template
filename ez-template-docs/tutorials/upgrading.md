@@ -1,11 +1,12 @@
 ---
+layout: default
 title: Upgrading
-description: How to upgrade EZ-Template
+description: honey!  new version released!  time to upgrade!
 ---
 
 :::warning
 
-This only works for 2.x and beyond.  You cannot upgrade from 1.x to 2.x, or 2.x to 3.x without changing code.  See more about migration [here](https://ez-robotics.github.io/EZ-Template/migration).
+This only works for 2.x and beyond.  You cannot upgrade from 1.x to 2.x, or 2.x to 3.x without changing code.  See more about migration [here](/category/migration).
 
 :::
 

@@ -37,10 +37,14 @@ const sidebars = {
           items: [
             'tutorials/installation',
             'tutorials/upgrading',
-            'tutorials/using_auton_selector',
-            'tutorials/autons',
-            'tutorials/example_autons',
-            'tutorials/intake_control'
+            'tutorials/using_ez',
+            // 'tutorials/example_autons',
+            'tutorials/drive_movements',
+            'tutorials/turn_movements',
+            'tutorials/swing_movements',
+            'tutorials/odom_movements',
+            'tutorials/exiting_movements',
+            'tutorials/github',
           ],
         },
 
@@ -61,7 +65,6 @@ const sidebars = {
           ],
         },
 
-
         // Tuning Constants
         {
           type: 'category',
@@ -72,11 +75,28 @@ const sidebars = {
           collapsed: true,
           collapsible: true,
           items: [
-            'tutorials/tuning_constants',
-            'tutorials/tuning_exit_conditions',
-            'tutorials/slew_constants',
-            'tutorials/imu_scaling',
-            'tutorials/wheel_diameter_tuning',
+            'tutorials/tuning_pid_constants',
+            'tutorials/tuning_exit_condition_constants',
+            'tutorials/tuning_slew_constants',
+            'tutorials/tuning_imu_scale',
+            'tutorials/tuning_wheel_diameter',
+            'tutorials/tuning_tracking_wheel_width',
+            // gain scheduling?
+          ],
+        },
+
+        // Subsystems
+        {
+          type: 'category',
+          label: 'Subsystems',
+          link: {
+            type: 'generated-index',
+          },
+          collapsed: true,
+          collapsible: true,
+          items: [
+            'tutorials/intake_tutorial',
+            'tutorials/piston_tutorial',
             // gain scheduling?
           ],
         },
@@ -112,11 +132,16 @@ const sidebars = {
         */
 
         // Remove these when above is uncommented
+        'tutorials/blank_pages',
+        'tutorials/mirror_autons',
         'tutorials/pid',
         'tutorials/pto_tutorial',
       ],
 
     },
+
+
+    // Docs
     {
       type: 'category',
       label: 'Docs',
@@ -127,19 +152,73 @@ const sidebars = {
       collapsible: true,
       items: [
         'docs/constructor',
-        'docs/auton_functions',
+
+        // Auton Specific Docs
+        {
+          type: 'category',
+          label: 'Autonomous Functions',
+          link: {
+            type: 'generated-index',
+          },
+          collapsed: true,
+          collapsible: true,
+          items: [
+            'docs/general_autonomous',
+            'docs/drive_movements',
+            'docs/turn_movements',
+            'docs/swing_movements',
+            
+            {
+              type: 'category',
+              label: 'Odometry',
+              link: {
+                type: 'generated-index',
+              },
+              collapsed: true,
+              collapsible: true,
+              items: [
+                'docs/odom_general',
+                'docs/odom_movements',
+              ],
+            },
+
+          ],
+        },
+
+        
         'docs/user_control',
         'docs/auton_selector',
-        'docs/set_and_get_drive',
-        'docs/pid',
         'docs/pid_tuner',
+        'docs/tracking_wheels',
+        'docs/set_and_get_drive',
         'docs/pto',
-        'docs/slew',
         'docs/piston',
+        'docs/pid',
+        'docs/slew',
         'docs/util',
-        'migration',
+
+        {
+          type: 'category',
+          label: 'Migration',
+          link: {
+            type: 'generated-index',
+          },
+          collapsed: true,
+          collapsible: true,
+          items: [
+            'migration/3.1-3.2',
+            'migration/2.2-3.0',
+          ],
+        },
+        
       ],
+      
+
+
+          
     },
+
+
 
     /*
     {

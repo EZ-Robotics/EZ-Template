@@ -1,6 +1,7 @@
 ---
+layout: default
 title: PTO Tutorial
-description: Add or remove drive motors dynamically
+description: add and remove motors from your drive
 ---
 
 
