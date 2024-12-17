@@ -102,8 +102,8 @@ class PID {
   double compute(double current);
 
   /**
-   * Computes PID, but you compute the error yourself.  
-   * 
+   * Computes PID, but you compute the error yourself.
+   *
    * Current is only used here for calculative derivative to solve derivative kick.
    *
    * \param err
@@ -247,8 +247,8 @@ class PID {
   std::string name_get();
 
   /**
-   * Enables / disables i resetting when sgn of error changes.  
-   * 
+   * Enables / disables i resetting when sgn of error changes.
+   *
    * True resets, false doesn't.
    *
    * \param toggle
@@ -257,8 +257,8 @@ class PID {
   void i_reset_toggle(bool toggle);
 
   /**
-   * Returns if i will reset when sgn of error changes.  
-   * 
+   * Returns if i will reset when sgn of error changes.
+   *
    * True resets, false doesn't.
    */
   bool i_reset_get();
