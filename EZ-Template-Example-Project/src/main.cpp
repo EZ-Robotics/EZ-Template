@@ -128,7 +128,6 @@ void autonomous() {
   to be consistent
   */
 
-  // Uncomment this to use the auton selector
   ez::as::auton_selector.selected_auton_call();  // Calls selected auton from autonomous selector
 }
 
