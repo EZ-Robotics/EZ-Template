@@ -7,7 +7,7 @@ description: pages, they're blank, you make them not blank
 ## What is it?
 EZ-Template's autonomous selector takes over the emulated lcd display on the brain screen, making it very difficult to use the screen for debugging.  
 
-Blank pages are an easy work around for this, allowing you to add your own pages to the autonomous selector carousel that are blank.  
+Blank pages are an easy solution for this, allowing you to add your own pages to the autonomous selector carousel that are blank.  
 
 
 ## Introduction
