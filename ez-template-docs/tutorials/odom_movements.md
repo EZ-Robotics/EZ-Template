@@ -5,12 +5,6 @@ description: make robor go to coordinates by itself
 ---
 
 ## How does it work?
-odom needs multi part
-coordinate system
-distance formula not outputting sign so the rotate solution for that
-move to point vs injection in how it reacts
-smoothing
-boomerang, limitations, why it can be silly, why it's useful
 
 ### Coordinate System
 By default the robot starts at (0, 0) and facing 0 degrees.  This means:  
@@ -35,7 +29,7 @@ This is the backbone of all EZ-Template odometry motions.
 <!---
 IMAGE
 
-this point to point section feels like it needs an image, honsetly I'm not sure what, but anything to break up this absolute wall of text
+this point to point section feels like it needs an image, honestly I'm not sure what, but anything to break up this absolute wall of text
 -->
 
 Two PID loops run simultaneously.  One for forward/backwards movements (we call this xyPID) and one for turning (angularPID).  The constants used for xyPID are your normal drive constants, in all of our testing we found that there was no need for odometry motions to have unique constants.  Unique constants for angularPID was found to be necessary, and you can use another unique set of constants for Boomerang motions (Boomerang is explained further below).  

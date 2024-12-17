@@ -1,7 +1,7 @@
 ---
 layout: default
 title: General
-description:  ""
+description:  stuff that applies to multiple types of odometry movements
 ---
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
@@ -1712,7 +1712,7 @@ void autonomous() {
 ### pid_odom_drive_exit_condition_set()
 Set's constants for odom driving exit conditions.  
 
-`p_small_exit_time` time to exit when within smalL_error, okapi unit     
+`p_small_exit_time` time to exit when within small_error, okapi unit     
 `p_small_error` small timer will start when error is within this, okapi unit     
 `p_big_exit_time` time to exit when within big_error, okapi unit             
 `p_big_error` big timer will start when error is within this, okapi unit        
@@ -1750,7 +1750,7 @@ void initialize() {
 ### pid_odom_drive_exit_condition_set()
 Set's constants for odom driving exit conditions.  
 
-`p_small_exit_time` time to exit when within smalL_error, in ms     
+`p_small_exit_time` time to exit when within small_error, in ms     
 `p_small_error` small timer will start when error is within this, in inches     
 `p_big_exit_time` time to exit when within big_error, in ms             
 `p_big_error` big timer will start when error is within this, in inches        
@@ -1789,7 +1789,7 @@ void initialize() {
 ### pid_odom_turn_exit_condition_set()
 Set's constants for odom turning exit conditions.  
 
-`p_small_exit_time` time to exit when within smalL_error, okapi unit     
+`p_small_exit_time` time to exit when within small_error, okapi unit     
 `p_small_error` small timer will start when error is within this, okapi unit     
 `p_big_exit_time` time to exit when within big_error, okapi unit             
 `p_big_error` big timer will start when error is within this, okapi unit        
@@ -1824,7 +1824,7 @@ void initialize() {
 ### pid_odom_turn_exit_condition_set()
 Set's constants for odom turning exit conditions.  
 
-`p_small_exit_time` time to exit when within smalL_error, in ms  
+`p_small_exit_time` time to exit when within small_error, in ms  
 `p_small_error` small timer will start when error is within this, in degrees
 `p_big_exit_time` time to exit when within big_error, in ms
 `p_big_error` big timer will start when error is within this, in degrees

@@ -1,7 +1,7 @@
 ---
 layout: default
 title: General
-description:  Stuff that applies to multiple types of movements
+description:  stuff that applies to multiple types of movements
 ---
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';

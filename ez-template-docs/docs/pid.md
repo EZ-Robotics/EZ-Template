@@ -1,7 +1,7 @@
 ---
 layout: default
 title: PID
-description:  ""
+description:  proportional, integral, derivative
 ---
 
 

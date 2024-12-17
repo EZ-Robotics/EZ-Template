@@ -1,8 +1,7 @@
 ---
 title: EZ-Template
 slug: /
-description: Simple plug-and-play PROS template that handles drive base functions,
-  autonomous selector, input curves, and active brake with PTO support.
+description: coding made ez
 image: /img/embed.png
 preview: /img/embed.png
 ---
@@ -70,4 +69,4 @@ We believe that, as developers, knowing how a library works helps us become bett
 Supporting me on Patreon will help guarantee that EZ-Template continues to get maintained and allow me to develop products for teams to use.  [Click here](https://www.patreon.com/roboticsisez) to see my Patreon!
 
 ## [Download and Installation](/tutorials/installation)
-Learn how ot install and setup EZ-Template [here](/tutorials/installation)!
+Learn how to install and setup EZ-Template [here](/tutorials/installation)!

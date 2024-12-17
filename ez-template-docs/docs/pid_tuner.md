@@ -1,7 +1,7 @@
 ---
 layout: default
 title: PID Tuner
-description:  ""
+description:  tuning pid live :O
 ---
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';

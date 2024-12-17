@@ -1,7 +1,7 @@
 ---
 layout: default
 title: User Control
-description:  ""
+description:  controlling the robot with the user
 ---
 
 

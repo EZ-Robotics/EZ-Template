@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Util
-description:  ""
+description:  chat, util is short for utility if you're new here.  we're just using slang. 
 ---
 
 

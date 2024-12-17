@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Turning
-description:  Turning in place
+description:  turning in place
 ---
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
@@ -482,7 +482,7 @@ void pid_turn_relative_set(okapi::QAngle p_target, int speed, e_angle_behavior b
 ### pid_turn_exit_condition_set()
 Set's constants for turn exit conditions.  
  
-`p_small_exit_time` time to exit when within smalL_error, okapi unit     
+`p_small_exit_time` time to exit when within small_error, okapi unit     
 `p_small_error` small timer will start when error is within this, okapi unit     
 `p_big_exit_time` time to exit when within big_error, okapi unit             
 `p_big_error` big timer will start when error is within this, okapi unit        
@@ -1056,7 +1056,7 @@ void pid_turn_relative_set(double target, int speed, e_angle_behavior behavior, 
 ### pid_turn_exit_condition_set()
 Set's constants for turn exit conditions.  
 
-`p_small_exit_time` time to exit when within smalL_error, in ms  
+`p_small_exit_time` time to exit when within small_error, in ms  
 `p_small_error` small timer will start when error is within this, in degrees
 `p_big_exit_time` time to exit when within big_error, in ms
 `p_big_error` big timer will start when error is within this, in degrees

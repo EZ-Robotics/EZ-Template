@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Swinging
-description:  Turns but only using one side of the drive
+description:  turns but only using one side of the drive
 ---
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
@@ -904,7 +904,7 @@ void pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, int
 ### pid_swing_exit_condition_set()
 Set's constants for swing exit conditions.  
 
-`p_small_exit_time` time to exit when within smalL_error, in ms  
+`p_small_exit_time` time to exit when within small_error, in ms  
 `p_small_error` small timer will start when error is within this, in degrees
 `p_big_exit_time` time to exit when within big_error, in ms
 `p_big_error` big timer will start when error is within this, in degrees
@@ -946,7 +946,7 @@ void pid_swing_exit_condition_set(int p_small_exit_time, double p_small_error, i
 ### pid_swing_exit_condition_set()
 Set's constants for swing exit conditions.  
  
-`p_small_exit_time` time to exit when within smalL_error, okapi unit     
+`p_small_exit_time` time to exit when within small_error, okapi unit     
 `p_small_error` small timer will start when error is within this, okapi unit     
 `p_big_exit_time` time to exit when within big_error, okapi unit             
 `p_big_error` big timer will start when error is within this, okapi unit        

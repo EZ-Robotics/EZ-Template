@@ -43,7 +43,7 @@ void default_constants() {
 
 
 ### Different Constants
-When your robot has huge weight shifts (grabbing a mobile goal, raising a lift, etc), you might want to have different constants for those states.  You can have multiple functions with constants for different states and change constants during your autonomous routine.
+When your robot has huge weight shifts (grabbing a mobile goal, raising a lift, etc.), you might want to have different constants for those states.  You can have multiple functions with constants for different states and change constants during your autonomous routine.
 ```cpp
 void grab_mogo() {
   default_constants();  // Use default constants
@@ -191,7 +191,7 @@ chassis.odom_turn_bias_set(0.9);
 ### Angular
 Run a test program where the robot travels to (0, 24) then (24, 24) with pure pursuit.  
 
-Increase kP until the robot starts to oscilate around the target heading a little, increase kD until this goes away.  If needed you can add kI too.  
+Increase kP until the robot starts to oscillate around the target heading a little, increase kD until this goes away.  If needed you can add kI too.  
 
 ```cpp
 chassis.pid_odom_angular_constants_set(6.5, 0.0, 52.5);
@@ -200,7 +200,7 @@ chassis.pid_odom_angular_constants_set(6.5, 0.0, 52.5);
 ### Boomerang
 Run a test program where the robot travels to (24, 24, 90) with boomerang.  
 
-Increase kP until the robot starts to oscilate around the target heading a little, increase kD until this goes away.  If needed you can add kI too.  
+Increase kP until the robot starts to oscillate around the target heading a little, increase kD until this goes away.  If needed you can add kI too.  
 
 ```cpp
 chassis.pid_odom_boomerang_constants_set(5.8, 0.0, 32.5);

@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Movements
-description:  ""
+description:  moving with odometry in autonomous
 ---
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';

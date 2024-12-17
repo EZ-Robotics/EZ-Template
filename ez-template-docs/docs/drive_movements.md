@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Driving
-description:  Going forward and backward
+description:  moving forward and backward autonomously
 ---
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
@@ -169,7 +169,7 @@ void pid_drive_set(okapi::QLength p_target, int speed, bool slew_on, bool toggle
 ### pid_drive_exit_condition_set()
 Set's constants for drive exit conditions.     
  
-`p_small_exit_time` time to exit when within smalL_error, okapi unit     
+`p_small_exit_time` time to exit when within small_error, okapi unit     
 `p_small_error` small timer will start when error is within this, okapi unit     
 `p_big_exit_time` time to exit when within big_error, okapi unit             
 `p_big_error` big timer will start when error is within this, okapi unit        
@@ -591,7 +591,7 @@ void pid_drive_set(double target, int speed, bool slew_on, bool toggle_heading =
 ### pid_drive_exit_condition_set()
 Set's constants for drive exit conditions.   
 
-`p_small_exit_time` time to exit when within smalL_error, in ms     
+`p_small_exit_time` time to exit when within small_error, in ms     
 `p_small_error` small timer will start when error is within this, in inches     
 `p_big_exit_time` time to exit when within big_error, in ms             
 `p_big_error` big timer will start when error is within this, in inches        

@@ -9,7 +9,7 @@ import TabItem from '@theme/TabItem';
 A quick run through of how to use EZ-Template and things to keep in mind.  
 
 ## IMU Calibration
-When you turn your program on, a loading bar will appear on the brain screen.  This is your Inertial Measurement Unit (IMU) calibrating.  The IMU need some time to calibrate, and during this time **you cannot move the robot.**  For the calibration to be successful the robot cannot move during tihs time.  
+When you turn your program on, a loading bar will appear on the brain screen.  This is your Inertial Measurement Unit (IMU) calibrating.  The IMU need some time to calibrate, and during this time **you cannot move the robot.**  For the calibration to be successful the robot cannot move during this time.  
 
 The calibration is successful if the red loading bar does not appear.  As of the v3.2.0 example project, the controller will vibrate once quickly if the calibration was successful.  The controller will vibrate three long times if it was not successful or failed silently.  
 

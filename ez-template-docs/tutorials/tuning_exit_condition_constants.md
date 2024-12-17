@@ -42,7 +42,7 @@ You can tune the amount added to `target` during chained motions.  
 
 **Larger constants** will carry more momentum into the next motion, making your autonomous faster but potentially hurting consistency.  **Smaller constants** will carry less momentum into the next motion, this will still be significantly faster then any other method of exiting but could be slightly less consistent than `pid_wait()`.  
 
-If I were making autonomous routines, I would try to use a smaller constant for normal motions and only push a larger constant when an autonomous routine would greatly bennifit from it.  
+If I were making autonomous routines, I would try to use a smaller constant for normal motions and only push a larger constant when an autonomous routine would greatly benefit from it.  
 
 
 #### Driving

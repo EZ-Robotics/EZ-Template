@@ -84,8 +84,7 @@ The code will not show to GitHub until you push to origin.  To do this, in the t
 
 
 ## Adding Teammates to Repository
-
-I was going to write a tutorial on how to do this, but GitHub has written one better then I can, and I'm not going ot reinvent the wheel.  [So here you go!](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/managing-repository-settings/managing-teams-and-people-with-access-to-your-repository)
+I was going to write a tutorial on how to do this, but GitHub has written one better then I can, and I'm not going to reinvent the wheel.  [So here you go!](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/managing-repository-settings/managing-teams-and-people-with-access-to-your-repository)
 
 
 

@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Autonomous Selector
-description:  ""
+description: selecting autons
 ---
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';

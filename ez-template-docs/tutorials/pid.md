@@ -65,7 +65,7 @@ inline ez::PID liftPID{0.45, 0, 0, 0, "Lift"};
 
 
 ## User Control
-This is the simplest implementation of EZ-Template'd PID.  
+This is the simplest implementation of EZ-Template's PID.  
 
 First, we need to reset the motor encoder at program start.  This means that every time we turn the robot on the lift has to be in the exact same position, this should be against a mechanical stop so it's easy to ensure it's the same spot.  
 ```cpp
