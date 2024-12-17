@@ -4,8 +4,8 @@ License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-#include "main.h"
-#include "util.hpp"
+#include "EZ-Template/api.hpp"
+#include "api.h"
 
 using namespace ez;
 
@@ -41,6 +41,12 @@ void PID::constants_set(double p, double i, double d, double p_start_i) {
   constants.start_i = p_start_i;
 }
 
+bool PID::constants_set_check() {
+  if (constants.kp == 0.0 && constants.ki == 0.0 && constants.kd == 0.0 && constants.start_i == 0.0)
+    return false;
+  return true;
+}
+
 // Set exit condition timeouts
 void PID::exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout) {
   exit.small_exit_time = p_small_exit_time;
@@ -58,8 +64,7 @@ void PID::i_reset_toggle(bool toggle) { reset_i_sgn = toggle; }
 bool PID::i_reset_get() { return reset_i_sgn; };
 
 double PID::compute(double current) {
-  error = target - current;
-  return compute_error(error, current);
+  return compute_error(target - current, current);
 }
 
 double PID::compute_error(double err, double current) {
@@ -244,4 +249,12 @@ exit_output PID::exit_condition(std::vector<pros::Motor> sensor, bool print) {
   }
 
   return exit_condition(print);
+}
+
+exit_output PID::exit_condition(pros::MotorGroup sensor, bool print) {
+  std::vector<pros::Motor> vector_sensor;
+  for (i = 0; i < sensor.size(); i++) {
+    vector_sensor.push_back(pros::Motor(sensor.get_port(i)));
+  }
+  return exit_condition(vector_sensor, print);
 }

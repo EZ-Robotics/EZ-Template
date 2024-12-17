@@ -4,11 +4,9 @@ License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-#include "drive.hpp"
-
 #include <list>
 
-#include "main.h"
+#include "EZ-Template/api.hpp"
 #include "okapi/api/units/QAngle.hpp"
 #include "pros/llemu.hpp"
 #include "pros/screen.hpp"
@@ -149,25 +147,44 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 }
 
 void Drive::drive_defaults_set() {
+  imu.set_data_rate(5);
+
   std::cout << std::fixed;
   std::cout << std::setprecision(2);
 
   // PID Constants
-  pid_heading_constants_set(11, 0, 20, 0);
-  pid_drive_constants_set(20, 0, 100, 0);
-  pid_turn_constants_set(3, 0.05, 20, 15);
-  pid_swing_constants_set(6, 0, 65);
+  pid_drive_constants_set(20.0, 0.0, 100.0);
+  pid_heading_constants_set(11.0, 0.0, 20.0);
+  pid_turn_constants_set(3.0, 0.05, 20.0, 15.0);
+  pid_swing_constants_set(6.0, 0.0, 65.0);
+  pid_odom_angular_constants_set(6.5, 0.0, 52.5);
+  pid_odom_boomerang_constants_set(5.8, 0.0, 32.5);
   pid_turn_min_set(30);
   pid_swing_min_set(30);
 
+  // Path Constants
+  odom_path_smooth_constants_set(0.75, 0.03, 0.0001);
+  odom_path_spacing_set(0.5_in);
+  odom_turn_bias_set(0.9);
+  odom_look_ahead_set(7_in);
+  odom_boomerang_distance_set(16_in);
+  odom_boomerang_dlead_set(0.625);
+
   // Slew constants
-  slew_drive_constants_set(7_in, 80);
+  slew_turn_constants_set(3_deg, 70);
+  slew_drive_constants_set(3_in, 70);
+  slew_swing_constants_set(3_in, 80);
 
   // Exit condition constants
-  pid_turn_exit_condition_set(80_ms, 3_deg, 250_ms, 7_deg, 500_ms, 500_ms);
-  pid_swing_exit_condition_set(80_ms, 3_deg, 250_ms, 7_deg, 500_ms, 500_ms);
-  pid_drive_exit_condition_set(80_ms, 1_in, 250_ms, 3_in, 500_ms, 500_ms);
+  pid_turn_exit_condition_set(90_ms, 3_deg, 250_ms, 7_deg, 500_ms, 500_ms);
+  pid_swing_exit_condition_set(90_ms, 3_deg, 250_ms, 7_deg, 500_ms, 500_ms);
+  pid_drive_exit_condition_set(90_ms, 1_in, 250_ms, 3_in, 500_ms, 500_ms);
+  pid_odom_turn_exit_condition_set(90_ms, 3_deg, 250_ms, 7_deg, 500_ms, 750_ms);
+  pid_odom_drive_exit_condition_set(90_ms, 1_in, 250_ms, 3_in, 500_ms, 750_ms);
 
+  pid_odom_behavior_set(ez::shortest);  // Default odom turning to shortest
+
+  // Motion chaining
   pid_turn_chain_constant_set(3_deg);
   pid_swing_chain_constant_set(5_deg);
   pid_drive_chain_constant_set(3_in);
@@ -188,11 +205,14 @@ void Drive::drive_defaults_set() {
 }
 
 double Drive::drive_tick_per_inch() {
+  if (is_tracker == ODOM_TRACKER)
+    return odom_tracker_right->ticks_per_inch();
+
   CIRCUMFERENCE = WHEEL_DIAMETER * M_PI;
 
   if (is_tracker == DRIVE_ADI_ENCODER || is_tracker == DRIVE_ROTATION)
     TICK_PER_REV = CARTRIDGE * RATIO;
-  else
+  else if (is_tracker == DRIVE_INTEGRATED)
     TICK_PER_REV = (50.0 * (3600.0 / CARTRIDGE)) * RATIO;  // with no cart, the encoder reads 50 counts per rotation
 
   TICK_PER_INCH = (TICK_PER_REV / CIRCUMFERENCE);
@@ -216,7 +236,7 @@ void Drive::private_drive_set(int left, int right) {
 }
 
 void Drive::drive_set(int left, int right) {
-  drive_mode_set(DISABLE);
+  drive_mode_set(DISABLE, false);
   private_drive_set(left, right);
 }
 
@@ -245,8 +265,23 @@ int Drive::drive_current_limit_get() {
 
 // Motor telemetry
 void Drive::drive_sensor_reset() {
+  // Update active brake constants
+  left_activebrakePID.target_set(0.0);
+  right_activebrakePID.target_set(0.0);
+
+  // Reset odom stuff
+  h_last = 0.0;
+  l_last = 0.0;
+  r_last = 0.0;
+  t_last = 0.0;
+
+  // Reset sensors
   left_motors.front().tare_position();
   right_motors.front().tare_position();
+  if (odom_tracker_left_enabled) odom_tracker_left->reset();
+  if (odom_tracker_right_enabled) odom_tracker_right->reset();
+  if (odom_tracker_front_enabled) odom_tracker_front->reset();
+  if (odom_tracker_back_enabled) odom_tracker_back->reset();
   if (is_tracker == DRIVE_ADI_ENCODER) {
     left_tracker.reset();
     right_tracker.reset();
@@ -263,9 +298,15 @@ int Drive::drive_sensor_right_raw() {
     return right_tracker.get_value();
   else if (is_tracker == DRIVE_ROTATION)
     return right_rotation.get_position();
+  else if (is_tracker == ODOM_TRACKER)
+    return odom_tracker_right->get_raw();
   return right_motors.front().get_position();
 }
-double Drive::drive_sensor_right() { return drive_sensor_right_raw() / drive_tick_per_inch(); }
+double Drive::drive_sensor_right() {
+  if (is_tracker == ODOM_TRACKER)
+    return odom_tracker_right->get();
+  return drive_sensor_right_raw() / drive_tick_per_inch();
+}
 int Drive::drive_velocity_right() { return right_motors.front().get_actual_velocity(); }
 double Drive::drive_mA_right() { return right_motors.front().get_current_draw(); }
 bool Drive::drive_current_right_over() { return right_motors.front().is_over_current(); }
@@ -275,14 +316,24 @@ int Drive::drive_sensor_left_raw() {
     return left_tracker.get_value();
   else if (is_tracker == DRIVE_ROTATION)
     return left_rotation.get_position();
+  else if (is_tracker == ODOM_TRACKER)
+    return odom_tracker_left->get_raw();
   return left_motors.front().get_position();
 }
-double Drive::drive_sensor_left() { return drive_sensor_left_raw() / drive_tick_per_inch(); }
+double Drive::drive_sensor_left() {
+  if (is_tracker == ODOM_TRACKER)
+    return odom_tracker_left->get();
+  return drive_sensor_left_raw() / drive_tick_per_inch();
+}
 int Drive::drive_velocity_left() { return left_motors.front().get_actual_velocity(); }
 double Drive::drive_mA_left() { return left_motors.front().get_current_draw(); }
 bool Drive::drive_current_left_over() { return left_motors.front().is_over_current(); }
 
-void Drive::drive_imu_reset(double new_heading) { imu.set_rotation(new_heading); }
+void Drive::drive_imu_reset(double new_heading) {
+  imu.set_rotation(new_heading);
+  angle_rad = util::to_rad(new_heading);
+  t_last = angle_rad;
+}
 double Drive::drive_imu_get() { return imu.get_rotation() * IMU_SCALER; }
 double Drive::drive_imu_accel_get() { return imu.get_accel().x + imu.get_accel().y; }
 
@@ -293,34 +344,35 @@ void Drive::drive_imu_display_loading(int iter) {
   // If the lcd is already initialized, don't run this function
   if (pros::lcd::is_initialized()) return;
 
-  // Boarder
-  int boarder = 50;
+  // Border
+  int border = 50;
 
-  // Create the boarder
+  // Create the border
   pros::screen::set_pen(pros::c::COLOR_WHITE);
   for (int i = 1; i < 3; i++) {
-    pros::screen::draw_rect(boarder + i, boarder + i, 480 - boarder - i, 240 - boarder - i);
+    pros::screen::draw_rect(border + i, border + i, 480 - border - i, 240 - border - i);
   }
 
   // While IMU is loading
   if (iter < 2000) {
-    static int last_x1 = boarder;
+    static int last_x1 = border;
     pros::screen::set_pen(0x00FF6EC7);  // EZ Pink
-    int x1 = (iter * ((480 - (boarder * 2)) / 2000.0)) + boarder;
-    pros::screen::fill_rect(last_x1, boarder, x1, 240 - boarder);
+    int x1 = (iter * ((480 - (border * 2)) / 2000.0)) + border;
+    pros::screen::fill_rect(last_x1, border, x1, 240 - border);
     last_x1 = x1;
   }
   // Failsafe time
   else {
-    static int last_x1 = boarder;
+    static int last_x1 = border;
     pros::screen::set_pen(pros::c::COLOR_RED);
-    int x1 = ((iter - 2000) * ((480 - (boarder * 2)) / 1000.0)) + boarder;
-    pros::screen::fill_rect(last_x1, boarder, x1, 240 - boarder);
+    int x1 = ((iter - 2000) * ((480 - (border * 2)) / 1000.0)) + border;
+    pros::screen::fill_rect(last_x1, border, x1, 240 - border);
     last_x1 = x1;
   }
 }
 
 bool Drive::drive_imu_calibrate(bool run_loading_animation) {
+  imu_calibration_complete = false;
   imu.reset();
   int iter = 0;
   bool current_status = imu.is_calibrating();
@@ -343,13 +395,22 @@ bool Drive::drive_imu_calibrate(bool run_loading_animation) {
       }
       if (iter >= 3000) {
         printf("No IMU plugged in, (took %d ms to realize that)\n", iter);
+        imu_calibrate_took_too_long = true;
         return false;
       }
     }
     pros::delay(util::DELAY_TIME);
   }
   printf("IMU is done calibrating (took %d ms)\n", iter);
+  imu_calibration_complete = true;
+  imu_calibrate_took_too_long = iter > 2000 ? true : false;
   return true;
+}
+
+bool Drive::drive_imu_calibrated() {
+  if (imu_calibration_complete && !imu_calibrate_took_too_long)
+    return true;
+  return false;
 }
 
 // Brake modes
@@ -374,62 +435,43 @@ void Drive::initialize() {
   drive_sensor_reset();
 }
 
-void Drive::pid_drive_toggle(bool toggle) { drive_toggle = toggle; }
-void Drive::pid_print_toggle(bool toggle) { print_toggle = toggle; }
+void Drive::odom_tracker_left_set(tracking_wheel* input) {
+  if (input == nullptr) return;
 
-bool Drive::pid_drive_toggle_get() { return drive_toggle; }
-bool Drive::pid_print_toggle_get() { return print_toggle; }
+  odom_tracker_left = input;
+  odom_tracker_left_enabled = true;
 
-void Drive::slew_drive_constants_forward_set(okapi::QLength distance, int min_speed) {
-  double dist = distance.convert(okapi::inch);
-  slew_forward.constants_set(dist, min_speed);
+  // Assume the user input a positive number and set it to a negative number
+  odom_tracker_left->distance_to_center_flip_set(true);
+
+  // If the user has input a left and right tracking wheel,
+  // the tracking wheels become the new sensors always
+  if (odom_tracker_right_enabled)
+    is_tracker = ODOM_TRACKER;
 }
+void Drive::odom_tracker_right_set(tracking_wheel* input) {
+  if (input == nullptr) return;
 
-void Drive::slew_drive_constants_backward_set(okapi::QLength distance, int min_speed) {
-  double dist = distance.convert(okapi::inch);
-  slew_backward.constants_set(dist, min_speed);
+  odom_tracker_right = input;
+  odom_tracker_right_enabled = true;
+
+  // If the user has input a left and right tracking wheel,
+  // the tracking wheels become the new sensors always
+  if (odom_tracker_left_enabled)
+    is_tracker = ODOM_TRACKER;
 }
+void Drive::odom_tracker_front_set(tracking_wheel* input) {
+  if (input == nullptr) return;
 
-void Drive::slew_drive_constants_set(okapi::QLength distance, int min_speed) {
-  slew_drive_constants_backward_set(distance, min_speed);
-  slew_drive_constants_forward_set(distance, min_speed);
+  odom_tracker_front = input;
+  odom_tracker_front_enabled = true;
 }
+void Drive::odom_tracker_back_set(tracking_wheel* input) {
+  if (input == nullptr) return;
 
-void Drive::slew_turn_constants_set(okapi::QAngle distance, int min_speed) {
-  double dist = distance.convert(okapi::degree);
-  slew_turn.constants_set(dist, min_speed);
-}
+  odom_tracker_back = input;
+  odom_tracker_back_enabled = true;
 
-void Drive::slew_swing_constants_backward_set(okapi::QLength distance, int min_speed) {
-  slew_swing_rev_using_angle = false;
-  double dist = distance.convert(okapi::inch);
-  slew_swing_backward.constants_set(dist, min_speed);
-}
-
-void Drive::slew_swing_constants_forward_set(okapi::QLength distance, int min_speed) {
-  slew_swing_fwd_using_angle = false;
-  double dist = distance.convert(okapi::inch);
-  slew_swing_forward.constants_set(dist, min_speed);
-}
-
-void Drive::slew_swing_constants_set(okapi::QLength distance, int min_speed) {
-  slew_swing_constants_forward_set(distance, min_speed);
-  slew_swing_constants_backward_set(distance, min_speed);
-}
-
-void Drive::slew_swing_constants_backward_set(okapi::QAngle distance, int min_speed) {
-  slew_swing_rev_using_angle = true;
-  double dist = distance.convert(okapi::degree);
-  slew_swing_backward.constants_set(dist, min_speed);
-}
-
-void Drive::slew_swing_constants_forward_set(okapi::QAngle distance, int min_speed) {
-  slew_swing_fwd_using_angle = true;
-  double dist = distance.convert(okapi::degree);
-  slew_swing_forward.constants_set(dist, min_speed);
-}
-
-void Drive::slew_swing_constants_set(okapi::QAngle distance, int min_speed) {
-  slew_swing_constants_forward_set(distance, min_speed);
-  slew_swing_constants_backward_set(distance, min_speed);
+  // Set the center distance to be negative
+  odom_tracker_back->distance_to_center_flip_set(true);
 }

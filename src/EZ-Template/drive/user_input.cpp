@@ -4,7 +4,12 @@ License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-#include "main.h"
+#include "EZ-Template/PID.hpp"
+#include "EZ-Template/drive/drive.hpp"
+#include "pros/misc.h"
+
+void Drive::opcontrol_arcade_scaling(bool enable) { arcade_vector_scaling = enable; }
+bool Drive::opcontrol_arcade_scaling_enabled() { return arcade_vector_scaling; }
 
 // Set curve defaults
 void Drive::opcontrol_curve_default_set(double left, double right) {
@@ -167,12 +172,8 @@ void Drive::opcontrol_curve_buttons_iterate() {
     button_press(&r_decrease_, master.get_digital(r_decrease_.button), ([this] { this->r_decrease(); }), ([this] { this->save_r_curve_sd(); }));
   }
 
-  std::ostringstream short_sl, short_sr;
-  short_sl << std::fixed << std::setprecision(1) << left_curve_scale;
-  short_sr << std::fixed << std::setprecision(1) << right_curve_scale;
-
-  auto sr = short_sr.str();
-  auto sl = short_sl.str();
+  auto sl = util::to_string_with_precision(left_curve_scale, 1);
+  auto sr = util::to_string_with_precision(right_curve_scale, 1);
   if (!is_tank)
     master.set_text(2, 0, sl + "         " + sr);
   else
@@ -202,23 +203,30 @@ double Drive::opcontrol_curve_right(double x) {
 }
 
 // Set active brake constant
-void Drive::opcontrol_drive_activebrake_set(double kp) {
-  active_brake_kp = kp;
-  drive_sensor_reset();
+void Drive::opcontrol_drive_activebrake_set(double kp, double ki, double kd, double start_i) {
+  left_activebrakePID.constants_set(kp, ki, kd, start_i);
+  right_activebrakePID.constants_set(kp, ki, kd, start_i);
+  opcontrol_drive_activebrake_targets_set();
 }
 
-// Get active brake constant
-double Drive::opcontrol_drive_activebrake_get() {
-  return active_brake_kp;
-}
+// Get active brake kp constant
+double Drive::opcontrol_drive_activebrake_get() { return left_activebrakePID.constants.kp; }
+
+// Get active brake kp constant
+PID::Constants Drive::opcontrol_drive_activebrake_constants_get() { return left_activebrakePID.constants; }
 
 // Set joystick threshold
 void Drive::opcontrol_joystick_threshold_set(int threshold) { JOYSTICK_THRESHOLD = abs(threshold); }
 int Drive::opcontrol_joystick_threshold_get() { return JOYSTICK_THRESHOLD; }
 
+void Drive::opcontrol_drive_activebrake_targets_set() {
+  left_activebrakePID.target_set(drive_sensor_left());
+  right_activebrakePID.target_set(drive_sensor_right());
+}
+
 void Drive::opcontrol_drive_sensors_reset() {
   if (util::AUTON_RAN) {
-    drive_sensor_reset();
+    opcontrol_drive_activebrake_targets_set();
     util::AUTON_RAN = false;
   }
 }
@@ -230,21 +238,53 @@ void Drive::opcontrol_drive_reverse_set(bool toggle) { is_reversed = toggle; }
 bool Drive::opcontrol_drive_reverse_get() { return is_reversed; }
 
 void Drive::opcontrol_joystick_threshold_iterate(int l_stick, int r_stick) {
+  double l_out = 0.0, r_out = 0.0;
+
   // Check the motors are being set to power
   if (abs(l_stick) > 0 || abs(r_stick) > 0) {
-    if (practice_mode_is_on && (abs(l_stick) > 120 || abs(r_stick) > 120))
-      drive_set(0, 0);
-    else if (is_reversed == true)
-      drive_set(-r_stick, -l_stick);
-    else
-      drive_set(l_stick, r_stick);
-    if (active_brake_kp != 0) drive_sensor_reset();
+    if (left_activebrakePID.constants_set_check()) opcontrol_drive_activebrake_targets_set();  // Update active brake PID targets
+
+    if (practice_mode_is_on && (abs(l_stick) > 120 || abs(r_stick) > 120)) {
+      l_out = 0.0;
+      r_out = 0.0;
+    } else if (!is_reversed) {
+      l_out = l_stick;
+      r_out = r_stick;
+    } else {
+      l_out = -r_stick;
+      r_out = -l_stick;
+    }
+
   }
   // When joys are released, run active brake (P) on drive
   else {
-    drive_set((0 - drive_sensor_left()) * active_brake_kp, (0 - drive_sensor_right()) * active_brake_kp);
+    l_out = left_activebrakePID.compute(drive_sensor_left());
+    r_out = right_activebrakePID.compute(drive_sensor_right());
   }
+
+  // Constrain output between 127 and -127
+  if (arcade_vector_scaling) {
+    double faster_side = fmax(fabs(l_out), fabs(r_out));
+    if (faster_side > 127.0) {
+      l_out *= (127.0 / faster_side);
+      r_out *= (127.0 / faster_side);
+    }
+  }
+
+  // Constrain left and right outputs to the user set max speed
+  // the user set max speed is defaulted to 127
+  l_out *= (opcontrol_speed_max / 127.0);
+  r_out *= (opcontrol_speed_max / 127.0);
+
+  // Ensure output is within speed limit
+  l_out = l_out > opcontrol_speed_max ? opcontrol_speed_max : l_out;
+  r_out = r_out > opcontrol_speed_max ? opcontrol_speed_max : r_out;
+
+  drive_set(l_out, r_out);
 }
+
+void Drive::opcontrol_speed_max_set(int speed) { opcontrol_speed_max = (double)speed; }
+int Drive::opcontrol_speed_max_get() { return (int)opcontrol_speed_max; }
 
 // Clip joysticks based on joystick threshold
 int Drive::clipped_joystick(int joystick) { return abs(joystick) < JOYSTICK_THRESHOLD ? 0 : joystick; }
@@ -257,12 +297,12 @@ void Drive::opcontrol_tank() {
   // Toggle for controller curve
   opcontrol_curve_buttons_iterate();
 
-  auto analog_left_value = master.get_analog(ANALOG_LEFT_Y);
-  auto analog_right_value = master.get_analog(ANALOG_RIGHT_Y);
+  auto analog_left_value = master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
+  auto analog_right_value = master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y);
 
   // Put the joysticks through the curve function
-  int l_stick = opcontrol_curve_left(clipped_joystick(master.get_analog(ANALOG_LEFT_Y)));
-  int r_stick = opcontrol_curve_left(clipped_joystick(master.get_analog(ANALOG_RIGHT_Y)));
+  int l_stick = opcontrol_curve_left(clipped_joystick(master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y)));
+  int r_stick = opcontrol_curve_left(clipped_joystick(master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y)));
 
   // Set robot to l_stick and r_stick, check joystick threshold, set active brake
   opcontrol_joystick_threshold_iterate(l_stick, r_stick);
@@ -280,12 +320,12 @@ void Drive::opcontrol_arcade_standard(e_type stick_type) {
   // Check arcade type (split vs single, normal vs flipped)
   if (stick_type == SPLIT) {
     // Put the joysticks through the curve function
-    fwd_stick = opcontrol_curve_left(clipped_joystick(master.get_analog(ANALOG_LEFT_Y)));
-    turn_stick = opcontrol_curve_right(clipped_joystick(master.get_analog(ANALOG_RIGHT_X)));
+    fwd_stick = opcontrol_curve_left(clipped_joystick(master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y)));
+    turn_stick = opcontrol_curve_right(clipped_joystick(master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X)));
   } else if (stick_type == SINGLE) {
     // Put the joysticks through the curve function
-    fwd_stick = opcontrol_curve_left(clipped_joystick(master.get_analog(ANALOG_LEFT_Y)));
-    turn_stick = opcontrol_curve_right(clipped_joystick(master.get_analog(ANALOG_LEFT_X)));
+    fwd_stick = opcontrol_curve_left(clipped_joystick(master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y)));
+    turn_stick = opcontrol_curve_right(clipped_joystick(master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X)));
   }
 
   // Set robot to l_stick and r_stick, check joystick threshold, set active brake
@@ -304,12 +344,12 @@ void Drive::opcontrol_arcade_flipped(e_type stick_type) {
   // Check arcade type (split vs single, normal vs flipped)
   if (stick_type == SPLIT) {
     // Put the joysticks through the curve function
-    fwd_stick = opcontrol_curve_right(clipped_joystick(master.get_analog(ANALOG_RIGHT_Y)));
-    turn_stick = opcontrol_curve_left(clipped_joystick(master.get_analog(ANALOG_LEFT_X)));
+    fwd_stick = opcontrol_curve_right(clipped_joystick(master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y)));
+    turn_stick = opcontrol_curve_left(clipped_joystick(master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X)));
   } else if (stick_type == SINGLE) {
     // Put the joysticks through the curve function
-    fwd_stick = opcontrol_curve_right(clipped_joystick(master.get_analog(ANALOG_RIGHT_Y)));
-    turn_stick = opcontrol_curve_left(clipped_joystick(master.get_analog(ANALOG_RIGHT_X)));
+    fwd_stick = opcontrol_curve_right(clipped_joystick(master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y)));
+    turn_stick = opcontrol_curve_left(clipped_joystick(master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X)));
   }
 
   // Set robot to l_stick and r_stick, check joystick threshold, set active brake

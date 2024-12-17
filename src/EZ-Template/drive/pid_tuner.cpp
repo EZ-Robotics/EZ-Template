@@ -4,13 +4,19 @@ License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-#include "EZ-Template/api.hpp"
+#include "EZ-Template/drive/drive.hpp"
 #include "EZ-Template/sdcard.hpp"
+#include "EZ-Template/util.hpp"
+#include "liblvgl/llemu.hpp"
 #include "pros/llemu.hpp"
 #include "pros/misc.h"
 
 // Is the PID Tuner enabled?
 bool Drive::pid_tuner_enabled() { return pid_tuner_on; }
+
+// Enable/disabling the full PID tuner
+void Drive::pid_tuner_full_enable(bool enable) { is_full_pid_tuner_enabled = enable; }
+bool Drive::pid_tuner_full_enabled() { return is_full_pid_tuner_enabled; }
 
 // Toggle printing to terminal
 void Drive::pid_tuner_print_terminal_set(bool input) { pid_tuner_terminal_b = input; }
@@ -45,16 +51,12 @@ bool Drive::pid_tuner_print_brain_enabled() { return pid_tuner_lcd_b; }
 
 // Enable PID Tuner
 void Drive::pid_tuner_enable() {
-  // Set the constants
-  constants = {
-      {"Drive Forward PID Constants", &forward_drivePID.constants},
-      {"Drive Backward PID Constants", &backward_drivePID.constants},
-      {"Heading PID Constants", &headingPID.constants},
-      {"Turn PID Constants", &turnPID.constants},
-      {"Swing Forward PID Constants", &forward_swingPID.constants},
-      {"Swing Backward PID Constants", &backward_swingPID.constants}};
-
   pid_tuner_brain_init();
+
+  if (pid_tuner_full_enabled())
+    used_pid_tuner_pids = &pid_tuner_full_pids;
+  else
+    used_pid_tuner_pids = &pid_tuner_pids;
 
   // Keep track of the last state of this so we can set it back once PID Tuner is disables
   last_controller_curve_state = opcontrol_curve_buttons_toggle_get();
@@ -88,18 +90,23 @@ void Drive::pid_tuner_toggle() {
 void Drive::pid_tuner_print() {
   if (!pid_tuner_on) return;
 
-  std::string name = constants[column].name + "\n";
-  std::string kp = "kp: " + std::to_string(constants[column].consts->kp);
-  std::string ki = "ki: " + std::to_string(constants[column].consts->ki);
-  std::string kd = "kd: " + std::to_string(constants[column].consts->kd);
-  std::string starti = "start i: " + std::to_string(constants[column].consts->start_i);
+  double kp = used_pid_tuner_pids->at(column).consts->kp;
+  double ki = used_pid_tuner_pids->at(column).consts->ki;
+  double kd = used_pid_tuner_pids->at(column).consts->kd;
+  double starti = used_pid_tuner_pids->at(column).consts->start_i;
 
-  kp = row == 0 ? kp + arrow : kp + "\n";
-  ki = row == 1 ? ki + arrow : ki + "\n";
-  kd = row == 2 ? kd + arrow : kd + "\n";
-  starti = row == 3 ? starti + arrow : starti + "\n";
+  std::string sname = used_pid_tuner_pids->at(column).name + "\n";
+  std::string skp = "kp: " + util::to_string_with_precision(kp, util::places_after_decimal(kp, 2));
+  std::string ski = "ki: " + util::to_string_with_precision(ki, util::places_after_decimal(ki, 2));
+  std::string skd = "kd: " + util::to_string_with_precision(kd, util::places_after_decimal(kd, 2));
+  std::string sstarti = "start i: " + util::to_string_with_precision(starti, util::places_after_decimal(starti, 2));
 
-  complete_pid_tuner_output = name + "\n" + kp + ki + kd + starti + "\n";
+  skp = row == 0 ? skp + arrow : skp + "\n";
+  ski = row == 1 ? ski + arrow : ski + "\n";
+  skd = row == 2 ? skd + arrow : skd + "\n";
+  sstarti = row == 3 ? sstarti + arrow : sstarti + "\n";
+
+  complete_pid_tuner_output = sname + "\n" + skp + ski + skd + sstarti + "\n";
 
   pid_tuner_print_brain();
   pid_tuner_print_terminal();
@@ -121,16 +128,24 @@ void Drive::pid_tuner_value_modify(float p, float i, float d, float start) {
 
   switch (row) {
     case 0:
-      constants[column].consts->kp += p;
+      used_pid_tuner_pids->at(column).consts->kp += p;
+      if (used_pid_tuner_pids->at(column).consts->kp < 0.0)
+        used_pid_tuner_pids->at(column).consts->kp = 0.0;
       break;
     case 1:
-      constants[column].consts->ki += i;
+      used_pid_tuner_pids->at(column).consts->ki += i;
+      if (used_pid_tuner_pids->at(column).consts->ki < 0.0)
+        used_pid_tuner_pids->at(column).consts->ki = 0.0;
       break;
     case 2:
-      constants[column].consts->kd += d;
+      used_pid_tuner_pids->at(column).consts->kd += d;
+      if (used_pid_tuner_pids->at(column).consts->kd < 0.0)
+        used_pid_tuner_pids->at(column).consts->kd = 0.0;
       break;
     case 3:
-      constants[column].consts->start_i += start;
+      used_pid_tuner_pids->at(column).consts->start_i += start;
+      if (used_pid_tuner_pids->at(column).consts->start_i < 0.0)
+        used_pid_tuner_pids->at(column).consts->start_i = 0.0;
       break;
     default:
       break;
@@ -163,13 +178,13 @@ void Drive::pid_tuner_iterate() {
   // Up / Down for Rows
   if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_RIGHT)) {
     column++;
-    if (column > constants.size() - 1)
+    if (column > used_pid_tuner_pids->size() - 1)
       column = 0;
     pid_tuner_print();
   } else if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_LEFT)) {
     column--;
     if (column < 0)
-      column = constants.size() - 1;
+      column = used_pid_tuner_pids->size() - 1;
     pid_tuner_print();
   }
 
