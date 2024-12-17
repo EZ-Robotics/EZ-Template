@@ -29,6 +29,12 @@ pros c fetch EZ-Template@x.x.x.zip
 ```
 
 ## Apply EZ-Template to Your Project
+:::warning
+
+Ensure that your PROS kernel version at least the same as EZ-Template!  Run `pros c upgrade kernel@latest` if you're unsure.  
+
+:::
+
 Apply EZ-Template to your project by typing below, replacing `x.x.x` with the version of your file.  Press Enter.
 ```
 pros c apply EZ-Template@x.x.x

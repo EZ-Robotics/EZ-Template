@@ -47,6 +47,8 @@ Are you using tracking wheels?  You can configure them here!
 The examples below show you how to create tracking wheels using ADI Encoders, ADI Encoders plugged into 3-wire Expanders, and Rotation Sensors.  
 
 `2.75`  is the wheel diameter, and `4.0` is the distance to the center of the robot.  You can use a tape measure to find this value, or you can follow [this tutorial](/tutorials/tuning_tracking_wheel_width).  
+
+Left/right trackers are tracking wheels that are parallel to your drive wheels, and front/back trackers are tracking wheels that are perpendicular to your drive wheels.  
 ```cpp
 ez::tracking_wheel right_tracker({-'A', -'B'}, 2.75, 4.0);  // ADI Encoders
 ez::tracking_wheel left_tracker(1, {'C', 'D'}, 2.75, 4.0);  // ADI Encoders plugged into a Smart port
