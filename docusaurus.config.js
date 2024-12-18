@@ -48,7 +48,7 @@ const config = {
           lastVersion: 'current',
           versions: {
             current: {
-              label: '3.2.0',
+              label: '3.2.1',
               banner: 'none',
             },
             '2.x': {
@@ -111,7 +111,7 @@ const config = {
 
   themeConfig:
 
-  
+
 
 
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
@@ -152,7 +152,7 @@ const config = {
       announcementBar: {
         id: 'new_version',
         content:
-          '🥳 <a target="_blank" rel="noopener noreferrer" href="https://github.com/EZ-Robotics/EZ-Template/releases/tag/v3.2.0">EZ-Template v3.2.0</a> is out! 🥳',
+          '🥳 <a target="_blank" rel="noopener noreferrer" href="https://github.com/EZ-Robotics/EZ-Template/releases/tag/v3.2.1">EZ-Template v3.2.1</a> is out! 🥳',
         backgroundColor: '#FDFD96',
         textColor: '#000000',
         isCloseable: true,
