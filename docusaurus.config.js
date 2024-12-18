@@ -117,6 +117,12 @@ const config = {
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
 
+      docs: {
+        sidebar: {
+          autoCollapseCategories: true,
+        },
+      },
+
       algolia: {
         // The application ID provided by Algolia
         appId: 'X63SPMQ1B4',
