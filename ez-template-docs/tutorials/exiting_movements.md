@@ -53,6 +53,73 @@ chassis.pid_wait();
 ```
 
 
+## pid_wait_quick()
+`pid_wait_quick()` is exactly the same as writing the code below.  It will `pid_wait_until(target)` but it'll replace `target` with wherever the last target you set was.  This way of exiting has a chance at being faster, because if the robot overshoots at all then the code will exit.  If you undershoot then it'll be as if you ran a normal `pid_wait()`.   
+
+The two examples below do the same thing.  
+<Tabs
+  groupId="wait_until_vs_quick_wait"
+  defaultValue="example"
+  values={[
+    { label: 'pid_wait_until()',  value: 'example', },
+    { label: 'pid_wait_quick()',  value: 'proto', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+chassis.pid_drive_set(24_in, 110);
+chassis.pid_wait_until(24_in);
+```
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+chassis.pid_drive_set(24_in, 110);
+chassis.pid_wait_quick();
+```
+</TabItem>
+</Tabs>
+
+## pid_wait_quick_chain()
+`pid_wait_quick_chain()` is your fastest way of exiting.  The code below is what happens internally.  You will tell the robot to go 24 inches, internally X will get added to target, and `pid_wait_until()` will get called with the target YOU entered.  
+
+The two examples below do the same thing.  
+<Tabs
+  groupId="quick_chain_vs_wait_until"
+  defaultValue="example"
+  values={[
+    { label: 'pid_wait_until()',  value: 'example', },
+    { label: 'pid_wait_quick()',  value: 'proto', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+chassis.pid_drive_set(27_in, 110);
+chassis.pid_wait_until(24_in);
+```
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+chassis.pid_drive_chain_constant_set(3_in);
+
+chassis.pid_drive_set(24_in, 110);
+chassis.pid_wait_quick_chain();
+```
+</TabItem>
+</Tabs>
+While being the fastest way of exiting, this should be used carefully to avoid inconsistencies.  Make sure your PID is well-tuned and do enough testing that you're confident your results are consistent.  
+
+
+
 ## pid_wait_until()
 `pid_wait_until()` is very similar to typing the code below.  This code will exit as soon as the robot has traveled 6 inches.  
 ```cpp
@@ -127,24 +194,32 @@ intake.move(127);
 chassis.pid_wait();
 ```
 
-## pid_wait_quick()
-`pid_wait_quick()` is exactly the same as writing the code below.  It will `pid_wait_until(target)` but it'll replace `target` with wherever the last target you set was.  This way of exiting has a chance at being faster, because if the robot overshoots at all then the code will exit.  If you undershoot then it'll be as if you ran a normal `pid_wait()`.   
 
-The two examples below do the same thing.  
+
+
+
+
+## pid_wait_until_index()
+`pid_wait_until_index()` is basically the same as `pid_wait_until({point})`, except you're giving it an index in your pure pursuit instead of a point.  The two examples below do the same thing.  
 <Tabs
-  groupId="wait_until_vs_quick_wait"
+  groupId="pid_wait_until_index_vs_pid_wait_until"
   defaultValue="example"
   values={[
-    { label: 'pid_wait_until()',  value: 'example', },
-    { label: 'pid_wait_quick()',  value: 'proto', },
+    { label: 'pid_wait_until_index()',  value: 'example', },
+    { label: 'pid_wait_until()',  value: 'proto', },
   ]
 }>
 
 <TabItem value="example">
 
 ```cpp
-chassis.pid_drive_set(24_in, 110);
-chassis.pid_wait_until(24_in);
+chassis.pid_odom_set({{{0_in, 24_in}, fwd, 110},
+                      {{12_in, 24_in}, fwd, 110},
+                      {{24_in, 24_in}, fwd, 110}},
+                     true);
+chassis.pid_wait_until_index(1);  // Waits until the robot passes 12, 24
+Intake.move(127);
+chassis.pid_wait();
 ```
 </TabItem>
 
@@ -152,42 +227,32 @@ chassis.pid_wait_until(24_in);
 <TabItem value="proto">
 
 ```cpp
-chassis.pid_drive_set(24_in, 110);
-chassis.pid_wait_quick();
+chassis.pid_odom_set({{{0_in, 24_in}, fwd, 110},
+                      {{12_in, 24_in}, fwd, 110},
+                      {{24_in, 24_in}, fwd, 110}},
+                     true);
+chassis.pid_wait_until({12_in, 24_in});  // Waits until the robot passes 12, 24
+Intake.move(127);
+chassis.pid_wait();
 ```
 </TabItem>
 </Tabs>
 
-## pid_wait_quick_chain()
-`pid_wait_quick_chain()` is your fastest way of exiting.  The code below is what happens internally.  You will tell the robot to go 24 inches, internally X will get added to target, and `pid_wait_until()` will get called with the target YOU entered.  
 
-The two examples below do the same thing.  
-<Tabs
-  groupId="quick_chain_vs_wait_until"
-  defaultValue="example"
-  values={[
-    { label: 'pid_wait_until()',  value: 'example', },
-    { label: 'pid_wait_quick()',  value: 'proto', },
-  ]
-}>
 
-<TabItem value="example">
-
+## pid_wait_until_index_started()
+This function is a little different to the ones above.  This exits once the input point **becomes the target**.  This is a key difference, as instead of starting to spin the intake at `{12, 24}`, this code will have the robot starting to intake earlier so by the time it's at `{12, 24}` it's already intaking.  
 ```cpp
-chassis.pid_drive_set(27_in, 110);
-chassis.pid_wait_until(24_in);
+chassis.pid_odom_set({{{0_in, 24_in}, fwd, 110},
+                      {{12_in, 24_in}, fwd, 110},
+                      {{24_in, 24_in}, fwd, 110}},
+                     true);
+chassis.pid_wait_until_index_started(1));  // Waits until 12, 24 becomes the target point
+Intake.move(127);
+chassis.pid_wait();
 ```
-</TabItem>
 
 
-<TabItem value="proto">
 
-```cpp
-chassis.pid_drive_chain_constant_set(3_in);
 
-chassis.pid_drive_set(24_in, 110);
-chassis.pid_wait_quick_chain();
-```
-</TabItem>
-</Tabs>
-While being the fastest way of exiting, this should be used carefully to avoid inconsistencies.  Make sure your PID is well-tuned and do enough testing that you're confident your results are consistent.  
+
