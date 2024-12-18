@@ -13,7 +13,7 @@ Blank pages are an easy solution for this, allowing you to add your own pages to
 ## Introduction
 
 ### Hello World!
-We have to make a `Hello World! screen appear, right?  
+We have to make a `Hello World!` screen appear, right?  
 
 To create a blank page, you just have to check what page you're on.  This will simultaneously check what page you're on and create the page if it doesn't exist.  
 ```cpp
@@ -180,7 +180,7 @@ void ez_screen_task() {
 pros::Task ezScreenTask(ez_screen_task);
 ```
 
-We can fill this in with code that prints to the brain screen and code that constantly updates `test_variable`.  This code can be placed anywhere outside of a function in `main.cpp`.  With this you'll be able to see `test_variable` update if you're in user control or autonomous!  
+We can fill this in with code that prints to the brain screen and code that constantly updates `test_variable`.  This code can be placed anywhere outside of a function in `main.cpp`, it's above `opcontrol()` in the example project.  With this you'll be able to see `test_variable` update if you're in user control or autonomous!  
 ```cpp
 // Make test_variable a global variable 
 double test_variable = 0.0;
