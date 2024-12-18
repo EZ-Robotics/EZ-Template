@@ -27,7 +27,13 @@ Look at our [Using Auton Selector tutorial](/tutorials/using_ez) for how to sele
 
 
 ### Modifying Constants  
-In `src/autons.cpp`, there is a function called `default_constants()`.  This function is where all of your modified PID constants can be set.  
+In `src/autons.cpp`, there is a function called `default_constants()`.  This function is where all of your modified PID constants can be set.   
+
+The parameters are:  
+`p` kP  
+`i` kI  
+`d` kD  
+`p_start_i` i will start when error is within this  
 ```cpp
 void default_constants() {
   // P, I, D, and Start I
