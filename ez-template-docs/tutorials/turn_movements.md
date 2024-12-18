@@ -45,6 +45,21 @@ chassis.pid_wait();
 chassis.pid_turn_set(0, 90);
 chassis.pid_wait();
 ```
+
+### Starting Angle
+You can change the starting angle of the robot with `drive_angle_set()`.  This is nice when your robot is facing a strange angle to start the autonomous routine, and you can align your angles with the field.  
+```cpp
+chassis.drive_angle_set(45_deg);  // Start the robot facing 45 degrees
+
+// Turn to 0deg
+chassis.pid_turn_set(0_deg, 90);
+chassis.pid_wait();
+
+// Turn to 45deg
+chassis.pid_turn_set(45_deg, 90);
+chassis.pid_wait();
+```
+
 ### Turn Paths
 You can set the robot to always turn a specific direction.  
 ```cpp

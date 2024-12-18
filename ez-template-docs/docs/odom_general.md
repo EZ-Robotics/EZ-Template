@@ -1105,7 +1105,7 @@ void autonomous() {
  
 
 ### odom_theta_flip()
-Flips the rotation axis.   
+Flips the rotation axis.  This works for odom and non odom functions.  
 
 `flip` true means counterclockwise is positive, false means clockwise is positive
 <Tabs
