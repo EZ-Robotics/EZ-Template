@@ -44,6 +44,12 @@ ez::Drive chassis(
 ## Configure Tracking Wheels
 Are you using tracking wheels?  You can configure them here!
 
+:::note
+
+Tracking wheels are not required for EZ-Template!  Read below for more information.  
+
+:::
+
 The examples below show you how to create tracking wheels using ADI Encoders, ADI Encoders plugged into 3-wire Expanders, and Rotation Sensors.  
 
 If you have:
@@ -53,11 +59,11 @@ If you have:
 * traction wheels
   * you can just use a parallel tracking wheel and get good results
   
-But, **EZ-Template works without tracking wheels!**  If you use no tracking wheels, you'll need to be aware of wheel slip and try to avoid it.  Odometry and tracking are not magic and you'll need to do as much as possible to help the robot be consistent.  
+But, **EZ-Template works without tracking wheels!**  If you use no tracking wheels, you'll need to be aware of wheel slip and try to avoid it.  Odometry and tracking are not magic and you'll need to do as much as possible to help the robot be consistent.  If you're able to, just fit a parallel and perpendicular tracking wheel :D you'll be thankful in the long run.  
 
-If you're able to, just fit a parallel and perpendicular tracking wheel :D you'll be thankful in the long run.
+EZ-Template supports any combination of tracking wheels.  
 
-`2.75`  is the wheel diameter, and `4.0` is the distance to the center of the robot.  You can use a tape measure to find this value, or you can follow [this tutorial](/tutorials/tuning_tracking_wheel_width).  
+`2.75`  is the wheel diameter, and `4.0` is the distance to the center of the robot.  You can use a tape measure to find this value, or you can follow [this tutorial](/tutorials/tuning_tracking_wheel_width).  Your parallel tracking wheels will be the left/right trackers, and your perpendicular trackers will be the front/back trackers.  
 
 Left/right trackers are tracking wheels that are parallel to your drive wheels, and front/back trackers are tracking wheels that are perpendicular to your drive wheels.  
 ```cpp

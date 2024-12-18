@@ -137,6 +137,7 @@ const sidebars = {
         'tutorials/mirror_autons',
         'tutorials/pid',
         'tutorials/pto_tutorial',
+        'migration/3.1-3.2',
       ],
 
     },
@@ -211,6 +212,8 @@ const sidebars = {
             'migration/2.2-3.0',
           ],
         },
+
+        
         
       ],
       
