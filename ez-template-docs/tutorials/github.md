@@ -103,7 +103,7 @@ Type in the name of the repository, decide where the code should live on your co
 ### How to Pull
 `Pulling` is when you take the code from GitHub and put it onto your computer.
 
-In GitHub Desktop, go to `Repository` -> `Pull`.  If you've made changes, you can `stache` them for later.
+In GitHub Desktop, go to `Repository` -> `Pull`.  If you've made changes, you can `stach` them for later.
 
 ## You're Done! 
 You know how to use GitHub!
