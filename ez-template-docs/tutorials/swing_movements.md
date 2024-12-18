@@ -59,6 +59,20 @@ chassis.pid_swing_set(ez::RIGHT_SWING, 0, 90);
 chassis.pid_wait();
 ```
 
+### Starting Angle
+You can change the starting angle of the robot with `drive_angle_set()`.  This is nice when your robot is facing a strange angle to start the autonomous routine, and you can align your angles with the field.  
+```cpp
+chassis.drive_angle_set(45_deg);  // Start the robot facing 45 degrees
+
+// Swing to 0deg
+chassis.pid_swing_set(ez::LEFT_SWING, 0_deg, 90);
+chassis.pid_wait();
+
+// Swing to 45deg
+chassis.pid_swing_set(ez::LEFT_SWING, 45_deg, 90);
+chassis.pid_wait();
+```
+
 
 ### Arcs
 ```cpp
