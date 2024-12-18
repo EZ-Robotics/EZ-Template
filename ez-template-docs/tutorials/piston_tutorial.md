@@ -35,7 +35,7 @@ We want to create a piston and have it accessible by `main.cpp` and `autons.cpp`
 #include "EZ-Template/api.hpp"
 #include "api.h"
 
-ez::Piston doinker('A');
+inline ez::Piston doinker('A');
 
 // Your motors, sensors, etc. should go here.  Below are examples
 
@@ -53,7 +53,7 @@ ez::Piston doinker('A');
 #include "EZ-Template/api.hpp"
 #include "api.h"
 
-ez::Piston doinker('A', 3);  // Creates a piston in 'A' of a 3-wire Expander in port 3
+inline ez::Piston doinker('A', 3);  // Creates a piston in 'A' of a 3-wire Expander in port 3
 
 // Your motors, sensors, etc. should go here.  Below are examples
 
