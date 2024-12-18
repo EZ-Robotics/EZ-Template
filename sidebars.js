@@ -97,6 +97,7 @@ const sidebars = {
           items: [
             'tutorials/intake_tutorial',
             'tutorials/piston_tutorial',
+            'tutorials/subsystem_best_practice',
             // gain scheduling?
           ],
         },
