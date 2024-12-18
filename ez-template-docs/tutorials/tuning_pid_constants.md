@@ -85,7 +85,7 @@ After finding a kP that causes undesired behavior, we can tune kD.  Increase kD
 Repeat Steps 1 and Steps 2 until kD cannot remove oscillation from the movement.  Then go back to the last values that worked. 
 
 ### Step 4 - kI
-Sometimes you need a little extra power to get your robot all the way there.  Integral can be a dangerous variable because it grows exponentially.  The fourth parameter is what the error needs to be for I to start.  For turns, we found around 15 degrees is good. 
+Sometimes you need a little extra power to get your robot all the way there.  Integral can be a dangerous variable because it grows exponentially.  The fourth parameter is what the error needs to be for I to start, this prevents "integral windup".  For turns, we found around 15 degrees is good. 
 
 Increase kI until any minor disturbances are accounted for.  You might need to adjust kD while tuning kI.  
 

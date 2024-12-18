@@ -10,8 +10,6 @@ If you plan on tuning wheel diameter, you must do that before this!
 
 :::
 
-tldr of what tracking wheels are should be here, the different configs, why use some over others, and how to implement it in the code
-
 ## What is it?
 Track width is calculated at your tracking wheel by default.  Modifying tracking wheel width offsets your "tracking center", and the goal is to get this as close to the center of rotation of your robot as possible.  
 
@@ -21,6 +19,12 @@ Modifying width on left/right trackers will move your tracking center to the lef
 
 Modifying width on front/back trackers will move your tracking center forwards and backwards.  
 - If this isn't accurate, the robot's XY position will change during turns and will make where the robot currently is unintuitive
+
+:::note
+
+If you aren't using tracking wheels, you don't need any offsets!
+
+:::
 
 ## measure_offsets()
 As of 3.2.0, the example project ships with an autonomous routine called `measure_offsets()` that will turn the robot 10 times and calculate out what your offsets should be.    
@@ -144,6 +148,13 @@ pros::Task ezScreenTask(ez_screen_task);
 ```
 
 ## Modifying Constants
-Go to the `measure_offsets()` page on the autonomous selector and press `B` and `DOWN` at the same time.  This will start running the `measure_offsets()` autonomous routine.  
+Go to the `measure_offsets()` page on the autonomous selector and run the autonomous (press `B` and `DOWN` at the same time, or use a competition switch).  This will start running the `measure_offsets()` autonomous routine.  
 
-Once this is complete, go to Blank Page 1 and read what it says the width should be.  Go into your code and replace your widths with these new values.  
+Once this is complete, go to Blank Page 1.  The new widths that `measure_offsets()` calculated will be here.  
+
+Go into your code and replace your tracking wheel widths with these new values.  Replace `4.0` with your new values.  
+```cpp
+ez::tracking_wheel right_tracker({-'A', -'B'}, 2.75, 4.0);  // ADI Encoders
+ez::tracking_wheel left_tracker(1, {'C', 'D'}, 2.75, 4.0);  // ADI Encoders plugged into a Smart port
+ez::tracking_wheel horiz_tracker(1, 2.75, 4.0);             // Rotation sensors
+```
