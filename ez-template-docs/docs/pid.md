@@ -18,7 +18,7 @@ Creates a PID object with constants.  Everything past kP has a default starting 
 `p` kP  
 `i` kI  
 `d` kD  
-`p_start_i` i will start when error is within this
+`p_start_i` i will start when error is within this  
 `name` a string for the name of the PID
 <Tabs
   groupId="ex2"

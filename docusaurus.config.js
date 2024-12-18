@@ -42,6 +42,14 @@ const config = {
       'classic',
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
+
+        pages: {
+          editUrl: ({ pagesPath }) =>
+            `https://github.com/ez-robotics/EZ-Template/tree/website/src/pages/${pagesPath}`,
+          showLastUpdateTime: true,
+          showLastUpdateAuthor: true,
+          
+        },
         docs: {
 
           // For when 3.0 is actually released
@@ -79,6 +87,8 @@ const config = {
           // Remove this to remove the "edit this page" links.
           editUrl: ({ versionDocsDirPath, docPath }) =>
             `https://github.com/ez-robotics/EZ-Template/tree/website/${versionDocsDirPath}/${docPath}`,
+          showLastUpdateTime: true,
+          showLastUpdateAuthor: true,
         },
 
         blog: false,
@@ -100,6 +110,10 @@ const config = {
         path: 'community', // file path
         routeBasePath: 'community', // url
         sidebarPath: './sidebarsCommunity.js',
+        editUrl: ({ docPath }) =>
+          `https://github.com/ez-robotics/EZ-Template/tree/website/community/${docPath}`,
+        showLastUpdateTime: true,
+        showLastUpdateAuthor: true,
         // ... other options
       },
     ],
