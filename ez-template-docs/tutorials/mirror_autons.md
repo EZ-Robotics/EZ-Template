@@ -22,6 +22,12 @@ odom_x_direction_get();  // True = left is positive X, False = right is positive
 odom_theta_direction_get(); // True = positive is counterclockwise, False = positive is counterclockwise
 ```
 
+:::note
+
+Flipping works without odom too!  You'll only need to use `odom_theta_flip()` and `odom_theta_direction_get()`
+
+:::
+
 ## Example
 You'll need three functions per auton that you want flipped:
 - a base function

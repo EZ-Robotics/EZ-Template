@@ -633,7 +633,7 @@ pose vector_off_point(double added, pose icurrent);
 
 ```cpp
 void initialize() {
-  ez::pose test = ez::util::vector_off_point(24, {0, 0, 0);
+  ez::pose test = ez::util::vector_off_point(24, {0, 0, 0});
   printf("(%.2f, %.2f, %.2f)\n", test.x, test.y, test.theta);
 }
 ```
