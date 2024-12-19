@@ -3410,7 +3410,33 @@ class Drive {
    */
   bool opcontrol_arcade_scaling_enabled();
 
+  /**
+   * Current odom position.
+   */
+  pose odom_current = {0.0, 0.0, 0.0};
+
+  /**
+   * Tracking task that uses tracking wheels, this is used by default.
+   */
+  void tracking_wheels_tracking();
+
+  /**
+   * Sets a new task to use for tracking.
+   *
+   * In this function, you must:
+   *  - odom_current.x =
+   *  - odom_current.y =
+   *  - odom_current.theta =
+   *
+   * This function does not need to loop, that is done for you in EZ-Template.
+   *
+   * \param tracking_task
+   *        new function for tracking
+   */
+  void odom_tracking_set(std::function<void(void)> tracking_task);
+
  private:
+  std::function<void(void)> tracking;
   void opcontrol_drive_activebrake_targets_set();
   double odom_smooth_weight_smooth = 0.0;
   double odom_smooth_weight_data = 0.0;
@@ -3454,7 +3480,6 @@ class Drive {
   double global_track_width = 0.0;
   bool odometry_enabled = true;
   pose odom_target = {0.0, 0.0, 0.0};
-  pose odom_current = {0.0, 0.0, 0.0};
   pose odom_second_to_last = {0.0, 0.0, 0.0};
   pose odom_start = {0.0, 0.0, 0.0};
   pose odom_target_start = {0.0, 0.0, 0.0};
