@@ -152,6 +152,9 @@ void Drive::drive_defaults_set() {
   std::cout << std::fixed;
   std::cout << std::setprecision(2);
 
+  // Set tracking task, user can override this if they want
+  odom_tracking_set(std::bind(&ez::Drive::tracking_wheels_tracking, this));
+
   // PID Constants
   pid_drive_constants_set(20.0, 0.0, 100.0);
   pid_heading_constants_set(11.0, 0.0, 20.0);

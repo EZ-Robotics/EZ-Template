@@ -67,6 +67,10 @@ double Drive::odom_theta_get() { return odom_current.theta; }
 pose Drive::odom_pose_get() { return odom_current; }
 double Drive::drive_width_get() { return global_track_width; }
 
+// Set tracking task
+// void Drive::odom_tracking_set(void (*tracking_task)()) { tracking = tracking_task; }
+void Drive::odom_tracking_set(std::function<void(void)> tracking_task) { tracking = tracking_task; }
+
 std::pair<float, float> Drive::decide_vert_sensor(ez::tracking_wheel* tracker, bool is_tracker_enabled, float ime, float ime_track) {
   float current = ime;
   float track_width = ime_track;
@@ -125,21 +129,10 @@ ez::pose Drive::solve_xy_horiz(float p_track_width, float current_t, float delta
 
   return output;
 }
-// pose central_pose;
+
 // Tracking based on https://wiki.purduesigbots.com/software/odometry
-void Drive::ez_tracking_task() {
-  // Don't let this function run if odom is disabled
-  // and make sure all the "lasts" are 0
-  if (!imu_calibration_complete || !odometry_enabled) {
-    h_last = 0.0;
-    t_last = 0.0;
-    l_last = 0.0;
-    r_last = 0.0;
-    return;
-  }
-
+void Drive::tracking_wheels_tracking() {
   // Decide on using a horiz tracker vs not
-
   ez::tracking_wheel* h_sensor = odom_tracker_back != nullptr ? odom_tracker_back : odom_tracker_front;
   bool h_tracker_enabled = h_sensor == odom_tracker_back ? odom_tracker_back_enabled : odom_tracker_front_enabled;
   std::pair<float, float> h_cur_and_track = decide_vert_sensor(h_sensor, h_tracker_enabled);
@@ -225,6 +218,28 @@ void Drive::ez_tracking_task() {
 
   odom_current.theta = drive_imu_get();
 
+  // printf("odom_ime_track_width_left %f   l_ %f   r_ %f   t_current %f\n", odom_ime_track_width_left, r_, t_, t_current);
+
+  // printf("left (%.2f, %.2f)", l_pose.x, l_pose.y);
+  // printf("   right (%.2f, %.2f)", r_pose.x, r_pose.y);
+  // printf("   current used (%.2f, %.2f, %.2f)      l delta: %.2f   r delta: %.2f", odom_current.x, odom_current.y, odom_current.theta, l_, r_);
+  // printf("        htw: %f\n", h_track_width);
+}
+
+void Drive::ez_tracking_task() {
+  // Don't let this function run if odom is disabled
+  // and make sure all the "lasts" are 0
+  if (!imu_calibration_complete || !odometry_enabled) {
+    h_last = 0.0;
+    t_last = 0.0;
+    l_last = 0.0;
+    r_last = 0.0;
+    return;
+  }
+
+  // Use ez's tracking or a custom tracking function made by the user
+  tracking();
+
   // This is used for PID as a "current" sensor value
   // what this value actually is doesn't matter, it just needs to move with the correct sign
   xy_current_fake = fabs(is_past_target({0.0, 0.0}, odom_pose_get()));
@@ -233,11 +248,4 @@ void Drive::ez_tracking_task() {
   else
     was_odom_just_set = false;
   xy_last_fake = xy_current_fake;
-
-  // printf("odom_ime_track_width_left %f   l_ %f   r_ %f   t_current %f\n", odom_ime_track_width_left, r_, t_, t_current);
-
-  // printf("left (%.2f, %.2f)", l_pose.x, l_pose.y);
-  // printf("   right (%.2f, %.2f)", r_pose.x, r_pose.y);
-  // printf("   current used (%.2f, %.2f, %.2f)      l delta: %.2f   r delta: %.2f", odom_current.x, odom_current.y, odom_current.theta, l_, r_);
-  // printf("        htw: %f\n", h_track_width);
 }
