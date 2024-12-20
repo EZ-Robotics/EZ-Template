@@ -69,7 +69,7 @@ inline ez::Piston doinker('A', 3);  // Creates a piston in 'A' of a 3-wire Expan
 ### Two Buttons
 To move a piston we type
 ```cpp
-motor name.(true or false);
+piston name.(true or false);
 ```
 
 So to actuate the piston, we would type
@@ -172,7 +172,7 @@ if (master.get_digital_new_pres(DIGITAL_R1)) {
 
 EZ-Template has a shortcut for button toggles with pistons.  
 ```cpp
-doinker.button_toggle(master.get_digital_new_press(DIGITAL_R1));
+doinker.button_toggle(master.get_digital(DIGITAL_R1));
 ```
 
 Adding this to opcontrol looks like this.  
@@ -195,7 +195,7 @@ void opcontrol() {
     // Put more user control code here!
     // . . .
     
-    doinker.button_toggle(master.get_digital_new_press(DIGITAL_R1));
+    doinker.button_toggle(master.get_digital(DIGITAL_R1));
 
     pros::delay(ez::util::DELAY_TIME);  // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
   }
