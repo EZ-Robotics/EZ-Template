@@ -3361,6 +3361,16 @@ class Drive {
   };
 
   /**
+   * Adds PIDs to the PID Tuner.
+   *
+   * This adds to both the default tuner and the full tuner.
+   *
+   * \param new_pid_and_name
+   *        {"name", &pid.constants}
+   */
+  void pid_tuner_add(const_and_name new_pid_and_name);
+
+  /**
    * Vector used for a simplified PID Tuner
    */
   std::vector<const_and_name> pid_tuner_pids = {
