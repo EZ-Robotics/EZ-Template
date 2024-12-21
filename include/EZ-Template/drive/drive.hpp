@@ -1245,6 +1245,16 @@ class Drive {
    * True enabled, false disabled.
    */
   bool pid_print_toggle_get();
+  
+  /**
+   * Sets the buttons to change the PID tuner.
+   *
+   * \param decrease
+   *        sets the button to lower PID tuner
+   * \param increase 
+   *        sets the button to increase PID tuner
+   */
+  void pid_tuner_button_set(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase);
 
   /////
   //

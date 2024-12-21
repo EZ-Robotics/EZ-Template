@@ -164,6 +164,13 @@ double Drive::pid_tuner_increment_i_get() { return i_increment; }
 double Drive::pid_tuner_increment_d_get() { return d_increment; }
 double Drive::pid_tuner_increment_start_i_get() { return start_i_increment; }
 
+pros::controller_digital_e_t pid_tuner_increase;
+pros::controller_digital_e_t pid_tuner_decrease;
+void Drive::pid_tuner_button_set(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase) {
+  pid_tuner_increase = increase;
+  pid_tuner_decrease = decrease;
+}
+
 // Iterate
 void Drive::pid_tuner_iterate() {
   if (!pid_tuner_on) return;  // Exit if it's disabled
@@ -202,10 +209,10 @@ void Drive::pid_tuner_iterate() {
   }
 
   // Increase / Decrease constant
-  if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_A)) {
+  if (master.get_digital_new_press(pid_tuner_increase)) {
     pid_tuner_value_increase();
     pid_tuner_print();
-  } else if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_Y)) {
+  } else if (master.get_digital_new_press(pid_tuner_decrease)) {
     pid_tuner_value_decrease();
     pid_tuner_print();
   }
