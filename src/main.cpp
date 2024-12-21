@@ -28,11 +28,14 @@ ez::Drive chassis(
  * All other competition modes are blocked by initialize; it is recommended
  * to keep execution time for this mode under a few seconds.
  */
+ez::PID liftPID(0.45);
 void initialize() {
   // Print our branding over your terminal :D
   ez::ez_template_print();
 
   pros::delay(500);  // Stop the user from doing anything while legacy ports configure
+
+  chassis.pid_tuner_add({"Lift PID", &liftPID.constants});
 
   // Are you using tracking wheels?  Comment out which ones you're using here!
   // chassis.odom_tracker_right_set(&right_tracker);
@@ -241,6 +244,10 @@ void opcontrol() {
   while (true) {
     // Gives you some extras to make EZ-Template ezier
     ez_template_extras();
+
+    if (master.get_digital_new_press(DIGITAL_R1)) {
+      chassis.pid_tuner_full_enable(!chassis.pid_tuner_full_enabled());
+    }
 
     chassis.opcontrol_tank();  // Tank control
     // chassis.opcontrol_arcade_standard(ez::SPLIT);   // Standard split arcade
