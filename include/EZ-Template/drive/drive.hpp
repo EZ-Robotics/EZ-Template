@@ -3299,7 +3299,7 @@ class Drive {
   /**
    * Sets the value that PID Tuner increments I.
    *
-   * \param p
+   * \param i
    *        i will increase by this
    */
   void pid_tuner_increment_i_set(double i);
@@ -3307,7 +3307,7 @@ class Drive {
   /**
    * Sets the value that PID Tuner increments D.
    *
-   * \param p
+   * \param d
    *        d will increase by this
    */
   void pid_tuner_increment_d_set(double d);
@@ -3315,7 +3315,7 @@ class Drive {
   /**
    * Sets the value that PID Tuner increments Start I.
    *
-   * \param p
+   * \param start_i
    *        start i will increase by this
    */
   void pid_tuner_increment_start_i_set(double start_i);
@@ -3387,7 +3387,7 @@ class Drive {
   /**
    * Sets the max speed for user control.
    *
-   * \param int
+   * \param speed
    *        the speed limit
    */
   void opcontrol_speed_max_set(int speed);
@@ -3400,7 +3400,7 @@ class Drive {
   /**
    * Toggles vector scaling for arcade control.  True enables, false disables.
    *
-   * \param bool
+   * \param enable
    *        true enables, false disables
    */
   void opcontrol_arcade_scaling(bool enable);
