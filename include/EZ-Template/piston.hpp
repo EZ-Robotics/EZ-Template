@@ -7,6 +7,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #pragma once
 
 #include "api.h"
+#include "pros/misc.h"
 
 namespace ez {
 class Piston {
@@ -60,6 +61,14 @@ class Piston {
    *        an input button
    */
   void button_toggle(int toggle);
+
+  /**
+   * One button toggle for the piston.
+   *
+   * \param toggle
+   *        an input button
+   */
+  void button_toggle(pros::controller_digital_e_t toggle);
 
   /**
    * Two buttons trigger the piston.  Active is enabled, deactive is disabled.
