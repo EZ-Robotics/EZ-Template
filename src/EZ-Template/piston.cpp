@@ -55,3 +55,11 @@ void Piston::buttons(int active, int deactive) {
   else if (deactive && get())
     set(false);
 }
+
+// Two button control for piston, takes in pros buttons
+void Piston::buttons(pros::controller_digital_e_t active, pros::controller_digital_e_t deactive) {
+  if (master.get_digital(active) && !get())
+    set(true);
+  else if (master.get_digital(deactive) && get())
+    set(false);
+}

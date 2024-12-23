@@ -75,10 +75,20 @@ class Piston {
    *
    * \param active
    *        sets piston to true
-   * \param active
+   * \param deactive
    *        sets piston to false
    */
   void buttons(int active, int deactive);
+  
+  /**
+   * Two buttons trigger the piston. Active is enabled, deactive is disabled.
+   *
+   * \param active
+   *        sets piston to true
+   * \param deactive
+   *        sets piston to false
+   */
+  void buttons(pros::controller_digital_e_t active, pros::controller_digital_e_t deactive);
 
  private:
   bool reversed = false;
