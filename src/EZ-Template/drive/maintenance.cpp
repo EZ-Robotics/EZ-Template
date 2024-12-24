@@ -11,6 +11,7 @@ void Drive::check_imu_task()
         auto& [imuPtr, start_time] = bad_imus[i];
         if(pros::millis() - start_time > util::DISCONNECT_THRESHOLD)
         {
+            delete imuPtr; //always invalid
             deleteIndexes.push_back(i);
         }
         else if(imuPtr->get_status() != pros::ImuStatus::error && errno != PROS_ERR)//not sure if errno is needed yet. I think it is??
