@@ -71,7 +71,7 @@ class Drive {
   /**
    * All good imus, for redunadncy
    */
-  std::stack<pros::Imu*> good_imus;
+  std::deque<pros::Imu*> good_imus;
   
   /**
    * All good imus, for redunadncy
@@ -392,6 +392,10 @@ class Drive {
    */
   void initialize();
 
+  /*
+  * Set all scalings for all imu's
+  */
+  void set_all_imu_scaling(std::vector<double> scales);
   /**
    * Tasks for autonomous.
    */
@@ -3512,6 +3516,7 @@ class Drive {
   bool opcontrol_arcade_scaling_enabled();
 
  private:
+  std::map<pros::Imu, double> imu_scale_map = {};
   void opcontrol_drive_activebrake_targets_set();
   double odom_smooth_weight_smooth = 0.0;
   double odom_smooth_weight_data = 0.0;
@@ -3614,8 +3619,7 @@ class Drive {
   double used_motion_chain_scale = 0.0;
   bool motion_chain_backward = false;
 
-  double IMU_SCALER = 1.0;
-
+  
   bool drive_toggle = true;
   bool print_toggle = true;
   int swing_min = 0;

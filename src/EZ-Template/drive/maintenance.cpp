@@ -16,7 +16,7 @@ void Drive::check_imu_task()
         }
         else if(imuPtr->get_status() != pros::ImuStatus::error && errno != PROS_ERR)//not sure if errno is needed yet. I think it is??
         {
-            good_imus.push(imuPtr);
+            good_imus.push_front(imuPtr);
             deleteIndexes.push_back(i);
             imu = imuPtr;
         }
@@ -29,11 +29,11 @@ void Drive::check_imu_task()
     if((imu->get_status() == pros::ImuStatus::error || errno == PROS_ERR) && !good_imus.empty())//not sure if errno is needed yet. I think it is??
     {
         //switch due to an error
-        bad_imus.push_front(std::make_tuple(good_imus.top(), pros::millis()));
-        good_imus.pop();
+        bad_imus.push_front(std::make_tuple(good_imus.front(), pros::millis()));
+        good_imus.pop_front();
         if (!good_imus.empty())
         {
-            imu = good_imus.top();
+            imu = good_imus.front();
         }
     }  
 }

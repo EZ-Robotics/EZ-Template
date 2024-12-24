@@ -36,7 +36,8 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
     right_motors.push_back(temp);
   }
 
-  good_imus.push(imu);
+  good_imus.push_front(imu);
+  drive_imu_scaler_set(1);
   // Set constants for tick_per_inch calculation
   WHEEL_DIAMETER = wheel_diameter;
   RATIO = ratio;
@@ -68,16 +69,19 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
     right_motors.push_back(temp);
   }
   
+  std::vector<double> imu_scale_values = {};
   
+  good_imus.push_back(imu);
+  imu_scale_values.push_back(1);
   //set all imus
-  for (int i = imu_ports.size(); i > 0; i--)
+  for (int i = 1; i < imu_ports.size(); i--)
   {
-    pros::Imu temp(imu_ports[i]);
-    good_imus.push(&temp);
+    pros::Imu* temp = new pros::Imu(imu_ports[i]);
+    good_imus.push_back(temp);
+    imu_scale_values.push_back(1);
   }
   
-  good_imus.push(imu);
-  
+  set_all_imu_scaling(imu_scale_values);
   // Set constants for tick_per_inch calculation
   WHEEL_DIAMETER = wheel_diameter;
   RATIO = ratio;
@@ -110,8 +114,8 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
     right_motors.push_back(temp);
   }
 
-  good_imus.push(imu);
-
+  good_imus.push_front(imu);
+  drive_imu_scaler_set(1);
   // Set constants for tick_per_inch calculation
   WHEEL_DIAMETER = wheel_diameter;
   RATIO = ratio;
@@ -145,14 +149,19 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
     right_motors.push_back(temp);
   }
 
-   //set all imus
-  for (int i = imu_ports.size(); i > 0; i--)
+  std::vector<double> imu_scale_values = {};
+  
+  good_imus.push_back(imu);
+  imu_scale_values.push_back(1);
+  //set all imus
+  for (int i = 1; i < imu_ports.size(); i--)
   {
-    pros::Imu temp(imu_ports[i]);
-    good_imus.push(&temp);
+    pros::Imu* temp = new pros::Imu(imu_ports[i]);
+    good_imus.push_back(temp);
+    imu_scale_values.push_back(1);
   }
   
-  good_imus.push(imu);
+  set_all_imu_scaling(imu_scale_values);
 
   // Set constants for tick_per_inch calculation
   WHEEL_DIAMETER = wheel_diameter;
@@ -187,8 +196,8 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
     right_motors.push_back(temp);
   }
 
-  good_imus.push(imu);
-
+  good_imus.push_front(imu);
+  drive_imu_scaler_set(1);
   // Set constants for tick_per_inch calculation
   WHEEL_DIAMETER = wheel_diameter;
   RATIO = ratio;
@@ -222,14 +231,19 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
     right_motors.push_back(temp);
   }
   
-   //set all imus
-  for (int i = imu_ports.size(); i > 0; i--)
+  std::vector<double> imu_scale_values = {};
+  
+  good_imus.push_back(imu);
+  imu_scale_values.push_back(1);
+  //set all imus
+  for (int i = 1; i < imu_ports.size(); i--)
   {
-    pros::Imu temp(imu_ports[i]);
-    good_imus.push(&temp);
+    pros::Imu* temp = new pros::Imu(imu_ports[i]);
+    good_imus.push_back(temp);
+    imu_scale_values.push_back(1);
   }
   
-  good_imus.push(imu);
+  set_all_imu_scaling(imu_scale_values);
 
   // Set constants for tick_per_inch calculation
   WHEEL_DIAMETER = wheel_diameter;
@@ -266,8 +280,8 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
     right_motors.push_back(temp);
   }
 
-  good_imus.push(imu);
-
+  good_imus.push_front(imu);
+  drive_imu_scaler_set(1);
   // Set constants for tick_per_inch calculation
   WHEEL_DIAMETER = wheel_diameter;
   RATIO = ratio;
@@ -303,15 +317,19 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
     right_motors.push_back(temp);
   }
 
-   //set all imus
-  for (int i = imu_ports.size(); i > 0; i--)
+  std::vector<double> imu_scale_values = {};
+  
+  good_imus.push_back(imu);
+  imu_scale_values.push_back(1);
+  //set all imus
+  for (int i = 1; i < imu_ports.size(); i--)
   {
-    pros::Imu temp(imu_ports[i]);
-    good_imus.push(&temp);
+    pros::Imu* temp = new pros::Imu(imu_ports[i]);
+    good_imus.push_back(temp);
+    imu_scale_values.push_back(1);
   }
   
-  good_imus.push(imu);
-
+  set_all_imu_scaling(imu_scale_values);
   // Set constants for tick_per_inch calculation
   WHEEL_DIAMETER = wheel_diameter;
   RATIO = ratio;
@@ -327,8 +345,8 @@ Drive::~Drive()
   
   while(!good_imus.empty()) 
   {
-    delete good_imus.top(); 
-    good_imus.pop();
+    delete good_imus.front(); 
+    good_imus.pop_front();
   }
 
   while(!bad_imus.empty())
@@ -337,7 +355,7 @@ Drive::~Drive()
     delete ptr;
     bad_imus.pop_back();
   }
-  
+
 }
 
 //set defaults
@@ -399,6 +417,13 @@ void Drive::drive_defaults_set() {
   as::limit_switch_lcd_initialize(nullptr, nullptr);
 }
 
+void Drive::set_all_imu_scaling(std::vector<double> scales)
+{
+  for(int i = 0; i < std::min(good_imus.size(), scales.size()); i++)
+  {
+    imu_scale_map[*good_imus[i]] = scales[i];
+  }
+}
 double Drive::drive_tick_per_inch() {
   if (is_tracker == ODOM_TRACKER)
     return odom_tracker_right->ticks_per_inch();
@@ -529,11 +554,11 @@ void Drive::drive_imu_reset(double new_heading) {
   angle_rad = util::to_rad(new_heading);
   t_last = angle_rad;
 }
-double Drive::drive_imu_get() { return imu->get_rotation() * IMU_SCALER; }
+double Drive::drive_imu_get() { return imu->get_rotation() * drive_imu_scaler_get(); }
 double Drive::drive_imu_accel_get() { return imu->get_accel().x + imu->get_accel().y; }
 
-void Drive::drive_imu_scaler_set(double scaler) { IMU_SCALER = scaler; }
-double Drive::drive_imu_scaler_get() { return IMU_SCALER; }
+void Drive::drive_imu_scaler_set(double scaler) { imu_scale_map[*imu] = scaler; }
+double Drive::drive_imu_scaler_get() { return imu_scale_map[*imu]; }
 
 void Drive::drive_imu_display_loading(int iter) {
   // If the lcd is already initialized, don't run this function
