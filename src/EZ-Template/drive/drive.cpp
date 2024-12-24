@@ -421,7 +421,7 @@ void Drive::set_all_imu_scaling(std::vector<double> scales)
 {
   for(int i = 0; i < std::min(good_imus.size(), scales.size()); i++)
   {
-    imu_scale_map[*good_imus[i]] = scales[i];
+    imu_scale_map[good_imus[i]->get_port()] = scales[i];
   }
 }
 double Drive::drive_tick_per_inch() {
@@ -557,8 +557,8 @@ void Drive::drive_imu_reset(double new_heading) {
 double Drive::drive_imu_get() { return imu->get_rotation() * drive_imu_scaler_get(); }
 double Drive::drive_imu_accel_get() { return imu->get_accel().x + imu->get_accel().y; }
 
-void Drive::drive_imu_scaler_set(double scaler) { imu_scale_map[*imu] = scaler; }
-double Drive::drive_imu_scaler_get() { return imu_scale_map[*imu]; }
+void Drive::drive_imu_scaler_set(double scaler) { imu_scale_map[imu->get_port()] = scaler; }
+double Drive::drive_imu_scaler_get() { return imu_scale_map[imu->get_port()]; }
 
 void Drive::drive_imu_display_loading(int iter) {
   // If the lcd is already initialized, don't run this function

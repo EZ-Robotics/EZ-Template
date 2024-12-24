@@ -3516,7 +3516,7 @@ class Drive {
   bool opcontrol_arcade_scaling_enabled();
 
  private:
-  std::map<pros::Imu, double> imu_scale_map = {};
+  std::map<int, double> imu_scale_map = {};
   void opcontrol_drive_activebrake_targets_set();
   double odom_smooth_weight_smooth = 0.0;
   double odom_smooth_weight_data = 0.0;
