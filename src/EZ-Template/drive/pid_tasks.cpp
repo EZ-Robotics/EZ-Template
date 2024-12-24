@@ -14,7 +14,7 @@ void Drive::ez_auto_task() {
   while (true) {
     // Run odom
     ez_tracking_task();
-
+    check_imu_task();
     // Autonomous PID
     switch (drive_mode_get()) {
       case DRIVE:
