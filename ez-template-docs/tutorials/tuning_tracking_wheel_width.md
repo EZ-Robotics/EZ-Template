@@ -3,6 +3,8 @@ layout: default
 title: Tracking Wheel Width
 description: distance from the tracking wheel to the center of the robot
 ---
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
 
 :::note
 
@@ -153,8 +155,38 @@ Go to the `measure_offsets()` page on the autonomous selector and run the autono
 Once this is complete, go to Blank Page 1.  The new widths that `measure_offsets()` calculated will be here.  
 
 Go into your code and replace your tracking wheel widths with these new values.  Replace `4.0` with your new values.  
+<Tabs
+  groupId="intake1234_ex"
+  defaultValue="example"
+  values={[
+    { label: 'Rotation Sensor',  value: 'example', },
+    { label: 'ADI Encoder',  value: 'proto', },
+{ label: 'ADI Encoder in Expander',  value: 'proto2', },
+  ]
+}>
+
+<TabItem value="example">
+
 ```cpp
-ez::tracking_wheel right_tracker({-'A', -'B'}, 2.75, 4.0);  // ADI Encoders
-ez::tracking_wheel left_tracker(1, {'C', 'D'}, 2.75, 4.0);  // ADI Encoders plugged into a Smart port
-ez::tracking_wheel horiz_tracker(1, 2.75, 4.0);             // Rotation sensors
+ez::tracking_wheel horiz_tracker(8, 2.75, 4.0);  // This tracking wheel is perpendicular to the drive wheels
+ez::tracking_wheel vert_tracker(-9, 2.75, 4.0);  // This tracking wheel is parallel to the drive wheels
 ```
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+ez::tracking_wheel horiz_tracker({'A', 'B'}, 2.75, 4.0);   // This tracking wheel is perpendicular to the drive wheels
+ez::tracking_wheel vert_tracker({-'A', -'B'}, 2.75, 4.0);  // This tracking wheel is parallel to the drive wheels
+```
+</TabItem>
+
+<TabItem value="proto2">
+
+```cpp
+ez::tracking_wheel horiz_tracker(8, {'A', 'B'}, 2.75, 4.0);   // This tracking wheel is perpendicular to the drive wheels
+ez::tracking_wheel vert_tracker(8, {-'A', -'B'}, 2.75, 4.0);  // This tracking wheel is parallel to the drive wheels
+```
+</TabItem>
+</Tabs>

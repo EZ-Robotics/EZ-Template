@@ -3,6 +3,8 @@ layout: default
 title: Installation
 description: getting started with ez template
 ---
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
 
 :::note
 
@@ -66,11 +68,42 @@ EZ-Template supports any combination of tracking wheels.
 `2.75`  is the wheel diameter, and `4.0` is the distance to the center of the robot.  You can use a tape measure to find this value, or you can follow [this tutorial](/tutorials/tuning_tracking_wheel_width).  Your parallel tracking wheels will be the left/right trackers, and your perpendicular trackers will be the front/back trackers.  
 
 Left/right trackers are tracking wheels that are parallel to your drive wheels, and front/back trackers are tracking wheels that are perpendicular to your drive wheels.  
+<Tabs
+  groupId="intake4321_ex"
+  defaultValue="example"
+  values={[
+    { label: 'Rotation Sensor',  value: 'example', },
+    { label: 'ADI Encoder',  value: 'proto', },
+{ label: 'ADI Encoder in Expander',  value: 'proto2', },
+  ]
+}>
+
+<TabItem value="example">
+
 ```cpp
-ez::tracking_wheel right_tracker({-'A', -'B'}, 2.75, 4.0);  // ADI Encoders
-ez::tracking_wheel left_tracker(1, {'C', 'D'}, 2.75, 4.0);  // ADI Encoders plugged into a Smart port
-ez::tracking_wheel horiz_tracker(1, 2.75, 4.0);             // Rotation sensors
+ez::tracking_wheel horiz_tracker(8, 2.75, 4.0);  // This tracking wheel is perpendicular to the drive wheels
+ez::tracking_wheel vert_tracker(-9, 2.75, 4.0);  // This tracking wheel is parallel to the drive wheels
 ```
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+ez::tracking_wheel horiz_tracker({'A', 'B'}, 2.75, 4.0);   // This tracking wheel is perpendicular to the drive wheels
+ez::tracking_wheel vert_tracker({-'A', -'B'}, 2.75, 4.0);  // This tracking wheel is parallel to the drive wheels
+```
+</TabItem>
+
+<TabItem value="proto2">
+
+```cpp
+ez::tracking_wheel horiz_tracker(8, {'A', 'B'}, 2.75, 4.0);   // This tracking wheel is perpendicular to the drive wheels
+ez::tracking_wheel vert_tracker(8, {-'A', -'B'}, 2.75, 4.0);  // This tracking wheel is parallel to the drive wheels
+```
+</TabItem>
+</Tabs>
+
 
 You'll now need to tell EZ-Template what tracking wheels to use.  
 ```cpp
@@ -80,10 +113,14 @@ void initialize() {
 
   pros::delay(500);  // Stop the user from doing anything while legacy ports configure
 
-  // Are you using tracking wheels?  Comment out which ones you're using here!
-  chassis.odom_tracker_right_set(&right_tracker);
-  chassis.odom_tracker_left_set(&left_tracker);
-  chassis.odom_tracker_back_set(&horiz_tracker);  // Replace `back` to `front` if your tracker is in the front!
+  // Look at your horizontal tracking wheel and decide if it's in front of the midline of your robot or behind it
+  //  - change `back` to `front` if the tracking wheel is in front of the midline
+  //  - ignore this if you aren't using a horizontal tracker
+  chassis.odom_tracker_back_set(&horiz_tracker);
+  // Look at your vertical tracking wheel and decide if it's to the left or right of the center of the robot
+  //  - change `left` to `right` if the tracking wheel is to the right of the centerline
+  //  - ignore this if you aren't using a vertical tracker
+  chassis.odom_tracker_left_set(&vert_tracker);
 
   // . . .
 }

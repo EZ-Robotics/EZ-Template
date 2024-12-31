@@ -15,7 +15,6 @@ I got frustrated with how annoying it was to update my last seasons code for new
 
 ## EZ
 <iframe width="560" height="315" src="https://www.youtube.com/embed/NBjzGbJT9CI?si=3Ddl56RJAztPfKJo" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
-
 <iframe width="560" height="315" src="https://www.youtube.com/embed/B7c5HegU7BA?si=QTRTxQxkOHP72Njc" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
 
 ## 1721G

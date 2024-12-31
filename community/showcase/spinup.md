@@ -16,15 +16,15 @@ To fix some problems within EZ-Template, such as adding units and having a consi
 ## 7686B
 High School World Champion  
 
-<iframe width="315" height="560" src="https://www.youtube.com/embed/1yQB4JcRuAw?si=KUTKhE0MJUSKG_cG" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
+<iframe width="560" height="315" src="https://www.youtube.com/embed/1yQB4JcRuAw?si=KUTKhE0MJUSKG_cG" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
 
-<iframe width="315" height="560" src="https://www.youtube.com/embed/i4gGYW8jo4E?si=q0m1wPG8uMLKKXri" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
+<iframe width="560" height="315" src="https://www.youtube.com/embed/i4gGYW8jo4E?si=q0m1wPG8uMLKKXri" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
 ⠀⠀
-<iframe width="315" height="560" src="https://www.youtube.com/embed/FQAVN2eFZAk?si=o3YnnYyCwExu1Av2" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
+<iframe width="560" height="315" src="https://www.youtube.com/embed/FQAVN2eFZAk?si=o3YnnYyCwExu1Av2" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
 
-<iframe width="315" height="560" src="https://www.youtube.com/embed/3LhVMSq-gLU?si=zlFn9ZNe1XOBtHfe" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
+<iframe width="560" height="315" src="https://www.youtube.com/embed/3LhVMSq-gLU?si=zlFn9ZNe1XOBtHfe" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
 ⠀⠀
-<iframe width="315" height="560" src="https://www.youtube.com/embed/uqlkVD8D4qc?si=1xejvTCIOPbOGKR4" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>   
+<iframe width="560" height="315" src="https://www.youtube.com/embed/uqlkVD8D4qc?si=1xejvTCIOPbOGKR4" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>   
 
 ## 4082B
 <iframe width="560" height="315" src="https://www.youtube.com/embed/Sm_HKixaDcQ?si=AZALZ4nymObZ87Ww" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  

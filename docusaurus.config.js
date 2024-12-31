@@ -87,8 +87,8 @@ const config = {
           // Remove this to remove the "edit this page" links.
           editUrl: ({ versionDocsDirPath, docPath }) =>
             `https://github.com/ez-robotics/EZ-Template/tree/website/${versionDocsDirPath}/${docPath}`,
-          showLastUpdateTime: true,
-          showLastUpdateAuthor: true,
+          // showLastUpdateTime: true,
+          // showLastUpdateAuthor: true,
         },
 
         blog: false,
