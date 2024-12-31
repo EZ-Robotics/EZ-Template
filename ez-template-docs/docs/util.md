@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Util
-description:  chat, util is short for utility if you're new here.  we're just using slang. 
+description:  chat, util is short for utility if you're new here.  we're just using slang
 ---
 
 
@@ -9,10 +9,9 @@ description:  chat, util is short for utility if you're new here.  we're just us
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-## Util
 
 
-### controller
+## controller
 The pros controller is defined globally in our library as `master`.     
 <Tabs
   groupId="ex2"
@@ -60,7 +59,7 @@ extern pros::Controller master();
  
 
 
-### screen_print() 
+## screen_print() 
 Prints to the LLEMU.  This function handles text that's too long for a line by finding the last word and starting it on a new line, and takes `\n` to set a new line.   
 
 `text` input string   
@@ -122,7 +121,7 @@ void initialize() {
 
 
 
-### to_string_with_precision() 
+## to_string_with_precision() 
 Returns a string with a specific number of decimal points.     
 
 `input` your input value     
@@ -158,7 +157,7 @@ void initialize() {
  
 
 
-### print_ez_template() 
+## print_ez_template() 
 Prints our branding on your terminal :D.   
 <Tabs
   groupId="ex4"
@@ -199,7 +198,7 @@ void print_ez_template();
  
 
 
-### sgn() 
+## sgn() 
 Returns the sign of the input.  Returns 1 if positive, -1 if negative, and 0 if 0.    
 
 `input` value to check the sign of
@@ -246,7 +245,7 @@ double sgn(double input);
  
 
 
-### clamp() 
+## clamp() 
 Returns input restricted to min-max threshold.    
 
 `input` your input value   
@@ -292,7 +291,7 @@ double clamp(double input, double max, double min);
 
 
 
-### clamp() 
+## clamp() 
 Returns input restricted to min-max threshold.  
 
 The minimum used is negative max.      
@@ -345,7 +344,7 @@ double clamp(double input, double max);
  
 
 
-### DELAY_TIME 
+## DELAY_TIME 
 Standard delay time for loops in ms.    
 <Tabs
   groupId="ex7"
@@ -390,7 +389,7 @@ const int DELAY_TIME = 10;
  
 
 
-### IS_SD_CARD
+## IS_SD_CARD
 Boolean that checks if an SD card is installed.  True if there is one, false if there isn't.    
 <Tabs
   groupId="ex8"
@@ -449,7 +448,7 @@ const bool IS_SD_CARD = pros::usd::is_installed();
 
 
 
-### to_deg() 
+## to_deg() 
 Converts radians to degrees.       
 
 `input` your input radian    
@@ -481,7 +480,7 @@ void initialize() {
 
 
 
-### to_rad() 
+## to_rad() 
 Converts degrees to radians.       
 
 `input` your input degree    
@@ -513,7 +512,7 @@ void initialize() {
 
 
 
-### absolute_angle_to_point() 
+## absolute_angle_to_point() 
 Returns the angle between two points.      
 
 `itarget` target pose    
@@ -547,7 +546,7 @@ void initialize() {
 
 
 
-### distance_to_point() 
+## distance_to_point() 
 Returns the distance between two points.      
 
 `itarget` target pose    
@@ -578,7 +577,7 @@ void initialize() {
 </Tabs>
 
 
-### wrap_angle() 
+## wrap_angle() 
 Constrains an angle between 180 and -180.     
 
 `wrap_angle` input angle in degrees  
@@ -610,7 +609,7 @@ void initialize() {
 
 
 
-### vector_off_point() 
+## vector_off_point() 
 Returns a new pose that is projected off of the current pose.     
 
 `added` how far to project a new point   
