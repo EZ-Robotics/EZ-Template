@@ -60,4 +60,6 @@ For the example data above, the average sensor value is 24.2783.  The robot was 
 ```
 
 ## You're Done!
-Take this new number, in my case 2.7185, and replace it with your wheel size in your drive constructor.  That's it!  
+Take this new number, in my case 2.7185, and replace it with your wheel size in your drive constructor or your tracking wheel constructor.  
+
+That's it!  
