@@ -20,23 +20,17 @@ This brought attention to the EZ-Template and this grew more and more.  By the e
 High School World Champion  
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/48Qy_qmK--I?si=6253EQaYnkwbI8dq" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
-
 <iframe width="560" height="315" src="https://www.youtube.com/embed/AUWkGa8izhM?si=xVzqoCimWjCl9ZCO" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
-
 <iframe width="560" height="315" src="https://www.youtube.com/embed/Z0jPnYM4g0w?si=aUsT6yQaGKcP52B4" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>   
-⠀⠀
-<iframe width="315" height="560" src="https://www.youtube.com/embed/VuRuLGlXKsY?si=fZWg2iwpK_7PlT6h" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
-
-<iframe width="315" height="560" src="https://www.youtube.com/embed/7lbyZlyZrxM?si=NF1XBFs5Dp7EWOlw" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
-⠀⠀
-<iframe width="315" height="560" src="https://www.youtube.com/embed/ezsYvmgPYpc?si=pQK_miUiHLNqJqIu" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
+<iframe width="560" height="315" src="https://www.youtube.com/embed/VuRuLGlXKsY?si=fZWg2iwpK_7PlT6h" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
+<iframe width="560" height="315" src="https://www.youtube.com/embed/7lbyZlyZrxM?si=NF1XBFs5Dp7EWOlw" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
+<iframe width="560" height="315" src="https://www.youtube.com/embed/ezsYvmgPYpc?si=pQK_miUiHLNqJqIu" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
 
 ### EZ x 21S
 <iframe width="560" height="315" src="https://www.youtube.com/embed/-iKVvODZ_7M?si=iDjz0_4ZiQcx19HU" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
 
 ### 471X
 <iframe width="560" height="315" src="https://www.youtube.com/embed/tYB7et6aiqY?si=MsXy4h__XYcE8LMj" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
-
 <iframe width="560" height="315" src="https://www.youtube.com/embed/abxZKTxWg4A?si=vNeEqAJ6oVNDS302" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
 
 
@@ -47,19 +41,12 @@ High School World Champion
 
 ### EZ
 <iframe width="560" height="315" src="https://www.youtube.com/embed/aMjDo37H36s?si=ijKrN8jtFwHGCY0-" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
-
 <iframe width="560" height="315" src="https://www.youtube.com/embed/mk8Jy-Bt02A?si=k1NYq6_Dnz015PK1" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
-
 <iframe width="560" height="315" src="https://www.youtube.com/embed/FprJjUABPw4?si=9xgdJS-g5xFBToqs" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
-
 <iframe width="560" height="315" src="https://www.youtube.com/embed/YsscLl03SFM?si=rOGqeoli91vaaYM_" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
-
 <iframe width="560" height="315" src="https://www.youtube.com/embed/VdM0je7SvSc?si=c6RBYv37DK3W67uR" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
-
 <iframe width="560" height="315" src="https://www.youtube.com/embed/dE77iaCD7qo?si=DxyFctii2AikhBmo" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
-
 <iframe width="560" height="315" src="https://www.youtube.com/embed/8vDDJdTgBL8?si=iPFEWQlDRX_X29zS" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
-
 <iframe width="560" height="315" src="https://www.youtube.com/embed/TEzD2983alo?si=JbuUwnzIt3CwhyyP" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
 
 ### BCUZ
@@ -70,12 +57,9 @@ High School World Champion
 
 ### 21S
 <iframe width="560" height="315" src="https://www.youtube.com/embed/OHwVwRJqkSg?si=p9t4B6VIA8OzQ3cS" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
-
 <iframe width="560" height="315" src="https://www.youtube.com/embed/NdTmYyq8nBg?si=4X__TYpykOUlvC6E" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
-⠀⠀
-<iframe width="315" height="560" src="https://www.youtube.com/embed/Herl5zpZ8Xc?si=v4BdF7DyVOJ__Bj7" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
-
-<iframe width="315" height="560" src="https://www.youtube.com/embed/Uo8AZY3ssRY?si=TJPcssdaBM_VBc5O" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
+<iframe width="560" height="315" src="https://www.youtube.com/embed/Herl5zpZ8Xc?si=v4BdF7DyVOJ__Bj7" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
+<iframe width="560" height="315" src="https://www.youtube.com/embed/Uo8AZY3ssRY?si=TJPcssdaBM_VBc5O" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
 
 ### 2660X
 <iframe width="560" height="315" src="https://www.youtube.com/embed/vkcJqUrFou0?si=cbuJFS2JTBC7jCgk" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
@@ -85,10 +69,8 @@ High School World Champion
 
 ### 2616W
 <iframe width="560" height="315" src="https://www.youtube.com/embed/fnfCAPTVgAY?si=FEqZFXSuNwJoOVGl" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
-
 <iframe width="560" height="315" src="https://www.youtube.com/embed/VBAgcZKNazo?si=tyKndqobwrH5_-s4" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 ### AMOGO x DOGO
 <iframe width="560" height="315" src="https://www.youtube.com/embed/p1lgbKy1ZBE?si=OntAtXsEQU3brHdq" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
-
 <iframe width="560" height="315" src="https://www.youtube.com/embed/wpvR_m3cUFk?si=7JY3CfJnQGNLVqEU" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe> 
