@@ -172,7 +172,7 @@ const config = {
       announcementBar: {
         id: 'new_version',
         content:
-          '🥳 <a target="_blank" rel="noopener noreferrer" href="https://github.com/EZ-Robotics/EZ-Template/releases/tag/v3.2.1">EZ-Template v3.2.1</a> is out! 🥳',
+          '🥳 <a target="_blank" rel="noopener noreferrer" href="https://github.com/EZ-Robotics/EZ-Template/releases/tag/v3.2.2">EZ-Template v3.2.2</a> is out! 🥳',
         backgroundColor: '#FDFD96',
         textColor: '#000000',
         isCloseable: true,
