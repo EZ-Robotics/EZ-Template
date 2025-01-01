@@ -164,8 +164,8 @@ double Drive::pid_tuner_increment_i_get() { return i_increment; }
 double Drive::pid_tuner_increment_d_get() { return d_increment; }
 double Drive::pid_tuner_increment_start_i_get() { return start_i_increment; }
 
-pros::controller_digital_e_t pid_tuner_increase;
-pros::controller_digital_e_t pid_tuner_decrease;
+/*pros::controller_digital_e_t pid_tuner_increase;
+pros::controller_digital_e_t pid_tuner_decrease;*/
 void Drive::pid_tuner_button_set(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase) {
   pid_tuner_increase = increase;
   pid_tuner_decrease = decrease;

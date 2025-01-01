@@ -3552,6 +3552,9 @@ class Drive {
   std::string complete_pid_tuner_output = "";
   float p_increment = 0.1, i_increment = 0.001, d_increment = 0.25, start_i_increment = 1.0;
 
+  pros::controller_digital_e_t pid_tuner_increase; //is this place good?
+  pros::controller_digital_e_t pid_tuner_decrease;
+
   /**
    * Private wait until for drive
    */
