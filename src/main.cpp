@@ -15,12 +15,13 @@ ez::Drive chassis(
     4.125,   // Wheel Diameter (Remember, 4" wheels without screw holes are actually 4.125!)
     420.0);  // Wheel RPM = cartridge * (motor gear / wheel gear)
 
-// Are you using tracking wheels?  Comment out which ones you're using here!
-//  `2.75` is the wheel diameter
-//  `4.0` is the distance from the center of the wheel to the center of the robot
-// ez::tracking_wheel right_tracker({-'A', -'B'}, 2.75, 4.0);  // ADI Encoders
-// ez::tracking_wheel left_tracker(1, {'C', 'D'}, 2.75, 4.0);  // ADI Encoders plugged into a Smart port
-// ez::tracking_wheel horiz_tracker(1, 2.75, 4.0);             // Rotation sensors
+// Uncomment the trackers you're using here!
+// - `8` and `9` are smart ports (making these negative will reverse the sensor)
+//  - you should get positive values on the encoders going FORWARD and RIGHT
+// - `2.75` is the wheel diameter
+// - `4.0` is the distance from the center of the wheel to the center of the robot
+// ez::tracking_wheel horiz_tracker(8, 2.75, 4.0);  // This tracking wheel is perpendicular to the drive wheels
+// ez::tracking_wheel vert_tracker(9, 2.75, 4.0);   // This tracking wheel is parallel to the drive wheels
 
 /**
  * Runs initialization code. This occurs as soon as the program is started.
@@ -34,10 +35,14 @@ void initialize() {
 
   pros::delay(500);  // Stop the user from doing anything while legacy ports configure
 
-  // Are you using tracking wheels?  Comment out which ones you're using here!
-  // chassis.odom_tracker_right_set(&right_tracker);
-  // chassis.odom_tracker_left_set(&left_tracker);
-  // chassis.odom_tracker_back_set(&horiz_tracker);  // Replace `back` to `front` if your tracker is in the front!
+  // Look at your horizontal tracking wheel and decide if it's in front of the midline of your robot or behind it
+  //  - change `back` to `front` if the tracking wheel is in front of the midline
+  //  - ignore this if you aren't using a horizontal tracker
+  // chassis.odom_tracker_back_set(&horiz_tracker);
+  // Look at your vertical tracking wheel and decide if it's to the left or right of the center of the robot
+  //  - change `left` to `right` if the tracking wheel is to the right of the centerline
+  //  - ignore this if you aren't using a vertical tracker
+  // chassis.odom_tracker_left_set(&vert_tracker);
 
   //is this placement good?
   chassis.pid_tuner_button_set(pros::E_CONTROLLER_DIGITAL_Y, pros::E_CONTROLLER_DIGITAL_A);
@@ -69,7 +74,7 @@ void initialize() {
       {"Pure Pursuit Wait Until\n\nGo to (24, 24) but start running an intake once the robot passes (12, 24)", odom_pure_pursuit_wait_until_example},
       {"Boomerang\n\nGo to (0, 24, 45) then come back to (0, 0, 0)", odom_boomerang_example},
       {"Boomerang Pure Pursuit\n\nGo to (0, 24, 45) on the way to (24, 24) then come back to (0, 0, 0)", odom_boomerang_injected_pure_pursuit_example},
-      {"Measure Offsets\n\nThis will turn the robot a bunch of times and calculate your offsets for your tracking wheels.", odom_boomerang_injected_pure_pursuit_example},
+      {"Measure Offsets\n\nThis will turn the robot a bunch of times and calculate your offsets for your tracking wheels.", measure_offsets},
   });
 
   // Initialize chassis and auton selector

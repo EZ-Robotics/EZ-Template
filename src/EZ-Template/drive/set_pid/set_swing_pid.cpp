@@ -291,9 +291,9 @@ void Drive::pid_swing_set(e_swing type, double target, int speed, int opposite_s
   used_motion_chain_scale = 0.0;
 
   // Flip the swing from left-right if rotation axis is flipped
-  if (odom_theta_direction_get()) 
-    current_swing = type == ez::LEFT_SWING ? ez::RIGHT_SWING : ez::LEFT_SWING;
-  
+  current_swing = type;
+  if (odom_theta_direction_get())
+    current_swing = current_swing == ez::LEFT_SWING ? ez::RIGHT_SWING : ez::LEFT_SWING;
 
   // Figure out if going forward or backward
   int side = type == ez::LEFT_SWING ? 1 : -1;
