@@ -1253,8 +1253,16 @@ class Drive {
    *        sets the button to lower PID tuner
    * \param increase 
    *        sets the button to increase PID tuner
+   * \param pageLeft
+            sets the PID screen left
+   * \param pageRight
+            sets the PID screen right
+   * \param pageUP
+            switched between kp, ki, kd, and start i
+   * \param pageDown
+            switched between kp, ki, kd, and start i
    */
-  void pid_tuner_button_set(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase);
+  void pid_tuner_button_set(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase, pros::controller_digital_e_t pageLeft, pros::controller_digital_e_t pageRight, pros::controller_digital_e_t pageUp, pros::controller_digital_e_t pageDown);
 
   /////
   //
@@ -3554,6 +3562,10 @@ class Drive {
 
   pros::controller_digital_e_t pid_tuner_increase; //is this place good?
   pros::controller_digital_e_t pid_tuner_decrease;
+  pros::controller_digital_e_t pid_tuner_pageLeft;
+  pros::controller_digital_e_t pid_tuner_pageRight;
+  pros::controller_digital_e_t pid_tuner_pageUp;
+  pros::controller_digital_e_t pid_tuner_pageDown;
 
   /**
    * Private wait until for drive

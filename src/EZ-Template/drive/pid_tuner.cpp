@@ -166,10 +166,20 @@ double Drive::pid_tuner_increment_start_i_get() { return start_i_increment; }
 
 /*pros::controller_digital_e_t pid_tuner_increase;
 pros::controller_digital_e_t pid_tuner_decrease;*/
-void Drive::pid_tuner_button_set(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase) {
+/*void Drive::pid_tuner_button_set(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase) {
   pid_tuner_increase = increase;
   pid_tuner_decrease = decrease;
+}*/
+
+void Drive::pid_tuner_button_set(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase, pros::controller_digital_e_t pageLeft, pros::controller_digital_e_t pageRight, pros::controller_digital_e_t pageUp, pros::controller_digital_e_t pageDown){
+  pid_tuner_increase = increase;
+  pid_tuner_decrease = decrease;
+  pid_tuner_pageLeft = pageLeft;
+  pid_tuner_pageRight = pageRight;
+  pid_tuner_pageUp = pageUp;
+  pid_tuner_pageDown = pageDown;
 }
+
 
 // Iterate
 void Drive::pid_tuner_iterate() {
@@ -183,12 +193,12 @@ void Drive::pid_tuner_iterate() {
   }
 
   // Up / Down for Rows
-  if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_RIGHT)) {
+  if (master.get_digital_new_press(pid_tuner_pageRight)) {
     column++;
     if (column > used_pid_tuner_pids->size() - 1)
       column = 0;
     pid_tuner_print();
-  } else if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_LEFT)) {
+  } else if (master.get_digital_new_press(pid_tuner_pageLeft)) {
     column--;
     if (column < 0)
       column = used_pid_tuner_pids->size() - 1;
@@ -196,12 +206,12 @@ void Drive::pid_tuner_iterate() {
   }
 
   // Left / Right for Columns
-  if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_DOWN)) {
+  if (master.get_digital_new_press(pid_tuner_pageDown)) {
     row++;
     if (row > 3)
       row = 0;
     pid_tuner_print();
-  } else if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_UP)) {
+  } else if (master.get_digital_new_press(pid_tuner_pageUp)) {
     row--;
     if (row < 0)
       row = 3;
