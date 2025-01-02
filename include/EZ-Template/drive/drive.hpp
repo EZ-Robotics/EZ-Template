@@ -1247,24 +1247,55 @@ class Drive {
   bool pid_print_toggle_get();
   
   /**
-   * Sets the buttons to change the PID tuner.
-   *
-   * \param decrease
-   *        sets the button to lower PID tuner
-   * \param increase 
-   *        sets the button to increase PID tuner
-   * \param pageLeft
-            sets the PID screen left
-   * \param pageRight
-            sets the PID screen right
-   * \param pageUP
-            switched between kp, ki, kd, and start i
-   * \param pageDown
-            switched between kp, ki, kd, and start i
-   */
-  void pid_tuner_button_set(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase, pros::controller_digital_e_t pageLeft, pros::controller_digital_e_t pageRight, pros::controller_digital_e_t pageUp, pros::controller_digital_e_t pageDown);
+  * \param increase 
+  *        sets the button to increase PID tuner
+  */
+  void pid_tuner_button_increment_set(pros::controller_digital_e_t increase);
 
-  std::vector<pros::controller_digital_e_t> pid_tuner_button_get();
+  std::vector<pros::controller_digital_e_t> pid_tuner_button_increment_get();
+
+  /**
+  * \param decrease
+  *        sets the button to lower PID tuner
+  */
+  void pid_tuner_button_decrement_set(pros::controller_digital_e_t decrease);
+  
+  std::vector<pros::controller_digital_e_t> pid_tuner_button_decrement_get();
+
+  /** 
+  * \param pageUP
+  *        switched between kp, ki, kd, and start i
+  */
+  void pid_tuner_button_up_set(pros::controller_digital_e_t pageUp);
+  
+  std::vector<pros::controller_digital_e_t> pid_tuner_button_up_get();  
+
+  /**
+  * \param pageDown
+  *        switched between kp, ki, kd, and start i
+  */
+  void pid_tuner_button_down_set(pros::controller_digital_e_t pageDown);
+
+  std::vector<pros::controller_digital_e_t> pid_tuner_button_down_get();  
+
+  /**
+  * \param pageLeft
+  *        sets the PID screen left
+  */
+
+  void pid_tuner_button_left_set(pros::controller_digital_e_t pageLeft);
+
+  std::vector<pros::controller_digital_e_t> pid_tuner_button_left_get();  
+
+  /** 
+  * \param pageRight
+  *        sets the PID screen right
+  */
+  void pid_tuner_button_right_set(pros::controller_digital_e_t pageRight);
+  
+  std::vector<pros::controller_digital_e_t> pid_tuner_button_right_get();  
+
+  //std::vector<pros::controller_digital_e_t> pid_tuner_button_get();
   /////
   //
   // Telemetry

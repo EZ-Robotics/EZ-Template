@@ -164,7 +164,7 @@ double Drive::pid_tuner_increment_i_get() { return i_increment; }
 double Drive::pid_tuner_increment_d_get() { return d_increment; }
 double Drive::pid_tuner_increment_start_i_get() { return start_i_increment; }
 
-void Drive::pid_tuner_button_set(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase, pros::controller_digital_e_t pageLeft, pros::controller_digital_e_t pageRight, pros::controller_digital_e_t pageUp, pros::controller_digital_e_t pageDown){
+/*void Drive::pid_tuner_button_set(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase, pros::controller_digital_e_t pageLeft, pros::controller_digital_e_t pageRight, pros::controller_digital_e_t pageUp, pros::controller_digital_e_t pageDown){
   pid_tuner_increase = increase;
   pid_tuner_decrease = decrease;
   pid_tuner_pageLeft = pageLeft;
@@ -175,6 +175,54 @@ void Drive::pid_tuner_button_set(pros::controller_digital_e_t decrease, pros::co
 
 std::vector<pros::controller_digital_e_t> Drive::pid_tuner_button_get() {
   return {pid_tuner_increase, pid_tuner_decrease, pid_tuner_pageLeft, pid_tuner_pageRight, pid_tuner_pageUp, pid_tuner_pageDown};
+}*/
+
+void Drive::pid_tuner_button_increment_set(pros::controller_digital_e_t increase){
+  pid_tuner_increase = increase;
+}
+
+std::vector<pros::controller_digital_e_t> Drive::pid_tuner_button_increment_get() {
+  return {pid_tuner_increase};
+}
+
+void Drive::pid_tuner_button_decrement_set(pros::controller_digital_e_t decrease){
+  pid_tuner_decrease = decrease;
+}
+
+std::vector<pros::controller_digital_e_t> Drive::pid_tuner_button_decrement_get() {
+  return {pid_tuner_decrease};
+}
+
+void Drive::pid_tuner_button_up_set(pros::controller_digital_e_t pageUp){
+  pid_tuner_pageUp = pageUp;
+}
+
+std::vector<pros::controller_digital_e_t> Drive::pid_tuner_button_up_get() {
+  return {pid_tuner_pageUp};
+}
+
+void Drive::pid_tuner_button_down_set(pros::controller_digital_e_t pageDown){
+  pid_tuner_pageDown = pageDown;
+}
+
+std::vector<pros::controller_digital_e_t> Drive::pid_tuner_button_down_get() {
+  return {pid_tuner_pageDown};
+}
+
+void Drive::pid_tuner_button_left_set(pros::controller_digital_e_t pageLeft){
+  pid_tuner_pageLeft = pageLeft;
+}
+
+std::vector<pros::controller_digital_e_t> Drive::pid_tuner_button_left_get() {
+  return {pid_tuner_pageLeft};
+}
+
+void Drive::pid_tuner_button_right_set(pros::controller_digital_e_t pageRight){
+  pid_tuner_pageRight = pageRight;
+}
+
+std::vector<pros::controller_digital_e_t> Drive::pid_tuner_button_right_get() {
+  return {pid_tuner_pageRight};
 }
 
 // Iterate

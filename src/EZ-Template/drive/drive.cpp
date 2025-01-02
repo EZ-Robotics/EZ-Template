@@ -196,6 +196,15 @@ void Drive::drive_defaults_set() {
   opcontrol_curve_buttons_left_set(pros::E_CONTROLLER_DIGITAL_LEFT, pros::E_CONTROLLER_DIGITAL_RIGHT);
   opcontrol_curve_buttons_right_set(pros::E_CONTROLLER_DIGITAL_Y, pros::E_CONTROLLER_DIGITAL_A);
 
+  //Default PID tuner controlls
+
+  pid_tuner_button_increment_set(pros::E_CONTROLLER_DIGITAL_A);
+  pid_tuner_button_decrement_set(pros::E_CONTROLLER_DIGITAL_Y);
+  pid_tuner_button_up_set(pros::E_CONTROLLER_DIGITAL_UP);
+  pid_tuner_button_down_set(pros::E_CONTROLLER_DIGITAL_DOWN);
+  pid_tuner_button_left_set(pros::E_CONTROLLER_DIGITAL_LEFT);
+  pid_tuner_button_right_set(pros::E_CONTROLLER_DIGITAL_RIGHT);
+
   // Enable auto printing and drive motors moving
   pid_drive_toggle(true);
   pid_print_toggle(true);
