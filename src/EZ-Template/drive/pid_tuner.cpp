@@ -164,13 +164,6 @@ double Drive::pid_tuner_increment_i_get() { return i_increment; }
 double Drive::pid_tuner_increment_d_get() { return d_increment; }
 double Drive::pid_tuner_increment_start_i_get() { return start_i_increment; }
 
-/*pros::controller_digital_e_t pid_tuner_increase;
-pros::controller_digital_e_t pid_tuner_decrease;*/
-/*void Drive::pid_tuner_button_set(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase) {
-  pid_tuner_increase = increase;
-  pid_tuner_decrease = decrease;
-}*/
-
 void Drive::pid_tuner_button_set(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase, pros::controller_digital_e_t pageLeft, pros::controller_digital_e_t pageRight, pros::controller_digital_e_t pageUp, pros::controller_digital_e_t pageDown){
   pid_tuner_increase = increase;
   pid_tuner_decrease = decrease;
@@ -180,6 +173,9 @@ void Drive::pid_tuner_button_set(pros::controller_digital_e_t decrease, pros::co
   pid_tuner_pageDown = pageDown;
 }
 
+std::vector<pros::controller_digital_e_t> Drive::pid_tuner_button_get() {
+  return {pid_tuner_increase, pid_tuner_decrease, pid_tuner_pageLeft, pid_tuner_pageRight, pid_tuner_pageUp, pid_tuner_pageDown};
+}
 
 // Iterate
 void Drive::pid_tuner_iterate() {

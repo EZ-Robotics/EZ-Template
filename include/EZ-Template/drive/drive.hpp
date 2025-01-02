@@ -1264,6 +1264,7 @@ class Drive {
    */
   void pid_tuner_button_set(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase, pros::controller_digital_e_t pageLeft, pros::controller_digital_e_t pageRight, pros::controller_digital_e_t pageUp, pros::controller_digital_e_t pageDown);
 
+  std::vector<pros::controller_digital_e_t> pid_tuner_button_get();
   /////
   //
   // Telemetry
