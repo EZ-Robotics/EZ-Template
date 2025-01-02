@@ -70,18 +70,17 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
     right_motors.push_back(temp);
   }
 
+  // Set all IMUs
   std::vector<double> imu_scale_values = {};
-
   good_imus.push_back(imu);
   imu_scale_values.push_back(1);
-  // set all imus
   for (int i = 1; i < imu_ports.size(); i--) {
     pros::Imu* temp = new pros::Imu(imu_ports[i]);
     good_imus.push_back(temp);
     imu_scale_values.push_back(1);
   }
-
   drive_imus_scalers_set(imu_scale_values);
+
   // Set constants for tick_per_inch calculation
   WHEEL_DIAMETER = wheel_diameter;
   RATIO = ratio;
@@ -448,20 +447,40 @@ void Drive::drive_imu_display_loading(int iter) {
 
 bool Drive::drive_imu_calibrate(bool run_loading_animation) {
   imu_calibration_complete = false;
-  imu->reset();
-  int iter = 0;
-  bool current_status = imu->is_calibrating();
-  bool last_status = current_status;
+
+  // No IMUs are calibrated yet, set them all to false
+  std::vector<bool> imus_status, imus_done;
+  for (int i = 0; i < good_imus.size(); i++) {
+    good_imus[i]->reset();
+    imus_status.push_back(good_imus[i]->is_calibrating());
+    imus_done.push_back(false);
+  }
+  std::vector<bool> imus_last_status = imus_status;
+
   bool successful = false;
+  int iter = 0;
   while (true) {
     iter += util::DELAY_TIME;
 
     if (run_loading_animation) drive_imu_display_loading(iter);
 
     if (!successful) {
-      last_status = current_status;
-      current_status = imu->is_calibrating();
-      successful = !current_status && last_status ? true : false;
+      // Check if each IMU is done calibrating
+      for (int i = 0; i < good_imus.size(); i++) {
+        imus_last_status[i] = imus_status[i];
+        imus_status[i] = good_imus[i]->is_calibrating();
+        if (!imus_done[i])
+          imus_done[i] = !imus_status[i] && imus_last_status[i] ? true : false;
+      }
+    }
+
+    // Check if all IMUs have calibrated
+    successful = true;
+    for (auto i : imus_done) {
+      if (!i) {
+        successful = false;
+        break;
+      }
     }
 
     if (iter >= 2000) {
