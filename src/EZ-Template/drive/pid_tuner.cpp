@@ -86,9 +86,19 @@ void Drive::pid_tuner_toggle() {
     pid_tuner_disable();
 }
 
+// Add PIDs to the Tuner
+void Drive::pid_tuner_add(const_and_name new_pid_and_name) {
+  pid_tuner_pids.push_back(new_pid_and_name);
+  pid_tuner_full_pids.push_back(new_pid_and_name);
+}
+
 // Print PID Tuner
 void Drive::pid_tuner_print() {
   if (!pid_tuner_on) return;
+
+  // Ensure that the user column is within the size of the pid tuner
+  if (column > used_pid_tuner_pids->size() - 1)
+    column = 0;
 
   double kp = used_pid_tuner_pids->at(column).consts->kp;
   double ki = used_pid_tuner_pids->at(column).consts->ki;
