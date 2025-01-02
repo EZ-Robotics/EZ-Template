@@ -1240,11 +1240,88 @@ class Drive {
   /**
    * Gets the current state of the toggle.
    *
-   * This toggles printing in autonomous.
-   *
    * True enabled, false disabled.
    */
   bool pid_print_toggle_get();
+
+  /**
+   * Sets the button to increment the PID constants.
+   *
+   * \param increase
+   *        a pros controller button
+   */
+  void pid_tuner_button_increment_set(pros::controller_digital_e_t increase);
+
+  /**
+   * Returns the pros button to increment the PID constants.
+   */
+  pros::controller_digital_e_t pid_tuner_button_increment_get();
+
+  /**
+   * Sets the button to decrement the PID constants.
+   *
+   * \param decrease
+   *        a pros controller button
+   */
+  void pid_tuner_button_decrement_set(pros::controller_digital_e_t decrease);
+
+  /**
+   * Returns the pros button to decrement the PID constants.
+   */
+  pros::controller_digital_e_t pid_tuner_button_decrement_get();
+
+  /**
+   * Sets the button to go up between the PID constants.
+   *
+   * \param pageUp
+   *        a pros controller button
+   */
+  void pid_tuner_button_up_set(pros::controller_digital_e_t pageUp);
+
+  /**
+   * Returns the pros button to go up between the PID constants.
+   */
+  pros::controller_digital_e_t pid_tuner_button_up_get();
+
+  /**
+   * Sets the button to go down between the PID constants.
+   *
+   * \param pageDown
+   *        a pros controller button
+   */
+  void pid_tuner_button_down_set(pros::controller_digital_e_t pageDown);
+
+  /**
+   * Returns the pros button to go down between the PID constants.
+   */
+  pros::controller_digital_e_t pid_tuner_button_down_get();
+
+  /**
+   * Sets the button to go left in the PID Tuner.
+   *
+   * \param pageLeft
+   *        a pros controller button
+   */
+
+  void pid_tuner_button_left_set(pros::controller_digital_e_t pageLeft);
+
+  /**
+   * Returns the pros button to go left in the PID Tuner.
+   */
+  pros::controller_digital_e_t pid_tuner_button_left_get();
+
+  /**
+   * Sets the button to go right in the PID Tuner.
+   *
+   * \param pageRight
+   *        a pros controller button
+   */
+  void pid_tuner_button_right_set(pros::controller_digital_e_t pageRight);
+
+  /**
+   * Returns the pros button to go right in the PID Tuner.
+   */
+  pros::controller_digital_e_t pid_tuner_button_right_get();
 
   /////
   //
@@ -3541,6 +3618,13 @@ class Drive {
   bool pid_tuner_on = false;
   std::string complete_pid_tuner_output = "";
   float p_increment = 0.1, i_increment = 0.001, d_increment = 0.25, start_i_increment = 1.0;
+
+  pros::controller_digital_e_t pid_tuner_increase;  // is this place good?
+  pros::controller_digital_e_t pid_tuner_decrease;  // ^yes this placement is fine :D
+  pros::controller_digital_e_t pid_tuner_pageLeft;
+  pros::controller_digital_e_t pid_tuner_pageRight;
+  pros::controller_digital_e_t pid_tuner_pageUp;
+  pros::controller_digital_e_t pid_tuner_pageDown;
 
   /**
    * Private wait until for drive
