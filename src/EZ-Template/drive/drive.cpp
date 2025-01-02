@@ -16,7 +16,7 @@ using namespace ez;
 // Constructor for integrated encoders
 Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports,
              int imu_port, double wheel_diameter, double ticks, double ratio)
-    : imu(imu_port),
+    : imu(new pros::Imu(imu_port)),
       left_tracker(-1, -1, false),   // Default value
       right_tracker(-1, -1, false),  // Default value
       left_rotation(-1),
@@ -36,6 +36,51 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
     right_motors.push_back(temp);
   }
 
+  good_imus.push_front(imu);
+  drive_imu_scaler_set(1);
+  // Set constants for tick_per_inch calculation
+  WHEEL_DIAMETER = wheel_diameter;
+  RATIO = ratio;
+  CARTRIDGE = ticks;
+  TICK_PER_INCH = drive_tick_per_inch();
+
+  drive_defaults_set();
+}
+
+// Constructor for integrated encoders with redundant imu support
+Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports,
+             std::vector<int> imu_ports, double wheel_diameter, double ticks, double ratio)
+    : imu(new pros::Imu(imu_ports[0])),
+      left_tracker(-1, -1, false),   // Default value
+      right_tracker(-1, -1, false),  // Default value
+      left_rotation(-1),
+      right_rotation(-1),
+      ez_auto([this] { this->ez_auto_task(); }) {
+  is_tracker = DRIVE_INTEGRATED;
+
+  // Set ports to a global vector
+  for (auto i : left_motor_ports) {
+    pros::Motor temp((std::int8_t)abs(i));
+    temp.set_reversed(util::reversed_active(i));
+    left_motors.push_back(temp);
+  }
+  for (auto i : right_motor_ports) {
+    pros::Motor temp((std::int8_t)abs(i));
+    temp.set_reversed(util::reversed_active(i));
+    right_motors.push_back(temp);
+  }
+
+  // Set all IMUs
+  std::vector<double> imu_scale_values = {};
+  good_imus.push_back(imu);
+  imu_scale_values.push_back(1);
+  for (int i = 1; i < imu_ports.size(); i--) {
+    pros::Imu* temp = new pros::Imu(imu_ports[i]);
+    good_imus.push_back(temp);
+    imu_scale_values.push_back(1);
+  }
+  drive_imus_scalers_set(imu_scale_values);
+
   // Set constants for tick_per_inch calculation
   WHEEL_DIAMETER = wheel_diameter;
   RATIO = ratio;
@@ -49,7 +94,7 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports,
              int imu_port, double wheel_diameter, double ticks, double ratio,
              std::vector<int> left_tracker_ports, std::vector<int> right_tracker_ports)
-    : imu(imu_port),
+    : imu(new pros::Imu(imu_port)),
       left_tracker(abs(left_tracker_ports[0]), abs(left_tracker_ports[1]), util::reversed_active(left_tracker_ports[0])),
       right_tracker(abs(right_tracker_ports[0]), abs(right_tracker_ports[1]), util::reversed_active(right_tracker_ports[0])),
       left_rotation(-1),
@@ -69,6 +114,8 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
     right_motors.push_back(temp);
   }
 
+  good_imus.push_front(imu);
+  drive_imu_scaler_set(1);
   // Set constants for tick_per_inch calculation
   WHEEL_DIAMETER = wheel_diameter;
   RATIO = ratio;
@@ -82,7 +129,7 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports,
              int imu_port, double wheel_diameter, double ticks, double ratio,
              std::vector<int> left_tracker_ports, std::vector<int> right_tracker_ports, int expander_smart_port)
-    : imu(imu_port),
+    : imu(new pros::Imu(imu_port)),
       left_tracker({expander_smart_port, abs(left_tracker_ports[0]), abs(left_tracker_ports[1])}, util::reversed_active(left_tracker_ports[0])),
       right_tracker({expander_smart_port, abs(right_tracker_ports[0]), abs(right_tracker_ports[1])}, util::reversed_active(right_tracker_ports[0])),
       left_rotation(-1),
@@ -102,6 +149,8 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
     right_motors.push_back(temp);
   }
 
+  good_imus.push_front(imu);
+  drive_imu_scaler_set(1);
   // Set constants for tick_per_inch calculation
   WHEEL_DIAMETER = wheel_diameter;
   RATIO = ratio;
@@ -115,7 +164,7 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports,
              int imu_port, double wheel_diameter, double ratio,
              int left_rotation_port, int right_rotation_port)
-    : imu(imu_port),
+    : imu(new pros::Imu(imu_port)),
       left_tracker(-1, -1, false),   // Default value
       right_tracker(-1, -1, false),  // Default value
       left_rotation(abs(left_rotation_port)),
@@ -137,6 +186,8 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
     right_motors.push_back(temp);
   }
 
+  good_imus.push_front(imu);
+  drive_imu_scaler_set(1);
   // Set constants for tick_per_inch calculation
   WHEEL_DIAMETER = wheel_diameter;
   RATIO = ratio;
@@ -146,8 +197,24 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
   drive_defaults_set();
 }
 
+Drive::~Drive() {
+  delete imu;
+
+  while (!good_imus.empty()) {
+    delete good_imus.front();
+    good_imus.pop_front();
+  }
+
+  while (!bad_imus.empty()) {
+    auto ptr = std::get<pros::Imu*>(bad_imus.back());
+    delete ptr;
+    bad_imus.pop_back();
+  }
+}
+
+// set defaults
 void Drive::drive_defaults_set() {
-  imu.set_data_rate(5);
+  imu->set_data_rate(5);
 
   std::cout << std::fixed;
   std::cout << std::setprecision(2);
@@ -330,15 +397,22 @@ double Drive::drive_mA_left() { return left_motors.front().get_current_draw(); }
 bool Drive::drive_current_left_over() { return left_motors.front().is_over_current(); }
 
 void Drive::drive_imu_reset(double new_heading) {
-  imu.set_rotation(new_heading);
+  imu->set_rotation(new_heading);
   angle_rad = util::to_rad(new_heading);
   t_last = angle_rad;
 }
-double Drive::drive_imu_get() { return imu.get_rotation() * IMU_SCALER; }
-double Drive::drive_imu_accel_get() { return imu.get_accel().x + imu.get_accel().y; }
+double Drive::drive_imu_get() { return imu->get_rotation() * drive_imu_scaler_get(); }
+double Drive::drive_imu_accel_get() { return imu->get_accel().x + imu->get_accel().y; }
 
-void Drive::drive_imu_scaler_set(double scaler) { IMU_SCALER = scaler; }
-double Drive::drive_imu_scaler_get() { return IMU_SCALER; }
+void Drive::drive_imu_scaler_set(double scaler) { imu_scale_map[imu->get_port()] = scaler; }
+double Drive::drive_imu_scaler_get() { return imu_scale_map[imu->get_port()]; }
+
+void Drive::drive_imus_scalers_set(std::vector<double> scales) {
+  for (int i = 0; i < std::min(good_imus.size(), scales.size()); i++) {
+    imu_scale_map[good_imus[i]->get_port()] = scales[i];
+  }
+}
+std::map<int, double> Drive::drive_imus_scalers_get() { return imu_scale_map; }
 
 void Drive::drive_imu_display_loading(int iter) {
   // If the lcd is already initialized, don't run this function
@@ -373,20 +447,40 @@ void Drive::drive_imu_display_loading(int iter) {
 
 bool Drive::drive_imu_calibrate(bool run_loading_animation) {
   imu_calibration_complete = false;
-  imu.reset();
-  int iter = 0;
-  bool current_status = imu.is_calibrating();
-  bool last_status = current_status;
+
+  // No IMUs are calibrated yet, set them all to false
+  std::vector<bool> imus_status, imus_done;
+  for (int i = 0; i < good_imus.size(); i++) {
+    good_imus[i]->reset();
+    imus_status.push_back(good_imus[i]->is_calibrating());
+    imus_done.push_back(false);
+  }
+  std::vector<bool> imus_last_status = imus_status;
+
   bool successful = false;
+  int iter = 0;
   while (true) {
     iter += util::DELAY_TIME;
 
     if (run_loading_animation) drive_imu_display_loading(iter);
 
     if (!successful) {
-      last_status = current_status;
-      current_status = imu.is_calibrating();
-      successful = !current_status && last_status ? true : false;
+      // Check if each IMU is done calibrating
+      for (int i = 0; i < good_imus.size(); i++) {
+        imus_last_status[i] = imus_status[i];
+        imus_status[i] = good_imus[i]->is_calibrating();
+        if (!imus_done[i])
+          imus_done[i] = !imus_status[i] && imus_last_status[i] ? true : false;
+      }
+    }
+
+    // Check if all IMUs have calibrated
+    successful = true;
+    for (auto i : imus_done) {
+      if (!i) {
+        successful = false;
+        break;
+      }
     }
 
     if (iter >= 2000) {

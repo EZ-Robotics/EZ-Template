@@ -228,6 +228,11 @@ const bool SD_CARD_ACTIVE = pros::usd::is_installed();
 const int DELAY_TIME = 10;
 
 /**
+ * Thresold for disconnect time
+ */
+const int DISCONNECT_THRESHOLD = 10;
+
+/**
  * Converts radians to degrees.
  *
  * \param input
