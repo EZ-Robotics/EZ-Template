@@ -47,6 +47,7 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
   drive_defaults_set();
 }
 
+// Constructor for integrated encoders with redundant imu support
 Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports,
              std::vector<int> imu_ports, double wheel_diameter, double ticks, double ratio)
     : imu(new pros::Imu(imu_ports[0])),
@@ -68,20 +69,19 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
     temp.set_reversed(util::reversed_active(i));
     right_motors.push_back(temp);
   }
-  
+
   std::vector<double> imu_scale_values = {};
-  
+
   good_imus.push_back(imu);
   imu_scale_values.push_back(1);
-  //set all imus
-  for (int i = 1; i < imu_ports.size(); i--)
-  {
+  // set all imus
+  for (int i = 1; i < imu_ports.size(); i--) {
     pros::Imu* temp = new pros::Imu(imu_ports[i]);
     good_imus.push_back(temp);
     imu_scale_values.push_back(1);
   }
-  
-  set_all_imu_scaling(imu_scale_values);
+
+  drive_imus_scalers_set(imu_scale_values);
   // Set constants for tick_per_inch calculation
   WHEEL_DIAMETER = wheel_diameter;
   RATIO = ratio;
@@ -90,6 +90,7 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 
   drive_defaults_set();
 }
+
 // Constructor for tracking wheels plugged into the brain
 Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports,
              int imu_port, double wheel_diameter, double ticks, double ratio,
@@ -125,53 +126,6 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
   drive_defaults_set();
 }
 
-// Constructor for tracking wheels plugged into the brain and multiple imus
-Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports,
-             std::vector<int> imu_ports, double wheel_diameter, double ticks, double ratio,
-             std::vector<int> left_tracker_ports, std::vector<int> right_tracker_ports)
-    : imu(new pros::Imu(imu_ports[0])),
-      left_tracker(abs(left_tracker_ports[0]), abs(left_tracker_ports[1]), util::reversed_active(left_tracker_ports[0])),
-      right_tracker(abs(right_tracker_ports[0]), abs(right_tracker_ports[1]), util::reversed_active(right_tracker_ports[0])),
-      left_rotation(-1),
-      right_rotation(-1),
-      ez_auto([this] { this->ez_auto_task(); }) {
-  is_tracker = DRIVE_ADI_ENCODER;
-
-  // Set ports to a global vector
-  for (auto i : left_motor_ports) {
-    pros::Motor temp(abs(i));
-    temp.set_reversed(util::reversed_active(i));
-    left_motors.push_back(temp);
-  }
-  for (auto i : right_motor_ports) {
-    pros::Motor temp(abs(i));
-    temp.set_reversed(util::reversed_active(i));
-    right_motors.push_back(temp);
-  }
-
-  std::vector<double> imu_scale_values = {};
-  
-  good_imus.push_back(imu);
-  imu_scale_values.push_back(1);
-  //set all imus
-  for (int i = 1; i < imu_ports.size(); i--)
-  {
-    pros::Imu* temp = new pros::Imu(imu_ports[i]);
-    good_imus.push_back(temp);
-    imu_scale_values.push_back(1);
-  }
-  
-  set_all_imu_scaling(imu_scale_values);
-
-  // Set constants for tick_per_inch calculation
-  WHEEL_DIAMETER = wheel_diameter;
-  RATIO = ratio;
-  CARTRIDGE = ticks;
-  TICK_PER_INCH = drive_tick_per_inch();
-
-  drive_defaults_set();
-}
-
 // Constructor for tracking wheels plugged into a 3 wire expander
 Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports,
              int imu_port, double wheel_diameter, double ticks, double ratio,
@@ -198,53 +152,6 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 
   good_imus.push_front(imu);
   drive_imu_scaler_set(1);
-  // Set constants for tick_per_inch calculation
-  WHEEL_DIAMETER = wheel_diameter;
-  RATIO = ratio;
-  CARTRIDGE = ticks;
-  TICK_PER_INCH = drive_tick_per_inch();
-
-  drive_defaults_set();
-}
-
-// Constructor for tracking wheels plugged into a 3 wire expander with multiple imu support
-Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports,
-             std::vector<int> imu_ports, double wheel_diameter, double ticks, double ratio,
-             std::vector<int> left_tracker_ports, std::vector<int> right_tracker_ports, int expander_smart_port)
-    : imu(new pros::Imu(imu_ports[0])),
-      left_tracker({expander_smart_port, abs(left_tracker_ports[0]), abs(left_tracker_ports[1])}, util::reversed_active(left_tracker_ports[0])),
-      right_tracker({expander_smart_port, abs(right_tracker_ports[0]), abs(right_tracker_ports[1])}, util::reversed_active(right_tracker_ports[0])),
-      left_rotation(-1),
-      right_rotation(-1),
-      ez_auto([this] { this->ez_auto_task(); }) {
-  is_tracker = DRIVE_ADI_ENCODER;
-
-  // Set ports to a global vector
-  for (auto i : left_motor_ports) {
-    pros::Motor temp(abs(i));
-    temp.set_reversed(util::reversed_active(i));
-    left_motors.push_back(temp);
-  }
-  for (auto i : right_motor_ports) {
-    pros::Motor temp(abs(i));
-    temp.set_reversed(util::reversed_active(i));
-    right_motors.push_back(temp);
-  }
-  
-  std::vector<double> imu_scale_values = {};
-  
-  good_imus.push_back(imu);
-  imu_scale_values.push_back(1);
-  //set all imus
-  for (int i = 1; i < imu_ports.size(); i--)
-  {
-    pros::Imu* temp = new pros::Imu(imu_ports[i]);
-    good_imus.push_back(temp);
-    imu_scale_values.push_back(1);
-  }
-  
-  set_all_imu_scaling(imu_scale_values);
-
   // Set constants for tick_per_inch calculation
   WHEEL_DIAMETER = wheel_diameter;
   RATIO = ratio;
@@ -291,74 +198,22 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
   drive_defaults_set();
 }
 
-// Constructor for rotation sensors with multiple imu support
-Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports,
-             std::vector<int> imu_ports, double wheel_diameter, double ratio,
-             int left_rotation_port, int right_rotation_port)
-    : imu(new pros::Imu(imu_ports[0])),
-      left_tracker(-1, -1, false),   // Default value
-      right_tracker(-1, -1, false),  // Default value
-      left_rotation(abs(left_rotation_port)),
-      right_rotation(abs(right_rotation_port)),
-      ez_auto([this] { this->ez_auto_task(); }) {
-  is_tracker = DRIVE_ROTATION;
-  left_rotation.set_reversed(util::reversed_active(left_rotation_port));
-  right_rotation.set_reversed(util::reversed_active(right_rotation_port));
-
-  // Set ports to a global vector
-  for (auto i : left_motor_ports) {
-    pros::Motor temp(abs(i));
-    temp.set_reversed(util::reversed_active(i));
-    left_motors.push_back(temp);
-  }
-  for (auto i : right_motor_ports) {
-    pros::Motor temp(abs(i));
-    temp.set_reversed(util::reversed_active(i));
-    right_motors.push_back(temp);
-  }
-
-  std::vector<double> imu_scale_values = {};
-  
-  good_imus.push_back(imu);
-  imu_scale_values.push_back(1);
-  //set all imus
-  for (int i = 1; i < imu_ports.size(); i--)
-  {
-    pros::Imu* temp = new pros::Imu(imu_ports[i]);
-    good_imus.push_back(temp);
-    imu_scale_values.push_back(1);
-  }
-  
-  set_all_imu_scaling(imu_scale_values);
-  // Set constants for tick_per_inch calculation
-  WHEEL_DIAMETER = wheel_diameter;
-  RATIO = ratio;
-  CARTRIDGE = 36000;
-  TICK_PER_INCH = drive_tick_per_inch();
-
-  drive_defaults_set();
-}
-
-Drive::~Drive()
-{
+Drive::~Drive() {
   delete imu;
-  
-  while(!good_imus.empty()) 
-  {
-    delete good_imus.front(); 
+
+  while (!good_imus.empty()) {
+    delete good_imus.front();
     good_imus.pop_front();
   }
 
-  while(!bad_imus.empty())
-  {
+  while (!bad_imus.empty()) {
     auto ptr = std::get<pros::Imu*>(bad_imus.back());
     delete ptr;
     bad_imus.pop_back();
   }
-
 }
 
-//set defaults
+// set defaults
 void Drive::drive_defaults_set() {
   imu->set_data_rate(5);
 
@@ -417,13 +272,6 @@ void Drive::drive_defaults_set() {
   as::limit_switch_lcd_initialize(nullptr, nullptr);
 }
 
-void Drive::set_all_imu_scaling(std::vector<double> scales)
-{
-  for(int i = 0; i < std::min(good_imus.size(), scales.size()); i++)
-  {
-    imu_scale_map[good_imus[i]->get_port()] = scales[i];
-  }
-}
 double Drive::drive_tick_per_inch() {
   if (is_tracker == ODOM_TRACKER)
     return odom_tracker_right->ticks_per_inch();
@@ -559,6 +407,13 @@ double Drive::drive_imu_accel_get() { return imu->get_accel().x + imu->get_accel
 
 void Drive::drive_imu_scaler_set(double scaler) { imu_scale_map[imu->get_port()] = scaler; }
 double Drive::drive_imu_scaler_get() { return imu_scale_map[imu->get_port()]; }
+
+void Drive::drive_imus_scalers_set(std::vector<double> scales) {
+  for (int i = 0; i < std::min(good_imus.size(), scales.size()); i++) {
+    imu_scale_map[good_imus[i]->get_port()] = scales[i];
+  }
+}
+std::map<int, double> Drive::drive_imus_scalers_get() { return imu_scale_map; }
 
 void Drive::drive_imu_display_loading(int iter) {
   // If the lcd is already initialized, don't run this function

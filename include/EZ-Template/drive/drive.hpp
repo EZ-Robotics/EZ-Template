@@ -6,11 +6,12 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #pragma once
 
+#include <deque>
 #include <functional>
 #include <iostream>
-#include <tuple>
 #include <stack>
-#include <deque>
+#include <tuple>
+
 #include "EZ-Template/PID.hpp"
 #include "EZ-Template/slew.hpp"
 #include "EZ-Template/tracking_wheel.hpp"
@@ -69,15 +70,15 @@ class Drive {
   pros::Imu* imu;
 
   /**
-   * All good imus, for redunadncy
+   * All good imus, for redundancy.
    */
   std::deque<pros::Imu*> good_imus;
-  
+
   /**
-   * All good imus, for redunadncy
+   * All good imus, for redundancy.
    */
   std::deque<std::tuple<pros::Imu*, uint32_t>> bad_imus;
-  
+
   /**
    * Deprecated left tracking wheel.
    */
@@ -392,10 +393,6 @@ class Drive {
    */
   void initialize();
 
-  /*
-  * Set all scalings for all imu's
-  */
-  void set_all_imu_scaling(std::vector<double> scales);
   /**
    * Tasks for autonomous.
    */
@@ -485,17 +482,15 @@ class Drive {
    */
   Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ratio, int left_rotation_port, int right_rotation_port) __attribute__((deprecated("Use the integrated encoder constructor with odom_tracker_left_set() and odom_tracker_right_set() instead!")));
 
-  //here is the swithc!!!!
-
   /**
-   * Creates a Drive Controller using internal encoders.
+   * Creates a Drive Controller using internal encoders with redundant IMUs.
    *
    * \param left_motor_ports
    *        input {1, -2...}. make ports negative if reversed
    * \param right_motor_ports
    *        input {-3, 4...}. make ports negative if reversed
    * \param imu_port
-   *        port the IMU is plugged into
+   *        input {5, 6...}. multiple IMU ports
    * \param wheel_diameter
    *        diameter of your drive wheels
    * \param ticks
@@ -505,74 +500,7 @@ class Drive {
    */
   Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, std::vector<int> imu_ports, double wheel_diameter, double ticks, double ratio = 1.0);
 
-  /**
-   * Creates a Drive Controller using encoders plugged into the brain.
-   *
-   * \param left_motor_ports
-   *        input {1, -2...}. make ports negative if reversed
-   * \param right_motor_ports
-   *        input {-3, 4...}. make ports negative if reversed
-   * \param imu_port
-   *        port the IMU is plugged into
-   * \param wheel_diameter
-   *        diameter of your sensored wheel
-   * \param ticks
-   *        ticks per revolution of your encoder
-   * \param ratio
-   *        external gear ratio, wheel gear / sensor gear
-   * \param left_tracker_ports
-   *        input {1, 2}. make ports negative if reversed
-   * \param right_tracker_ports
-   *        input {3, 4}. make ports negative if reversed
-   */
-  Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, std::vector<int> imu_ports, double wheel_diameter, double ticks, double ratio, std::vector<int> left_tracker_ports, std::vector<int> right_tracker_ports) __attribute__((deprecated("Use the integrated encoder constructor with odom_tracker_left_set() and odom_tracker_right_set() instead!")));
-
-  /**
-   * Creates a Drive Controller using encoders plugged into a 3 wire expander.
-   *
-   * \param left_motor_ports
-   *        input {1, -2...}. make ports negative if reversed
-   * \param right_motor_ports
-   *        input {-3, 4...}. make ports negative if reversed
-   * \param imu_port
-   *        port the IMU is plugged into
-   * \param wheel_diameter
-   *        diameter of your sensored wheel
-   * \param ticks
-   *        ticks per revolution of your encoder
-   * \param ratio
-   *        external gear ratio, wheel gear / sensor gear
-   * \param left_tracker_ports
-   *        input {1, 2}. make ports negative if reversed
-   * \param right_tracker_ports
-   *        input {3, 4}. make ports negative if reversed
-   * \param expander_smart_port
-   *        port the expander is plugged into
-   */
-  Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, std::vector<int> imu_ports, double wheel_diameter, double ticks, double ratio, std::vector<int> left_tracker_ports, std::vector<int> right_tracker_ports, int expander_smart_port) __attribute__((deprecated("Use the integrated encoder constructor with odom_tracker_left_set() and odom_tracker_right_set() instead!")));
-
-  /**
-   * Creates a Drive Controller using rotation sensors.
-   *
-   * \param left_motor_ports
-   *        input {1, -2...}. make ports negative if reversed
-   * \param right_motor_ports
-   *        input {-3, 4...}. make ports negative if reversed
-   * \param imu_ports
-   *        port the IMU is plugged into
-   * \param wheel_diameter
-   *        diameter of your sensored wheel
-   * \param ratio
-   *        external gear ratio, wheel gear / sensor gear
-   * \param left_tracker_port
-   *        make ports negative if reversed
-   * \param right_tracker_port
-   *        make ports negative if reversed
-   */
-  Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, std::vector<int> imu_ports, double wheel_diameter, double ratio, int left_rotation_port, int right_rotation_port) __attribute__((deprecated("Use the integrated encoder constructor with odom_tracker_left_set() and odom_tracker_right_set() instead!")));
-
-  
-  //Deconstructor
+  // Deconstructor
   ~Drive();
 
   /**
@@ -1452,6 +1380,21 @@ class Drive {
    * Returns the current imu scaling factor.
    */
   double drive_imu_scaler_get();
+
+  /*
+   * Sets a new IMU scaling factor for all IMUs.
+   *
+   * This value is multiplied by the imu to change its output.
+   *
+   * \param scales
+   *        input {0.99, 1.01...}
+   */
+  void drive_imus_scalers_set(std::vector<double> scales);
+
+  /*
+   * Returns the scaling factor for all IMUs.
+   */
+  std::map<int, double> drive_imus_scalers_get();
 
   /**
    * Calibrates the IMU, recommended to run in initialize().
@@ -3619,7 +3562,6 @@ class Drive {
   double used_motion_chain_scale = 0.0;
   bool motion_chain_backward = false;
 
-  
   bool drive_toggle = true;
   bool print_toggle = true;
   int swing_min = 0;
@@ -3709,8 +3651,8 @@ class Drive {
 
   /**
    * Current position of imu
-  */
-  
+   */
+
   /**
    * Enable/disable modifying controller curve with controller.
    */
