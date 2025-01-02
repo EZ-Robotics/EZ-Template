@@ -11,6 +11,9 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 using namespace ez;
 
 void Drive::check_imu_task() {
+  // Don't let this function run if IMU calibration is incomplete
+  if (!imu_calibration_complete) return;
+
   std::vector<int> deleteIndexes = {};
   for (int i = 0; i < bad_imus.size(); i++) {
     auto& [imuPtr, start_time] = bad_imus[i];
