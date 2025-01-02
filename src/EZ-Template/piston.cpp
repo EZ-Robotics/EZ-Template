@@ -5,6 +5,8 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
 #include "EZ-Template/piston.hpp"
+#include "pros/misc.h"
+#include "util.hpp"
 
 using namespace ez;
 
@@ -37,10 +39,20 @@ void Piston::button_toggle(int toggle) {
   last_press = toggle;
 }
 
+// Toggle for user control, takes in a pros button
+void Piston::button_toggle(pros::controller_digital_e_t toggle) {
+  button_toggle(master.get_digital(toggle));
+}
+
 // Two button control for piston
 void Piston::buttons(int active, int deactive) {
   if (active && !get())
     set(true);
   else if (deactive && get())
     set(false);
+}
+
+// Two button control for piston, takes in pros buttons
+void Piston::buttons(pros::controller_digital_e_t active, pros::controller_digital_e_t deactive) {
+  buttons(master.get_digital(active), master.get_digital(deactive));
 }
