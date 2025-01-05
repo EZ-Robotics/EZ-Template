@@ -36,7 +36,7 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
     right_motors.push_back(temp);
   }
 
-  good_imus.push_front(imu);
+  good_imus.push_back(imu);
   drive_imu_scaler_set(1);
   // Set constants for tick_per_inch calculation
   WHEEL_DIAMETER = wheel_diameter;
@@ -74,7 +74,7 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
   std::vector<double> imu_scale_values = {};
   good_imus.push_back(imu);
   imu_scale_values.push_back(1);
-  for (int i = 1; i < imu_ports.size(); i--) {
+  for (int i = 1; i < imu_ports.size(); i++) {
     pros::Imu* temp = new pros::Imu(imu_ports[i]);
     good_imus.push_back(temp);
     imu_scale_values.push_back(1);
@@ -114,7 +114,7 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
     right_motors.push_back(temp);
   }
 
-  good_imus.push_front(imu);
+  good_imus.push_back(imu);
   drive_imu_scaler_set(1);
   // Set constants for tick_per_inch calculation
   WHEEL_DIAMETER = wheel_diameter;
@@ -149,7 +149,7 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
     right_motors.push_back(temp);
   }
 
-  good_imus.push_front(imu);
+  good_imus.push_back(imu);
   drive_imu_scaler_set(1);
   // Set constants for tick_per_inch calculation
   WHEEL_DIAMETER = wheel_diameter;
@@ -186,7 +186,7 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
     right_motors.push_back(temp);
   }
 
-  good_imus.push_front(imu);
+  good_imus.push_back(imu);
   drive_imu_scaler_set(1);
   // Set constants for tick_per_inch calculation
   WHEEL_DIAMETER = wheel_diameter;
@@ -199,16 +199,11 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 
 Drive::~Drive() {
   delete imu;
+  good_imus.pop_front();
 
   while (!good_imus.empty()) {
     delete good_imus.front();
     good_imus.pop_front();
-  }
-
-  while (!bad_imus.empty()) {
-    auto ptr = std::get<pros::Imu*>(bad_imus.back());
-    delete ptr;
-    bad_imus.pop_back();
   }
 }
 

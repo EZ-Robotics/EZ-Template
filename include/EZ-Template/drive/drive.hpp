@@ -75,11 +75,6 @@ class Drive {
   std::deque<pros::Imu*> good_imus;
 
   /**
-   * All good imus, for redundancy.
-   */
-  std::deque<std::tuple<pros::Imu*, uint32_t>> bad_imus;
-
-  /**
    * Deprecated left tracking wheel.
    */
   pros::adi::Encoder left_tracker;
@@ -3472,6 +3467,7 @@ class Drive {
   std::vector<const_and_name>* used_pid_tuner_pids;
   double opcontrol_speed_max = 127.0;
   bool arcade_vector_scaling = false;
+  double prev_imu_value = 0;
   // odom privates
   std::vector<odom> pp_movements;
   std::vector<int> injected_pp_index;
