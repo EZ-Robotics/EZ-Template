@@ -1412,6 +1412,10 @@ class Drive {
   void drive_imu_display_loading(int iter);
 
   /**
+   * Get angle of the robot, depending on focused sensor
+   */
+  double get_angle();
+  /**
    * Practice mode for driver practice that shuts off the drive if you go max speed.
    *
    * \param toggle

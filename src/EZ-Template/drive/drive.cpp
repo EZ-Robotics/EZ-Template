@@ -266,6 +266,10 @@ void Drive::drive_defaults_set() {
   as::limit_switch_lcd_initialize(nullptr, nullptr);
 }
 
+double Drive::get_angle()
+{
+  return 0;
+}
 double Drive::drive_tick_per_inch() {
   if (is_tracker == ODOM_TRACKER)
     return odom_tracker_right->ticks_per_inch();
