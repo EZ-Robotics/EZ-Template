@@ -1415,6 +1415,12 @@ class Drive {
    * Get angle of the robot, depending on focused sensor
    */
   double get_angle();
+
+  /**
+   * Get angle with encoder
+   */
+  double get_encoder_angle();
+  
   /**
    * Practice mode for driver practice that shuts off the drive if you go max speed.
    *
