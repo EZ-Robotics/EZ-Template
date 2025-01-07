@@ -166,7 +166,7 @@ void Drive::ez_tracking_task() {
   r_last = r_current;
 
   // Angle and velocity
-  float t_current = -ez::util::to_rad(drive_imu_get());  // negative for math standard
+  float t_current = -ez::util::to_rad(drive_get_angle());  // negative for math standard
   float t_ = t_current - t_last;
   t_last = t_current;
 
@@ -223,7 +223,7 @@ void Drive::ez_tracking_task() {
     }
   }
 
-  odom_current.theta = drive_imu_get();
+  odom_current.theta = drive_get_angle();
 
   // This is used for PID as a "current" sensor value
   // what this value actually is doesn't matter, it just needs to move with the correct sign

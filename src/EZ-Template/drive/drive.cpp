@@ -266,25 +266,14 @@ void Drive::drive_defaults_set() {
   as::limit_switch_lcd_initialize(nullptr, nullptr);
 }
 
-double Drive::get_angle()
+double Drive::drive_get_angle()
 {
   /*if there is a good imu*/
   if(imu != nullptr) return drive_imu_get();
 
-  //this is odom tracking
-  if(is_tracker == ODOM_TRACKER) /**/;
-
-  //if width set, use ime
-  if(drive_width_get() != 0.0) /**/;
-  //
-
   return INT_MAX;
 }
 
-double Drive::get_encoder_angle()
-{
-  //calcualte encoder angle  
-}
 double Drive::drive_tick_per_inch() {
   if (is_tracker == ODOM_TRACKER)
     return odom_tracker_right->ticks_per_inch();
@@ -415,7 +404,9 @@ void Drive::drive_imu_reset(double new_heading) {
   angle_rad = util::to_rad(new_heading);
   t_last = angle_rad;
 }
-double Drive::drive_imu_get() { return imu->get_rotation() * drive_imu_scaler_get(); }
+double Drive::get_this_imu(pros::Imu* imu) { return imu->get_rotation() * imu_scale_map[imu->get_port()]; }
+
+double Drive::drive_imu_get() { return get_this_imu(imu); }
 double Drive::drive_imu_accel_get() { return imu->get_accel().x + imu->get_accel().y; }
 
 void Drive::drive_imu_scaler_set(double scaler) { imu_scale_map[imu->get_port()] = scaler; }

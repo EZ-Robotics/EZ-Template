@@ -253,10 +253,10 @@ void Drive::wait_until_turn_swing(double target) {
   }
 
   // Create new target that is the shortest from current
-  target = new_turn_target_compute(target, drive_imu_get(), shortest);
+  target = new_turn_target_compute(target, drive_get_angle(), shortest);
 
   // Calculate error between current and target (target needs to be an in between position)
-  double g_error = target - drive_imu_get();
+  double g_error = target - drive_get_angle();
   int g_sgn = util::sgn(g_error);
 
   exit_output turn_exit = RUNNING;
@@ -265,7 +265,7 @@ void Drive::wait_until_turn_swing(double target) {
   pros::Motor& sensor = current_swing == ez::LEFT_SWING ? left_motors[0] : right_motors[0];
 
   while (true) {
-    g_error = target - drive_imu_get();
+    g_error = target - drive_get_angle();
 
     // If turning...
     if (mode == TURN || mode == TURN_TO_POINT) {
@@ -276,7 +276,7 @@ void Drive::wait_until_turn_swing(double target) {
           turn_exit = turn_exit != RUNNING ? turn_exit : turnPID.exit_condition({left_motors[0], right_motors[0]});
           pros::delay(util::DELAY_TIME);
         } else {
-          if (print_toggle) std::cout << "  Turn: " << exit_to_string(turn_exit) << " Wait Until Exit Failsafe, triggered at " << drive_imu_get() << " instead of " << target << "\n";
+          if (print_toggle) std::cout << "  Turn: " << exit_to_string(turn_exit) << " Wait Until Exit Failsafe, triggered at " << drive_get_angle() << " instead of " << target << "\n";
 
           if (turn_exit == mA_EXIT || turn_exit == VELOCITY_EXIT) {
             interfered = true;
@@ -286,7 +286,7 @@ void Drive::wait_until_turn_swing(double target) {
       }
       // Once we've past target, return
       else if (util::sgn(g_error) != g_sgn) {
-        if (print_toggle) printf("  Turn Wait Until Exit Success, triggered at %.2f.  Target: %.2f\n", drive_imu_get(), target);
+        if (print_toggle) printf("  Turn Wait Until Exit Success, triggered at %.2f.  Target: %.2f\n", drive_get_angle(), target);
         turnPID.timers_reset();
         return;
       }
@@ -301,7 +301,7 @@ void Drive::wait_until_turn_swing(double target) {
           swing_exit = swing_exit != RUNNING ? swing_exit : swingPID.exit_condition(sensor);
           pros::delay(util::DELAY_TIME);
         } else {
-          if (print_toggle) std::cout << "  Swing: " << exit_to_string(swing_exit) << " Wait Until Exit Failsafe, triggered at " << drive_imu_get() << " instead of " << target << "\n";
+          if (print_toggle) std::cout << "  Swing: " << exit_to_string(swing_exit) << " Wait Until Exit Failsafe, triggered at " << drive_get_angle() << " instead of " << target << "\n";
 
           if (swing_exit == mA_EXIT || swing_exit == VELOCITY_EXIT) {
             interfered = true;
@@ -311,7 +311,7 @@ void Drive::wait_until_turn_swing(double target) {
       }
       // Once we've past target, return
       else if (util::sgn(g_error) != g_sgn) {
-        if (print_toggle) printf("  Swing Wait Until Exit Success, triggered at %.2f. Target: %.2f\n", drive_imu_get(), target);
+        if (print_toggle) printf("  Swing Wait Until Exit Success, triggered at %.2f. Target: %.2f\n", drive_get_angle(), target);
         swingPID.timers_reset();
         return;
       }

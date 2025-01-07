@@ -1414,12 +1414,7 @@ class Drive {
   /**
    * Get angle of the robot, depending on focused sensor
    */
-  double get_angle();
-
-  /**
-   * Get angle with encoder
-   */
-  double get_encoder_angle();
+  double drive_get_angle();
   
   /**
    * Practice mode for driver practice that shuts off the drive if you go max speed.
@@ -3465,6 +3460,7 @@ class Drive {
 
  private:
   std::map<int, double> imu_scale_map = {};
+  std::map<int, double> prev_imu_values = {};
   void opcontrol_drive_activebrake_targets_set();
   double odom_smooth_weight_smooth = 0.0;
   double odom_smooth_weight_data = 0.0;
@@ -3595,6 +3591,11 @@ class Drive {
   std::string complete_pid_tuner_output = "";
   float p_increment = 0.1, i_increment = 0.001, d_increment = 0.25, start_i_increment = 1.0;
 
+  /**
+   * @brief 
+   * Get the scaled imu value from given imu
+   */
+  double get_this_imu(pros::Imu* imu);
   /**
    * Private wait until for drive
    */

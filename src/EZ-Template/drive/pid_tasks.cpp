@@ -51,7 +51,7 @@ void Drive::drive_pid_task() {
   leftPID.compute(drive_sensor_left());
   rightPID.compute(drive_sensor_right());
 
-  headingPID.compute(drive_imu_get());
+  headingPID.compute(drive_get_angle());
 
   // Compute slew
   slew_left.iterate(drive_sensor_left());
@@ -93,7 +93,7 @@ void Drive::drive_pid_task() {
 void Drive::turn_pid_task() {
   // Compute PID if it's a normal turn
   if (mode == TURN) {
-    turnPID.compute(drive_imu_get());
+    turnPID.compute(drive_get_angle());
   }
   // Compute PID if we're turning to point
   else {
@@ -104,7 +104,7 @@ void Drive::turn_pid_task() {
   }
 
   // Compute slew
-  slew_turn.iterate(drive_imu_get());
+  slew_turn.iterate(drive_get_angle());
 
   // Clip gyroPID to max speed
   double gyro_out = util::clamp(turnPID.output, slew_turn.output(), -slew_turn.output());
@@ -123,12 +123,12 @@ void Drive::turn_pid_task() {
 // Swing PID task
 void Drive::swing_pid_task() {
   // Compute PID
-  swingPID.compute(drive_imu_get());
+  swingPID.compute(drive_get_angle());
   leftPID.compute(drive_sensor_left());
   rightPID.compute(drive_sensor_right());
 
   // Compute slew
-  double current = slew_swing_using_angle ? drive_imu_get() : (current_swing == LEFT_SWING ? drive_sensor_left() : drive_sensor_right());
+  double current = slew_swing_using_angle ? drive_get_angle() : (current_swing == LEFT_SWING ? drive_sensor_left() : drive_sensor_right());
   slew_swing.iterate(current);
 
   // Clip swingPID to max speed
