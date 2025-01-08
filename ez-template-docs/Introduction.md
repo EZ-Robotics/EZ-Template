@@ -1,9 +1,6 @@
 ---
 title: EZ-Template
-slug: /
 description: coding made ez
-image: /img/embed.png
-preview: /img/embed.png
 ---
 ![](https://img.shields.io/github/downloads/EZ-Robotics/EZ-Template/total.svg)
 ![](https://github.com/EZ-Robotics/EZ-Template/workflows/Build/badge.svg)

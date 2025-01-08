@@ -1,11 +1,7 @@
 ---
 title: EZ-Template
-nav_order: 1
-slug: /
 description: Simple plug-and-play PROS template that handles drive base functions,
   autonomous selector, input curves, and active brake with PTO support.
-image: /img/embed.png
-preview: /img/embed.png
 ---
 ![](https://img.shields.io/github/downloads/EZ-Robotics/EZ-Template/total.svg)
 ![](https://github.com/EZ-Robotics/EZ-Template/workflows/Build/badge.svg)
