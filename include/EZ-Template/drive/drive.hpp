@@ -3460,7 +3460,7 @@ class Drive {
 
  private:
   std::map<int, double> imu_scale_map = {};
-  std::map<int, double> prev_imu_values = {};
+  std::map<int, std::pair<double, int>> prev_imu_values = {};
   void opcontrol_drive_activebrake_targets_set();
   double odom_smooth_weight_smooth = 0.0;
   double odom_smooth_weight_data = 0.0;

@@ -14,11 +14,17 @@ void Drive::check_imu_task() {
   // Don't let this function run if IMU calibration is incomplete
   if (!imu_calibration_complete) return;
 
-  // erase indices only if imu val equals previous one
-  good_imus.erase(std::remove_if(good_imus.begin(), good_imus.end(), [this](pros::Imu *n) { return n->get_status() == pros::ImuStatus::error || errno == PROS_ERR || get_this_imu(n) == prev_imu_values[n->get_port()]; }), good_imus.end());
+  // Erase indices only if imu val equals previous one
+  good_imus.erase(std::remove_if(good_imus.begin(), good_imus.end(), [this](pros::Imu *n) { return n->get_status() == pros::ImuStatus::error /*|| errno == PROS_ERR*/ || prev_imu_values[n->get_port()].second >= 5; }), good_imus.end());
 
-  for (size_t i = 0; i < good_imus.size(); i++)
-    prev_imu_values[good_imus[i]->get_port()] = get_this_imu(good_imus[i]);
+  // Increment every time an IMU doesn't update
+  for (size_t i = 0; i < good_imus.size(); i++) {
+    if (prev_imu_values[good_imus[i]->get_port()].first == get_this_imu(good_imus[i]))
+      prev_imu_values[good_imus[i]->get_port()].second += 1;
+    else
+      prev_imu_values[good_imus[i]->get_port()].second = 0;
+    prev_imu_values[good_imus[i]->get_port()].first = get_this_imu(good_imus[i]);
+  }
 
   if (!good_imus.empty())
     imu = good_imus.front();

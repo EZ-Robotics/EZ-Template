@@ -455,15 +455,17 @@ void Drive::drive_imu_display_loading(int iter) {
 
 bool Drive::drive_imu_calibrate(bool run_loading_animation) {
   imu_calibration_complete = false;
+  bool one_calibrated = false;
 
   // No IMUs are calibrated yet, set them all to false
-  std::vector<bool> imus_status, imus_done;
+  std::map<int, bool> imus_status, imus_done, imus_last_status;
   for (int i = 0; i < good_imus.size(); i++) {
     good_imus[i]->reset();
-    imus_status.push_back(good_imus[i]->is_calibrating());
-    imus_done.push_back(false);
+    int port = good_imus[i]->get_port();
+    imus_status[port] = good_imus[i]->is_calibrating();
+    imus_last_status[port] = imus_status[port];
+    imus_done[port] = false;
   }
-  std::vector<bool> imus_last_status = imus_status;
 
   bool successful = false;
   int iter = 0;
@@ -475,38 +477,68 @@ bool Drive::drive_imu_calibrate(bool run_loading_animation) {
     if (!successful) {
       // Check if each IMU is done calibrating
       for (int i = 0; i < good_imus.size(); i++) {
-        imus_last_status[i] = imus_status[i];
-        imus_status[i] = good_imus[i]->is_calibrating();
-        if (!imus_done[i])
-          imus_done[i] = !imus_status[i] && imus_last_status[i] ? true : false;
+        int port = good_imus[i]->get_port();
+        imus_last_status[port] = imus_status[port];
+        imus_status[port] = good_imus[i]->is_calibrating();
+        if (!imus_done[port])
+          imus_done[port] = !imus_status[port] && imus_last_status[port] ? true : false;
       }
     }
 
     // Check if all IMUs have calibrated
     successful = true;
-    for (auto i : imus_done) {
-      if (!i) {
+    for (int i = 0; i < good_imus.size(); i++) {
+      if (!imus_done[good_imus[i]->get_port()]) {
         successful = false;
-        break;
+      } else {
+        one_calibrated = true;  // Remember that at least 1 IMU has calibrated
       }
     }
 
     if (iter >= 2000) {
       if (successful) {
+        printf("IMU is done calibrating (took %d ms)\n", iter);
+        imu_calibration_complete = true;
+        imu_calibrate_took_too_long = iter > 2000 ? true : false;
         break;
       }
       if (iter >= 3000) {
-        printf("No IMU plugged in, (took %d ms to realize that)\n", iter);
+        if (!one_calibrated) {
+          printf("No IMU plugged in");
+        } else {
+          printf("Only IMUs in ports {");
+          for (int i = 0; i < good_imus.size(); i++) {
+            int port = good_imus[i]->get_port();
+            if (imus_done[port])
+              printf(" %i", port);
+          }
+          printf(" } calibrated");
+        }
+        printf(", (took %d ms to realize that)\n", iter);
         imu_calibrate_took_too_long = true;
-        return false;
+        break;
       }
     }
     pros::delay(util::DELAY_TIME);
   }
-  printf("IMU is done calibrating (took %d ms)\n", iter);
-  imu_calibration_complete = true;
-  imu_calibrate_took_too_long = iter > 2000 ? true : false;
-  return true;
+
+  // Run through all of the IMUs and remove any IMUs that didn't calibrate successfully
+  for (int i = 0; i < good_imus.size(); i++) {
+    int port = good_imus[i]->get_port();
+
+    if (!imus_done[port]) {
+      good_imus.erase(good_imus.begin() + i);
+      if (i == 0 && !good_imus.empty())
+        imu = good_imus.front();
+    }
+  }
+
+  if (one_calibrated && !good_imus.empty())
+    imu_calibration_complete = true;
+
+  printf("one cali-%i\n", one_calibrated);
+
+  return imu_calibration_complete;
 }
 
 bool Drive::drive_imu_calibrated() {
