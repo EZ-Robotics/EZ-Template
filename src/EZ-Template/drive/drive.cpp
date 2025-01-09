@@ -266,10 +266,9 @@ void Drive::drive_defaults_set() {
   as::limit_switch_lcd_initialize(nullptr, nullptr);
 }
 
-double Drive::drive_get_angle()
-{
+double Drive::drive_angle_get() {
   /*if there is a good imu*/
-  if(imu != nullptr) return drive_imu_get();
+  if (imu != nullptr) return drive_imu_get();
 
   return INT_MAX;
 }

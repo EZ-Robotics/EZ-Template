@@ -13,15 +13,14 @@ using namespace ez;
 void Drive::check_imu_task() {
   // Don't let this function run if IMU calibration is incomplete
   if (!imu_calibration_complete) return;
-  
-  //erase indices only if imu val equals previous one
+
+  // erase indices only if imu val equals previous one
   good_imus.erase(std::remove_if(good_imus.begin(), good_imus.end(), [this](pros::Imu *n) { return n->get_status() == pros::ImuStatus::error || errno == PROS_ERR || get_this_imu(n) == prev_imu_values[n->get_port()]; }), good_imus.end());
-  
-  for (size_t i = 0; i < good_imus.size(); i++)
-  {
+
+  for (size_t i = 0; i < good_imus.size(); i++) {
     prev_imu_values[good_imus[i]->get_port()] = get_this_imu(good_imus[i]);
   }
-  
+
   double imu_val = drive_imu_scaler_get();
   if ((imu->get_status() == pros::ImuStatus::error || errno == PROS_ERR || prev_imu_value == imu_val) && !good_imus.empty())  // not sure if errno is needed yet. I think it is??
   {

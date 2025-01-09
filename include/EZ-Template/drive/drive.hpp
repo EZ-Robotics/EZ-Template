@@ -1412,10 +1412,10 @@ class Drive {
   void drive_imu_display_loading(int iter);
 
   /**
-   * Get angle of the robot, depending on focused sensor
+   * Get angle of the robot, depending on focused sensor.
    */
-  double drive_get_angle();
-  
+  double drive_angle_get();
+
   /**
    * Practice mode for driver practice that shuts off the drive if you go max speed.
    *
@@ -3592,7 +3592,7 @@ class Drive {
   float p_increment = 0.1, i_increment = 0.001, d_increment = 0.25, start_i_increment = 1.0;
 
   /**
-   * @brief 
+   * @brief
    * Get the scaled imu value from given imu
    */
   double get_this_imu(pros::Imu* imu);
@@ -3655,10 +3655,6 @@ class Drive {
    */
   double l_start = 0;
   double r_start = 0;
-
-  /**
-   * Current position of imu
-   */
 
   /**
    * Enable/disable modifying controller curve with controller.
