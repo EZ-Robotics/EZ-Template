@@ -12,9 +12,12 @@ using namespace ez;
 
 void Drive::ez_auto_task() {
   while (true) {
-    // Run odom
+    // Check IMUs for redundancy
     check_imu_task();
+
+    // Run odom
     ez_tracking_task();
+
     // Autonomous PID
     switch (drive_mode_get()) {
       case DRIVE:
