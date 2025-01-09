@@ -31,10 +31,11 @@ We want to create a motor and have it accessible by `main.cpp` and `autons.cpp`.
 #include "EZ-Template/api.hpp"
 #include "api.h"
 
-inline pros::Motor intake(10);  // Make this number negative if you want to reverse the motor
+extern Drive chassis;
 
 // Your motors, sensors, etc. should go here.  Below are examples
 
+inline pros::Motor intake(10);  // Make this number negative if you want to reverse the motor
 // inline pros::Motor intake(1);
 // inline pros::adi::DigitalIn limit_switch('A');
 ```
@@ -49,10 +50,11 @@ inline pros::Motor intake(10);  // Make this number negative if you want to rev
 #include "EZ-Template/api.hpp"
 #include "api.h"
 
-inline pros::MotorGroup intake({10, -11});  // Negative port will reverse the motor
+extern Drive chassis;
 
 // Your motors, sensors, etc. should go here.  Below are examples
 
+inline pros::MotorGroup intake({10, -11});  // Negative port will reverse the motor
 // inline pros::Motor intake(1);
 // inline pros::adi::DigitalIn limit_switch('A');
 ```
@@ -70,7 +72,10 @@ So to make the intake spin at full speed forward, we would type
 intake.move(127);
 ```
 
-EZ-Template has a controller object already made for you that you can access with `master`.  You can read controller inputs with `master.get_digital(DIGITAL_button)`.  With an if/else statement, we can have the intake go full speed forward when L1 is pressed, and go full speed backward when L2 is pressed.  When neither button is pressed the intake will stop moving.  
+EZ-Template has a controller object already made for you that you can access with `master`.  You can read controller inputs with `master.get_digital(DIGITAL_button)`.  
+
+### Two Button Control
+With an if/else statement, we can have the intake go full speed forward when L1 is pressed, and go full speed backward when L2 is pressed.  When neither button is pressed the intake will stop moving.  
 ```cpp
 if (master.get_digital(DIGITAL_L1)) {
   intake.move(127);
@@ -109,6 +114,49 @@ void opcontrol() {
     else if (master.get_digital(DIGITAL_L2)) {
       intake.move(-127);
     } 
+    else {
+      intake.move(0);
+    }
+
+    pros::delay(ez::util::DELAY_TIME);  // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
+  }
+}
+```
+
+### Toggle
+We can also have the button turn on/off with a single button.  This can happen with a `bool` that is set to true/false and that changes what the intake will do.   
+```cpp
+void opcontrol() {
+  // This is preference to what you like to drive on
+  chassis.drive_brake_set(MOTOR_BRAKE_COAST);
+
+  // Boolean for if the intake is spinning
+  bool intake_running = false;
+
+  while (true) {
+    // Gives you some extras to make EZ-Template ezier
+    ez_template_extras();
+
+    chassis.opcontrol_tank();  // Tank control
+    // chassis.opcontrol_arcade_standard(ez::SPLIT);   // Standard split arcade
+    // chassis.opcontrol_arcade_standard(ez::SINGLE);  // Standard single arcade
+    // chassis.opcontrol_arcade_flipped(ez::SPLIT);    // Flipped split arcade
+    // chassis.opcontrol_arcade_flipped(ez::SINGLE);   // Flipped single arcade
+
+    // . . .
+    // Put more user control code here!
+    // . . .
+    
+    // Set intake_running to the opposite of itself
+    if (master.get_digital_new_press(DIGITAL_L1)) {
+      intake_running = !intake_running;
+    }
+
+    // Spin the intake if intake_running is true
+    if (intake_running) {
+      intake.move(127);
+    }
+    // Stop the intake if intake_running is false 
     else {
       intake.move(0);
     }
