@@ -209,7 +209,9 @@ Drive::~Drive() {
 
 // set defaults
 void Drive::drive_defaults_set() {
-  imu->set_data_rate(5);
+  for (int i = 0; i < good_imus.size(); i++) {
+    imu->set_data_rate(5);
+  }
 
   std::cout << std::fixed;
   std::cout << std::setprecision(2);
@@ -399,7 +401,9 @@ double Drive::drive_mA_left() { return left_motors.front().get_current_draw(); }
 bool Drive::drive_current_left_over() { return left_motors.front().is_over_current(); }
 
 void Drive::drive_imu_reset(double new_heading) {
-  imu->set_rotation(new_heading);
+  for (int i = 0; i < good_imus.size(); i++) {
+    good_imus[i]->set_rotation(new_heading);
+  }
   angle_rad = util::to_rad(new_heading);
   t_last = angle_rad;
 }
