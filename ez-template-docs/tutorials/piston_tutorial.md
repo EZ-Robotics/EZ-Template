@@ -35,10 +35,11 @@ We want to create a piston and have it accessible by `main.cpp` and `autons.cpp`
 #include "EZ-Template/api.hpp"
 #include "api.h"
 
-inline ez::Piston doinker('A');
+extern Drive chassis;
 
 // Your motors, sensors, etc. should go here.  Below are examples
 
+inline ez::Piston doinker('A');
 // inline pros::Motor intake(1);
 // inline pros::adi::DigitalIn limit_switch('A');
 ```
@@ -53,10 +54,11 @@ inline ez::Piston doinker('A');
 #include "EZ-Template/api.hpp"
 #include "api.h"
 
-inline ez::Piston doinker('A', 3);  // Creates a piston in 'A' of a 3-wire Expander in port 3
+extern Drive chassis;
 
 // Your motors, sensors, etc. should go here.  Below are examples
 
+inline ez::Piston doinker('A', 3);  // Creates a piston in 'A' of a 3-wire Expander in port 3
 // inline pros::Motor intake(1);
 // inline pros::adi::DigitalIn limit_switch('A');
 ```
@@ -164,7 +166,7 @@ if (master.get_digital(DIGITAL_R1)) {
 
 The solution to this is to only allow that code to run when the button is pressed freshly.  
 ```cpp
-if (master.get_digital_new_pres(DIGITAL_R1)) {
+if (master.get_digital_new_press(DIGITAL_R1)) {
   doinker.set(!doinker.get());
 } 
 ```
