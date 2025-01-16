@@ -379,7 +379,7 @@ class Drive {
   /**
    * Calibrates imu and initializes sd card to curve.
    */
-  void initialize();
+  void initialize(bool run_loading_animation = true);
 
   /**
    * Tasks for autonomous.

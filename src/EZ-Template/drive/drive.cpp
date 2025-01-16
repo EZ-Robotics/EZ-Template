@@ -429,9 +429,9 @@ pros::motor_brake_mode_e_t Drive::drive_brake_get() {
   return CURRENT_BRAKE;
 }
 
-void Drive::initialize() {
+void Drive::initialize(bool run_loading_animation) {
   opcontrol_curve_sd_initialize();
-  drive_imu_calibrate();
+  drive_imu_calibrate(run_loading_animation);
   drive_sensor_reset();
 }
 
