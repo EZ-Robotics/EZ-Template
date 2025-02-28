@@ -16,12 +16,13 @@ IMU scaling is a number that the IMU value gets multiplied by.  If this is set t
 ## Tuning 
 If we tell the robot to turn 360°, the robot will look like it's close enough.  We can see the error accumulation multiplied if we turn 10 times to 3600°, and this will happen with the line of code below being run in autonomous.  
 ```cpp
-chassis.pid_turn_set(3600_deg, 110);
+  chassis.pid_turn_set(3600_deg, TURN_SPEED, ez::raw);
+  chassis.pid_wait();
 ```
 
 Place your robot carefully, ideally align the chassis with tiles on the field so you know the robot is correctly facing forward.  Run the autonomous routine and see how far off it is. 
 
-If the robot undershoots, you'll want to decrease the imu scaler.  If the robot overshoots, you'll want to increase the IMU scaler.  This number will be very sensitive, I suggest modifying it in increments of `0.05` to start.  You'll do this by adding this line of code to `default_constants()` in `src/autons.cpp`.  
+If the robot undershoots, you'll want to increase the imu scaler.  If the robot overshoots, you'll want to decrease the IMU scaler.  This number will be very sensitive, I suggest modifying it in increments of `0.05` to start.  You'll do this by adding this line of code to `default_constants()` in `src/autons.cpp`.  
 ```cpp
 chassis.drive_imu_scaler_set(1.05);
 ```
