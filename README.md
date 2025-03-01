@@ -1,3 +1,4 @@
+[![Deployment to Pages](https://github.com/EZ-Robotics/EZ-Template/actions/workflows/deploy-to-github-pages.yml/badge.svg?branch=website)](https://github.com/EZ-Robotics/EZ-Template/actions/workflows/deploy-to-github-pages.yml)
 # Website
 
 This website is built using [Docusaurus 3](https://docusaurus.io/), a modern static website generator.
