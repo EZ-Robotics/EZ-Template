@@ -123,11 +123,11 @@ void Drive::pid_turn_set(double target, int speed, e_angle_behavior behavior, bo
 
   // Compute new turn target based on new angle
   target = flip_angle_target(target);
-  target = new_turn_target_compute(target, drive_imu_get(), current_angle_behavior);
+  target = new_turn_target_compute(target, drive_angle_get(), current_angle_behavior);
 
   // Print targets
   if (print_toggle) printf("Turn Started... Target Value: %.2f\n", target);
-  chain_sensor_start = drive_imu_get();
+  chain_sensor_start = drive_angle_get();
   chain_target_start = target;
   used_motion_chain_scale = 0.0;
 
@@ -176,7 +176,7 @@ void Drive::pid_turn_set(united_pose p_itarget, drive_directions dir, int speed,
 /////
 void Drive::pid_turn_set(pose itarget, drive_directions dir, int speed, e_angle_behavior behavior, bool slew_on) {
   itarget = flip_pose(itarget);
-  odom_imu_start = drive_imu_get();
+  odom_imu_start = drive_angle_get();
 
   current_drive_direction = dir;
   current_angle_behavior = behavior;

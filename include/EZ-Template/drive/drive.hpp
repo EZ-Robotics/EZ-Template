@@ -6,8 +6,10 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #pragma once
 
+#include <deque>
 #include <functional>
 #include <iostream>
+#include <stack>
 #include <tuple>
 
 #include "EZ-Template/PID.hpp"
@@ -63,9 +65,14 @@ class Drive {
   std::vector<int> pto_active;
 
   /**
-   * Inertial sensor.
+   * Current focused Inertial sensor.
    */
-  pros::Imu imu;
+  pros::Imu* imu;
+
+  /**
+   * All good imus, for redundancy.
+   */
+  std::deque<pros::Imu*> good_imus;
 
   /**
    * Deprecated left tracking wheel.
@@ -469,6 +476,27 @@ class Drive {
    *        make ports negative if reversed
    */
   Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ratio, int left_rotation_port, int right_rotation_port) __attribute__((deprecated("Use the integrated encoder constructor with odom_tracker_left_set() and odom_tracker_right_set() instead!")));
+
+  /**
+   * Creates a Drive Controller using internal encoders with redundant IMUs.
+   *
+   * \param left_motor_ports
+   *        input {1, -2...}. make ports negative if reversed
+   * \param right_motor_ports
+   *        input {-3, 4...}. make ports negative if reversed
+   * \param imu_port
+   *        input {5, 6...}. multiple IMU ports
+   * \param wheel_diameter
+   *        diameter of your drive wheels
+   * \param ticks
+   *        motor cartridge RPM
+   * \param ratio
+   *        external gear ratio, wheel gear / motor gear
+   */
+  Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, std::vector<int> imu_ports, double wheel_diameter, double ticks, double ratio = 1.0);
+
+  // Deconstructor
+  ~Drive();
 
   /**
    * Sets drive defaults.
@@ -1348,6 +1376,21 @@ class Drive {
    */
   double drive_imu_scaler_get();
 
+  /*
+   * Sets a new IMU scaling factor for all IMUs.
+   *
+   * This value is multiplied by the imu to change its output.
+   *
+   * \param scales
+   *        input {0.99, 1.01...}
+   */
+  void drive_imus_scalers_set(std::vector<double> scales);
+
+  /*
+   * Returns the scaling factor for all IMUs.
+   */
+  std::map<int, double> drive_imus_scalers_get();
+
   /**
    * Calibrates the IMU, recommended to run in initialize().
    *
@@ -1367,6 +1410,11 @@ class Drive {
    * Loading display while the IMU calibrates.
    */
   void drive_imu_display_loading(int iter);
+
+  /**
+   * Get angle of the robot, depending on focused sensor.
+   */
+  double drive_angle_get();
 
   /**
    * Practice mode for driver practice that shuts off the drive if you go max speed.
@@ -3411,6 +3459,8 @@ class Drive {
   bool opcontrol_arcade_scaling_enabled();
 
  private:
+  std::map<int, double> imu_scale_map = {};
+  std::map<int, std::pair<double, int>> prev_imu_values = {};
   void opcontrol_drive_activebrake_targets_set();
   double odom_smooth_weight_smooth = 0.0;
   double odom_smooth_weight_data = 0.0;
@@ -3423,6 +3473,7 @@ class Drive {
   std::vector<const_and_name>* used_pid_tuner_pids;
   double opcontrol_speed_max = 127.0;
   bool arcade_vector_scaling = false;
+  double prev_imu_value = 0;
   // odom privates
   std::vector<odom> pp_movements;
   std::vector<int> injected_pp_index;
@@ -3513,8 +3564,6 @@ class Drive {
   double used_motion_chain_scale = 0.0;
   bool motion_chain_backward = false;
 
-  double IMU_SCALER = 1.0;
-
   bool drive_toggle = true;
   bool print_toggle = true;
   int swing_min = 0;
@@ -3542,6 +3591,11 @@ class Drive {
   std::string complete_pid_tuner_output = "";
   float p_increment = 0.1, i_increment = 0.001, d_increment = 0.25, start_i_increment = 1.0;
 
+  /**
+   * @brief
+   * Get the scaled imu value from given imu
+   */
+  double get_this_imu(pros::Imu* imu);
   /**
    * Private wait until for drive
    */
@@ -3594,6 +3648,7 @@ class Drive {
   void ptp_task();
   void boomerang_task();
   void pp_task();
+  void check_imu_task();
 
   /**
    * Starting value for left/right

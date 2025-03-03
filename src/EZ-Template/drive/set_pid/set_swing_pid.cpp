@@ -93,7 +93,7 @@ ez::e_angle_behavior Drive::pid_swing_behavior_get() { return default_swing_type
 /////
 // Absolute
 void Drive::pid_swing_set(e_swing type, double target, int speed) {
-  bool slew_on = is_swing_slew_enabled(type, target, drive_imu_get());
+  bool slew_on = is_swing_slew_enabled(type, target, drive_angle_get());
   pid_swing_set(type, target, speed, 0, pid_swing_behavior_get(), slew_on);
 }
 void Drive::pid_swing_set(e_swing type, okapi::QAngle p_target, int speed) {
@@ -104,7 +104,7 @@ void Drive::pid_swing_set(e_swing type, okapi::QAngle p_target, int speed) {
 void Drive::pid_swing_relative_set(e_swing type, double target, int speed) {
   // Figure out if going forward or backward
   double absolute_heading = target + headingPID.target_get();
-  bool slew_on = is_swing_slew_enabled(type, absolute_heading, drive_imu_get());
+  bool slew_on = is_swing_slew_enabled(type, absolute_heading, drive_angle_get());
   pid_swing_relative_set(type, target, speed, 0, pid_swing_behavior_get(), slew_on);
 }
 void Drive::pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed) {
@@ -117,7 +117,7 @@ void Drive::pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int spe
 /////
 // Absolute
 void Drive::pid_swing_set(e_swing type, double target, int speed, e_angle_behavior behavior) {
-  bool slew_on = is_swing_slew_enabled(type, target, drive_imu_get());
+  bool slew_on = is_swing_slew_enabled(type, target, drive_angle_get());
   pid_swing_set(type, target, speed, 0, behavior, slew_on);
 }
 void Drive::pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, e_angle_behavior behavior) {
@@ -128,7 +128,7 @@ void Drive::pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, e_ang
 void Drive::pid_swing_relative_set(e_swing type, double target, int speed, e_angle_behavior behavior) {
   // Figure out if going forward or backward
   double absolute_heading = target + headingPID.target_get();
-  bool slew_on = is_swing_slew_enabled(type, absolute_heading, drive_imu_get());
+  bool slew_on = is_swing_slew_enabled(type, absolute_heading, drive_angle_get());
   pid_swing_relative_set(type, target, speed, 0, behavior, slew_on);
 }
 void Drive::pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, e_angle_behavior behavior) {
@@ -141,18 +141,18 @@ void Drive::pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int spe
 /////
 // Absolute
 void Drive::pid_swing_set(e_swing type, double target, int speed, int opposite_speed) {
-  bool slew_on = is_swing_slew_enabled(type, target, drive_imu_get());
+  bool slew_on = is_swing_slew_enabled(type, target, drive_angle_get());
   pid_swing_set(type, target, speed, opposite_speed, pid_swing_behavior_get(), slew_on);
 }
 void Drive::pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed) {
   double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
-  bool slew_on = is_swing_slew_enabled(type, target, drive_imu_get());
+  bool slew_on = is_swing_slew_enabled(type, target, drive_angle_get());
   pid_swing_set(type, target, speed, opposite_speed, slew_on);
 }
 // Relative
 void Drive::pid_swing_relative_set(e_swing type, double target, int speed, int opposite_speed) {
   double absolute_heading = target + headingPID.target_get();
-  bool slew_on = is_swing_slew_enabled(type, absolute_heading, drive_imu_get());
+  bool slew_on = is_swing_slew_enabled(type, absolute_heading, drive_angle_get());
   pid_swing_relative_set(type, target, speed, opposite_speed, pid_swing_behavior_get(), slew_on);
 }
 void Drive::pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed) {
@@ -185,18 +185,18 @@ void Drive::pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int spe
 /////
 // Absolute
 void Drive::pid_swing_set(e_swing type, double target, int speed, int opposite_speed, e_angle_behavior behavior) {
-  bool slew_on = is_swing_slew_enabled(type, target, drive_imu_get());
+  bool slew_on = is_swing_slew_enabled(type, target, drive_angle_get());
   pid_swing_set(type, target, speed, opposite_speed, behavior, slew_on);
 }
 void Drive::pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed, e_angle_behavior behavior) {
   double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
-  bool slew_on = is_swing_slew_enabled(type, target, drive_imu_get());
+  bool slew_on = is_swing_slew_enabled(type, target, drive_angle_get());
   pid_swing_set(type, target, speed, opposite_speed, behavior);
 }
 // Relative
 void Drive::pid_swing_relative_set(e_swing type, double target, int speed, int opposite_speed, e_angle_behavior behavior) {
   double absolute_heading = target + headingPID.target_get();
-  bool slew_on = is_swing_slew_enabled(type, absolute_heading, drive_imu_get());
+  bool slew_on = is_swing_slew_enabled(type, absolute_heading, drive_angle_get());
   pid_swing_relative_set(type, target, speed, opposite_speed, behavior, slew_on);
 }
 void Drive::pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed, e_angle_behavior behavior) {
@@ -281,12 +281,12 @@ void Drive::pid_swing_set(e_swing type, double target, int speed, int opposite_s
 
   // Compute new turn target based on new angle
   target = flip_angle_target(target);
-  target = new_turn_target_compute(target, drive_imu_get(), current_angle_behavior);
+  target = new_turn_target_compute(target, drive_angle_get(), current_angle_behavior);
 
   // Print targets
   if (print_toggle) printf("Swing Started... Target Value: %.2f\n", target);
 
-  chain_sensor_start = drive_imu_get();
+  chain_sensor_start = drive_angle_get();
   chain_target_start = target;
   used_motion_chain_scale = 0.0;
 
