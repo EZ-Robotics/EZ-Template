@@ -29,6 +29,8 @@ I dislike 2.  If you make a change to a PID constant or make a change to user c
 ### Selecting the Autonomous Routine
 The brain screen has 3 buttons.  With EZ-Template the center button does nothing.  You can navigate through the menus by selecting the left or right button.  Once autonomous mode is enabled, the page that is left open will be the autonomous routine that runs.  
 
+![](images/auton_selector.png)  
+
 ### Testing With a Competition Switch
 With a competition switch, run your code in disable.  Select the autonomous on the screen.  Change the competition switch to `Autonomous` on your competition switch, and set it to `Enable`.  Your autonomous routine will run!
 
