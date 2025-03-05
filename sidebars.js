@@ -222,6 +222,9 @@ const sidebars = {
           
     },
 
+    'faq',
+
+
 
 
     /*
