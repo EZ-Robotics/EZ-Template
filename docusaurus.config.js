@@ -27,7 +27,11 @@ const config = {
   projectName: 'EZ-Template', // Usually your repo name.
   trailingSlash: false,
   onBrokenLinks: 'throw',
-  onBrokenMarkdownLinks: 'warn',
+  markdown: {
+    hooks: {
+      onBrokenMarkdownLinks: 'warn',
+    },
+  },
 
   // Even if you don't use internationalization, you can use this field to set
   // useful metadata like html lang. For example, if your site is Chinese, you
@@ -170,9 +174,9 @@ const config = {
 
 
       announcementBar: {
-        id: 'new_version',
+        id: 'worlds_2026',
         content:
-          '🤖 <a target="_blank" rel="noopener noreferrer" href="https://www.youtube.com/watch?v=0-yhN4ntpAA">Check out FLUSHER Pre-Season Reveal</a> 📸',
+            '🏆 Good luck to everyone heading to VEX Worlds this year! 🤖',
         backgroundColor: '#FDFD96',
         textColor: '#000000',
         isCloseable: true,
