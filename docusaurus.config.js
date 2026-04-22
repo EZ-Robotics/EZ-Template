@@ -174,9 +174,9 @@ const config = {
 
 
       announcementBar: {
-        id: 'worlds_2026',
+        id: 'scouting',
         content:
-            '🏆 Good luck to everyone heading to VEX Worlds this year! 🤖',
+         '🏆 Check out our new <a target="_blank" rel="noopener noreferrer" href="https://www.ezscout.ing">scouting website</a> for Worlds! Also look out for EZ Stickers! 🥳',
         backgroundColor: '#FDFD96',
         textColor: '#000000',
         isCloseable: true,
@@ -205,6 +205,7 @@ const config = {
           { to: '/community/category/showcase', label: 'Showcase', position: 'left' },
           { to: '/community/support', label: 'Support', position: 'left' },
           { href: 'https://www.roboticsisez.com/', label: 'robotics is ez', position: 'right' },
+          { href: 'https://www.ezscout.ing', label: 'scouting is ez', position: 'right'},
           { href: 'https://github.com/EZ-Robotics/EZ-Template', label: 'GitHub', position: 'right' },
         ],
       },
