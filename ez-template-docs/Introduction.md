@@ -63,6 +63,18 @@ EZ-Template is built with high attention to the user experience.
 
 We believe that, as developers, knowing how a library works helps us become better at using it.  We're dedicating effort to creating tutorials and documentation with the hope that reading it will gain the user a deeper understanding of the tool, and become even more proficient in using it.  
 
+## RECF Student Centered Policy
+
+
+:::note 
+EZ-Template is a tool, not a shortcut. Like any tool, it requires understanding to use effectively — a wrench doesn't fix your robot if you don't know what's loose.
+Per G4c of the Game Manual, teams using third-party libraries must understand their competition code, be able to explain it, and be capable of writing equivalent code independently. EZ-Template's docs, source code, and examples are all written with this in mind — the goal is for students to actually learn, not just copy and paste.
+If an event partner asks you to explain your autonomous, you should be able to.
+
+:::
+
+### Please always reference the RECF's [Student Centered Policy](https://kb.roboticseducation.org/hc/en-us/articles/5449868745367-Student-Centered-Policy#programming-coding-Smg21) and the [Override game manual](https://content.vexrobotics.com/docs/2026-2027/override/files/override-0.1-game-manual.pdf#V5RC%2026-27%20-%20Override.indd%3A%3CG4%3E%3A1969).
+
 ## [Support me on Patreon!](https://www.patreon.com/roboticsisez)
 Supporting me on Patreon will help guarantee that EZ-Template continues to get maintained and allow me to develop products for teams to use.  [Click here](https://www.patreon.com/roboticsisez) to see my Patreon!
 
