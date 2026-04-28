@@ -176,7 +176,7 @@ const config = {
       announcementBar: {
         id: 'scouting',
         content:
-         '🏆 Check out our new <a target="_blank" rel="noopener noreferrer" href="https://www.ezscout.ing">scouting website</a> for Worlds! Also look out for EZ Stickers! 🥳',
+         '🏆 Check out the game manual release! <a target="_blank" rel="noopener noreferrer" href="https://content.vexrobotics.com/docs/2026-2027/override/files/override-0.1-game-manual.pdf">V5RC Override game manual</a>🥳',
         backgroundColor: '#FDFD96',
         textColor: '#000000',
         isCloseable: true,
