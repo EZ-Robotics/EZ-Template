@@ -21,6 +21,7 @@ void auto_sd_update() {
   if (!ez::util::SD_CARD_ACTIVE) return;
 
   FILE* usd_file_write = fopen("/usd/auto.txt", "w");
+  if (usd_file_write == nullptr) return;
   std::string cp_str = std::to_string(auton_selector.auton_page_current);
   char const* cp_c = cp_str.c_str();
   fputs(cp_c, usd_file_write);
