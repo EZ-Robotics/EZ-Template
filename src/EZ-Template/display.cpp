@@ -6,6 +6,7 @@
 #include "liblvgl/llemu.hpp"
 #include "liblvgl/lvgl.h"
 #include "pros/llemu.hpp"
+#include "pros/rtos.hpp"
 
 #if LVGL_VERSION_MAJOR >= 9
 // For lv_display_t::flush_cb and buf_1: LVGL 9 has no getter for the installed
@@ -229,6 +230,66 @@ void flush_wrapper_install(lv_display_t* disp) {
   g_flush_orig = disp->flush_cb;
   lv_display_set_flush_cb(disp, flush_rotated_cb);
 }
+
+// The kernel's display daemon runs lv_timer_handler with no lock at all: this
+// liblvgl is built with LV_USE_OS none, so its lv_lock is empty, and the cold
+// package links the archive whole, so a replacement here can't reach it. lvgl
+// 8 tolerated other tasks writing labels anyway; lvgl 9 asserts the moment
+// lv_inv_area runs while a frame is mid-render, and the assert handler never
+// returns, taking the writing task -- and with it the daemon and LLEMU's
+// buttons -- down for good. Blank pages redraw through the screen task every
+// iteration, so landing on one made that near-certain. The print lines are
+// buffered instead and replayed from the daemon itself, riding the touch
+// indev's read callback because that is the only call the daemon makes every
+// cycle that library code can reach; installing the wrapper is a single
+// function-pointer store, so it can't tear mid-swap.
+bool g_line_dirty[LINE_COUNT] = {false};
+lv_indev_read_cb_t g_indev_read_orig = nullptr;
+
+// Function-local so the screen task can print at static-init time without
+// racing this file's own construction.
+pros::Mutex& line_mutex() {
+  static pros::Mutex mutex;
+  return mutex;
+}
+
+// Runs on the display daemon's task, where label writes are safe.
+void lines_replay(lv_indev_t* indev, lv_indev_data_t* data) {
+  g_indev_read_orig(indev, data);
+
+  // Left dirty until LLEMU exists so nothing prints into null labels.
+  if (!g_portrait_on && !pros::lcd::is_initialized()) return;
+
+  for (int i = 0; i < LINE_COUNT; i++) {
+    line_mutex().take();
+    bool dirty = g_line_dirty[i];
+    std::string text = g_line_text[i];
+    g_line_dirty[i] = false;
+    line_mutex().give();
+    if (!dirty) continue;
+
+    if (g_portrait_on)
+      portrait_line_set(i, text.c_str());
+    else
+      pros::lcd::set_text(i, text);
+  }
+}
+
+void screen_line_publish(int line, std::string text) {
+  line_mutex().take();
+  g_line_text[line] = text;
+  g_line_dirty[line] = true;
+
+  if (g_indev_read_orig == nullptr) {
+    lv_indev_t* indev = lv_indev_get_next(nullptr);
+    lv_indev_read_cb_t orig = indev != nullptr ? lv_indev_get_read_cb(indev) : nullptr;
+    if (orig != nullptr && orig != lines_replay) {
+      g_indev_read_orig = orig;
+      lv_indev_set_read_cb(indev, lines_replay);
+    }
+  }
+  line_mutex().give();
+}
 }  // namespace
 
 void screen_rotation_set(int degrees) {
@@ -272,6 +333,17 @@ namespace {
 void portrait_load() {}
 void portrait_unload() {}
 void portrait_line_set(int line, const char* text) {}
+
+// LVGL 8 has no rendering_in_progress assert, so writes go straight through
+// here; only the LVGL 9 build has to marshal them onto the display daemon.
+void screen_line_publish(int line, std::string text) {
+  g_line_text[line] = text;
+
+  // The global screen task starts printing at static-init time, before LLEMU
+  // exists.
+  if (!pros::lcd::is_initialized()) return;
+  pros::lcd::set_text(line, text);
+}
 }  // namespace
 
 void screen_rotation_set(int degrees) {
@@ -314,38 +386,17 @@ int screen_rotation_get() { return g_rotation; }
 bool screen_portrait_enabled() { return g_portrait_on; }
 
 void screen_line_set(int line, std::string text) {
-  if (line >= 0 && line < LINE_COUNT) g_line_text[line] = text;
-
-  if (g_portrait_on) {
-    if (line >= 0 && line < LINE_COUNT) portrait_line_set(line, text.c_str());
-    return;
-  }
-  // The global screen task starts printing at static-init time, before LLEMU
-  // exists; under lvgl 9 touching its null labels corrupts the heap.
-  if (!pros::lcd::is_initialized()) return;
-  pros::lcd::set_text(line, text);
+  if (line < 0 || line >= LINE_COUNT) return;
+  screen_line_publish(line, text);
 }
 
 void screen_line_clear(int line) {
-  if (line >= 0 && line < LINE_COUNT) g_line_text[line].clear();
-
-  if (g_portrait_on) {
-    if (line >= 0 && line < LINE_COUNT) portrait_line_set(line, "");
-    return;
-  }
-  if (!pros::lcd::is_initialized()) return;
-  pros::lcd::clear_line(line);
+  if (line < 0 || line >= LINE_COUNT) return;
+  screen_line_publish(line, "");
 }
 
 void screen_lines_clear() {
-  for (int i = 0; i < LINE_COUNT; i++) g_line_text[i].clear();
-
-  if (g_portrait_on) {
-    for (int i = 0; i < LINE_COUNT; i++) portrait_line_set(i, "");
-    return;
-  }
-  if (!pros::lcd::is_initialized()) return;
-  pros::lcd::clear();
+  for (int i = 0; i < LINE_COUNT; i++) screen_line_publish(i, "");
 }
 
 }  // namespace ez
