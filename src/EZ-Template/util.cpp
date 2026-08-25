@@ -54,6 +54,12 @@ std::string get_rest_of_the_word(std::string text, int position) {
 }
 
 void screen_print(std::string text, int line) {
+  // The example project's global screen task starts printing during static
+  // init, before ez::as::initialize creates LLEMU. lvgl 8 tolerated writing to
+  // the null labels; lvgl 9 walks the null object's parent chain and corrupts
+  // the heap, so drop the print until the screen exists.
+  if (!pros::lcd::is_initialized()) return;
+
   int CurrAutoLine = line;
   std::vector<string> texts = {};
   std::string temp = "";

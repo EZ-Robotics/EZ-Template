@@ -64,7 +64,10 @@ void Drive::save_l_curve_sd() {
   // If no SD card, return
   if (!ez::util::SD_CARD_ACTIVE) return;
 
+  // fopen still fails if the card is missing or pulled after boot; writing to
+  // a null FILE is a data abort that pros silently skips, wedging the task.
   FILE* usd_file_write = fopen("/usd/left_curve.txt", "w");
+  if (usd_file_write == nullptr) return;
   std::string in_str = std::to_string(left_curve_scale);
   char const* in_c = in_str.c_str();
   fputs(in_c, usd_file_write);
@@ -77,6 +80,7 @@ void Drive::save_r_curve_sd() {
   if (!ez::util::SD_CARD_ACTIVE) return;
 
   FILE* usd_file_write = fopen("/usd/right_curve.txt", "w");
+  if (usd_file_write == nullptr) return;
   std::string in_str = std::to_string(right_curve_scale);
   char const* in_c = in_str.c_str();
   fputs(in_c, usd_file_write);
