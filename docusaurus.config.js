@@ -173,14 +173,14 @@ const config = {
 
 
 
-      announcementBar: {
+    /* announcementBar: {
         id: 'scouting',
         content:
          '🏆 Check out the game manual release! <a target="_blank" rel="noopener noreferrer" href="https://content.vexrobotics.com/docs/2026-2027/override/files/override-0.1-game-manual.pdf">V5RC Override game manual</a>🥳',
         backgroundColor: '#FDFD96',
         textColor: '#000000',
         isCloseable: true,
-      },
+      },*/
 
       colorMode: {
         defaultMode: 'dark',
