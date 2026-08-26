@@ -1,5 +1,6 @@
 #include "EZ-Template/health.hpp"
 
+#include "EZ-Template/api.hpp"
 #include "pros/error.h"
 #include <cstdio>
 #include <utility>
@@ -10,6 +11,12 @@ namespace health {
 
 namespace {
 std::vector<std::pair<pros::Device*, const char*>> g_devices;
+
+// The v5 firmware cuts motor power in stages as a motor heats up, the first of
+// them at 55C, so a motor at or above that is already down on torque. 45C is an
+// early warning: still at full power, but on its way there.
+constexpr double MOTOR_TEMP_HOT_C = 55.0;
+constexpr double MOTOR_TEMP_WARM_C = 45.0;
 }
 
 void device_add(pros::Device* device, const char* name) {
@@ -27,9 +34,21 @@ Report preflight(ez::Drive& chassis, pros::Controller& controller) {
 
   auto check_motors = [&](std::vector<pros::Motor>& motors) {
     for (auto& m : motors) {
-      if (m.get_temperature() == PROS_ERR_F) {
+      // An error return means nothing is answering on the port at all, which is
+      // reported on its own so a dead motor never picks up a temperature line
+      // as well. The temperature tiers below are a separate, softer concern.
+      double temp = m.get_temperature();
+      if (temp == PROS_ERR_F) {
         r.motors_bad++;
         printf("[health] Drive motor on port %d not responding\n", m.get_port());
+        continue;
+      }
+      if (temp >= MOTOR_TEMP_HOT_C) {
+        r.motors_hot++;
+        printf("[health] Drive motor on port %d is overheating (%.0fC) - v5 throttles at 55\n", m.get_port(), temp);
+      } else if (temp >= MOTOR_TEMP_WARM_C) {
+        r.motors_warm++;
+        printf("[health] Drive motor on port %d is getting warm (%.0fC)\n", m.get_port(), temp);
       }
     }
   };
@@ -65,7 +84,31 @@ Report preflight(ez::Drive& chassis, pros::Controller& controller) {
   } else {
     printf("[health] Preflight OK.\n");
   }
+
+  // Temperature never fails the preflight, so this trails the verdict above and
+  // only rumbles when that verdict passed, since a failure already buzzed "---".
+  if (r.motors_hot > 0 || r.motors_warm > 0) {
+    printf("[health] temp watch: %d hot, %d warm\n", r.motors_hot, r.motors_warm);
+    if (r.all_ok()) controller.rumble(".");
+  }
   return r;
+}
+
+void preflight_register(ez::Drive& chassis) {
+  ez::Drive* drive = &chassis;
+
+  // The selector's autons_add() assigns over the list instead of appending, so
+  // the page is pushed on directly to leave any autons already added alone.
+  as::auton_selector.Autons.push_back(
+      Auton("Health Check\n\nRuns preflight",
+            [drive]() {
+              pros::Controller controller(pros::E_CONTROLLER_MASTER);
+              preflight(*drive, controller);
+            }));
+  as::auton_selector.auton_count++;
+
+  printf("[health] Health Check registered on selector page %d.\n",
+         (int)as::auton_selector.Autons.size());
 }
 
 }  // namespace health
