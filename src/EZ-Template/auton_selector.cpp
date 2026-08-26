@@ -22,7 +22,7 @@ ez::AutonSelector::AutonSelector(std::vector<Auton> autons) {
 void ez::AutonSelector::selected_auton_print() {
   if (auton_count == 0) return;
   for (int i = 0; i < 8; i++)
-    pros::lcd::clear_line(i);
+    ez::screen_line_clear(i);
   ez::screen_print("Page " + std::to_string(auton_page_current + 1) + "\n" + Autons[auton_page_current].Name);
 }
 
