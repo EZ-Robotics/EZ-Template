@@ -13,7 +13,6 @@
 #include <cstdlib>
 #include <functional>
 #include <sstream>
-#include <cstring>
 
 #ifdef THREADS_STD
 #include <thread>

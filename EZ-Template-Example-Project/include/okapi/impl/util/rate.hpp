@@ -6,6 +6,7 @@
 #pragma once
 
 #include "okapi/api/util/abstractRate.hpp"
+#include <cstring>
 
 namespace okapi {
 class Rate : public AbstractRate {

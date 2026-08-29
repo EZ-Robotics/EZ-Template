@@ -9,6 +9,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include <filesystem>
 
 #include "auton_selector.hpp"
+#include "display.hpp"
 #include "liblvgl/llemu.hpp"
 #include "pros/llemu.hpp"
 #include "util.hpp"
@@ -21,6 +22,7 @@ void auto_sd_update() {
   if (!ez::util::SD_CARD_ACTIVE) return;
 
   FILE* usd_file_write = fopen("/usd/auto.txt", "w");
+  if (usd_file_write == nullptr) return;
   std::string cp_str = std::to_string(auton_selector.auton_page_current);
   char const* cp_c = cp_str.c_str();
   fputs(cp_c, usd_file_write);
@@ -57,7 +59,7 @@ void print_page() {
     auton_selector.selected_auton_print();
   } else {
     for (int i = 0; i < 8; i++)
-      pros::lcd::clear_line(i);
+      ez::screen_line_clear(i);
     screen_print("Page " + std::to_string(auton_selector.auton_page_current + 1) + " - Blank page " + std::to_string(page_blank_current() + 1));
   }
   if (page_blank_current() < 0)

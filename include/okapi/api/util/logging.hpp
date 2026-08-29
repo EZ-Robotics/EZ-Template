@@ -8,6 +8,7 @@
 #include "okapi/api/coreProsAPI.hpp"
 #include "okapi/api/util/abstractTimer.hpp"
 #include "okapi/api/util/mathUtil.hpp"
+#include <cstring>
 #include <memory>
 #include <mutex>
 

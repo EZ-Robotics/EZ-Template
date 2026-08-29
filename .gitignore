@@ -1,30 +1,11 @@
-# Dependencies
-/node_modules
-
-# Production
-/build
-
-# Generated files
-.docusaurus
-.cache-loader
-
-# Misc
-.DS_Store
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
 # Compiled Object files
 *.o
 *.obj
+
 # Executables
 *.bin
 *.elf
+
 # PROS
 bin/
 .vscode/
@@ -33,14 +14,4 @@ compile_commands.json
 temp.log
 temp.errors
 *.ini
-.d/
-
-EZ-Template-Example-Project/bin/
-EZ-Template-Example-Project/.vscode/
-EZ-Template-Example-Project/.cache/
-EZ-Template-Example-Project/compile_commands.json
-EZ-Template-Example-Project/temp.log
-EZ-Template-Example-Project/temp.errors
-EZ-Template-Example-Project/*.ini
-EZ-Template-Example-Project/.d/
 .d/

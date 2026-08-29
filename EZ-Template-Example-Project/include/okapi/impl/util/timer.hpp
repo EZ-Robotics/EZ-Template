@@ -6,6 +6,7 @@
 #pragma once
 
 #include "okapi/api/util/abstractTimer.hpp"
+#include <cstring>
 
 namespace okapi {
 class Timer : public AbstractTimer {
