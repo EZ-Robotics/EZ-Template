@@ -39,9 +39,9 @@
 #include <unistd.h>
 #endif /* __cplusplus */
 
+#include "pros/version.h"
 #include "pros/adi.h"
 #include "pros/ai_vision.h"
-#include "pros/colors.h"
 #include "pros/device.h"
 #include "pros/distance.h"
 #include "pros/error.h"
