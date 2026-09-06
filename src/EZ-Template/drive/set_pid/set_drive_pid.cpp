@@ -66,6 +66,11 @@ PID::Constants Drive::pid_heading_constants_get() { return headingPID.constants_
 PID::Constants Drive::pid_drive_constants_backward_get() { return backward_drivePID.constants_get(); }
 PID::Constants Drive::pid_drive_constants_forward_get() { return forward_drivePID.constants_get(); }
 PID::Constants Drive::pid_drive_constants_get() {
+  // The plain setter zeroes forward/backward and stores the constants in fwd_rev,
+  // so return those rather than the zeros they were replaced with
+  if (!forward_drivePID.constants_set_check() && !backward_drivePID.constants_set_check())
+    return fwd_rev_drivePID.constants_get();
+
   auto fwd_const = pid_drive_constants_forward_get();
   auto rev_const = pid_drive_constants_backward_get();
   if (!(fwd_const.kp == rev_const.kp && fwd_const.ki == rev_const.ki && fwd_const.kd == rev_const.kd && fwd_const.start_i == rev_const.start_i)) {
