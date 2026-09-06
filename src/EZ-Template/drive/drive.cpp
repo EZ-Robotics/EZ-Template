@@ -413,7 +413,11 @@ bool Drive::drive_current_left_over() { return left_motors.front().is_over_curre
 
 void Drive::drive_imu_reset(double new_heading) {
   for (int i = 0; i < good_imus.size(); i++) {
-    good_imus[i]->set_rotation(new_heading);
+    // Reads go through get_this_imu(), which multiplies by the scaler, so the
+    // value written here has to be divided by it to read back as new_heading
+    auto scaler = imu_scale_map.find(good_imus[i]->get_port());
+    double scale = (scaler != imu_scale_map.end() && scaler->second != 0.0) ? scaler->second : 1.0;
+    good_imus[i]->set_rotation(new_heading / scale);
   }
   angle_rad = util::to_rad(new_heading);
   t_last = angle_rad;
