@@ -4,6 +4,8 @@ License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
+#include <cmath>
+
 #include "EZ-Template/api.hpp"
 #include "EZ-Template/util.hpp"
 
@@ -236,7 +238,7 @@ std::vector<odom> Drive::smooth_path(std::vector<odom> ipath, double weight_smoo
           y_i += weight_data * (x_i - y_i) + weight_smooth * (y_next + y_prev - (2.0 * y_i));
           new_path[i][j] = y_i;
 
-          change += abs(y_i - y_i_saved);
+          change += std::fabs(y_i - y_i_saved);
         }
       }
     }
