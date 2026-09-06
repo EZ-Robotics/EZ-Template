@@ -4,6 +4,7 @@ License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
+#include <cmath>
 #include <list>
 
 #include "EZ-Template/api.hpp"
@@ -421,7 +422,10 @@ void Drive::drive_imu_reset(double new_heading) {
 double Drive::get_this_imu(pros::Imu* imu) { return imu->get_rotation() * imu_scale_map[imu->get_port()]; }
 
 double Drive::drive_imu_get() { return get_this_imu(imu); }
-double Drive::drive_imu_accel_get() { return imu->get_accel().x + imu->get_accel().y; }
+double Drive::drive_imu_accel_get() {
+  auto accel = imu->get_accel();
+  return std::hypot(accel.x, accel.y);
+}
 
 void Drive::drive_imu_scaler_set(double scaler) { imu_scale_map[imu->get_port()] = scaler; }
 double Drive::drive_imu_scaler_get() { return imu_scale_map[imu->get_port()]; }
