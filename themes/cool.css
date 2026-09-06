@@ -1,0 +1,12 @@
+/* COOL palette. Option 4's temperature, blue leaning greys.
+   Drop this in after base.css and the density file to swap temperature. */
+:root {
+  --ez-ground:#ffffff; --ez-surface:#f7f7fa; --ez-raise:#eeeef4;
+  --ez-line:#e3e3ea; --ez-line-soft:#eeeef3;
+  --ez-ink:#3f3f4a; --ez-head:#16161d; --ez-muted:#6a6a78;
+}
+html[data-theme='dark'] {
+  --ez-ground:#0d0f14; --ez-surface:#12151b; --ez-raise:#191d25;
+  --ez-line:#242a34; --ez-line-soft:#1c212a;
+  --ez-ink:#c3c9d4; --ez-head:#ffffff; --ez-muted:#858d9c;
+}

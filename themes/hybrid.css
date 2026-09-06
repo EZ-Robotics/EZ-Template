@@ -1,0 +1,25 @@
+/* HYBRID. The top bar takes the slate blue from Cool, the sidebar takes the
+   light grey from Neutral. Navbar and sidebar stop sharing one surface. */
+:root {
+  --ez-ground:#ffffff;
+  --ez-nav:#e7ecf4;        /* top bar, slate blue, from Cool */
+  --ez-surface:#f7f7fa;    /* sidebar, light grey, from Neutral */
+  --ez-raise:#f0f0f4;
+  --ez-line:#dcdfe8; --ez-line-soft:#ebedf2;
+  --ez-ink:#2f3846; --ez-head:#0b1119; --ez-muted:#596374;
+  --ifm-navbar-background-color: var(--ez-nav);
+  --ifm-background-color: var(--ez-ground);
+  --ifm-background-surface-color: var(--ez-surface);
+}
+html[data-theme='dark'] {
+  --ez-ground:#0d0f14;
+  --ez-nav:#12151b;        /* top bar, the cooler surface */
+  --ez-surface:#1a1b1e;    /* sidebar, neutral grey */
+  --ez-raise:#191d25;
+  --ez-line:#242a34; --ez-line-soft:#1c212a;
+  --ez-ink:#c3c9d4; --ez-head:#ffffff; --ez-muted:#858d9c;
+  --ifm-navbar-background-color: var(--ez-nav);
+}
+.navbar { background: var(--ez-nav) !important; border-bottom:1px solid var(--ez-line); }
+.theme-doc-sidebar-container { background: var(--ez-surface) !important; }
+.footer { background: var(--ez-nav); }

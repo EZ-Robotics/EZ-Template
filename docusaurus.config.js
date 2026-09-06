@@ -6,8 +6,13 @@
 
 // import { themes as prismThemes } from 'prism-react-renderer';
 
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import darkCode from './src/utils/codeDark.ts';
 import lightCode from './src/utils/codeLight.ts';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -112,6 +117,17 @@ const config = {
         // ... other options
       },
     ],
+
+    // Dev-only floating panel for live-previewing themes/ layer combos.
+    // See src/clientModules/themeSwitcher.js — it no-ops in production builds.
+    function themeSwitcherPlugin() {
+      return {
+        name: 'theme-switcher-panel',
+        getClientModules() {
+          return [path.resolve(__dirname, 'src/clientModules/themeSwitcher.js')];
+        },
+      };
+    },
   ],
 
 
@@ -175,7 +191,7 @@ const config = {
 
       colorMode: {
         defaultMode: 'dark',
-        disableSwitch: true,
+        disableSwitch: false,
         respectPrefersColorScheme: false,
       },
 

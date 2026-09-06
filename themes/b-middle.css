@@ -1,0 +1,14 @@
+/* MIDDLE. The in-between Jordan asked for. */
+:root {
+  --ifm-font-size-base: 15.5px;
+  --ifm-line-height-base: 1.62;
+  --ifm-h1-font-size: 1.95rem;
+  --ifm-h2-font-size: 1.4rem;
+  --ifm-h3-font-size: 1.08rem;
+  --ifm-navbar-height: 54px;
+  --doc-sidebar-width: 232px;
+}
+.menu { font-size:.86rem; padding:.8rem .65rem !important; }
+.menu__link { padding:5px 10px; }
+h2 { margin-top:2rem; }
+.markdown > p, .markdown > ul, .markdown > ol { max-width:76ch; }
