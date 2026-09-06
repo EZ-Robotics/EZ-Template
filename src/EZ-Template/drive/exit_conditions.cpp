@@ -395,8 +395,10 @@ void Drive::pid_wait_until_index_started(int index) {
   // Let the PID run at least 1 iteration
   pros::delay(util::DELAY_TIME);
 
-  if (index > injected_pp_index.size() - 2 || index < 0)
-    printf("  Wait Until PP Error!  Index %i is not within range!  %i is max!\n", index, injected_pp_index.size() - 2);
+  if (index < 0 || index > (int)injected_pp_index.size() - 2) {
+    printf("  Wait Until PP Error!  Index %i is not within range!  %i is max!\n", index, (int)injected_pp_index.size() - 2);
+    return;
+  }
   index += 1;
 
   exit_output xy_exit = RUNNING;
@@ -423,6 +425,7 @@ void Drive::pid_wait_until_index_started(int index) {
 void Drive::pid_wait_until_index(int index) {
   pid_wait_until_index_started(index);
   index += 1;
+  if (index < 0 || index >= (int)injected_pp_index.size()) return;
   pose target = pp_movements[injected_pp_index[index]].target;
   pid_wait_until_point(target);
 }
