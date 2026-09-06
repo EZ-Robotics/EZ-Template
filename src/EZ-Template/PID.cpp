@@ -4,6 +4,8 @@ License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
+#include <cmath>
+
 #include "EZ-Template/api.hpp"
 #include "api.h"
 
@@ -140,7 +142,7 @@ exit_output PID::exit_condition(bool print) {
 
   // If the robot gets within the target, make sure it's there for small_timeout amount of time
   if (exit.small_error != 0) {
-    if (abs(error) < exit.small_error) {
+    if (std::fabs(error) < exit.small_error) {
       j += util::DELAY_TIME;
       i = 0;  // While this is running, don't run big thresh
       if (j > exit.small_exit_time) {
@@ -156,7 +158,7 @@ exit_output PID::exit_condition(bool print) {
   // If the robot is close to the target, start a timer.  If the robot doesn't get closer within
   // a certain amount of time, exit and continue.  This does not run while small_timeout is running
   else if (exit.big_error != 0 && exit.big_exit_time != 0) {  // Check if this condition is enabled
-    if (abs(error) < exit.big_error) {
+    if (std::fabs(error) < exit.big_error) {
       i += util::DELAY_TIME;
       if (i > exit.big_exit_time) {
         timers_reset();
@@ -170,7 +172,7 @@ exit_output PID::exit_condition(bool print) {
 
   // If the motor velocity is 0, the code will timeout and set interfered to true.
   if (exit.velocity_exit_time != 0) {  // Check if this condition is enabled
-    if (abs(derivative) <= velocity_zero_main) {
+    if (std::fabs(derivative) <= velocity_zero_main) {
       k += util::DELAY_TIME;
       if (k > exit.velocity_exit_time) {
         timers_reset();
@@ -187,7 +189,7 @@ exit_output PID::exit_condition(bool print) {
 
   // If the secondary sensors velocity is 0, the code will timeout and set interfered to true.
   if (exit.velocity_exit_time != 0) {  // Check if this condition is enabled
-    if (abs(second_sensor) <= velocity_zero_secondary) {
+    if (std::fabs(second_sensor) <= velocity_zero_secondary) {
       m += util::DELAY_TIME;
       if (m > exit.velocity_exit_time) {
         timers_reset();
