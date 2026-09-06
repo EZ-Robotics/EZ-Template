@@ -15,8 +15,6 @@ void PID::variables_reset() {
   error = 0;
   prev_error = 0;
   integral = 0;
-  time = 0;
-  prev_time = 0;
 }
 
 PID::PID() {
@@ -110,6 +108,8 @@ void PID::name_set(std::string p_name) {
   name = p_name;
   name_active = name == "" ? false : true;
 }
+
+std::string PID::name_get() { return name; }
 
 void PID::exit_condition_print(ez::exit_output exit_type) {
   std::cout << " ";
