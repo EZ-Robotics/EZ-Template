@@ -183,6 +183,10 @@ const config = {
       image: 'img/embed.png',
       navbar: {
         title: 'EZ-Template',
+        logo: {
+          alt: 'EZ-Template logo',
+          src: 'img/ez-png.png',
+        },
         items: [
           {
             type: 'docsVersionDropdown',
