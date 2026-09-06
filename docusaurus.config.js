@@ -56,10 +56,16 @@ const config = {
         },
         docs: {
 
-          // For when 3.0 is actually released
-          lastVersion: 'current',
+          // 4.0 is in beta, so 3.2.2 stays the version people land on.
+          // When 4.0.0 ships: run `npm run docusaurus docs:version 4.0.0`,
+          // set lastVersion to '4.0.0', and give 3.2.2 a 'unmaintained' banner.
+          lastVersion: '3.2.2',
           versions: {
             current: {
+              label: '4.0.0-beta.1',
+              banner: 'unreleased',
+            },
+            '3.2.2': {
               label: '3.2.2',
               banner: 'none',
             },
@@ -68,21 +74,6 @@ const config = {
               banner: 'unmaintained',
             },
           },
-
-          /*
-          // While 3.0 isn't released
-          lastVersion: '2.x',
-          versions: {
-            current: {
-              label: '3.0.0-pre-release',
-              banner: 'unreleased',
-            },
-            '2.x': {
-              label: '2.x',
-              banner: 'none',
-            },
-          },
-          */
 
           routeBasePath: '/', // url
           path: './ez-template-docs', // file path

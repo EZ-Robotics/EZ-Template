@@ -5,6 +5,10 @@ title: versions
 :::note
 EZ-Template Github Releases
 :::
+# 4.x
+
+#### [v4.0.0-beta.1](https://github.com/EZ-Robotics/EZ-Template/releases/tag/v4.0.0-beta.1)
+
 # 3.x
 
 ### [v3.2.2](https://github.com/EZ-Robotics/EZ-Template/releases/tag/v3.2.2)

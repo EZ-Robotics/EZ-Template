@@ -153,41 +153,6 @@ void button_toggle(int toggle);
 </Tabs>
 
 
-Also accepts a `pros::controller_digital_e_t` directly.  
-<Tabs
-  groupId="button_toggle_digital"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-
-<TabItem value="example">
-
-```cpp
-ez::Piston left_wing('A');
-void opcontrol() {
-  while (true) {
-    left_wing.button_toggle(DIGITAL_X);
-
-    pros::delay(10);
-  }
-}
-```
-
-</TabItem>
-
-<TabItem value="proto">
-
-```cpp
-void button_toggle(pros::controller_digital_e_t toggle);
-```
-
-</TabItem>
-</Tabs>
-
-
 
 ### buttons()
 Sets the piston to go in and out with 2 buttons during opcontrol.  
@@ -222,41 +187,6 @@ void opcontrol() {
 
 ```cpp
 void buttons(int active, int deactive);
-```
-
-</TabItem>
-</Tabs>
-
-
-Also accepts `pros::controller_digital_e_t` directly.  
-<Tabs
-  groupId="buttons_digital"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-
-<TabItem value="example">
-
-```cpp
-ez::Piston left_wing('A');
-void opcontrol() {
-  while (true) {
-    left_wing.buttons(DIGITAL_L1, DIGITAL_L2);
-
-    pros::delay(10);
-  }
-}
-```
-
-</TabItem>
-
-<TabItem value="proto">
-
-```cpp
-void buttons(pros::controller_digital_e_t active, pros::controller_digital_e_t deactive);
 ```
 
 </TabItem>
