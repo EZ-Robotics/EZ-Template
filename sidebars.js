@@ -198,6 +198,8 @@ const sidebars = {
         'docs/pid',
         'docs/slew',
         'docs/util',
+        'docs/health',
+        'docs/display',
 
         {
           type: 'category',

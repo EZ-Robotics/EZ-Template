@@ -214,6 +214,72 @@ void initialize() {
 
 
 
+## Custom Tracking
+
+By default, position is computed by `tracking_wheels_tracking()`, using whatever tracking wheels or drive encoders you configured.  `odom_tracking_set()` lets you replace that entirely, for example to fuse in a camera or a different sensor.
+
+### odom_tracking_set()
+Sets a new task to use for tracking.
+
+In the function you pass in, you must set `odom_current.x`, `odom_current.y`, and `odom_current.theta`.  The function does not need to loop, that is done for you by EZ-Template.
+
+`tracking_task` new function for tracking
+<Tabs
+  groupId="odom_tracking_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void custom_tracking() {
+  chassis.odom_current.x = my_sensor_fusion_x();
+  chassis.odom_current.y = my_sensor_fusion_y();
+  chassis.odom_current.theta = chassis.drive_angle_get();
+}
+
+void initialize() {
+  chassis.odom_tracking_set(custom_tracking);
+  chassis.initialize();
+}
+```
+
+</TabItem>
+
+<TabItem value="proto">
+
+```cpp
+void odom_tracking_set(std::function<void(void)> tracking_task);
+```
+
+</TabItem>
+</Tabs>
+
+
+### tracking_wheels_tracking()
+The default tracking task, used unless `odom_tracking_set()` is called.  Documented here for reference - most users will never call this directly.
+<Tabs
+  groupId="tracking_wheels_tracking"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+  ]
+}>
+
+<TabItem value="proto">
+
+```cpp
+void tracking_wheels_tracking();
+```
+
+</TabItem>
+</Tabs>
+
+
 ## Pose
 
 

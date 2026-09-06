@@ -13,6 +13,8 @@ import TabItem from '@theme/TabItem';
 
 ### initialize()
 Runs `opcontrol_curve_sd_initialize()` and `drive_imu_calibrate()`.    
+
+`run_loading_animation` false skips the loading animation on the brain screen while the IMU calibrates
 <Tabs
   groupId="drive_init"
   defaultValue="proto"
@@ -38,7 +40,7 @@ void initialize() {
 
 
 ```cpp
-void Drive::initialize();
+void Drive::initialize(bool run_loading_animation = true);
 ```
 
 
@@ -211,6 +213,44 @@ void turn_example() {
 
 ```cpp
 void drive_imu_scaler_set(double scaler);
+```
+
+</TabItem>
+</Tabs>
+
+
+### drive_imus_scalers_set()
+Sets a new IMU scaling factor for all IMUs, for drives built with the redundant IMU constructor.   
+
+This value is multiplied by each imu to change its output.     
+
+`scales` input `{0.99, 1.01...}`, in the same order as the IMU ports passed to the constructor
+<Tabs
+  groupId="drive_imus_scalers_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  chassis.initialize();
+  chassis.drive_imus_scalers_set({1.0, 1.02});
+}
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+void drive_imus_scalers_set(std::vector<double> scales);
 ```
 
 </TabItem>
@@ -848,6 +888,70 @@ double drive_imu_scaler_get();
 
 
  
+
+
+### drive_imus_scalers_get()
+Returns the scaling factor for all IMUs, keyed by port, for drives built with the redundant IMU constructor.
+<Tabs
+  groupId="drive_imus_scalers_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+chassis.drive_imus_scalers_set({1.0, 1.02});
+for (auto& [port, scale] : chassis.drive_imus_scalers_get())
+  printf("port %i: %.2f\n", port, scale);
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+std::map<int, double> drive_imus_scalers_get();
+```
+
+</TabItem>
+</Tabs>
+
+
+### drive_angle_get()
+Returns the angle of the robot, from whichever IMU is currently focused.  On a redundant IMU drive, this is the one to read instead of talking to an individual `pros::Imu` directly, since it stays correct across a failover.
+<Tabs
+  groupId="drive_angle_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+printf("%.2f\n", chassis.drive_angle_get());
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+double drive_angle_get();
+```
+
+</TabItem>
+</Tabs>
 
 
 ### drive_imu_scaler_get()
