@@ -17,8 +17,6 @@ void PID::variables_reset() {
   error = 0;
   prev_error = 0;
   integral = 0;
-  time = 0;
-  prev_time = 0;
 }
 
 PID::PID() {
@@ -87,7 +85,7 @@ double PID::raw_compute() {
       integral += error;
 
     // Reset i when the sign of error flips
-    if (util::sgn(error) != util::sgn(prev_current) && reset_i_sgn)
+    if (util::sgn(error) != util::sgn(prev_error) && reset_i_sgn)
       integral = 0;
   }
 
@@ -112,6 +110,8 @@ void PID::name_set(std::string p_name) {
   name = p_name;
   name_active = name == "" ? false : true;
 }
+
+std::string PID::name_get() { return name; }
 
 void PID::exit_condition_print(ez::exit_output exit_type) {
   std::cout << " ";
@@ -157,7 +157,7 @@ exit_output PID::exit_condition(bool print) {
 
   // If the robot is close to the target, start a timer.  If the robot doesn't get closer within
   // a certain amount of time, exit and continue.  This does not run while small_timeout is running
-  else if (exit.big_error != 0 && exit.big_exit_time != 0) {  // Check if this condition is enabled
+  if (exit.big_error != 0 && exit.big_exit_time != 0) {  // Check if this condition is enabled
     if (std::fabs(error) < exit.big_error) {
       i += util::DELAY_TIME;
       if (i > exit.big_exit_time) {

@@ -306,6 +306,7 @@ double Drive::turn_left(double target, double current, bool print) {
   if (util::sgn(shortest - current) == -1) {
     output = shortest;
 
+    if (print) printf("%.2f\n", output);
     return output;
   }
 
@@ -318,12 +319,13 @@ double Drive::turn_left(double target, double current, bool print) {
 
 // Always turn right
 double Drive::turn_right(double target, double current, bool print) {
-  if (print) printf("LEFT   Target: %.2f   Current: %.2f      New Target: ", target, current);
+  if (print) printf("RIGHT  Target: %.2f   Current: %.2f      New Target: ", target, current);
   double shortest = util::turn_shortest(target, current, false);
   double output = shortest;
   if (util::sgn(shortest - current) == 1) {
     output = shortest;
 
+    if (print) printf("%.2f\n", output);
     return output;
   }
 
