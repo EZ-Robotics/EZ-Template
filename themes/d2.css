@@ -1,4 +1,0 @@
-/* D2  page on the bar's hue, lightly. hue 220, sat 12%. */
-html[data-theme='dark'] { --ez-ground:#16181e; --ez-nav:#12151b; --ez-surface:#191d25;
-  --ez-raise:#1d222b; --ez-line:#262c37;
-  --ifm-background-color:var(--ez-ground); --ifm-background-surface-color:var(--ez-surface); }

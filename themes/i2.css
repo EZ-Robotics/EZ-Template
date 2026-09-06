@@ -1,4 +1,0 @@
-/* I2  inverted, moderate. */
-html[data-theme='dark'] { --ez-ground:#171b23; --ez-nav:#0d0f14; --ez-surface:#0d0f14;
-  --ez-raise:#1e242e; --ez-line:#262d38;
-  --ifm-background-color:var(--ez-ground); --ifm-background-surface-color:var(--ez-surface); }
