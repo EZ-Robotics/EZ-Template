@@ -279,8 +279,6 @@ class PID {
   double prev_current = 0.0;
   double integral = 0.0;
   double derivative = 0.0;
-  long time = 0;
-  long prev_time = 0;
 
  private:
   double velocity_zero_main = 0.05;
