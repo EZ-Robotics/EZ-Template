@@ -1,0 +1,4 @@
+/* D4  the cool page I meant to ship. hue 218, sat 22%. */
+html[data-theme='dark'] { --ez-ground:#0d0f14; --ez-nav:#12151b; --ez-surface:#191d25;
+  --ez-raise:#1d222c; --ez-line:#242a34;
+  --ifm-background-color:var(--ez-ground); --ifm-background-surface-color:var(--ez-surface); }

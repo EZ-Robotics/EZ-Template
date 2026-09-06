@@ -1,0 +1,4 @@
+/* I3  inverted, clear. The content reads as a lit panel. */
+html[data-theme='dark'] { --ez-ground:#1b2029; --ez-nav:#0d0f14; --ez-surface:#0d0f14;
+  --ez-raise:#232a36; --ez-line:#2b333f;
+  --ifm-background-color:var(--ez-ground); --ifm-background-surface-color:var(--ez-surface); }

@@ -1,0 +1,3 @@
+/* S1  current, neutral grey. Hue 240, off the navbar's 217. */
+:root { --ez-surface:#f7f7fa; --ez-line:#dcdfe8; --ifm-background-surface-color:var(--ez-surface); }
+.theme-doc-sidebar-container { background:var(--ez-surface) !important; }

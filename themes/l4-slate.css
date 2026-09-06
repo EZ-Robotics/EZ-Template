@@ -1,0 +1,7 @@
+/* L4  Slate. Coolest and highest contrast. Darker ink, firmer lines,
+   the most tool-like of the four and the furthest from a document. */
+:root {
+  --ez-ground:#fbfcfe; --ez-surface:#e7ecf4; --ez-raise:#dde4ef;
+  --ez-line:#c9d2e0; --ez-line-soft:#dde3ed;
+  --ez-ink:#2f3846; --ez-head:#0b1119; --ez-muted:#596374;
+}

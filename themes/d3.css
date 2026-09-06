@@ -1,0 +1,4 @@
+/* D3  same hue, deeper and bluer. hue 220, sat 17%. */
+html[data-theme='dark'] { --ez-ground:#121419; --ez-nav:#171b23; --ez-surface:#1b1f28;
+  --ez-raise:#1f2530; --ez-line:#282f3b;
+  --ifm-background-color:var(--ez-ground); --ifm-background-surface-color:var(--ez-surface); }
