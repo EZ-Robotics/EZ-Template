@@ -1,3 +1,0 @@
-/* S4  same hue and almost the same lightness. Sidebar and top bar read as one panel. */
-:root { --ez-surface:#e9eef6; --ez-line:#d2dae8; --ifm-background-surface-color:var(--ez-surface); }
-.theme-doc-sidebar-container { background:var(--ez-surface) !important; }

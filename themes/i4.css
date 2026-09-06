@@ -1,4 +1,0 @@
-/* I4  inverted, strong. Maximum separation between chrome and content. */
-html[data-theme='dark'] { --ez-ground:#202634; --ez-nav:#0b0d12; --ez-surface:#0b0d12;
-  --ez-raise:#28303f; --ez-line:#333c4c;
-  --ifm-background-color:var(--ez-ground); --ifm-background-surface-color:var(--ez-surface); }
