@@ -75,8 +75,5 @@ If an event partner asks you to explain your autonomous, you should be able to.
 
 ### Please always reference rule G2 the [Student Centered Policy](https://www.vexrobotics.com/override-manual#g2).
 
-## [Support me on Patreon!](https://www.patreon.com/roboticsisez)
-Supporting me on Patreon will help guarantee that EZ-Template continues to get maintained and allow me to develop products for teams to use.  [Click here](https://www.patreon.com/roboticsisez) to see my Patreon!
-
 ## [Download and Installation](/tutorials/installation)
 Learn how to install and setup EZ-Template [here](/tutorials/installation)!

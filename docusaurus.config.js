@@ -6,8 +6,13 @@
 
 // import { themes as prismThemes } from 'prism-react-renderer';
 
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import darkCode from './src/utils/codeDark.ts';
 import lightCode from './src/utils/codeLight.ts';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -56,10 +61,16 @@ const config = {
         },
         docs: {
 
-          // For when 3.0 is actually released
-          lastVersion: 'current',
+          // 4.0 is in beta, so 3.2.2 stays the version people land on.
+          // When 4.0.0 ships: run `npm run docusaurus docs:version 4.0.0`,
+          // set lastVersion to '4.0.0', and give 3.2.2 a 'unmaintained' banner.
+          lastVersion: '3.2.2',
           versions: {
             current: {
+              label: '4.0.0-beta.1',
+              banner: 'unreleased',
+            },
+            '3.2.2': {
               label: '3.2.2',
               banner: 'none',
             },
@@ -68,21 +79,6 @@ const config = {
               banner: 'unmaintained',
             },
           },
-
-          /*
-          // While 3.0 isn't released
-          lastVersion: '2.x',
-          versions: {
-            current: {
-              label: '3.0.0-pre-release',
-              banner: 'unreleased',
-            },
-            '2.x': {
-              label: '2.x',
-              banner: 'none',
-            },
-          },
-          */
 
           routeBasePath: '/', // url
           path: './ez-template-docs', // file path
@@ -121,6 +117,17 @@ const config = {
         // ... other options
       },
     ],
+
+    // Dev-only floating panel for live-previewing themes/ layer combos.
+    // See src/clientModules/themeSwitcher.js — it no-ops in production builds.
+    function themeSwitcherPlugin() {
+      return {
+        name: 'theme-switcher-panel',
+        getClientModules() {
+          return [path.resolve(__dirname, 'src/clientModules/themeSwitcher.js')];
+        },
+      };
+    },
   ],
 
 
@@ -184,7 +191,7 @@ const config = {
 
       colorMode: {
         defaultMode: 'dark',
-        disableSwitch: true,
+        disableSwitch: false,
         respectPrefersColorScheme: false,
       },
 

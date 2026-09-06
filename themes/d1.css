@@ -1,0 +1,3 @@
+/* D1  what it has actually been rendering. Page neutral, hue 240, sat 4%. */
+html[data-theme='dark'] { --ez-ground:#1b1b1d; --ez-nav:#12151b; --ez-surface:#1a1b1e;
+  --ifm-background-color:var(--ez-ground); --ifm-background-surface-color:var(--ez-surface); }

@@ -1,0 +1,151 @@
+{
+  "docs": [
+    "Introduction",
+    {
+      "type": "category",
+      "label": "Tutorials",
+      "link": {
+        "type": "generated-index"
+      },
+      "collapsed": false,
+      "collapsible": true,
+      "items": [
+        {
+          "type": "category",
+          "label": "Getting Started",
+          "link": {
+            "type": "generated-index"
+          },
+          "collapsed": false,
+          "collapsible": true,
+          "items": [
+            "tutorials/installation",
+            "tutorials/upgrading",
+            "tutorials/using_ez",
+            "tutorials/drive_movements",
+            "tutorials/turn_movements",
+            "tutorials/swing_movements",
+            "tutorials/odom_movements",
+            "tutorials/exiting_movements",
+            "tutorials/github"
+          ]
+        },
+        {
+          "type": "category",
+          "label": "User Control",
+          "link": {
+            "type": "generated-index"
+          },
+          "collapsed": true,
+          "collapsible": true,
+          "items": [
+            "tutorials/control_schemes",
+            "tutorials/joystick_curve",
+            "tutorials/activebrake",
+            "tutorials/practice_mode"
+          ]
+        },
+        {
+          "type": "category",
+          "label": "Tuning Constants",
+          "link": {
+            "type": "generated-index"
+          },
+          "collapsed": true,
+          "collapsible": true,
+          "items": [
+            "tutorials/tuning_pid_constants",
+            "tutorials/tuning_exit_condition_constants",
+            "tutorials/tuning_slew_constants",
+            "tutorials/tuning_imu_scale",
+            "tutorials/tuning_wheel_diameter",
+            "tutorials/tuning_tracking_wheel_width"
+          ]
+        },
+        {
+          "type": "category",
+          "label": "Subsystems",
+          "link": {
+            "type": "generated-index"
+          },
+          "collapsed": true,
+          "collapsible": true,
+          "items": [
+            "tutorials/intake_tutorial",
+            "tutorials/piston_tutorial",
+            "tutorials/subsystem_best_practice"
+          ]
+        },
+        "tutorials/blank_pages",
+        "tutorials/mirror_autons",
+        "tutorials/pid",
+        "tutorials/pto_tutorial",
+        "migration/3.1-3.2"
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Docs",
+      "link": {
+        "type": "generated-index"
+      },
+      "collapsed": true,
+      "collapsible": true,
+      "items": [
+        "docs/constructor",
+        {
+          "type": "category",
+          "label": "Autonomous Functions",
+          "link": {
+            "type": "generated-index"
+          },
+          "collapsed": true,
+          "collapsible": true,
+          "items": [
+            "docs/general_autonomous",
+            "docs/drive_movements",
+            "docs/turn_movements",
+            "docs/swing_movements",
+            {
+              "type": "category",
+              "label": "Odometry",
+              "link": {
+                "type": "generated-index"
+              },
+              "collapsed": true,
+              "collapsible": true,
+              "items": [
+                "docs/odom_general",
+                "docs/odom_movements"
+              ]
+            }
+          ]
+        },
+        "docs/user_control",
+        "docs/auton_selector",
+        "docs/pid_tuner",
+        "docs/tracking_wheels",
+        "docs/set_and_get_drive",
+        "docs/pto",
+        "docs/piston",
+        "docs/pid",
+        "docs/slew",
+        "docs/util",
+        {
+          "type": "category",
+          "label": "Migration",
+          "link": {
+            "type": "generated-index"
+          },
+          "collapsed": true,
+          "collapsible": true,
+          "items": [
+            "migration/3.1-3.2",
+            "migration/2.2-3.0"
+          ]
+        }
+      ]
+    },
+    "faq"
+  ]
+}

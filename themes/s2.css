@@ -1,0 +1,3 @@
+/* S2  same hue as the top bar, two steps lighter. */
+:root { --ez-surface:#f0f3f9; --ez-line:#dbe1ec; --ifm-background-surface-color:var(--ez-surface); }
+.theme-doc-sidebar-container { background:var(--ez-surface) !important; }
