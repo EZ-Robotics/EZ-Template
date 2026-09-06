@@ -136,7 +136,8 @@ table td, table th { border:none; border-bottom:1px solid var(--ez-line-soft); }
 .ezCtaRow a:not(:first-child) { border:1px solid var(--ez-line); color:var(--ez-ink); }
 .ezQuickLook { display:grid; gap:24px; margin-bottom:1.75rem; }
 @media (min-width:997px){ .ezQuickLook { grid-template-columns:1fr 1fr; align-items:start; } }
-.ezQuickLook iframe { width:100%; aspect-ratio:16/9; height:auto; border:1px solid var(--ez-line); border-radius:4px; }
+.ezQuickLook iframe { width:100%; aspect-ratio:16/9; height:auto; border:1px solid var(--ez-line); border-radius:8px; }
+.markdown img, .markdown video, .markdown iframe { border-radius:8px; }
 .ezQuickLook p:not(.ezLabel) { color:var(--ez-muted); font-size:.9rem; margin-top:.6rem; margin-bottom:0; }
 .ezLabel { font-family:var(--ez-font-mono); font-size:.76rem; letter-spacing:.08em; text-transform:uppercase; color:var(--ez-muted); margin-bottom:.5rem; }
 .ezFeatures > ul { padding-left:1.1rem; }
