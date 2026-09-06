@@ -1,4 +1,0 @@
-/* I1  inverted, subtle. Content one step above the chrome. */
-html[data-theme='dark'] { --ez-ground:#14171d; --ez-nav:#0f1116; --ez-surface:#0f1116;
-  --ez-raise:#1b1f27; --ez-line:#242a34;
-  --ifm-background-color:var(--ez-ground); --ifm-background-surface-color:var(--ez-surface); }

@@ -6,13 +6,8 @@
 
 // import { themes as prismThemes } from 'prism-react-renderer';
 
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-
 import darkCode from './src/utils/codeDark.ts';
 import lightCode from './src/utils/codeLight.ts';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -117,17 +112,6 @@ const config = {
         // ... other options
       },
     ],
-
-    // Dev-only floating panel for live-previewing themes/ layer combos.
-    // See src/clientModules/themeSwitcher.js — it no-ops in production builds.
-    function themeSwitcherPlugin() {
-      return {
-        name: 'theme-switcher-panel',
-        getClientModules() {
-          return [path.resolve(__dirname, 'src/clientModules/themeSwitcher.js')];
-        },
-      };
-    },
   ],
 
 
@@ -212,12 +196,10 @@ const config = {
           { to: '/community/category/showcase', label: 'Showcase', position: 'left' },
           { to: '/community/support', label: 'Support', position: 'left' },
           { href: 'https://www.roboticsisez.com/', label: 'robotics is ez', position: 'right' },
-          { href: 'https://www.ezscout.ing', label: 'scouting is ez', position: 'right'},
           { href: 'https://github.com/EZ-Robotics/EZ-Template', label: 'GitHub', position: 'right' },
         ],
       },
       footer: {
-        style: 'dark',
         links: [
           {
             title: 'Learn',
