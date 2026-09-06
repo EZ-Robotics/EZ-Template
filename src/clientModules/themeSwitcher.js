@@ -169,8 +169,8 @@ const DEFAULTS = {
   density: 'b-middle',
   temperature: 'cool',
   palette: 'l4-slate',
-  hybrid: 'on',
-  sidebar: 's3',
+  hybrid: 'off',
+  sidebar: 's4',
   depth: 'd4',
 };
 
@@ -183,7 +183,7 @@ const CATEGORY_LABELS = {
   depth: 'Dark page depth',
 };
 
-const STORAGE_KEY = 'ez-theme-panel-v1';
+const STORAGE_KEY = 'ez-theme-panel-v2';
 
 function recipeArgs(state) {
   const args = [];
