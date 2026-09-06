@@ -83,7 +83,7 @@ double PID::raw_compute() {
       integral += error;
 
     // Reset i when the sign of error flips
-    if (util::sgn(error) != util::sgn(prev_current) && reset_i_sgn)
+    if (util::sgn(error) != util::sgn(prev_error) && reset_i_sgn)
       integral = 0;
   }
 
