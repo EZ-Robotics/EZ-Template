@@ -56,6 +56,18 @@ void Drive::pid_odom_boomerang_constants_set(double p, double i, double d, doubl
 }
 
 void Drive::odom_path_smooth_constants_set(double weight_smooth, double weight_data, double tolerance) {
+  if (weight_smooth < 0 || weight_smooth >= 1) {
+    printf("EZ-Template: odom_path_smooth_constants_set rejected weight_smooth %.4f, must be in [0, 1)\n", weight_smooth);
+    return;
+  }
+  if (weight_data < 0) {
+    printf("EZ-Template: odom_path_smooth_constants_set rejected weight_data %.4f, must be >= 0\n", weight_data);
+    return;
+  }
+  if (tolerance <= 0) {
+    printf("EZ-Template: odom_path_smooth_constants_set rejected tolerance %.4f, must be > 0\n", tolerance);
+    return;
+  }
   odom_smooth_weight_smooth = weight_smooth;
   odom_smooth_weight_data = weight_data;
   odom_smooth_tolerance = tolerance;
@@ -77,10 +89,22 @@ void Drive::odom_boomerang_distance_set(okapi::QLength p_distance) { odom_boomer
 double Drive::odom_boomerang_distance_get() { return max_boomerang_distance; }
 void Drive::odom_turn_bias_set(double bias) { odom_turn_bias_amount = bias; }
 double Drive::odom_turn_bias_get() { return odom_turn_bias_amount; }
-void Drive::odom_path_spacing_set(double spacing) { SPACING = spacing; }
+void Drive::odom_path_spacing_set(double spacing) {
+  if (spacing <= 0) {
+    printf("EZ-Template: odom_path_spacing_set rejected non-positive spacing %.4f\n", spacing);
+    return;
+  }
+  SPACING = spacing;
+}
 void Drive::odom_path_spacing_set(okapi::QLength p_spacing) { odom_path_spacing_set(p_spacing.convert(okapi::inch)); }
 double Drive::odom_path_spacing_get() { return SPACING; }
-void Drive::odom_look_ahead_set(double distance) { LOOK_AHEAD = distance; }
+void Drive::odom_look_ahead_set(double distance) {
+  if (distance <= 0) {
+    printf("EZ-Template: odom_look_ahead_set rejected non-positive distance %.4f\n", distance);
+    return;
+  }
+  LOOK_AHEAD = distance;
+}
 void Drive::odom_look_ahead_set(okapi::QLength p_distance) { odom_look_ahead_set(p_distance.convert(okapi::inch)); }
 double Drive::odom_look_ahead_get() { return LOOK_AHEAD; }
 bool Drive::odom_turn_bias_enabled() { return is_odom_turn_bias_enabled; }
@@ -141,6 +165,10 @@ void Drive::pid_odom_set(odom imovement, bool slew_on) {
     pid_odom_injected_pp_set({imovement}, slew_on);
 }
 void Drive::pid_odom_set(std::vector<odom> imovements) {
+  if (imovements.empty()) {
+    printf("EZ-Template: pid_odom_set was given an empty path\n");
+    return;
+  }
   bool slew_on = imovements[0].drive_direction == fwd ? slew_drive_forward_get() : slew_drive_backward_get();
   pid_odom_set(imovements, slew_on);
 }
@@ -188,6 +216,10 @@ void Drive::pid_odom_ptp_set(united_odom p_imovement, bool slew_on) {
 /////
 // No units
 void Drive::pid_odom_pp_set(std::vector<odom> imovements) {
+  if (imovements.empty()) {
+    printf("EZ-Template: pid_odom_set was given an empty path\n");
+    return;
+  }
   bool slew_on = imovements[0].drive_direction == fwd ? slew_drive_forward_get() : slew_drive_backward_get();
   pid_odom_pp_set(imovements, slew_on);
 }
@@ -206,6 +238,10 @@ void Drive::pid_odom_pp_set(std::vector<united_odom> p_imovements, bool slew_on)
 /////
 // No units
 void Drive::pid_odom_injected_pp_set(std::vector<ez::odom> imovements) {
+  if (imovements.empty()) {
+    printf("EZ-Template: pid_odom_set was given an empty path\n");
+    return;
+  }
   bool slew_on = imovements[0].drive_direction == fwd ? slew_drive_forward_get() : slew_drive_backward_get();
   pid_odom_injected_pp_set(imovements, slew_on);
 }
@@ -242,6 +278,10 @@ void Drive::pid_odom_injected_pp_set(std::vector<ez::united_odom> p_imovements, 
 /////
 // No units
 void Drive::pid_odom_smooth_pp_set(std::vector<odom> imovements) {
+  if (imovements.empty()) {
+    printf("EZ-Template: pid_odom_set was given an empty path\n");
+    return;
+  }
   bool slew_on = imovements[0].drive_direction == fwd ? slew_drive_forward_get() : slew_drive_backward_get();
   pid_odom_smooth_pp_set(imovements, slew_on);
 }
@@ -299,6 +339,11 @@ void Drive::pid_odom_boomerang_set(united_odom p_imovement, bool slew_on) {
 // External base pure pursuit
 /////
 void Drive::pid_odom_pp_set(std::vector<odom> imovements, bool slew_on) {
+  if (imovements.empty()) {
+    printf("EZ-Template: pid_odom_set was given an empty path\n");
+    return;
+  }
+
   interfered = false;
 
   xyPID.timers_reset();
@@ -396,6 +441,11 @@ void Drive::pid_odom_ptp_set(odom imovement, bool slew_on) {
 // Base pure pursuit
 /////
 void Drive::raw_pid_odom_pp_set(std::vector<odom> imovements, bool slew_on) {
+  if (imovements.empty()) {
+    printf("EZ-Template: pid_odom_set was given an empty path\n");
+    return;
+  }
+
   std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
 
   odom_second_to_last = imovements[imovements.size() - 2].target;
