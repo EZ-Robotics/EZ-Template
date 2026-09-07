@@ -35,7 +35,7 @@ void autonomous() {
   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
 
-  chassis.odom_odom_set(24_in, 110);
+  chassis.pid_odom_set(24_in, 110);
   chassis.pid_wait();
 }
 ```
@@ -81,7 +81,7 @@ void autonomous() {
   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
 
-  chassis.odom_odom_set(24_in, 110, true);
+  chassis.pid_odom_set(24_in, 110, true);
   chassis.pid_wait();
 }
 ```
@@ -142,7 +142,7 @@ void autonomous() {
   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
 
-  chassis.odom_odom_set({{24_in, 24_in}, fwd, 110});
+  chassis.pid_odom_set({{24_in, 24_in}, fwd, 110});
   chassis.pid_wait();
 }
 ```
@@ -183,7 +183,7 @@ void autonomous() {
   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
 
-  chassis.odom_odom_set({{24_in, 24_in}, fwd, 110}, true);
+  chassis.pid_odom_set({{24_in, 24_in}, fwd, 110}, true);
   chassis.pid_wait();
 }
 ```
@@ -738,7 +738,7 @@ void autonomous() {
   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
 
-  chassis.odom_odom_set({{24_in, 24_in, 0_deg}, fwd, 110});
+  chassis.pid_odom_set({{24_in, 24_in, 0_deg}, fwd, 110});
   chassis.pid_wait();
 }
 ```
@@ -781,7 +781,7 @@ void autonomous() {
   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
 
-  chassis.odom_odom_set({{24_in, 24_in, 0_deg}, fwd, 110}, true);
+  chassis.pid_odom_set({{24_in, 24_in, 0_deg}, fwd, 110}, true);
   chassis.pid_wait();
 }
 ```
@@ -1129,7 +1129,7 @@ void autonomous() {
   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
 
-  chassis.odom_odom_set(24, 110);
+  chassis.pid_odom_set(24, 110);
   chassis.pid_wait();
 }
 ```
@@ -1175,7 +1175,7 @@ void autonomous() {
   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
 
-  chassis.odom_odom_set(24, 110, true);
+  chassis.pid_odom_set(24, 110, true);
   chassis.pid_wait();
 }
 ```
@@ -1226,7 +1226,7 @@ void autonomous() {
   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
 
-  chassis.odom_odom_set({{24, 24}, fwd, 110});
+  chassis.pid_odom_set({{24, 24}, fwd, 110});
   chassis.pid_wait();
 }
 ```
@@ -1271,7 +1271,7 @@ void autonomous() {
   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
 
-  chassis.odom_odom_set({{24, 24}, fwd, 110}, true);
+  chassis.pid_odom_set({{24, 24}, fwd, 110}, true);
   chassis.pid_wait();
 }
 ```
@@ -1774,7 +1774,7 @@ void autonomous() {
   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
 
-  chassis.odom_odom_set({{24, 24, 0}, fwd, 110});
+  chassis.pid_odom_set({{24, 24, 0}, fwd, 110});
   chassis.pid_wait();
 }
 ```
@@ -1817,7 +1817,7 @@ void autonomous() {
   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
 
-  chassis.odom_odom_set({{24, 24,  0}, fwd, 110}, true);
+  chassis.pid_odom_set({{24, 24,  0}, fwd, 110}, true);
   chassis.pid_wait();
 }
 ```
