@@ -1,13 +1,13 @@
-// tracking [H4, M3]: construct a Drive with fake IMEs and one fake left
-// tracker (3.5 in offset) and a fake back tracker (2.0 in); mark calibration
+// Tracking: construct a Drive with fake IMEs and one fake left tracker
+// (3.5 in offset) and a fake back tracker (2.0 in); mark calibration
 // complete; call odom_xyt_set(0, 0, 90); run ez_tracking_task() once with no
 // sensor change; assert x and y are within 1e-6 of 0. Then set odom
 // disabled, advance the fake wheels 100 in, enable, run one pass, assert
 // pose unchanged.
-// competition [#365 fix]: with the fake status moving disabled ->
-// autonomous, running the task body once after a pid_drive_set leaves
-// mode == DRIVE; moving autonomous -> driver with no disabled gap sets
-// mode == DISABLE once.
+// Competition state (regression coverage for GitHub issue #365): with the
+// fake status moving disabled -> autonomous, running the task body once
+// after a pid_drive_set leaves mode == DRIVE; moving autonomous -> driver
+// with no disabled gap sets mode == DISABLE once.
 #include "doctest.h"
 
 #include "drive_test_access.hpp"
@@ -34,7 +34,7 @@ void run_one_auto_task_pass(Drive& chassis) {
 }
 }  // namespace
 
-TEST_CASE("tracking [H4] no sensor change after priming leaves x/y at 0") {
+TEST_CASE("tracking no sensor change after priming leaves x/y at 0") {
   Drive chassis = make_chassis();
 
   tracking_wheel left_tracker(1, 3.25, 3.5);
@@ -58,7 +58,7 @@ TEST_CASE("tracking [H4] no sensor change after priming leaves x/y at 0") {
   CHECK(chassis.odom_y_get() == doctest::Approx(0.0).epsilon(1e-6));
 }
 
-TEST_CASE("tracking [M3] disabling odom before a sensor jump prevents that jump from ever showing up") {
+TEST_CASE("tracking disabling odom before a sensor jump prevents that jump from ever showing up") {
   Drive chassis = make_chassis();
 
   tracking_wheel left_tracker(1, 3.25, 3.5);
@@ -93,7 +93,7 @@ TEST_CASE("tracking [M3] disabling odom before a sensor jump prevents that jump 
   CHECK(chassis.odom_y_get() == doctest::Approx(y_before).epsilon(1e-6));
 }
 
-TEST_CASE("competition [#365 fix] disabled -> autonomous does not cancel the first motion") {
+TEST_CASE("competition state (#365) disabled -> autonomous does not cancel the first motion") {
   Drive chassis = make_chassis();
 
   test_stub::g_competition.disabled = true;
@@ -114,7 +114,7 @@ TEST_CASE("competition [#365 fix] disabled -> autonomous does not cancel the fir
   CHECK(chassis.drive_mode_get() == DRIVE);
 }
 
-TEST_CASE("competition [#365 fix] autonomous -> driver with no disabled gap forces DISABLE") {
+TEST_CASE("competition state (#365) autonomous -> driver with no disabled gap forces DISABLE") {
   Drive chassis = make_chassis();
 
   test_stub::g_competition.disabled = false;

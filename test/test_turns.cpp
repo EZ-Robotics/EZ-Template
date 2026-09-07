@@ -1,9 +1,9 @@
-// turns [H5, H6, M4]: with odom_theta_flip(true), pid_turn_set(90) then
-// pid_turn_relative_set(45) leaves headingPID.target_get() at -135;
-// pid_turn_set({24,24}, fwd) with x and theta flipped leaves it at -45;
-// pid_swing_set(LEFT_SWING, 90, 110, 45) mirrored selects the forward slew
-// constants; the turn-min gate does not engage for an 88 -> 90 turn and does
-// engage inside start_i for a 0 -> 90 turn.
+// With odom_theta_flip(true), pid_turn_set(90) then pid_turn_relative_set(45)
+// leaves headingPID.target_get() at -135; pid_turn_set({24,24}, fwd) with x
+// and theta flipped leaves it at -45; pid_swing_set(LEFT_SWING, 90, 110, 45)
+// mirrored selects the forward slew constants; the turn-min gate does not
+// engage for an 88 -> 90 turn and does engage inside start_i for a 0 -> 90
+// turn.
 #include "doctest.h"
 
 #include "drive_test_access.hpp"
@@ -17,7 +17,7 @@ Drive make_chassis() {
 }
 }  // namespace
 
-TEST_CASE("turns [H5] pid_turn_set then pid_turn_relative_set with theta flipped") {
+TEST_CASE("turns pid_turn_set then pid_turn_relative_set with theta flipped") {
   Drive chassis = make_chassis();
   chassis.odom_theta_flip(true);
 
@@ -27,7 +27,7 @@ TEST_CASE("turns [H5] pid_turn_set then pid_turn_relative_set with theta flipped
   CHECK(chassis.headingPID.target_get() == doctest::Approx(-135));
 }
 
-TEST_CASE("turns [H6] pid_turn_set(pose) with x and theta flipped") {
+TEST_CASE("turns pid_turn_set(pose) with x and theta flipped") {
   Drive chassis = make_chassis();
   chassis.odom_x_flip(true);
   chassis.odom_theta_flip(true);
@@ -40,7 +40,7 @@ TEST_CASE("turns [H6] pid_turn_set(pose) with x and theta flipped") {
   CHECK(chassis.headingPID.target_get() == doctest::Approx(-45));
 }
 
-TEST_CASE("turns [M4] mirrored LEFT_SWING selects the forward slew constants") {
+TEST_CASE("turns mirrored LEFT_SWING selects the forward slew constants") {
   Drive chassis = make_chassis();
   chassis.odom_theta_flip(true);  // mirrors LEFT_SWING <-> RIGHT_SWING
 
@@ -59,7 +59,7 @@ TEST_CASE("turns [M4] mirrored LEFT_SWING selects the forward slew constants") {
   CHECK(chassis.slew_swing.constants_get().min_speed == doctest::Approx(70));
 }
 
-TEST_CASE("turns [M4] turn-min gate does not engage for an 88 -> 90 turn") {
+TEST_CASE("turns turn-min gate does not engage for an 88 -> 90 turn") {
   Drive chassis = make_chassis();
   chassis.pid_turn_constants_set(20.0, 0.5, 0.0, 5.0);  // start_i = 5
   chassis.pid_turn_min_set(20);
@@ -77,7 +77,7 @@ TEST_CASE("turns [M4] turn-min gate does not engage for an 88 -> 90 turn") {
   CHECK(gyro_out == doctest::Approx(40).epsilon(0.01));
 }
 
-TEST_CASE("turns [M4] turn-min gate engages inside start_i for a 0 -> 90 turn") {
+TEST_CASE("turns turn-min gate engages inside start_i for a 0 -> 90 turn") {
   Drive chassis = make_chassis();
   chassis.pid_turn_constants_set(20.0, 0.5, 0.0, 5.0);  // start_i = 5
   chassis.pid_turn_min_set(20);
