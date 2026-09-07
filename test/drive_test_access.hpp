@@ -36,6 +36,8 @@ struct DriveTestAccess {
     return d.is_swing_slew_enabled(type, target, current);
   }
   static e_swing swing_type_internal(Drive& d, e_swing type) { return d.swing_type_internal(type); }
+
+  static double get_this_imu(Drive& d, pros::Imu* imu) { return d.get_this_imu(imu); }
 };
 
 }  // namespace ez
