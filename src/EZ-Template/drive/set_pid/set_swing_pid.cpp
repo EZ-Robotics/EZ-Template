@@ -280,7 +280,12 @@ void Drive::pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int spe
 // Swing set base
 /////
 void Drive::pid_swing_set(e_swing type, double target, int speed, int opposite_speed, e_angle_behavior behavior, bool slew_on) {
+  interfered = false;
+
   swingPID.timers_reset();
+  swingPID.motion_reset(drive_angle_get());
+  leftPID.motion_reset(drive_sensor_left());
+  rightPID.motion_reset(drive_sensor_right());
 
   // Set turn behavior
   current_angle_behavior = behavior;

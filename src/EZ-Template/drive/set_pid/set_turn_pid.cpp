@@ -117,7 +117,10 @@ void Drive::pid_turn_relative_set(okapi::QAngle p_target, int speed, e_angle_beh
 // Turn to angle base
 /////
 void Drive::pid_turn_set(double target, int speed, e_angle_behavior behavior, bool slew_on) {
+  interfered = false;
+
   turnPID.timers_reset();
+  turnPID.motion_reset(drive_angle_get());
 
   // Set turn behavior
   current_angle_behavior = behavior;

@@ -104,8 +104,13 @@ void Drive::pid_drive_set(okapi::QLength p_target, int speed) {
 
 // Set drive PID raw
 void Drive::pid_drive_set(double target, int speed, bool slew_on, bool toggle_heading) {
+  interfered = false;
+
   leftPID.timers_reset();
   rightPID.timers_reset();
+  leftPID.motion_reset(drive_sensor_left());
+  rightPID.motion_reset(drive_sensor_right());
+  headingPID.motion_reset(drive_angle_get());
 
   // Print targets
   if (print_toggle) printf("Drive Started... Target Value: %.2f", target);
