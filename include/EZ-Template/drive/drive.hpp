@@ -3612,7 +3612,7 @@ class Drive {
   void raw_pid_odom_pp_set(std::vector<odom> imovements, bool slew_on);
   bool ptf1_running = false;
   std::vector<pose> find_point_to_face(pose current, pose target, drive_directions dir, bool set_global);
-  void raw_pid_odom_ptp_set(odom imovement, bool slew_on);
+  void raw_pid_odom_ptp_set(odom imovement, bool slew_on, bool is_boomerang);
   std::vector<odom> inject_points(std::vector<odom> imovements);
   std::vector<pose> point_to_face = {{0, 0, 0}, {0, 0, 0}};
   double turn_is_toleranced(double target, double current, double input, double longest, double shortest);
