@@ -3102,7 +3102,8 @@ class Drive {
   double pid_drive_chain_backward_constant_get();
 
   /**
-   * Sets minimum power for swings when kI and startI are enabled.
+   * When kI and startI are enabled, sets the maximum output allowed while error is inside
+   * startI, for swings larger than startI. This lets I accumulate without overshoot.
    *
    * \param min
    *        new clipped speed
@@ -3110,7 +3111,8 @@ class Drive {
   void pid_swing_min_set(int min);
 
   /**
-   * The minimum power for turns when kI and startI are enabled.
+   * When kI and startI are enabled, sets the maximum output allowed while error is inside
+   * startI, for turns larger than startI. This lets I accumulate without overshoot.
    *
    * \param min
    *        new clipped speed
@@ -3118,12 +3120,14 @@ class Drive {
   void pid_turn_min_set(int min);
 
   /**
-   * Returns minimum power for swings when kI and startI are enabled.
+   * Returns the maximum output allowed while error is inside startI, for swings larger than startI,
+   * when kI and startI are enabled.
    */
   int pid_swing_min_get();
 
   /**
-   * Returns minimum power for turns when kI and startI are enabled.
+   * Returns the maximum output allowed while error is inside startI, for turns larger than startI,
+   * when kI and startI are enabled.
    */
   int pid_turn_min_get();
 
