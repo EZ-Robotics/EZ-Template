@@ -774,9 +774,12 @@ class Drive {
    * A proportion of how prioritized turning is during odometry motions.
    *
    * Turning is prioritized so the robot "applies brakes" while turning.  Lower number means more braking.
+   * Values below 1 make the robot stop driving once turning has gone past a certain angle error, and the
+   * robot will never drive backwards to reach the point.  The internal scale factor is clamped to [0, 1].
+   * Non-positive values are rejected and the previous value is kept, since this is used as a divisor.
    *
    * \param bias
-   *        a number between 0 and 1
+   *        a positive number, default is 1.375
    */
   void odom_turn_bias_set(double bias);
 

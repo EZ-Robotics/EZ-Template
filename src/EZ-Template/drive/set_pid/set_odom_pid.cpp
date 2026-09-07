@@ -75,7 +75,13 @@ double Drive::odom_boomerang_dlead_get() { return dlead; }
 void Drive::odom_boomerang_distance_set(double distance) { max_boomerang_distance = distance; }
 void Drive::odom_boomerang_distance_set(okapi::QLength p_distance) { odom_boomerang_distance_set(p_distance.convert(okapi::inch)); }
 double Drive::odom_boomerang_distance_get() { return max_boomerang_distance; }
-void Drive::odom_turn_bias_set(double bias) { odom_turn_bias_amount = bias; }
+void Drive::odom_turn_bias_set(double bias) {
+  if (bias <= 0.0) {
+    printf("EZ-Template: odom_turn_bias_set rejected non-positive bias %.4f\n", bias);
+    return;
+  }
+  odom_turn_bias_amount = bias;
+}
 double Drive::odom_turn_bias_get() { return odom_turn_bias_amount; }
 void Drive::odom_path_spacing_set(double spacing) { SPACING = spacing; }
 void Drive::odom_path_spacing_set(okapi::QLength p_spacing) { odom_path_spacing_set(p_spacing.convert(okapi::inch)); }
