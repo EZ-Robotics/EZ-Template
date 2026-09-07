@@ -3619,6 +3619,16 @@ class Drive {
   double turn_left(double target, double current, bool print = false);
   double turn_right(double target, double current, bool print = false);
   bool imu_calibration_complete = false;
+
+  // IMU watchdog state: every IMU ever constructed (never shrinks), and
+  // per-port health tracking used by check_imu_task() to eject/re-add IMUs.
+  std::deque<pros::Imu*> all_imus;
+  std::map<int, int> imu_stuck_passes;
+  std::map<int, int> imu_healthy_passes;
+  double last_good_angle = 0.0;
+  double watchdog_l_last = 0.0, watchdog_r_last = 0.0;
+  bool imu_only_imu_warning_shown = false;
+
   bool is_swing_slew_enabled(e_swing type, double target, double current);
   // Converts a user-facing swing side to the internal side (mirrored when theta is flipped).
   e_swing swing_type_internal(e_swing type);
