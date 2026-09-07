@@ -1,9 +1,9 @@
-// pure pursuit [H8, L10]: inject_points on a 24 in straight path at 0.5 in
-// spacing yields the expected count and injected_pp_index of size 2;
-// smooth_path on a 600-point path returns 600 points with endpoints
-// unchanged (this would have overflowed the old arrays);
-// new_turn_target_compute table for raw/cw/ccw/shortest/longest from current
-// 10 to targets 200, -160, 350, 0.
+// inject_points on a 24 in straight path at 0.5 in spacing yields the
+// expected count and injected_pp_index of size 2; smooth_path on a
+// 600-point path returns 600 points with endpoints unchanged (this would
+// have overflowed the old fixed-size arrays); new_turn_target_compute table
+// for raw/cw/ccw/shortest/longest from current 10 to targets 200, -160,
+// 350, 0.
 #include "doctest.h"
 
 #include "drive_test_access.hpp"
@@ -17,7 +17,7 @@ Drive make_chassis() {
 }
 }  // namespace
 
-TEST_CASE("pure pursuit [H8, L10] inject_points on a 24in straight path at 0.5in spacing") {
+TEST_CASE("pure pursuit inject_points on a 24in straight path at 0.5in spacing") {
   Drive chassis = make_chassis();
   chassis.odom_xyt_set(0.0, 0.0, 0.0);
 
@@ -32,7 +32,7 @@ TEST_CASE("pure pursuit [H8, L10] inject_points on a 24in straight path at 0.5in
   CHECK(DriveTestAccess::injected_pp_index(chassis).size() == 2);
 }
 
-TEST_CASE("pure pursuit [L10] smooth_path on a 600-point path returns 600 points with endpoints unchanged") {
+TEST_CASE("pure pursuit smooth_path on a 600-point path returns 600 points with endpoints unchanged") {
   Drive chassis = make_chassis();
 
   std::vector<odom> path;
@@ -50,7 +50,7 @@ TEST_CASE("pure pursuit [L10] smooth_path on a 600-point path returns 600 points
   CHECK(output.back().target.y == doctest::Approx(path.back().target.y));
 }
 
-TEST_CASE("pure pursuit [L10] new_turn_target_compute from current 10") {
+TEST_CASE("pure pursuit new_turn_target_compute from current 10") {
   Drive chassis = make_chassis();
   const double current = 10;
 
