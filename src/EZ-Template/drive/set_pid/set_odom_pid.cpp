@@ -12,7 +12,7 @@ namespace ez {
 // Set constants
 /////
 void Drive::odom_path_print() {
-  for (int i = 0; i < pp_movements.size(); i++) {
+  for (int i = 0; i < (int)pp_movements.size(); i++) {
     printf("Point %i: (%.2f, %.2f, %.2f)\n", i, pp_movements[i].target.x, pp_movements[i].target.y, pp_movements[i].target.theta);
   }
 }
@@ -22,7 +22,6 @@ ez::e_angle_behavior Drive::pid_odom_behavior_get() { return default_odom_type; 
 pose Drive::flip_pose(pose input) {
   int flip_x = x_flipped ? -1 : 1;
   int flip_y = y_flipped ? -1 : 1;
-  int flip_a = theta_flipped ? -1 : 1;
 
   pose new_pose = input;
   new_pose.x *= flip_x;
@@ -35,7 +34,7 @@ pose Drive::flip_pose(pose input) {
 std::vector<odom> Drive::set_odoms_direction(std::vector<odom> inputs) {
   std::vector<odom> output;
 
-  for (int i = 0; i < inputs.size(); i++) {
+  for (std::size_t i = 0; i < inputs.size(); i++) {
     pose new_pose = flip_pose(inputs[i].target);
     output.push_back({new_pose,
                       inputs[i].drive_direction,
@@ -363,7 +362,7 @@ void Drive::pid_odom_pp_set(std::vector<odom> imovements, bool slew_on) {
   input.insert(input.begin(), {{{odom_x_get(), odom_y_get(), ANGLE_NOT_SET}, imovements[0].drive_direction, imovements[0].max_xy_speed}});
 
   int t = 0;
-  for (int i = 0; i < input.size() - 1; i++) {
+  for (std::size_t i = 0; i < input.size() - 1; i++) {
     // Inject new parent points for boomerang
     int j = i + t;
     j = i;
@@ -381,7 +380,7 @@ void Drive::pid_odom_pp_set(std::vector<odom> imovements, bool slew_on) {
   }
 
   // Shift all the turn behaviors 1 parent point down
-  for (int i = 0; i < input.size() - 1; i++) {
+  for (std::size_t i = 0; i < input.size() - 1; i++) {
     input[i].turn_behavior = input[i + 1].turn_behavior;
   }
   input.back().turn_behavior = raw;
@@ -389,7 +388,7 @@ void Drive::pid_odom_pp_set(std::vector<odom> imovements, bool slew_on) {
   // This is used for pid_wait_until_pp()
   injected_pp_index.clear();
   injected_pp_index.push_back(0);
-  for (int i = 0; i < input.size(); i++) {
+  for (std::size_t i = 0; i < input.size(); i++) {
     if (i != 0 && input[i - 1].target.theta == ANGLE_NOT_SET)
       injected_pp_index.push_back(i);
   }

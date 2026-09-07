@@ -24,3 +24,21 @@ jobs:
         with:
           name: ${{ steps.test.outputs.name }}
           path: ${{ github.workspace }}/template/*
+
+  warnings-clean:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Builds only the library archive (excludes src/main.cpp and src/autons.cpp,
+      # which are user project files this repo happens to keep around for local dev
+      # and aren't held to this warning bar) with -Werror on top of the Makefile's
+      # WARNFLAGS. Reuses the same pinned pros-build image as the job above so the
+      # compiler is identical, but overrides its entrypoint to run `make` directly
+      # instead of the image's default full-project build script.
+      - name: Build library with -Werror
+        uses: docker://ghcr.io/lemlib/pros-build:v5.1.0
+        with:
+          entrypoint: bash
+          args: -c "make library EXTRA_CXXFLAGS='-Wno-deprecated-enum-enum-conversion -Werror'"

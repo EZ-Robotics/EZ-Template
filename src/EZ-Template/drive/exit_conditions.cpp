@@ -127,7 +127,7 @@ void Drive::pid_wait() {
 
     // Wait until pure pursuit is on the last point, then continue as normal
     if (mode == PURE_PURSUIT) {
-      while (pp_index != pp_movements.size() - 1) {
+      while (pp_index != (int)pp_movements.size() - 1) {
         xyPID.velocity_sensor_secondary_set(drive_imu_accel_get());
         current_a_odomPID.velocity_sensor_secondary_set(drive_imu_accel_get());
         xy_exit = xy_exit != RUNNING ? xy_exit : xyPID.exit_condition({left_motors[0], right_motors[0]});

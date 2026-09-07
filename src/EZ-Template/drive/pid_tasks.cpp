@@ -273,8 +273,8 @@ void Drive::boomerang_task() {
 
 void Drive::pp_task() {
   if (fabs(util::distance_to_point(pp_movements[pp_index].target, odom_pose_get())) < odom_look_ahead_get()) {
-    if (pp_index < pp_movements.size() - 1) {
-      pp_index = pp_index >= pp_movements.size() - 1 ? pp_index : pp_index + 1;
+    if (pp_index < (int)pp_movements.size() - 1) {
+      pp_index = pp_index >= (int)pp_movements.size() - 1 ? pp_index : pp_index + 1;
       bool slew_on = slew_left.enabled() || slew_right.enabled() ? true : false;
       if (!current_slew_on) slew_on = false;
       raw_pid_odom_ptp_set(pp_movements[pp_index], slew_on, pp_movements[pp_index].target.theta != ANGLE_NOT_SET);

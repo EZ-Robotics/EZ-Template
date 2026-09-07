@@ -26,7 +26,6 @@ double Drive::is_past_target(pose target, pose current) {
   double fake_angle = util::to_rad((util::absolute_angle_to_point(ptf, {fakek_x, fakek_y})) + add);
 
   // Rotate around origin
-  double fake_x = (fakek_x * cos(fake_angle)) - (fakek_y * sin(fake_angle));
   double fake_y = (fakek_y * cos(fake_angle)) + (fakek_x * sin(fake_angle));
 
   return fake_y;
@@ -90,7 +89,7 @@ std::vector<odom> Drive::inject_points(std::vector<ez::odom> imovements) {
 
   // Inject new parent points for boomerang
   int t = 0;
-  for (int i = 0; i < input.size() - 1; i++) {
+  for (std::size_t i = 0; i < input.size() - 1; i++) {
     int j = i + t;
     j = i;
     if (input[j].target.theta != ANGLE_NOT_SET) {
@@ -107,7 +106,7 @@ std::vector<odom> Drive::inject_points(std::vector<ez::odom> imovements) {
   }
 
   // Shift all the turn behaviors 1 parent point down
-  for (int i = 0; i < input.size() - 1; i++) {
+  for (std::size_t i = 0; i < input.size() - 1; i++) {
     input[i].turn_behavior = input[i + 1].turn_behavior;
   }
   input.back().turn_behavior = raw;
@@ -119,7 +118,7 @@ std::vector<odom> Drive::inject_points(std::vector<ez::odom> imovements) {
   bool allow_injecting = false;  // Flag to disable injecting for the first few points
 
   // This for loop runs for how many points there are minus one because there is one less vector then points
-  for (int i = 0; i < input.size() - 1; i++) {
+  for (std::size_t i = 0; i < input.size() - 1; i++) {
     // Figure out how many points fit in the vector
     int num_of_points_that_fit = (util::distance_to_point(input[i + 1].target, input[i].target)) / SPACING;
 
@@ -190,7 +189,7 @@ std::vector<odom> Drive::smooth_path(std::vector<odom> ipath, double weight_smoo
   bool boomerang_after_not_done = false;
 
   // Convert odom to array
-  for (int i = 0; i < ipath.size(); i++) {
+  for (std::size_t i = 0; i < ipath.size(); i++) {
     path[i][0] = new_path[i][0] = ipath[i].target.x;
     path[i][1] = new_path[i][1] = ipath[i].target.y;
     path[i][2] = new_path[i][2] = ipath[i].target.theta;
@@ -229,7 +228,7 @@ std::vector<odom> Drive::smooth_path(std::vector<odom> ipath, double weight_smoo
 
   while (change >= tolerance) {
     change = 0.0;
-    for (int i = 1; i < ipath.size() - 2; i++) {
+    for (std::size_t i = 1; i < ipath.size() - 2; i++) {
       // if (path[i][2] == ANGLE_NOT_SET) {
       if (!dont_touch[i]) {
         for (int j = 0; j < 2; j++) {
@@ -251,7 +250,7 @@ std::vector<odom> Drive::smooth_path(std::vector<odom> ipath, double weight_smoo
   // Convert array to odom
   std::vector<odom> output = ipath;  // Set output to input so target angles, turn types and speed hold
   // Overwrite x and y
-  for (int i = 0; i < ipath.size(); i++) {
+  for (std::size_t i = 0; i < ipath.size(); i++) {
     output[i].target.x = new_path[i][0];
     output[i].target.y = new_path[i][1];
   }
@@ -292,7 +291,6 @@ double Drive::turn_is_toleranced(double target, double current, double input, do
     return output;
 
   int long_error_sgn = util::sgn(long_error);
-  int short_error_sgn = util::sgn(short_error);
 
   if (turn_biased_left)
     output = long_error_sgn == -1 ? longest : shortest;
