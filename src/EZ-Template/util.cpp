@@ -55,7 +55,7 @@ std::string get_rest_of_the_word(std::string text, int position) {
 
 void screen_print(std::string text, int line) {
   int CurrAutoLine = line;
-  std::vector<string> texts = {};
+  std::vector<std::string> texts = {};
   std::string temp = "";
 
   for (int i = 0; i < (int)text.length(); i++) {

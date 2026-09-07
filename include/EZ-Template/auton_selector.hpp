@@ -9,8 +9,6 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "EZ-Template/auton.hpp"
 
-using namespace std;
-
 namespace ez {
 class AutonSelector {
  public:

@@ -2086,7 +2086,7 @@ class Drive {
   void pid_turn_set(okapi::QAngle p_target, int speed, e_angle_behavior behavior, bool slew_on);
 
   /**
-   * Sets the robot to turn relative to current heading using PID with okapi units, only using slew if globally enabled.
+   * Sets the robot to turn relative to the last commanded heading target using PID with okapi units, only using slew if globally enabled. Adds to the last target rather than the current heading, so error doesn't accumulate across chained relative turns.
    *
    * \param p_target
    *        target value in okapi angle units
@@ -2096,7 +2096,7 @@ class Drive {
   void pid_turn_relative_set(okapi::QAngle p_target, int speed);
 
   /**
-   * Sets the robot to turn relative to current heading using PID with okapi units, only using slew if globally enabled.
+   * Sets the robot to turn relative to the last commanded heading target using PID with okapi units, only using slew if globally enabled. Adds to the last target rather than the current heading, so error doesn't accumulate across chained relative turns.
    *
    * \param p_target
    *        target value in okapi angle units
@@ -2108,7 +2108,7 @@ class Drive {
   void pid_turn_relative_set(okapi::QAngle p_target, int speed, e_angle_behavior behavior);
 
   /**
-   * Sets the robot to turn relative to current heading using PID with okapi units, using slew if enabled for this motion.
+   * Sets the robot to turn relative to the last commanded heading target using PID with okapi units, using slew if enabled for this motion. Adds to the last target rather than the current heading, so error doesn't accumulate across chained relative turns.
    *
    * \param p_target
    *        target value in okapi angle units
@@ -2120,7 +2120,7 @@ class Drive {
   void pid_turn_relative_set(okapi::QAngle p_target, int speed, bool slew_on);
 
   /**
-   * Sets the robot to turn relative to current heading using PID with okapi units, using slew if enabled for this motion.
+   * Sets the robot to turn relative to the last commanded heading target using PID with okapi units, using slew if enabled for this motion. Adds to the last target rather than the current heading, so error doesn't accumulate across chained relative turns.
    *
    * \param p_target
    *        target value in okapi angle units
@@ -2134,7 +2134,7 @@ class Drive {
   void pid_turn_relative_set(okapi::QAngle p_target, int speed, e_angle_behavior behavior, bool slew_on);
 
   /**
-   * Sets the robot to turn relative to current heading using PID without okapi units, only using slew if globally enabled.
+   * Sets the robot to turn relative to the last commanded heading target using PID without okapi units, only using slew if globally enabled. Adds to the last target rather than the current heading, so error doesn't accumulate across chained relative turns.
    *
    * \param p_target
    *        target value as a double, unit is degrees
@@ -2144,7 +2144,7 @@ class Drive {
   void pid_turn_relative_set(double target, int speed);
 
   /**
-   * Sets the robot to turn relative to current heading using PID without okapi units, only using slew if globally enabled.
+   * Sets the robot to turn relative to the last commanded heading target using PID without okapi units, only using slew if globally enabled. Adds to the last target rather than the current heading, so error doesn't accumulate across chained relative turns.
    *
    * \param p_target
    *        target value as a double, unit is degrees
@@ -2156,7 +2156,7 @@ class Drive {
   void pid_turn_relative_set(double target, int speed, e_angle_behavior behavior);
 
   /**
-   * Sets the robot to turn relative to current heading using PID without okapi units, using slew if enabled for this motion.
+   * Sets the robot to turn relative to the last commanded heading target using PID without okapi units, using slew if enabled for this motion. Adds to the last target rather than the current heading, so error doesn't accumulate across chained relative turns.
    *
    * \param p_target
    *        target value as a double, unit is degrees
@@ -2168,7 +2168,7 @@ class Drive {
   void pid_turn_relative_set(double target, int speed, bool slew_on);
 
   /**
-   * Sets the robot to turn relative to current heading using PID without okapi units, using slew if enabled for this motion.
+   * Sets the robot to turn relative to the last commanded heading target using PID without okapi units, using slew if enabled for this motion. Adds to the last target rather than the current heading, so error doesn't accumulate across chained relative turns.
    *
    * \param p_target
    *        target value as a double, unit is degrees
@@ -3791,6 +3791,15 @@ class Drive {
   double TICK_PER_REV;
   double TICK_PER_INCH;
   double CIRCUMFERENCE;
+
+  /**
+   * Recomputes TICK_PER_REV/CIRCUMFERENCE/TICK_PER_INCH from WHEEL_DIAMETER,
+   * CARTRIDGE, RATIO and is_tracker. Called from every constructor and from
+   * drive_ratio_set()/drive_rpm_set(), the only places those inputs change;
+   * drive_tick_per_inch() just returns the cached TICK_PER_INCH so it's
+   * cheap to call from drive_sensor_left()/_right() every sensor read.
+   */
+  void drive_tick_per_inch_compute();
 
   double CARTRIDGE;
   double RATIO;

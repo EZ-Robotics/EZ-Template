@@ -63,6 +63,7 @@ class Motor {
     return 1;
   }
   std::int32_t set_current_limit(std::int32_t limit) { return 1; }
+  std::int32_t set_encoder_units(MotorUnits units) { return 1; }
   std::int32_t set_brake_mode(motor_brake_mode_e_t mode) {
     fake().brake_mode = mode;
     return 1;
