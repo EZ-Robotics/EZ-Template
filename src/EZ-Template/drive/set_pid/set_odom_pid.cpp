@@ -381,7 +381,7 @@ void Drive::pid_odom_ptp_set(odom imovement, bool slew_on) {
   current_slew_on = slew_on;
   slew_min_when_it_enabled = 0;
   slew_will_enable_later = false;
-  raw_pid_odom_ptp_set(imovement, slew_on);
+  raw_pid_odom_ptp_set(imovement, slew_on, false);
 
   // Initialize slew
   int dir = current_drive_direction == REV ? -1 : 1;  // If we're going backwards, add a -1
@@ -415,7 +415,7 @@ void Drive::raw_pid_odom_pp_set(std::vector<odom> imovements, bool slew_on) {
   l_start = drive_sensor_left();
   r_start = drive_sensor_right();
 
-  raw_pid_odom_ptp_set(pp_movements[pp_index], slew_on);
+  raw_pid_odom_ptp_set(pp_movements[pp_index], slew_on, pp_movements[0].target.theta != ANGLE_NOT_SET);
 
   // Initialize slew
   int dir = current_drive_direction == REV ? -1 : 1;  // If we're going backwards, add a -1
@@ -429,7 +429,7 @@ void Drive::raw_pid_odom_pp_set(std::vector<odom> imovements, bool slew_on) {
 /////
 // Base point to point
 /////
-void Drive::raw_pid_odom_ptp_set(odom imovement, bool slew_on) {
+void Drive::raw_pid_odom_ptp_set(odom imovement, bool slew_on, bool is_boomerang) {
   // Update current drive/turn behavior
   current_drive_direction = imovement.drive_direction;
 
@@ -496,9 +496,7 @@ void Drive::raw_pid_odom_ptp_set(odom imovement, bool slew_on) {
     slew_right.constants_set(slew_consts.distance_to_travel, slew_min);
   }
 
-  bool is_current_boomerang = false;
-  if (mode == PURE_PURSUIT)
-    is_current_boomerang = pp_movements[pp_index].target.theta != ANGLE_NOT_SET ? true : false;
+  bool is_current_boomerang = is_boomerang;
   if (print_toggle && !was_last_pp_mode_boomerang) {
     if (mode == PURE_PURSUIT)
       printf(" ");

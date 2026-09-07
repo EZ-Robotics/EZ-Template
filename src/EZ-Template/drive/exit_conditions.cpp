@@ -155,6 +155,11 @@ void Drive::pid_wait() {
     if (xy_exit == mA_EXIT || xy_exit == VELOCITY_EXIT || a_exit == mA_EXIT || a_exit == VELOCITY_EXIT) {
       interfered = true;
     }
+
+    {
+      std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
+      if (odom_target_start.theta != ANGLE_NOT_SET) headingPID.target_set(odom_target_start.theta);
+    }
   }
 
   // Turn Exit
@@ -438,9 +443,17 @@ void Drive::pid_wait_until_index(int index) {
 void Drive::pid_wait_quick() {
   if (mode == PURE_PURSUIT) {
     pid_wait_until_index(injected_pp_index.size() - 2);
+    {
+      std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
+      if (odom_target_start.theta != ANGLE_NOT_SET) headingPID.target_set(odom_target_start.theta);
+    }
     return;
   } else if (mode == POINT_TO_POINT) {
     pid_wait_until_point(odom_target_start);
+    {
+      std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
+      if (odom_target_start.theta != ANGLE_NOT_SET) headingPID.target_set(odom_target_start.theta);
+    }
     return;
   } else if (mode == TURN || mode == SWING || mode == TURN_TO_POINT) {
     // chain_target_start is already internal-frame and already behavior-resolved
