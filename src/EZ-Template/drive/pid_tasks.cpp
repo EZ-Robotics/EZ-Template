@@ -12,37 +12,41 @@ using namespace ez;
 
 void Drive::ez_auto_task() {
   while (true) {
-    // Check IMUs for redundancy
-    check_imu_task();
+    {
+      std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
 
-    // Run odom
-    ez_tracking_task();
+      // Check IMUs for redundancy
+      check_imu_task();
 
-    // Autonomous PID
-    switch (drive_mode_get()) {
-      case DRIVE:
-        drive_pid_task();
-        break;
-      case TURN ... TURN_TO_POINT:
-        turn_pid_task();
-        break;
-      case SWING:
-        swing_pid_task();
-        break;
-      case POINT_TO_POINT:
-        ptp_task();
-        break;
-      case PURE_PURSUIT:
-        pp_task();
-        break;
-      case DISABLE:
-        break;
-      default:
-        break;
+      // Run odom
+      ez_tracking_task();
+
+      // Autonomous PID
+      switch (drive_mode_get()) {
+        case DRIVE:
+          drive_pid_task();
+          break;
+        case TURN ... TURN_TO_POINT:
+          turn_pid_task();
+          break;
+        case SWING:
+          swing_pid_task();
+          break;
+        case POINT_TO_POINT:
+          ptp_task();
+          break;
+        case PURE_PURSUIT:
+          pp_task();
+          break;
+        case DISABLE:
+          break;
+        default:
+          break;
+      }
+
+      // This is used to reset sensors for active braking
+      util::AUTON_RAN = drive_mode_get() != DISABLE ? true : false;
     }
-
-    // This is used to reset sensors for active braking
-    util::AUTON_RAN = drive_mode_get() != DISABLE ? true : false;
 
     pros::delay(ez::util::DELAY_TIME);
   }

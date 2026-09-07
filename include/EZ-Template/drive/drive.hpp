@@ -9,6 +9,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include <deque>
 #include <functional>
 #include <iostream>
+#include <mutex>
 #include <stack>
 #include <tuple>
 
@@ -21,6 +22,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include "okapi/api/units/QTime.hpp"
 #include "pros/motor_group.hpp"
 #include "pros/motors.h"
+#include "pros/rtos.hpp"
 
 //using namespace ez;
 
@@ -3574,6 +3576,12 @@ class Drive {
   void odom_tracking_set(std::function<void(void)> tracking_task);
 
  private:
+  /**
+   * Guards state shared between the ez_auto task and the public setters.
+   * Recursive so nested public calls and user callbacks that call setters are safe.
+   */
+  pros::RecursiveMutex drive_mutex;
+
   std::function<void(void)> tracking;
   void opcontrol_drive_activebrake_targets_set();
   double odom_smooth_weight_smooth = 0.0;

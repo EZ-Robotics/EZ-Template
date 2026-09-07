@@ -117,6 +117,8 @@ void Drive::pid_turn_relative_set(okapi::QAngle p_target, int speed, e_angle_beh
 // Turn to angle base
 /////
 void Drive::pid_turn_set(double target, int speed, e_angle_behavior behavior, bool slew_on) {
+  std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
+
   interfered = false;
 
   turnPID.timers_reset();
@@ -179,6 +181,8 @@ void Drive::pid_turn_set(united_pose p_itarget, drive_directions dir, int speed,
 // Turn to point base
 /////
 void Drive::pid_turn_set(pose itarget, drive_directions dir, int speed, e_angle_behavior behavior, bool slew_on) {
+  std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
+
   itarget = flip_pose(itarget);
   odom_imu_start = drive_angle_get();
 

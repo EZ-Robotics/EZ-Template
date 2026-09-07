@@ -51,6 +51,8 @@ void Drive::pid_heading_constants_set(double p, double i, double d, double p_sta
   headingPID.constants_set(p, i, d, p_start_i);
 }
 void Drive::drive_angle_set(double angle) {
+  std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
+
   headingPID.target_set(angle);
   drive_imu_reset(angle);
   central_pose.theta = angle;
@@ -104,6 +106,8 @@ void Drive::pid_drive_set(okapi::QLength p_target, int speed) {
 
 // Set drive PID raw
 void Drive::pid_drive_set(double target, int speed, bool slew_on, bool toggle_heading) {
+  std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
+
   interfered = false;
 
   leftPID.timers_reset();

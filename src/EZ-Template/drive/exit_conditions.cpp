@@ -482,54 +482,58 @@ double Drive::pid_swing_chain_backward_constant_get() { return swing_backward_mo
 
 // Pid wait that hold momentum into the next motion
 void Drive::pid_wait_quick_chain() {
-  // If driving, add drive_motion_chain_scale to target
-  if (mode == DRIVE) {
-    double chain_scale = motion_chain_backward ? drive_backward_motion_chain_scale : drive_forward_motion_chain_scale;
-    used_motion_chain_scale = chain_scale * util::sgn(chain_target_start);
-    leftPID.target_set(leftPID.target_get() + used_motion_chain_scale);
-    rightPID.target_set(rightPID.target_get() + used_motion_chain_scale);
-  }
+  {
+    std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
 
-  // If turning, add turn_motion_chain_scale to target
-  else if (mode == TURN) {
-    used_motion_chain_scale = turn_motion_chain_scale * util::sgn(chain_target_start - chain_sensor_start);
-    turnPID.target_set(turnPID.target_get() + used_motion_chain_scale);
-  }
+    // If driving, add drive_motion_chain_scale to target
+    if (mode == DRIVE) {
+      double chain_scale = motion_chain_backward ? drive_backward_motion_chain_scale : drive_forward_motion_chain_scale;
+      used_motion_chain_scale = chain_scale * util::sgn(chain_target_start);
+      leftPID.target_set(leftPID.target_get() + used_motion_chain_scale);
+      rightPID.target_set(rightPID.target_get() + used_motion_chain_scale);
+    }
 
-  // If swinging, add swing_motion_chain_scale to target
-  else if (mode == SWING) {
-    double chain_scale = motion_chain_backward ? swing_backward_motion_chain_scale : swing_forward_motion_chain_scale;
-    used_motion_chain_scale = chain_scale * util::sgn(chain_target_start - chain_sensor_start);
-    swingPID.target_set(swingPID.target_get() + used_motion_chain_scale);
-  }
+    // If turning, add turn_motion_chain_scale to target
+    else if (mode == TURN) {
+      used_motion_chain_scale = turn_motion_chain_scale * util::sgn(chain_target_start - chain_sensor_start);
+      turnPID.target_set(turnPID.target_get() + used_motion_chain_scale);
+    }
 
-  // If odometrying, add drive_motion_chain_scale to the final target point
-  // It'll be at the angle between the second to last point and the last point
-  else if (mode == POINT_TO_POINT || mode == PURE_PURSUIT) {
-    double chain_scale = current_drive_direction == REV ? drive_backward_motion_chain_scale : drive_forward_motion_chain_scale;
-    used_motion_chain_scale = chain_scale;
+    // If swinging, add swing_motion_chain_scale to target
+    else if (mode == SWING) {
+      double chain_scale = motion_chain_backward ? swing_backward_motion_chain_scale : swing_forward_motion_chain_scale;
+      used_motion_chain_scale = chain_scale * util::sgn(chain_target_start - chain_sensor_start);
+      swingPID.target_set(swingPID.target_get() + used_motion_chain_scale);
+    }
 
-    // Figure out what angle to use.
-    // this will either by the angle between second to last point and last point,
-    // or it'll be the boomerang end angle
-    double angle = util::absolute_angle_to_point(odom_target_start, odom_second_to_last);
-    if (odom_target_start.theta != ANGLE_NOT_SET) angle = odom_target_start.theta;
+    // If odometrying, add drive_motion_chain_scale to the final target point
+    // It'll be at the angle between the second to last point and the last point
+    else if (mode == POINT_TO_POINT || mode == PURE_PURSUIT) {
+      double chain_scale = current_drive_direction == REV ? drive_backward_motion_chain_scale : drive_forward_motion_chain_scale;
+      used_motion_chain_scale = chain_scale;
 
-    // Create new point
-    pose target = util::vector_off_point(used_motion_chain_scale, {odom_target_start.x, odom_target_start.y, angle});
-    target.theta = odom_target_start.theta;
+      // Figure out what angle to use.
+      // this will either by the angle between second to last point and last point,
+      // or it'll be the boomerang end angle
+      double angle = util::absolute_angle_to_point(odom_target_start, odom_second_to_last);
+      if (odom_target_start.theta != ANGLE_NOT_SET) angle = odom_target_start.theta;
 
-    // Replace target in ptp, add new final point if pp
-    if (mode == POINT_TO_POINT)
-      odom_target = target;
-    else
-      pp_movements.push_back({target,
-                              pp_movements[pp_movements.size() - 1].drive_direction,
-                              pp_movements[pp_movements.size() - 1].max_xy_speed});
+      // Create new point
+      pose target = util::vector_off_point(used_motion_chain_scale, {odom_target_start.x, odom_target_start.y, angle});
+      target.theta = odom_target_start.theta;
 
-  } else {
-    printf("Not in a supported drive mode!\n");
-    return;
+      // Replace target in ptp, add new final point if pp
+      if (mode == POINT_TO_POINT)
+        odom_target = target;
+      else
+        pp_movements.push_back({target,
+                                pp_movements[pp_movements.size() - 1].drive_direction,
+                                pp_movements[pp_movements.size() - 1].max_xy_speed});
+
+    } else {
+      printf("Not in a supported drive mode!\n");
+      return;
+    }
   }
 
   // Exit at the real target

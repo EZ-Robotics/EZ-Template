@@ -348,6 +348,8 @@ int Drive::drive_current_limit_get() {
 
 // Motor telemetry
 void Drive::drive_sensor_reset() {
+  std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
+
   // Update active brake constants
   left_activebrakePID.target_set(0.0);
   right_activebrakePID.target_set(0.0);
@@ -408,6 +410,8 @@ double Drive::drive_mA_left() { return left_motors.front().get_current_draw(); }
 bool Drive::drive_current_left_over() { return left_motors.front().is_over_current(); }
 
 void Drive::drive_imu_reset(double new_heading) {
+  std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
+
   for (int i = 0; i < good_imus.size(); i++) {
     // Reads go through get_this_imu(), which multiplies by the scaler, so the
     // value written here has to be divided by it to read back as new_heading
@@ -426,10 +430,15 @@ double Drive::drive_imu_accel_get() {
   return std::hypot(accel.x, accel.y);
 }
 
-void Drive::drive_imu_scaler_set(double scaler) { imu_scale_map[imu->get_port()] = scaler; }
+void Drive::drive_imu_scaler_set(double scaler) {
+  std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
+  imu_scale_map[imu->get_port()] = scaler;
+}
 double Drive::drive_imu_scaler_get() { return imu_scale_map[imu->get_port()]; }
 
 void Drive::drive_imus_scalers_set(std::vector<double> scales) {
+  std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
+
   for (int i = 0; i < std::min(good_imus.size(), scales.size()); i++) {
     imu_scale_map[good_imus[i]->get_port()] = scales[i];
   }
@@ -512,7 +521,6 @@ bool Drive::drive_imu_calibrate(bool run_loading_animation) {
     if (iter >= 2000) {
       if (successful) {
         printf("IMU is done calibrating (took %d ms)\n", iter);
-        imu_calibration_complete = true;
         imu_calibrate_took_too_long = iter > 2000 ? true : false;
         break;
       }
@@ -537,18 +545,22 @@ bool Drive::drive_imu_calibrate(bool run_loading_animation) {
   }
 
   // Run through all of the IMUs and remove any IMUs that didn't calibrate successfully
-  for (int i = 0; i < good_imus.size(); i++) {
-    int port = good_imus[i]->get_port();
+  {
+    std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
 
-    if (!imus_done[port]) {
-      good_imus.erase(good_imus.begin() + i);
-      if (i == 0 && !good_imus.empty())
-        imu = good_imus.front();
+    for (int i = 0; i < good_imus.size(); i++) {
+      int port = good_imus[i]->get_port();
+
+      if (!imus_done[port]) {
+        good_imus.erase(good_imus.begin() + i);
+        if (i == 0 && !good_imus.empty())
+          imu = good_imus.front();
+      }
     }
-  }
 
-  if (one_calibrated && !good_imus.empty())
-    imu_calibration_complete = true;
+    if (one_calibrated && !good_imus.empty())
+      imu_calibration_complete = true;
+  }
 
   printf("one cali-%i\n", one_calibrated);
 
@@ -584,6 +596,8 @@ void Drive::initialize(bool run_loading_animation) {
 }
 
 void Drive::odom_tracker_left_set(tracking_wheel* input) {
+  std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
+
   if (input == nullptr) return;
 
   odom_tracker_left = input;
@@ -598,6 +612,8 @@ void Drive::odom_tracker_left_set(tracking_wheel* input) {
     is_tracker = ODOM_TRACKER;
 }
 void Drive::odom_tracker_right_set(tracking_wheel* input) {
+  std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
+
   if (input == nullptr) return;
 
   odom_tracker_right = input;
@@ -609,12 +625,16 @@ void Drive::odom_tracker_right_set(tracking_wheel* input) {
     is_tracker = ODOM_TRACKER;
 }
 void Drive::odom_tracker_front_set(tracking_wheel* input) {
+  std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
+
   if (input == nullptr) return;
 
   odom_tracker_front = input;
   odom_tracker_front_enabled = true;
 }
 void Drive::odom_tracker_back_set(tracking_wheel* input) {
+  std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
+
   if (input == nullptr) return;
 
   odom_tracker_back = input;
