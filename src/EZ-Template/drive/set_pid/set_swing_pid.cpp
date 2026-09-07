@@ -238,7 +238,7 @@ void Drive::pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int spe
 /////
 // Absolute
 void Drive::pid_swing_set(e_swing type, double target, int speed, e_angle_behavior behavior, bool slew_on) {
-  pid_swing_set(type, target, speed, 0, pid_swing_behavior_get(), slew_on);
+  pid_swing_set(type, target, speed, 0, behavior, slew_on);
 }
 void Drive::pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, e_angle_behavior behavior, bool slew_on) {
   double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
@@ -249,7 +249,7 @@ void Drive::pid_swing_relative_set(e_swing type, double target, int speed, e_ang
   // Compute absolute target by adding to current heading
   double absolute_target = headingPID.target_get() + target;
   if (print_toggle) printf("Relative ");
-  pid_swing_set(type, absolute_target, speed, 0, pid_swing_behavior_get(), slew_on);
+  pid_swing_set(type, absolute_target, speed, 0, behavior, slew_on);
 }
 void Drive::pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, e_angle_behavior behavior, bool slew_on) {
   double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
