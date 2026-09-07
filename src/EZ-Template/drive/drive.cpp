@@ -43,7 +43,7 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 
   good_imus.push_back(imu);
   all_imus.push_back(imu);
-  drive_imu_scaler_set(1);
+  imu_scale_map[imu->get_port()] = 1.0;
   // Set constants for tick_per_inch calculation
   WHEEL_DIAMETER = wheel_diameter;
   RATIO = ratio;
@@ -80,17 +80,15 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
   }
 
   // Set all IMUs
-  std::vector<double> imu_scale_values = {};
   good_imus.push_back(imu);
   all_imus.push_back(imu);
-  imu_scale_values.push_back(1);
+  imu_scale_map[imu->get_port()] = 1.0;
   for (std::size_t i = 1; i < imu_ports.size(); i++) {
     pros::Imu* temp = new pros::Imu(imu_ports[i]);
     good_imus.push_back(temp);
     all_imus.push_back(temp);
-    imu_scale_values.push_back(1);
+    imu_scale_map[temp->get_port()] = 1.0;
   }
-  drive_imus_scalers_set(imu_scale_values);
 
   // Set constants for tick_per_inch calculation
   WHEEL_DIAMETER = wheel_diameter;
@@ -130,7 +128,7 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 
   good_imus.push_back(imu);
   all_imus.push_back(imu);
-  drive_imu_scaler_set(1);
+  imu_scale_map[imu->get_port()] = 1.0;
   // Set constants for tick_per_inch calculation
   WHEEL_DIAMETER = wheel_diameter;
   RATIO = ratio;
@@ -169,7 +167,7 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 
   good_imus.push_back(imu);
   all_imus.push_back(imu);
-  drive_imu_scaler_set(1);
+  imu_scale_map[imu->get_port()] = 1.0;
   // Set constants for tick_per_inch calculation
   WHEEL_DIAMETER = wheel_diameter;
   RATIO = ratio;
@@ -210,7 +208,7 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 
   good_imus.push_back(imu);
   all_imus.push_back(imu);
-  drive_imu_scaler_set(1);
+  imu_scale_map[imu->get_port()] = 1.0;
   // Set constants for tick_per_inch calculation
   WHEEL_DIAMETER = wheel_diameter;
   RATIO = ratio;
@@ -475,31 +473,48 @@ double Drive::drive_imu_accel_get() {
   return std::hypot(accel.x, accel.y);
 }
 
-void Drive::drive_imu_scaler_set(double scaler) {
+void Drive::drive_imu_scaler_set(double imu_value_after_3600) {
   std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
-  if (imu == nullptr) {
-    if (all_imus.empty()) return;
-    imu_scale_map[all_imus.front()->get_port()] = scaler;
+  if (imu_value_after_3600 == 0.0) {
+    printf("EZ-Template: drive_imu_scaler_set rejected 0, value must be the imu's reading after physically turning the robot 3600 degrees\n");
     return;
   }
-  imu_scale_map[imu->get_port()] = scaler;
+  double multiplier = 3600.0 / imu_value_after_3600;
+  if (imu == nullptr) {
+    if (all_imus.empty()) return;
+    imu_scale_map[all_imus.front()->get_port()] = multiplier;
+    return;
+  }
+  imu_scale_map[imu->get_port()] = multiplier;
 }
 double Drive::drive_imu_scaler_get() {
+  double multiplier = 1.0;
   if (imu == nullptr) {
-    if (all_imus.empty()) return 1.0;
-    return imu_scale_map[all_imus.front()->get_port()];
+    if (!all_imus.empty()) multiplier = imu_scale_map[all_imus.front()->get_port()];
+  } else {
+    multiplier = imu_scale_map[imu->get_port()];
   }
-  return imu_scale_map[imu->get_port()];
+  return multiplier != 0.0 ? 3600.0 / multiplier : 0.0;
 }
 
-void Drive::drive_imus_scalers_set(std::vector<double> scales) {
+void Drive::drive_imus_scalers_set(std::vector<double> imu_values_after_3600) {
   std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
 
-  for (std::size_t i = 0; i < std::min(all_imus.size(), scales.size()); i++) {
-    imu_scale_map[all_imus[i]->get_port()] = scales[i];
+  for (std::size_t i = 0; i < std::min(all_imus.size(), imu_values_after_3600.size()); i++) {
+    if (imu_values_after_3600[i] == 0.0) {
+      printf("EZ-Template: drive_imus_scalers_set rejected 0 for imu on port %i, value must be the imu's reading after physically turning the robot 3600 degrees\n", all_imus[i]->get_port());
+      continue;
+    }
+    imu_scale_map[all_imus[i]->get_port()] = 3600.0 / imu_values_after_3600[i];
   }
 }
-std::map<int, double> Drive::drive_imus_scalers_get() { return imu_scale_map; }
+std::map<int, double> Drive::drive_imus_scalers_get() {
+  std::map<int, double> output;
+  for (auto const& pair : imu_scale_map) {
+    output[pair.first] = pair.second != 0.0 ? 3600.0 / pair.second : 0.0;
+  }
+  return output;
+}
 
 void Drive::drive_imu_display_loading(int iter) {
   // If the lcd is already initialized, don't run this function
