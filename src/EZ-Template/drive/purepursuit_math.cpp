@@ -4,7 +4,9 @@ License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
+#include <array>
 #include <cmath>
+#include <vector>
 
 #include "EZ-Template/api.hpp"
 #include "EZ-Template/util.hpp"
@@ -178,8 +180,10 @@ std::vector<odom> Drive::inject_points(std::vector<ez::odom> imovements) {
 
 // Path smoothing based on https://medium.com/@jaems33/understanding-robot-motion-path-smoothing-5970c8363bc4
 std::vector<odom> Drive::smooth_path(std::vector<odom> ipath, double weight_smooth, double weight_data, double tolerance) {
-  double path[500][3];
-  double new_path[500][3];
+  if (ipath.size() < 3) return ipath;
+
+  std::vector<std::array<double, 3>> path(ipath.size());
+  std::vector<std::array<double, 3>> new_path(ipath.size());
   std::vector<bool> dont_touch;
   int t = 0;
   bool allow_injecting = false;
