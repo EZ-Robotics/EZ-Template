@@ -280,6 +280,8 @@ void Drive::pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int spe
 // Swing set base
 /////
 void Drive::pid_swing_set(e_swing type, double target, int speed, int opposite_speed, e_angle_behavior behavior, bool slew_on) {
+  std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
+
   interfered = false;
 
   swingPID.timers_reset();
