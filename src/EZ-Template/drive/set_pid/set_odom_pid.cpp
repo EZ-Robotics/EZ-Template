@@ -104,12 +104,18 @@ void Drive::pid_odom_set(double target, int speed) {
   pid_odom_set(target, speed, slew_on);
 }
 void Drive::pid_odom_set(double target, int speed, bool slew_on) {
+  interfered = false;
+
   drive_directions fwd_or_rev = util::sgn(target) >= 0 ? fwd : rev;
   pose target_pose = util::vector_off_point(target, {odom_x_get(), odom_y_get(), headingPID.target_get()});
   odom path = {{target_pose.x, target_pose.y}, fwd_or_rev, speed};
 
   xyPID.timers_reset();
   current_a_odomPID.timers_reset();
+  xyPID.motion_reset(new_current_fake);
+  current_a_odomPID.motion_reset(odom_theta_get());
+  leftPID.motion_reset(drive_sensor_left());
+  rightPID.motion_reset(drive_sensor_right());
 
   if (print_toggle) printf("Injected ");
   std::vector<odom> input_path = inject_points({path});
@@ -204,8 +210,14 @@ void Drive::pid_odom_injected_pp_set(std::vector<ez::odom> imovements) {
   pid_odom_injected_pp_set(imovements, slew_on);
 }
 void Drive::pid_odom_injected_pp_set(std::vector<ez::odom> imovements, bool slew_on) {
+  interfered = false;
+
   xyPID.timers_reset();
   current_a_odomPID.timers_reset();
+  xyPID.motion_reset(new_current_fake);
+  current_a_odomPID.motion_reset(odom_theta_get());
+  leftPID.motion_reset(drive_sensor_left());
+  rightPID.motion_reset(drive_sensor_right());
 
   if (print_toggle) printf("Injected ");
   std::vector<odom> input_path = inject_points(set_odoms_direction(imovements));
@@ -234,8 +246,14 @@ void Drive::pid_odom_smooth_pp_set(std::vector<odom> imovements) {
   pid_odom_smooth_pp_set(imovements, slew_on);
 }
 void Drive::pid_odom_smooth_pp_set(std::vector<odom> imovements, bool slew_on) {
+  interfered = false;
+
   xyPID.timers_reset();
   current_a_odomPID.timers_reset();
+  xyPID.motion_reset(new_current_fake);
+  current_a_odomPID.motion_reset(odom_theta_get());
+  leftPID.motion_reset(drive_sensor_left());
+  rightPID.motion_reset(drive_sensor_right());
 
   if (print_toggle) printf("Smooth Injected ");
   std::vector<odom> input_path = smooth_path(inject_points(set_odoms_direction(imovements)), odom_smooth_weight_smooth, odom_smooth_weight_data, odom_smooth_tolerance);
@@ -281,8 +299,14 @@ void Drive::pid_odom_boomerang_set(united_odom p_imovement, bool slew_on) {
 // External base pure pursuit
 /////
 void Drive::pid_odom_pp_set(std::vector<odom> imovements, bool slew_on) {
+  interfered = false;
+
   xyPID.timers_reset();
   current_a_odomPID.timers_reset();
+  xyPID.motion_reset(new_current_fake);
+  current_a_odomPID.motion_reset(odom_theta_get());
+  leftPID.motion_reset(drive_sensor_left());
+  rightPID.motion_reset(drive_sensor_right());
 
   std::vector<odom> input = set_odoms_direction(imovements);
   input.insert(input.begin(), {{{odom_x_get(), odom_y_get(), ANGLE_NOT_SET}, imovements[0].drive_direction, imovements[0].max_xy_speed}});
@@ -332,6 +356,8 @@ void Drive::pid_odom_pp_set(std::vector<odom> imovements, bool slew_on) {
 // External base ptp
 /////
 void Drive::pid_odom_ptp_set(odom imovement, bool slew_on) {
+  interfered = false;
+
   imovement = set_odom_direction(imovement);
 
   odom_second_to_last = odom_pose_get();
@@ -340,6 +366,10 @@ void Drive::pid_odom_ptp_set(odom imovement, bool slew_on) {
 
   xyPID.timers_reset();
   current_a_odomPID.timers_reset();
+  xyPID.motion_reset(new_current_fake);
+  current_a_odomPID.motion_reset(odom_theta_get());
+  leftPID.motion_reset(drive_sensor_left());
+  rightPID.motion_reset(drive_sensor_right());
 
   // This is used for wait_until and slew
   l_start = drive_sensor_left();

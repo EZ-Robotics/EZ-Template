@@ -106,6 +106,14 @@ void PID::timers_reset() {
   is_mA = false;
 }
 
+void PID::motion_reset(double current) {
+  integral = 0;
+  prev_current = current;
+  cur = current;
+  derivative = 0;
+  prev_error = 0;
+}
+
 void PID::name_set(std::string p_name) {
   name = p_name;
   name_active = name == "" ? false : true;

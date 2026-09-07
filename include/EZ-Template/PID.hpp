@@ -269,6 +269,16 @@ class PID {
   void timers_reset();
 
   /**
+   * Resets the parts of the PID that must not carry over from one motion to the next.
+   * Clears the integral and primes the derivative so the first iteration of a new motion
+   * does not see a spike from the previous motion's final position.
+   *
+   * \param current
+   *        the sensor value the next compute() will be given
+   */
+  void motion_reset(double current);
+
+  /**
    * PID variables.
    */
   double output = 0.0;
