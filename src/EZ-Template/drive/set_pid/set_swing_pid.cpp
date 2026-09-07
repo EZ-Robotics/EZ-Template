@@ -205,7 +205,6 @@ void Drive::pid_swing_set(e_swing type, double target, int speed, int opposite_s
 }
 void Drive::pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed, e_angle_behavior behavior) {
   double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
-  bool slew_on = is_swing_slew_enabled(type, target, drive_angle_get());
   pid_swing_set(type, target, speed, opposite_speed, behavior);
 }
 // Relative

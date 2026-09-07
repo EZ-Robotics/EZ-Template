@@ -43,7 +43,7 @@ std::string get_last_word(std::string text) {
 }
 std::string get_rest_of_the_word(std::string text, int position) {
   std::string word = "";
-  for (int i = position; i < text.length(); i++) {
+  for (int i = position; i < (int)text.length(); i++) {
     if (text[i] != ' ' && text[i] != '\n') {
       word += text[i];
     } else {
@@ -58,7 +58,7 @@ void screen_print(std::string text, int line) {
   std::vector<string> texts = {};
   std::string temp = "";
 
-  for (int i = 0; i < text.length(); i++) {
+  for (int i = 0; i < (int)text.length(); i++) {
     if (text[i] != '\n' && temp.length() + 1 > 38) {
       auto last_word = get_last_word(temp);
       if (last_word == temp) {
@@ -73,13 +73,13 @@ void screen_print(std::string text, int line) {
         last_word += rest_of_word;
         i += rest_of_word.length();
         temp = last_word;
-        if (i >= text.length() - 1) {
+        if (i >= (int)text.length() - 1) {
           texts.push_back(temp);
           break;
         }
       }
     }
-    if (i >= text.length() - 1) {
+    if (i >= (int)text.length() - 1) {
       temp += text[i];
       texts.push_back(temp);
       temp = "";
@@ -270,7 +270,7 @@ pose united_pose_to_pose(united_pose input) {
 
 std::vector<odom> united_odoms_to_odoms(std::vector<united_odom> inputs) {
   std::vector<odom> output;
-  for (int i = 0; i < inputs.size(); i++) {
+  for (std::size_t i = 0; i < inputs.size(); i++) {
     pose new_pose = united_pose_to_pose(inputs[i].target);
     output.push_back({{new_pose}, inputs[i].drive_direction, inputs[i].max_xy_speed, inputs[i].turn_behavior});
   }

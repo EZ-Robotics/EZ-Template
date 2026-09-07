@@ -118,7 +118,7 @@ void Drive::pid_tuner_print() {
   if (!pid_tuner_on) return;
 
   // Ensure that the user column is within the size of the pid tuner
-  if (column > used_pid_tuner_pids->size() - 1)
+  if (column > (int)used_pid_tuner_pids->size() - 1)
     column = 0;
 
   double kp = used_pid_tuner_pids->at(column).consts->kp;
@@ -209,7 +209,7 @@ void Drive::pid_tuner_iterate() {
   // Up / Down for Rows
   if (master.get_digital_new_press(pid_tuner_pageRight)) {
     column++;
-    if (column > used_pid_tuner_pids->size() - 1)
+    if (column > (int)used_pid_tuner_pids->size() - 1)
       column = 0;
     pid_tuner_print();
   } else if (master.get_digital_new_press(pid_tuner_pageLeft)) {

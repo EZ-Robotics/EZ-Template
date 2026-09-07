@@ -80,7 +80,7 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
   good_imus.push_back(imu);
   all_imus.push_back(imu);
   imu_scale_values.push_back(1);
-  for (int i = 1; i < imu_ports.size(); i++) {
+  for (std::size_t i = 1; i < imu_ports.size(); i++) {
     pros::Imu* temp = new pros::Imu(imu_ports[i]);
     good_imus.push_back(temp);
     all_imus.push_back(temp);
@@ -211,16 +211,23 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 }
 
 Drive::~Drive() {
+  // pros::v5::Imu has virtual member functions but a non-virtual destructor.
+  // Every pointer in all_imus was allocated as exactly `new pros::Imu(...)`
+  // (never a derived type), so this delete is safe; the diagnostic can't be
+  // fixed at the source since pros::Imu is a vendored header.
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdelete-non-virtual-dtor"
   for (pros::Imu* n : all_imus) {
     delete n;
   }
+#pragma GCC diagnostic pop
   good_imus.clear();
   all_imus.clear();
 }
 
 // set defaults
 void Drive::drive_defaults_set() {
-  for (int i = 0; i < good_imus.size(); i++) {
+  for (std::size_t i = 0; i < good_imus.size(); i++) {
     good_imus[i]->set_data_rate(5);
   }
 
@@ -419,7 +426,7 @@ bool Drive::drive_current_left_over() { return left_motors.front().is_over_curre
 void Drive::drive_imu_reset(double new_heading) {
   std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
 
-  for (int i = 0; i < all_imus.size(); i++) {
+  for (std::size_t i = 0; i < all_imus.size(); i++) {
     // Reads go through get_this_imu(), which multiplies by the scaler, so the
     // value written here has to be divided by it to read back as new_heading
     auto scaler = imu_scale_map.find(all_imus[i]->get_port());
@@ -469,7 +476,7 @@ double Drive::drive_imu_scaler_get() {
 void Drive::drive_imus_scalers_set(std::vector<double> scales) {
   std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
 
-  for (int i = 0; i < std::min(all_imus.size(), scales.size()); i++) {
+  for (std::size_t i = 0; i < std::min(all_imus.size(), scales.size()); i++) {
     imu_scale_map[all_imus[i]->get_port()] = scales[i];
   }
 }
@@ -521,7 +528,7 @@ bool Drive::drive_imu_calibrate(bool run_loading_animation) {
 
   // No IMUs are calibrated yet, set them all to false
   std::map<int, bool> imus_status, imus_done, imus_last_status;
-  for (int i = 0; i < good_imus.size(); i++) {
+  for (std::size_t i = 0; i < good_imus.size(); i++) {
     good_imus[i]->reset();
     int port = good_imus[i]->get_port();
     imus_status[port] = good_imus[i]->is_calibrating();
@@ -538,7 +545,7 @@ bool Drive::drive_imu_calibrate(bool run_loading_animation) {
 
     if (!successful) {
       // Check if each IMU is done calibrating
-      for (int i = 0; i < good_imus.size(); i++) {
+      for (std::size_t i = 0; i < good_imus.size(); i++) {
         int port = good_imus[i]->get_port();
         imus_last_status[port] = imus_status[port];
         imus_status[port] = good_imus[i]->is_calibrating();
@@ -549,7 +556,7 @@ bool Drive::drive_imu_calibrate(bool run_loading_animation) {
 
     // Check if all IMUs have calibrated
     successful = true;
-    for (int i = 0; i < good_imus.size(); i++) {
+    for (std::size_t i = 0; i < good_imus.size(); i++) {
       if (!imus_done[good_imus[i]->get_port()]) {
         successful = false;
       } else {
@@ -567,7 +574,7 @@ bool Drive::drive_imu_calibrate(bool run_loading_animation) {
           printf("No IMU plugged in");
         } else {
           printf("Only IMUs in ports {");
-          for (int i = 0; i < good_imus.size(); i++) {
+          for (std::size_t i = 0; i < good_imus.size(); i++) {
             int port = good_imus[i]->get_port();
             if (imus_done[port])
               printf(" %i", port);

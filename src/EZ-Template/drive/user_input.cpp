@@ -314,9 +314,6 @@ void Drive::opcontrol_tank() {
   // Toggle for controller curve
   opcontrol_curve_buttons_iterate();
 
-  auto analog_left_value = master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
-  auto analog_right_value = master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y);
-
   // Put the joysticks through the curve function
   int l_stick = opcontrol_curve_left(clipped_joystick(master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y)));
   int r_stick = opcontrol_curve_left(clipped_joystick(master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y)));

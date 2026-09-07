@@ -12,7 +12,7 @@ BINDIR=$(ROOT)/bin
 SRCDIR=$(ROOT)/src
 INCDIR=$(ROOT)/include
 
-WARNFLAGS+=
+WARNFLAGS+=-Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers
 EXTRA_CFLAGS=
 EXTRA_CXXFLAGS=-Wno-deprecated-enum-enum-conversion
 
