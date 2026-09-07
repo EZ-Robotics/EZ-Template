@@ -3619,6 +3619,7 @@ class Drive {
   double turn_left(double target, double current, bool print = false);
   double turn_right(double target, double current, bool print = false);
   bool imu_calibration_complete = false;
+  uint8_t last_comp_status = 0;
 
   // IMU watchdog state: every IMU ever constructed (never shrinks), and
   // per-port health tracking used by check_imu_task() to eject/re-add IMUs.
