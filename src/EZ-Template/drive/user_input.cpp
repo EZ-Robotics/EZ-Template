@@ -4,6 +4,8 @@ License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
+#include <cstdlib>
+
 #include "EZ-Template/PID.hpp"
 #include "EZ-Template/drive/drive.hpp"
 #include "pros/misc.h"
@@ -33,10 +35,15 @@ void Drive::opcontrol_curve_sd_initialize() {
   FILE* l_usd_file_read;
   // If file exists...
   if ((l_usd_file_read = fopen("/usd/left_curve.txt", "r"))) {
-    char l_buf[5];
-    fread(l_buf, 1, 5, l_usd_file_read);
-    left_curve_scale = std::stof(l_buf);
+    char buf[32] = {0};
+    fread(buf, 1, sizeof(buf) - 1, l_usd_file_read);
     fclose(l_usd_file_read);
+    char* end = nullptr;
+    double parsed = strtod(buf, &end);
+    if (end != buf)
+      left_curve_scale = parsed;
+    else
+      printf("EZ-Template: couldn't parse /usd/left_curve.txt, keeping current curve\n");
   }
   // If file doesn't exist, create file
   else {
@@ -47,10 +54,15 @@ void Drive::opcontrol_curve_sd_initialize() {
   FILE* r_usd_file_read;
   // If file exists...
   if ((r_usd_file_read = fopen("/usd/right_curve.txt", "r"))) {
-    char l_buf[5];
-    fread(l_buf, 1, 5, r_usd_file_read);
-    right_curve_scale = std::stof(l_buf);
+    char buf[32] = {0};
+    fread(buf, 1, sizeof(buf) - 1, r_usd_file_read);
     fclose(r_usd_file_read);
+    char* end = nullptr;
+    double parsed = strtod(buf, &end);
+    if (end != buf)
+      right_curve_scale = parsed;
+    else
+      printf("EZ-Template: couldn't parse /usd/right_curve.txt, keeping current curve\n");
   }
   // If file doesn't exist, create file
   else {

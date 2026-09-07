@@ -32,7 +32,7 @@ void ez::AutonSelector::selected_auton_call() {
 }
 
 void ez::AutonSelector::autons_add(std::vector<Auton> autons) {
-  auton_count += autons.size();
+  Autons.insert(Autons.end(), autons.begin(), autons.end());
+  auton_count = Autons.size();
   auton_page_current = 0;
-  Autons.assign(autons.begin(), autons.end());
 }

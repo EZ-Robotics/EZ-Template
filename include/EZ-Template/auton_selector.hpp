@@ -22,6 +22,13 @@ class AutonSelector {
   AutonSelector(std::vector<Auton> autons);
   void selected_auton_call();
   void selected_auton_print();
+
+  /**
+   * Appends the given autons to the existing list of autons.
+   *
+   * \param autons
+   *        vector of Autons to append to the current list
+   */
   void autons_add(std::vector<Auton> autons);
 };
 }  // namespace ez
