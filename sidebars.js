@@ -134,7 +134,6 @@ const sidebars = {
 
         // Remove these when above is uncommented
         'tutorials/blank_pages',
-        'tutorials/mirror_autons',
         'tutorials/pid',
         'tutorials/pto_tutorial',
         'migration/3.1-3.2',
