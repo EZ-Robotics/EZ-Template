@@ -474,23 +474,22 @@ void Drive::drive_imu_display_loading(int iter) {
 
   // While IMU is loading
   if (iter < 2000) {
-    static int last_x1 = border;
     pros::screen::set_pen(0x00FF6EC7);  // EZ Pink
     int x1 = (iter * ((480 - (border * 2)) / 2000.0)) + border;
-    pros::screen::fill_rect(last_x1, border, x1, 240 - border);
-    last_x1 = x1;
+    pros::screen::fill_rect(loading_bar_last_x, border, x1, 240 - border);
+    loading_bar_last_x = x1;
   }
   // Failsafe time
   else {
-    static int last_x1 = border;
     pros::screen::set_pen(pros::c::COLOR_RED);
     int x1 = ((iter - 2000) * ((480 - (border * 2)) / 1000.0)) + border;
-    pros::screen::fill_rect(last_x1, border, x1, 240 - border);
-    last_x1 = x1;
+    pros::screen::fill_rect(loading_bar_last_x, border, x1, 240 - border);
+    loading_bar_last_x = x1;
   }
 }
 
 bool Drive::drive_imu_calibrate(bool run_loading_animation) {
+  loading_bar_last_x = 50;
   imu_calibration_complete = false;
   imu_calibrate_took_too_long = false;
   bool one_calibrated = false;
