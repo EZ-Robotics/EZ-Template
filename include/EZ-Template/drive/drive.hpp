@@ -1399,17 +1399,19 @@ class Drive {
   double drive_imu_accel_get();
 
   /**
-   * Sets a new imu scaling factor.
+   * Calibrates the imu's scale using a physical turn.
    *
-   * This value is multiplied by the imu to change its output.
+   * Physically turn the robot 3600 degrees (10 full rotations) and pass in
+   * what the imu reported for that turn.  Internally, this is used to divide
+   * the imu's raw reading so it reports the true 3600.
    *
-   * \param scaler
-   *        factor to scale the imu by
+   * \param imu_value_after_3600
+   *        what the imu reads after physically turning the robot 3600 degrees
    */
-  void drive_imu_scaler_set(double scaler);
+  void drive_imu_scaler_set(double imu_value_after_3600);
 
   /**
-   * Returns the current imu scaling factor.
+   * Returns the imu value after a 3600 degree turn that produces the imu's current scale.
    */
   double drive_imu_scaler_get();
 
@@ -1417,17 +1419,18 @@ class Drive {
   std::map<int, std::pair<double, int>> prev_imu_values;
 
   /*
-   * Sets a new IMU scaling factor for all IMUs.
+   * Calibrates the scale of all IMUs using a physical turn.
    *
-   * This value is multiplied by the imu to change its output.
+   * Physically turn the robot 3600 degrees (10 full rotations) and pass in
+   * what each imu reported for that turn.
    *
-   * \param scales
-   *        input {0.99, 1.01...}
+   * \param imu_values_after_3600
+   *        what each imu reads after physically turning the robot 3600 degrees, input {3550, 3625...}
    */
-  void drive_imus_scalers_set(std::vector<double> scales);
+  void drive_imus_scalers_set(std::vector<double> imu_values_after_3600);
 
   /*
-   * Returns the scaling factor for all IMUs.
+   * Returns the imu value after a 3600 degree turn that produces each imu's current scale.
    */
   std::map<int, double> drive_imus_scalers_get();
 
