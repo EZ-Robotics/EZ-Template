@@ -3583,6 +3583,11 @@ class Drive {
   void odom_tracking_set(std::function<void(void)> tracking_task);
 
  private:
+  // Grants the host test suite (test/) access to private state and task
+  // bodies (e.g. ez_auto_task(), pp_task()) so motions can be driven and
+  // asserted on directly, since pros::Task never actually runs them here.
+  friend struct DriveTestAccess;
+
   /**
    * Guards state shared between the ez_auto task and the public setters.
    * Recursive so nested public calls and user callbacks that call setters are safe.

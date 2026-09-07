@@ -15,3 +15,8 @@ temp.log
 temp.errors
 *.ini
 .d/
+
+# Host test binary
+test/run_tests
+test/run_tests.exe
+test/run_tests.pdb
