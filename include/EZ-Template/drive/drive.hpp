@@ -690,51 +690,6 @@ class Drive {
   void odom_reset();
 
   /**
-   * Flips the X axis.
-   *
-   * \param flip
-   *        true means left is positive x, false means right is positive x
-   */
-  void odom_x_flip(bool flip = true);
-
-  /**
-   * Checks if X axis is flipped.
-   *
-   * True means left is positive X, false means right is positive X.
-   */
-  bool odom_x_direction_get();
-
-  /**
-   * Flips the Y axis.
-   *
-   * \param flip
-   *        true means down is positive y, false means up is positive y
-   */
-  void odom_y_flip(bool flip = true);
-
-  /**
-   * Checks if Y axis is flipped.
-   *
-   * True means down is positive Y, false means up is positive Y.
-   */
-  bool odom_y_direction_get();
-
-  /**
-   * Flips the rotation axis.
-   *
-   * \param flip
-   *        true means counterclockwise is positive, false means clockwise is positive
-   */
-  void odom_theta_flip(bool flip = true);
-
-  /**
-   * Checks if the rotation axis is flipped.
-   *
-   * True means counterclockwise is positive, false means clockwise is positive.
-   */
-  bool odom_theta_direction_get();
-
-  /**
    * Sets a new dlead.
    *
    * Dlead is a proportional value of how much to make the robot curve during boomerang motions.
@@ -3643,9 +3598,6 @@ class Drive {
   bool imu_only_imu_warning_shown = false;
 
   bool is_swing_slew_enabled(e_swing type, double target, double current);
-  // Converts a user-facing swing side to the internal side (mirrored when theta is flipped).
-  e_swing swing_type_internal(e_swing type);
-  // Runs the swing base with already-internal-frame type/target.  Does not flip.
   void swing_set_internal(e_swing type, double target, int speed, int opposite_speed, e_angle_behavior behavior, bool slew_on);
   bool slew_reenables_when_max_speed_changes = true;
   int slew_min_when_it_enabled = 0;
@@ -3662,14 +3614,7 @@ class Drive {
   pose odom_start = {0.0, 0.0, 0.0};
   pose odom_target_start = {0.0, 0.0, 0.0};
   pose turn_to_point_target = {0.0, 0.0, 0.0};
-  bool y_flipped = false;
-  bool x_flipped = false;
-  bool theta_flipped = false;
-  double flip_angle_target(double target);
-  // Runs the turn base with an already-internal-frame target.  Does not flip.
   void turn_set_internal(double target, int speed, e_angle_behavior behavior, bool slew_on);
-  // The current heading target expressed in the user's frame (undoes the internal flip).
-  double heading_target_user_frame();
   double odom_imu_start = 0.0;
   int past_target = 0;
   double SPACING = 0.5;
@@ -3703,9 +3648,6 @@ class Drive {
   e_angle_behavior default_turn_type = raw;
   e_angle_behavior default_odom_type = shortest;
   bool turn_biased_left = false;
-  std::vector<odom> set_odoms_direction(std::vector<odom> inputs);
-  odom set_odom_direction(odom input);
-  pose flip_pose(pose input);
   bool odom_tracker_left_enabled = false;
   bool odom_tracker_right_enabled = false;
   bool odom_tracker_front_enabled = false;

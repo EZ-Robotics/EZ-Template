@@ -251,12 +251,12 @@ void Drive::wait_until_drive(double target) {
 
 // Function to wait until a certain position is reached.  Wrapper for exit condition.
 void Drive::wait_until_turn_swing(double target) {
-  // Flip into the internal frame and resolve using the motion's own behavior
-  target = new_turn_target_compute(flip_angle_target(target), drive_angle_get(), current_angle_behavior);
+  // Resolve using the motion's own behavior
+  target = new_turn_target_compute(target, drive_angle_get(), current_angle_behavior);
   wait_until_turn_swing_internal(target);
 }
 
-// Expects an already-resolved, internal-frame absolute target.  Does not flip or re-resolve behavior.
+// Expects an already-resolved absolute target.  Does not re-resolve behavior.
 void Drive::wait_until_turn_swing_internal(double target) {
   // Make sure mode is correct
   if (!(mode == TURN || mode == SWING || mode == TURN_TO_POINT)) {

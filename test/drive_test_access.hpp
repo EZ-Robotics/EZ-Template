@@ -35,7 +35,6 @@ struct DriveTestAccess {
   static bool is_swing_slew_enabled(Drive& d, e_swing type, double target, double current) {
     return d.is_swing_slew_enabled(type, target, current);
   }
-  static e_swing swing_type_internal(Drive& d, e_swing type) { return d.swing_type_internal(type); }
 
   static double get_this_imu(Drive& d, pros::Imu* imu) { return d.get_this_imu(imu); }
 };

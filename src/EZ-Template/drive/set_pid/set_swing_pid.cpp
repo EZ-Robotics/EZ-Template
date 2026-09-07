@@ -83,19 +83,10 @@ void Drive::slew_swing_forward_set(bool slew_on) { global_forward_swing_slew_ena
 bool Drive::slew_swing_forward_get() { return global_forward_swing_slew_enabled; }
 void Drive::slew_swing_backward_set(bool slew_on) { global_backward_swing_slew_enabled = slew_on; }
 bool Drive::slew_swing_backward_get() { return global_backward_swing_slew_enabled; }
-// Converts a user-facing swing side to the internal side (mirrored when theta is flipped)
-e_swing Drive::swing_type_internal(e_swing type) {
-  if (odom_theta_direction_get())
-    return type == ez::LEFT_SWING ? ez::RIGHT_SWING : ez::LEFT_SWING;
-  return type;
-}
-
 // Checks if slew is globally enabled or not
 bool Drive::is_swing_slew_enabled(e_swing type, double target, double current) {
-  e_swing internal_type = swing_type_internal(type);
-  double internal_target = flip_angle_target(target);
-  int side = internal_type == ez::LEFT_SWING ? 1 : -1;
-  int direction = util::sgn((internal_target - current) * side);
+  int side = type == ez::LEFT_SWING ? 1 : -1;
+  int direction = util::sgn((target - current) * side);
   return direction == 1 ? slew_swing_forward_get() : slew_swing_backward_get();
 }
 
@@ -118,7 +109,7 @@ void Drive::pid_swing_set(e_swing type, okapi::QAngle p_target, int speed) {
 // Relative
 void Drive::pid_swing_relative_set(e_swing type, double target, int speed) {
   // Figure out if going forward or backward
-  double absolute_heading = target + heading_target_user_frame();
+  double absolute_heading = target + headingPID.target_get();
   bool slew_on = is_swing_slew_enabled(type, absolute_heading, drive_angle_get());
   pid_swing_relative_set(type, target, speed, 0, pid_swing_behavior_get(), slew_on);
 }
@@ -142,7 +133,7 @@ void Drive::pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, e_ang
 // Relative
 void Drive::pid_swing_relative_set(e_swing type, double target, int speed, e_angle_behavior behavior) {
   // Figure out if going forward or backward
-  double absolute_heading = target + heading_target_user_frame();
+  double absolute_heading = target + headingPID.target_get();
   bool slew_on = is_swing_slew_enabled(type, absolute_heading, drive_angle_get());
   pid_swing_relative_set(type, target, speed, 0, behavior, slew_on);
 }
@@ -166,7 +157,7 @@ void Drive::pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, int o
 }
 // Relative
 void Drive::pid_swing_relative_set(e_swing type, double target, int speed, int opposite_speed) {
-  double absolute_heading = target + heading_target_user_frame();
+  double absolute_heading = target + headingPID.target_get();
   bool slew_on = is_swing_slew_enabled(type, absolute_heading, drive_angle_get());
   pid_swing_relative_set(type, target, speed, opposite_speed, pid_swing_behavior_get(), slew_on);
 }
@@ -209,7 +200,7 @@ void Drive::pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, int o
 }
 // Relative
 void Drive::pid_swing_relative_set(e_swing type, double target, int speed, int opposite_speed, e_angle_behavior behavior) {
-  double absolute_heading = target + heading_target_user_frame();
+  double absolute_heading = target + headingPID.target_get();
   bool slew_on = is_swing_slew_enabled(type, absolute_heading, drive_angle_get());
   pid_swing_relative_set(type, target, speed, opposite_speed, behavior, slew_on);
 }
@@ -232,7 +223,7 @@ void Drive::pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, int o
 // Relative
 void Drive::pid_swing_relative_set(e_swing type, double target, int speed, int opposite_speed, bool slew_on) {
   // Compute absolute target by adding to current heading
-  double absolute_target = heading_target_user_frame() + target;
+  double absolute_target = headingPID.target_get() + target;
   if (print_toggle) printf("Relative ");
   pid_swing_set(type, absolute_target, speed, opposite_speed, pid_swing_behavior_get(), slew_on);
 }
@@ -255,7 +246,7 @@ void Drive::pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, e_ang
 // Relative
 void Drive::pid_swing_relative_set(e_swing type, double target, int speed, e_angle_behavior behavior, bool slew_on) {
   // Compute absolute target by adding to current heading
-  double absolute_target = heading_target_user_frame() + target;
+  double absolute_target = headingPID.target_get() + target;
   if (print_toggle) printf("Relative ");
   pid_swing_set(type, absolute_target, speed, 0, behavior, slew_on);
 }
@@ -275,7 +266,7 @@ void Drive::pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, int o
 // Relative
 void Drive::pid_swing_relative_set(e_swing type, double target, int speed, int opposite_speed, e_angle_behavior behavior, bool slew_on) {
   // Compute absolute target by adding to current heading
-  double absolute_target = heading_target_user_frame() + target;
+  double absolute_target = headingPID.target_get() + target;
   if (print_toggle) printf("Relative ");
   pid_swing_set(type, absolute_target, speed, opposite_speed, behavior, slew_on);
 }
@@ -288,7 +279,7 @@ void Drive::pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int spe
 // Swing set base
 /////
 void Drive::pid_swing_set(e_swing type, double target, int speed, int opposite_speed, e_angle_behavior behavior, bool slew_on) {
-  swing_set_internal(swing_type_internal(type), flip_angle_target(target), speed, opposite_speed, behavior, slew_on);
+  swing_set_internal(type, target, speed, opposite_speed, behavior, slew_on);
 }
 
 /////

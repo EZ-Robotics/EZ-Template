@@ -18,35 +18,6 @@ void Drive::odom_path_print() {
 }
 void Drive::pid_odom_behavior_set(ez::e_angle_behavior behavior) { default_odom_type = behavior; }
 ez::e_angle_behavior Drive::pid_odom_behavior_get() { return default_odom_type; }
-// Flip all inputs so it works internally
-pose Drive::flip_pose(pose input) {
-  int flip_x = x_flipped ? -1 : 1;
-  int flip_y = y_flipped ? -1 : 1;
-
-  pose new_pose = input;
-  new_pose.x *= flip_x;
-  new_pose.y *= flip_y;
-  if (new_pose.theta != ANGLE_NOT_SET)
-    new_pose.theta = flip_angle_target(new_pose.theta);
-
-  return new_pose;
-}
-std::vector<odom> Drive::set_odoms_direction(std::vector<odom> inputs) {
-  std::vector<odom> output;
-
-  for (std::size_t i = 0; i < inputs.size(); i++) {
-    pose new_pose = flip_pose(inputs[i].target);
-    output.push_back({new_pose,
-                      inputs[i].drive_direction,
-                      inputs[i].max_xy_speed,
-                      inputs[i].turn_behavior});
-  }
-
-  return output;
-}
-odom Drive::set_odom_direction(odom input) {
-  return set_odoms_direction({input})[0];
-}
 void Drive::pid_odom_angular_constants_set(double p, double i, double d, double p_start_i) {
   odom_angularPID.constants_set(p, i, d, p_start_i);
 }
@@ -75,12 +46,6 @@ std::vector<double> Drive::odom_path_smooth_constants_get() {
   return {odom_smooth_weight_smooth, odom_smooth_weight_data, odom_smooth_tolerance};
 }
 
-void Drive::odom_x_flip(bool flip) { x_flipped = flip; }
-bool Drive::odom_x_direction_get() { return x_flipped; }
-void Drive::odom_y_flip(bool flip) { y_flipped = flip; }
-bool Drive::odom_y_direction_get() { return y_flipped; }
-void Drive::odom_theta_flip(bool flip) { theta_flipped = flip; }
-bool Drive::odom_theta_direction_get() { return theta_flipped; }
 void Drive::odom_boomerang_dlead_set(double input) { dlead = input; }
 double Drive::odom_boomerang_dlead_get() { return dlead; }
 void Drive::odom_boomerang_distance_set(double distance) { max_boomerang_distance = distance; }
@@ -261,7 +226,7 @@ void Drive::pid_odom_injected_pp_set(std::vector<ez::odom> imovements, bool slew
   rightPID.motion_reset(drive_sensor_right());
 
   if (print_toggle) printf("Injected ");
-  std::vector<odom> input_path = inject_points(set_odoms_direction(imovements));
+  std::vector<odom> input_path = inject_points(imovements);
   odom_turn_bias_enable(true);
   current_slew_on = slew_on;
   slew_min_when_it_enabled = 0;
@@ -301,7 +266,7 @@ void Drive::pid_odom_smooth_pp_set(std::vector<odom> imovements, bool slew_on) {
   rightPID.motion_reset(drive_sensor_right());
 
   if (print_toggle) printf("Smooth Injected ");
-  std::vector<odom> input_path = smooth_path(inject_points(set_odoms_direction(imovements)), odom_smooth_weight_smooth, odom_smooth_weight_data, odom_smooth_tolerance);
+  std::vector<odom> input_path = smooth_path(inject_points(imovements), odom_smooth_weight_smooth, odom_smooth_weight_data, odom_smooth_tolerance);
   odom_turn_bias_enable(true);
   current_slew_on = slew_on;
   slew_min_when_it_enabled = 0;
@@ -358,7 +323,7 @@ void Drive::pid_odom_pp_set(std::vector<odom> imovements, bool slew_on) {
   leftPID.motion_reset(drive_sensor_left());
   rightPID.motion_reset(drive_sensor_right());
 
-  std::vector<odom> input = set_odoms_direction(imovements);
+  std::vector<odom> input = imovements;
   input.insert(input.begin(), {{{odom_x_get(), odom_y_get(), ANGLE_NOT_SET}, imovements[0].drive_direction, imovements[0].max_xy_speed}});
 
   int t = 0;
@@ -409,8 +374,6 @@ void Drive::pid_odom_ptp_set(odom imovement, bool slew_on) {
   std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
 
   interfered = false;
-
-  imovement = set_odom_direction(imovement);
 
   odom_second_to_last = odom_pose_get();
   odom_target_start = imovement.target;
