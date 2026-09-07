@@ -21,13 +21,15 @@ void Drive::ez_auto_task() {
       // Run odom
       ez_tracking_task();
 
-      // Stop commanding the drive whenever the competition state changes (auton -> disabled ->
-      // driver) or while disabled, so a motion cut off by field control cannot resume on its own.
-      uint8_t comp_status = pros::competition::get_status();
-      if (pros::competition::is_disabled() || comp_status != last_comp_status) {
+      // Stop commanding the drive while disabled, and once when autonomous ends, so a motion
+      // that field control cut off cannot resume on its own when driver control starts.
+      // Entering autonomous must NOT trigger this: the autonomous task's first setter can run
+      // before this pass sees the status change, and disabling here would cancel that motion.
+      bool autonomous_now = pros::competition::is_autonomous();
+      if (pros::competition::is_disabled() || (last_was_autonomous && !autonomous_now)) {
         if (drive_mode_get() != DISABLE) drive_mode_set(DISABLE, false);
       }
-      last_comp_status = comp_status;
+      last_was_autonomous = autonomous_now;
 
       // Autonomous PID
       switch (drive_mode_get()) {
