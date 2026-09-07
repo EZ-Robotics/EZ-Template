@@ -352,12 +352,6 @@ void Drive::drive_sensor_reset() {
   left_activebrakePID.target_set(0.0);
   right_activebrakePID.target_set(0.0);
 
-  // Reset odom stuff
-  h_last = 0.0;
-  l_last = 0.0;
-  r_last = 0.0;
-  t_last = 0.0;
-
   // Reset sensors
   left_motors.front().tare_position();
   right_motors.front().tare_position();
@@ -368,12 +362,13 @@ void Drive::drive_sensor_reset() {
   if (is_tracker == DRIVE_ADI_ENCODER) {
     left_tracker.reset();
     right_tracker.reset();
-    return;
   } else if (is_tracker == DRIVE_ROTATION) {
     left_rotation.reset_position();
     right_rotation.reset_position();
-    return;
   }
+
+  // Reset odom stuff to the freshly-zeroed sensor values
+  tracking_prime();
 }
 
 int Drive::drive_sensor_right_raw() {
@@ -421,7 +416,7 @@ void Drive::drive_imu_reset(double new_heading) {
     good_imus[i]->set_rotation(new_heading / scale);
   }
   angle_rad = util::to_rad(new_heading);
-  t_last = angle_rad;
+  t_last = -angle_rad;
 }
 double Drive::get_this_imu(pros::Imu* imu) { return imu->get_rotation() * imu_scale_map[imu->get_port()]; }
 
