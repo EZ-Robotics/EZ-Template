@@ -116,8 +116,8 @@ void Drive::turn_pid_task() {
   // Clip gyroPID to max speed
   double gyro_out = util::clamp(turnPID.output, slew_turn.output(), -slew_turn.output());
 
-  // Clip the speed of the turn when the robot is within StartI, only do this when target is larger then StartI
-  if (turnPID.constants.ki != 0 && (fabs(turnPID.target_get()) > turnPID.constants.start_i && fabs(turnPID.error) < turnPID.constants.start_i)) {
+  // Clip the speed of the turn when the robot is within StartI, only do this when the turn is larger then StartI
+  if (turnPID.constants.ki != 0 && (fabs(chain_target_start - chain_sensor_start) > turnPID.constants.start_i && fabs(turnPID.error) < turnPID.constants.start_i)) {
     if (pid_turn_min_get() != 0)
       gyro_out = util::clamp(gyro_out, pid_turn_min_get(), -pid_turn_min_get());
   }
@@ -141,8 +141,8 @@ void Drive::swing_pid_task() {
   // Clip swingPID to max speed
   double swing_out = util::clamp(swingPID.output, slew_swing.output(), -slew_swing.output());
 
-  // Clip the speed of the turn when the robot is within StartI, only do this when target is larger then StartI
-  if (swingPID.constants.ki != 0 && (fabs(swingPID.target_get()) > swingPID.constants.start_i && fabs(swingPID.error) < swingPID.constants.start_i)) {
+  // Clip the speed of the swing when the robot is within StartI, only do this when the swing is larger then StartI
+  if (swingPID.constants.ki != 0 && (fabs(chain_target_start - chain_sensor_start) > swingPID.constants.start_i && fabs(swingPID.error) < swingPID.constants.start_i)) {
     if (pid_swing_min_get() != 0)
       swing_out = util::clamp(swing_out, pid_swing_min_get(), -pid_swing_min_get());
   }
