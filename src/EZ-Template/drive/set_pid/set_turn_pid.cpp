@@ -37,6 +37,9 @@ double Drive::flip_angle_target(double target) {
   return new_target;
 }
 
+// The current heading target expressed in the user's frame (undoes the internal flip)
+double Drive::heading_target_user_frame() { return flip_angle_target(headingPID.target_get()); }
+
 /////
 // Set turn PID basic wrappers
 /////
@@ -103,8 +106,8 @@ void Drive::pid_turn_set(okapi::QAngle p_target, int speed, e_angle_behavior beh
 }
 // Relative
 void Drive::pid_turn_relative_set(double target, int speed, e_angle_behavior behavior, bool slew_on) {
-  // Compute absolute target by adding to current heading
-  double absolute_target = headingPID.target_get() + target;
+  // Compute absolute target by adding to current heading (both in the user's frame)
+  double absolute_target = heading_target_user_frame() + target;
   if (print_toggle) printf("Relative ");
   pid_turn_set(absolute_target, speed, behavior, slew_on);
 }
@@ -117,6 +120,13 @@ void Drive::pid_turn_relative_set(okapi::QAngle p_target, int speed, e_angle_beh
 // Turn to angle base
 /////
 void Drive::pid_turn_set(double target, int speed, e_angle_behavior behavior, bool slew_on) {
+  turn_set_internal(flip_angle_target(target), speed, behavior, slew_on);
+}
+
+/////
+// Turn to angle internal
+/////
+void Drive::turn_set_internal(double target, int speed, e_angle_behavior behavior, bool slew_on) {
   std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
 
   interfered = false;
@@ -128,7 +138,6 @@ void Drive::pid_turn_set(double target, int speed, e_angle_behavior behavior, bo
   current_angle_behavior = behavior;
 
   // Compute new turn target based on new angle
-  target = flip_angle_target(target);
   target = new_turn_target_compute(target, drive_angle_get(), current_angle_behavior);
 
   // Print targets
@@ -199,7 +208,7 @@ void Drive::pid_turn_set(pose itarget, drive_directions dir, int speed, e_angle_
   // ANGLE_ADDER_WAS_RESET = false;
 
   if (print_toggle) printf("Turn to Point PID Started... Target Point: (%.2f, %.2f) \n", itarget.x, itarget.y);
-  pid_turn_set(target, speed, behavior, slew_on);
+  turn_set_internal(target, speed, behavior, slew_on);
 
   drive_mode_set(TURN_TO_POINT);
 }
