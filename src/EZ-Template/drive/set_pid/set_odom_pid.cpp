@@ -377,15 +377,15 @@ void Drive::raw_pid_odom_pp_set(std::vector<odom> imovements, bool slew_on) {
   // Set new target
   pp_movements = imovements;
 
-  raw_pid_odom_ptp_set(pp_movements[pp_index], slew_on);
-
   // This is used for wait_until and slew
   l_start = drive_sensor_left();
   r_start = drive_sensor_right();
 
+  raw_pid_odom_ptp_set(pp_movements[pp_index], slew_on);
+
   // Initialize slew
   int dir = current_drive_direction == REV ? -1 : 1;  // If we're going backwards, add a -1
-  double dist_to_target = util::distance_to_point(pp_movements.end()->target, odom_pose_get()) * dir;
+  double dist_to_target = util::distance_to_point(pp_movements.back().target, odom_pose_get()) * dir;
   slew_left.initialize(slew_on, max_speed, dist_to_target + l_start, l_start);
   slew_right.initialize(slew_on, max_speed, dist_to_target + r_start, r_start);
 
