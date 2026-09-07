@@ -68,6 +68,8 @@ bool Drive::pid_tuner_print_brain_enabled() { return pid_tuner_lcd_b; }
 
 // Enable PID Tuner
 void Drive::pid_tuner_enable() {
+  if (pid_tuner_on) return;
+
   pid_tuner_brain_init();
 
   if (pid_tuner_full_enabled())
@@ -85,6 +87,8 @@ void Drive::pid_tuner_enable() {
 
 // Disable PID Tuner
 void Drive::pid_tuner_disable() {
+  if (!pid_tuner_on) return;
+
   pid_tuner_on = false;
   opcontrol_curve_buttons_toggle(last_controller_curve_state);
   if (last_auton_selector_state) {

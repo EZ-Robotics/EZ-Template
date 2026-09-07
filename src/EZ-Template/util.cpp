@@ -94,7 +94,7 @@ void screen_print(std::string text, int line) {
   for (auto i : texts) {
     if (CurrAutoLine > 7) {
       screen_lines_clear();
-      screen_line_set(line, "Out of Bounds. Print Line is too far down");
+      screen_line_set(7, "Out of Bounds. Print Line is too far down");
       return;
     }
     screen_line_clear(CurrAutoLine);
