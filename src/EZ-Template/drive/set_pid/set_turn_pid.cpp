@@ -30,16 +30,6 @@ ez::e_angle_behavior Drive::pid_turn_behavior_get() { return default_turn_type; 
 void Drive::slew_turn_set(bool slew_on) { global_turn_slew_enabled = slew_on; }
 bool Drive::slew_turn_get() { return global_turn_slew_enabled; }
 
-double Drive::flip_angle_target(double target) {
-  int flip_theta = theta_flipped ? -1 : 1;
-  double new_target = target;
-  new_target *= flip_theta;
-  return new_target;
-}
-
-// The current heading target expressed in the user's frame (undoes the internal flip)
-double Drive::heading_target_user_frame() { return flip_angle_target(headingPID.target_get()); }
-
 /////
 // Set turn PID basic wrappers
 /////
@@ -107,7 +97,7 @@ void Drive::pid_turn_set(okapi::QAngle p_target, int speed, e_angle_behavior beh
 // Relative
 void Drive::pid_turn_relative_set(double target, int speed, e_angle_behavior behavior, bool slew_on) {
   // Compute absolute target by adding to current heading (both in the user's frame)
-  double absolute_target = heading_target_user_frame() + target;
+  double absolute_target = headingPID.target_get() + target;
   if (print_toggle) printf("Relative ");
   pid_turn_set(absolute_target, speed, behavior, slew_on);
 }
@@ -120,7 +110,7 @@ void Drive::pid_turn_relative_set(okapi::QAngle p_target, int speed, e_angle_beh
 // Turn to angle base
 /////
 void Drive::pid_turn_set(double target, int speed, e_angle_behavior behavior, bool slew_on) {
-  turn_set_internal(flip_angle_target(target), speed, behavior, slew_on);
+  turn_set_internal(target, speed, behavior, slew_on);
 }
 
 /////
@@ -192,7 +182,6 @@ void Drive::pid_turn_set(united_pose p_itarget, drive_directions dir, int speed,
 void Drive::pid_turn_set(pose itarget, drive_directions dir, int speed, e_angle_behavior behavior, bool slew_on) {
   std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
 
-  itarget = flip_pose(itarget);
   odom_imu_start = drive_angle_get();
 
   current_drive_direction = dir;
