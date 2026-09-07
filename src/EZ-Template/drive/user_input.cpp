@@ -97,11 +97,11 @@ void Drive::opcontrol_curve_buttons_right_set(pros::controller_digital_e_t decre
 }
 
 std::vector<pros::controller_digital_e_t> Drive::opcontrol_curve_buttons_left_get() {
-  return {l_decrease_.button, r_decrease_.button};
+  return {l_decrease_.button, l_increase_.button};
 }
 
 std::vector<pros::controller_digital_e_t> Drive::opcontrol_curve_buttons_right_get() {
-  return {r_decrease_.button, r_decrease_.button};
+  return {r_decrease_.button, r_increase_.button};
 }
 
 // Increase / decrease left and right curves
@@ -282,8 +282,8 @@ void Drive::opcontrol_joystick_threshold_iterate(int l_stick, int r_stick) {
   r_out *= (opcontrol_speed_max / 127.0);
 
   // Ensure output is within speed limit
-  l_out = l_out > opcontrol_speed_max ? opcontrol_speed_max : l_out;
-  r_out = r_out > opcontrol_speed_max ? opcontrol_speed_max : r_out;
+  l_out = util::clamp(l_out, opcontrol_speed_max);
+  r_out = util::clamp(r_out, opcontrol_speed_max);
 
   drive_set(l_out, r_out);
 }
@@ -321,7 +321,7 @@ void Drive::opcontrol_arcade_standard(e_type stick_type) {
   // Toggle for controller curve
   opcontrol_curve_buttons_iterate();
 
-  int fwd_stick, turn_stick;
+  int fwd_stick = 0, turn_stick = 0;
   // Check arcade type (split vs single, normal vs flipped)
   if (stick_type == SPLIT) {
     // Put the joysticks through the curve function
@@ -345,7 +345,7 @@ void Drive::opcontrol_arcade_flipped(e_type stick_type) {
   // Toggle for controller curve
   opcontrol_curve_buttons_iterate();
 
-  int turn_stick, fwd_stick;
+  int turn_stick = 0, fwd_stick = 0;
   // Check arcade type (split vs single, normal vs flipped)
   if (stick_type == SPLIT) {
     // Put the joysticks through the curve function
