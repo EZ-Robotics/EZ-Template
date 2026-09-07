@@ -199,6 +199,7 @@ void Drive::ptp_task() {
   xy_out = util::clamp(xy_out, max_slew_out);
   // double scale = cos(util::to_rad(current_a_odomPID.error)) / odom_turn_bias_amount;
   double scale = 1.0 - ((1.0 - cos(util::to_rad(current_a_odomPID.error))) / odom_turn_bias_amount);  // 1 - ((1-0.7)/0.75)
+  scale = util::clamp(scale, 1.0, 0.0);
   if (odom_turn_bias_enabled())
     xy_out *= scale;
   double a_out = current_a_odomPID.output;
@@ -260,7 +261,7 @@ void Drive::boomerang_task() {
 
   if (odom_target.x != temp.x || odom_target.y != temp.y) {
     bool slew_on = slew_left.enabled() || slew_right.enabled() ? true : false;
-    raw_pid_odom_ptp_set({temp, pp_movements[target_index].drive_direction, pp_movements[target_index].max_xy_speed}, slew_on);
+    raw_pid_odom_ptp_set({temp, pp_movements[target_index].drive_direction, pp_movements[target_index].max_xy_speed}, slew_on, true);
   }
 
   // printf("cur(%.2f, %.2f, %.2f)   tar(%.2f, %.2f, %.2f)   h %.2f  \n", odom_x_get(), odom_y_get(), odom_theta_get(), temp.x, temp.y, temp.theta, h);
@@ -274,7 +275,7 @@ void Drive::pp_task() {
       pp_index = pp_index >= pp_movements.size() - 1 ? pp_index : pp_index + 1;
       bool slew_on = slew_left.enabled() || slew_right.enabled() ? true : false;
       if (!current_slew_on) slew_on = false;
-      raw_pid_odom_ptp_set(pp_movements[pp_index], slew_on);
+      raw_pid_odom_ptp_set(pp_movements[pp_index], slew_on, pp_movements[pp_index].target.theta != ANGLE_NOT_SET);
     }
   }
 

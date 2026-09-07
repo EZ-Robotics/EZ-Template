@@ -774,9 +774,12 @@ class Drive {
    * A proportion of how prioritized turning is during odometry motions.
    *
    * Turning is prioritized so the robot "applies brakes" while turning.  Lower number means more braking.
+   * Values below 1 make the robot stop driving once turning has gone past a certain angle error, and the
+   * robot will never drive backwards to reach the point.  The internal scale factor is clamped to [0, 1].
+   * Non-positive values are rejected and the previous value is kept, since this is used as a divisor.
    *
    * \param bias
-   *        a number between 0 and 1
+   *        a positive number, default is 1.375
    */
   void odom_turn_bias_set(double bias);
 
@@ -3609,7 +3612,7 @@ class Drive {
   void raw_pid_odom_pp_set(std::vector<odom> imovements, bool slew_on);
   bool ptf1_running = false;
   std::vector<pose> find_point_to_face(pose current, pose target, drive_directions dir, bool set_global);
-  void raw_pid_odom_ptp_set(odom imovement, bool slew_on);
+  void raw_pid_odom_ptp_set(odom imovement, bool slew_on, bool is_boomerang);
   std::vector<odom> inject_points(std::vector<odom> imovements);
   std::vector<pose> point_to_face = {{0, 0, 0}, {0, 0, 0}};
   double turn_is_toleranced(double target, double current, double input, double longest, double shortest);
@@ -3620,6 +3623,7 @@ class Drive {
   double turn_right(double target, double current, bool print = false);
   bool imu_calibration_complete = false;
   uint8_t last_comp_status = 0;
+  int loading_bar_last_x = 0;
 
   // IMU watchdog state: every IMU ever constructed (never shrinks), and
   // per-port health tracking used by check_imu_task() to eject/re-add IMUs.

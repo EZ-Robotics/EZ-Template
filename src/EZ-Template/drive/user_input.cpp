@@ -4,6 +4,8 @@ License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
+#include <cstdlib>
+
 #include "EZ-Template/PID.hpp"
 #include "EZ-Template/drive/drive.hpp"
 #include "pros/misc.h"
@@ -33,10 +35,15 @@ void Drive::opcontrol_curve_sd_initialize() {
   FILE* l_usd_file_read;
   // If file exists...
   if ((l_usd_file_read = fopen("/usd/left_curve.txt", "r"))) {
-    char l_buf[5];
-    fread(l_buf, 1, 5, l_usd_file_read);
-    left_curve_scale = std::stof(l_buf);
+    char buf[32] = {0};
+    fread(buf, 1, sizeof(buf) - 1, l_usd_file_read);
     fclose(l_usd_file_read);
+    char* end = nullptr;
+    double parsed = strtod(buf, &end);
+    if (end != buf)
+      left_curve_scale = parsed;
+    else
+      printf("EZ-Template: couldn't parse /usd/left_curve.txt, keeping current curve\n");
   }
   // If file doesn't exist, create file
   else {
@@ -47,10 +54,15 @@ void Drive::opcontrol_curve_sd_initialize() {
   FILE* r_usd_file_read;
   // If file exists...
   if ((r_usd_file_read = fopen("/usd/right_curve.txt", "r"))) {
-    char l_buf[5];
-    fread(l_buf, 1, 5, r_usd_file_read);
-    right_curve_scale = std::stof(l_buf);
+    char buf[32] = {0};
+    fread(buf, 1, sizeof(buf) - 1, r_usd_file_read);
     fclose(r_usd_file_read);
+    char* end = nullptr;
+    double parsed = strtod(buf, &end);
+    if (end != buf)
+      right_curve_scale = parsed;
+    else
+      printf("EZ-Template: couldn't parse /usd/right_curve.txt, keeping current curve\n");
   }
   // If file doesn't exist, create file
   else {
@@ -97,11 +109,11 @@ void Drive::opcontrol_curve_buttons_right_set(pros::controller_digital_e_t decre
 }
 
 std::vector<pros::controller_digital_e_t> Drive::opcontrol_curve_buttons_left_get() {
-  return {l_decrease_.button, r_decrease_.button};
+  return {l_decrease_.button, l_increase_.button};
 }
 
 std::vector<pros::controller_digital_e_t> Drive::opcontrol_curve_buttons_right_get() {
-  return {r_decrease_.button, r_decrease_.button};
+  return {r_decrease_.button, r_increase_.button};
 }
 
 // Increase / decrease left and right curves
@@ -282,8 +294,8 @@ void Drive::opcontrol_joystick_threshold_iterate(int l_stick, int r_stick) {
   r_out *= (opcontrol_speed_max / 127.0);
 
   // Ensure output is within speed limit
-  l_out = l_out > opcontrol_speed_max ? opcontrol_speed_max : l_out;
-  r_out = r_out > opcontrol_speed_max ? opcontrol_speed_max : r_out;
+  l_out = util::clamp(l_out, opcontrol_speed_max);
+  r_out = util::clamp(r_out, opcontrol_speed_max);
 
   drive_set(l_out, r_out);
 }
@@ -321,7 +333,7 @@ void Drive::opcontrol_arcade_standard(e_type stick_type) {
   // Toggle for controller curve
   opcontrol_curve_buttons_iterate();
 
-  int fwd_stick, turn_stick;
+  int fwd_stick = 0, turn_stick = 0;
   // Check arcade type (split vs single, normal vs flipped)
   if (stick_type == SPLIT) {
     // Put the joysticks through the curve function
@@ -345,7 +357,7 @@ void Drive::opcontrol_arcade_flipped(e_type stick_type) {
   // Toggle for controller curve
   opcontrol_curve_buttons_iterate();
 
-  int turn_stick, fwd_stick;
+  int turn_stick = 0, fwd_stick = 0;
   // Check arcade type (split vs single, normal vs flipped)
   if (stick_type == SPLIT) {
     // Put the joysticks through the curve function
