@@ -246,14 +246,18 @@ void Drive::wait_until_drive(double target) {
 
 // Function to wait until a certain position is reached.  Wrapper for exit condition.
 void Drive::wait_until_turn_swing(double target) {
+  // Flip into the internal frame and resolve using the motion's own behavior
+  target = new_turn_target_compute(flip_angle_target(target), drive_angle_get(), current_angle_behavior);
+  wait_until_turn_swing_internal(target);
+}
+
+// Expects an already-resolved, internal-frame absolute target.  Does not flip or re-resolve behavior.
+void Drive::wait_until_turn_swing_internal(double target) {
   // Make sure mode is correct
   if (!(mode == TURN || mode == SWING || mode == TURN_TO_POINT)) {
     printf("Mode needs to be swing or turn!\n");
     return;
   }
-
-  // Create new target that is the shortest from current
-  target = new_turn_target_compute(target, drive_angle_get(), shortest);
 
   // Calculate error between current and target (target needs to be an in between position)
   double g_error = target - drive_angle_get();
@@ -438,7 +442,11 @@ void Drive::pid_wait_quick() {
   } else if (mode == POINT_TO_POINT) {
     pid_wait_until_point(odom_target_start);
     return;
-  } else if (!(mode == DRIVE || mode == TURN || mode == SWING || mode == TURN_TO_POINT)) {
+  } else if (mode == TURN || mode == SWING || mode == TURN_TO_POINT) {
+    // chain_target_start is already internal-frame and already behavior-resolved
+    wait_until_turn_swing_internal(chain_target_start);
+    return;
+  } else if (mode != DRIVE) {
     printf("Not in a valid drive mode!\n");
     return;
   }

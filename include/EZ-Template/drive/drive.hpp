@@ -3620,6 +3620,10 @@ class Drive {
   double turn_right(double target, double current, bool print = false);
   bool imu_calibration_complete = false;
   bool is_swing_slew_enabled(e_swing type, double target, double current);
+  // Converts a user-facing swing side to the internal side (mirrored when theta is flipped).
+  e_swing swing_type_internal(e_swing type);
+  // Runs the swing base with already-internal-frame type/target.  Does not flip.
+  void swing_set_internal(e_swing type, double target, int speed, int opposite_speed, e_angle_behavior behavior, bool slew_on);
   bool slew_reenables_when_max_speed_changes = true;
   int slew_min_when_it_enabled = 0;
   bool slew_will_enable_later = false;
@@ -3639,6 +3643,10 @@ class Drive {
   bool x_flipped = false;
   bool theta_flipped = false;
   double flip_angle_target(double target);
+  // Runs the turn base with an already-internal-frame target.  Does not flip.
+  void turn_set_internal(double target, int speed, e_angle_behavior behavior, bool slew_on);
+  // The current heading target expressed in the user's frame (undoes the internal flip).
+  double heading_target_user_frame();
   double odom_imu_start = 0.0;
   int past_target = 0;
   double SPACING = 0.5;
@@ -3734,6 +3742,8 @@ class Drive {
    */
   void wait_until_drive(double target);
   void wait_until_turn_swing(double target);
+  // Expects an already-resolved, internal-frame absolute target.  Does not flip or re-resolve behavior.
+  void wait_until_turn_swing_internal(double target);
 
   /**
    * Sets the chassis to voltage.
