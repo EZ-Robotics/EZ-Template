@@ -446,9 +446,20 @@ double Drive::drive_imu_accel_get() {
 
 void Drive::drive_imu_scaler_set(double scaler) {
   std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
+  if (imu == nullptr) {
+    if (all_imus.empty()) return;
+    imu_scale_map[all_imus.front()->get_port()] = scaler;
+    return;
+  }
   imu_scale_map[imu->get_port()] = scaler;
 }
-double Drive::drive_imu_scaler_get() { return imu_scale_map[imu->get_port()]; }
+double Drive::drive_imu_scaler_get() {
+  if (imu == nullptr) {
+    if (all_imus.empty()) return 1.0;
+    return imu_scale_map[all_imus.front()->get_port()];
+  }
+  return imu_scale_map[imu->get_port()];
+}
 
 void Drive::drive_imus_scalers_set(std::vector<double> scales) {
   std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
@@ -501,6 +512,7 @@ bool Drive::drive_imu_calibrate(bool run_loading_animation) {
     imu_stuck_passes.clear();
     imu_healthy_passes.clear();
     imu_only_imu_warning_shown = false;
+    good_imus = all_imus;
   }
 
   // No IMUs are calibrated yet, set them all to false
