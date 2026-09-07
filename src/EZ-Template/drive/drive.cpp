@@ -31,11 +31,13 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
   for (auto i : left_motor_ports) {
     pros::Motor temp((std::int8_t)abs(i));
     temp.set_reversed(util::reversed_active(i));
+    temp.set_encoder_units(pros::MotorUnits::counts);  // drive_tick_per_inch() assumes counts
     left_motors.push_back(temp);
   }
   for (auto i : right_motor_ports) {
     pros::Motor temp((std::int8_t)abs(i));
     temp.set_reversed(util::reversed_active(i));
+    temp.set_encoder_units(pros::MotorUnits::counts);  // drive_tick_per_inch() assumes counts
     right_motors.push_back(temp);
   }
 
@@ -46,7 +48,7 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
   WHEEL_DIAMETER = wheel_diameter;
   RATIO = ratio;
   CARTRIDGE = ticks;
-  TICK_PER_INCH = drive_tick_per_inch();
+  drive_tick_per_inch_compute();
 
   drive_defaults_set();
 }
@@ -67,11 +69,13 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
   for (auto i : left_motor_ports) {
     pros::Motor temp((std::int8_t)abs(i));
     temp.set_reversed(util::reversed_active(i));
+    temp.set_encoder_units(pros::MotorUnits::counts);  // drive_tick_per_inch() assumes counts
     left_motors.push_back(temp);
   }
   for (auto i : right_motor_ports) {
     pros::Motor temp((std::int8_t)abs(i));
     temp.set_reversed(util::reversed_active(i));
+    temp.set_encoder_units(pros::MotorUnits::counts);  // drive_tick_per_inch() assumes counts
     right_motors.push_back(temp);
   }
 
@@ -92,7 +96,7 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
   WHEEL_DIAMETER = wheel_diameter;
   RATIO = ratio;
   CARTRIDGE = ticks;
-  TICK_PER_INCH = drive_tick_per_inch();
+  drive_tick_per_inch_compute();
 
   drive_defaults_set();
 }
@@ -114,11 +118,13 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
   for (auto i : left_motor_ports) {
     pros::Motor temp(abs(i));
     temp.set_reversed(util::reversed_active(i));
+    temp.set_encoder_units(pros::MotorUnits::counts);  // drive_tick_per_inch() assumes counts
     left_motors.push_back(temp);
   }
   for (auto i : right_motor_ports) {
     pros::Motor temp(abs(i));
     temp.set_reversed(util::reversed_active(i));
+    temp.set_encoder_units(pros::MotorUnits::counts);  // drive_tick_per_inch() assumes counts
     right_motors.push_back(temp);
   }
 
@@ -129,7 +135,7 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
   WHEEL_DIAMETER = wheel_diameter;
   RATIO = ratio;
   CARTRIDGE = ticks;
-  TICK_PER_INCH = drive_tick_per_inch();
+  drive_tick_per_inch_compute();
 
   drive_defaults_set();
 }
@@ -151,11 +157,13 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
   for (auto i : left_motor_ports) {
     pros::Motor temp(abs(i));
     temp.set_reversed(util::reversed_active(i));
+    temp.set_encoder_units(pros::MotorUnits::counts);  // drive_tick_per_inch() assumes counts
     left_motors.push_back(temp);
   }
   for (auto i : right_motor_ports) {
     pros::Motor temp(abs(i));
     temp.set_reversed(util::reversed_active(i));
+    temp.set_encoder_units(pros::MotorUnits::counts);  // drive_tick_per_inch() assumes counts
     right_motors.push_back(temp);
   }
 
@@ -166,7 +174,7 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
   WHEEL_DIAMETER = wheel_diameter;
   RATIO = ratio;
   CARTRIDGE = ticks;
-  TICK_PER_INCH = drive_tick_per_inch();
+  drive_tick_per_inch_compute();
 
   drive_defaults_set();
 }
@@ -190,11 +198,13 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
   for (auto i : left_motor_ports) {
     pros::Motor temp(abs(i));
     temp.set_reversed(util::reversed_active(i));
+    temp.set_encoder_units(pros::MotorUnits::counts);  // drive_tick_per_inch() assumes counts
     left_motors.push_back(temp);
   }
   for (auto i : right_motor_ports) {
     pros::Motor temp(abs(i));
     temp.set_reversed(util::reversed_active(i));
+    temp.set_encoder_units(pros::MotorUnits::counts);  // drive_tick_per_inch() assumes counts
     right_motors.push_back(temp);
   }
 
@@ -205,7 +215,7 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
   WHEEL_DIAMETER = wheel_diameter;
   RATIO = ratio;
   CARTRIDGE = 36000;
-  TICK_PER_INCH = drive_tick_per_inch();
+  drive_tick_per_inch_compute();
 
   drive_defaults_set();
 }
@@ -305,6 +315,10 @@ double Drive::drive_tick_per_inch() {
   if (is_tracker == ODOM_TRACKER)
     return odom_tracker_right->ticks_per_inch();
 
+  return TICK_PER_INCH;
+}
+
+void Drive::drive_tick_per_inch_compute() {
   CIRCUMFERENCE = WHEEL_DIAMETER * M_PI;
 
   if (is_tracker == DRIVE_ADI_ENCODER || is_tracker == DRIVE_ROTATION)
@@ -313,12 +327,17 @@ double Drive::drive_tick_per_inch() {
     TICK_PER_REV = (50.0 * (3600.0 / CARTRIDGE)) * RATIO;  // with no cart, the encoder reads 50 counts per rotation
 
   TICK_PER_INCH = (TICK_PER_REV / CIRCUMFERENCE);
-  return TICK_PER_INCH;
 }
 
-void Drive::drive_ratio_set(double ratio) { RATIO = ratio; }
+void Drive::drive_ratio_set(double ratio) {
+  RATIO = ratio;
+  drive_tick_per_inch_compute();
+}
 double Drive::drive_ratio_get() { return RATIO; }
-void Drive::drive_rpm_set(double rpm) { CARTRIDGE = rpm; }
+void Drive::drive_rpm_set(double rpm) {
+  CARTRIDGE = rpm;
+  drive_tick_per_inch_compute();
+}
 double Drive::drive_rpm_get() { return CARTRIDGE; }
 
 void Drive::private_drive_set(int left, int right) {

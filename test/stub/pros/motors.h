@@ -10,4 +10,11 @@ enum motor_brake_mode_e_t {
   E_MOTOR_BRAKE_HOLD = 2,
 };
 
+enum class MotorEncoderUnits {
+  degrees = 0,
+  rotations = 1,
+  counts = 2,
+};
+using MotorUnits = MotorEncoderUnits;
+
 }  // namespace pros
