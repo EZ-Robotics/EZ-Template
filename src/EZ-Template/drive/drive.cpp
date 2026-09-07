@@ -25,6 +25,7 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
       right_rotation(-1),
       ez_auto([this] { this->ez_auto_task(); }) {
   is_tracker = DRIVE_INTEGRATED;
+  last_comp_status = pros::competition::get_status();
 
   // Set ports to a global vector
   for (auto i : left_motor_ports) {
@@ -60,6 +61,7 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
       right_rotation(-1),
       ez_auto([this] { this->ez_auto_task(); }) {
   is_tracker = DRIVE_INTEGRATED;
+  last_comp_status = pros::competition::get_status();
 
   // Set ports to a global vector
   for (auto i : left_motor_ports) {
@@ -106,6 +108,7 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
       right_rotation(-1),
       ez_auto([this] { this->ez_auto_task(); }) {
   is_tracker = DRIVE_ADI_ENCODER;
+  last_comp_status = pros::competition::get_status();
 
   // Set ports to a global vector
   for (auto i : left_motor_ports) {
@@ -142,6 +145,7 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
       right_rotation(-1),
       ez_auto([this] { this->ez_auto_task(); }) {
   is_tracker = DRIVE_ADI_ENCODER;
+  last_comp_status = pros::competition::get_status();
 
   // Set ports to a global vector
   for (auto i : left_motor_ports) {
@@ -178,6 +182,7 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
       right_rotation(abs(right_rotation_port)),
       ez_auto([this] { this->ez_auto_task(); }) {
   is_tracker = DRIVE_ROTATION;
+  last_comp_status = pros::competition::get_status();
   left_rotation.set_reversed(util::reversed_active(left_rotation_port));
   right_rotation.set_reversed(util::reversed_active(right_rotation_port));
 
