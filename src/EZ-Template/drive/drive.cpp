@@ -4,6 +4,7 @@ License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
+#include <algorithm>
 #include <cmath>
 #include <list>
 
@@ -38,6 +39,7 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
   }
 
   good_imus.push_back(imu);
+  all_imus.push_back(imu);
   drive_imu_scaler_set(1);
   // Set constants for tick_per_inch calculation
   WHEEL_DIAMETER = wheel_diameter;
@@ -74,10 +76,12 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
   // Set all IMUs
   std::vector<double> imu_scale_values = {};
   good_imus.push_back(imu);
+  all_imus.push_back(imu);
   imu_scale_values.push_back(1);
   for (int i = 1; i < imu_ports.size(); i++) {
     pros::Imu* temp = new pros::Imu(imu_ports[i]);
     good_imus.push_back(temp);
+    all_imus.push_back(temp);
     imu_scale_values.push_back(1);
   }
   drive_imus_scalers_set(imu_scale_values);
@@ -116,6 +120,7 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
   }
 
   good_imus.push_back(imu);
+  all_imus.push_back(imu);
   drive_imu_scaler_set(1);
   // Set constants for tick_per_inch calculation
   WHEEL_DIAMETER = wheel_diameter;
@@ -151,6 +156,7 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
   }
 
   good_imus.push_back(imu);
+  all_imus.push_back(imu);
   drive_imu_scaler_set(1);
   // Set constants for tick_per_inch calculation
   WHEEL_DIAMETER = wheel_diameter;
@@ -188,6 +194,7 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
   }
 
   good_imus.push_back(imu);
+  all_imus.push_back(imu);
   drive_imu_scaler_set(1);
   // Set constants for tick_per_inch calculation
   WHEEL_DIAMETER = wheel_diameter;
@@ -199,19 +206,17 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 }
 
 Drive::~Drive() {
-  delete imu;
-  good_imus.pop_front();
-
-  while (!good_imus.empty()) {
-    delete good_imus.front();
-    good_imus.pop_front();
+  for (pros::Imu* n : all_imus) {
+    delete n;
   }
+  good_imus.clear();
+  all_imus.clear();
 }
 
 // set defaults
 void Drive::drive_defaults_set() {
   for (int i = 0; i < good_imus.size(); i++) {
-    imu->set_data_rate(5);
+    good_imus[i]->set_data_rate(5);
   }
 
   std::cout << std::fixed;
@@ -281,10 +286,7 @@ void Drive::drive_defaults_set() {
 }
 
 double Drive::drive_angle_get() {
-  /*if there is a good imu*/
-  if (imu != nullptr) return drive_imu_get();
-
-  return INT_MAX;
+  return drive_imu_get();
 }
 
 double Drive::drive_tick_per_inch() {
@@ -412,20 +414,32 @@ bool Drive::drive_current_left_over() { return left_motors.front().is_over_curre
 void Drive::drive_imu_reset(double new_heading) {
   std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
 
-  for (int i = 0; i < good_imus.size(); i++) {
+  for (int i = 0; i < all_imus.size(); i++) {
     // Reads go through get_this_imu(), which multiplies by the scaler, so the
     // value written here has to be divided by it to read back as new_heading
-    auto scaler = imu_scale_map.find(good_imus[i]->get_port());
+    auto scaler = imu_scale_map.find(all_imus[i]->get_port());
     double scale = (scaler != imu_scale_map.end() && scaler->second != 0.0) ? scaler->second : 1.0;
-    good_imus[i]->set_rotation(new_heading / scale);
+    all_imus[i]->set_rotation(new_heading / scale);
   }
   angle_rad = util::to_rad(new_heading);
   t_last = -angle_rad;
+  last_good_angle = new_heading;
 }
 double Drive::get_this_imu(pros::Imu* imu) { return imu->get_rotation() * imu_scale_map[imu->get_port()]; }
 
-double Drive::drive_imu_get() { return get_this_imu(imu); }
+double Drive::drive_imu_get() {
+  if (imu == nullptr) return last_good_angle;
+
+  double reading = get_this_imu(imu);
+  if (std::isfinite(reading)) {
+    last_good_angle = reading;
+    return reading;
+  }
+  return last_good_angle;
+}
 double Drive::drive_imu_accel_get() {
+  if (imu == nullptr) return 0.0;
+
   auto accel = imu->get_accel();
   return std::hypot(accel.x, accel.y);
 }
@@ -439,8 +453,8 @@ double Drive::drive_imu_scaler_get() { return imu_scale_map[imu->get_port()]; }
 void Drive::drive_imus_scalers_set(std::vector<double> scales) {
   std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
 
-  for (int i = 0; i < std::min(good_imus.size(), scales.size()); i++) {
-    imu_scale_map[good_imus[i]->get_port()] = scales[i];
+  for (int i = 0; i < std::min(all_imus.size(), scales.size()); i++) {
+    imu_scale_map[all_imus[i]->get_port()] = scales[i];
   }
 }
 std::map<int, double> Drive::drive_imus_scalers_get() { return imu_scale_map; }
@@ -478,7 +492,16 @@ void Drive::drive_imu_display_loading(int iter) {
 
 bool Drive::drive_imu_calibrate(bool run_loading_animation) {
   imu_calibration_complete = false;
+  imu_calibrate_took_too_long = false;
   bool one_calibrated = false;
+
+  {
+    // Reset the IMU watchdog for this calibration
+    std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
+    imu_stuck_passes.clear();
+    imu_healthy_passes.clear();
+    imu_only_imu_warning_shown = false;
+  }
 
   // No IMUs are calibrated yet, set them all to false
   std::map<int, bool> imus_status, imus_done, imus_last_status;
@@ -521,7 +544,6 @@ bool Drive::drive_imu_calibrate(bool run_loading_animation) {
     if (iter >= 2000) {
       if (successful) {
         printf("IMU is done calibrating (took %d ms)\n", iter);
-        imu_calibrate_took_too_long = iter > 2000 ? true : false;
         break;
       }
       if (iter >= 3000) {
@@ -548,21 +570,15 @@ bool Drive::drive_imu_calibrate(bool run_loading_animation) {
   {
     std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
 
-    for (int i = 0; i < good_imus.size(); i++) {
-      int port = good_imus[i]->get_port();
+    good_imus.erase(std::remove_if(good_imus.begin(), good_imus.end(),
+                                    [&](pros::Imu* n) { return !imus_done[n->get_port()]; }),
+                     good_imus.end());
 
-      if (!imus_done[port]) {
-        good_imus.erase(good_imus.begin() + i);
-        if (i == 0 && !good_imus.empty())
-          imu = good_imus.front();
-      }
-    }
+    imu = good_imus.empty() ? nullptr : good_imus.front();
 
     if (one_calibrated && !good_imus.empty())
       imu_calibration_complete = true;
   }
-
-  printf("one cali-%i\n", one_calibrated);
 
   return imu_calibration_complete;
 }
