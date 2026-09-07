@@ -3647,6 +3647,7 @@ class Drive {
   std::pair<float, float> decide_vert_sensor(ez::tracking_wheel* tracker, bool is_tracker_enabled, float ime = 0.0, float ime_track = 0.0);
   pose solve_xy_vert(float p_track_width, float current_t, float delta_vert, float delta_t);
   pose solve_xy_horiz(float p_track_width, float current_t, float delta_horiz, float delta_t);
+  void tracking_prime();
   bool was_last_pp_mode_boomerang = false;
   bool global_forward_drive_slew_enabled = false;
   bool global_backward_drive_slew_enabled = false;

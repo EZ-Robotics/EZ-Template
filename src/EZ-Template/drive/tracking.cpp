@@ -131,6 +131,29 @@ ez::pose Drive::solve_xy_horiz(float p_track_width, float current_t, float delta
   return output;
 }
 
+// Primes the "last" sensor values to the current readings, without touching
+// any of the accumulated pose data. Used whenever tracking is (re)started so
+// the next tracking pass computes a real delta instead of jumping by however
+// much the sensors accumulated while tracking was paused/disabled.
+void Drive::tracking_prime() {
+  // Decide on using a horiz tracker vs not
+  ez::tracking_wheel* h_sensor = odom_tracker_back != nullptr ? odom_tracker_back : odom_tracker_front;
+  bool h_tracker_enabled = h_sensor == odom_tracker_back ? odom_tracker_back_enabled : odom_tracker_front_enabled;
+  std::pair<float, float> h_cur_and_track = decide_vert_sensor(h_sensor, h_tracker_enabled);
+  h_last = h_cur_and_track.first;
+
+  // Decide on left ime vs left tracker
+  std::pair<float, float> l_cur_and_track = decide_vert_sensor(odom_tracker_left, odom_tracker_left_enabled, drive_sensor_left(), odom_ime_track_width_left);
+  l_last = l_cur_and_track.first;
+
+  // Decide on right ime vs right tracker
+  std::pair<float, float> r_cur_and_track = decide_vert_sensor(odom_tracker_right, odom_tracker_right_enabled, drive_sensor_right(), odom_ime_track_width_right);
+  r_last = r_cur_and_track.first;
+
+  // Angle, matching the sign convention used in tracking_wheels_tracking()
+  t_last = -ez::util::to_rad(drive_angle_get());
+}
+
 // Tracking based on https://wiki.purduesigbots.com/software/odometry
 void Drive::tracking_wheels_tracking() {
   // Decide on using a horiz tracker vs not
@@ -219,12 +242,9 @@ void Drive::tracking_wheels_tracking() {
 
 void Drive::ez_tracking_task() {
   // Don't let this function run if odom is disabled
-  // and make sure all the "lasts" are 0
+  // and prime the "lasts" to the current sensor values
   if (!imu_calibration_complete || !odometry_enabled) {
-    h_last = 0.0;
-    t_last = 0.0;
-    l_last = 0.0;
-    r_last = 0.0;
+    tracking_prime();
     return;
   }
 
