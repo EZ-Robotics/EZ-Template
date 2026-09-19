@@ -28,6 +28,15 @@ jobs:
           [ -f template/include/EZ-Units/units.hpp ] || { echo "template/include/EZ-Units/units.hpp is missing; template/ contains:"; ls -R template | head -40; exit 1; }
           grep -q 'EZ-Units.*units.hpp' template/template.pros || { echo "template/template.pros does not list EZ-Units/units.hpp"; exit 1; }
 
+      # api.hpp includes include/EZ-Template/version.hpp, which the Makefile regenerates from
+      # VERSION, so the template has to carry it. pros-build appends +<commit> to VERSION
+      # here, which must not end up in the header.
+      - name: Check the template ships version.hpp
+        run: |
+          [ -f template/include/EZ-Template/version.hpp ] || { echo "template/include/EZ-Template/version.hpp is missing; template/ contains:"; ls -R template | head -40; exit 1; }
+          grep -q 'EZ-Template.*version.hpp' template/template.pros || { echo "template/template.pros does not list EZ-Template/version.hpp"; exit 1; }
+          ! grep -q 'VERSION_STRING ".*+' template/include/EZ-Template/version.hpp || { echo "build metadata leaked into EZ_TEMPLATE_VERSION_STRING"; exit 1; }
+
       - name: Upload Artifact
         uses: actions/upload-artifact@v7
         with:
@@ -63,6 +72,18 @@ jobs:
       # ubuntu-latest already has, and runs the resulting doctest binary.
       - name: Run host tests
         run: make -C test
+
+      # tools/gen-version.sh, which turns VERSION in the Makefile into version.hpp
+      - name: Version macros
+        run: cd test && sh version_test.sh g++
+
+      # Every build regenerates version.hpp and the root version file from VERSION, so this only
+      # fails when a VERSION change was committed without them. Run make and commit the result.
+      - name: version.hpp and version match VERSION in the Makefile
+        run: |
+          git ls-files --error-unmatch include/EZ-Template/version.hpp > /dev/null
+          err=$(sh tools/gen-version.sh); [ -z "$err" ] || { echo "$err"; exit 1; }
+          git diff --exit-code -- include/EZ-Template/version.hpp version
 
       # OkapiLib is no longer a dependency of the library. Keep it that way; the
       # only okapi allowed in the repo is the four unit headers under test/fixtures,

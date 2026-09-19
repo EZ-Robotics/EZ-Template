@@ -28,6 +28,9 @@ IS_LIBRARY:=1
 # TODO: CHANGE THIS!
 LIBNAME:=EZ-Template
 VERSION:=4.0.0-beta.2
+# include/EZ-Template/version.hpp and the root version file follow VERSION, see tools/gen-version.sh
+EZ_VERSION_ERROR:=$(shell sh tools/gen-version.sh $(VERSION))
+$(if $(EZ_VERSION_ERROR),$(error $(EZ_VERSION_ERROR)))
 # EXCLUDE_SRC_FROM_LIB= $(SRCDIR)/unpublishedfile.c
 # this line excludes opcontrol.c and similar files
 EXCLUDE_SRC_FROM_LIB+=$(foreach file, $(SRCDIR)/autons $(SRCDIR)/main,$(foreach cext,$(CEXTS),$(file).$(cext)) $(foreach cxxext,$(CXXEXTS),$(file).$(cxxext)))
