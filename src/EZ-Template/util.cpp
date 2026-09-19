@@ -170,6 +170,20 @@ double clamp(double input, double max, double min) {
 
 double clamp(double input, double max) { return clamp(input, fabs(max), -fabs(max)); }
 
+std::pair<double, double> curvature_mix(double fwd, double turn, double point_turn_gain) {
+  double gain = fmax(fabs(fwd) / 127.0, clamp(point_turn_gain, 1.0, 0.0));
+  double l = fwd + turn * gain;
+  double r = fwd - turn * gain;
+
+  // Divide instead of clamp, so the ratio between sides (the curvature) is kept
+  double faster_side = fmax(fabs(l), fabs(r));
+  if (faster_side > 127.0) {
+    l *= 127.0 / faster_side;
+    r *= 127.0 / faster_side;
+  }
+  return {l, r};
+}
+
 // Conversions from deg to rad and rad to deg
 double to_deg(double input) { return input * (180 / M_PI); }
 double to_rad(double input) { return input * (M_PI / 180); }
