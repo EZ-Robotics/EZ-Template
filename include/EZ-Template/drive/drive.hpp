@@ -1002,7 +1002,7 @@ class Drive {
    * Sets how much the robot turns when it is barely moving fwd/rev in curvature control.
    *
    * Curvature turns less the slower you drive, so this is the least the turn stick is scaled by.  0 can't turn
-   * on a point, 1 is the same as arcade.  Defaults to 0.5.
+   * on a point, 1 is the same as arcade.  Defaults to 0.8.
    *
    * \param gain
    *        0 to 1
@@ -3613,7 +3613,7 @@ class Drive {
   std::vector<const_and_name>* used_pid_tuner_pids;
   double opcontrol_speed_max = 127.0;
   bool arcade_vector_scaling = false;
-  double curvature_point_turn_gain = 0.5;
+  double curvature_point_turn_gain = 0.8;
   double prev_imu_value = 0;
   // odom privates
   std::vector<odom> pp_movements;

@@ -37,6 +37,8 @@ struct DriveTestAccess {
   }
 
   static double get_this_imu(Drive& d, pros::Imu* imu) { return d.get_this_imu(imu); }
+
+  static double curvature_point_turn_gain(Drive& d) { return d.curvature_point_turn_gain; }
 };
 
 }  // namespace ez
