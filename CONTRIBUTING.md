@@ -2,7 +2,8 @@
 
 - Code PRs target `dev`.
 - Branch names: `<type>/<short-description>` (`bug/`, `feature/`, `docs/`, `test/`, `build/`, `cleanup/`, `safety/`).
-- `src/main.cpp` and `src/autons.cpp` are the dev/example project, excluded from the packaged library.
+- `src/main.cpp` and `src/autons.cpp` are the dev robot config, excluded from the packaged library.
+- The example project lives on the `example-project` branch, which never merges into `dev` or `main`. PRs that change it target `example-project`, not `dev`.
 
 ## Commits & PR titles
 

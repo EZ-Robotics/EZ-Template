@@ -26,3 +26,7 @@ test/run_tests.pdb
 /build
 .docusaurus
 .cache-loader
+
+# Example project (lives on the example-project branch, not here)
+/EZ-Template-Example-Project/
+/EZ-Template-Example-Project.zip
