@@ -1449,7 +1449,7 @@ void initialize() {
 ### odom_look_ahead_set()
 Sets how far away the robot looks in the path during pure pursuits.  
 
-`distance` how long the "carrot on a stick" is, in inches
+`distance` how long the "carrot on a stick" is, in inches.  Must be greater than 0.  Otherwise it is rejected, a message is printed to the terminal, and the previous value is kept.
 <Tabs
   groupId="odom_look_ahead_set"
   defaultValue="proto"
@@ -1507,7 +1507,7 @@ void autonomous() {
 ### odom_look_ahead_set()
 Sets how far away the robot looks in the path during pure pursuits.  
 
-`distance` how long the "carrot on a stick" is, in okapi units
+`distance` how long the "carrot on a stick" is, in okapi units.  Must be greater than 0.  Otherwise it is rejected, a message is printed to the terminal, and the previous value is kept.
 <Tabs
   groupId="odom_look_ahead_se_okat"
   defaultValue="proto"
@@ -1650,7 +1650,7 @@ e_angle_behavior pid_odom_behavior_get();
 ### odom_path_spacing_set()
 Sets the spacing between points when points get injected into the path.   
 
-`p_spacing` a small number in okapi units
+`p_spacing` a small number in okapi units.  Must be greater than 0.  Otherwise it is rejected, a message is printed to the terminal, and the previous value is kept.
 <Tabs
   groupId="odom_path_spacing_set_oka"
   defaultValue="proto"
@@ -1697,7 +1697,7 @@ void autonomous() {
 ### odom_path_spacing_set()
 Sets the spacing between points when points get injected into the path.   
 
-`spacing` a small number in inches
+`spacing` a small number in inches.  Must be greater than 0.  Otherwise it is rejected, a message is printed to the terminal, and the previous value is kept.
 <Tabs
   groupId="odom_path_spacing_set"
   defaultValue="proto"
@@ -2012,9 +2012,11 @@ Sets the constants for smoothing out a path.
 
 Path smoothing based on [https://medium.com/@jaems33/understanding-robot-motion-path-smoothing-5970c8363bc4](https://medium.com/@jaems33/understanding-robot-motion-path-smoothing-5970c8363bc4)  
 
-`weight_smooth` how much weight to update the data   
-`weight_data` how much weight to smooth the coordinates   
-`tolerance` how much change per iteration is necessary to keep iterating    
+`weight_smooth` how much weight to update the data, 0 or more and less than 1  
+`weight_data` how much weight to smooth the coordinates, 0 or more  
+`tolerance` how much change per iteration is necessary to keep iterating, greater than 0  
+
+If any of these are out of range, all of the constants are rejected, a message is printed to the terminal naming the first one that is out of range, and the previous constants are kept.  
 <Tabs
   groupId="odom_path_smooth_constants_set"
   defaultValue="proto"

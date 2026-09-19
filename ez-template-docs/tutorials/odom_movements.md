@@ -239,6 +239,8 @@ chassis.pid_wait();
 
 Beyond this, all of the syntax for moving to single points applies to moving through multiple points.  Each point has the same syntax, and a final parameter for if slew is enabled or not.  
 
+The list needs at least one point.  If you give `pid_odom_set()` an empty list, it prints `EZ-Template: pid_odom_set was given an empty path` to the terminal and doesn't start the motion.  
+
 
 ## "pid_drive_set()"
 You can take all the `pid_drive_set()` syntax and replace it for `pid_odom_set()`.  This will run odometry but it'll be going forward/backwards only.  
