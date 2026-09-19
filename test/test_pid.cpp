@@ -7,6 +7,13 @@
 // next derivative 0.
 // MotorGroup overload: exit_condition(pros::MotorGroup) produces BIG_EXIT at
 // the same pass count as the plain overload.
+// Velocity exit arming: with velocity_exit_time 50, the velocity timer does not
+// run until the main sensor's derivative has exceeded its zero threshold once
+// (the robot has actually moved), so a robot that hasn't started moving yet is
+// not exited early.  After that it exits on the 6th stationary pass, as before.
+// A robot that never moves still velocity-exits once the 1000 ms fallback window
+// passes (101 passes to arm, then the same 6 passes), so pid_wait can't hang.
+// timers_reset() disarms.  The secondary sensor is gated by the same flag.
 #include "doctest.h"
 
 #include "EZ-Template/api.hpp"
@@ -101,4 +108,111 @@ TEST_CASE("PID motion_reset zeroes the integral and primes the next derivative t
 
   pid.compute(3.0);  // same value motion_reset primed prev_current to
   CHECK(pid.derivative == doctest::Approx(0));
+}
+
+// ---- Velocity exit arming -------------------------------------------------
+// exit_condition_set(small_time, small_err, big_time, big_err, velocity_time, mA)
+// velocity_time 50 ms with DELAY_TIME 10 ms: the timer passes 50 on its 6th
+// counted pass.  The fallback window is 1000 ms (100 passes) before arming.
+
+TEST_CASE("PID velocity exit does not run before the robot has moved") {
+  PID pid;
+  pid.exit_condition_set(0, 0, 0, 0, 50, 0);
+  pid.error = 10.0;
+  pid.derivative = 0.0;  // hasn't started moving yet
+
+  // Well past the 6 passes an unarmed timer would have exited on
+  for (int pass = 1; pass <= 50; pass++) {
+    INFO("pass ", pass);
+    CHECK(pid.exit_condition() == RUNNING);
+  }
+}
+
+TEST_CASE("PID velocity exit ignores sensor noise below the zero threshold") {
+  PID pid;
+  pid.exit_condition_set(0, 0, 0, 0, 50, 0);
+  pid.error = 10.0;
+  pid.derivative = 0.04;  // under the 0.05 default, so not movement
+
+  for (int pass = 1; pass <= 50; pass++) {
+    INFO("pass ", pass);
+    CHECK(pid.exit_condition() == RUNNING);
+  }
+}
+
+TEST_CASE("PID velocity exit fires on the 6th stationary pass once the robot has moved") {
+  PID pid;
+  pid.exit_condition_set(0, 0, 0, 0, 50, 0);
+  pid.error = 10.0;
+
+  pid.derivative = 1.0;
+  for (int pass = 1; pass <= 3; pass++) CHECK(pid.exit_condition() == RUNNING);
+
+  pid.derivative = 0.0;  // robot has stopped, e.g. hit a wall
+  for (int pass = 1; pass < 6; pass++) {
+    INFO("stationary pass ", pass);
+    CHECK(pid.exit_condition() == RUNNING);
+  }
+  CHECK(pid.exit_condition() == VELOCITY_EXIT);
+}
+
+TEST_CASE("PID velocity timer restarts when the robot moves again") {
+  PID pid;
+  pid.exit_condition_set(0, 0, 0, 0, 50, 0);
+  pid.error = 10.0;
+
+  pid.derivative = 1.0;
+  CHECK(pid.exit_condition() == RUNNING);
+  pid.derivative = 0.0;
+  for (int pass = 1; pass <= 5; pass++) CHECK(pid.exit_condition() == RUNNING);  // 1 pass short of exiting
+  pid.derivative = 1.0;
+  CHECK(pid.exit_condition() == RUNNING);  // moving again, timer resets
+  pid.derivative = 0.0;
+  for (int pass = 1; pass <= 5; pass++) CHECK(pid.exit_condition() == RUNNING);
+  CHECK(pid.exit_condition() == VELOCITY_EXIT);
+}
+
+TEST_CASE("PID velocity exit still fires for a robot that never moves, after the fallback window") {
+  PID pid;
+  pid.exit_condition_set(0, 0, 0, 0, 50, 0);
+  pid.error = 10.0;
+  pid.derivative = 0.0;  // pinned from the start
+
+  // 100 passes fill the 1000 ms window, pass 101 arms and starts the timer,
+  // and the timer passes 50 ms on the 6th of those.
+  for (int pass = 1; pass < 106; pass++) {
+    INFO("pass ", pass);
+    CHECK(pid.exit_condition() == RUNNING);
+  }
+  CHECK(pid.exit_condition() == VELOCITY_EXIT);
+}
+
+TEST_CASE("PID timers_reset disarms velocity exit for the next motion") {
+  PID pid;
+  pid.exit_condition_set(0, 0, 0, 0, 50, 0);
+  pid.error = 10.0;
+
+  pid.derivative = 1.0;
+  CHECK(pid.exit_condition() == RUNNING);  // armed
+  pid.timers_reset();                      // next motion starts
+
+  pid.derivative = 0.0;
+  for (int pass = 1; pass <= 50; pass++) {
+    INFO("pass ", pass);
+    CHECK(pid.exit_condition() == RUNNING);
+  }
+}
+
+TEST_CASE("PID secondary velocity sensor is gated by the same arming") {
+  PID pid;
+  pid.exit_condition_set(0, 0, 0, 0, 50, 0);
+  pid.velocity_sensor_secondary_toggle_set(true);
+  pid.velocity_sensor_secondary_set(0.0);  // reads as stationary
+  pid.error = 10.0;
+  pid.derivative = 0.0;
+
+  for (int pass = 1; pass <= 50; pass++) {
+    INFO("pass ", pass);
+    CHECK(pid.exit_condition() == RUNNING);
+  }
 }
