@@ -1,7 +1,10 @@
 // inject_points on a 24 in straight path at 0.5 in spacing yields the
 // expected count and injected_pp_index of size 2; smooth_path on a
 // 600-point path returns 600 points with endpoints unchanged (this would
-// have overflowed the old fixed-size arrays); new_turn_target_compute table
+// have overflowed the old fixed-size arrays); smooth_path rounds off a bent
+// path with constants that settle and returns it untouched with constants that
+// diverge, and odom_path_smooth_constants_set rejects those constants and
+// keeps the old ones; new_turn_target_compute table
 // for raw/cw/ccw/shortest/longest from current 10 to targets 200, -160,
 // 350, 0.
 #include "doctest.h"
@@ -48,6 +51,76 @@ TEST_CASE("pure pursuit smooth_path on a 600-point path returns 600 points with 
   CHECK(output.front().target.y == doctest::Approx(path.front().target.y));
   CHECK(output.back().target.x == doctest::Approx(path.back().target.x));
   CHECK(output.back().target.y == doctest::Approx(path.back().target.y));
+}
+
+namespace {
+// 60 points at 0.5 in spacing that run diagonally, then straight up. The bend
+// gives the smoother something to move, and it starts far enough from the
+// first point that the look-ahead exclusion at the start doesn't cover it.
+std::vector<odom> bent_path() {
+  std::vector<odom> path;
+  for (int i = 0; i < 60; i++) {
+    double x = i < 20 ? 0.3 * i : 6.0;
+    path.push_back({{x, 0.5 * i}, fwd, 127});
+  }
+  return path;
+}
+
+bool all_finite_within(const std::vector<odom>& path, double limit) {
+  for (const auto& p : path) {
+    if (!std::isfinite(p.target.x) || !std::isfinite(p.target.y)) return false;
+    if (std::fabs(p.target.x) > limit || std::fabs(p.target.y) > limit) return false;
+  }
+  return true;
+}
+}  // namespace
+
+TEST_CASE("pure pursuit smooth_path smooths a bent path with constants that settle") {
+  Drive chassis = make_chassis();
+  auto path = bent_path();
+
+  for (auto constants : {std::vector<double>{0.75, 0.03}, std::vector<double>{0.95, 0.05}}) {
+    auto output = DriveTestAccess::smooth_path(chassis, path, constants[0], constants[1], 0.0001);
+
+    REQUIRE(output.size() == path.size());
+    CHECK(all_finite_within(output, 100.0));
+    // The kink at point 20 is what smoothing should round off.
+    CHECK(output[20].target.x != doctest::Approx(path[20].target.x));
+  }
+}
+
+TEST_CASE("pure pursuit smooth_path returns the path unsmoothed when the constants would diverge") {
+  Drive chassis = make_chassis();
+  auto path = bent_path();
+
+  // Each weight is fine on its own, but weight_data + 2 * weight_smooth is 2.01.
+  auto output = DriveTestAccess::smooth_path(chassis, path, 0.99, 0.03, 0.0001);
+
+  REQUIRE(output.size() == path.size());
+  for (std::size_t i = 0; i < path.size(); i++) {
+    CHECK(output[i].target.x == path[i].target.x);
+    CHECK(output[i].target.y == path[i].target.y);
+  }
+}
+
+TEST_CASE("pure pursuit odom_path_smooth_constants_set rejects constants that diverge and keeps the old ones") {
+  Drive chassis = make_chassis();
+  chassis.odom_path_smooth_constants_set(0.75, 0.03, 0.0001);
+  const std::vector<double> before = {0.75, 0.03, 0.0001};
+  REQUIRE(chassis.odom_path_smooth_constants_get() == before);
+
+  // (smooth, data): each in range alone, sum of data + 2 * smooth is 2.01, exactly 2, and 2.3.
+  chassis.odom_path_smooth_constants_set(0.99, 0.03, 0.0001);
+  CHECK(chassis.odom_path_smooth_constants_get() == before);
+  chassis.odom_path_smooth_constants_set(0.5, 1.0, 0.0001);
+  CHECK(chassis.odom_path_smooth_constants_get() == before);
+  chassis.odom_path_smooth_constants_set(0.9, 0.5, 0.0001);
+  CHECK(chassis.odom_path_smooth_constants_get() == before);
+
+  // Just inside the limit is still accepted.
+  chassis.odom_path_smooth_constants_set(0.95, 0.05, 0.0002);
+  const std::vector<double> after = {0.95, 0.05, 0.0002};
+  CHECK(chassis.odom_path_smooth_constants_get() == after);
 }
 
 TEST_CASE("pure pursuit new_turn_target_compute from current 10") {
