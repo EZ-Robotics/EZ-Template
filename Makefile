@@ -35,7 +35,7 @@ EXCLUDE_SRC_FROM_LIB+=$(foreach file, $(SRCDIR)/autons $(SRCDIR)/main,$(foreach 
 # files that get distributed to every user (beyond your source archive) - add
 # whatever files you want here. This line is configured to add all header files
 # that are in the the include directory get exported
-TEMPLATE_FILES=$(INCDIR)/EZ-Template/*.hpp $(INCDIR)/EZ-Template/drive/*.hpp
+TEMPLATE_FILES=$(INCDIR)/EZ-Template/*.hpp $(INCDIR)/EZ-Template/drive/*.hpp $(INCDIR)/EZ-Units/*.hpp
 
 .DEFAULT_GOAL=quick
 
