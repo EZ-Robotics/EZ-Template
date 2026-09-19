@@ -327,9 +327,9 @@ void pid_drive_chain_backward_constant_set(okapi::QLength input);
 ### slew_drive_constants_set()
 Sets constants for slew for driving.     
 
-Slew ramps up the speed of the robot until the set distance is traveled.     
+Slew ramps up the speed of the robot from `min_speed` to full speed (127) over the set distance.  A motion with a lower max speed is capped at that speed, so it stops ramping sooner.     
 
-`distance` the distance the robot travels before reaching max speed, an okapi distance unit   
+`distance` the distance the robot travels to ramp up to full speed (127), an okapi distance unit   
 `min_speed` the starting speed for the movement, 0 - 127   
 <Tabs
   groupId="slew_backward_constant_set"
@@ -377,9 +377,9 @@ void slew_drive_constants_set(okapi::QLength distance, int min_speed);
 ### slew_drive_constants_forward_set()
 Sets constants for slew for driving forward.     
 
-Slew ramps up the speed of the robot until the set distance is traveled.     
+Slew ramps up the speed of the robot from `min_speed` to full speed (127) over the set distance.  A motion with a lower max speed is capped at that speed, so it stops ramping sooner.     
 
-`distance` the distance the robot travels before reaching max speed, an okapi distance unit   
+`distance` the distance the robot travels to ramp up to full speed (127), an okapi distance unit   
 `min_speed` the starting speed for the movement, 0 - 127   
 <Tabs
   groupId="slew_forward_constant_set"
@@ -424,9 +424,9 @@ void slew_drive_constants_forward_set(okapi::QLength distance, int min_speed);
 ### slew_drive_constants_backward_set()
 Sets constants for slew for driving backward.     
 
-Slew ramps up the speed of the robot until the set distance is traveled.     
+Slew ramps up the speed of the robot from `min_speed` to full speed (127) over the set distance.  A motion with a lower max speed is capped at that speed, so it stops ramping sooner.     
 
-`distance` the distance the robot travels before reaching max speed, an okapi distance unit   
+`distance` the distance the robot travels to ramp up to full speed (127), an okapi distance unit   
 `min_speed` the starting speed for the movement, 0 - 127   
 <Tabs
   groupId="slew_backward_constant_set"

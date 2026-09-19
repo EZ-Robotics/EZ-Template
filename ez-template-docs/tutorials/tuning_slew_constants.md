@@ -15,12 +15,20 @@ Slew is when your motors start at a lower speed and build up to a faster speed. 
 
 EZ-Template treats the output of slew as a **maximum speed** the PID can output.  The output of slew does **not** get set to the motors.  If slew is enabled for an extremely small motion, it is very likely that slew will not do anything and your motion will still be as fast as possible.  
 
+:::caution Changed in 4.0
+
+Slew now ramps at the same rate no matter how fast a motion is.  The distance you set is how far the robot travels to ramp from the starting speed up to full speed (127).  A motion with a lower speed limit, such as 80, is cut off by that limit and reaches it sooner than the distance you set.  
+
+In versions before 4.0, the distance was measured to each motion's own speed limit, so slower motions ramped more gently.  If you're upgrading, motions with a lower speed limit will now ramp faster with the same distance, and you may need to raise your distance.  
+
+:::
+
 ## Tuning Slew 
 There are 2 parameters to tune with slew in EZ-Template; the distance to slew for and starting speed.  The robot will accelerate very quickly with a low distance to slew for, regardless of the starting speed.  
 
 There are 2 parameters to tune in EZ-Template.
 * Distance to slew for
-  * The larger this number is, the longer it will take to reach your maximum speed.  Making this number smaller will cause the robot to accelerate quickly. 
+  * The larger this number is, the longer it will take to reach full speed (127).  Making this number smaller will cause the robot to accelerate quickly. 
 * Starting speed
   * The smaller this number is, the slower the robot will start motions.  Making this number smaller will cause the robot to accelerate slowly.  
 
@@ -44,6 +52,7 @@ void default_constants() {
 ```
 
 Now you can lower the distance until the robot is able to successfully reach `DRIVE_SPEED` without undesirable behavior!  
+Any motion with a speed limit at or below `DRIVE_SPEED` will accelerate no faster than what you just tested.  
 ```cpp
 void tuning_slew() {
   chassis.drive_pid_set(24_in, DRIVE_SPEED, true);

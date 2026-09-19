@@ -567,9 +567,9 @@ void pid_turn_chain_constant_set(okapi::QAngle input);
 ### slew_turn_constants_set()
 Sets constants for slew for turns.
 
-Slew ramps up the speed of the robot until the set distance is traveled.
+Slew ramps up the speed of the robot from `min_speed` to full speed (127) over the set distance.  A motion with a lower max speed is capped at that speed, so it stops ramping sooner.
 
-`distance` the distance the robot travels before reaching max speed, an okapi angle unit   
+`distance` the distance the robot travels to ramp up to full speed (127), an okapi angle unit   
 `min_speed` the starting speed for the movement, 0 - 127   
 <Tabs
   groupId="slew_turn_constant_set"
