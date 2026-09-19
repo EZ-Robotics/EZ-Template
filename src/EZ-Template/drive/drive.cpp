@@ -575,8 +575,6 @@ bool Drive::drive_imu_calibrate(bool run_loading_animation) {
   while (true) {
     iter += util::DELAY_TIME;
 
-    if (run_loading_animation) drive_imu_display_loading(iter);
-
     if (!successful) {
       // Check if each IMU is done calibrating
       for (std::size_t i = 0; i < good_imus.size(); i++) {
@@ -620,6 +618,9 @@ bool Drive::drive_imu_calibrate(bool run_loading_animation) {
         break;
       }
     }
+
+    if (run_loading_animation) drive_imu_display_loading(iter);
+
     pros::delay(util::DELAY_TIME);
   }
 
