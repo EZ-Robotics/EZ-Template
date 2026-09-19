@@ -133,7 +133,10 @@ void Drive::pid_wait() {
         xy_exit = xy_exit != RUNNING ? xy_exit : xyPID.exit_condition({left_motors[0], right_motors[0]});
         a_exit = a_exit != RUNNING ? a_exit : current_a_odomPID.exit_condition({left_motors[0], right_motors[0]});
 
-        if ((xy_exit == mA_EXIT || xy_exit == VELOCITY_EXIT) && (a_exit == mA_EXIT || a_exit == VELOCITY_EXIT)) {
+        // Angle only needs to have settled (any exit type), not specifically stalled itself -
+        // requiring mA/VELOCITY_EXIT from angle too left this unreachable on straight segments,
+        // where angle latches SMALL_EXIT almost immediately and never gets re-evaluated.
+        if ((xy_exit == mA_EXIT || xy_exit == VELOCITY_EXIT) && a_exit != RUNNING) {
           if (print_toggle) std::cout << "  XY: " << exit_to_string(xy_exit) << " Exited early, error: " << xyPID.error << ".   Angle: " << exit_to_string(a_exit) << " Exited early, error: " << current_a_odomPID.error << ".\n";
           break;
         }
