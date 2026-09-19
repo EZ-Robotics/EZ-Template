@@ -29,3 +29,10 @@ Lead with a [gitmoji](https://gitmoji.dev):
 - `make -C test` runs the host-only unit tests (no PROS toolchain needed).
 - Match `.clang-format`.
 - CI runs `Build`, `warnings-clean` (`-Werror`), and `host-tests` on every PR.
+
+## Merging
+
+- Regular `dev` PRs: use **Squash and merge**, so `dev`'s history stays one
+  gitmoji-prefixed commit per PR.
+- The `dev` → `main` release PR: use a regular merge, to keep `dev`'s full
+  commit history intact on `main`.
