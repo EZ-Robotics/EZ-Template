@@ -66,6 +66,16 @@ jobs:
       - name: Run host tests
         run: make -C test
 
+      # OkapiLib is no longer a dependency of the library. Keep it that way; the
+      # only okapi allowed in the repo is the four unit headers under test/fixtures,
+      # used to simulate a user project that still has okapilib installed.
+      - name: No OkapiLib references in the library
+        run: |
+          if grep -rniE 'okapi' include/EZ-Template src/EZ-Template; then
+            echo "OkapiLib is no longer used by EZ-Template; remove the references above"
+            exit 1
+          fi
+
   # include/EZ-Units/units.hpp is a vendored copy of EZ-Units and must stay
   # byte-identical to the tagged release. To upgrade it, copy the file from the new
   # tag and bump EZ_UNITS_TAG below in the same commit.
