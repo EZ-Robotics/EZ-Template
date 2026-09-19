@@ -17,7 +17,6 @@ Track width is calculated at your tracking wheel by default.  Modifying tracking
 
 Modifying width on left/right trackers will move your tracking center to the left/right.  
  - If this isn't accurate, the robot may behave differently when moving to the right vs moving to the left
- - The more accurate this is, the closer your autons will be after mirroring them
 
 Modifying width on front/back trackers will move your tracking center forwards and backwards.  
 - If this isn't accurate, the robot's XY position will change during turns and will make where the robot currently is unintuitive

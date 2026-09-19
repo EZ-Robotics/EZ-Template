@@ -7,12 +7,12 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
 
-## Functions with Okapi Units
+## Functions with Units
 
 ### drive_angle_set()
 Sets the angle of the robot.  This is useful when your robot is setup in at an unconventional angle and you want 0 to be when you're square with the field.         
 
-`p_angle` an okapi angle unit, angle that the robot will think it's now facing.
+`p_angle` an angle unit, angle that the robot will think it's now facing.
 <Tabs
   groupId="drive_angle_set_okapi"
   defaultValue="proto"
@@ -25,7 +25,7 @@ Sets the angle of the robot.  This is useful when your robot is setup in at an u
 <TabItem value="proto">
 
 ```cpp
-void drive_angle_set(okapi::QAngle p_angle);
+void drive_angle_set(ez::QAngle p_angle);
 ```
 
 
@@ -102,9 +102,9 @@ void autonomous() {
 
 
 ### pid_wait_until()
-Lock the code in a while loop until this position has passed for driving with okapi units.               
+Lock the code in a while loop until this position has passed for driving with units.               
 
-`target` for driving and swings, using okapi units     
+`target` for driving and swings, using units     
 <Tabs
   groupId="pid_wait_until_distance"
   defaultValue="proto"
@@ -136,7 +136,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void pid_wait_until(okapi::QLength target);
+void pid_wait_until(ez::QLength target);
 ```
 
 
@@ -146,9 +146,9 @@ void pid_wait_until(okapi::QLength target);
 
 
 ### pid_wait_until()
-Lock the code in a while loop until this position has passed for turning or swinging with okapi units.             
+Lock the code in a while loop until this position has passed for turning or swinging with units.             
 
-`target` for turning, using okapi units     
+`target` for turning, using units     
 <Tabs
   groupId="pid_wait_until_angle"
   defaultValue="proto"
@@ -180,7 +180,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void pid_wait_until(okapi::QAngle target);
+void pid_wait_until(ez::QAngle target);
 ```
 
 
@@ -236,12 +236,18 @@ void pid_speed_max_set(int speed);
 
 
 
-## Functions without Okapi Units
+## Functions without Units
 
 
 
 ### drive_mode_set()
 Sets the current mode of the drive.  
+
+:::note
+
+When your brain is connected to a competition switch or field control, EZ-Template sets the drive mode to `ez::DISABLE` while the robot is disabled, and once when autonomous ends.  This stops a motion that field control cut off from resuming on its own when driver control starts.  It does not happen when entering autonomous, and it never happens without a competition switch, so testing at your desk or running autons from the brain menu is not affected.  
+
+:::
 
 `p_mode` the current task running for the drive.  accepts `ez::DISABLE`, `ez::SWING`, `ez::TURN`, `ez::DRIVE`           
 <Tabs
@@ -463,7 +469,7 @@ void pid_print_toggle(bool toggle);
 
 
 ### pid_wait_until()
-Lock the code in a while loop until this position has passed for driving without okapi units.           
+Lock the code in a while loop until this position has passed for driving without units.           
 
 `target` for driving or turning, using a double.  degrees for turns/swings, inches for driving  
 <Tabs
@@ -564,7 +570,7 @@ void pid_angle_behavior_set(e_angle_behavior behavior);
 ### pid_angle_behavior_tolerance_set() 
 Gives some wiggle room in shortest vs longest, so a 180.1 and 179.9 degree turns have consistent behavior.   
 
-`p_tolerance` angle wiggle room, an okapi unit    
+`p_tolerance` angle wiggle room, a unit    
 <Tabs
   groupId="pid_angle_behavior_tolerance_set_oka"
   defaultValue="proto"
@@ -597,7 +603,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void pid_angle_behavior_tolerance_set(okapi::QAngle p_tolerance);
+void pid_angle_behavior_tolerance_set(ez::QAngle p_tolerance);
 ```
 </TabItem>
 </Tabs>

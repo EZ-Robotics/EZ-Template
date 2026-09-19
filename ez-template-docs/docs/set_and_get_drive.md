@@ -172,11 +172,11 @@ void drive_current_limit_set(int mA);
 
 
 ### drive_imu_scaler_set()
-Sets a new imu scaling factor.   
+Calibrates the imu's scale using a physical turn.   
 
-This value is multiplied by the imu to change its output.     
+Physically turn the robot 3600 degrees (10 full rotations) and pass in what the imu reported for that turn.  Internally, this is used to divide the imu's raw reading so it reports the true 3600.  See the [IMU Scaling tutorial](https://ez-robotics.github.io/EZ-Template/tutorials/tuning_imu_scale) for the full calibration walkthrough.     
 
-`scaler`  factor to scale the imu by   
+`imu_value_after_3600`  what the imu reads after physically turning the robot 3600 degrees
 <Tabs
   groupId="drive_imu_scaler_set"
   defaultValue="proto"
@@ -189,19 +189,12 @@ This value is multiplied by the imu to change its output.
 <TabItem value="example">
 
 ```cpp
-void turn_example() {
-  chassis.drive_imu_scaler_set(2);
+void initialize() {
+  chassis.initialize();
 
-  // This will now turn to 45 real degrees
-  chassis.pid_turn_set(90_deg, TURN_SPEED);
-  chassis.pid_wait();
-
-  // This will turn to 22.5 real degrees
-  chassis.pid_turn_set(45_deg, TURN_SPEED);
-  chassis.pid_wait();
-
-  chassis.pid_turn_set(0_deg, TURN_SPEED);
-  chassis.pid_wait();
+  // After physically turning the robot 3600 degrees and reading what the
+  // imu reported, pass that value in here.
+  chassis.drive_imu_scaler_set(3625.42);
 }
 ```
 
@@ -212,7 +205,7 @@ void turn_example() {
 <TabItem value="proto">
 
 ```cpp
-void drive_imu_scaler_set(double scaler);
+void drive_imu_scaler_set(double imu_value_after_3600);
 ```
 
 </TabItem>
@@ -220,11 +213,11 @@ void drive_imu_scaler_set(double scaler);
 
 
 ### drive_imus_scalers_set()
-Sets a new IMU scaling factor for all IMUs, for drives built with the redundant IMU constructor.   
+Calibrates the scale of all IMUs using a physical turn, for drives built with the redundant IMU constructor.   
 
-This value is multiplied by each imu to change its output.     
+Physically turn the robot 3600 degrees (10 full rotations) and pass in what each imu reported for that turn.     
 
-`scales` input `{0.99, 1.01...}`, in the same order as the IMU ports passed to the constructor
+`imu_values_after_3600` what each imu reads after physically turning the robot 3600 degrees, input `{3550, 3625...}`, in the same order as the IMU ports passed to the constructor
 <Tabs
   groupId="drive_imus_scalers_set"
   defaultValue="proto"
@@ -239,7 +232,11 @@ This value is multiplied by each imu to change its output.
 ```cpp
 void initialize() {
   chassis.initialize();
-  chassis.drive_imus_scalers_set({1.0, 1.02});
+
+  // After physically turning the robot 3600 degrees and reading what each
+  // imu reported, pass those values in here, in the same order as the imu
+  // ports passed to the constructor.
+  chassis.drive_imus_scalers_set({3550.0, 3625.0});
 }
 ```
 
@@ -250,7 +247,7 @@ void initialize() {
 <TabItem value="proto">
 
 ```cpp
-void drive_imus_scalers_set(std::vector<double> scales);
+void drive_imus_scalers_set(std::vector<double> imu_values_after_3600);
 ```
 
 </TabItem>
@@ -807,39 +804,8 @@ bool drive_imu_calibrate(bool run_loading_animation = true);
 
 
 
-### drive_imu_get()
-Gets IMU sensor scaler.  This number is multiplied by the imu so users can tune what a "degree" means.     
-<Tabs
-  groupId="drive_imu_get"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-
-<TabItem value="example">
-
-```cpp
-...
-```
-
-
-</TabItem>
-
-
-<TabItem value="proto">
-
-```cpp
-double drive_imu_scaler_get();
-```
-
-</TabItem>
-</Tabs>
-
-
 ### drive_imu_scaler_get()
-Returns the current imu scaling factor.        
+Returns the imu value after a 3600 degree turn that produces the imu's current scale.        
 <Tabs
   groupId="drive_imu_scaler_get"
   defaultValue="proto"
@@ -852,20 +818,10 @@ Returns the current imu scaling factor.
 <TabItem value="example">
 
 ```cpp
-void turn_example() {
-  chassis.drive_imu_scaler_set(2);
-  printf("%.2f\n", chassis.drive_imu_scaler_get()); // Prints 2
-
-  // This will now turn to 45 real degrees
-  chassis.pid_turn_set(90_deg, TURN_SPEED);
-  chassis.pid_wait();
-
-  // This will turn to 22.5 real degrees
-  chassis.pid_turn_set(45_deg, TURN_SPEED);
-  chassis.pid_wait();
-
-  chassis.pid_turn_set(0_deg, TURN_SPEED);
-  chassis.pid_wait();
+void initialize() {
+  chassis.initialize();
+  chassis.drive_imu_scaler_set(3625.42);
+  printf("%.2f\n", chassis.drive_imu_scaler_get()); // Prints 3625.42
 }
 ```
 
@@ -885,13 +841,11 @@ double drive_imu_scaler_get();
 
 
 
-
-
  
 
 
 ### drive_imus_scalers_get()
-Returns the scaling factor for all IMUs, keyed by port, for drives built with the redundant IMU constructor.
+Returns the imu value after a 3600 degree turn that produces each imu's current scale, keyed by port, for drives built with the redundant IMU constructor.
 <Tabs
   groupId="drive_imus_scalers_get"
   defaultValue="proto"
@@ -904,9 +858,9 @@ Returns the scaling factor for all IMUs, keyed by port, for drives built with th
 <TabItem value="example">
 
 ```cpp
-chassis.drive_imus_scalers_set({1.0, 1.02});
-for (auto& [port, scale] : chassis.drive_imus_scalers_get())
-  printf("port %i: %.2f\n", port, scale);
+chassis.drive_imus_scalers_set({3550.0, 3625.0});
+for (auto& [port, value] : chassis.drive_imus_scalers_get())
+  printf("port %i: %.2f\n", port, value);
 ```
 
 
@@ -954,12 +908,12 @@ double drive_angle_get();
 </Tabs>
 
 
-### drive_imu_scaler_get()
+### drive_imu_calibrated()
 Checks if the imu calibrated successfully or if it took longer than expected.  
 
 Returns true if calibrated successfully, and false if unsuccessful.        
 <Tabs
-  groupId="drive_imu_scaler_get"
+  groupId="drive_imu_calibrated"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },

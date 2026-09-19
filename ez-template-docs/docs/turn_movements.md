@@ -32,13 +32,13 @@ import TabItem from '@theme/TabItem';
 
 
 
-## Functions with Okapi Units
+## Functions with Units
 
 
 ### pid_turn_set()
 Sets the robot to turn using PID relative to initial heading.  
 
-`p_target` target value in okapi angle units   
+`p_target` target value in angle units   
 `speed` 0 to 127, max speed during motion   
 <Tabs
   groupId="pid_turn_0a9sk1k2jhse91823z4t_okapi"
@@ -69,7 +69,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void pid_turn_set(okapi::QAngle p_target, int speed);
+void pid_turn_set(ez::QAngle p_target, int speed);
 ```
 
 </TabItem>
@@ -83,7 +83,7 @@ void pid_turn_set(okapi::QAngle p_target, int speed);
 ### pid_turn_set()
 Sets the robot to turn using PID relative to initial heading.  
 
-`p_target` target value in okapi angle units   
+`p_target` target value in angle units   
 `speed` 0 to 127, max speed during motion   
 `behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
 <Tabs
@@ -115,7 +115,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void pid_turn_set(okapi::QAngle p_target, int speed, e_angle_behavior behavior);
+void pid_turn_set(ez::QAngle p_target, int speed, e_angle_behavior behavior);
 ```
 
 </TabItem>
@@ -130,7 +130,7 @@ void pid_turn_set(okapi::QAngle p_target, int speed, e_angle_behavior behavior);
 ### pid_turn_set()
 Sets the robot to turn using PID relative to initial heading.  
 
-`p_target` target value in okapi angle units   
+`p_target` target value in angle units   
 `speed` 0 to 127, max speed during motion   
 `slew_on` ramp up from a lower speed to your target speed   
 <Tabs
@@ -162,7 +162,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void pid_turn_set(okapi::QAngle p_target, int speed, bool slew_on);
+void pid_turn_set(ez::QAngle p_target, int speed, bool slew_on);
 ```
 
 </TabItem>
@@ -175,7 +175,7 @@ void pid_turn_set(okapi::QAngle p_target, int speed, bool slew_on);
 ### pid_turn_set()
 Sets the robot to turn using PID relative to initial heading.  
 
-`p_target` target value in okapi angle units   
+`p_target` target value in angle units   
 `speed` 0 to 127, max speed during motion   
 `behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
 `slew_on` ramp up from a lower speed to your target speed   
@@ -208,7 +208,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void pid_turn_set(okapi::QAngle p_target, int speed, e_angle_behavior behavior, bool slew_on);
+void pid_turn_set(ez::QAngle p_target, int speed, e_angle_behavior behavior, bool slew_on);
 ```
 
 </TabItem>
@@ -254,7 +254,7 @@ void pid_turn_set(okapi::QAngle p_target, int speed, e_angle_behavior behavior, 
 ### pid_turn_relative_set()
 Sets the robot to turn using PID relative to the current heading.  
 
-`p_target` target value in okapi angle units   
+`p_target` target value in angle units   
 `speed` 0 to 127, max speed during motion   
 <Tabs
   groupId="pid_01283z1435turn_re098asd12l_set_okapi"
@@ -290,7 +290,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void pid_turn_relative_set(okapi::QAngle p_target, int speed);
+void pid_turn_relative_set(ez::QAngle p_target, int speed);
 ```
 
 </TabItem>
@@ -306,7 +306,7 @@ void pid_turn_relative_set(okapi::QAngle p_target, int speed);
 ### pid_turn_relative_set()
 Sets the robot to turn using PID relative to the current heading.  
 
-`p_target` target value in okapi angle units   
+`p_target` target value in angle units   
 `speed` 0 to 127, max speed during motion   
 `slew_on` ramp up from a lower speed to your target speed   
 <Tabs
@@ -343,7 +343,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void pid_turn_relative_set(okapi::QAngle p_target, int speed, bool slew_on);
+void pid_turn_relative_set(ez::QAngle p_target, int speed, bool slew_on);
 ```
 
 </TabItem>
@@ -359,7 +359,7 @@ void pid_turn_relative_set(okapi::QAngle p_target, int speed, bool slew_on);
 ### pid_turn_relative_set()
 Sets the robot to turn using PID relative to the current heading.  
 
-`p_target` target value in okapi angle units   
+`p_target` target value in angle units   
 `speed` 0 to 127, max speed during motion   
 `behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
 <Tabs
@@ -396,7 +396,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void pid_turn_relative_set(okapi::QAngle p_target, int speed, e_angle_behavior behavior);
+void pid_turn_relative_set(ez::QAngle p_target, int speed, e_angle_behavior behavior);
 ```
 
 </TabItem>
@@ -406,7 +406,7 @@ void pid_turn_relative_set(okapi::QAngle p_target, int speed, e_angle_behavior b
 ### pid_turn_relative_set()
 Sets the robot to turn using PID relative to the current heading.  
 
-`p_target` target value in okapi angle units   
+`p_target` target value in angle units   
 `speed` 0 to 127, max speed during motion   
 `behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
 `slew_on` ramp up from a lower speed to your target speed     
@@ -444,7 +444,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void pid_turn_relative_set(okapi::QAngle p_target, int speed, e_angle_behavior behavior, bool slew_on);
+void pid_turn_relative_set(ez::QAngle p_target, int speed, e_angle_behavior behavior, bool slew_on);
 ```
 
 </TabItem>
@@ -482,12 +482,12 @@ void pid_turn_relative_set(okapi::QAngle p_target, int speed, e_angle_behavior b
 ### pid_turn_exit_condition_set()
 Set's constants for turn exit conditions.  
  
-`p_small_exit_time` time to exit when within small_error, okapi unit     
-`p_small_error` small timer will start when error is within this, okapi unit     
-`p_big_exit_time` time to exit when within big_error, okapi unit             
-`p_big_error` big timer will start when error is within this, okapi unit        
-`p_velocity_exit_time` velocity timer will start when velocity is 0, okapi unit   
-`p_mA_timeout` mA timer will start when the motors are pulling too much current, okapi unit      
+`p_small_exit_time` time to exit when within small_error, in units     
+`p_small_error` small timer will start when error is within this, in units     
+`p_big_exit_time` time to exit when within big_error, in units             
+`p_big_error` big timer will start when error is within this, in units        
+`p_velocity_exit_time` velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), in units   
+`p_mA_timeout` mA timer will start when the motors are pulling too much current, in units      
 `use_imu` true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't         
 <Tabs
   groupId="pid_turn_Exit_set_okapi"
@@ -514,7 +514,7 @@ void initialize() {
 <TabItem value="proto">
 
 ```cpp
-void pid_turn_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QAngle p_small_error, okapi::QTime p_big_exit_time, okapi::QAngle p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout, use_imu = true);
+void pid_turn_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error, ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, use_imu = true);
 ```
 
 </TabItem>
@@ -528,7 +528,7 @@ Sets the amount that the PID will overshoot target by to maintain momentum into 
 
 This sets turning constants.     
  
-`input` okapi angle unit      
+`input` angle unit      
 <Tabs
   groupId="pid_turn_chain_constant_set_oka"
   defaultValue="proto"
@@ -548,7 +548,7 @@ void initialize() {
 <TabItem value="proto">
 
 ```cpp
-void pid_turn_chain_constant_set(okapi::QAngle input);
+void pid_turn_chain_constant_set(ez::QAngle input);
 ```
 </TabItem>
 </Tabs>
@@ -567,9 +567,9 @@ void pid_turn_chain_constant_set(okapi::QAngle input);
 ### slew_turn_constants_set()
 Sets constants for slew for turns.
 
-Slew ramps up the speed of the robot until the set distance is traveled.
+Slew ramps up the speed of the robot from `min_speed` to full speed (127) over the set distance.  A motion with a lower max speed is capped at that speed, so it stops ramping sooner.
 
-`distance` the distance the robot travels before reaching max speed, an okapi angle unit   
+`distance` the distance the robot travels to ramp up to full speed (127), an angle unit   
 `min_speed` the starting speed for the movement, 0 - 127   
 <Tabs
   groupId="slew_turn_constant_set"
@@ -602,7 +602,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void slew_turn_constants_set(okapi::QAngle distance, int min_speed);
+void slew_turn_constants_set(ez::QAngle distance, int min_speed);
 ```
 
 </TabItem>
@@ -620,7 +620,7 @@ void slew_turn_constants_set(okapi::QAngle distance, int min_speed);
 
 
 
-## Functions without Okapi Units
+## Functions without Units
 ### pid_turn_set()
 Sets the robot to turn using PID relative to initial heading.  
 
@@ -1060,7 +1060,7 @@ Set's constants for turn exit conditions.
 `p_small_error` small timer will start when error is within this, in degrees
 `p_big_exit_time` time to exit when within big_error, in ms
 `p_big_error` big timer will start when error is within this, in degrees
-`p_velocity_exit_time`  velocity timer will start when velocity is 0, in ms
+`p_velocity_exit_time`  velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), in ms
 `p_mA_timeout` mA timer will start when the motors are pulling too much current, in ms   
 `use_imu` true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't    
 <Tabs

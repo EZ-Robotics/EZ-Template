@@ -7,13 +7,13 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
 
-## Functions with Okapi Units
+## Functions with Units
 
 ### pid_swing_set()
 Sets the robot to turn using only one side of the drive with PID relative to initial heading.  
 
 `type` L_SWING or R_SWING  
-`p_target` target value okapi unit  
+`p_target` target value, in units  
 `speed` 0 to 127, max speed during motion   
 <Tabs
   groupId="pid_turn_0a9s09sd09d098123zk1k2jhset_okapi"
@@ -44,7 +44,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed);
+void pid_swing_set(e_swing type, ez::QAngle p_target, int speed);
 ```
 
 </TabItem>
@@ -59,7 +59,7 @@ void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed);
 Sets the robot to turn using only one side of the drive with PID relative to initial heading.  
 
 `type` L_SWING or R_SWING  
-`p_target` target value okapi unit  
+`p_target` target value, in units  
 `speed` 0 to 127, max speed during motion   
 `behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
 <Tabs
@@ -91,7 +91,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, e_angle_behavior behavior);
+void pid_swing_set(e_swing type, ez::QAngle p_target, int speed, e_angle_behavior behavior);
 ```
 
 </TabItem>
@@ -107,7 +107,7 @@ void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, e_angle_beha
 Sets the robot to turn using only one side of the drive with PID relative to initial heading.  
 
 `type` L_SWING or R_SWING  
-`p_target` target value okapi unit  
+`p_target` target value, in units  
 `speed` 0 to 127, max speed during motion   
 `slew_on` ramp up from a lower speed to your target speed   
 <Tabs
@@ -139,7 +139,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, bool slew_on);
+void pid_swing_set(e_swing type, ez::QAngle p_target, int speed, bool slew_on);
 ```
 
 </TabItem>
@@ -153,7 +153,7 @@ void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, bool slew_on
 Sets the robot to turn using only one side of the drive with PID relative to initial heading.  
 
 `type` L_SWING or R_SWING  
-`p_target` target value okapi unit  
+`p_target` target value, in units  
 `speed` 0 to 127, max speed during motion   
 `behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
 `slew_on` ramp up from a lower speed to your target speed   
@@ -186,7 +186,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, e_angle_behavior behavior, bool slew_on);
+void pid_swing_set(e_swing type, ez::QAngle p_target, int speed, e_angle_behavior behavior, bool slew_on);
 ```
 
 </TabItem>
@@ -222,7 +222,7 @@ void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, e_angle_beha
 Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to initial heading.  
 
 `type` L_SWING or R_SWING  
-`p_target` target value okapi unit  
+`p_target` target value, in units  
 `speed` 0 to 127, max speed during motion   
 `opposite_speed` -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs   
 <Tabs
@@ -254,7 +254,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed);
+void pid_swing_set(e_swing type, ez::QAngle p_target, int speed, int opposite_speed);
 ```
 
 </TabItem>
@@ -269,7 +269,7 @@ void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, int opposite
 Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to initial heading.  
 
 `type` L_SWING or R_SWING  
-`p_target` target value okapi unit  
+`p_target` target value, in units  
 `speed` 0 to 127, max speed during motion   
 `opposite_speed` -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs   
 `behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
@@ -302,7 +302,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed, e_angle_behavior behavior);
+void pid_swing_set(e_swing type, ez::QAngle p_target, int speed, int opposite_speed, e_angle_behavior behavior);
 ```
 
 </TabItem>
@@ -318,7 +318,7 @@ void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, int opposite
 Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to initial heading.  
 
 `type` L_SWING or R_SWING  
-`p_target` target value okapi unit  
+`p_target` target value, in units  
 `speed` 0 to 127, max speed during motion   
 `opposite_speed` -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs    
 `slew_on` ramp up from a lower speed to your target speed   
@@ -351,7 +351,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed, bool slew_on);
+void pid_swing_set(e_swing type, ez::QAngle p_target, int speed, int opposite_speed, bool slew_on);
 ```
 
 </TabItem>
@@ -365,7 +365,7 @@ void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, int opposite
 Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to initial heading.  
 
 `type` L_SWING or R_SWING  
-`p_target` target value okapi unit  
+`p_target` target value, in units  
 `speed` 0 to 127, max speed during motion   
 `opposite_speed` -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs    
 `behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
@@ -399,7 +399,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed, e_angle_behavior behavior, bool slew_on);
+void pid_swing_set(e_swing type, ez::QAngle p_target, int speed, int opposite_speed, e_angle_behavior behavior, bool slew_on);
 ```
 
 </TabItem>
@@ -446,7 +446,7 @@ void pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, int opposite
 Sets the robot to turn using only one side of the drive with PID relative to the current heading.  
 
 `type` L_SWING or R_SWING  
-`p_target` target value okapi unit  
+`p_target` target value, in units  
 `speed` 0 to 127, max speed during motion   
 <Tabs
   groupId="pid123z4_turn_re098asd12l_set_o098zx12kapi"
@@ -482,7 +482,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed);
+void pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed);
 ```
 
 </TabItem>
@@ -499,7 +499,7 @@ void pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed);
 Sets the robot to turn using only one side of the drive with PID relative to the current heading.  
 
 `type` L_SWING or R_SWING  
-`p_target` target value okapi unit  
+`p_target` target value, in units  
 `speed` 0 to 127, max speed during motion   
 `slew_on` ramp up from a lower speed to your target speed   
 <Tabs
@@ -536,7 +536,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, bool slew_on);
+void pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, bool slew_on);
 ```
 
 </TabItem>
@@ -553,7 +553,7 @@ void pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, boo
 Sets the robot to turn using only one side of the drive with PID relative to the current heading.  
 
 `type` L_SWING or R_SWING  
-`p_target` target value okapi unit  
+`p_target` target value, in units  
 `speed` 0 to 127, max speed during motion   
 `behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
 <Tabs
@@ -590,7 +590,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, e_angle_behavior behavior);
+void pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, e_angle_behavior behavior);
 ```
 
 </TabItem>
@@ -603,7 +603,7 @@ void pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, e_a
 Sets the robot to turn using only one side of the drive with PID relative to the current heading.  
 
 `type` L_SWING or R_SWING  
-`p_target` target value okapi unit  
+`p_target` target value, in units  
 `speed` 0 to 127, max speed during motion   
 `behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
 `slew_on` ramp up from a lower speed to your target speed     
@@ -641,7 +641,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, e_angle_behavior behavior, bool slew_on);
+void pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, e_angle_behavior behavior, bool slew_on);
 ```
 
 </TabItem>
@@ -673,7 +673,7 @@ void pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, e_a
 Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to the current heading.  
 
 `type` L_SWING or R_SWING  
-`p_target` target value okapi unit  
+`p_target` target value, in units  
 `speed` 0 to 127, max speed during motion   
 `opposite_speed` -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs     
 <Tabs
@@ -710,7 +710,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed);
+void pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, int opposite_speed);
 ```
 
 </TabItem>
@@ -727,7 +727,7 @@ void pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, int
 Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to the current heading.  
 
 `type` L_SWING or R_SWING  
-`p_target` target value okapi unit  
+`p_target` target value, in units  
 `speed` 0 to 127, max speed during motion   
 `opposite_speed` -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs     
 `slew_on` ramp up from a lower speed to your target speed   
@@ -765,7 +765,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed, bool slew_on);
+void pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, int opposite_speed, bool slew_on);
 ```
 
 </TabItem>
@@ -782,7 +782,7 @@ void pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, int
 Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to the current heading.  
 
 `type` L_SWING or R_SWING  
-`p_target` target value okapi unit  
+`p_target` target value, in units  
 `speed` 0 to 127, max speed during motion   
 `opposite_speed` -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs     
 `behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
@@ -820,7 +820,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed, e_angle_behavior behavior);
+void pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, int opposite_speed, e_angle_behavior behavior);
 ```
 
 </TabItem>
@@ -833,7 +833,7 @@ void pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, int
 Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to the current heading.  
 
 `type` L_SWING or R_SWING  
-`p_target` target value okapi unit  
+`p_target` target value, in units  
 `speed` 0 to 127, max speed during motion   
 `opposite_speed` -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs     
 `behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
@@ -872,7 +872,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed, e_angle_behavior behavior, bool slew_on);
+void pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, int opposite_speed, e_angle_behavior behavior, bool slew_on);
 ```
 
 </TabItem>
@@ -908,7 +908,7 @@ Set's constants for swing exit conditions.
 `p_small_error` small timer will start when error is within this, in degrees
 `p_big_exit_time` time to exit when within big_error, in ms
 `p_big_error` big timer will start when error is within this, in degrees
-`p_velocity_exit_time`  velocity timer will start when velocity is 0, in ms
+`p_velocity_exit_time`  velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), in ms
 `p_mA_timeout` mA timer will start when the motors are pulling too much current, in ms   
 `use_imu` true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't    
 <Tabs
@@ -946,12 +946,12 @@ void pid_swing_exit_condition_set(int p_small_exit_time, double p_small_error, i
 ### pid_swing_exit_condition_set()
 Set's constants for swing exit conditions.  
  
-`p_small_exit_time` time to exit when within small_error, okapi unit     
-`p_small_error` small timer will start when error is within this, okapi unit     
-`p_big_exit_time` time to exit when within big_error, okapi unit             
-`p_big_error` big timer will start when error is within this, okapi unit        
-`p_velocity_exit_time` velocity timer will start when velocity is 0, okapi unit   
-`p_mA_timeout` mA timer will start when the motors are pulling too much current, okapi unit      
+`p_small_exit_time` time to exit when within small_error, in units     
+`p_small_error` small timer will start when error is within this, in units     
+`p_big_exit_time` time to exit when within big_error, in units             
+`p_big_error` big timer will start when error is within this, in units        
+`p_velocity_exit_time` velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), in units   
+`p_mA_timeout` mA timer will start when the motors are pulling too much current, in units      
 `use_imu` true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't         
 <Tabs
   groupId="pid_swing_Exit_set_okapi"
@@ -978,7 +978,7 @@ void initialize() {
 <TabItem value="proto">
 
 ```cpp
-void pid_swing_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QAngle p_small_error, okapi::QTime p_big_exit_time, okapi::QAngle p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout, use_imu = true);
+void pid_swing_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error, ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, use_imu = true);
 ```
 
 </TabItem>
@@ -993,7 +993,7 @@ Sets the amount that the PID will overshoot target by to maintain momentum into 
 
 This sets forward and backwards swing constants.     
  
-`input` okapi angle unit      
+`input` angle unit      
 <Tabs
   groupId="pid_swing_chain_constant_set"
   defaultValue="proto"
@@ -1013,7 +1013,7 @@ void initialize() {
 <TabItem value="proto">
 
 ```cpp
-void pid_swing_chain_constant_set(okapi::QAngle input);
+void pid_swing_chain_constant_set(ez::QAngle input);
 ```
 </TabItem>
 </Tabs>
@@ -1023,7 +1023,7 @@ Sets the amount that the PID will overshoot target by to maintain momentum into 
 
 This only sets forward swing constants.      
  
-`input` okapi angle unit      
+`input` angle unit      
 <Tabs
   groupId="pid_swing_chain_forward_constant_set"
   defaultValue="proto"
@@ -1043,7 +1043,7 @@ void initialize() {
 <TabItem value="proto">
 
 ```cpp
-void pid_swing_chain_forward_constant_set(okapi::QAngle input);
+void pid_swing_chain_forward_constant_set(ez::QAngle input);
 ```
 </TabItem>
 </Tabs>
@@ -1054,7 +1054,7 @@ Sets the amount that the PID will overshoot target by to maintain momentum into 
 
 This only sets backward swing constants.     
  
-`input` okapi angle unit      
+`input` angle unit      
 <Tabs
   groupId="pid_swing_chain_forward_constant_set"
   defaultValue="proto"
@@ -1074,7 +1074,7 @@ void initialize() {
 <TabItem value="proto">
 
 ```cpp
-void pid_swing_chain_backward_constant_set(okapi::QAngle input);
+void pid_swing_chain_backward_constant_set(ez::QAngle input);
 ```
 </TabItem>
 </Tabs>
@@ -1089,9 +1089,9 @@ void pid_swing_chain_backward_constant_set(okapi::QAngle input);
 ### slew_swing_constants_set()
 Sets constants for slew for swing movements.   
 
-Slew ramps up the speed of the robot until the set distance is traveled.   
+Slew ramps up the speed of the robot from `min_speed` to full speed (127) over the set distance.  A motion with a lower max speed is capped at that speed, so it stops ramping sooner.   
 
-`distance` the distance the robot travels before reaching max speed, an okapi distance unit  
+`distance` the distance the robot travels to ramp up to full speed (127), a distance unit  
 `min_speed` the starting speed for the movement, 0 - 127  
 <Tabs
   groupId="slew_swing_constants_set_okapi_distance"
@@ -1124,7 +1124,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void slew_swing_constants_set(okapi::QLength distance, int min_speed);
+void slew_swing_constants_set(ez::QLength distance, int min_speed);
 ```
 
 </TabItem>
@@ -1138,9 +1138,9 @@ void slew_swing_constants_set(okapi::QLength distance, int min_speed);
 ### slew_swing_constants_forward_set()
 Sets constants for slew for forward swing movements.   
 
-Slew ramps up the speed of the robot until the set distance is traveled.   
+Slew ramps up the speed of the robot from `min_speed` to full speed (127) over the set distance.  A motion with a lower max speed is capped at that speed, so it stops ramping sooner.   
 
-`distance` the distance the robot travels before reaching max speed, an okapi distance unit  
+`distance` the distance the robot travels to ramp up to full speed (127), a distance unit  
 `min_speed` the starting speed for the movement, 0 - 127  
 <Tabs
   groupId="slew_forward_swing_constants_set_okapi_distance"
@@ -1173,7 +1173,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void slew_swing_constants_forward_set(okapi::QLength distance, int min_speed);
+void slew_swing_constants_forward_set(ez::QLength distance, int min_speed);
 ```
 
 </TabItem>
@@ -1186,9 +1186,9 @@ void slew_swing_constants_forward_set(okapi::QLength distance, int min_speed);
 ### slew_swing_constants_backward_set()
 Sets constants for slew for backward swing movements.   
 
-Slew ramps up the speed of the robot until the set distance is traveled.   
+Slew ramps up the speed of the robot from `min_speed` to full speed (127) over the set distance.  A motion with a lower max speed is capped at that speed, so it stops ramping sooner.   
 
-`distance` the distance the robot travels before reaching max speed, an okapi distance unit  
+`distance` the distance the robot travels to ramp up to full speed (127), a distance unit  
 `min_speed` the starting speed for the movement, 0 - 127  
 <Tabs
   groupId="slew_backward_swing_constants_set_okapi_distance"
@@ -1221,7 +1221,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void slew_swing_constants_backward_set(okapi::QLength distance, int min_speed);
+void slew_swing_constants_backward_set(ez::QLength distance, int min_speed);
 ```
 
 </TabItem>
@@ -1234,9 +1234,9 @@ void slew_swing_constants_backward_set(okapi::QLength distance, int min_speed);
 ### slew_swing_constants_set()
 Sets constants for slew for swing movements.   
 
-Slew ramps up the speed of the robot until the set distance is traveled.   
+Slew ramps up the speed of the robot from `min_speed` to full speed (127) over the set distance.  A motion with a lower max speed is capped at that speed, so it stops ramping sooner.   
 
-`distance` the distance the robot travels before reaching max speed, an okapi angle unit  
+`distance` the distance the robot travels to ramp up to full speed (127), an angle unit  
 `min_speed` the starting speed for the movement, 0 - 127  
 <Tabs
   groupId="slew_swing_constants_set_okapi_angle"
@@ -1269,7 +1269,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void slew_swing_constants_set(okapi::QAngle distance, int min_speed);
+void slew_swing_constants_set(ez::QAngle distance, int min_speed);
 ```
 
 </TabItem>
@@ -1278,9 +1278,9 @@ void slew_swing_constants_set(okapi::QAngle distance, int min_speed);
 ### slew_swing_constants_forward_set()
 Sets constants for slew for forward swing movements.   
 
-Slew ramps up the speed of the robot until the set distance is traveled.   
+Slew ramps up the speed of the robot from `min_speed` to full speed (127) over the set distance.  A motion with a lower max speed is capped at that speed, so it stops ramping sooner.   
 
-`distance` the distance the robot travels before reaching max speed, an okapi angle unit  
+`distance` the distance the robot travels to ramp up to full speed (127), an angle unit  
 `min_speed` the starting speed for the movement, 0 - 127  
 <Tabs
   groupId="slew_forward_swing_constants_set_okapi_angle"
@@ -1313,7 +1313,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void slew_swing_constants_forward_set(okapi::QAngle distance, int min_speed);
+void slew_swing_constants_forward_set(ez::QAngle distance, int min_speed);
 ```
 
 </TabItem>
@@ -1322,9 +1322,9 @@ void slew_swing_constants_forward_set(okapi::QAngle distance, int min_speed);
 ### slew_swing_constants_backward_set()
 Sets constants for slew for backward swing movements.   
 
-Slew ramps up the speed of the robot until the set distance is traveled.   
+Slew ramps up the speed of the robot from `min_speed` to full speed (127) over the set distance.  A motion with a lower max speed is capped at that speed, so it stops ramping sooner.   
 
-`distance` the distance the robot travels before reaching max speed, an okapi angle unit  
+`distance` the distance the robot travels to ramp up to full speed (127), an angle unit  
 `min_speed` the starting speed for the movement, 0 - 127  
 <Tabs
   groupId="slew_bakward_swing_constants_set_okapi_angle"
@@ -1357,7 +1357,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void slew_swing_constants_backward_set(okapi::QAngle distance, int min_speed);
+void slew_swing_constants_backward_set(ez::QAngle distance, int min_speed);
 ```
 
 </TabItem>
@@ -1384,7 +1384,7 @@ void slew_swing_constants_backward_set(okapi::QAngle distance, int min_speed);
 
 
 
-## Functions without Okapi Units
+## Functions without Units
 
 
 ### pid_swing_set()

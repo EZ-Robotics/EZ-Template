@@ -408,7 +408,7 @@ void autonomous() {
 ### odom_x_set()
 Sets the current X coordinate of the robot.     
 
-`p_x` new x coordinate as an okapi unit  
+`p_x` new x coordinate as a unit  
 <Tabs
   groupId="odom_x_set_oka"
   defaultValue="proto"
@@ -420,7 +420,7 @@ Sets the current X coordinate of the robot.
 <TabItem value="proto">
 
 ```cpp
-void odom_x_set(okapi::QLength p_x);
+void odom_x_set(ez::QLength p_x);
 ```
 </TabItem>
 <TabItem value="example">
@@ -497,7 +497,7 @@ void autonomous() {
 ### odom_y_set()
 Sets the current Y coordinate of the robot.       
 
-`p_y` new y coordinate as an okapi unit  
+`p_y` new y coordinate as a unit  
 <Tabs
   groupId="odom_y_set_oka"
   defaultValue="proto"
@@ -509,7 +509,7 @@ Sets the current Y coordinate of the robot.
 <TabItem value="proto">
 
 ```cpp
-void odom_y_set(okapi::QLength p_y);
+void odom_y_set(ez::QLength p_y);
 ```
 </TabItem>
 <TabItem value="example">
@@ -591,7 +591,7 @@ void autonomous() {
 ### odom_theta_set()
 Sets the current angle of the robot.     
 
-`p_y` new angle as an okapi unit
+`p_y` new angle as a unit
 <Tabs
   groupId="odom_theta_set_oka"
   defaultValue="proto"
@@ -604,7 +604,7 @@ Sets the current angle of the robot.
 <TabItem value="proto">
 
 ```cpp
-void odom_theta_set(okapi::QAngle p_a);
+void odom_theta_set(ez::QAngle p_a);
 ```
 
 
@@ -702,8 +702,8 @@ void autonomous() {
 ### odom_xy_set()
 Sets the current X and Y coordinate for the robot.    
 
-`p_x` new x value, okapi unit   
-`p_y` new y value, okapi unit    
+`p_x` new x value, in units   
+`p_y` new y value, in units    
 <Tabs
   groupId="odom_xy_set_oka"
   defaultValue="proto"
@@ -716,7 +716,7 @@ Sets the current X and Y coordinate for the robot.
 <TabItem value="proto">
 
 ```cpp
-void odom_xy_set(okapi::QLength p_x, okapi::QLength p_y);
+void odom_xy_set(ez::QLength p_x, ez::QLength p_y);
 ```
 
 
@@ -811,9 +811,9 @@ void autonomous() {
 ### odom_xy_set()
 Sets the current X, Y, and Theta values for the robot.     
 
-`p_x` new x value, okapi unit   
-`p_y` new y value, okapi unit  
-`p_t` new theta value, okapi unit
+`p_x` new x value, in units   
+`p_y` new y value, in units  
+`p_t` new theta value, in units
 <Tabs
   groupId="odom_xy_set_oka"
   defaultValue="proto"
@@ -826,7 +826,7 @@ Sets the current X, Y, and Theta values for the robot.
 <TabItem value="proto">
 
 ```cpp
-void odom_xyt_set(okapi::QLength p_x, okapi::QLength p_y, okapi::QAngle p_t);
+void odom_xyt_set(ez::QLength p_x, ez::QLength p_y, ez::QAngle p_t);
 ```
 
 
@@ -920,7 +920,7 @@ void autonomous() {
 ### odom_pose_set()
 Set the current pose of the robot.        
 
-`itarget` `{x, y, t}` as an okapi unit   
+`itarget` `{x, y, t}` as a unit   
 <Tabs
   groupId="odom_pose_set_oka"
   defaultValue="proto"
@@ -986,265 +986,6 @@ void autonomous() {
 
 
 
-### odom_x_flip()
-Flips the C axis.  
-
-`flip` true means left is positive x, false means right is positive x
-<Tabs
-  groupId="odom_x_flip"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-
-<TabItem value="proto">
-
-```cpp
-void odom_x_flip(bool flip = true);
-```
-
-
-</TabItem>
-
-
-<TabItem value="example">
-
-```cpp
-void base() {
-  ez::united_pose start_intaking_here;
-
-  if (chassis.odom_x_direction_get() == false)
-    start_intaking_here = {12_in, 24_in};  // If red
-  else
-    start_intaking_here = {15_in, 24_in};  // If blue
-
-  chassis.pid_odom_set({{{0_in, 24_in}, fwd, 110},
-                        {start_intaking_here, rev, 110},
-                        {{24_in, 24_in}, rev, 110}},
-                       true);
-  chassis.pid_wait_until_index(1);  // Waits until the robot passes 12, 24
-  Intake.move(127);
-  chassis.pid_wait();
-
-  chassis.pid_odom_set({{24_in, 48_in, 45_deg}, fwd, 110},
-                       true);
-  chassis.pid_wait();
-
-  chassis.pid_turn_set(90_deg, 110, true);
-  chassis.pid_wait();
-}
-
-void red() {
-  base();
-}
-
-void blue() {
-  chassis.odom_x_flip();
-  chassis.odom_theta_flip();
-  base();
-}
-
-
-void autonomous() {
-  chassis.pid_targets_reset();                // Resets PID targets to 0
-  chassis.drive_imu_reset();                  // Reset gyro position to 0
-  chassis.drive_sensor_reset();               // Reset drive sensors to 0
-  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
-  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
-
-  red(); 
-  // blue();
-}
-```
-
-</TabItem>
-</Tabs>
-
-
-
- 
-
-
-
-
-
-
-
-
-
-### odom_y_flip()
-Flips the Y axis.   
-
-`flip` true means down is positive y, false means up is positive y    
-<Tabs
-  groupId="odom_y_flip"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-
-<TabItem value="proto">
-
-```cpp
-void odom_y_flip(bool flip = true);
-```
-
-
-</TabItem>
-
-
-<TabItem value="example">
-
-```cpp
-void base() {
-  ez::united_pose start_intaking_here;
-
-  if (chassis.odom_y_direction_get() == false)
-    start_intaking_here = {12_in, 24_in};  // If red
-  else
-    start_intaking_here = {15_in, 24_in};  // If blue
-
-  chassis.pid_odom_set({{{0_in, 24_in}, fwd, 110},
-                        {start_intaking_here, rev, 110},
-                        {{24_in, 24_in}, rev, 110}},
-                       true);
-  chassis.pid_wait_until_index(1);  // Waits until the robot passes 12, 24
-  Intake.move(127);
-  chassis.pid_wait();
-
-  chassis.pid_odom_set({{24_in, 48_in, 45_deg}, fwd, 110},
-                       true);
-  chassis.pid_wait();
-
-  chassis.pid_turn_set(90_deg, 110, true);
-  chassis.pid_wait();
-}
-
-void red() {
-  base();
-}
-
-void blue() {
-  chassis.odom_y_flip();
-  chassis.odom_theta_flip();
-  base();
-}
-
-
-void autonomous() {
-  chassis.pid_targets_reset();                // Resets PID targets to 0
-  chassis.drive_imu_reset();                  // Reset gyro position to 0
-  chassis.drive_sensor_reset();               // Reset drive sensors to 0
-  chassis.odom_xyt_set(0_in, 0_in, 90_deg);   // Set the current position, you can start at a specific position with this
-  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
-
-  red(); 
-  // blue();
-}
-```
-
-</TabItem>
-</Tabs>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- 
-
-### odom_theta_flip()
-Flips the rotation axis.  This works for odom and non odom functions.  
-
-`flip` true means counterclockwise is positive, false means clockwise is positive
-<Tabs
-  groupId="odom_theta_flip"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-
-<TabItem value="proto">
-
-```cpp
-void odom_theta_flip(bool flip = true);
-```
-
-
-</TabItem>
-
-
-<TabItem value="example">
-
-```cpp
-void base() {
-  ez::united_pose start_intaking_here;
-
-  if (chassis.odom_theta_direction_get() == false)
-    start_intaking_here = {12_in, 24_in};  // If red
-  else
-    start_intaking_here = {15_in, 24_in};  // If blue
-
-  chassis.pid_odom_set({{{0_in, 24_in}, fwd, 110},
-                        {start_intaking_here, rev, 110},
-                        {{24_in, 24_in}, rev, 110}},
-                       true);
-  chassis.pid_wait_until_index(1);  // Waits until the robot passes 12, 24
-  Intake.move(127);
-  chassis.pid_wait();
-
-  chassis.pid_odom_set({{24_in, 48_in, 45_deg}, fwd, 110},
-                       true);
-  chassis.pid_wait();
-
-  chassis.pid_turn_set(90_deg, 110, true);
-  chassis.pid_wait();
-}
-
-void red() {
-  base();
-}
-
-void blue() {
-  chassis.odom_x_flip();
-  chassis.odom_theta_flip();
-  base();
-}
-
-
-void autonomous() {
-  chassis.pid_targets_reset();                // Resets PID targets to 0
-  chassis.drive_imu_reset();                  // Reset gyro position to 0
-  chassis.drive_sensor_reset();               // Reset drive sensors to 0
-  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
-  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
-
-  red(); 
-  // blue();
-}
-```
-
-</TabItem>
-</Tabs>
 
 
 
@@ -1427,233 +1168,6 @@ void autonomous() {
 </TabItem>
 </Tabs>
 
-### odom_x_direction_get()
-Checks if X axis is flipped.   
-
-True means left is positive X, false means right is positive X.   
-<Tabs
-  groupId="odom_x_direction_get"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-
-<TabItem value="proto">
-
-```cpp
-bool odom_x_direction_get();
-```
-
-
-</TabItem>
-
-
-<TabItem value="example">
-
-```cpp
-void base() {
-  ez::united_pose start_intaking_here;
-
-  if (chassis.odom_x_direction_get() == false)
-    start_intaking_here = {12_in, 24_in};  // If red
-  else
-    start_intaking_here = {15_in, 24_in};  // If blue
-
-  chassis.pid_odom_set({{{0_in, 24_in}, fwd, 110},
-                        {start_intaking_here, rev, 110},
-                        {{24_in, 24_in}, rev, 110}},
-                       true);
-  chassis.pid_wait_until_index(1);  // Waits until the robot passes 12, 24
-  Intake.move(127);
-  chassis.pid_wait();
-
-  chassis.pid_odom_set({{24_in, 48_in, 45_deg}, fwd, 110},
-                       true);
-  chassis.pid_wait();
-
-  chassis.pid_turn_set(90_deg, 110, true);
-  chassis.pid_wait();
-}
-
-void red() {
-  base();
-}
-
-void blue() {
-  chassis.odom_x_flip();
-  chassis.odom_theta_flip();
-  base();
-}
-
-
-void autonomous() {
-  chassis.pid_targets_reset();                // Resets PID targets to 0
-  chassis.drive_imu_reset();                  // Reset gyro position to 0
-  chassis.drive_sensor_reset();               // Reset drive sensors to 0
-  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
-  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
-
-  red(); 
-  // blue();
-}
-```
-
-</TabItem>
-</Tabs>
-
-### odom_y_direction_get()
-Checks if Y axis is flipped.   
-
-True means down is positive Y, false means up is positive Y.   
-<Tabs
-  groupId="odom_y_direction_get"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-
-<TabItem value="proto">
-
-```cpp
-bool odom_y_direction_get();
-```
-
-
-</TabItem>
-
-
-<TabItem value="example">
-
-```cpp
-void base() {
-  ez::united_pose start_intaking_here;
-
-  if (chassis.odom_y_direction_get() == false)
-    start_intaking_here = {12_in, 24_in};  // If red
-  else
-    start_intaking_here = {15_in, 24_in};  // If blue
-
-  chassis.pid_odom_set({{{0_in, 24_in}, fwd, 110},
-                        {start_intaking_here, rev, 110},
-                        {{24_in, 24_in}, rev, 110}},
-                       true);
-  chassis.pid_wait_until_index(1);  // Waits until the robot passes 12, 24
-  Intake.move(127);
-  chassis.pid_wait();
-
-  chassis.pid_odom_set({{24_in, 48_in, 45_deg}, fwd, 110},
-                       true);
-  chassis.pid_wait();
-
-  chassis.pid_turn_set(90_deg, 110, true);
-  chassis.pid_wait();
-}
-
-void red() {
-  base();
-}
-
-void blue() {
-  chassis.odom_y_flip();
-  chassis.odom_theta_flip();
-  base();
-}
-
-
-void autonomous() {
-  chassis.pid_targets_reset();                // Resets PID targets to 0
-  chassis.drive_imu_reset();                  // Reset gyro position to 0
-  chassis.drive_sensor_reset();               // Reset drive sensors to 0
-  chassis.odom_xyt_set(0_in, 0_in, 90_deg);   // Set the current position, you can start at a specific position with this
-  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
-
-  red(); 
-  // blue();
-}
-```
-
-</TabItem>
-</Tabs>
-
-### odom_theta_direction_get()
-Checks if the rotation axis is flipped.   
-
-True means counterclockwise is positive, false means clockwise is positive.   
-<Tabs
-  groupId="odom_theta_direction_get"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-
-<TabItem value="proto">
-
-```cpp
-bool odom_theta_direction_get();
-```
-
-
-</TabItem>
-
-
-<TabItem value="example">
-
-```cpp
-void base() {
-  ez::united_pose start_intaking_here;
-
-  if (chassis.odom_theta_direction_get() == false)
-    start_intaking_here = {12_in, 24_in};  // If red
-  else
-    start_intaking_here = {15_in, 24_in};  // If blue
-
-  chassis.pid_odom_set({{{0_in, 24_in}, fwd, 110},
-                        {start_intaking_here, rev, 110},
-                        {{24_in, 24_in}, rev, 110}},
-                       true);
-  chassis.pid_wait_until_index(1);  // Waits until the robot passes 12, 24
-  Intake.move(127);
-  chassis.pid_wait();
-
-  chassis.pid_odom_set({{24_in, 48_in, 45_deg}, fwd, 110},
-                       true);
-  chassis.pid_wait();
-
-  chassis.pid_turn_set(90_deg, 110, true);
-  chassis.pid_wait();
-}
-
-void red() {
-  base();
-}
-
-void blue() {
-  chassis.odom_x_flip();
-  chassis.odom_theta_flip();
-  base();
-}
-
-
-void autonomous() {
-  chassis.pid_targets_reset();                // Resets PID targets to 0
-  chassis.drive_imu_reset();                  // Reset gyro position to 0
-  chassis.drive_sensor_reset();               // Reset drive sensors to 0
-  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
-  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
-
-  red(); 
-  // blue();
-}
-```
-
-</TabItem>
-</Tabs>
   
 
 
@@ -1720,7 +1234,11 @@ A proportion of how prioritized turning is during odometry motions.
 
 Turning is prioritized so the robot "applies brakes" while turning.  Lower number means more braking.  
 
-`bias` a number between 0 and 1
+Values below 1 make the robot stop driving once turning has gone past a certain angle error, and the robot will never drive backwards to reach the point.  The internal scale factor is clamped between 0 and 1.  
+
+Non-positive values are rejected, a message is printed to the terminal, and the previous value is kept.  
+
+`bias` a positive number, default is 1.375
 <Tabs
   groupId="odom_turn_bias_set"
   defaultValue="proto"
@@ -1761,7 +1279,7 @@ void autonomous() {
   chassis.pid_wait();
   chassis.odom_xyt_set(0_in, 0_in);
 
-  chassis.odom_turn_bias_set(0.5);  // Set turn bias to 0
+  chassis.odom_turn_bias_set(0.5);  // Set turn bias to 0.5
 
   // Go to 24, 24 relative to where the robot ended, but with a new turn bias
   chassis.pid_odom_set({{24_in, 24_in}, fwd, 110});
@@ -1778,12 +1296,12 @@ void autonomous() {
 ### pid_odom_drive_exit_condition_set()
 Set's constants for odom driving exit conditions.  
 
-`p_small_exit_time` time to exit when within small_error, okapi unit     
-`p_small_error` small timer will start when error is within this, okapi unit     
-`p_big_exit_time` time to exit when within big_error, okapi unit             
-`p_big_error` big timer will start when error is within this, okapi unit        
-`p_velocity_exit_time` time, in okapi units, for velocity to be 0          
-`p_mA_timeout` velocity timer will start when velocity is 0, okapi unit     
+`p_small_exit_time` time to exit when within small_error, in units     
+`p_small_error` small timer will start when error is within this, in units     
+`p_big_exit_time` time to exit when within big_error, in units             
+`p_big_error` big timer will start when error is within this, in units        
+`p_velocity_exit_time` time, in units, for velocity to be 0 after the robot has moved (or after 1 second if it never moves)          
+`p_mA_timeout` velocity timer will start when velocity is 0, in units     
 `use_imu` true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't         
 <Tabs
   groupId="pid_odom_drive_exit_condition_set_oka"
@@ -1796,7 +1314,7 @@ Set's constants for odom driving exit conditions.
 <TabItem value="proto">
 
 ```cpp
-void pid_odom_drive_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QLength p_small_error, okapi::QTime p_big_exit_time, okapi::QLength p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout, bool use_imu = true);
+void pid_odom_drive_exit_condition_set(ez::QTime p_small_exit_time, ez::QLength p_small_error, ez::QTime p_big_exit_time, ez::QLength p_big_error, ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = true);
 ```
 </TabItem>
 
@@ -1820,7 +1338,7 @@ Set's constants for odom driving exit conditions.
 `p_small_error` small timer will start when error is within this, in inches     
 `p_big_exit_time` time to exit when within big_error, in ms             
 `p_big_error` big timer will start when error is within this, in inches        
-`p_velocity_exit_time` velocity timer will start when velocity is 0, in ms   
+`p_velocity_exit_time` velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), in ms   
 `p_mA_timeout` mA timer will start when the motors are pulling too much current, in ms      
 `use_imu` true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't         
 <Tabs
@@ -1855,12 +1373,12 @@ void initialize() {
 ### pid_odom_turn_exit_condition_set()
 Set's constants for odom turning exit conditions.  
 
-`p_small_exit_time` time to exit when within small_error, okapi unit     
-`p_small_error` small timer will start when error is within this, okapi unit     
-`p_big_exit_time` time to exit when within big_error, okapi unit             
-`p_big_error` big timer will start when error is within this, okapi unit        
-`p_velocity_exit_time` time, in okapi units, for velocity to be 0          
-`p_mA_timeout` velocity timer will start when velocity is 0, okapi unit     
+`p_small_exit_time` time to exit when within small_error, in units     
+`p_small_error` small timer will start when error is within this, in units     
+`p_big_exit_time` time to exit when within big_error, in units             
+`p_big_error` big timer will start when error is within this, in units        
+`p_velocity_exit_time` time, in units, for velocity to be 0 after the robot has moved (or after 1 second if it never moves)          
+`p_mA_timeout` velocity timer will start when velocity is 0, in units     
 `use_imu` true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't         
 <Tabs
   groupId="pid_odom_turn_exit_condition_set_oka"
@@ -1873,7 +1391,7 @@ Set's constants for odom turning exit conditions.
 <TabItem value="proto">
 
 ```cpp
-void pid_odom_turn_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QAngle p_small_error, okapi::QTime p_big_exit_time, okapi::QAngle p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout, bool use_imu = true);
+void pid_odom_turn_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error, ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = true);
 ```
 </TabItem>
 
@@ -1894,7 +1412,7 @@ Set's constants for odom turning exit conditions.
 `p_small_error` small timer will start when error is within this, in degrees
 `p_big_exit_time` time to exit when within big_error, in ms
 `p_big_error` big timer will start when error is within this, in degrees
-`p_velocity_exit_time`  velocity timer will start when velocity is 0, in ms
+`p_velocity_exit_time`  velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), in ms
 `p_mA_timeout` mA timer will start when the motors are pulling too much current, in ms   
 `use_imu` true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't    
 <Tabs
@@ -1931,7 +1449,7 @@ void initialize() {
 ### odom_look_ahead_set()
 Sets how far away the robot looks in the path during pure pursuits.  
 
-`distance` how long the "carrot on a stick" is, in inches
+`distance` how long the "carrot on a stick" is, in inches.  Must be greater than 0.  Otherwise it is rejected, a message is printed to the terminal, and the previous value is kept.
 <Tabs
   groupId="odom_look_ahead_set"
   defaultValue="proto"
@@ -1989,7 +1507,7 @@ void autonomous() {
 ### odom_look_ahead_set()
 Sets how far away the robot looks in the path during pure pursuits.  
 
-`distance` how long the "carrot on a stick" is, in okapi units
+`distance` how long the "carrot on a stick" is, in units.  Must be greater than 0.  Otherwise it is rejected, a message is printed to the terminal, and the previous value is kept.
 <Tabs
   groupId="odom_look_ahead_se_okat"
   defaultValue="proto"
@@ -2002,7 +1520,7 @@ Sets how far away the robot looks in the path during pure pursuits.
 <TabItem value="proto">
 
 ```cpp
-void odom_look_ahead_set(okapi::QLength p_distance);
+void odom_look_ahead_set(ez::QLength p_distance);
 ```
 
 
@@ -2132,7 +1650,7 @@ e_angle_behavior pid_odom_behavior_get();
 ### odom_path_spacing_set()
 Sets the spacing between points when points get injected into the path.   
 
-`p_spacing` a small number in okapi units
+`p_spacing` a small number in units.  Must be greater than 0.  Otherwise it is rejected, a message is printed to the terminal, and the previous value is kept.
 <Tabs
   groupId="odom_path_spacing_set_oka"
   defaultValue="proto"
@@ -2145,7 +1663,7 @@ Sets the spacing between points when points get injected into the path.
 <TabItem value="proto">
 
 ```cpp
-void odom_path_spacing_set(okapi::QLength p_spacing);
+void odom_path_spacing_set(ez::QLength p_spacing);
 ```
 
 
@@ -2179,7 +1697,7 @@ void autonomous() {
 ### odom_path_spacing_set()
 Sets the spacing between points when points get injected into the path.   
 
-`spacing` a small number in inches
+`spacing` a small number in inches.  Must be greater than 0.  Otherwise it is rejected, a message is printed to the terminal, and the previous value is kept.
 <Tabs
   groupId="odom_path_spacing_set"
   defaultValue="proto"
@@ -2264,7 +1782,7 @@ void autonomous() {
   chassis.pid_wait();
   chassis.odom_xyt_set(0_in, 0_in);
 
-  chassis.odom_turn_bias_set(0.5);  // Set turn bias to 0
+  chassis.odom_turn_bias_set(0.5);  // Set turn bias to 0.5
   printf("Turn Bias: %.2f\n", chassis.odom_turn_bias_get());
 
   // Go to 24, 24 relative to where the robot ended, but with a new turn bias
@@ -2494,9 +2012,11 @@ Sets the constants for smoothing out a path.
 
 Path smoothing based on [https://medium.com/@jaems33/understanding-robot-motion-path-smoothing-5970c8363bc4](https://medium.com/@jaems33/understanding-robot-motion-path-smoothing-5970c8363bc4)  
 
-`weight_smooth` how much weight to update the data   
-`weight_data` how much weight to smooth the coordinates   
-`tolerance` how much change per iteration is necessary to keep iterating    
+`weight_smooth` how much weight to update the data, 0 or more and less than 1  
+`weight_data` how much weight to smooth the coordinates, 0 or more  
+`tolerance` how much change per iteration is necessary to keep iterating, greater than 0  
+
+If any of these are out of range, all of the constants are rejected, a message is printed to the terminal naming the first one that is out of range, and the previous constants are kept.  
 <Tabs
   groupId="odom_path_smooth_constants_set"
   defaultValue="proto"
@@ -2804,7 +2324,7 @@ void initialize() {
 ### odom_boomerang_distance_set()
 Sets how far away the carrot point can be from the target point.   
 
-`distance` distance as an okapi unit  
+`distance` distance as a unit  
 <Tabs
   groupId="odom_boomerang_distance_set_oka"
   defaultValue="proto"
@@ -2817,7 +2337,7 @@ Sets how far away the carrot point can be from the target point.
 <TabItem value="proto">
 
 ```cpp
-void odom_boomerang_distance_set(okapi::QLength p_distance);
+void odom_boomerang_distance_set(ez::QLength p_distance);
 ```
 
 

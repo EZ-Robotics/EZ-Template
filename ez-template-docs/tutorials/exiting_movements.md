@@ -34,7 +34,7 @@ You can add another layer to this where it'll also check for a larger area.  No
 But when the robot enters the smaller exit zone, the big timer will not continue.  If the big timer was not reset to 0 and we overshot target, big timer would be starting from a very high number and we would exit before correctly confirming the robot has settled.  This can be seen here.     
 ![](images/big_timeout_reset_small_timeout.gif) 
 
-There are two more exit timers that you can add that are intended to be **failsafes** for when the previous two don't trigger.  One timer will start to increase when the velocity of the robot is 0, so if the robot is still for too long it'll exit.  Another timer will start once the robot sees it's pulling on the motors too hard (ie, you're fighting your opponent for a mobile goal), and if it's doing this for too long it'll exit.  
+There are two more exit timers that you can add that are intended to be **failsafes** for when the previous two don't trigger.  One timer will start to increase when the velocity of the robot is 0, so if the robot is still for too long it'll exit.  This timer waits until the robot has started moving, so a robot that hasn't gotten going yet won't exit too early.  If the robot never moves, the timer starts counting after 1 second.  Another timer will start once the robot sees it's pulling on the motors too hard (ie, you're fighting your opponent for a mobile goal), and if it's doing this for too long it'll exit.  
 
 `pid_wait()` will be your safest way to exit, but with that, it's also going to be the slowest way to exit.  
 

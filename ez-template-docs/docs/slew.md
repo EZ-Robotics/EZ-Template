@@ -18,9 +18,9 @@ Click [here](https://ez-robotics.github.io/EZ-Template/category/autonomous-funct
 
 
 ### slew()
-Creates a slew object with constants.  Robot will start at `min_speed` and will be at the maximum set speed once `distance` is traveled.
+Creates a slew object with constants.  Robot will start at `min_speed` and ramp up to full speed (127) once `distance` is traveled, capped at the movement's maximum speed.
 
-`distance` distance to travel until maximum speed is reached.  
+`distance` distance to travel until full speed (127) is reached.  The ramp rate does not depend on the movement's maximum speed.  
 `minimum_speed` starting speed.  
 <Tabs
   groupId="slew"
@@ -57,7 +57,7 @@ slew(double distance, int minimum_speed);
 ### constants_set()
 Sets slew constants.    
 
-`distance` distance to travel until maximum speed is reached.  
+`distance` distance to travel until full speed (127) is reached.  The ramp rate does not depend on the movement's maximum speed.  
 `minimum_speed` starting speed.  
 <Tabs
   groupId="set_constants"
@@ -96,8 +96,8 @@ void constants_set(double distance, int minimum_speed);
 Setup for slew.  Keeps track of where the starting sensor value is and what the maximum target speed is.  
 
 `enabled` true if you want slew to run, false if you don't.  
-`maximum_speed` the target speed for the robot to reach.    
-`target` the distance to reach before max speed is hit.  
+`maximum_speed` the most speed slew is allowed to output for this movement.  This caps the output, it does not change how fast slew ramps up.    
+`target` the target position for the movement.  
 `current` the current sensor value.  
 <Tabs
   groupId="slew_init"
