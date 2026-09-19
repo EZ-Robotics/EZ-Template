@@ -4,7 +4,7 @@ coding made **ez**
 
 A C++ library for VEX V5 robots that gets your robot moving in minutes, built on [PROS](https://pros.cs.purdue.edu/).
 
-*Used by teams that have won Worlds, and thousands of others.*
+Used by thousands of teams, including Worlds winners.
 
 ![](https://img.shields.io/github/downloads/EZ-Robotics/EZ-Template/total.svg)
 ![](https://github.com/EZ-Robotics/EZ-Template/workflows/Build/badge.svg)
