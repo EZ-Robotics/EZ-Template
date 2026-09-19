@@ -19,16 +19,14 @@ jobs:
         id: test
         uses: LemLib/pros-build@v5.1.0
 
-      # The library's headers #include "EZ-Units/units.hpp", so the template zip has to
-      # carry it. Fails if TEMPLATE_FILES in the Makefile ever stops shipping it.
-      - name: Check the template zip ships EZ-Units
+      # The library's headers #include "EZ-Units/units.hpp", so the built template has to
+      # carry it. pros-build leaves the template unpacked in template/ (that is what the
+      # artifact upload below publishes). Fails if TEMPLATE_FILES in the Makefile ever stops
+      # shipping the header.
+      - name: Check the template ships EZ-Units
         run: |
-          shopt -s nullglob
-          zips=(template/*.zip)
-          [ ${#zips[@]} -gt 0 ] || { echo "no template zip found in template/"; exit 1; }
-          for z in "${zips[@]}"; do
-            unzip -l "$z" | grep -q 'include/EZ-Units/units.hpp' || { echo "$z is missing include/EZ-Units/units.hpp"; exit 1; }
-          done
+          [ -f template/include/EZ-Units/units.hpp ] || { echo "template/include/EZ-Units/units.hpp is missing; template/ contains:"; ls -R template | head -40; exit 1; }
+          grep -q 'EZ-Units.*units.hpp' template/template.pros || { echo "template/template.pros does not list EZ-Units/units.hpp"; exit 1; }
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v7
