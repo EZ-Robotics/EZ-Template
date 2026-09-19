@@ -21,6 +21,11 @@ namespace as {
 // Drive::drive_defaults_set() with (nullptr, nullptr), which the real
 // implementation just turns into an early return, so a no-op is equivalent.
 void limit_switch_lcd_initialize(pros::adi::DigitalIn* right_limit, pros::adi::DigitalIn* left_limit) {}
+
+// Declared in sdcard.hpp, defined in sdcard.cpp (excluded). autons_add()
+// reads it to keep auton_count in sync with blank pages the screen task
+// has already registered.
+int amount_of_blank_pages = 0;
 }  // namespace as
 }  // namespace ez
 
