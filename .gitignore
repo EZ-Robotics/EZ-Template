@@ -20,3 +20,13 @@ temp.errors
 test/run_tests
 test/run_tests.exe
 test/run_tests.pdb
+
+# Docusaurus (docs site lives on the website branch, not here)
+/node_modules
+/build
+.docusaurus
+.cache-loader
+
+# Example project (lives on the example-project branch, not here)
+/EZ-Template-Example-Project/
+/EZ-Template-Example-Project.zip

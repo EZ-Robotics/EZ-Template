@@ -11,11 +11,14 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include <string.h>
 
 #include "api.h"
-#include "okapi/api/units/QAngle.hpp"
-#include "okapi/api/units/QLength.hpp"
-#include "okapi/api/units/QTime.hpp"
+#include "EZ-Units/units.hpp"
 
-using namespace okapi::literals;
+// include/EZ-Units/units.hpp is vendored from EZ-Units, and a standalone EZ-Units install ships the
+// same file at the same path. Refuse to build against a different major version.
+static_assert(EZ_UNITS_VERSION_MAJOR == 1, "EZ-Template needs EZ-Units 1.x, check include/EZ-Units/units.hpp");
+
+// Puts the unit literals (24_in, 90_deg, 100_ms, ...) in scope for user code.
+using namespace ez::literals;
 
 /**
  * Controller.
@@ -108,7 +111,7 @@ enum e_angle_behavior { raw = 0,
                         longest = 4 };
 
 const double ANGLE_NOT_SET = 0.0000000000000000000001;
-const okapi::QAngle p_ANGLE_NOT_SET = 0.0000000000000000000001_deg;
+const ez::QAngle p_ANGLE_NOT_SET = 0.0000000000000000000001_deg;
 
 /**
  * Struct for coordinates.
@@ -123,9 +126,9 @@ typedef struct pose {
  * Struct for united coordinates.
  */
 typedef struct united_pose {
-  okapi::QLength x;
-  okapi::QLength y;
-  okapi::QAngle theta = p_ANGLE_NOT_SET;
+  ez::QLength x;
+  ez::QLength y;
+  ez::QAngle theta = p_ANGLE_NOT_SET;
 } united_pose;
 
 /**
@@ -217,6 +220,27 @@ double clamp(double input, double max, double min);
 double clamp(double input, double max);
 
 /**
+ * Mixes a forward and turn joystick value into left and right outputs using curvature drive.
+ *
+ * The turn value is scaled by the forward speed, so the robot follows the same arc no matter how fast it is
+ * driving.  A turn value scaled by forward speed can't turn on a point, so the scale never drops below
+ * point_turn_gain.  Below that speed this behaves like arcade with turning scaled by point_turn_gain.
+ *
+ * If either side goes past 127, both are divided by the larger one.  This keeps the ratio between the sides,
+ * which keeps the arc, at the cost of top speed.
+ *
+ * \param fwd
+ *        forward joystick value, -127 to 127
+ * \param turn
+ *        turn joystick value, -127 to 127
+ * \param point_turn_gain
+ *        0 to 1.  0 is pure curvature, 1 is pure arcade
+ * \return
+ *        {left, right}, both within -127 to 127
+ */
+std::pair<double, double> curvature_mix(double fwd, double turn, double point_turn_gain);
+
+/**
  * Is the SD card plugged in?
  */
 const bool SD_CARD_ACTIVE = pros::usd::is_installed();
@@ -305,7 +329,7 @@ double turn_shortest(double target, double current, bool print = false);
 double turn_longest(double target, double current, bool print = false);
 
 /**
- * Converts pose with okapi units to a pose without okapi units.
+ * Converts pose with units to a pose without units.
  *
  * \param input
  *        a pose with units
@@ -313,7 +337,7 @@ double turn_longest(double target, double current, bool print = false);
 pose united_pose_to_pose(united_pose input);
 
 /**
- * Converts vector of poses with okapi units to a vector of poses without okapi units.
+ * Converts vector of poses with units to a vector of poses without units.
  *
  * \param inputs
  *        poses with units

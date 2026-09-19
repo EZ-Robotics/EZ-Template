@@ -13,14 +13,32 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Run LemLib/pros-build
         id: test
         uses: LemLib/pros-build@v5.1.0
 
+      # The library's headers #include "EZ-Units/units.hpp", so the built template has to
+      # carry it. pros-build leaves the template unpacked in template/ (that is what the
+      # artifact upload below publishes). Fails if TEMPLATE_FILES in the Makefile ever stops
+      # shipping the header.
+      - name: Check the template ships EZ-Units
+        run: |
+          [ -f template/include/EZ-Units/units.hpp ] || { echo "template/include/EZ-Units/units.hpp is missing; template/ contains:"; ls -R template | head -40; exit 1; }
+          grep -q 'EZ-Units.*units.hpp' template/template.pros || { echo "template/template.pros does not list EZ-Units/units.hpp"; exit 1; }
+
+      # api.hpp includes include/EZ-Template/version.hpp, which the Makefile regenerates from
+      # VERSION, so the template has to carry it. pros-build appends +<commit> to VERSION
+      # here, which must not end up in the header.
+      - name: Check the template ships version.hpp
+        run: |
+          [ -f template/include/EZ-Template/version.hpp ] || { echo "template/include/EZ-Template/version.hpp is missing; template/ contains:"; ls -R template | head -40; exit 1; }
+          grep -q 'EZ-Template.*version.hpp' template/template.pros || { echo "template/template.pros does not list EZ-Template/version.hpp"; exit 1; }
+          ! grep -q 'VERSION_STRING ".*+' template/include/EZ-Template/version.hpp || { echo "build metadata leaked into EZ_TEMPLATE_VERSION_STRING"; exit 1; }
+
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ steps.test.outputs.name }}
           path: ${{ github.workspace }}/template/*
@@ -29,7 +47,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # Builds only the library archive (excludes src/main.cpp and src/autons.cpp,
       # which are user project files this repo happens to keep around for local dev
@@ -47,10 +65,48 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # No PROS toolchain, no VEX brain: compiles the pure-logic parts of the
-      # library against a set of PROS/okapi stubs with the ordinary g++
+      # library against a set of PROS stubs with the ordinary g++
       # ubuntu-latest already has, and runs the resulting doctest binary.
       - name: Run host tests
         run: make -C test
+
+      # tools/gen-version.sh, which turns VERSION in the Makefile into version.hpp
+      - name: Version macros
+        run: cd test && sh version_test.sh g++
+
+      # Every build regenerates version.hpp and the root version file from VERSION, so this only
+      # fails when a VERSION change was committed without them. Run make and commit the result.
+      - name: version.hpp and version match VERSION in the Makefile
+        run: |
+          git ls-files --error-unmatch include/EZ-Template/version.hpp > /dev/null
+          err=$(sh tools/gen-version.sh); [ -z "$err" ] || { echo "$err"; exit 1; }
+          git diff --exit-code -- include/EZ-Template/version.hpp version
+
+      # OkapiLib is no longer a dependency of the library. Keep it that way; the
+      # only okapi allowed in the repo is the four unit headers under test/fixtures,
+      # used to simulate a user project that still has okapilib installed.
+      - name: No OkapiLib references in the library
+        run: |
+          if grep -rniE 'okapi' include/EZ-Template src/EZ-Template; then
+            echo "OkapiLib is no longer used by EZ-Template; remove the references above"
+            exit 1
+          fi
+
+  # include/EZ-Units/units.hpp is a vendored copy of EZ-Units and must stay
+  # byte-identical to the tagged release. To upgrade it, copy the file from the new
+  # tag and bump EZ_UNITS_TAG below in the same commit.
+  vendored-ez-units:
+    runs-on: ubuntu-latest
+    env:
+      EZ_UNITS_TAG: v1.0.0
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Vendored EZ-Units matches the upstream tag
+        run: |
+          curl -fsSL --retry 3 "https://raw.githubusercontent.com/EZ-Robotics/EZ-Units/${EZ_UNITS_TAG}/include/EZ-Units/units.hpp" -o /tmp/upstream_units.hpp
+          diff -u /tmp/upstream_units.hpp include/EZ-Units/units.hpp

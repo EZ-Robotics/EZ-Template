@@ -5,14 +5,14 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
 #include "EZ-Template/api.hpp"
-#include "okapi/api/units/QAngle.hpp"
+#include "EZ-Units/units.hpp"
 
 namespace ez {
 /////
 // Sets swing constants
 /////
 // When kI and startI are enabled, maximum output allowed while error is inside startI, for swings larger than startI
-void Drive::pid_swing_min_set(int min) { swing_min = abs(min); }
+void Drive::pid_swing_min_set(int min) { swing_min = std::abs(min); }
 int Drive::pid_swing_min_get() { return swing_min; }
 
 // PID Constants
@@ -45,31 +45,31 @@ PID::Constants Drive::pid_swing_constants_get() {
 }
 
 // Slew Constants
-void Drive::slew_swing_constants_backward_set(okapi::QLength distance, int min_speed) {
+void Drive::slew_swing_constants_backward_set(ez::QLength distance, int min_speed) {
   slew_swing_rev_using_angle = false;
-  double dist = distance.convert(okapi::inch);
+  double dist = distance.convert(ez::inch);
   slew_swing_backward.constants_set(dist, min_speed);
 }
-void Drive::slew_swing_constants_forward_set(okapi::QLength distance, int min_speed) {
+void Drive::slew_swing_constants_forward_set(ez::QLength distance, int min_speed) {
   slew_swing_fwd_using_angle = false;
-  double dist = distance.convert(okapi::inch);
+  double dist = distance.convert(ez::inch);
   slew_swing_forward.constants_set(dist, min_speed);
 }
-void Drive::slew_swing_constants_set(okapi::QLength distance, int min_speed) {
+void Drive::slew_swing_constants_set(ez::QLength distance, int min_speed) {
   slew_swing_constants_forward_set(distance, min_speed);
   slew_swing_constants_backward_set(distance, min_speed);
 }
-void Drive::slew_swing_constants_backward_set(okapi::QAngle distance, int min_speed) {
+void Drive::slew_swing_constants_backward_set(ez::QAngle distance, int min_speed) {
   slew_swing_rev_using_angle = true;
-  double dist = distance.convert(okapi::degree);
+  double dist = distance.convert(ez::degree);
   slew_swing_backward.constants_set(dist, min_speed);
 }
-void Drive::slew_swing_constants_forward_set(okapi::QAngle distance, int min_speed) {
+void Drive::slew_swing_constants_forward_set(ez::QAngle distance, int min_speed) {
   slew_swing_fwd_using_angle = true;
-  double dist = distance.convert(okapi::degree);
+  double dist = distance.convert(ez::degree);
   slew_swing_forward.constants_set(dist, min_speed);
 }
-void Drive::slew_swing_constants_set(okapi::QAngle distance, int min_speed) {
+void Drive::slew_swing_constants_set(ez::QAngle distance, int min_speed) {
   slew_swing_constants_forward_set(distance, min_speed);
   slew_swing_constants_backward_set(distance, min_speed);
 }
@@ -102,8 +102,8 @@ void Drive::pid_swing_set(e_swing type, double target, int speed) {
   bool slew_on = is_swing_slew_enabled(type, target, drive_angle_get());
   pid_swing_set(type, target, speed, 0, pid_swing_behavior_get(), slew_on);
 }
-void Drive::pid_swing_set(e_swing type, okapi::QAngle p_target, int speed) {
-  double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
+void Drive::pid_swing_set(e_swing type, ez::QAngle p_target, int speed) {
+  double target = p_target.convert(ez::degree);  // Convert unit to degree
   pid_swing_set(type, target, speed);
 }
 // Relative
@@ -113,8 +113,8 @@ void Drive::pid_swing_relative_set(e_swing type, double target, int speed) {
   bool slew_on = is_swing_slew_enabled(type, absolute_heading, drive_angle_get());
   pid_swing_relative_set(type, target, speed, 0, pid_swing_behavior_get(), slew_on);
 }
-void Drive::pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed) {
-  double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
+void Drive::pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed) {
+  double target = p_target.convert(ez::degree);  // Convert unit to degree
   pid_swing_relative_set(type, target, speed);
 }
 
@@ -126,8 +126,8 @@ void Drive::pid_swing_set(e_swing type, double target, int speed, e_angle_behavi
   bool slew_on = is_swing_slew_enabled(type, target, drive_angle_get());
   pid_swing_set(type, target, speed, 0, behavior, slew_on);
 }
-void Drive::pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, e_angle_behavior behavior) {
-  double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
+void Drive::pid_swing_set(e_swing type, ez::QAngle p_target, int speed, e_angle_behavior behavior) {
+  double target = p_target.convert(ez::degree);  // Convert unit to degree
   pid_swing_set(type, target, speed, behavior);
 }
 // Relative
@@ -137,8 +137,8 @@ void Drive::pid_swing_relative_set(e_swing type, double target, int speed, e_ang
   bool slew_on = is_swing_slew_enabled(type, absolute_heading, drive_angle_get());
   pid_swing_relative_set(type, target, speed, 0, behavior, slew_on);
 }
-void Drive::pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, e_angle_behavior behavior) {
-  double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
+void Drive::pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, e_angle_behavior behavior) {
+  double target = p_target.convert(ez::degree);  // Convert unit to degree
   pid_swing_relative_set(type, target, speed, behavior);
 }
 
@@ -150,8 +150,8 @@ void Drive::pid_swing_set(e_swing type, double target, int speed, int opposite_s
   bool slew_on = is_swing_slew_enabled(type, target, drive_angle_get());
   pid_swing_set(type, target, speed, opposite_speed, pid_swing_behavior_get(), slew_on);
 }
-void Drive::pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed) {
-  double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
+void Drive::pid_swing_set(e_swing type, ez::QAngle p_target, int speed, int opposite_speed) {
+  double target = p_target.convert(ez::degree);  // Convert unit to degree
   bool slew_on = is_swing_slew_enabled(type, target, drive_angle_get());
   pid_swing_set(type, target, speed, opposite_speed, slew_on);
 }
@@ -161,8 +161,8 @@ void Drive::pid_swing_relative_set(e_swing type, double target, int speed, int o
   bool slew_on = is_swing_slew_enabled(type, absolute_heading, drive_angle_get());
   pid_swing_relative_set(type, target, speed, opposite_speed, pid_swing_behavior_get(), slew_on);
 }
-void Drive::pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed) {
-  double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
+void Drive::pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, int opposite_speed) {
+  double target = p_target.convert(ez::degree);  // Convert unit to degree
   pid_swing_relative_set(type, target, speed, opposite_speed);
 }
 
@@ -173,16 +173,16 @@ void Drive::pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int spe
 void Drive::pid_swing_set(e_swing type, double target, int speed, bool slew_on) {
   pid_swing_set(type, target, speed, 0, pid_swing_behavior_get(), slew_on);
 }
-void Drive::pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, bool slew_on) {
-  double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
+void Drive::pid_swing_set(e_swing type, ez::QAngle p_target, int speed, bool slew_on) {
+  double target = p_target.convert(ez::degree);  // Convert unit to degree
   pid_swing_set(type, target, speed, slew_on);
 }
 // Relative
 void Drive::pid_swing_relative_set(e_swing type, double target, int speed, bool slew_on) {
   pid_swing_relative_set(type, target, speed, 0, pid_swing_behavior_get(), slew_on);
 }
-void Drive::pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, bool slew_on) {
-  double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
+void Drive::pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, bool slew_on) {
+  double target = p_target.convert(ez::degree);  // Convert unit to degree
   pid_swing_relative_set(type, target, speed, slew_on);
 }
 
@@ -194,8 +194,8 @@ void Drive::pid_swing_set(e_swing type, double target, int speed, int opposite_s
   bool slew_on = is_swing_slew_enabled(type, target, drive_angle_get());
   pid_swing_set(type, target, speed, opposite_speed, behavior, slew_on);
 }
-void Drive::pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed, e_angle_behavior behavior) {
-  double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
+void Drive::pid_swing_set(e_swing type, ez::QAngle p_target, int speed, int opposite_speed, e_angle_behavior behavior) {
+  double target = p_target.convert(ez::degree);  // Convert unit to degree
   pid_swing_set(type, target, speed, opposite_speed, behavior);
 }
 // Relative
@@ -204,8 +204,8 @@ void Drive::pid_swing_relative_set(e_swing type, double target, int speed, int o
   bool slew_on = is_swing_slew_enabled(type, absolute_heading, drive_angle_get());
   pid_swing_relative_set(type, target, speed, opposite_speed, behavior, slew_on);
 }
-void Drive::pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed, e_angle_behavior behavior) {
-  double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
+void Drive::pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, int opposite_speed, e_angle_behavior behavior) {
+  double target = p_target.convert(ez::degree);  // Convert unit to degree
   pid_swing_relative_set(type, target, speed, opposite_speed, behavior);
 }
 
@@ -216,8 +216,8 @@ void Drive::pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int spe
 void Drive::pid_swing_set(e_swing type, double target, int speed, int opposite_speed, bool slew_on) {
   pid_swing_set(type, target, speed, opposite_speed, pid_swing_behavior_get(), slew_on);
 }
-void Drive::pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed, bool slew_on) {
-  double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
+void Drive::pid_swing_set(e_swing type, ez::QAngle p_target, int speed, int opposite_speed, bool slew_on) {
+  double target = p_target.convert(ez::degree);  // Convert unit to degree
   pid_swing_set(type, target, speed, opposite_speed, slew_on);
 }
 // Relative
@@ -227,8 +227,8 @@ void Drive::pid_swing_relative_set(e_swing type, double target, int speed, int o
   if (print_toggle) printf("Relative ");
   pid_swing_set(type, absolute_target, speed, opposite_speed, pid_swing_behavior_get(), slew_on);
 }
-void Drive::pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed, bool slew_on) {
-  double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
+void Drive::pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, int opposite_speed, bool slew_on) {
+  double target = p_target.convert(ez::degree);  // Convert unit to degree
   pid_swing_relative_set(type, target, speed, opposite_speed, slew_on);
 }
 
@@ -239,8 +239,8 @@ void Drive::pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int spe
 void Drive::pid_swing_set(e_swing type, double target, int speed, e_angle_behavior behavior, bool slew_on) {
   pid_swing_set(type, target, speed, 0, behavior, slew_on);
 }
-void Drive::pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, e_angle_behavior behavior, bool slew_on) {
-  double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
+void Drive::pid_swing_set(e_swing type, ez::QAngle p_target, int speed, e_angle_behavior behavior, bool slew_on) {
+  double target = p_target.convert(ez::degree);  // Convert unit to degree
   pid_swing_set(type, target, speed, behavior, slew_on);
 }
 // Relative
@@ -250,8 +250,8 @@ void Drive::pid_swing_relative_set(e_swing type, double target, int speed, e_ang
   if (print_toggle) printf("Relative ");
   pid_swing_set(type, absolute_target, speed, 0, behavior, slew_on);
 }
-void Drive::pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, e_angle_behavior behavior, bool slew_on) {
-  double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
+void Drive::pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, e_angle_behavior behavior, bool slew_on) {
+  double target = p_target.convert(ez::degree);  // Convert unit to degree
   pid_swing_relative_set(type, target, speed, behavior, slew_on);
 }
 
@@ -259,8 +259,8 @@ void Drive::pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int spe
 // Set turn PID with opposite speed, swing behavior, and slew
 /////
 // Absolute
-void Drive::pid_swing_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed, e_angle_behavior behavior, bool slew_on) {
-  double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
+void Drive::pid_swing_set(e_swing type, ez::QAngle p_target, int speed, int opposite_speed, e_angle_behavior behavior, bool slew_on) {
+  double target = p_target.convert(ez::degree);  // Convert unit to degree
   pid_swing_set(type, target, speed, opposite_speed, behavior, slew_on);
 }
 // Relative
@@ -270,8 +270,8 @@ void Drive::pid_swing_relative_set(e_swing type, double target, int speed, int o
   if (print_toggle) printf("Relative ");
   pid_swing_set(type, absolute_target, speed, opposite_speed, behavior, slew_on);
 }
-void Drive::pid_swing_relative_set(e_swing type, okapi::QAngle p_target, int speed, int opposite_speed, e_angle_behavior behavior, bool slew_on) {
-  double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
+void Drive::pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, int opposite_speed, e_angle_behavior behavior, bool slew_on) {
+  double target = p_target.convert(ez::degree);  // Convert unit to degree
   pid_swing_relative_set(type, target, speed, opposite_speed, behavior, slew_on);
 }
 

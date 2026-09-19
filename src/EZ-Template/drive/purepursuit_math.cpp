@@ -26,7 +26,7 @@ double Drive::is_past_target(pose target, pose current) {
   double fake_angle = util::to_rad((util::absolute_angle_to_point(ptf, {fakek_x, fakek_y})) + add);
 
   // Rotate around origin
-  double fake_y = (fakek_y * cos(fake_angle)) + (fakek_x * sin(fake_angle));
+  double fake_y = (fakek_y * std::cos(fake_angle)) + (fakek_x * std::sin(fake_angle));
 
   return fake_y;
 }
@@ -56,7 +56,7 @@ std::vector<pose> Drive::find_point_to_face(pose current, pose target, drive_dir
   double angle = 0.0;
   if (tx_cx != 0) {
     m = (target.y - current.y) / tx_cx;
-    angle = 90.0 - util::to_deg(atan(m));
+    angle = 90.0 - util::to_deg(std::atan(m));
   }
   pose ptf1 = util::vector_off_point(odom_look_ahead_get(), {target.x, target.y, angle});
   pose ptf2 = util::vector_off_point(-odom_look_ahead_get(), {target.x, target.y, angle});

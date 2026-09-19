@@ -9,7 +9,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include <list>
 
 #include "EZ-Template/api.hpp"
-#include "okapi/api/units/QAngle.hpp"
+#include "EZ-Units/units.hpp"
 #include "pros/llemu.hpp"
 #include "pros/screen.hpp"
 
@@ -29,13 +29,13 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 
   // Set ports to a global vector
   for (auto i : left_motor_ports) {
-    pros::Motor temp((std::int8_t)abs(i));
+    pros::Motor temp((std::int8_t)std::abs(i));
     temp.set_reversed(util::reversed_active(i));
     temp.set_encoder_units(pros::MotorUnits::counts);  // drive_tick_per_inch() assumes counts
     left_motors.push_back(temp);
   }
   for (auto i : right_motor_ports) {
-    pros::Motor temp((std::int8_t)abs(i));
+    pros::Motor temp((std::int8_t)std::abs(i));
     temp.set_reversed(util::reversed_active(i));
     temp.set_encoder_units(pros::MotorUnits::counts);  // drive_tick_per_inch() assumes counts
     right_motors.push_back(temp);
@@ -67,13 +67,13 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 
   // Set ports to a global vector
   for (auto i : left_motor_ports) {
-    pros::Motor temp((std::int8_t)abs(i));
+    pros::Motor temp((std::int8_t)std::abs(i));
     temp.set_reversed(util::reversed_active(i));
     temp.set_encoder_units(pros::MotorUnits::counts);  // drive_tick_per_inch() assumes counts
     left_motors.push_back(temp);
   }
   for (auto i : right_motor_ports) {
-    pros::Motor temp((std::int8_t)abs(i));
+    pros::Motor temp((std::int8_t)std::abs(i));
     temp.set_reversed(util::reversed_active(i));
     temp.set_encoder_units(pros::MotorUnits::counts);  // drive_tick_per_inch() assumes counts
     right_motors.push_back(temp);
@@ -104,8 +104,8 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
              int imu_port, double wheel_diameter, double ticks, double ratio,
              std::vector<int> left_tracker_ports, std::vector<int> right_tracker_ports)
     : imu(new pros::Imu(imu_port)),
-      left_tracker(abs(left_tracker_ports[0]), abs(left_tracker_ports[1]), util::reversed_active(left_tracker_ports[0])),
-      right_tracker(abs(right_tracker_ports[0]), abs(right_tracker_ports[1]), util::reversed_active(right_tracker_ports[0])),
+      left_tracker(std::abs(left_tracker_ports[0]), std::abs(left_tracker_ports[1]), util::reversed_active(left_tracker_ports[0])),
+      right_tracker(std::abs(right_tracker_ports[0]), std::abs(right_tracker_ports[1]), util::reversed_active(right_tracker_ports[0])),
       left_rotation(-1),
       right_rotation(-1),
       ez_auto([this] { this->ez_auto_task(); }) {
@@ -114,13 +114,13 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 
   // Set ports to a global vector
   for (auto i : left_motor_ports) {
-    pros::Motor temp(abs(i));
+    pros::Motor temp(std::abs(i));
     temp.set_reversed(util::reversed_active(i));
     temp.set_encoder_units(pros::MotorUnits::counts);  // drive_tick_per_inch() assumes counts
     left_motors.push_back(temp);
   }
   for (auto i : right_motor_ports) {
-    pros::Motor temp(abs(i));
+    pros::Motor temp(std::abs(i));
     temp.set_reversed(util::reversed_active(i));
     temp.set_encoder_units(pros::MotorUnits::counts);  // drive_tick_per_inch() assumes counts
     right_motors.push_back(temp);
@@ -143,8 +143,8 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
              int imu_port, double wheel_diameter, double ticks, double ratio,
              std::vector<int> left_tracker_ports, std::vector<int> right_tracker_ports, int expander_smart_port)
     : imu(new pros::Imu(imu_port)),
-      left_tracker({expander_smart_port, abs(left_tracker_ports[0]), abs(left_tracker_ports[1])}, util::reversed_active(left_tracker_ports[0])),
-      right_tracker({expander_smart_port, abs(right_tracker_ports[0]), abs(right_tracker_ports[1])}, util::reversed_active(right_tracker_ports[0])),
+      left_tracker({expander_smart_port, std::abs(left_tracker_ports[0]), std::abs(left_tracker_ports[1])}, util::reversed_active(left_tracker_ports[0])),
+      right_tracker({expander_smart_port, std::abs(right_tracker_ports[0]), std::abs(right_tracker_ports[1])}, util::reversed_active(right_tracker_ports[0])),
       left_rotation(-1),
       right_rotation(-1),
       ez_auto([this] { this->ez_auto_task(); }) {
@@ -153,13 +153,13 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 
   // Set ports to a global vector
   for (auto i : left_motor_ports) {
-    pros::Motor temp(abs(i));
+    pros::Motor temp(std::abs(i));
     temp.set_reversed(util::reversed_active(i));
     temp.set_encoder_units(pros::MotorUnits::counts);  // drive_tick_per_inch() assumes counts
     left_motors.push_back(temp);
   }
   for (auto i : right_motor_ports) {
-    pros::Motor temp(abs(i));
+    pros::Motor temp(std::abs(i));
     temp.set_reversed(util::reversed_active(i));
     temp.set_encoder_units(pros::MotorUnits::counts);  // drive_tick_per_inch() assumes counts
     right_motors.push_back(temp);
@@ -184,8 +184,8 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
     : imu(new pros::Imu(imu_port)),
       left_tracker(-1, -1, false),   // Default value
       right_tracker(-1, -1, false),  // Default value
-      left_rotation(abs(left_rotation_port)),
-      right_rotation(abs(right_rotation_port)),
+      left_rotation(std::abs(left_rotation_port)),
+      right_rotation(std::abs(right_rotation_port)),
       ez_auto([this] { this->ez_auto_task(); }) {
   is_tracker = DRIVE_ROTATION;
   last_was_autonomous = pros::competition::is_autonomous();
@@ -194,13 +194,13 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 
   // Set ports to a global vector
   for (auto i : left_motor_ports) {
-    pros::Motor temp(abs(i));
+    pros::Motor temp(std::abs(i));
     temp.set_reversed(util::reversed_active(i));
     temp.set_encoder_units(pros::MotorUnits::counts);  // drive_tick_per_inch() assumes counts
     left_motors.push_back(temp);
   }
   for (auto i : right_motor_ports) {
-    pros::Motor temp(abs(i));
+    pros::Motor temp(std::abs(i));
     temp.set_reversed(util::reversed_active(i));
     temp.set_encoder_units(pros::MotorUnits::counts);  // drive_tick_per_inch() assumes counts
     right_motors.push_back(temp);
@@ -361,15 +361,15 @@ std::vector<int> Drive::drive_get() {
 }
 
 void Drive::drive_current_limit_set(int mA) {
-  if (abs(mA) > 2500) {
+  if (std::abs(mA) > 2500) {
     mA = 2500;
   }
   CURRENT_MA = mA;
   for (auto i : left_motors) {
-    if (!pto_check(i)) i.set_current_limit(abs(mA));  // If the motor is in the pto list, don't do anything to the motor.
+    if (!pto_check(i)) i.set_current_limit(std::abs(mA));  // If the motor is in the pto list, don't do anything to the motor.
   }
   for (auto i : right_motors) {
-    if (!pto_check(i)) i.set_current_limit(abs(mA));  // If the motor is in the pto list, don't do anything to the motor.
+    if (!pto_check(i)) i.set_current_limit(std::abs(mA));  // If the motor is in the pto list, don't do anything to the motor.
   }
 }
 
@@ -473,13 +473,18 @@ double Drive::drive_imu_accel_get() {
   return std::hypot(accel.x, accel.y);
 }
 
-void Drive::drive_imu_scaler_set(double imu_value_after_3600) {
-  std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
-  if (imu_value_after_3600 == 0.0) {
-    printf("EZ-Template: drive_imu_scaler_set rejected 0, value must be the imu's reading after physically turning the robot 3600 degrees\n");
+// A physical 3600 degree turn reads in the thousands.  Anything under 100 (0, or a
+// leftover 3.2.x style 1.007) would turn into a wildly wrong scale, so refuse it.
+static bool imu_3600_reading_valid(double imu_value_after_3600) { return std::fabs(imu_value_after_3600) >= 100.0; }
+
+void Drive::drive_imu_scaler_3600_set(double imu_value_after_3600) {
+  if (!imu_3600_reading_valid(imu_value_after_3600)) {
+    printf("EZ-Template: drive_imu_scaler_3600_set rejected %g, value must be the imu's reading after physically turning the robot 3600 degrees (about 3600)\n", imu_value_after_3600);
     return;
   }
   double multiplier = 3600.0 / imu_value_after_3600;
+
+  std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
   if (imu == nullptr) {
     if (all_imus.empty()) return;
     imu_scale_map[all_imus.front()->get_port()] = multiplier;
@@ -487,7 +492,7 @@ void Drive::drive_imu_scaler_set(double imu_value_after_3600) {
   }
   imu_scale_map[imu->get_port()] = multiplier;
 }
-double Drive::drive_imu_scaler_get() {
+double Drive::drive_imu_scaler_3600_get() {
   double multiplier = 1.0;
   if (imu == nullptr) {
     if (!all_imus.empty()) multiplier = imu_scale_map[all_imus.front()->get_port()];
@@ -497,18 +502,18 @@ double Drive::drive_imu_scaler_get() {
   return multiplier != 0.0 ? 3600.0 / multiplier : 0.0;
 }
 
-void Drive::drive_imus_scalers_set(std::vector<double> imu_values_after_3600) {
+void Drive::drive_imus_scalers_3600_set(std::vector<double> imu_values_after_3600) {
   std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
 
   for (std::size_t i = 0; i < std::min(all_imus.size(), imu_values_after_3600.size()); i++) {
-    if (imu_values_after_3600[i] == 0.0) {
-      printf("EZ-Template: drive_imus_scalers_set rejected 0 for imu on port %i, value must be the imu's reading after physically turning the robot 3600 degrees\n", all_imus[i]->get_port());
+    if (!imu_3600_reading_valid(imu_values_after_3600[i])) {
+      printf("EZ-Template: drive_imus_scalers_3600_set rejected %g for imu on port %i, value must be the imu's reading after physically turning the robot 3600 degrees (about 3600)\n", imu_values_after_3600[i], all_imus[i]->get_port());
       continue;
     }
     imu_scale_map[all_imus[i]->get_port()] = 3600.0 / imu_values_after_3600[i];
   }
 }
-std::map<int, double> Drive::drive_imus_scalers_get() {
+std::map<int, double> Drive::drive_imus_scalers_3600_get() {
   std::map<int, double> output;
   for (auto const& pair : imu_scale_map) {
     output[pair.first] = pair.second != 0.0 ? 3600.0 / pair.second : 0.0;
@@ -575,8 +580,6 @@ bool Drive::drive_imu_calibrate(bool run_loading_animation) {
   while (true) {
     iter += util::DELAY_TIME;
 
-    if (run_loading_animation) drive_imu_display_loading(iter);
-
     if (!successful) {
       // Check if each IMU is done calibrating
       for (std::size_t i = 0; i < good_imus.size(); i++) {
@@ -620,6 +623,9 @@ bool Drive::drive_imu_calibrate(bool run_loading_animation) {
         break;
       }
     }
+
+    if (run_loading_animation) drive_imu_display_loading(iter);
+
     pros::delay(util::DELAY_TIME);
   }
 

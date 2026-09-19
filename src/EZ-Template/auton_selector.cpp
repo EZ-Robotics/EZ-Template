@@ -33,6 +33,6 @@ void ez::AutonSelector::selected_auton_call() {
 
 void ez::AutonSelector::autons_add(std::vector<Auton> autons) {
   Autons.insert(Autons.end(), autons.begin(), autons.end());
-  auton_count = Autons.size();
+  auton_count = Autons.size() + ez::as::amount_of_blank_pages;
   auton_page_current = 0;
 }

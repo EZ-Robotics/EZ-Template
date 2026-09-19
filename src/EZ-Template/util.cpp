@@ -170,6 +170,20 @@ double clamp(double input, double max, double min) {
 
 double clamp(double input, double max) { return clamp(input, fabs(max), -fabs(max)); }
 
+std::pair<double, double> curvature_mix(double fwd, double turn, double point_turn_gain) {
+  double gain = fmax(fabs(fwd) / 127.0, clamp(point_turn_gain, 1.0, 0.0));
+  double l = fwd + turn * gain;
+  double r = fwd - turn * gain;
+
+  // Divide instead of clamp, so the ratio between sides (the curvature) is kept
+  double faster_side = fmax(fabs(l), fabs(r));
+  if (faster_side > 127.0) {
+    l *= 127.0 / faster_side;
+    r *= 127.0 / faster_side;
+  }
+  return {l, r};
+}
+
 // Conversions from deg to rad and rad to deg
 double to_deg(double input) { return input * (180 / M_PI); }
 double to_rad(double input) { return input * (M_PI / 180); }
@@ -181,7 +195,7 @@ double absolute_angle_to_point(pose itarget, pose icurrent) {
   double y_error = itarget.y - icurrent.y;
 
   // Displacement of error
-  double error = to_deg(atan2(x_error, y_error));
+  double error = to_deg(std::atan2(x_error, y_error));
   return error;
 }
 
@@ -240,15 +254,15 @@ double distance_to_point(pose itarget, pose icurrent) {
   double y_error = (itarget.y - icurrent.y);
 
   // Hypotenuse of triangle
-  double distance = hypot(x_error, y_error);
+  double distance = std::hypot(x_error, y_error);
 
   return distance;
 }
 
 // Uses input as hypot to find the new xy
 pose vector_off_point(double added, pose icurrent) {
-  double x_error = sin(to_rad(icurrent.theta)) * added;
-  double y_error = cos(to_rad(icurrent.theta)) * added;
+  double x_error = std::sin(to_rad(icurrent.theta)) * added;
+  double y_error = std::cos(to_rad(icurrent.theta)) * added;
 
   pose output;
   output.x = x_error + icurrent.x;
@@ -259,12 +273,12 @@ pose vector_off_point(double added, pose icurrent) {
 
 pose united_pose_to_pose(united_pose input) {
   pose output = {0, 0, 0};
-  output.x = input.x.convert(okapi::inch);
-  output.y = input.y.convert(okapi::inch);
+  output.x = input.x.convert(ez::inch);
+  output.y = input.y.convert(ez::inch);
   if (input.theta == p_ANGLE_NOT_SET)
     output.theta = ANGLE_NOT_SET;
   else
-    output.theta = input.theta.convert(okapi::degree);
+    output.theta = input.theta.convert(ez::degree);
   return output;
 }
 
