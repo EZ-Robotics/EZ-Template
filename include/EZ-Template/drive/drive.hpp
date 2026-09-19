@@ -767,10 +767,14 @@ class Drive {
    *
    * Path smoothing based on https://medium.com/@jaems33/understanding-robot-motion-path-smoothing-5970c8363bc4
    *
+   * Values that would make the smoothing diverge instead of settle are rejected with a message in the terminal,
+   * and the previous constants stay in place.  weight_smooth must be in [0, 1), weight_data must be at least 0,
+   * tolerance must be above 0, and weight_data + 2 * weight_smooth must be below 2.
+   *
    * \param weight_smooth
-   *        how much weight to update the data
-   * \param weight_data
    *        how much weight to smooth the coordinates
+   * \param weight_data
+   *        how much weight to keep the coordinates near the original path
    * \param tolerance
    *        how much change per iteration is necessary to keep iterating
    */

@@ -38,6 +38,13 @@ void Drive::odom_path_smooth_constants_set(double weight_smooth, double weight_d
     printf("EZ-Template: odom_path_smooth_constants_set rejected tolerance %.4f, must be > 0\n", tolerance);
     return;
   }
+  // Every pass moves a point by weight_data * (original - point) + weight_smooth * (neighbors - 2 * point), and that
+  // only settles while weight_data + 2 * weight_smooth stays under 2.  Passing the checks above one weight at a time
+  // is not enough, (0.99, 0.03) is in range for each and still blows the path up.
+  if (!(weight_data + 2.0 * weight_smooth < 2.0)) {
+    printf("EZ-Template: odom_path_smooth_constants_set rejected weight_smooth %.4f and weight_data %.4f, weight_data + 2 * weight_smooth must be < 2\n", weight_smooth, weight_data);
+    return;
+  }
   odom_smooth_weight_smooth = weight_smooth;
   odom_smooth_weight_data = weight_data;
   odom_smooth_tolerance = tolerance;
