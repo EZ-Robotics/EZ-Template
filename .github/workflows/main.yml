@@ -19,6 +19,17 @@ jobs:
         id: test
         uses: LemLib/pros-build@v5.1.0
 
+      # The library's headers #include "EZ-Units/units.hpp", so the template zip has to
+      # carry it. Fails if TEMPLATE_FILES in the Makefile ever stops shipping it.
+      - name: Check the template zip ships EZ-Units
+        run: |
+          shopt -s nullglob
+          zips=(template/*.zip)
+          [ ${#zips[@]} -gt 0 ] || { echo "no template zip found in template/"; exit 1; }
+          for z in "${zips[@]}"; do
+            unzip -l "$z" | grep -q 'include/EZ-Units/units.hpp' || { echo "$z is missing include/EZ-Units/units.hpp"; exit 1; }
+          done
+
       - name: Upload Artifact
         uses: actions/upload-artifact@v7
         with:
@@ -54,3 +65,19 @@ jobs:
       # ubuntu-latest already has, and runs the resulting doctest binary.
       - name: Run host tests
         run: make -C test
+
+  # include/EZ-Units/units.hpp is a vendored copy of EZ-Units and must stay
+  # byte-identical to the tagged release. To upgrade it, copy the file from the new
+  # tag and bump EZ_UNITS_TAG below in the same commit.
+  vendored-ez-units:
+    runs-on: ubuntu-latest
+    env:
+      EZ_UNITS_TAG: v1.0.0
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Vendored EZ-Units matches the upstream tag
+        run: |
+          curl -fsSL --retry 3 "https://raw.githubusercontent.com/EZ-Robotics/EZ-Units/${EZ_UNITS_TAG}/include/EZ-Units/units.hpp" -o /tmp/upstream_units.hpp
+          diff -u /tmp/upstream_units.hpp include/EZ-Units/units.hpp
