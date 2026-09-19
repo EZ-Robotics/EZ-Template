@@ -243,6 +243,12 @@ void pid_speed_max_set(int speed);
 ### drive_mode_set()
 Sets the current mode of the drive.  
 
+:::note
+
+When your brain is connected to a competition switch or field control, EZ-Template sets the drive mode to `ez::DISABLE` while the robot is disabled, and once when autonomous ends.  This stops a motion that field control cut off from resuming on its own when driver control starts.  It does not happen when entering autonomous, and it never happens without a competition switch, so testing at your desk or running autons from the brain menu is not affected.  
+
+:::
+
 `p_mode` the current task running for the drive.  accepts `ez::DISABLE`, `ez::SWING`, `ez::TURN`, `ez::DRIVE`           
 <Tabs
   groupId="examples13"
