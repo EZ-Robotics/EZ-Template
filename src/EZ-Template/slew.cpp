@@ -40,7 +40,7 @@ void slew::initialize(bool enabled, double maximum_speed, double target, double 
     return;
   }
   x_intercept = current + ((constants.distance_to_travel * sign));
-  y_intercept = max_speed * sign;
+  y_intercept = 127 * sign;  // slope is always calculated against full speed, so ramp rate is independent of this movement's max_speed
   slope = ((sign * constants.min_speed) - y_intercept) / (x_intercept - 0 - current);  // y2-y1 / x2-x1
 }
 
