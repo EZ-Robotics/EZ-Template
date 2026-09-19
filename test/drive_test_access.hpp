@@ -39,6 +39,11 @@ struct DriveTestAccess {
   static double get_this_imu(Drive& d, pros::Imu* imu) { return d.get_this_imu(imu); }
 
   static double curvature_point_turn_gain(Drive& d) { return d.curvature_point_turn_gain; }
+
+  static int max_speed(Drive& d) { return d.max_speed; }
+  static bool is_tank(Drive& d) { return d.is_tank; }
+  static double left_curve_scale(Drive& d) { return d.left_curve_scale; }
+  static double right_curve_scale(Drive& d) { return d.right_curve_scale; }
 };
 
 }  // namespace ez
