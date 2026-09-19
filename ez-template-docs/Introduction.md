@@ -22,7 +22,7 @@ A C++ library for VEX V5 robots that gets your robot moving in minutes, built on
 
 <div className="ezCtaRow">
 
-[Get Started](/tutorials/installation) [View on GitHub](https://github.com/EZ-Robotics/EZ-Template) [Join the Discord](https://discord.gg/EHjXBcK2Gy) [Download example project](https://github.com/EZ-Robotics/EZ-Template/releases/latest/download/EZ-Template-Example-Project.zip)
+[Get Started](/tutorials/installation) [View on GitHub](https://github.com/EZ-Robotics/EZ-Template) [Join the Discord](https://discord.gg/EHjXBcK2Gy) [Download example project](https://github.com/EZ-Robotics/EZ-Template/releases/download/v4.0.0-beta.2/EZ-Template-Example-Project.zip)
 
 </div>
 
