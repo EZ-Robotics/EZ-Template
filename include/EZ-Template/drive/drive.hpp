@@ -32,7 +32,7 @@ class Drive {
    *
    * Set with opcontrol_joystick_threshold_set()
    */
-  int JOYSTICK_THRESHOLD;
+  int JOYSTICK_THRESHOLD = 0;
 
   /**
    * Global current brake mode.
@@ -47,7 +47,7 @@ class Drive {
   /**
    * Current swing type.
    */
-  e_swing current_swing;
+  e_swing current_swing = LEFT_SWING;
 
   /**
    * Vector of pros motors for the left chassis.
@@ -67,7 +67,7 @@ class Drive {
   /**
    * Current focused Inertial sensor.
    */
-  pros::Imu* imu;
+  pros::Imu* imu = nullptr;
 
   /**
    * All good imus, for redundancy.
@@ -97,22 +97,22 @@ class Drive {
   /**
    * Left vertical tracking wheel.
    */
-  tracking_wheel* odom_tracker_left;
+  tracking_wheel* odom_tracker_left = nullptr;
 
   /**
    * Right vertical tracking wheel.
    */
-  tracking_wheel* odom_tracker_right;
+  tracking_wheel* odom_tracker_right = nullptr;
 
   /**
    * Front horizontal tracking wheel.
    */
-  tracking_wheel* odom_tracker_front;
+  tracking_wheel* odom_tracker_front = nullptr;
 
   /**
    * Back horizontal tracking wheel.
    */
-  tracking_wheel* odom_tracker_back;
+  tracking_wheel* odom_tracker_back = nullptr;
 
   /**
    * PID objects.
@@ -366,7 +366,7 @@ class Drive {
   /**
    * Current mode of the drive.
    */
-  e_mode mode;
+  e_mode mode = DISABLE;
 
   /**
    * Sets current mode of drive.
@@ -3741,12 +3741,12 @@ class Drive {
   std::string complete_pid_tuner_output = "";
   float p_increment = 0.1, i_increment = 0.001, d_increment = 0.25, start_i_increment = 1.0;
 
-  pros::controller_digital_e_t pid_tuner_increase;  // is this place good?
-  pros::controller_digital_e_t pid_tuner_decrease;  // ^yes this placement is fine :D
-  pros::controller_digital_e_t pid_tuner_pageLeft;
-  pros::controller_digital_e_t pid_tuner_pageRight;
-  pros::controller_digital_e_t pid_tuner_pageUp;
-  pros::controller_digital_e_t pid_tuner_pageDown;
+  pros::controller_digital_e_t pid_tuner_increase = pros::E_CONTROLLER_DIGITAL_A;  // is this place good?
+  pros::controller_digital_e_t pid_tuner_decrease = pros::E_CONTROLLER_DIGITAL_Y;  // ^yes this placement is fine :D
+  pros::controller_digital_e_t pid_tuner_pageLeft = pros::E_CONTROLLER_DIGITAL_LEFT;
+  pros::controller_digital_e_t pid_tuner_pageRight = pros::E_CONTROLLER_DIGITAL_RIGHT;
+  pros::controller_digital_e_t pid_tuner_pageUp = pros::E_CONTROLLER_DIGITAL_UP;
+  pros::controller_digital_e_t pid_tuner_pageDown = pros::E_CONTROLLER_DIGITAL_DOWN;
 
   /**
    * @brief
@@ -3784,9 +3784,9 @@ class Drive {
   /**
    * Tick per inch calculation.
    */
-  double TICK_PER_REV;
-  double TICK_PER_INCH;
-  double CIRCUMFERENCE;
+  double TICK_PER_REV = 0.0;
+  double TICK_PER_INCH = 0.0;
+  double CIRCUMFERENCE = 0.0;
 
   /**
    * Recomputes TICK_PER_REV/CIRCUMFERENCE/TICK_PER_INCH from WHEEL_DIAMETER,
@@ -3797,14 +3797,14 @@ class Drive {
    */
   void drive_tick_per_inch_compute();
 
-  double CARTRIDGE;
-  double RATIO;
-  double WHEEL_DIAMETER;
+  double CARTRIDGE = 0.0;
+  double RATIO = 0.0;
+  double WHEEL_DIAMETER = 0.0;
 
   /**
    * Max speed for autonomous.
    */
-  int max_speed;
+  int max_speed = 0;
 
   /**
    * Tasks
@@ -3832,7 +3832,7 @@ class Drive {
   /**
    * Is tank drive running?
    */
-  bool is_tank;
+  bool is_tank = false;
 
 #define DRIVE_INTEGRATED 1
 #define DRIVE_ADI_ENCODER 2
@@ -3858,8 +3858,8 @@ class Drive {
     bool release_reset = false;
     int release_timer = 0;
     int hold_timer = 0;
-    int increase_timer;
-    pros::controller_digital_e_t button;
+    int increase_timer = 0;
+    pros::controller_digital_e_t button = pros::E_CONTROLLER_DIGITAL_A;
   };
 
   button_ l_increase_;
@@ -3875,8 +3875,8 @@ class Drive {
   /**
    * The left and right curve scalers.
    */
-  double left_curve_scale;
-  double right_curve_scale;
+  double left_curve_scale = 0.0;
+  double right_curve_scale = 0.0;
 
   /**
    * Increase and decrease left and right curve scale.
