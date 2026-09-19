@@ -12,7 +12,7 @@ namespace ez {
 // Sets swing constants
 /////
 // When kI and startI are enabled, maximum output allowed while error is inside startI, for swings larger than startI
-void Drive::pid_swing_min_set(int min) { swing_min = abs(min); }
+void Drive::pid_swing_min_set(int min) { swing_min = std::abs(min); }
 int Drive::pid_swing_min_get() { return swing_min; }
 
 // PID Constants

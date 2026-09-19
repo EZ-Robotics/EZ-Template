@@ -19,7 +19,7 @@ void Drive::pid_turn_constants_set(double p, double i, double d, double p_start_
   turnPID.constants_set(p, i, d, p_start_i);
 }
 PID::Constants Drive::pid_turn_constants_get() { return turnPID.constants_get(); }
-void Drive::pid_turn_min_set(int min) { turn_min = abs(min); }
+void Drive::pid_turn_min_set(int min) { turn_min = std::abs(min); }
 int Drive::pid_turn_min_get() { return turn_min; }
 
 // Sets the behavior of turning

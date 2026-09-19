@@ -29,13 +29,13 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 
   // Set ports to a global vector
   for (auto i : left_motor_ports) {
-    pros::Motor temp((std::int8_t)abs(i));
+    pros::Motor temp((std::int8_t)std::abs(i));
     temp.set_reversed(util::reversed_active(i));
     temp.set_encoder_units(pros::MotorUnits::counts);  // drive_tick_per_inch() assumes counts
     left_motors.push_back(temp);
   }
   for (auto i : right_motor_ports) {
-    pros::Motor temp((std::int8_t)abs(i));
+    pros::Motor temp((std::int8_t)std::abs(i));
     temp.set_reversed(util::reversed_active(i));
     temp.set_encoder_units(pros::MotorUnits::counts);  // drive_tick_per_inch() assumes counts
     right_motors.push_back(temp);
@@ -67,13 +67,13 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 
   // Set ports to a global vector
   for (auto i : left_motor_ports) {
-    pros::Motor temp((std::int8_t)abs(i));
+    pros::Motor temp((std::int8_t)std::abs(i));
     temp.set_reversed(util::reversed_active(i));
     temp.set_encoder_units(pros::MotorUnits::counts);  // drive_tick_per_inch() assumes counts
     left_motors.push_back(temp);
   }
   for (auto i : right_motor_ports) {
-    pros::Motor temp((std::int8_t)abs(i));
+    pros::Motor temp((std::int8_t)std::abs(i));
     temp.set_reversed(util::reversed_active(i));
     temp.set_encoder_units(pros::MotorUnits::counts);  // drive_tick_per_inch() assumes counts
     right_motors.push_back(temp);
@@ -104,8 +104,8 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
              int imu_port, double wheel_diameter, double ticks, double ratio,
              std::vector<int> left_tracker_ports, std::vector<int> right_tracker_ports)
     : imu(new pros::Imu(imu_port)),
-      left_tracker(abs(left_tracker_ports[0]), abs(left_tracker_ports[1]), util::reversed_active(left_tracker_ports[0])),
-      right_tracker(abs(right_tracker_ports[0]), abs(right_tracker_ports[1]), util::reversed_active(right_tracker_ports[0])),
+      left_tracker(std::abs(left_tracker_ports[0]), std::abs(left_tracker_ports[1]), util::reversed_active(left_tracker_ports[0])),
+      right_tracker(std::abs(right_tracker_ports[0]), std::abs(right_tracker_ports[1]), util::reversed_active(right_tracker_ports[0])),
       left_rotation(-1),
       right_rotation(-1),
       ez_auto([this] { this->ez_auto_task(); }) {
@@ -114,13 +114,13 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 
   // Set ports to a global vector
   for (auto i : left_motor_ports) {
-    pros::Motor temp(abs(i));
+    pros::Motor temp(std::abs(i));
     temp.set_reversed(util::reversed_active(i));
     temp.set_encoder_units(pros::MotorUnits::counts);  // drive_tick_per_inch() assumes counts
     left_motors.push_back(temp);
   }
   for (auto i : right_motor_ports) {
-    pros::Motor temp(abs(i));
+    pros::Motor temp(std::abs(i));
     temp.set_reversed(util::reversed_active(i));
     temp.set_encoder_units(pros::MotorUnits::counts);  // drive_tick_per_inch() assumes counts
     right_motors.push_back(temp);
@@ -143,8 +143,8 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
              int imu_port, double wheel_diameter, double ticks, double ratio,
              std::vector<int> left_tracker_ports, std::vector<int> right_tracker_ports, int expander_smart_port)
     : imu(new pros::Imu(imu_port)),
-      left_tracker({expander_smart_port, abs(left_tracker_ports[0]), abs(left_tracker_ports[1])}, util::reversed_active(left_tracker_ports[0])),
-      right_tracker({expander_smart_port, abs(right_tracker_ports[0]), abs(right_tracker_ports[1])}, util::reversed_active(right_tracker_ports[0])),
+      left_tracker({expander_smart_port, std::abs(left_tracker_ports[0]), std::abs(left_tracker_ports[1])}, util::reversed_active(left_tracker_ports[0])),
+      right_tracker({expander_smart_port, std::abs(right_tracker_ports[0]), std::abs(right_tracker_ports[1])}, util::reversed_active(right_tracker_ports[0])),
       left_rotation(-1),
       right_rotation(-1),
       ez_auto([this] { this->ez_auto_task(); }) {
@@ -153,13 +153,13 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 
   // Set ports to a global vector
   for (auto i : left_motor_ports) {
-    pros::Motor temp(abs(i));
+    pros::Motor temp(std::abs(i));
     temp.set_reversed(util::reversed_active(i));
     temp.set_encoder_units(pros::MotorUnits::counts);  // drive_tick_per_inch() assumes counts
     left_motors.push_back(temp);
   }
   for (auto i : right_motor_ports) {
-    pros::Motor temp(abs(i));
+    pros::Motor temp(std::abs(i));
     temp.set_reversed(util::reversed_active(i));
     temp.set_encoder_units(pros::MotorUnits::counts);  // drive_tick_per_inch() assumes counts
     right_motors.push_back(temp);
@@ -184,8 +184,8 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
     : imu(new pros::Imu(imu_port)),
       left_tracker(-1, -1, false),   // Default value
       right_tracker(-1, -1, false),  // Default value
-      left_rotation(abs(left_rotation_port)),
-      right_rotation(abs(right_rotation_port)),
+      left_rotation(std::abs(left_rotation_port)),
+      right_rotation(std::abs(right_rotation_port)),
       ez_auto([this] { this->ez_auto_task(); }) {
   is_tracker = DRIVE_ROTATION;
   last_was_autonomous = pros::competition::is_autonomous();
@@ -194,13 +194,13 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 
   // Set ports to a global vector
   for (auto i : left_motor_ports) {
-    pros::Motor temp(abs(i));
+    pros::Motor temp(std::abs(i));
     temp.set_reversed(util::reversed_active(i));
     temp.set_encoder_units(pros::MotorUnits::counts);  // drive_tick_per_inch() assumes counts
     left_motors.push_back(temp);
   }
   for (auto i : right_motor_ports) {
-    pros::Motor temp(abs(i));
+    pros::Motor temp(std::abs(i));
     temp.set_reversed(util::reversed_active(i));
     temp.set_encoder_units(pros::MotorUnits::counts);  // drive_tick_per_inch() assumes counts
     right_motors.push_back(temp);
@@ -361,15 +361,15 @@ std::vector<int> Drive::drive_get() {
 }
 
 void Drive::drive_current_limit_set(int mA) {
-  if (abs(mA) > 2500) {
+  if (std::abs(mA) > 2500) {
     mA = 2500;
   }
   CURRENT_MA = mA;
   for (auto i : left_motors) {
-    if (!pto_check(i)) i.set_current_limit(abs(mA));  // If the motor is in the pto list, don't do anything to the motor.
+    if (!pto_check(i)) i.set_current_limit(std::abs(mA));  // If the motor is in the pto list, don't do anything to the motor.
   }
   for (auto i : right_motors) {
-    if (!pto_check(i)) i.set_current_limit(abs(mA));  // If the motor is in the pto list, don't do anything to the motor.
+    if (!pto_check(i)) i.set_current_limit(std::abs(mA));  // If the motor is in the pto list, don't do anything to the motor.
   }
 }
 

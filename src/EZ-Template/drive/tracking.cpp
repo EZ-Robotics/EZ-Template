@@ -103,13 +103,13 @@ ez::pose Drive::solve_xy_vert(float p_track_width, float current_t, float delta_
   float half_delta_t = 0.0;
   if (delta_t != 0) {
     half_delta_t = delta_t / 2.0;
-    float i = sin(half_delta_t) * 2.0;
+    float i = std::sin(half_delta_t) * 2.0;
     local_x = (delta_vert / delta_t - p_track_width) * i;
   }
 
   float alpha = current_t - half_delta_t;
-  float x = cos(alpha) * local_x;
-  float y = sin(alpha) * local_x;
+  float x = std::cos(alpha) * local_x;
+  float y = std::sin(alpha) * local_x;
 
   // xy is calculated internally using math standard but translated to what's intuitive
   // where going forward from 0 degrees increases Y
@@ -127,13 +127,13 @@ ez::pose Drive::solve_xy_horiz(float p_track_width, float current_t, float delta
   float half_delta_t = 0.0;
   if (delta_t != 0) {
     half_delta_t = delta_t / 2.0;
-    float i = sin(half_delta_t) * 2.0;
+    float i = std::sin(half_delta_t) * 2.0;
     local_y = (delta_horiz / delta_t + p_track_width) * i;
   }
 
   float alpha = current_t - half_delta_t;
-  float x = -sin(alpha) * local_y;
-  float y = cos(alpha) * local_y;
+  float x = -std::sin(alpha) * local_y;
+  float y = std::cos(alpha) * local_y;
 
   // xy is calculated internally using math standard but translated to what's intuitive
   // where going forward from 0 degrees increases Y
