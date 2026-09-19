@@ -1018,7 +1018,8 @@ class Drive {
   void opcontrol_curve_sd_initialize();
 
   /**
-   * Sets the default joystick curves.
+   * Sets the default joystick curves.  Values are kept between 0 and 20, which is also the range
+   * the curve buttons and the SD card files are held to.
    *
    * \param left
    *        left default curve

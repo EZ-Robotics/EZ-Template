@@ -220,6 +220,22 @@ double clamp(double input, double max, double min);
 double clamp(double input, double max);
 
 /**
+ * The largest joystick curve scale the library will hold.  Past this, a stick at three quarters
+ * already drives the wheels at a few percent, so there is nothing useful above it.
+ */
+const double MAX_CURVE_SCALE = 20.0;
+
+/**
+ * Returns a joystick curve scale restricted to 0 - MAX_CURVE_SCALE.  A negative scale would
+ * amplify small stick inputs instead of softening them, so it is treated as no curve.  NaN
+ * becomes 0.
+ *
+ * \param scale
+ *        your curve scale
+ */
+double curve_scale_clamp(double scale);
+
+/**
  * Mixes a forward and turn joystick value into left and right outputs using curvature drive.
  *
  * The turn value is scaled by the forward speed, so the robot follows the same arc no matter how fast it is
