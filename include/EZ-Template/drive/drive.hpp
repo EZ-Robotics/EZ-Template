@@ -3180,7 +3180,7 @@ class Drive {
    * \param p_big_error
    *        big timer will start when error is within this, in inches
    * \param p_velocity_exit_time
-   *        velocity timer will start when velocity is 0, in ms
+   *        velocity timer will start when velocity is 0 after the robot has moved, in ms
    * \param p_mA_timeout
    *        mA timer will start when the motors are pulling too much current, in ms
    * \param use_imu
@@ -3200,7 +3200,7 @@ class Drive {
    * \param p_big_error
    *        big timer will start when error is within this, in degrees
    * \param p_velocity_exit_time
-   *        velocity timer will start when velocity is 0, in ms
+   *        velocity timer will start when velocity is 0 after the robot has moved, in ms
    * \param p_mA_timeout
    *        mA timer will start when the motors are pulling too much current, in ms
    * \param use_imu
@@ -3220,7 +3220,7 @@ class Drive {
    * \param p_big_error
    *        big timer will start when error is within this, okapi unit
    * \param p_velocity_exit_time
-   *        velocity timer will start when velocity is 0, okapi unit
+   *        velocity timer will start when velocity is 0 after the robot has moved, okapi unit
    * \param p_mA_timeout
    *        mA timer will start when the motors are pulling too much current, okapi unit
    * \param use_imu
@@ -3240,7 +3240,7 @@ class Drive {
    * \param p_big_error
    *        big timer will start when error is within this, okapi unit
    * \param p_velocity_exit_time
-   *        velocity timer will start when velocity is 0, okapi unit
+   *        velocity timer will start when velocity is 0 after the robot has moved, okapi unit
    * \param p_mA_timeout
    *        mA timer will start when the motors are pulling too much current, okapi unit
    * \param use_imu
@@ -3260,7 +3260,7 @@ class Drive {
    * \param p_big_error
    *        big timer will start when error is within this, okapi unit
    * \param p_velocity_exit_time
-   *        velocity timer will start when velocity is 0, okapi unit
+   *        velocity timer will start when velocity is 0 after the robot has moved, okapi unit
    * \param p_mA_timeout
    *        mA timer will start when the motors are pulling too much current, okapi unit
    * \param use_imu
@@ -3280,7 +3280,7 @@ class Drive {
    * \param p_big_error
    *        big timer will start when error is within this, okapi unit
    * \param p_velocity_exit_time
-   *        velocity timer will start when velocity is 0, okapi unit
+   *        velocity timer will start when velocity is 0 after the robot has moved, okapi unit
    * \param p_mA_timeout
    *        mA timer will start when the motors are pulling too much current, okapi unit
    * \param use_imu
@@ -3300,7 +3300,7 @@ class Drive {
    * \param p_big_error
    *        big timer will start when error is within this, okapi unit
    * \param p_velocity_exit_time
-   *        velocity timer will start when velocity is 0, okapi unit
+   *        velocity timer will start when velocity is 0 after the robot has moved, okapi unit
    * \param p_mA_timeout
    *        mA timer will start when the motors are pulling too much current, okapi unit
    * \param use_imu
@@ -3320,7 +3320,7 @@ class Drive {
    * \param p_big_error
    *        big timer will start when error is within this, in inches
    * \param p_velocity_exit_time
-   *        velocity timer will start when velocity is 0, in ms
+   *        velocity timer will start when velocity is 0 after the robot has moved, in ms
    * \param p_mA_timeout
    *        mA timer will start when the motors are pulling too much current, in ms
    * \param use_imu
@@ -3340,7 +3340,7 @@ class Drive {
    * \param p_big_error
    *        big timer will start when error is within this, in degrees
    * \param p_velocity_exit_time
-   *        velocity timer will start when velocity is 0, in ms
+   *        velocity timer will start when velocity is 0 after the robot has moved, in ms
    * \param p_mA_timeout
    *        mA timer will start when the motors are pulling too much current, in ms
    * \param use_imu
@@ -3360,7 +3360,7 @@ class Drive {
    * \param p_big_error
    *        big timer will start when error is within this, in degrees
    * \param p_velocity_exit_time
-   *        velocity timer will start when velocity is 0, in ms
+   *        velocity timer will start when velocity is 0 after the robot has moved, in ms
    * \param p_mA_timeout
    *        mA timer will start when the motors are pulling too much current, in ms
    * \param use_imu

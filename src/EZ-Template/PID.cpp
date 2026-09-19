@@ -103,6 +103,8 @@ void PID::timers_reset() {
   j = 0;
   l = 0;
   m = 0;
+  arm_timer = 0;
+  velocity_armed = false;
   is_mA = false;
 }
 
@@ -178,8 +180,17 @@ exit_output PID::exit_condition(bool print) {
     }
   }
 
+  // The velocity exits only run once the robot has actually moved.  Without this, a short
+  // velocity_exit_time can run out while the robot is still sitting at the start of the motion.
+  // If it never moves (pinned, stalled) arm anyway after a fallback window so pid_wait can't hang.
+  if (exit.velocity_exit_time != 0 && !velocity_armed) {
+    arm_timer += util::DELAY_TIME;
+    if (std::fabs(derivative) > velocity_zero_main || arm_timer > VELOCITY_ARM_FALLBACK)
+      velocity_armed = true;
+  }
+
   // If the motor velocity is 0, the code will timeout and set interfered to true.
-  if (exit.velocity_exit_time != 0) {  // Check if this condition is enabled
+  if (exit.velocity_exit_time != 0 && velocity_armed) {  // Check if this condition is enabled
     if (std::fabs(derivative) <= velocity_zero_main) {
       k += util::DELAY_TIME;
       if (k > exit.velocity_exit_time) {
@@ -196,7 +207,7 @@ exit_output PID::exit_condition(bool print) {
     return RUNNING;
 
   // If the secondary sensors velocity is 0, the code will timeout and set interfered to true.
-  if (exit.velocity_exit_time != 0) {  // Check if this condition is enabled
+  if (exit.velocity_exit_time != 0 && velocity_armed) {  // Check if this condition is enabled
     if (std::fabs(second_sensor) <= velocity_zero_secondary) {
       m += util::DELAY_TIME;
       if (m > exit.velocity_exit_time) {

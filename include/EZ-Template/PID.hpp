@@ -81,7 +81,8 @@ class PID {
    * \param p_big_error
    *        sets big_error, timer will start when error is within this
    * \param p_velocity_exit_time
-   *        sets velocity_exit_time, timer will start when velocity is 0
+   *        sets velocity_exit_time, timer will start when velocity is 0 after the robot has moved.
+   *        If the robot never moves, it starts after 1 second.
    */
   void exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time = 0, double p_big_error = 0, int p_velocity_exit_time = 0, int p_mA_timeout = 0);
 
@@ -294,6 +295,9 @@ class PID {
   double velocity_zero_main = 0.05;
   double velocity_zero_secondary = 0.075;
   int i = 0, j = 0, k = 0, l = 0, m = 0;
+  int arm_timer = 0;
+  bool velocity_armed = false;
+  static constexpr int VELOCITY_ARM_FALLBACK = 1000;
   bool is_mA = false;
   double second_sensor = 0.0;
 
