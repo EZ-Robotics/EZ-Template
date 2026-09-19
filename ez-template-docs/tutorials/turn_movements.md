@@ -35,7 +35,7 @@ maybe some images get added here that showcase absolute angle:
 -->
 
 ### Simplest Turn
-At minimum, you need to give the robot an angle to go to and a speed limit (0-127).  You can do this with and without okapi units.  
+At minimum, you need to give the robot an angle to go to and a speed limit (0-127).  You can do this with and without units.  
 ```cpp
 // Turn to 45deg
 chassis.pid_turn_set(45_deg, 90);

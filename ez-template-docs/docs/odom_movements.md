@@ -8,13 +8,13 @@ import TabItem from '@theme/TabItem';
 
 
 
-## Functions with Okapi Units
+## Functions with Units
 
 
 ### pid_odom_set()
 Sets the robot to go forward/backward the distance you give it, but it uses odometry, without slew.     
 
-`p_target` is in an okapi length unit.  
+`p_target` is in a length unit.  
 `speed` is 0 to 127.  It's recommended to keep this at 110.  
 <Tabs
   groupId="erjk"
@@ -46,7 +46,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void pid_odom_set(okapi::QLength p_target, int speed);
+void pid_odom_set(ez::QLength p_target, int speed);
 ```
 
 </TabItem>
@@ -59,7 +59,7 @@ void pid_odom_set(okapi::QLength p_target, int speed);
 ### pid_odom_set()
 Sets the robot to go forward/backward the distance you give it, but it uses odometry.  
 
-`p_target` is in an okapi length unit.  
+`p_target` is in a length unit.  
 `speed` is 0 to 127.  It's recommended to keep this at 110.  
 `slew_on` increases the speed of the drive gradually.  You must set slew constants for this to work!  
 <Tabs
@@ -92,7 +92,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void pid_odom_set(okapi::QLength p_target, int speed, bool slew_on);
+void pid_odom_set(ez::QLength p_target, int speed, bool slew_on);
 ```
 
 </TabItem>
@@ -801,7 +801,7 @@ void autonomous() {
 ### pid_turn_set()
 Sets the robot to turn face a point using PID and odometry.  
 
-`p_itarget` `{x, y}` a target point to face.  this uses okapi units
+`p_itarget` `{x, y}` a target point to face.  this uses units
 `dir` face the point fwd or rev
 `speed` 0 to 127, max speed during motion   
 <Tabs
@@ -846,7 +846,7 @@ void pid_turn_set(united_pose p_itarget, drive_directions dir, int speed);
 ### pid_turn_set()
 Sets the robot to turn face a point using PID and odometry.  
 
-`p_itarget` `{x, y}` a target point to face.  this uses okapi units
+`p_itarget` `{x, y}` a target point to face.  this uses units
 `dir` face the point fwd or rev
 `speed` 0 to 127, max speed during motion   
 `slew_on` ramp up from a lower speed to your target speed   
@@ -892,7 +892,7 @@ void pid_turn_set(united_pose p_itarget, drive_directions dir, int speed, bool s
 ### pid_turn_set()
 Sets the robot to turn face a point using PID and odometry.  
 
-`p_itarget` `{x, y}` a target point to face.  this uses okapi units
+`p_itarget` `{x, y}` a target point to face.  this uses units
 `dir` face the point fwd or rev
 `speed` 0 to 127, max speed during motion   
 `behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
@@ -937,7 +937,7 @@ void pid_turn_set(united_pose p_itarget, drive_directions dir, int speed, e_angl
 ### pid_turn_set()
 Sets the robot to turn face a point using PID and odometry.  
 
-`p_itarget` `{x, y}` a target point to face.  this uses okapi units
+`p_itarget` `{x, y}` a target point to face.  this uses units
 `dir` face the point fwd or rev
 `speed` 0 to 127, max speed during motion   
 `behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
@@ -1101,7 +1101,7 @@ void autonomous() {
 
 
 
-## Functions Without Okapi Units
+## Functions Without Units
 
 
 
