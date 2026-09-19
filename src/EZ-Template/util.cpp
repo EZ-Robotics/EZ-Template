@@ -273,12 +273,12 @@ pose vector_off_point(double added, pose icurrent) {
 
 pose united_pose_to_pose(united_pose input) {
   pose output = {0, 0, 0};
-  output.x = input.x.convert(okapi::inch);
-  output.y = input.y.convert(okapi::inch);
+  output.x = input.x.convert(ez::inch);
+  output.y = input.y.convert(ez::inch);
   if (input.theta == p_ANGLE_NOT_SET)
     output.theta = ANGLE_NOT_SET;
   else
-    output.theta = input.theta.convert(okapi::degree);
+    output.theta = input.theta.convert(ez::degree);
   return output;
 }
 

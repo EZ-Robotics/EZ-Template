@@ -9,7 +9,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include <list>
 
 #include "EZ-Template/api.hpp"
-#include "okapi/api/units/QAngle.hpp"
+#include "EZ-Units/units.hpp"
 #include "pros/llemu.hpp"
 #include "pros/screen.hpp"
 

@@ -7,7 +7,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include <cmath>
 
 #include "EZ-Template/api.hpp"
-#include "okapi/api/units/QAngle.hpp"
+#include "EZ-Units/units.hpp"
 
 namespace ez {
 // Updates max speed
@@ -36,7 +36,7 @@ void Drive::pid_angle_behavior_bias_set(e_angle_behavior behavior) {
 }
 e_angle_behavior Drive::pid_angle_behavior_bias_get() { return turn_biased_left ? ez::LEFT_TURN : ez::RIGHT_TURN; }
 void Drive::pid_angle_behavior_tolerance_set(double tolerance) { turn_tolerance = tolerance; }
-void Drive::pid_angle_behavior_tolerance_set(okapi::QAngle p_tolerance) { pid_angle_behavior_tolerance_set(p_tolerance.convert(okapi::degree)); }
+void Drive::pid_angle_behavior_tolerance_set(ez::QAngle p_tolerance) { pid_angle_behavior_tolerance_set(p_tolerance.convert(ez::degree)); }
 double Drive::pid_angle_behavior_tolerance_get() { return turn_tolerance; }
 
 // Changes global default turn behavior to either:

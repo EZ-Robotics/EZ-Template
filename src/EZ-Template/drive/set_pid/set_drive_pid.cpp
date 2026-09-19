@@ -5,7 +5,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
 #include "EZ-Template/api.hpp"
-#include "okapi/api/units/QAngle.hpp"
+#include "EZ-Units/units.hpp"
 
 /////
 // Sets swing constants
@@ -13,15 +13,15 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 namespace ez {
 // Slew constants
-void Drive::slew_drive_constants_forward_set(okapi::QLength distance, int min_speed) {
-  double dist = distance.convert(okapi::inch);
+void Drive::slew_drive_constants_forward_set(ez::QLength distance, int min_speed) {
+  double dist = distance.convert(ez::inch);
   slew_forward.constants_set(dist, min_speed);
 }
-void Drive::slew_drive_constants_backward_set(okapi::QLength distance, int min_speed) {
-  double dist = distance.convert(okapi::inch);
+void Drive::slew_drive_constants_backward_set(ez::QLength distance, int min_speed) {
+  double dist = distance.convert(ez::inch);
   slew_backward.constants_set(dist, min_speed);
 }
-void Drive::slew_drive_constants_set(okapi::QLength distance, int min_speed) {
+void Drive::slew_drive_constants_set(ez::QLength distance, int min_speed) {
   slew_drive_constants_backward_set(distance, min_speed);
   slew_drive_constants_forward_set(distance, min_speed);
 }
@@ -60,8 +60,8 @@ void Drive::drive_angle_set(double angle) {
   r_pose.theta = angle;
   was_odom_just_set = true;
 }
-void Drive::drive_angle_set(okapi::QAngle p_angle) {
-  double angle = p_angle.convert(okapi::degree);  // Convert okapi unit to degree
+void Drive::drive_angle_set(ez::QAngle p_angle) {
+  double angle = p_angle.convert(ez::degree);  // Convert unit to degree
   drive_angle_set(angle);
 }
 PID::Constants Drive::pid_heading_constants_get() { return headingPID.constants_get(); }
@@ -93,14 +93,14 @@ void Drive::pid_drive_set(double target, int speed) {
 }
 
 // Set drive PID
-void Drive::pid_drive_set(okapi::QLength p_target, int speed, bool slew_on, bool toggle_heading) {
-  double target = p_target.convert(okapi::inch);  // Convert okapi unit to inches
+void Drive::pid_drive_set(ez::QLength p_target, int speed, bool slew_on, bool toggle_heading) {
+  double target = p_target.convert(ez::inch);  // Convert unit to inches
   pid_drive_set(target, speed, slew_on, toggle_heading);
 }
 
-// Set drive PID with global slew and okapi units
-void Drive::pid_drive_set(okapi::QLength p_target, int speed) {
-  double target = p_target.convert(okapi::inch);  // Convert okapi unit to inches
+// Set drive PID with global slew and units
+void Drive::pid_drive_set(ez::QLength p_target, int speed) {
+  double target = p_target.convert(ez::inch);  // Convert unit to inches
   pid_drive_set(target, speed);
 }
 

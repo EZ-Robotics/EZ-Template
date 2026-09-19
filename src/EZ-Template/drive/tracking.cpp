@@ -21,7 +21,7 @@ void Drive::odom_x_set(double x) {
   central_pose.x = x;
   was_odom_just_set = true;
 }
-void Drive::odom_x_set(okapi::QLength p_x) { odom_x_set(p_x.convert(okapi::inch)); }
+void Drive::odom_x_set(ez::QLength p_x) { odom_x_set(p_x.convert(ez::inch)); }
 void Drive::odom_y_set(double y) {
   std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
 
@@ -31,9 +31,9 @@ void Drive::odom_y_set(double y) {
   central_pose.y = y;
   was_odom_just_set = true;
 }
-void Drive::odom_y_set(okapi::QLength p_y) { odom_y_set(p_y.convert(okapi::inch)); }
+void Drive::odom_y_set(ez::QLength p_y) { odom_y_set(p_y.convert(ez::inch)); }
 void Drive::odom_theta_set(double a) { drive_angle_set(a); }
-void Drive::odom_theta_set(okapi::QAngle p_a) { odom_theta_set(p_a.convert(okapi::degree)); }
+void Drive::odom_theta_set(ez::QAngle p_a) { odom_theta_set(p_a.convert(ez::degree)); }
 void Drive::drive_width_set(double input) {
   std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
 
@@ -46,18 +46,18 @@ void Drive::drive_width_set(double input) {
   odom_ime_track_width_left = 0.0;
   odom_ime_track_width_right = 0.0;
 }
-void Drive::drive_width_set(okapi::QLength p_input) { drive_width_set(p_input.convert(okapi::inch)); }
+void Drive::drive_width_set(ez::QLength p_input) { drive_width_set(p_input.convert(ez::inch)); }
 void Drive::odom_xy_set(double x, double y) {
   odom_x_set(x);
   odom_y_set(y);
 }
-void Drive::odom_xy_set(okapi::QLength p_x, okapi::QLength p_y) { odom_xy_set(p_x.convert(okapi::inch), p_y.convert(okapi::inch)); }
+void Drive::odom_xy_set(ez::QLength p_x, ez::QLength p_y) { odom_xy_set(p_x.convert(ez::inch), p_y.convert(ez::inch)); }
 void Drive::odom_xyt_set(double x, double y, double t) {
   odom_x_set(x);
   odom_y_set(y);
   odom_theta_set(t);
 }
-void Drive::odom_xyt_set(okapi::QLength p_x, okapi::QLength p_y, okapi::QAngle p_t) { odom_xyt_set(p_x.convert(okapi::inch), p_y.convert(okapi::inch), p_t.convert(okapi::degree)); }
+void Drive::odom_xyt_set(ez::QLength p_x, ez::QLength p_y, ez::QAngle p_t) { odom_xyt_set(p_x.convert(ez::inch), p_y.convert(ez::inch), p_t.convert(ez::degree)); }
 void Drive::odom_pose_set(pose itarget) {
   odom_x_set(itarget.x);
   odom_y_set(itarget.y);

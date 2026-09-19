@@ -5,14 +5,14 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
 #include "EZ-Template/api.hpp"
-#include "okapi/api/units/QAngle.hpp"
+#include "EZ-Units/units.hpp"
 
 namespace ez {
 /////
 // Sets turn constants
 /////
-void Drive::slew_turn_constants_set(okapi::QAngle distance, int min_speed) {
-  double dist = distance.convert(okapi::degree);
+void Drive::slew_turn_constants_set(ez::QAngle distance, int min_speed) {
+  double dist = distance.convert(ez::degree);
   slew_turn.constants_set(dist, min_speed);
 }
 void Drive::pid_turn_constants_set(double p, double i, double d, double p_start_i) {
@@ -37,14 +37,14 @@ bool Drive::slew_turn_get() { return global_turn_slew_enabled; }
 void Drive::pid_turn_set(double target, int speed) {
   pid_turn_set(target, speed, pid_turn_behavior_get(), slew_turn_get());
 }
-void Drive::pid_turn_set(okapi::QAngle p_target, int speed) {
+void Drive::pid_turn_set(ez::QAngle p_target, int speed) {
   pid_turn_set(p_target, speed, pid_turn_behavior_get(), slew_turn_get());
 }
 // Relative
 void Drive::pid_turn_relative_set(double target, int speed) {
   pid_turn_relative_set(target, speed, pid_turn_behavior_get(), slew_turn_get());
 }
-void Drive::pid_turn_relative_set(okapi::QAngle p_target, int speed) {
+void Drive::pid_turn_relative_set(ez::QAngle p_target, int speed) {
   pid_turn_relative_set(p_target, speed, pid_turn_behavior_get(), slew_turn_get());
 }
 
@@ -55,11 +55,11 @@ void Drive::pid_turn_relative_set(okapi::QAngle p_target, int speed) {
 void Drive::pid_turn_set(double target, int speed, e_angle_behavior behavior) {
   pid_turn_set(target, speed, behavior, slew_turn_get());
 }
-void Drive::pid_turn_set(okapi::QAngle p_target, int speed, e_angle_behavior behavior) {
+void Drive::pid_turn_set(ez::QAngle p_target, int speed, e_angle_behavior behavior) {
   pid_turn_set(p_target, speed, behavior, slew_turn_get());
 }
 // Relative
-void Drive::pid_turn_relative_set(okapi::QAngle p_target, int speed, e_angle_behavior behavior) {
+void Drive::pid_turn_relative_set(ez::QAngle p_target, int speed, e_angle_behavior behavior) {
   pid_turn_relative_set(p_target, speed, behavior, slew_turn_get());
 }
 void Drive::pid_turn_relative_set(double target, int speed, e_angle_behavior behavior) {
@@ -73,16 +73,16 @@ void Drive::pid_turn_relative_set(double target, int speed, e_angle_behavior beh
 void Drive::pid_turn_set(double target, int speed, bool slew_on) {
   pid_turn_set(target, speed, pid_turn_behavior_get(), slew_on);
 }
-void Drive::pid_turn_set(okapi::QAngle p_target, int speed, bool slew_on) {
-  double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
+void Drive::pid_turn_set(ez::QAngle p_target, int speed, bool slew_on) {
+  double target = p_target.convert(ez::degree);  // Convert unit to degree
   pid_turn_set(target, speed, pid_turn_behavior_get(), slew_on);
 }
 // Relative
 void Drive::pid_turn_relative_set(double target, int speed, bool slew_on) {
   pid_turn_relative_set(target, speed, pid_turn_behavior_get(), slew_on);
 }
-void Drive::pid_turn_relative_set(okapi::QAngle p_target, int speed, bool slew_on) {
-  double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
+void Drive::pid_turn_relative_set(ez::QAngle p_target, int speed, bool slew_on) {
+  double target = p_target.convert(ez::degree);  // Convert unit to degree
   pid_turn_relative_set(target, speed, pid_turn_behavior_get(), slew_on);
 }
 
@@ -90,8 +90,8 @@ void Drive::pid_turn_relative_set(okapi::QAngle p_target, int speed, bool slew_o
 // Set turn PID with turn behavior and slew
 /////
 // Absolute
-void Drive::pid_turn_set(okapi::QAngle p_target, int speed, e_angle_behavior behavior, bool slew_on) {
-  double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
+void Drive::pid_turn_set(ez::QAngle p_target, int speed, e_angle_behavior behavior, bool slew_on) {
+  double target = p_target.convert(ez::degree);  // Convert unit to degree
   pid_turn_set(target, speed, behavior, slew_on);
 }
 // Relative
@@ -101,8 +101,8 @@ void Drive::pid_turn_relative_set(double target, int speed, e_angle_behavior beh
   if (print_toggle) printf("Relative ");
   pid_turn_set(absolute_target, speed, behavior, slew_on);
 }
-void Drive::pid_turn_relative_set(okapi::QAngle p_target, int speed, e_angle_behavior behavior, bool slew_on) {
-  double target = p_target.convert(okapi::degree);  // Convert okapi unit to degree
+void Drive::pid_turn_relative_set(ez::QAngle p_target, int speed, e_angle_behavior behavior, bool slew_on) {
+  double target = p_target.convert(ez::degree);  // Convert unit to degree
   pid_turn_relative_set(target, speed, behavior, slew_on);
 }
 

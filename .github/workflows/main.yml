@@ -61,7 +61,7 @@ jobs:
         uses: actions/checkout@v7
 
       # No PROS toolchain, no VEX brain: compiles the pure-logic parts of the
-      # library against a set of PROS/okapi stubs with the ordinary g++
+      # library against a set of PROS stubs with the ordinary g++
       # ubuntu-latest already has, and runs the resulting doctest binary.
       - name: Run host tests
         run: make -C test
