@@ -165,6 +165,197 @@ void opcontrol_arcade_flipped(e_type stick_type);
 
 
 
+### opcontrol_arcade_curvature_standard()
+Sets the chassis to controller joysticks using standard curvature control, where left stick is fwd/rev.    
+Run in usercontrol.    
+
+Curvature is like arcade, but the turn stick sets the curvature of the arc the robot drives instead of how fast it turns.  The robot follows the same arc at any speed, like a steering wheel.  See [Control Schemes](../tutorials/control_schemes.md#curvature) for more on how it feels.    
+
+Because the turn is scaled by how fast you're driving, the robot would not be able to turn while stopped.  `opcontrol_curvature_point_turn_gain_set()` controls how much the robot can turn on a point.    
+
+This passes the controller through the curve functions, but is disabled by default.    
+Use opcontrol_curve_buttons_toggle() to enable it.    
+
+`stick_type` ez::SINGLE or ez::SPLIT control  
+<Tabs
+  groupId="opcontrol_arcade_curvature_standard"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void opcontrol() {
+  while (true) {
+    chassis.opcontrol_arcade_curvature_standard(ez::SPLIT); // For split curvature
+    // chassis.opcontrol_arcade_curvature_standard(ez::SINGLE); // For single curvature
+    
+    pros::delay(ez::util::DELAY_TIME);
+  }
+}
+```
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+
+```cpp
+void opcontrol_arcade_curvature_standard(e_type stick_type);
+``` 
+
+
+</TabItem>
+</Tabs>
+
+
+
+### opcontrol_arcade_curvature_flipped()
+Sets the chassis to controller joysticks using flipped curvature control, where right stick is fwd/rev.    
+Run in usercontrol.    
+
+Curvature is like arcade, but the turn stick sets the curvature of the arc the robot drives instead of how fast it turns.  The robot follows the same arc at any speed, like a steering wheel.  See [Control Schemes](../tutorials/control_schemes.md#curvature) for more on how it feels.    
+
+Because the turn is scaled by how fast you're driving, the robot would not be able to turn while stopped.  `opcontrol_curvature_point_turn_gain_set()` controls how much the robot can turn on a point.    
+
+This passes the controller through the curve functions, but is disabled by default.    
+Use opcontrol_curve_buttons_toggle() to enable it.    
+
+`stick_type` ez::SINGLE or ez::SPLIT control  
+<Tabs
+  groupId="opcontrol_arcade_curvature_flipped"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void opcontrol() {
+  while (true) {
+    chassis.opcontrol_arcade_curvature_flipped(ez::SPLIT); // For split curvature
+    // chassis.opcontrol_arcade_curvature_flipped(ez::SINGLE); // For single curvature
+    
+    pros::delay(ez::util::DELAY_TIME);
+  }
+}
+```
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+
+```cpp
+void opcontrol_arcade_curvature_flipped(e_type stick_type);
+``` 
+
+
+</TabItem>
+</Tabs>
+
+
+
+### opcontrol_curvature_point_turn_gain_set()
+Sets how much the robot can turn when it is barely moving fwd/rev in curvature control.    
+
+Curvature scales the turn stick by how fast you're driving, so at 0 fwd/rev speed the robot could not turn at all.  To fix this, the turn is scaled by whichever is larger; your fwd/rev speed (as a fraction of full speed) or this gain.  There is no jump between the two, and no button is needed to turn on a point.    
+
+* `0` is pure curvature, the robot cannot turn on a point
+* `1` is the same as arcade
+* Anything in between turns on a point at a reduced sensitivity, and becomes true curvature once your fwd/rev speed is above `gain * 127`
+
+This is defaulted to `0.8`.  Values outside of 0 - 1 are clamped.    
+
+`gain` 0 - 1  
+<Tabs
+  groupId="opcontrol_curvature_point_turn_gain_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  // . . .
+  chassis.opcontrol_curvature_point_turn_gain_set(0.5);  // Turn on a point at half sensitivity
+  // . . .
+}
+```
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+
+```cpp
+void opcontrol_curvature_point_turn_gain_set(double gain);
+``` 
+
+
+</TabItem>
+</Tabs>
+
+
+
+### opcontrol_curvature_point_turn_gain_get()
+Returns how much the robot can turn when it is barely moving fwd/rev in curvature control.    
+<Tabs
+  groupId="opcontrol_curvature_point_turn_gain_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  // . . .
+  printf("Point turn gain: %.2f\n", chassis.opcontrol_curvature_point_turn_gain_get());
+  // . . .
+}
+```
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+
+```cpp
+double opcontrol_curvature_point_turn_gain_get();
+``` 
+
+
+</TabItem>
+</Tabs>
+
+
+
+
+
+
+
+
+
+
 ## Joystick Curves
 
 

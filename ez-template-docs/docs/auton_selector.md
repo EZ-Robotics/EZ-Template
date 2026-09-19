@@ -46,6 +46,8 @@ void initialize();
 ### limit_switch_lcd_initialize() 
 Sets external buttons to increase/decrease the current autonomous page.  
 
+The library never takes ownership of the pointers you pass in and will never delete them, so they can be global or stack objects.  Passing `nullptr` for both disables the limit switches.  
+
 `right_limit` a button to go forward a page
 `left_limit` a button to go backwards a page
 <Tabs
@@ -135,7 +137,7 @@ void shutdown();
 
 
 ### autons_add();
-Adds autonomous routines to the autonomous selector. Uses `ez::print_to_screen()` to display to the brain.  
+Appends autonomous routines to the autonomous selector's list.  Calling this more than once keeps the routines you've already added, and the selector goes back to the first page.  Uses `ez::print_to_screen()` to display to the brain.  
 
 `autons` accepts an object of a string and a function
 <Tabs

@@ -486,7 +486,7 @@ Set's constants for turn exit conditions.
 `p_small_error` small timer will start when error is within this, okapi unit     
 `p_big_exit_time` time to exit when within big_error, okapi unit             
 `p_big_error` big timer will start when error is within this, okapi unit        
-`p_velocity_exit_time` velocity timer will start when velocity is 0, okapi unit   
+`p_velocity_exit_time` velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), okapi unit   
 `p_mA_timeout` mA timer will start when the motors are pulling too much current, okapi unit      
 `use_imu` true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't         
 <Tabs
@@ -567,9 +567,9 @@ void pid_turn_chain_constant_set(okapi::QAngle input);
 ### slew_turn_constants_set()
 Sets constants for slew for turns.
 
-Slew ramps up the speed of the robot until the set distance is traveled.
+Slew ramps up the speed of the robot from `min_speed` to full speed (127) over the set distance.  A motion with a lower max speed is capped at that speed, so it stops ramping sooner.
 
-`distance` the distance the robot travels before reaching max speed, an okapi angle unit   
+`distance` the distance the robot travels to ramp up to full speed (127), an okapi angle unit   
 `min_speed` the starting speed for the movement, 0 - 127   
 <Tabs
   groupId="slew_turn_constant_set"
@@ -1060,7 +1060,7 @@ Set's constants for turn exit conditions.
 `p_small_error` small timer will start when error is within this, in degrees
 `p_big_exit_time` time to exit when within big_error, in ms
 `p_big_error` big timer will start when error is within this, in degrees
-`p_velocity_exit_time`  velocity timer will start when velocity is 0, in ms
+`p_velocity_exit_time`  velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), in ms
 `p_mA_timeout` mA timer will start when the motors are pulling too much current, in ms   
 `use_imu` true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't    
 <Tabs

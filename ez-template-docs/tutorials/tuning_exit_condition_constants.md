@@ -19,7 +19,7 @@ Ultimately you're tuning for 2 functions; timers and when to start timing for `p
 The values to tune are in `default_constants()` in your `src/autons.cpp`.  The parameters are:
 * The first number is the amount of time needed to exit when within the second number of your target  
 * The third number is the amount of time needed to exit when within the fourth number of your target   
-* The fifth number is the amount of time to exit when the velocity of the robot is 0  
+* The fifth number is the amount of time to exit when the velocity of the robot is 0.  This only starts counting once the robot has started moving, or after 1 second if it never does  
 * The sixth number is the amount of time to exit when you're pulling too many amps from your motors  
 ```cpp
 void default_constants() {

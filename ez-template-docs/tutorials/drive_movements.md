@@ -36,7 +36,8 @@ Slew ramps up the speed limit of the robot to give smoother accelerations.
 chassis.slew_drive_set(true);  // Enables global slew
 chassis.slew_drive_constants_set(5_in, 50);
 
-// Over the first 5 inches, the robot will ramp the speed limit from 50 to 110 
+// The speed limit ramps from 50 up to full speed (127) over the first 5 inches
+// This motion is capped at 110, so the ramp stops after about 4 inches
 chassis.pid_drive_set(24_in, 110);
 chassis.pid_wait();
 ```
@@ -46,7 +47,8 @@ You can change the behavior of slew for each motion.  In the example below, slew
 chassis.slew_drive_set(false);  // Disables global slew
 chassis.slew_drive_constants_set(5_in, 50);
 
-// Over the first 5 inches, the robot will ramp the speed limit from 50 to 110 
+// The speed limit ramps from 50 up to full speed (127) over the first 5 inches
+// This motion is capped at 110, so the ramp stops after about 4 inches
 chassis.pid_drive_set(24_in, 110, true);  // Slew will be enabled for this motion
 chassis.pid_wait();
 

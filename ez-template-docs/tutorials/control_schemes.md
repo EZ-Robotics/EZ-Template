@@ -8,7 +8,7 @@ import TabItem from '@theme/TabItem';
 
 # Control Schemes
 
-There are multiple ways of controlling your drive, split into two categories; tank and arcade.  EZ-Template supports both and you can pick which one you'd like to use by uncommenting it in the example project.  
+There are multiple ways of controlling your drive, split into three categories; tank, arcade, and curvature.  EZ-Template supports all of them.  Tank and arcade are listed in the example project and you can pick which one you'd like to use by uncommenting it.  Curvature isn't listed there, but you use it the same way; swap the call for one of the [curvature](#curvature) functions.  
 ```cpp
 void opcontrol() {
   // . . .
@@ -86,6 +86,47 @@ chassis.opcontrol_arcade_standard(ez::SINGLE); // Standard split arcade
 
 ```cpp
 chassis.opcontrol_arcade_flipped(ez::SINGLE); // Flipped split arcade
+```
+</TabItem>
+</Tabs>
+
+## Curvature
+Curvature is a variation of arcade that is sometimes called "cheesy drive".  Just like arcade you control "forward" and "turning", but the turning stick sets the *curvature* of the arc the robot drives instead of how fast the robot turns.  The robot follows the same arc no matter how fast you're going, like turning a steering wheel.  
+
+In arcade, a turn that feels good at low speed can be too twitchy at high speed.  Curvature fixes this by scaling the turn by how fast you're driving.  The downside is that when you aren't driving forward or backward the robot can't turn at all, since the turn is scaled to 0.  EZ-Template gets around this by never scaling the turn below `opcontrol_curvature_point_turn_gain_set()`, so you can still turn on a point without pressing any buttons.  
+
+* `0` is pure curvature, the robot cannot turn on a point
+* `1` is the same as arcade
+* `0.8` is the default, which turns on a point at reduced sensitivity and becomes true curvature once you're driving at 80% speed or faster
+
+```cpp
+chassis.opcontrol_curvature_point_turn_gain_set(0.8);  // Put this in initialize()
+```
+
+Curvature has the same split / single and standard / flipped options as arcade.  The joysticks go through the same curves, deadband, active brake, and `opcontrol_speed_max` as arcade.  
+<Tabs
+  groupId="curvature_split_single"
+  defaultValue="split"
+  values={[
+    { label: 'Split',  value: 'split', },
+    { label: 'Single',  value: 'single', },
+  ]
+}>
+
+<TabItem value="split">
+
+```cpp
+chassis.opcontrol_arcade_curvature_standard(ez::SPLIT); // Standard split curvature
+// chassis.opcontrol_arcade_curvature_flipped(ez::SPLIT); // Flipped split curvature
+```
+</TabItem>
+
+
+<TabItem value="single">
+
+```cpp
+chassis.opcontrol_arcade_curvature_standard(ez::SINGLE); // Standard single curvature
+// chassis.opcontrol_arcade_curvature_flipped(ez::SINGLE); // Flipped single curvature
 ```
 </TabItem>
 </Tabs>
