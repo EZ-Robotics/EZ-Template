@@ -1234,7 +1234,11 @@ A proportion of how prioritized turning is during odometry motions.
 
 Turning is prioritized so the robot "applies brakes" while turning.  Lower number means more braking.  
 
-`bias` a number between 0 and 1
+Values below 1 make the robot stop driving once turning has gone past a certain angle error, and the robot will never drive backwards to reach the point.  The internal scale factor is clamped between 0 and 1.  
+
+Non-positive values are rejected, a message is printed to the terminal, and the previous value is kept.  
+
+`bias` a positive number, default is 1.375
 <Tabs
   groupId="odom_turn_bias_set"
   defaultValue="proto"
@@ -1275,7 +1279,7 @@ void autonomous() {
   chassis.pid_wait();
   chassis.odom_xyt_set(0_in, 0_in);
 
-  chassis.odom_turn_bias_set(0.5);  // Set turn bias to 0
+  chassis.odom_turn_bias_set(0.5);  // Set turn bias to 0.5
 
   // Go to 24, 24 relative to where the robot ended, but with a new turn bias
   chassis.pid_odom_set({{24_in, 24_in}, fwd, 110});
@@ -1778,7 +1782,7 @@ void autonomous() {
   chassis.pid_wait();
   chassis.odom_xyt_set(0_in, 0_in);
 
-  chassis.odom_turn_bias_set(0.5);  // Set turn bias to 0
+  chassis.odom_turn_bias_set(0.5);  // Set turn bias to 0.5
   printf("Turn Bias: %.2f\n", chassis.odom_turn_bias_get());
 
   // Go to 24, 24 relative to where the robot ended, but with a new turn bias
