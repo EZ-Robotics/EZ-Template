@@ -408,7 +408,7 @@ void autonomous() {
 ### odom_x_set()
 Sets the current X coordinate of the robot.     
 
-`p_x` new x coordinate as an okapi unit  
+`p_x` new x coordinate as a unit  
 <Tabs
   groupId="odom_x_set_oka"
   defaultValue="proto"
@@ -420,7 +420,7 @@ Sets the current X coordinate of the robot.
 <TabItem value="proto">
 
 ```cpp
-void odom_x_set(okapi::QLength p_x);
+void odom_x_set(ez::QLength p_x);
 ```
 </TabItem>
 <TabItem value="example">
@@ -497,7 +497,7 @@ void autonomous() {
 ### odom_y_set()
 Sets the current Y coordinate of the robot.       
 
-`p_y` new y coordinate as an okapi unit  
+`p_y` new y coordinate as a unit  
 <Tabs
   groupId="odom_y_set_oka"
   defaultValue="proto"
@@ -509,7 +509,7 @@ Sets the current Y coordinate of the robot.
 <TabItem value="proto">
 
 ```cpp
-void odom_y_set(okapi::QLength p_y);
+void odom_y_set(ez::QLength p_y);
 ```
 </TabItem>
 <TabItem value="example">
@@ -591,7 +591,7 @@ void autonomous() {
 ### odom_theta_set()
 Sets the current angle of the robot.     
 
-`p_y` new angle as an okapi unit
+`p_y` new angle as a unit
 <Tabs
   groupId="odom_theta_set_oka"
   defaultValue="proto"
@@ -604,7 +604,7 @@ Sets the current angle of the robot.
 <TabItem value="proto">
 
 ```cpp
-void odom_theta_set(okapi::QAngle p_a);
+void odom_theta_set(ez::QAngle p_a);
 ```
 
 
@@ -702,8 +702,8 @@ void autonomous() {
 ### odom_xy_set()
 Sets the current X and Y coordinate for the robot.    
 
-`p_x` new x value, okapi unit   
-`p_y` new y value, okapi unit    
+`p_x` new x value, in units   
+`p_y` new y value, in units    
 <Tabs
   groupId="odom_xy_set_oka"
   defaultValue="proto"
@@ -716,7 +716,7 @@ Sets the current X and Y coordinate for the robot.
 <TabItem value="proto">
 
 ```cpp
-void odom_xy_set(okapi::QLength p_x, okapi::QLength p_y);
+void odom_xy_set(ez::QLength p_x, ez::QLength p_y);
 ```
 
 
@@ -811,9 +811,9 @@ void autonomous() {
 ### odom_xy_set()
 Sets the current X, Y, and Theta values for the robot.     
 
-`p_x` new x value, okapi unit   
-`p_y` new y value, okapi unit  
-`p_t` new theta value, okapi unit
+`p_x` new x value, in units   
+`p_y` new y value, in units  
+`p_t` new theta value, in units
 <Tabs
   groupId="odom_xy_set_oka"
   defaultValue="proto"
@@ -826,7 +826,7 @@ Sets the current X, Y, and Theta values for the robot.
 <TabItem value="proto">
 
 ```cpp
-void odom_xyt_set(okapi::QLength p_x, okapi::QLength p_y, okapi::QAngle p_t);
+void odom_xyt_set(ez::QLength p_x, ez::QLength p_y, ez::QAngle p_t);
 ```
 
 
@@ -920,7 +920,7 @@ void autonomous() {
 ### odom_pose_set()
 Set the current pose of the robot.        
 
-`itarget` `{x, y, t}` as an okapi unit   
+`itarget` `{x, y, t}` as a unit   
 <Tabs
   groupId="odom_pose_set_oka"
   defaultValue="proto"
@@ -1296,12 +1296,12 @@ void autonomous() {
 ### pid_odom_drive_exit_condition_set()
 Set's constants for odom driving exit conditions.  
 
-`p_small_exit_time` time to exit when within small_error, okapi unit     
-`p_small_error` small timer will start when error is within this, okapi unit     
-`p_big_exit_time` time to exit when within big_error, okapi unit             
-`p_big_error` big timer will start when error is within this, okapi unit        
-`p_velocity_exit_time` time, in okapi units, for velocity to be 0 after the robot has moved (or after 1 second if it never moves)          
-`p_mA_timeout` velocity timer will start when velocity is 0, okapi unit     
+`p_small_exit_time` time to exit when within small_error, in units     
+`p_small_error` small timer will start when error is within this, in units     
+`p_big_exit_time` time to exit when within big_error, in units             
+`p_big_error` big timer will start when error is within this, in units        
+`p_velocity_exit_time` time, in units, for velocity to be 0 after the robot has moved (or after 1 second if it never moves)          
+`p_mA_timeout` velocity timer will start when velocity is 0, in units     
 `use_imu` true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't         
 <Tabs
   groupId="pid_odom_drive_exit_condition_set_oka"
@@ -1314,7 +1314,7 @@ Set's constants for odom driving exit conditions.
 <TabItem value="proto">
 
 ```cpp
-void pid_odom_drive_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QLength p_small_error, okapi::QTime p_big_exit_time, okapi::QLength p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout, bool use_imu = true);
+void pid_odom_drive_exit_condition_set(ez::QTime p_small_exit_time, ez::QLength p_small_error, ez::QTime p_big_exit_time, ez::QLength p_big_error, ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = true);
 ```
 </TabItem>
 
@@ -1373,12 +1373,12 @@ void initialize() {
 ### pid_odom_turn_exit_condition_set()
 Set's constants for odom turning exit conditions.  
 
-`p_small_exit_time` time to exit when within small_error, okapi unit     
-`p_small_error` small timer will start when error is within this, okapi unit     
-`p_big_exit_time` time to exit when within big_error, okapi unit             
-`p_big_error` big timer will start when error is within this, okapi unit        
-`p_velocity_exit_time` time, in okapi units, for velocity to be 0 after the robot has moved (or after 1 second if it never moves)          
-`p_mA_timeout` velocity timer will start when velocity is 0, okapi unit     
+`p_small_exit_time` time to exit when within small_error, in units     
+`p_small_error` small timer will start when error is within this, in units     
+`p_big_exit_time` time to exit when within big_error, in units             
+`p_big_error` big timer will start when error is within this, in units        
+`p_velocity_exit_time` time, in units, for velocity to be 0 after the robot has moved (or after 1 second if it never moves)          
+`p_mA_timeout` velocity timer will start when velocity is 0, in units     
 `use_imu` true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't         
 <Tabs
   groupId="pid_odom_turn_exit_condition_set_oka"
@@ -1391,7 +1391,7 @@ Set's constants for odom turning exit conditions.
 <TabItem value="proto">
 
 ```cpp
-void pid_odom_turn_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QAngle p_small_error, okapi::QTime p_big_exit_time, okapi::QAngle p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout, bool use_imu = true);
+void pid_odom_turn_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error, ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = true);
 ```
 </TabItem>
 
@@ -1507,7 +1507,7 @@ void autonomous() {
 ### odom_look_ahead_set()
 Sets how far away the robot looks in the path during pure pursuits.  
 
-`distance` how long the "carrot on a stick" is, in okapi units.  Must be greater than 0.  Otherwise it is rejected, a message is printed to the terminal, and the previous value is kept.
+`distance` how long the "carrot on a stick" is, in units.  Must be greater than 0.  Otherwise it is rejected, a message is printed to the terminal, and the previous value is kept.
 <Tabs
   groupId="odom_look_ahead_se_okat"
   defaultValue="proto"
@@ -1520,7 +1520,7 @@ Sets how far away the robot looks in the path during pure pursuits.
 <TabItem value="proto">
 
 ```cpp
-void odom_look_ahead_set(okapi::QLength p_distance);
+void odom_look_ahead_set(ez::QLength p_distance);
 ```
 
 
@@ -1650,7 +1650,7 @@ e_angle_behavior pid_odom_behavior_get();
 ### odom_path_spacing_set()
 Sets the spacing between points when points get injected into the path.   
 
-`p_spacing` a small number in okapi units.  Must be greater than 0.  Otherwise it is rejected, a message is printed to the terminal, and the previous value is kept.
+`p_spacing` a small number in units.  Must be greater than 0.  Otherwise it is rejected, a message is printed to the terminal, and the previous value is kept.
 <Tabs
   groupId="odom_path_spacing_set_oka"
   defaultValue="proto"
@@ -1663,7 +1663,7 @@ Sets the spacing between points when points get injected into the path.
 <TabItem value="proto">
 
 ```cpp
-void odom_path_spacing_set(okapi::QLength p_spacing);
+void odom_path_spacing_set(ez::QLength p_spacing);
 ```
 
 
@@ -2324,7 +2324,7 @@ void initialize() {
 ### odom_boomerang_distance_set()
 Sets how far away the carrot point can be from the target point.   
 
-`distance` distance as an okapi unit  
+`distance` distance as a unit  
 <Tabs
   groupId="odom_boomerang_distance_set_oka"
   defaultValue="proto"
@@ -2337,7 +2337,7 @@ Sets how far away the carrot point can be from the target point.
 <TabItem value="proto">
 
 ```cpp
-void odom_boomerang_distance_set(okapi::QLength p_distance);
+void odom_boomerang_distance_set(ez::QLength p_distance);
 ```
 
 

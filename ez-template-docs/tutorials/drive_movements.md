@@ -18,7 +18,7 @@ Maintaining an angle while driving is called "heading" in EZ-Template.  This has
 EZ-Template will also run independent PID loops on the left and right side of your drive.  Because of this, EZ-Template will use the motor encoders if you only have one vertical tracking wheel.  The tracking wheel will be used to get your XY position and for all odometry motions, but the motor encoders will still be used for this function unless you have two vertical tracking wheels.  
 
 ## Simplest Drive
-At minimum, you need to give the robot a distance to travel and a speed limit (0-127).  You can do this with and without okapi units.  
+At minimum, you need to give the robot a distance to travel and a speed limit (0-127).  You can do this with and without units.  
 ```cpp
 // Drive forward 24in
 chassis.pid_drive_set(24_in, 110);

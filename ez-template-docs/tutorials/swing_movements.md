@@ -40,7 +40,7 @@ maybe some images get added here that showcase absolute angle:
 -->
 
 ### Simplest Swing
-At minimum, you need to give the robot an angle to go to and a speed limit (0-127).  You can do this with and without okapi units.  
+At minimum, you need to give the robot an angle to go to and a speed limit (0-127).  You can do this with and without units.  
 ```cpp
 // Turn to 45deg with the left side of the drive
 chassis.pid_swing_set(ez::LEFT_SWING, 45_deg, 90);
