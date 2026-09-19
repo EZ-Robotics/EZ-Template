@@ -967,6 +967,54 @@ class Drive {
   void opcontrol_arcade_flipped(e_type stick_type);
 
   /**
+   * Sets the chassis to controller joysticks using standard curvature control, where left stick is fwd/rev.
+   * Run in usercontrol.
+   *
+   * Like arcade, but the turn stick sets the curvature of the arc the robot drives, not the turn rate.  The
+   * robot turns the same arc at any speed, like a steering wheel.  Turning on a point is scaled with
+   * opcontrol_curvature_point_turn_gain_set().
+   *
+   * This passes the controller through the curve functions, but is disabled by default.
+   * Use opcontrol_curve_buttons_toggle() to enable it.
+   *
+   * \param stick_type
+   *        ez::SINGLE or ez::SPLIT control
+   */
+  void opcontrol_arcade_curvature_standard(e_type stick_type);
+
+  /**
+   * Sets the chassis to controller joysticks using flipped curvature control, where right stick is fwd/rev.
+   * Run in usercontrol.
+   *
+   * Like arcade, but the turn stick sets the curvature of the arc the robot drives, not the turn rate.  The
+   * robot turns the same arc at any speed, like a steering wheel.  Turning on a point is scaled with
+   * opcontrol_curvature_point_turn_gain_set().
+   *
+   * This passes the controller through the curve functions, but is disabled by default.
+   * Use opcontrol_curve_buttons_toggle() to enable it.
+   *
+   * \param stick_type
+   *        ez::SINGLE or ez::SPLIT control
+   */
+  void opcontrol_arcade_curvature_flipped(e_type stick_type);
+
+  /**
+   * Sets how much the robot turns when it is barely moving fwd/rev in curvature control.
+   *
+   * Curvature turns less the slower you drive, so this is the least the turn stick is scaled by.  0 can't turn
+   * on a point, 1 is the same as arcade.  Defaults to 0.5.
+   *
+   * \param gain
+   *        0 to 1
+   */
+  void opcontrol_curvature_point_turn_gain_set(double gain);
+
+  /**
+   * Returns how much the robot turns when it is barely moving fwd/rev in curvature control.
+   */
+  double opcontrol_curvature_point_turn_gain_get();
+
+  /**
    * Initializes left and right curves with the SD card, recommended to run in initialize().
    */
   void opcontrol_curve_sd_initialize();
@@ -3565,6 +3613,7 @@ class Drive {
   std::vector<const_and_name>* used_pid_tuner_pids;
   double opcontrol_speed_max = 127.0;
   bool arcade_vector_scaling = false;
+  double curvature_point_turn_gain = 0.5;
   double prev_imu_value = 0;
   // odom privates
   std::vector<odom> pp_movements;

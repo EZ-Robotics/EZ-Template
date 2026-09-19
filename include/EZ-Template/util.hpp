@@ -217,6 +217,27 @@ double clamp(double input, double max, double min);
 double clamp(double input, double max);
 
 /**
+ * Mixes a forward and turn joystick value into left and right outputs using curvature drive.
+ *
+ * The turn value is scaled by the forward speed, so the robot follows the same arc no matter how fast it is
+ * driving.  A turn value scaled by forward speed can't turn on a point, so the scale never drops below
+ * point_turn_gain.  Below that speed this behaves like arcade with turning scaled by point_turn_gain.
+ *
+ * If either side goes past 127, both are divided by the larger one.  This keeps the ratio between the sides,
+ * which keeps the arc, at the cost of top speed.
+ *
+ * \param fwd
+ *        forward joystick value, -127 to 127
+ * \param turn
+ *        turn joystick value, -127 to 127
+ * \param point_turn_gain
+ *        0 to 1.  0 is pure curvature, 1 is pure arcade
+ * \return
+ *        {left, right}, both within -127 to 127
+ */
+std::pair<double, double> curvature_mix(double fwd, double turn, double point_turn_gain);
+
+/**
  * Is the SD card plugged in?
  */
 const bool SD_CARD_ACTIVE = pros::usd::is_installed();
