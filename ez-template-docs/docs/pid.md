@@ -270,7 +270,7 @@ Sets the exit condition constants.  To disable one of the conditions, set the co
 `p_small_error` small error threshold  
 `p_big_exit_time` time, in ms, before exiting `p_big_error`  
 `p_big_error` big error threshold  
-`p_velocity_exit_time` time, in ms, for velocity to be 0  
+`p_velocity_exit_time` time, in ms, for velocity to be 0 after the robot has moved (or after 1 second if it never moves)  
 `p_mA_timeout` time, in ms, for `is_over_current` to be true       
 <Tabs
   groupId="ex5"
@@ -402,7 +402,7 @@ void velocity_sensor_secondary_set(double secondary_sensor);
 
 
 ### velocity_sensor_main_exit_set()
-Sets a threshold for the main sensors velocity.  The velocity timer will start increasing when the main sensor is within this value.  This is defaulted to `0.05`.  
+Sets a threshold for the main sensors velocity.  The velocity timer will start increasing when the main sensor is within this value, once the robot has moved faster than this at least once (or after 1 second if it never moves).  This is defaulted to `0.05`.  
 
 `zero` double, a small threshold   
 <Tabs
@@ -438,7 +438,7 @@ void velocity_sensor_main_exit_set(double zero);
 
 
 ### velocity_sensor_secondary_exit_set()
-Sets a threshold for the secondary sensors velocity.  The velocity timer will start increasing when the secondary sensor is within this value.  This is defaulted to `0.1`.  This is only used when the secondary sensor is enabled.   
+Sets a threshold for the secondary sensors velocity.  The velocity timer will start increasing when the secondary sensor is within this value.  This is defaulted to `0.1`.  This is only used when the secondary sensor is enabled.  The velocity timer also waits until the robot has moved, see `velocity_sensor_main_exit_set()`, or 1 second if it never moves.   
 
 `zero` double, a small threshold   
 <Tabs
@@ -612,7 +612,7 @@ double velocity_sensor_secondary_toggle_get();
 
 
 ### velocity_sensor_main_exit_get()
-Gets a threshold for the secondary sensors velocity.  The velocity timer will start increasing when the secondary sensor is within this value.  This is defaulted to `0.1`.    
+Gets a threshold for the main sensors velocity.  The velocity timer will start increasing when the main sensor is within this value, once the robot has moved faster than this at least once (or after 1 second if it never moves).  This is defaulted to `0.05`.    
 <Tabs
   groupId="velocity_sensor_main_exit_get()"
   defaultValue="proto"
@@ -652,7 +652,7 @@ double velocity_sensor_main_exit_get();
 
 
 ### velocity_sensor_secondary_exit_get()
-Gets a threshold for the secondary sensors velocity.  The velocity timer will start increasing when the secondary sensor is within this value.  This is defaulted to `0.1`.  This is only used when the secondary sensor is enabled.     
+Gets a threshold for the secondary sensors velocity.  The velocity timer will start increasing when the secondary sensor is within this value.  This is defaulted to `0.1`.  This is only used when the secondary sensor is enabled.  The velocity timer also waits until the robot has moved, see `velocity_sensor_main_exit_set()`, or 1 second if it never moves.     
 <Tabs
   groupId="velocity_sensor_secondary_exit_get()"
   defaultValue="proto"
@@ -741,7 +741,7 @@ enum exit_output { RUNNING = 1,
 ```
 
 ### No Motor
-Exit conditions without a motor will check if the error is small for X amount of time, if error is a little bigger for Y amount of time, or if velocity is 0 for Z amount of time, if you have constants enabled for them in [exit_condition_set()](https://ez-robotics.github.io/EZ-Template/docs/pid#exit_condition_set).
+Exit conditions without a motor will check if the error is small for X amount of time, if error is a little bigger for Y amount of time, or if velocity is 0 for Z amount of time (after the robot has moved), if you have constants enabled for them in [exit_condition_set()](https://ez-robotics.github.io/EZ-Template/docs/pid#exit_condition_set).
 
 Outputs one of the `exit_output` states.  This exit condition checks `small_error`, `big_error` and `velocity` if they are enabled.  
 <Tabs
@@ -800,7 +800,7 @@ ez::exit_output exit_condition(bool print = false);
 
 
 ### One Motor
-Exit conditions with a motor will check if the error is small for X amount of time, if error is a little bigger for Y amount of time, if velocity is 0 for Z amount of time, then they will check if the motor is pulling too many amps for A amount of time, only if you have constants enabled for them in [exit_condition_set()](https://ez-robotics.github.io/EZ-Template/docs/pid#exit_condition_set).
+Exit conditions with a motor will check if the error is small for X amount of time, if error is a little bigger for Y amount of time, if velocity is 0 for Z amount of time (after the robot has moved), then they will check if the motor is pulling too many amps for A amount of time, only if you have constants enabled for them in [exit_condition_set()](https://ez-robotics.github.io/EZ-Template/docs/pid#exit_condition_set).
 
 Outputs one of the `exit_output` states.  This exit condition checks `small_error`, `big_error`, `velocity` and `mA` if they are enabled.     
 <Tabs
