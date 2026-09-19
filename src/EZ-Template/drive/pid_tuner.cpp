@@ -100,11 +100,11 @@ void Drive::pid_tuner_disable() {
 
 // Toggle PID Tuner
 void Drive::pid_tuner_toggle() {
-  pid_tuner_on = !pid_tuner_on;
+  // enable/disable return early when already in the requested state, so don't flip pid_tuner_on here
   if (pid_tuner_on)
-    pid_tuner_enable();
-  else
     pid_tuner_disable();
+  else
+    pid_tuner_enable();
 }
 
 // Add PIDs to the Tuner
