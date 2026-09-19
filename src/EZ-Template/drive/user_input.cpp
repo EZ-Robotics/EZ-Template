@@ -14,6 +14,9 @@ namespace ez {
 void Drive::opcontrol_arcade_scaling(bool enable) { arcade_vector_scaling = enable; }
 bool Drive::opcontrol_arcade_scaling_enabled() { return arcade_vector_scaling; }
 
+void Drive::opcontrol_curvature_point_turn_gain_set(double gain) { curvature_point_turn_gain = util::clamp(gain, 1.0, 0.0); }
+double Drive::opcontrol_curvature_point_turn_gain_get() { return curvature_point_turn_gain; }
+
 // Set curve defaults
 void Drive::opcontrol_curve_default_set(double left, double right) {
   left_curve_scale = left;
@@ -368,5 +371,55 @@ void Drive::opcontrol_arcade_flipped(e_type stick_type) {
 
   // Set robot to l_stick and r_stick, check joystick threshold, set active brake
   opcontrol_joystick_threshold_iterate(fwd_stick + turn_stick, fwd_stick - turn_stick);
+}
+
+// Curvature control standard
+void Drive::opcontrol_arcade_curvature_standard(e_type stick_type) {
+  is_tank = false;
+  opcontrol_drive_sensors_reset();
+
+  // Toggle for controller curve
+  opcontrol_curve_buttons_iterate();
+
+  int fwd_stick = 0, turn_stick = 0;
+  // Check arcade type (split vs single, normal vs flipped)
+  if (stick_type == SPLIT) {
+    // Put the joysticks through the curve function
+    fwd_stick = opcontrol_curve_left(clipped_joystick(master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y)));
+    turn_stick = opcontrol_curve_right(clipped_joystick(master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X)));
+  } else if (stick_type == SINGLE) {
+    // Put the joysticks through the curve function
+    fwd_stick = opcontrol_curve_left(clipped_joystick(master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y)));
+    turn_stick = opcontrol_curve_right(clipped_joystick(master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X)));
+  }
+
+  // Set robot to l_stick and r_stick, check joystick threshold, set active brake
+  auto [l_stick, r_stick] = util::curvature_mix(fwd_stick, turn_stick, curvature_point_turn_gain);
+  opcontrol_joystick_threshold_iterate(lround(l_stick), lround(r_stick));
+}
+
+// Curvature control flipped
+void Drive::opcontrol_arcade_curvature_flipped(e_type stick_type) {
+  is_tank = false;
+  opcontrol_drive_sensors_reset();
+
+  // Toggle for controller curve
+  opcontrol_curve_buttons_iterate();
+
+  int turn_stick = 0, fwd_stick = 0;
+  // Check arcade type (split vs single, normal vs flipped)
+  if (stick_type == SPLIT) {
+    // Put the joysticks through the curve function
+    fwd_stick = opcontrol_curve_right(clipped_joystick(master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y)));
+    turn_stick = opcontrol_curve_left(clipped_joystick(master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X)));
+  } else if (stick_type == SINGLE) {
+    // Put the joysticks through the curve function
+    fwd_stick = opcontrol_curve_right(clipped_joystick(master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y)));
+    turn_stick = opcontrol_curve_left(clipped_joystick(master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X)));
+  }
+
+  // Set robot to l_stick and r_stick, check joystick threshold, set active brake
+  auto [l_stick, r_stick] = util::curvature_mix(fwd_stick, turn_stick, curvature_point_turn_gain);
+  opcontrol_joystick_threshold_iterate(lround(l_stick), lround(r_stick));
 }
 }  // namespace ez
