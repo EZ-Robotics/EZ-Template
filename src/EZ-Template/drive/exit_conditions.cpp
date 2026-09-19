@@ -18,14 +18,14 @@ void Drive::pid_drive_exit_condition_set(int p_small_exit_time, double p_small_e
   internal_rightPID.exit = rightPID.exit;
 }
 
-void Drive::pid_drive_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QLength p_small_error, okapi::QTime p_big_exit_time, okapi::QLength p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout, bool use_imu) {
-  // Convert okapi units to doubles
-  double se = p_small_error.convert(okapi::inch);
-  double be = p_big_error.convert(okapi::inch);
-  int set = p_small_exit_time.convert(okapi::millisecond);
-  int bet = p_big_exit_time.convert(okapi::millisecond);
-  int vet = p_velocity_exit_time.convert(okapi::millisecond);
-  int mAt = p_mA_timeout.convert(okapi::millisecond);
+void Drive::pid_drive_exit_condition_set(ez::QTime p_small_exit_time, ez::QLength p_small_error, ez::QTime p_big_exit_time, ez::QLength p_big_error, ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu) {
+  // Convert units to doubles
+  double se = p_small_error.convert(ez::inch);
+  double be = p_big_error.convert(ez::inch);
+  int set = p_small_exit_time.convert(ez::millisecond);
+  int bet = p_big_exit_time.convert(ez::millisecond);
+  int vet = p_velocity_exit_time.convert(ez::millisecond);
+  int mAt = p_mA_timeout.convert(ez::millisecond);
 
   pid_drive_exit_condition_set(set, se, bet, be, vet, mAt, use_imu);
 }
@@ -35,14 +35,14 @@ void Drive::pid_turn_exit_condition_set(int p_small_exit_time, double p_small_er
   turnPID.velocity_sensor_secondary_toggle_set(use_imu);
 }
 
-void Drive::pid_turn_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QAngle p_small_error, okapi::QTime p_big_exit_time, okapi::QAngle p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout, bool use_imu) {
-  // Convert okapi units to doubles
-  double se = p_small_error.convert(okapi::degree);
-  double be = p_big_error.convert(okapi::degree);
-  int set = p_small_exit_time.convert(okapi::millisecond);
-  int bet = p_big_exit_time.convert(okapi::millisecond);
-  int vet = p_velocity_exit_time.convert(okapi::millisecond);
-  int mAt = p_mA_timeout.convert(okapi::millisecond);
+void Drive::pid_turn_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error, ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu) {
+  // Convert units to doubles
+  double se = p_small_error.convert(ez::degree);
+  double be = p_big_error.convert(ez::degree);
+  int set = p_small_exit_time.convert(ez::millisecond);
+  int bet = p_big_exit_time.convert(ez::millisecond);
+  int vet = p_velocity_exit_time.convert(ez::millisecond);
+  int mAt = p_mA_timeout.convert(ez::millisecond);
 
   pid_turn_exit_condition_set(set, se, bet, be, vet, mAt, use_imu);
 }
@@ -52,14 +52,14 @@ void Drive::pid_swing_exit_condition_set(int p_small_exit_time, double p_small_e
   swingPID.velocity_sensor_secondary_toggle_set(use_imu);
 }
 
-void Drive::pid_swing_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QAngle p_small_error, okapi::QTime p_big_exit_time, okapi::QAngle p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout, bool use_imu) {
-  // Convert okapi units to doubles
-  double se = p_small_error.convert(okapi::degree);
-  double be = p_big_error.convert(okapi::degree);
-  int set = p_small_exit_time.convert(okapi::millisecond);
-  int bet = p_big_exit_time.convert(okapi::millisecond);
-  int vet = p_velocity_exit_time.convert(okapi::millisecond);
-  int mAt = p_mA_timeout.convert(okapi::millisecond);
+void Drive::pid_swing_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error, ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu) {
+  // Convert units to doubles
+  double se = p_small_error.convert(ez::degree);
+  double be = p_big_error.convert(ez::degree);
+  int set = p_small_exit_time.convert(ez::millisecond);
+  int bet = p_big_exit_time.convert(ez::millisecond);
+  int vet = p_velocity_exit_time.convert(ez::millisecond);
+  int mAt = p_mA_timeout.convert(ez::millisecond);
 
   pid_swing_exit_condition_set(set, se, bet, be, vet, mAt, use_imu);
 }
@@ -69,14 +69,14 @@ void Drive::pid_odom_drive_exit_condition_set(int p_small_exit_time, double p_sm
   xyPID.velocity_sensor_secondary_toggle_set(use_imu);
 }
 
-void Drive::pid_odom_drive_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QLength p_small_error, okapi::QTime p_big_exit_time, okapi::QLength p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout, bool use_imu) {
-  // Convert okapi units to doubles
-  double se = p_small_error.convert(okapi::inch);
-  double be = p_big_error.convert(okapi::inch);
-  int set = p_small_exit_time.convert(okapi::millisecond);
-  int bet = p_big_exit_time.convert(okapi::millisecond);
-  int vet = p_velocity_exit_time.convert(okapi::millisecond);
-  int mAt = p_mA_timeout.convert(okapi::millisecond);
+void Drive::pid_odom_drive_exit_condition_set(ez::QTime p_small_exit_time, ez::QLength p_small_error, ez::QTime p_big_exit_time, ez::QLength p_big_error, ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu) {
+  // Convert units to doubles
+  double se = p_small_error.convert(ez::inch);
+  double be = p_big_error.convert(ez::inch);
+  int set = p_small_exit_time.convert(ez::millisecond);
+  int bet = p_big_exit_time.convert(ez::millisecond);
+  int vet = p_velocity_exit_time.convert(ez::millisecond);
+  int mAt = p_mA_timeout.convert(ez::millisecond);
 
   pid_odom_drive_exit_condition_set(set, se, bet, be, vet, mAt, use_imu);
 }
@@ -86,14 +86,14 @@ void Drive::pid_odom_turn_exit_condition_set(int p_small_exit_time, double p_sma
   current_a_odomPID.velocity_sensor_secondary_toggle_set(use_imu);
 }
 
-void Drive::pid_odom_turn_exit_condition_set(okapi::QTime p_small_exit_time, okapi::QAngle p_small_error, okapi::QTime p_big_exit_time, okapi::QAngle p_big_error, okapi::QTime p_velocity_exit_time, okapi::QTime p_mA_timeout, bool use_imu) {
-  // Convert okapi units to doubles
-  double se = p_small_error.convert(okapi::degree);
-  double be = p_big_error.convert(okapi::degree);
-  int set = p_small_exit_time.convert(okapi::millisecond);
-  int bet = p_big_exit_time.convert(okapi::millisecond);
-  int vet = p_velocity_exit_time.convert(okapi::millisecond);
-  int mAt = p_mA_timeout.convert(okapi::millisecond);
+void Drive::pid_odom_turn_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error, ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu) {
+  // Convert units to doubles
+  double se = p_small_error.convert(ez::degree);
+  double be = p_big_error.convert(ez::degree);
+  int set = p_small_exit_time.convert(ez::millisecond);
+  int bet = p_big_exit_time.convert(ez::millisecond);
+  int vet = p_velocity_exit_time.convert(ez::millisecond);
+  int mAt = p_mA_timeout.convert(ez::millisecond);
 
   pid_odom_turn_exit_condition_set(set, se, bet, be, vet, mAt, use_imu);
 }
@@ -330,19 +330,19 @@ void Drive::wait_until_turn_swing_internal(double target) {
   }
 }
 
-void Drive::pid_wait_until(okapi::QLength target) {
+void Drive::pid_wait_until(ez::QLength target) {
   // If robot is driving...
   if (mode == DRIVE || mode == POINT_TO_POINT || mode == PURE_PURSUIT) {
-    wait_until_drive(target.convert(okapi::inch));
+    wait_until_drive(target.convert(ez::inch));
   } else {
     printf("QLength not supported for turn or swing!\n");
   }
 }
 
-void Drive::pid_wait_until(okapi::QAngle target) {
+void Drive::pid_wait_until(ez::QAngle target) {
   // If robot is driving...
   if (mode == TURN || mode == SWING || mode == TURN_TO_POINT) {
-    wait_until_turn_swing(target.convert(okapi::degree));
+    wait_until_turn_swing(target.convert(ez::degree));
   } else {
     printf("QAngle not supported for drive!\n");
   }
@@ -475,13 +475,13 @@ void Drive::pid_drive_chain_constant_set(double input) {
 }
 void Drive::pid_drive_chain_forward_constant_set(double input) { drive_forward_motion_chain_scale = fabs(input); }
 void Drive::pid_drive_chain_backward_constant_set(double input) { drive_backward_motion_chain_scale = fabs(input); }
-void Drive::pid_drive_chain_constant_set(okapi::QLength input) { pid_drive_chain_constant_set(input.convert(okapi::inch)); }
-void Drive::pid_drive_chain_forward_constant_set(okapi::QLength input) { pid_drive_chain_forward_constant_set(input.convert(okapi::inch)); }
-void Drive::pid_drive_chain_backward_constant_set(okapi::QLength input) { pid_drive_chain_backward_constant_set(input.convert(okapi::inch)); }
+void Drive::pid_drive_chain_constant_set(ez::QLength input) { pid_drive_chain_constant_set(input.convert(ez::inch)); }
+void Drive::pid_drive_chain_forward_constant_set(ez::QLength input) { pid_drive_chain_forward_constant_set(input.convert(ez::inch)); }
+void Drive::pid_drive_chain_backward_constant_set(ez::QLength input) { pid_drive_chain_backward_constant_set(input.convert(ez::inch)); }
 
 // Set turn motion chain constants
 void Drive::pid_turn_chain_constant_set(double input) { turn_motion_chain_scale = fabs(input); }
-void Drive::pid_turn_chain_constant_set(okapi::QAngle input) { pid_turn_chain_constant_set(input.convert(okapi::degree)); }
+void Drive::pid_turn_chain_constant_set(ez::QAngle input) { pid_turn_chain_constant_set(input.convert(ez::degree)); }
 
 // Set swing motion chain constants
 void Drive::pid_swing_chain_constant_set(double input) {
@@ -490,9 +490,9 @@ void Drive::pid_swing_chain_constant_set(double input) {
 }
 void Drive::pid_swing_chain_forward_constant_set(double input) { swing_forward_motion_chain_scale = fabs(input); }
 void Drive::pid_swing_chain_backward_constant_set(double input) { swing_backward_motion_chain_scale = fabs(input); }
-void Drive::pid_swing_chain_constant_set(okapi::QAngle input) { pid_swing_chain_constant_set(input.convert(okapi::degree)); }
-void Drive::pid_swing_chain_forward_constant_set(okapi::QAngle input) { pid_swing_chain_forward_constant_set(input.convert(okapi::degree)); }
-void Drive::pid_swing_chain_backward_constant_set(okapi::QAngle input) { pid_swing_chain_backward_constant_set(input.convert(okapi::degree)); }
+void Drive::pid_swing_chain_constant_set(ez::QAngle input) { pid_swing_chain_constant_set(input.convert(ez::degree)); }
+void Drive::pid_swing_chain_forward_constant_set(ez::QAngle input) { pid_swing_chain_forward_constant_set(input.convert(ez::degree)); }
+void Drive::pid_swing_chain_backward_constant_set(ez::QAngle input) { pid_swing_chain_backward_constant_set(input.convert(ez::degree)); }
 
 // Get motion chain constants
 double Drive::pid_drive_chain_forward_constant_get() { return drive_forward_motion_chain_scale; }

@@ -19,6 +19,15 @@ jobs:
         id: test
         uses: LemLib/pros-build@v5.1.0
 
+      # The library's headers #include "EZ-Units/units.hpp", so the built template has to
+      # carry it. pros-build leaves the template unpacked in template/ (that is what the
+      # artifact upload below publishes). Fails if TEMPLATE_FILES in the Makefile ever stops
+      # shipping the header.
+      - name: Check the template ships EZ-Units
+        run: |
+          [ -f template/include/EZ-Units/units.hpp ] || { echo "template/include/EZ-Units/units.hpp is missing; template/ contains:"; ls -R template | head -40; exit 1; }
+          grep -q 'EZ-Units.*units.hpp' template/template.pros || { echo "template/template.pros does not list EZ-Units/units.hpp"; exit 1; }
+
       - name: Upload Artifact
         uses: actions/upload-artifact@v7
         with:
@@ -50,7 +59,33 @@ jobs:
         uses: actions/checkout@v7
 
       # No PROS toolchain, no VEX brain: compiles the pure-logic parts of the
-      # library against a set of PROS/okapi stubs with the ordinary g++
+      # library against a set of PROS stubs with the ordinary g++
       # ubuntu-latest already has, and runs the resulting doctest binary.
       - name: Run host tests
         run: make -C test
+
+      # OkapiLib is no longer a dependency of the library. Keep it that way; the
+      # only okapi allowed in the repo is the four unit headers under test/fixtures,
+      # used to simulate a user project that still has okapilib installed.
+      - name: No OkapiLib references in the library
+        run: |
+          if grep -rniE 'okapi' include/EZ-Template src/EZ-Template; then
+            echo "OkapiLib is no longer used by EZ-Template; remove the references above"
+            exit 1
+          fi
+
+  # include/EZ-Units/units.hpp is a vendored copy of EZ-Units and must stay
+  # byte-identical to the tagged release. To upgrade it, copy the file from the new
+  # tag and bump EZ_UNITS_TAG below in the same commit.
+  vendored-ez-units:
+    runs-on: ubuntu-latest
+    env:
+      EZ_UNITS_TAG: v1.0.0
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Vendored EZ-Units matches the upstream tag
+        run: |
+          curl -fsSL --retry 3 "https://raw.githubusercontent.com/EZ-Robotics/EZ-Units/${EZ_UNITS_TAG}/include/EZ-Units/units.hpp" -o /tmp/upstream_units.hpp
+          diff -u /tmp/upstream_units.hpp include/EZ-Units/units.hpp

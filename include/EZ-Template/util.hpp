@@ -11,11 +11,14 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include <string.h>
 
 #include "api.h"
-#include "okapi/api/units/QAngle.hpp"
-#include "okapi/api/units/QLength.hpp"
-#include "okapi/api/units/QTime.hpp"
+#include "EZ-Units/units.hpp"
 
-using namespace okapi::literals;
+// include/EZ-Units/units.hpp is vendored from EZ-Units, and a standalone EZ-Units install ships the
+// same file at the same path. Refuse to build against a different major version.
+static_assert(EZ_UNITS_VERSION_MAJOR == 1, "EZ-Template needs EZ-Units 1.x, check include/EZ-Units/units.hpp");
+
+// Puts the unit literals (24_in, 90_deg, 100_ms, ...) in scope for user code.
+using namespace ez::literals;
 
 /**
  * Controller.
@@ -108,7 +111,7 @@ enum e_angle_behavior { raw = 0,
                         longest = 4 };
 
 const double ANGLE_NOT_SET = 0.0000000000000000000001;
-const okapi::QAngle p_ANGLE_NOT_SET = 0.0000000000000000000001_deg;
+const ez::QAngle p_ANGLE_NOT_SET = 0.0000000000000000000001_deg;
 
 /**
  * Struct for coordinates.
@@ -123,9 +126,9 @@ typedef struct pose {
  * Struct for united coordinates.
  */
 typedef struct united_pose {
-  okapi::QLength x;
-  okapi::QLength y;
-  okapi::QAngle theta = p_ANGLE_NOT_SET;
+  ez::QLength x;
+  ez::QLength y;
+  ez::QAngle theta = p_ANGLE_NOT_SET;
 } united_pose;
 
 /**
@@ -326,7 +329,7 @@ double turn_shortest(double target, double current, bool print = false);
 double turn_longest(double target, double current, bool print = false);
 
 /**
- * Converts pose with okapi units to a pose without okapi units.
+ * Converts pose with units to a pose without units.
  *
  * \param input
  *        a pose with units
@@ -334,7 +337,7 @@ double turn_longest(double target, double current, bool print = false);
 pose united_pose_to_pose(united_pose input);
 
 /**
- * Converts vector of poses with okapi units to a vector of poses without okapi units.
+ * Converts vector of poses with units to a vector of poses without units.
  *
  * \param inputs
  *        poses with units

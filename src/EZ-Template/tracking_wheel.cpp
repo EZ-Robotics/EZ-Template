@@ -13,7 +13,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 namespace ez {
 // ADI Encoder
 tracking_wheel::tracking_wheel(std::vector<int> ports, double wheel_diameter, double distance_to_center, double ratio)
-    : adi_encoder(abs(ports[0]), abs(ports[1]), util::reversed_active(ports[0])),
+    : adi_encoder(std::abs(ports[0]), std::abs(ports[1]), util::reversed_active(ports[0])),
       smart_encoder(-1) {
   IS_TRACKER = DRIVE_ADI_ENCODER;
 
@@ -25,7 +25,7 @@ tracking_wheel::tracking_wheel(std::vector<int> ports, double wheel_diameter, do
 
 // ADI Encoder in 3-wire expander
 tracking_wheel::tracking_wheel(int smart_port, std::vector<int> ports, double wheel_diameter, double distance_to_center, double ratio)
-    : adi_encoder({abs(smart_port), abs(ports[0]), abs(ports[1])}, util::reversed_active(ports[0])),
+    : adi_encoder({std::abs(smart_port), std::abs(ports[0]), std::abs(ports[1])}, util::reversed_active(ports[0])),
       smart_encoder(-1) {
   IS_TRACKER = DRIVE_ADI_ENCODER;
 
@@ -38,7 +38,7 @@ tracking_wheel::tracking_wheel(int smart_port, std::vector<int> ports, double wh
 // Rotation Sensor
 tracking_wheel::tracking_wheel(int port, double wheel_diameter, double distance_to_center, double ratio)
     : adi_encoder(-1, -1, false),
-      smart_encoder(abs(port)) {
+      smart_encoder(std::abs(port)) {
   IS_TRACKER = DRIVE_ROTATION;
   smart_encoder.set_reversed(util::reversed_active(port));
 

@@ -35,14 +35,19 @@ CXXFLAGS := $(CXXSTD) -g -Wall -Wextra -Wno-unused-parameter -D_USE_MATH_DEFINES
 
 BIN := run_tests
 
-.PHONY: test clean
+.PHONY: test clean compile-matrix
 .DEFAULT_GOAL := test
 
 $(BIN): $(LIB_SRC) $(TEST_SRC) doctest.h fake_hardware.hpp
 	$(CXX) $(CXXFLAGS) -o $@ $(LIB_SRC) $(TEST_SRC)
 
-test: $(BIN)
+test: $(BIN) compile-matrix
 	./$(BIN)
 
 clean:
 	rm -f $(BIN)
+
+# What upgrading looks like from a user's project (see compile_matrix.sh). Deliberately
+# does not get CXXFLAGS: those put ../include, and any okapi in it, on the include path.
+compile-matrix:
+	sh compile_matrix.sh "$(CXX)" "$(CXXSTD) -Wall -Wextra -Wno-unused-parameter -D_USE_MATH_DEFINES"

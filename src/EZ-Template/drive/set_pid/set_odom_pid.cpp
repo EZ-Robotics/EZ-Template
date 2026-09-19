@@ -5,7 +5,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
 #include "EZ-Template/drive/drive.hpp"
-#include "okapi/api/units/QAngle.hpp"
+#include "EZ-Units/units.hpp"
 
 namespace ez {
 /////
@@ -49,7 +49,7 @@ std::vector<double> Drive::odom_path_smooth_constants_get() {
 void Drive::odom_boomerang_dlead_set(double input) { dlead = input; }
 double Drive::odom_boomerang_dlead_get() { return dlead; }
 void Drive::odom_boomerang_distance_set(double distance) { max_boomerang_distance = distance; }
-void Drive::odom_boomerang_distance_set(okapi::QLength p_distance) { odom_boomerang_distance_set(p_distance.convert(okapi::inch)); }
+void Drive::odom_boomerang_distance_set(ez::QLength p_distance) { odom_boomerang_distance_set(p_distance.convert(ez::inch)); }
 double Drive::odom_boomerang_distance_get() { return max_boomerang_distance; }
 void Drive::odom_turn_bias_set(double bias) {
   if (bias <= 0.0) {
@@ -66,7 +66,7 @@ void Drive::odom_path_spacing_set(double spacing) {
   }
   SPACING = spacing;
 }
-void Drive::odom_path_spacing_set(okapi::QLength p_spacing) { odom_path_spacing_set(p_spacing.convert(okapi::inch)); }
+void Drive::odom_path_spacing_set(ez::QLength p_spacing) { odom_path_spacing_set(p_spacing.convert(ez::inch)); }
 double Drive::odom_path_spacing_get() { return SPACING; }
 void Drive::odom_look_ahead_set(double distance) {
   if (distance <= 0) {
@@ -75,7 +75,7 @@ void Drive::odom_look_ahead_set(double distance) {
   }
   LOOK_AHEAD = distance;
 }
-void Drive::odom_look_ahead_set(okapi::QLength p_distance) { odom_look_ahead_set(p_distance.convert(okapi::inch)); }
+void Drive::odom_look_ahead_set(ez::QLength p_distance) { odom_look_ahead_set(p_distance.convert(ez::inch)); }
 double Drive::odom_look_ahead_get() { return LOOK_AHEAD; }
 bool Drive::odom_turn_bias_enabled() { return is_odom_turn_bias_enabled; }
 void Drive::odom_turn_bias_enable(bool set) { is_odom_turn_bias_enabled = set; }
@@ -85,12 +85,12 @@ bool Drive::slew_odom_reenabled() { return slew_reenables_when_max_speed_changes
 /////
 // pid_odom_set but it looks like pid_drive_set
 /////
-void Drive::pid_odom_set(okapi::QLength p_target, int speed, bool slew_on) {
-  double target = p_target.convert(okapi::inch);
+void Drive::pid_odom_set(ez::QLength p_target, int speed, bool slew_on) {
+  double target = p_target.convert(ez::inch);
   pid_odom_set(target, speed, slew_on);
 }
-void Drive::pid_odom_set(okapi::QLength p_target, int speed) {
-  double target = p_target.convert(okapi::inch);
+void Drive::pid_odom_set(ez::QLength p_target, int speed) {
+  double target = p_target.convert(ez::inch);
   pid_odom_set(target, speed);
 }
 void Drive::pid_odom_set(double target, int speed) {

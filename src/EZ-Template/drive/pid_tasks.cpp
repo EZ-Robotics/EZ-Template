@@ -199,8 +199,8 @@ void Drive::ptp_task() {
   // Prioritize turning by scaling xy_out down
   double xy_out = xyPID.output;
   xy_out = util::clamp(xy_out, max_slew_out);
-  // double scale = cos(util::to_rad(current_a_odomPID.error)) / odom_turn_bias_amount;
-  double scale = 1.0 - ((1.0 - cos(util::to_rad(current_a_odomPID.error))) / odom_turn_bias_amount);  // 1 - ((1-0.7)/0.75)
+  // double scale = std::cos(util::to_rad(current_a_odomPID.error)) / odom_turn_bias_amount;
+  double scale = 1.0 - ((1.0 - std::cos(util::to_rad(current_a_odomPID.error))) / odom_turn_bias_amount);  // 1 - ((1-0.7)/0.75)
   scale = util::clamp(scale, 1.0, 0.0);
   if (odom_turn_bias_enabled())
     xy_out *= scale;

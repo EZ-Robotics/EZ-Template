@@ -206,7 +206,7 @@ double Drive::opcontrol_curve_left(double x) {
     // if (CURVE_TYPE)
     return (powf(2.718, -(left_curve_scale / 10)) + powf(2.718, (fabs(x) - 127) / 10) * (1 - powf(2.718, -(left_curve_scale / 10)))) * x;
     // else
-    // return powf(2.718, ((abs(x)-127)*RIGHT_CURVE_SCALE)/100)*x;
+    // return powf(2.718, ((std::abs(x)-127)*RIGHT_CURVE_SCALE)/100)*x;
   }
   return x;
 }
@@ -217,7 +217,7 @@ double Drive::opcontrol_curve_right(double x) {
     // if (CURVE_TYPE)
     return (powf(2.718, -(right_curve_scale / 10)) + powf(2.718, (fabs(x) - 127) / 10) * (1 - powf(2.718, -(right_curve_scale / 10)))) * x;
     // else
-    // return powf(2.718, ((abs(x)-127)*RIGHT_CURVE_SCALE)/100)*x;
+    // return powf(2.718, ((std::abs(x)-127)*RIGHT_CURVE_SCALE)/100)*x;
   }
   return x;
 }
@@ -236,7 +236,7 @@ double Drive::opcontrol_drive_activebrake_get() { return left_activebrakePID.con
 PID::Constants Drive::opcontrol_drive_activebrake_constants_get() { return left_activebrakePID.constants; }
 
 // Set joystick threshold
-void Drive::opcontrol_joystick_threshold_set(int threshold) { JOYSTICK_THRESHOLD = abs(threshold); }
+void Drive::opcontrol_joystick_threshold_set(int threshold) { JOYSTICK_THRESHOLD = std::abs(threshold); }
 int Drive::opcontrol_joystick_threshold_get() { return JOYSTICK_THRESHOLD; }
 
 void Drive::opcontrol_drive_activebrake_targets_set() {
@@ -261,10 +261,10 @@ void Drive::opcontrol_joystick_threshold_iterate(int l_stick, int r_stick) {
   double l_out = 0.0, r_out = 0.0;
 
   // Check the motors are being set to power
-  if (abs(l_stick) > 0 || abs(r_stick) > 0) {
+  if (std::abs(l_stick) > 0 || std::abs(r_stick) > 0) {
     if (left_activebrakePID.constants_set_check()) opcontrol_drive_activebrake_targets_set();  // Update active brake PID targets
 
-    if (practice_mode_is_on && (abs(l_stick) > 120 || abs(r_stick) > 120)) {
+    if (practice_mode_is_on && (std::abs(l_stick) > 120 || std::abs(r_stick) > 120)) {
       l_out = 0.0;
       r_out = 0.0;
     } else if (!is_reversed) {
@@ -307,7 +307,7 @@ void Drive::opcontrol_speed_max_set(int speed) { opcontrol_speed_max = (double)s
 int Drive::opcontrol_speed_max_get() { return (int)opcontrol_speed_max; }
 
 // Clip joysticks based on joystick threshold
-int Drive::clipped_joystick(int joystick) { return abs(joystick) < JOYSTICK_THRESHOLD ? 0 : joystick; }
+int Drive::clipped_joystick(int joystick) { return std::abs(joystick) < JOYSTICK_THRESHOLD ? 0 : joystick; }
 
 // Tank control
 void Drive::opcontrol_tank() {
