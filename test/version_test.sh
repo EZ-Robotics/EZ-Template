@@ -246,5 +246,24 @@ cat > "$WORK/defined_and.cpp" <<'CPP'
 CPP
 fails_to_compile "defined() && AT_LEAST on 3.x" "$WORK/defined_and.cpp" -I "$WORK/v3"
 
+# The opt-in prerelease warning from the header comment: silent on 3.x and on a release, and a
+# warning (so an error under -Werror) on a prerelease.
+cat > "$WORK/prerelease.cpp" <<'CPP'
+#include "EZ-Template/api.hpp"
+
+#ifdef EZ_TEMPLATE_VERSION_STAGE
+#if EZ_TEMPLATE_VERSION_STAGE != EZ_TEMPLATE_STAGE_RELEASE
+#warning "Built against an EZ-Template prerelease, the API may change"
+#endif
+#endif
+CPP
+compiles "prerelease warning is silent on 3.x" "$WORK/prerelease.cpp" -I "$WORK/v3"
+compiles "prerelease warning is silent on 4.0.0" "$WORK/prerelease.cpp" -I "$WORK/v4-4.0.0"
+for v in 4.0.0-beta.2 4.0.0-rc.1; do
+  if $CXX $FLAGS -I "$WORK/v4-$v" "$WORK/prerelease.cpp" >"$LOG" 2>&1; then bad "prerelease warning fires on $v (it compiled clean)"
+  elif grep -q 'Built against an EZ-Template prerelease' "$LOG"; then pass "prerelease warning fires on $v"
+  else bad "prerelease warning on $v failed for another reason"; sed -n 1,8p "$LOG"; fi
+done
+
 if [ "$fail" -eq 0 ]; then echo "version tests passed ($checks checks)"; else echo "version tests FAILED"; fi
 exit "$fail"

@@ -38,6 +38,19 @@
  * #endif
  * \endcode
  *
+ * Alpha, beta and rc releases are not final. APIs can change or be removed between
+ * them, and the final release may differ from any prerelease. EZ_TEMPLATE_VERSION_AT_LEAST
+ * is true on every prerelease of that version, so if your code depends on something that
+ * changed during the prereleases, compare against a specific stage as above. To be told
+ * when you are building against a prerelease:
+ * \code{.cpp}
+ * #ifdef EZ_TEMPLATE_VERSION_STAGE
+ * #if EZ_TEMPLATE_VERSION_STAGE != EZ_TEMPLATE_STAGE_RELEASE
+ * #warning "Built against an EZ-Template prerelease, the API may change"
+ * #endif
+ * #endif
+ * \endcode
+ *
  * Print it:
  * \code{.cpp}
  * printf("EZ-Template %s\n", EZ_TEMPLATE_VERSION_STRING);
