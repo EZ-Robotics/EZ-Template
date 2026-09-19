@@ -181,6 +181,12 @@ std::vector<odom> Drive::inject_points(std::vector<ez::odom> imovements) {
 std::vector<odom> Drive::smooth_path(std::vector<odom> ipath, double weight_smooth, double weight_data, double tolerance) {
   if (ipath.size() < 3) return ipath;
 
+  // Constants that don't settle would fling the points off toward infinity, so follow the path as given instead
+  if (!(weight_data + 2.0 * weight_smooth < 2.0)) {
+    printf("EZ-Template: path smoothing skipped, weight_smooth %.4f and weight_data %.4f don't settle (weight_data + 2 * weight_smooth must be < 2)\n", weight_smooth, weight_data);
+    return ipath;
+  }
+
   std::vector<std::array<double, 3>> path(ipath.size());
   std::vector<std::array<double, 3>> new_path(ipath.size());
   std::vector<bool> dont_touch;
@@ -224,9 +230,13 @@ std::vector<odom> Drive::smooth_path(std::vector<odom> ipath, double weight_smoo
     }
   }
 
+  // Constants that are valid but close to the limit settle very slowly, this keeps them from stalling the caller
+  constexpr int MAX_PASSES = 5000;
+  int passes = 0;
   double change = tolerance;
 
-  while (change >= tolerance) {
+  while (change >= tolerance && passes < MAX_PASSES) {
+    passes++;
     change = 0.0;
     for (std::size_t i = 1; i < ipath.size() - 2; i++) {
       // if (path[i][2] == ANGLE_NOT_SET) {
