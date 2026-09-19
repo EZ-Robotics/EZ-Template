@@ -72,10 +72,6 @@ The same policy addresses code from AI tools:
 
 [Join our Discord](https://discord.gg/EHjXBcK2Gy) for the fastest way to get help, or [start with installation](https://ez-robotics.github.io/EZ-Template/tutorials/installation).
 
-## Support
-
-Supporting EZ-Template on [Patreon](https://www.patreon.com/roboticsisez) helps guarantee it continues to get maintained.
-
 ## License
 
 This project is licensed under the [Mozilla Public License, version 2.0](https://opensource.org/licenses/MPL-2.0). See the [LICENSE](LICENSE.md) file for the full license.
