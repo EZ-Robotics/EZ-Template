@@ -10,11 +10,24 @@
 #include <string>
 
 #include "EZ-Template/api.hpp"
+#include "screen_capture.hpp"
 
 namespace ez {
-void screen_line_set(int line, std::string text) {}
-void screen_line_clear(int line) {}
-void screen_lines_clear() {}
+namespace test {
+std::string screen_lines[8];
+}  // namespace test
+
+void screen_line_set(int line, std::string text) {
+  if (line < 0 || line >= 8) return;
+  test::screen_lines[line] = text;
+}
+void screen_line_clear(int line) {
+  if (line < 0 || line >= 8) return;
+  test::screen_lines[line].clear();
+}
+void screen_lines_clear() {
+  for (auto& line : test::screen_lines) line.clear();
+}
 
 namespace as {
 // Declared in sdcard.hpp, defined in sdcard.cpp (excluded). Called from
