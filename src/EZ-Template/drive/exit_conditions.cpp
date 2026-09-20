@@ -161,7 +161,9 @@ void Drive::pid_wait() {
 
     {
       std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
-      if (odom_target_start.theta != ANGLE_NOT_SET) headingPID.target_set(odom_target_start.theta);
+      // Store the heading as the equivalent angle nearest the IMU.  The raw target can be a full turn away from it
+      // (IMU at 270, target -90), which the next drive or relative turn would read as a 360 degree error.
+      if (odom_target_start.theta != ANGLE_NOT_SET) headingPID.target_set(new_turn_target_compute(odom_target_start.theta, drive_angle_get(), shortest));
     }
   }
 
@@ -448,14 +450,15 @@ void Drive::pid_wait_quick() {
     pid_wait_until_index(injected_pp_index.size() - 2);
     {
       std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
-      if (odom_target_start.theta != ANGLE_NOT_SET) headingPID.target_set(odom_target_start.theta);
+      // Same as pid_wait(): store the equivalent angle nearest the IMU.
+      if (odom_target_start.theta != ANGLE_NOT_SET) headingPID.target_set(new_turn_target_compute(odom_target_start.theta, drive_angle_get(), shortest));
     }
     return;
   } else if (mode == POINT_TO_POINT) {
     pid_wait_until_point(odom_target_start);
     {
       std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
-      if (odom_target_start.theta != ANGLE_NOT_SET) headingPID.target_set(odom_target_start.theta);
+      if (odom_target_start.theta != ANGLE_NOT_SET) headingPID.target_set(new_turn_target_compute(odom_target_start.theta, drive_angle_get(), shortest));
     }
     return;
   } else if (mode == TURN || mode == SWING || mode == TURN_TO_POINT) {

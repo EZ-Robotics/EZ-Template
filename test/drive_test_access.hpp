@@ -26,6 +26,8 @@ struct DriveTestAccess {
     return d.new_turn_target_compute(target, current, behavior);
   }
   static const std::vector<int>& injected_pp_index(Drive& d) { return d.injected_pp_index; }
+  static int& pp_index(Drive& d) { return d.pp_index; }
+  static const std::vector<odom>& pp_movements(Drive& d) { return d.pp_movements; }
 
   static bool& imu_calibration_complete(Drive& d) { return d.imu_calibration_complete; }
   static bool& last_was_autonomous(Drive& d) { return d.last_was_autonomous; }
