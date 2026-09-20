@@ -52,7 +52,8 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
  * WHAT IT CANNOT DO
  *
- *  - It depends on the system daemon staying below TASK_PRIORITY_MAX - 1.
+ *  - It depends on the system daemon staying below TASK_PRIORITY_MAX - 1. ez_auto_task checks this once at startup and
+ *    prints a warning if it is not so.
  *  - A task running on an inherited priority cannot be shielded. task_set_priority changes the priority the task is
  *    using only when it is not inheriting one, so the raise does not take. The guard notices, puts the priority back at
  *    once, counts it (detail::stats.unshielded_raises), and takes the lock anyway. Putting it back stores the priority
@@ -84,9 +85,11 @@ inline void mark_scheduler_running() { scheduler_running.store(true, std::memory
 
 /// Counters that stay at zero in normal use. Meant for tests and for a robot's own debug display.
 struct LockStats {
-  std::atomic<std::uint32_t> unshielded_raises{0};   // guards that could not raise their task's priority
-  std::atomic<std::uint32_t> restore_mismatches{0};  // guards whose priority did not read back as saved after the restore
-  std::atomic<std::uint32_t> guarded_sections{0};    // guards that took and released their lock
+  std::atomic<std::uint32_t> unshielded_raises{0};          // guards that could not raise their task's priority
+  std::atomic<std::uint32_t> restore_mismatches{0};         // guards whose priority did not read back as saved after the restore
+  std::atomic<std::uint32_t> guarded_sections{0};           // guards that took and released their lock
+  std::atomic<std::uint32_t> auto_task_priority_starts{0};  // ez_auto_task passes that started at a priority other than the task's own
+  std::atomic<std::uint32_t> auto_task_passes{0};           // ez_auto_task passes, a heartbeat for debug displays
 };
 inline LockStats stats;
 
@@ -97,6 +100,26 @@ inline void emit(const char* text) {
     print_sink(text);
   else
     fputs(text, stdout);
+}
+
+/// Set once the daemon check has printed, so it prints at most once however many chassis there are.
+inline std::atomic<bool> daemon_reported{false};
+
+/// Prints, once, if the PROS system daemon is not below KILL_SAFE_PRIORITY, because a guard's raise then no longer
+/// keeps the daemon from running. Call it from a task, outside any lock.
+inline void report_daemon_priority_once() {
+  pros::task_t daemon = pros::c::task_get_by_name("PROS System Daemon");
+  std::uint32_t priority = daemon != nullptr ? pros::c::task_get_priority(daemon) : 0;
+  if (daemon != nullptr && priority < KILL_SAFE_PRIORITY) return;
+  if (daemon_reported.exchange(true)) return;
+
+  char text[192];
+  if (daemon == nullptr)
+    snprintf(text, sizeof(text), "EZ-Template: could not find the PROS system daemon, so a task holding a chassis lock cannot be shielded from deletion.\n");
+  else
+    snprintf(text, sizeof(text), "EZ-Template: the PROS system daemon runs at priority %lu, not below %lu, so a task holding a chassis lock cannot be shielded from deletion.\n",
+             static_cast<unsigned long>(priority), static_cast<unsigned long>(KILL_SAFE_PRIORITY));
+  emit(text);
 }
 
 }  // namespace detail
