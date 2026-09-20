@@ -150,6 +150,10 @@ void Drive::pid_odom_set(std::vector<odom> imovements) {
   pid_odom_set(imovements, slew_on);
 }
 void Drive::pid_odom_set(std::vector<odom> imovements, bool slew_on) {
+  if (imovements.empty()) {
+    printf("EZ-Template: pid_odom_set was given an empty path\n");
+    return;
+  }
   pid_odom_smooth_pp_set(imovements, slew_on);
 }
 // Units
@@ -223,6 +227,11 @@ void Drive::pid_odom_injected_pp_set(std::vector<ez::odom> imovements) {
   pid_odom_injected_pp_set(imovements, slew_on);
 }
 void Drive::pid_odom_injected_pp_set(std::vector<ez::odom> imovements, bool slew_on) {
+  if (imovements.empty()) {
+    printf("EZ-Template: pid_odom_set was given an empty path\n");
+    return;
+  }
+
   interfered = false;
 
   xyPID.timers_reset();
@@ -263,6 +272,11 @@ void Drive::pid_odom_smooth_pp_set(std::vector<odom> imovements) {
   pid_odom_smooth_pp_set(imovements, slew_on);
 }
 void Drive::pid_odom_smooth_pp_set(std::vector<odom> imovements, bool slew_on) {
+  if (imovements.empty()) {
+    printf("EZ-Template: pid_odom_set was given an empty path\n");
+    return;
+  }
+
   interfered = false;
 
   xyPID.timers_reset();
