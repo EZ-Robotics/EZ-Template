@@ -9,12 +9,14 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ez::AutonSelector::AutonSelector() {
   auton_count = 0;
   auton_page_current = 0;
+  last_auton_page_current = 0;
   Autons = {};
 }
 
 ez::AutonSelector::AutonSelector(std::vector<Auton> autons) {
   auton_count = autons.size();
   auton_page_current = 0;
+  last_auton_page_current = 0;
   Autons = {};
   Autons.assign(autons.begin(), autons.end());
 }
@@ -27,8 +29,23 @@ void ez::AutonSelector::selected_auton_print() {
 }
 
 void ez::AutonSelector::selected_auton_call() {
-  if (auton_count == 0) return;
-  Autons[last_auton_page_current].auton_call();
+  if (auton_count == 0 || Autons.empty()) return;
+
+  int index = auton_page_current;
+
+  // A page number this high isn't a real auton -- it's one of the blank
+  // pages appended after the list (odom debug, motor temps, ...), which
+  // come and go as a competition switch is plugged in and unplugged. Fall
+  // back to the last real auton page that was actually selected.
+  if (index >= static_cast<int>(Autons.size()))
+    index = last_auton_page_current;
+
+  if (index < 0)
+    index = 0;
+  else if (index > static_cast<int>(Autons.size()) - 1)
+    index = static_cast<int>(Autons.size()) - 1;
+
+  Autons[index].auton_call();
 }
 
 void ez::AutonSelector::autons_add(std::vector<Auton> autons) {
