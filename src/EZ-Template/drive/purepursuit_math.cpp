@@ -12,6 +12,9 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include "EZ-Template/util.hpp"
 
 namespace ez {
+// How close the robot has to be to a target, in inches, to count as already standing on it
+static constexpr double ON_TARGET_RADIUS = 0.1;
+
 // Returns a distance that the robot is away from target, but this keeps sign.
 double Drive::is_past_target(pose target, pose current) {
   // Translated current x, y translated around origin
@@ -58,13 +61,19 @@ std::vector<pose> Drive::find_point_to_face(pose current, pose target, drive_dir
     m = (target.y - current.y) / tx_cx;
     angle = 90.0 - util::to_deg(std::atan(m));
   }
+
+  // The target is on top of the robot, so there is no line from the robot to the target to face along, and both
+  // points are the same distance away.  Use the robot's own heading for the line and face the point ahead of it,
+  // otherwise the tie picks the point behind the robot and it turns around.
+  bool on_target = util::distance_to_point(target, current) < ON_TARGET_RADIUS;
+  if (on_target) angle = current.theta;
   pose ptf1 = util::vector_off_point(odom_look_ahead_get(), {target.x, target.y, angle});
   pose ptf2 = util::vector_off_point(-odom_look_ahead_get(), {target.x, target.y, angle});
 
   if (set_global) {
     double ptf1_dist = util::distance_to_point(ptf1, current);
     double ptf2_dist = util::distance_to_point(ptf2, current);
-    if (ptf1_dist > ptf2_dist) {
+    if (on_target || ptf1_dist > ptf2_dist) {
       ptf1_running = true;
     } else {
       ptf1_running = false;
