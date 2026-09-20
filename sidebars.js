@@ -209,6 +209,7 @@ const sidebars = {
           collapsed: true,
           collapsible: true,
           items: [
+            'migration/3.2-4.0',
             'migration/3.1-3.2',
             'migration/2.2-3.0',
           ],
