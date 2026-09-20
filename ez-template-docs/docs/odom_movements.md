@@ -6,6 +6,11 @@ description:  moving with odometry in autonomous
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
+:::note
+
+The functions that take a list of points, `pid_odom_set()`, `pid_odom_pp_set()`, `pid_odom_injected_pp_set()` and `pid_odom_smooth_pp_set()`, need at least one point.  If the list is empty, a message is printed to the terminal and the call does nothing.  
+
+:::
 
 
 ## Functions with Units
