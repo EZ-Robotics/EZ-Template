@@ -62,8 +62,10 @@ extern pros::Controller master();
 ## screen_print() 
 Prints to the LLEMU.  This function handles text that's too long for a line by finding the last word and starting it on a new line, and takes `\n` to set a new line.   
 
+There are 8 lines, 0 through 7.  If the text wraps past line 7, the last line is cut off and ends in `...`, and the lines above it are left alone.  A `line` outside of 0 to 7 does nothing, and an empty string clears that line.   
+
 `text` input string   
-`line` starting line     
+`line` starting line, 0 through 7     
 <Tabs
   groupId="ex3"
   defaultValue="proto"
