@@ -13,6 +13,8 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
+#include <vector>
 
 #include "pros/motors.hpp"
 
@@ -34,6 +36,10 @@ struct FakeClock {
   // -1 (default): pros::delay() never throws. >= 0: counts down on every
   // pros::delay() call and throws StopLoop when it reaches 0.
   int delay_calls_until_stop = -1;
+
+  // Runs on every pros::delay() call, before the countdown above. Lets a test change something between two
+  // passes of a task loop, such as the task's priority.
+  void (*on_delay)() = nullptr;
 };
 
 struct FakeCompetitionStatus {
@@ -41,8 +47,28 @@ struct FakeCompetitionStatus {
   bool autonomous = false;
 };
 
+// A fake task scheduler for the pros::c task calls: a few tasks, each with a base and an effective priority (they
+// differ while a task is running on an inherited priority), one of them current, and a log of the priority calls
+// made ("get", "set:15", ...) so a test can assert the exact sequence. Handle n is task n - 1; nullptr means the
+// current task, as it does in PROS. Task 3 is the PROS system daemon, at priority 14.
+struct FakeTask {
+  std::uint32_t base = 8;
+  std::uint32_t effective = 8;
+};
+
+struct FakeScheduler {
+  FakeTask tasks[4];
+  int current = 0;
+  bool daemon_present = true;
+  int ignore_sets = 0;  // the next N set_priority calls change nothing, as if a restore did not take
+  std::vector<std::string> calls;
+
+  FakeScheduler() { tasks[3] = {14, 14}; }
+};
+
 inline FakeClock g_clock;
 inline FakeCompetitionStatus g_competition;
+inline FakeScheduler g_sched;
 
 // pros::motor_fake_registry() and the globals above all persist for the
 // whole test binary's run, not per TEST_CASE. Any test that constructs a
@@ -52,6 +78,7 @@ inline FakeCompetitionStatus g_competition;
 inline void reset_all() {
   g_clock = FakeClock{};
   g_competition = FakeCompetitionStatus{};
+  g_sched = FakeScheduler{};
   pros::motor_fake_registry().clear();
 }
 
