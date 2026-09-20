@@ -364,6 +364,8 @@ double opcontrol_curvature_point_turn_gain_get();
 
 ### opcontrol_curve_sd_initialize()
 Initializes left and right curves with the SD card, recommended to run in initialize().     
+
+A value in `left_curve.txt` or `right_curve.txt` that is outside of 0 to 20 is changed to the nearest end of that range, and the terminal prints what it was changed to.  If a file can't be read as a number, the current curve is kept.  
 <Tabs
   groupId="opcontrol_curve_sd_initialize"
   defaultValue="proto"
@@ -402,13 +404,13 @@ void opcontrol_curve_sd_initialize();
  
 
 
-### opcontrol_curve_default_sets()
-Sets the default joystick curves.   
+### opcontrol_curve_default_set()
+Sets the default joystick curves.  Curves are kept between 0 and 20, a value outside of that is changed to the nearest end.  0 is no curve.   
 
 `left` left default curve  
-`right` right default curve  
+`right` right default curve, defaults to 0  
 <Tabs
-  groupId="opcontrol_curve_default_sets"
+  groupId="opcontrol_curve_default_set"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -420,7 +422,7 @@ Sets the default joystick curves.
 
 ```cpp
 void initialize() {
-  chassis.opcontrol_curve_default_sets(2, 2);
+  chassis.opcontrol_curve_default_set(2, 2);
 }
 ```
 
@@ -431,7 +433,7 @@ void initialize() {
 
 
 ```cpp
-void opcontrol_curve_default_set(double left, double right);
+void opcontrol_curve_default_set(double left, double right = 0);
 ```
 
 
@@ -531,7 +533,7 @@ bool opcontrol_curve_buttons_toggle_get();
 
 
 ### opcontrol_curve_buttons_left_set()
-Sets buttons for modifying the left joystick curve.   
+Sets buttons for modifying the left joystick curve.  The curve stops at 0 and at 20 when you hold the buttons.   
 
 `decrease` a pros button enumerator  
 `increase` a pros button enumerator   
@@ -574,7 +576,7 @@ void opcontrol_curve_buttons_left_set(pros::controller_digital_e_t decrease, pro
 
 
 ### opcontrol_curve_buttons_right_set()
-Sets buttons for modifying the right joystick curve.  
+Sets buttons for modifying the right joystick curve.  The curve stops at 0 and at 20 when you hold the buttons.  
 
 `decrease` a pros button enumerator  
 `increase` a pros button enumerator   
