@@ -102,7 +102,7 @@ void autonomous() {
 
 
 ### pid_wait_until()
-Lock the code in a while loop until this position has passed for driving with units.               
+Lock the code in a while loop until this position has passed for driving with units.  If an odom movement ends before the robot has traveled `target`, for example a 24 inch move waiting until 30 inches, the loop is released when the movement finishes.              
 
 `target` for driving and swings, using units     
 <Tabs
@@ -469,7 +469,7 @@ void pid_print_toggle(bool toggle);
 
 
 ### pid_wait_until()
-Lock the code in a while loop until this position has passed for driving without units.           
+Lock the code in a while loop until this position has passed for driving without units.  If an odom movement ends before the robot has traveled `target`, for example a 24 inch move waiting until 30 inches, the loop is released when the movement finishes.          
 
 `target` for driving or turning, using a double.  degrees for turns/swings, inches for driving  
 <Tabs
