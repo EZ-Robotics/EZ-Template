@@ -27,8 +27,15 @@ void ez::AutonSelector::selected_auton_print() {
 }
 
 void ez::AutonSelector::selected_auton_call() {
-  if (auton_count == 0) return;
-  Autons[last_auton_page_current].auton_call();
+  if (auton_count == 0 || Autons.empty()) return;
+
+  int index = auton_page_current;
+  if (index < 0)
+    index = 0;
+  else if (index > static_cast<int>(Autons.size()) - 1)
+    index = static_cast<int>(Autons.size()) - 1;
+
+  Autons[index].auton_call();
 }
 
 void ez::AutonSelector::autons_add(std::vector<Auton> autons) {
