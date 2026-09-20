@@ -1226,7 +1226,7 @@ void autonomous() {
 
 
 ### pid_turn_min_set()
-The minimum power for turns when kI and startI are enabled.        
+When kI and startI are enabled, sets the maximum output allowed while error is inside startI, for turns larger than startI.  This lets I accumulate without overshoot.  Despite the name this is a cap on the output, not a floor.        
 
 `min` new clipped speed
 <Tabs
@@ -1403,7 +1403,7 @@ void autonomous() {
 
 
 ### pid_turn_min_get()
-Returns minimum power for turns when kI and startI are enabled.         
+Returns the maximum output allowed while error is inside startI, for turns larger than startI, when kI and startI are enabled.         
 <Tabs
   groupId="examples17"
   defaultValue="proto"
