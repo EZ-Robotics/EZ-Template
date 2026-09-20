@@ -45,10 +45,17 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
  * HOW RECOVERY WORKS
  *
- * A task waiting for the lock wakes every LOCK_WAIT_SLICE_MS. If the lock has stayed unavailable for
- * LOCK_RECOVER_AFTER_MS, the task holding it is gone (no legitimate hold in EZ-Template lasts anywhere near
- * that long), so the waiter installs a fresh lock and carries on. A lock that is still held by a task that no
- * longer exists guards nothing, which is why replacing it is safe.
+ * A task waiting for the lock wakes every LOCK_WAIT_SLICE_MS. The lock counts how many times it has been fully
+ * released (the outermost guard letting go). A waiter that sees that count change knows the lock is being
+ * used by a live task, so it keeps waiting and restarts its clock: a task that releases and immediately takes
+ * the lock again in a tight loop can starve a waiter, and that is not a reason to replace the lock. If the count
+ * has not moved for LOCK_RECOVER_AFTER_MS, the task holding the lock is gone (no legitimate hold in EZ-Template
+ * lasts anywhere near that long), so the waiter installs a fresh lock and carries on. A lock that is held by a
+ * task that no longer exists guards nothing, which is why replacing it is safe.
+ *
+ * Only the outermost release counts as progress. PROS starts the replacement competition task in the same place
+ * as the one it deleted, so a recursive mutex treats it as the old owner: it can take and release the orphaned
+ * lock again and again, but the deleted task's own hold is never released, so the count never moves.
  *
  *  - Other waiters notice the replacement on their next wake and move to the new lock.
  *  - A guard always releases the lock it actually took, even if that lock was replaced while it was held.
@@ -56,19 +63,19 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *  - A lock is replaced at most LOCK_MAX_RECOVERIES times. After that it behaves like a plain mutex, so a
  *    system that keeps failing cannot leak memory without bound.
  *
- * If a task really is alive and holds a lock for longer than LOCK_RECOVER_AFTER_MS, recovery lets two tasks
- * touch the guarded state at once. Rule 2 is what keeps that from happening.
+ * If a task really is alive and holds a lock for longer than LOCK_RECOVER_AFTER_MS without ever releasing it,
+ * recovery lets two tasks touch the guarded state at once. Rule 2 is what keeps that from happening.
  */
 namespace ez {
 
-/// How long a task waits for a lock before deciding the task holding it no longer exists.
+/// How long a lock must go without being released before a waiting task decides the task holding it no longer exists.
 inline constexpr std::uint32_t LOCK_RECOVER_AFTER_MS = 500;
 
-/// A waiting task wakes this often to check whether another task already replaced the lock.
+/// A waiting task wakes this often to check whether the lock was released or already replaced.
 inline constexpr std::uint32_t LOCK_WAIT_SLICE_MS = 25;
 
-/// The most times a single lock will be replaced.
-inline constexpr std::uint32_t LOCK_MAX_RECOVERIES = 8;
+/// The most times a single lock will be replaced. Each replaced lock is kept (a few hundred bytes), so this bounds memory.
+inline constexpr std::uint32_t LOCK_MAX_RECOVERIES = 32;
 
 /// The most text that can be queued by print_after_unlock() on one lock at a time. Longer text is cut off.
 inline constexpr std::size_t LOCK_PRINT_BUFFER_SIZE = 256;
@@ -118,7 +125,8 @@ class RecoverableMutex {
   /// inherits a stale depth or queued text from a task that no longer exists.
   struct Slot {
     MutexType mutex;
-    int depth = 0;                   // guards currently holding this slot. Only the holder touches it.
+    int depth = 0;                          // guards currently holding this slot. Only the holder touches it.
+    std::atomic<std::uint32_t> releases{0};  // times the outermost guard let go. Waiters watch it to tell a live holder from a gone one.
     std::size_t pending_length = 0;  // text queued by print_after_unlock(), printed after the last unlock
     char pending[LOCK_PRINT_BUFFER_SIZE] = {};
   };
@@ -132,6 +140,7 @@ class RecoverableMutex {
   [[nodiscard]] Slot* lock() {
     Slot* slot = current_.load();
     std::uint32_t waiting_since = pros::millis();
+    std::uint32_t releases_seen = slot->releases.load();
 
     while (true) {
       if (slot->mutex.take(LOCK_WAIT_SLICE_MS)) {
@@ -145,12 +154,22 @@ class RecoverableMutex {
         slot->mutex.give();
         slot = current_.load();
         waiting_since = pros::millis();
+        releases_seen = slot->releases.load();
         continue;
       }
 
       Slot* latest = current_.load();
       if (latest != slot) {  // another task already recovered
         slot = latest;
+        waiting_since = pros::millis();
+        releases_seen = slot->releases.load();
+        continue;
+      }
+
+      // The holder let go and took the lock again before this task got its turn. It is alive, so keep waiting.
+      std::uint32_t releases_now = slot->releases.load();
+      if (releases_now != releases_seen) {
+        releases_seen = releases_now;
         waiting_since = pros::millis();
         continue;
       }
@@ -179,6 +198,7 @@ class RecoverableMutex {
     if (length > 0) std::memcpy(text, slot->pending, length);
     slot->pending_length = 0;
 
+    slot->releases.fetch_add(1);  // before the give, so a waiter that gets the lock next already sees it
     slot->mutex.give();
 
     if (length > 0) {
@@ -217,7 +237,7 @@ class RecoverableMutex {
     std::uint32_t index = recoveries_.fetch_add(1);
     if (index < LOCK_MAX_RECOVERIES) retired_[index] = stale;  // kept, not freed: its owner may still be blocked on it
 
-    printf("EZ-Template: the %s lock was still held %lu ms after the task holding it stopped running. This happens when a task is deleted while holding a lock, as field control does when the competition mode changes. The lock was replaced so nothing waits forever.\n", name_, (unsigned long)waited_ms);
+    printf("EZ-Template: the %s lock was not released for %lu ms, so the task holding it is gone. This happens when a task is deleted while holding a lock, as field control does when the competition mode changes. The lock was replaced so nothing waits forever.\n", name_, (unsigned long)waited_ms);
     return fresh;
   }
 

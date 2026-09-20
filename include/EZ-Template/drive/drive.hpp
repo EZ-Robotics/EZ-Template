@@ -3825,7 +3825,7 @@ class Drive {
   void ptp_task();
   void boomerang_task();
   void pp_task();
-  void check_imu_task();
+  void check_imu_task(LockGuard<pros::RecursiveMutex>& lock);
 
   /**
    * Starting value for left/right

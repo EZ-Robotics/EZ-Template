@@ -9,7 +9,9 @@
 // Pinned here:
 //  - a free lock is taken and released without waiting, and nested guards work
 //  - a lock whose owner is gone is replaced after LOCK_RECOVER_AFTER_MS and the caller carries on
-//  - a slow but living owner is not mistaken for a dead one
+//  - a slow but living owner is not mistaken for a dead one, nor is one that releases and retakes the lock
+//    faster than the waiter gets a turn
+//  - a lock left held by a deleted task is replaced even while the task PROS started in its place keeps using it
 //  - a waiter notices when another task already replaced the lock, and does not replace it a second time
 //  - a lock taken just as it was replaced is handed back, not used
 //  - a guard releases the lock it took even when the lock was replaced while it was held
@@ -27,20 +29,29 @@
 
 namespace {
 
+// True while the test is acting as the task PROS starts in place of the one it deleted. That task is the same
+// task as far as a recursive mutex can tell, so it can take a lock the deleted task left held.
+bool g_as_adoptee = false;
+
 // Stands in for a PROS mutex whose owner may have been deleted.
 struct FakeMutex {
   bool orphaned = false;         // the owner is gone: take() can never succeed
   std::uint32_t free_at_ms = 0;  // a live owner that lets go at this fake time
   int held = 0;                  // takes minus gives
   int gives = 0;
-  std::function<void()> on_failed_take;   // runs once, inside a take() that times out
-  std::function<void()> on_take_success;  // runs once, just after a take() succeeds
+  bool adoptee_reenters = false;  // an orphaned lock still lets the replacement task in (see g_as_adoptee)
+  std::function<void()> on_failed_take;        // runs once, inside a take() that times out
+  std::function<void()> on_every_failed_take;  // runs inside every take() that times out
+  std::function<void()> on_take_success;       // runs once, just after a take() succeeds
+
+  bool blocked() const { return (orphaned && !(adoptee_reenters && g_as_adoptee)) || pros::millis() < free_at_ms; }
 
   bool take(std::uint32_t timeout_ms) {
-    if (orphaned || pros::millis() < free_at_ms) {
+    if (blocked()) {
       pros::delay(timeout_ms);
-      if (orphaned || pros::millis() < free_at_ms) {
+      if (blocked()) {
         if (on_failed_take) std::exchange(on_failed_take, nullptr)();
+        if (on_every_failed_take) on_every_failed_take();
         return false;
       }
     }
@@ -135,10 +146,12 @@ TEST_CASE("nested guards on one lock nest and unwind") {
     }
     CHECK(slot->mutex.held == 1);
     CHECK(slot->depth == 1);
+    CHECK(slot->releases == 0);  // letting go of a nested guard is not the lock being released
   }
 
   CHECK(slot->mutex.held == 0);
   CHECK(slot->depth == 0);
+  CHECK(slot->releases == 1);
   CHECK(lock.recovery_count() == 0);
 }
 
@@ -192,6 +205,63 @@ TEST_CASE("a slow but living owner is waited for, not replaced") {
   CHECK(pros::millis() - before >= 300);
   CHECK(pros::millis() - before < ez::LOCK_RECOVER_AFTER_MS);
   CHECK(lock.recovery_count() == 0);
+}
+
+TEST_CASE("a live owner that keeps letting go and retaking the lock is never mistaken for a dead one") {
+  fresh_clock();
+  Lock lock("test");
+  Slot* slot = LockTestAccess::current(lock);
+  std::uint32_t before = pros::millis();
+
+  // Every time this task looks, the owner has the lock again, because it releases and retakes it faster than
+  // this task gets a turn (a task looping on setters does this). The owner only stops after four recovery times.
+  slot->mutex.free_at_ms = before + 4 * ez::LOCK_RECOVER_AFTER_MS;
+  slot->mutex.on_every_failed_take = [&] { slot->releases.fetch_add(1); };
+
+  {
+    LockGuard guard(lock);
+    CHECK(LockTestAccess::current(lock) == slot);
+  }
+
+  CHECK(pros::millis() - before >= 4 * ez::LOCK_RECOVER_AFTER_MS);
+  CHECK(lock.recovery_count() == 0);
+}
+
+TEST_CASE("a lock the deleted task left held is still replaced while its replacement task keeps using it") {
+  fresh_clock();
+  Lock lock("test");
+  Slot* dead = LockTestAccess::current(lock);
+  dead->mutex.orphaned = true;
+  dead->mutex.adoptee_reenters = true;
+  dead->mutex.held = 1;  // the deleted task's take, which nothing will ever give back
+  dead->depth = 1;
+
+  // While the chassis task waits, the task PROS started in place of the deleted one keeps calling setters. Each
+  // call takes the orphaned lock and releases it again, but never gets it below the deleted task's own hold.
+  int adoptee_calls = 0;
+  dead->mutex.on_every_failed_take = [&] {
+    g_as_adoptee = true;
+    {
+      LockGuard setter(lock);
+      CHECK(dead->depth == 2);
+    }
+    g_as_adoptee = false;
+    CHECK(dead->depth == 1);
+    adoptee_calls++;
+  };
+  std::uint32_t before = pros::millis();
+
+  {
+    LockGuard chassis_task(lock);
+    CHECK(LockTestAccess::current(lock) != dead);
+  }
+
+  std::uint32_t waited = pros::millis() - before;
+  CHECK(waited >= ez::LOCK_RECOVER_AFTER_MS);
+  CHECK(waited <= ez::LOCK_RECOVER_AFTER_MS + ez::LOCK_WAIT_SLICE_MS);
+  CHECK(adoptee_calls >= 10);  // it really was using the lock the whole time
+  CHECK(dead->releases == 0);  // and none of that counted as the lock being let go
+  CHECK(lock.recovery_count() == 1);
 }
 
 TEST_CASE("a waiter moves to the new lock when another task already replaced it") {

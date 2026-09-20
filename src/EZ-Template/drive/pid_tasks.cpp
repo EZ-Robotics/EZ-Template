@@ -16,7 +16,7 @@ void Drive::ez_auto_task() {
       ez::LockGuard lock(drive_mutex);
 
       // Check IMUs for redundancy
-      check_imu_task();
+      check_imu_task(lock);
 
       // Run odom
       ez_tracking_task();

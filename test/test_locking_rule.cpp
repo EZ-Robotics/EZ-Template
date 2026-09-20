@@ -94,6 +94,9 @@ std::vector<int> bare_lock_lines(const std::string& text) {
     // The mutex type is allowed as the argument of a RecoverableMutex, and nowhere else.
     erase_all(line, "RecoverableMutex<pros::RecursiveMutex>");
     erase_all(line, "RecoverableMutex<pros::Mutex>");
+    // A guard passed to a helper, so the helper can print through it.
+    erase_all(line, "LockGuard<pros::RecursiveMutex>");
+    erase_all(line, "LockGuard<pros::Mutex>");
     for (const std::string& token : forbidden) {
       if (line.find(token) != std::string::npos) {
         found.push_back(static_cast<int>(i) + 1);
@@ -105,17 +108,21 @@ std::vector<int> bare_lock_lines(const std::string& text) {
 }
 
 // Rule 2. Line numbers (1-based) of slow calls made while an ez::LockGuard is in scope. A guard is in
-// scope from its declaration to the end of the block that contains it.
+// scope from its declaration to the end of the block that contains it. A function that takes a guard by
+// reference, so it can print through it, only ever runs with the lock held, so its whole body counts.
 std::vector<int> slow_call_lines_under_lock(const std::string& text) {
   static const std::regex guard(R"(\bLockGuard\s+\w+\s*[({])");
+  static const std::regex guard_parameter(R"(\bLockGuard<[^>]*>&\s*\w+\s*\)\s*\{)");
   static const std::regex slow(R"(\b(printf|fprintf|puts|delay|task_delay|screen_print)\b|std::cout|pros::lcd::)");
 
   std::vector<int> found;
   std::vector<std::string> lines = strip_comments_and_literals(text);
   for (std::size_t start = 0; start < lines.size(); start++) {
-    if (!std::regex_search(lines[start], guard)) continue;
+    bool declares_guard = std::regex_search(lines[start], guard);
+    bool takes_guard = std::regex_search(lines[start], guard_parameter);
+    if (!declares_guard && !takes_guard) continue;
 
-    int depth = 0;
+    int depth = takes_guard ? -1 : 0;  // the body's opening brace is on this line, so it is not yet inside a block
     for (std::size_t i = start; i < lines.size(); i++) {
       if (i > start && std::regex_search(lines[i], slow)) found.push_back(static_cast<int>(i) + 1);
       for (char c : lines[i]) depth += (c == '{') - (c == '}');
@@ -164,6 +171,7 @@ TEST_CASE("rule 1 scanner accepts the recoverable lock, and ignores comments and
   CHECK(bare_lock_lines("/* std::lock_guard\n   pros::Mutex */\nint a;").empty());
   CHECK(bare_lock_lines("/**\n * Recursive so a std::lock_guard was fine\n */").empty());
   CHECK(bare_lock_lines("printf(\"a pros::Mutex in text\");").empty());
+  CHECK(bare_lock_lines("void check(ez::LockGuard<pros::RecursiveMutex>& lock);").empty());
 
   // But a bare lock beside a RecoverableMutex on the same line is still caught.
   CHECK(bare_lock_lines("RecoverableMutex<pros::Mutex> a; pros::Mutex b;").size() == 1);
@@ -176,6 +184,14 @@ TEST_CASE("rule 2 scanner flags slow calls made while a guard is held") {
   CHECK(slow_call_lines_under_lock("void f() {\n  ez::LockGuard lock(m);\n  ez::screen_print(\"x\", 1);\n}").size() == 1);
   CHECK(slow_call_lines_under_lock("void f() {\n  ez::LockGuard lock(m);\n  if (a) {\n    printf(\"x\");\n  }\n}").at(0) == 4);     // nested block
   CHECK(slow_call_lines_under_lock("void f() {\n  ez::LockGuard lock(m);\n  a = 1;\n}\nvoid g() {\n  printf(\"x\");\n}").empty());  // next function
+}
+
+TEST_CASE("rule 2 scanner treats the whole body of a function that takes a guard as locked") {
+  CHECK(slow_call_lines_under_lock("void f(ez::LockGuard<pros::RecursiveMutex>& lock) {\n  printf(\"x\");\n}").at(0) == 2);
+  CHECK(slow_call_lines_under_lock("void f(LockGuard<pros::Mutex>& lock) {\n  a = 1;\n  if (a) {\n    pros::delay(5);\n  }\n}").at(0) == 4);
+  CHECK(slow_call_lines_under_lock("void f(LockGuard<pros::RecursiveMutex>& lock) {\n  lock.print_after_unlock(\"x\");\n}").empty());
+  CHECK(slow_call_lines_under_lock("void f(LockGuard<pros::RecursiveMutex>& lock) {\n  a = 1;\n}\nvoid g() {\n  printf(\"x\");\n}").empty());  // next function
+  CHECK(slow_call_lines_under_lock("void f(LockGuard<pros::RecursiveMutex>& lock);\nvoid g() {\n  printf(\"x\");\n}").empty());              // a declaration has no body
 }
 
 TEST_CASE("rule 2 scanner accepts print_after_unlock, and slow calls after the guard's block ends") {

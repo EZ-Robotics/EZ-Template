@@ -21,7 +21,8 @@ constexpr int IMU_REACTIVATE_PASSES_THRESHOLD = 100;  // 1000 ms
 // Minimum drive sensor movement (in) between passes to consider the robot moving.
 constexpr double IMU_DRIVE_MOTION_THRESHOLD_IN = 0.05;
 
-void Drive::check_imu_task() {
+// Runs with the chassis lock held, so it prints through `lock` and never straight to the terminal.
+void Drive::check_imu_task(ez::LockGuard<pros::RecursiveMutex>& lock) {
   // Don't let this function run if IMU calibration is incomplete
   if (!imu_calibration_complete) return;
 
@@ -67,7 +68,7 @@ void Drive::check_imu_task() {
   }
   bool keep_front = bad_count > 0 && bad_count == static_cast<int>(good_imus.size());
   if (keep_front && !imu_only_imu_warning_shown) {
-    printf("EZ-Template: IMU on port %d looks unhealthy but it is the only IMU, keeping it\n", good_imus.front()->get_port());
+    lock.print_after_unlock("EZ-Template: IMU on port %d looks unhealthy but it is the only IMU, keeping it\n", good_imus.front()->get_port());
     imu_only_imu_warning_shown = true;
   }
 
@@ -110,13 +111,13 @@ void Drive::check_imu_task() {
       good_imus.push_back(n);
       imu_healthy_passes[port] = 0;
       imu_stuck_passes[port] = 0;
-      printf("EZ-Template: IMU on port %d recovered\n", port);
+      lock.print_after_unlock("EZ-Template: IMU on port %d recovered\n", port);
     }
   }
 
   // Keep the primary IMU pointed at the front of the healthy deque
   if (!good_imus.empty() && good_imus.front() != imu) {
     imu = good_imus.front();
-    printf("EZ-Template: switching primary IMU to port %d\n", imu->get_port());
+    lock.print_after_unlock("EZ-Template: switching primary IMU to port %d\n", imu->get_port());
   }
 }
