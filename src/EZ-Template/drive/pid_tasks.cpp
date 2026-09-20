@@ -13,7 +13,7 @@ using namespace ez;
 void Drive::ez_auto_task() {
   while (true) {
     {
-      std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
+      ez::LockGuard lock(drive_mutex);
 
       // Check IMUs for redundancy
       check_imu_task();

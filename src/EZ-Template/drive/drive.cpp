@@ -379,7 +379,7 @@ int Drive::drive_current_limit_get() {
 
 // Motor telemetry
 void Drive::drive_sensor_reset() {
-  std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
+  ez::LockGuard lock(drive_mutex);
 
   // Update active brake constants
   left_activebrakePID.target_set(0.0);
@@ -441,7 +441,7 @@ double Drive::drive_mA_left() { return left_motors.front().get_current_draw(); }
 bool Drive::drive_current_left_over() { return left_motors.front().is_over_current(); }
 
 void Drive::drive_imu_reset(double new_heading) {
-  std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
+  ez::LockGuard lock(drive_mutex);
 
   for (std::size_t i = 0; i < all_imus.size(); i++) {
     // Reads go through get_this_imu(), which multiplies by the scaler, so the
@@ -484,7 +484,7 @@ void Drive::drive_imu_scaler_3600_set(double imu_value_after_3600) {
   }
   double multiplier = 3600.0 / imu_value_after_3600;
 
-  std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
+  ez::LockGuard lock(drive_mutex);
   if (imu == nullptr) {
     if (all_imus.empty()) return;
     imu_scale_map[all_imus.front()->get_port()] = multiplier;
@@ -503,11 +503,11 @@ double Drive::drive_imu_scaler_3600_get() {
 }
 
 void Drive::drive_imus_scalers_3600_set(std::vector<double> imu_values_after_3600) {
-  std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
+  ez::LockGuard lock(drive_mutex);
 
   for (std::size_t i = 0; i < std::min(all_imus.size(), imu_values_after_3600.size()); i++) {
     if (!imu_3600_reading_valid(imu_values_after_3600[i])) {
-      printf("EZ-Template: drive_imus_scalers_3600_set rejected %g for imu on port %i, value must be the imu's reading after physically turning the robot 3600 degrees (about 3600)\n", imu_values_after_3600[i], all_imus[i]->get_port());
+      lock.print_after_unlock("EZ-Template: drive_imus_scalers_3600_set rejected %g for imu on port %i, value must be the imu's reading after physically turning the robot 3600 degrees (about 3600)\n", imu_values_after_3600[i], all_imus[i]->get_port());
       continue;
     }
     imu_scale_map[all_imus[i]->get_port()] = 3600.0 / imu_values_after_3600[i];
@@ -558,7 +558,7 @@ bool Drive::drive_imu_calibrate(bool run_loading_animation) {
 
   {
     // Reset the IMU watchdog for this calibration
-    std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
+    ez::LockGuard lock(drive_mutex);
     imu_stuck_passes.clear();
     imu_healthy_passes.clear();
     imu_only_imu_warning_shown = false;
@@ -631,7 +631,7 @@ bool Drive::drive_imu_calibrate(bool run_loading_animation) {
 
   // Run through all of the IMUs and remove any IMUs that didn't calibrate successfully
   {
-    std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
+    ez::LockGuard lock(drive_mutex);
 
     good_imus.erase(std::remove_if(good_imus.begin(), good_imus.end(),
                                     [&](pros::Imu* n) { return !imus_done[n->get_port()]; }),
@@ -675,7 +675,7 @@ void Drive::initialize(bool run_loading_animation) {
 }
 
 void Drive::odom_tracker_left_set(tracking_wheel* input) {
-  std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
+  ez::LockGuard lock(drive_mutex);
 
   if (input == nullptr) return;
 
@@ -691,7 +691,7 @@ void Drive::odom_tracker_left_set(tracking_wheel* input) {
     is_tracker = ODOM_TRACKER;
 }
 void Drive::odom_tracker_right_set(tracking_wheel* input) {
-  std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
+  ez::LockGuard lock(drive_mutex);
 
   if (input == nullptr) return;
 
@@ -704,7 +704,7 @@ void Drive::odom_tracker_right_set(tracking_wheel* input) {
     is_tracker = ODOM_TRACKER;
 }
 void Drive::odom_tracker_front_set(tracking_wheel* input) {
-  std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
+  ez::LockGuard lock(drive_mutex);
 
   if (input == nullptr) return;
 
@@ -712,7 +712,7 @@ void Drive::odom_tracker_front_set(tracking_wheel* input) {
   odom_tracker_front_enabled = true;
 }
 void Drive::odom_tracker_back_set(tracking_wheel* input) {
-  std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
+  ez::LockGuard lock(drive_mutex);
 
   if (input == nullptr) return;
 

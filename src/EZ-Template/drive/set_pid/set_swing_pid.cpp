@@ -286,7 +286,7 @@ void Drive::pid_swing_set(e_swing type, double target, int speed, int opposite_s
 // Swing set internal
 /////
 void Drive::swing_set_internal(e_swing type, double target, int speed, int opposite_speed, e_angle_behavior behavior, bool slew_on) {
-  std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
+  ez::LockGuard lock(drive_mutex);
 
   interfered = false;
 
@@ -302,7 +302,7 @@ void Drive::swing_set_internal(e_swing type, double target, int speed, int oppos
   target = new_turn_target_compute(target, drive_angle_get(), current_angle_behavior);
 
   // Print targets
-  if (print_toggle) printf("Swing Started... Target Value: %.2f\n", target);
+  if (print_toggle) lock.print_after_unlock("Swing Started... Target Value: %.2f\n", target);
 
   chain_sensor_start = drive_angle_get();
   chain_target_start = target;

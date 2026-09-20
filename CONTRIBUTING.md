@@ -24,6 +24,19 @@ Lead with a [gitmoji](https://gitmoji.dev):
 | ⬆️ | Upgrade dependency |
 | ⏪️ | Revert |
 
+## Locking
+
+PROS deletes the running competition task on every mode change, without releasing any mutex it was holding.
+A lock that waits forever can leave the background drive task, and with it odometry and every PID motion, dead
+until the brain restarts. So every lock in the library follows two rules (`include/EZ-Template/lock.hpp`):
+
+- Use an `ez::RecoverableMutex` taken with an `ez::LockGuard`. Never a bare `pros::Mutex`, `pros::RecursiveMutex`,
+  `std::lock_guard`, or `take()`/`give()`.
+- Do nothing slow while holding one: no `printf`, no `delay`, no waiting on hardware. To print from inside a lock,
+  use `guard.print_after_unlock(...)`.
+
+`make -C test` fails if either rule is broken (`test/test_locking_rule.cpp`).
+
 ## Before opening a PR
 
 - `pros make` builds the full project.

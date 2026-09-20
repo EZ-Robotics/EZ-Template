@@ -160,7 +160,7 @@ void Drive::pid_wait() {
     }
 
     {
-      std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
+      ez::LockGuard lock(drive_mutex);
       // Store the heading as the equivalent angle nearest the IMU.  The raw target can be a full turn away from it
       // (IMU at 270, target -90), which the next drive or relative turn would read as a 360 degree error.
       if (odom_target_start.theta != ANGLE_NOT_SET) headingPID.target_set(new_turn_target_compute(odom_target_start.theta, drive_angle_get(), shortest));
@@ -463,7 +463,7 @@ void Drive::pid_wait_quick() {
   if (mode == PURE_PURSUIT) {
     pid_wait_until_index(injected_pp_index.size() - 2);
     {
-      std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
+      ez::LockGuard lock(drive_mutex);
       // Same as pid_wait(): store the equivalent angle nearest the IMU.
       if (odom_target_start.theta != ANGLE_NOT_SET) headingPID.target_set(new_turn_target_compute(odom_target_start.theta, drive_angle_get(), shortest));
     }
@@ -471,7 +471,7 @@ void Drive::pid_wait_quick() {
   } else if (mode == POINT_TO_POINT) {
     pid_wait_until_point(odom_target_start);
     {
-      std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
+      ez::LockGuard lock(drive_mutex);
       if (odom_target_start.theta != ANGLE_NOT_SET) headingPID.target_set(new_turn_target_compute(odom_target_start.theta, drive_angle_get(), shortest));
     }
     return;
@@ -524,7 +524,7 @@ double Drive::pid_swing_chain_backward_constant_get() { return swing_backward_mo
 // Pid wait that hold momentum into the next motion
 void Drive::pid_wait_quick_chain() {
   {
-    std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
+    ez::LockGuard lock(drive_mutex);
 
     // If driving, add drive_motion_chain_scale to target
     if (mode == DRIVE) {
@@ -572,7 +572,7 @@ void Drive::pid_wait_quick_chain() {
                                 pp_movements[pp_movements.size() - 1].max_xy_speed});
 
     } else {
-      printf("Not in a supported drive mode!\n");
+      lock.print_after_unlock("Not in a supported drive mode!\n");
       return;
     }
   }

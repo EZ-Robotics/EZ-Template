@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <cstdio>
 
+#include "EZ-Template/lock.hpp"
 #include "liblvgl/llemu.hpp"
 #include "liblvgl/lvgl.h"
 #include "pros/llemu.hpp"
@@ -247,9 +248,11 @@ bool g_line_dirty[LINE_COUNT] = {false};
 lv_indev_read_cb_t g_indev_read_orig = nullptr;
 
 // Function-local so the screen task can print at static-init time without
-// racing this file's own construction.
-pros::Mutex& line_mutex() {
-  static pros::Mutex mutex;
+// racing this file's own construction. Recoverable: if the task holding it is
+// deleted (autonomous is, on every competition mode change) the lock is replaced
+// instead of freezing the screen and the display task forever.
+ez::RecoverableMutex<pros::Mutex>& line_mutex() {
+  static ez::RecoverableMutex<pros::Mutex> mutex("screen line");
   return mutex;
 }
 
@@ -261,11 +264,14 @@ void lines_replay(lv_indev_t* indev, lv_indev_data_t* data) {
   if (!g_portrait_on && !pros::lcd::is_initialized()) return;
 
   for (int i = 0; i < LINE_COUNT; i++) {
-    line_mutex().take();
-    bool dirty = g_line_dirty[i];
-    std::string text = g_line_text[i];
-    g_line_dirty[i] = false;
-    line_mutex().give();
+    bool dirty;
+    std::string text;
+    {
+      ez::LockGuard lock(line_mutex());
+      dirty = g_line_dirty[i];
+      text = g_line_text[i];
+      g_line_dirty[i] = false;
+    }
     if (!dirty) continue;
 
     if (g_portrait_on)
@@ -276,7 +282,7 @@ void lines_replay(lv_indev_t* indev, lv_indev_data_t* data) {
 }
 
 void screen_line_publish(int line, std::string text) {
-  line_mutex().take();
+  ez::LockGuard lock(line_mutex());
   g_line_text[line] = text;
   g_line_dirty[line] = true;
 
@@ -288,7 +294,6 @@ void screen_line_publish(int line, std::string text) {
       lv_indev_set_read_cb(indev, lines_replay);
     }
   }
-  line_mutex().give();
 }
 }  // namespace
 

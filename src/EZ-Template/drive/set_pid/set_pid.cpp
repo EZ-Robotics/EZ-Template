@@ -12,7 +12,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 namespace ez {
 // Updates max speed
 void Drive::pid_speed_max_set(int speed) {
-  std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
+  ez::LockGuard lock(drive_mutex);
 
   max_speed = std::fabs(util::clamp(speed, 127, -127));
   slew_left.speed_max_set(max_speed);
@@ -52,7 +52,7 @@ void Drive::pid_angle_behavior_set(ez::e_angle_behavior behavior) {
 }
 
 void Drive::pid_targets_reset() {
-  std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
+  ez::LockGuard lock(drive_mutex);
 
   headingPID.target_set(0);
   leftPID.target_set(0);

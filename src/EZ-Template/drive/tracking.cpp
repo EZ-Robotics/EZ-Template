@@ -13,7 +13,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 namespace ez {
 // Sets and gets
 void Drive::odom_x_set(double x) {
-  std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
+  ez::LockGuard lock(drive_mutex);
 
   odom_current.x = x;
   l_pose.x = x;
@@ -23,7 +23,7 @@ void Drive::odom_x_set(double x) {
 }
 void Drive::odom_x_set(ez::QLength p_x) { odom_x_set(p_x.convert(ez::inch)); }
 void Drive::odom_y_set(double y) {
-  std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
+  ez::LockGuard lock(drive_mutex);
 
   odom_current.y = y;
   l_pose.y = y;
@@ -35,7 +35,7 @@ void Drive::odom_y_set(ez::QLength p_y) { odom_y_set(p_y.convert(ez::inch)); }
 void Drive::odom_theta_set(double a) { drive_angle_set(a); }
 void Drive::odom_theta_set(ez::QAngle p_a) { odom_theta_set(p_a.convert(ez::degree)); }
 void Drive::drive_width_set(double input) {
-  std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
+  ez::LockGuard lock(drive_mutex);
 
   global_track_width = fabs(input);
   if (input != 0.0) {
@@ -66,7 +66,7 @@ void Drive::odom_pose_set(pose itarget) {
 void Drive::odom_pose_set(united_pose itarget) { odom_pose_set(util::united_pose_to_pose(itarget)); }
 void Drive::odom_reset() { odom_pose_set({0.0, 0.0, 0.0}); }
 void Drive::odom_enable(bool input) {
-  std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
+  ez::LockGuard lock(drive_mutex);
   odometry_enabled = input;
 }
 bool Drive::odom_enabled() { return odometry_enabled; }
@@ -80,7 +80,7 @@ double Drive::drive_width_get() { return global_track_width; }
 // Set tracking task
 // void Drive::odom_tracking_set(void (*tracking_task)()) { tracking = tracking_task; }
 void Drive::odom_tracking_set(std::function<void(void)> tracking_task) {
-  std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
+  ez::LockGuard lock(drive_mutex);
   tracking = tracking_task;
 }
 

@@ -9,11 +9,11 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include <deque>
 #include <functional>
 #include <iostream>
-#include <mutex>
 #include <stack>
 #include <tuple>
 
 #include "EZ-Template/PID.hpp"
+#include "EZ-Template/lock.hpp"
 #include "EZ-Template/slew.hpp"
 #include "EZ-Template/tracking_wheel.hpp"
 #include "EZ-Template/util.hpp"
@@ -3604,8 +3604,12 @@ class Drive {
   /**
    * Guards state shared between the ez_auto task and the public setters.
    * Recursive so nested public calls and user callbacks that call setters are safe.
+   *
+   * Recoverable: if the task holding it is deleted (field control does this to autonomous on every mode
+   * change) the lock is replaced instead of staying held forever. Take it only with ez::LockGuard, and see
+   * EZ-Template/lock.hpp for the rule this follows.
    */
-  pros::RecursiveMutex drive_mutex;
+  RecoverableMutex<pros::RecursiveMutex> drive_mutex{"chassis"};
 
   std::function<void(void)> tracking;
   void opcontrol_drive_activebrake_targets_set();

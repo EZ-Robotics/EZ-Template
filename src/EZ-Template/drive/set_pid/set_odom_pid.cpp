@@ -392,7 +392,7 @@ void Drive::pid_odom_pp_set(std::vector<odom> imovements, bool slew_on) {
 // External base ptp
 /////
 void Drive::pid_odom_ptp_set(odom imovement, bool slew_on) {
-  std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
+  ez::LockGuard lock(drive_mutex);
 
   interfered = false;
 
@@ -435,7 +435,7 @@ void Drive::raw_pid_odom_pp_set(std::vector<odom> imovements, bool slew_on) {
     return;
   }
 
-  std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
+  ez::LockGuard lock(drive_mutex);
 
   odom_second_to_last = imovements[imovements.size() - 2].target;
   odom_target_start = imovements[imovements.size() - 1].target;
