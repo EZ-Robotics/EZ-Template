@@ -1,7 +1,8 @@
 // util: turn_shortest/turn_longest/wrap_angle on a table of (target, current)
 // pairs including the 180 and -180 edges; clamp both overloads;
 // absolute_angle_to_point in all four quadrants; united_pose_to_pose
-// preserving ANGLE_NOT_SET.
+// preserving ANGLE_NOT_SET; curve_scale_clamp holding the joystick curve
+// scale to 0 - MAX_CURVE_SCALE, including infinity and NaN.
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
 
@@ -52,6 +53,33 @@ TEST_CASE("clamp: two-argument overload clamps to [-|max|, |max|]") {
   CHECK(util::clamp(-15, 10) == doctest::Approx(-10));
   // A negative max is treated the same as its absolute value.
   CHECK(util::clamp(5, -10) == doctest::Approx(5));
+}
+
+TEST_CASE("curve_scale_clamp: values in range pass through") {
+  CHECK(util::curve_scale_clamp(0) == doctest::Approx(0));
+  CHECK(util::curve_scale_clamp(5.5) == doctest::Approx(5.5));
+  CHECK(util::curve_scale_clamp(util::MAX_CURVE_SCALE) == doctest::Approx(util::MAX_CURVE_SCALE));
+}
+
+TEST_CASE("curve_scale_clamp: a held button or a bad SD file cannot push the curve out of range") {
+  // A scale of 50 turns a full stick into 7, and -50 turns a stick at 10 into 1483.
+  CHECK(util::curve_scale_clamp(50) == doctest::Approx(util::MAX_CURVE_SCALE));
+  CHECK(util::curve_scale_clamp(-50) == doctest::Approx(0));
+  CHECK(util::curve_scale_clamp(INFINITY) == doctest::Approx(util::MAX_CURVE_SCALE));
+  CHECK(util::curve_scale_clamp(-INFINITY) == doctest::Approx(0));
+  CHECK(util::curve_scale_clamp(NAN) == doctest::Approx(0));
+}
+
+TEST_CASE("curve_scale_clamp: the clamped curve keeps the stick usable") {
+  // Same curve as Drive::opcontrol_curve_left, evaluated at the ceiling.  A full stick still
+  // reaches full output, and a stick at three quarters still moves the robot.
+  auto curve = [](double scale, double x) {
+    return (powf(2.718, -(scale / 10)) + powf(2.718, (fabs(x) - 127) / 10) * (1 - powf(2.718, -(scale / 10)))) * x;
+  };
+  double scale = util::curve_scale_clamp(50);
+  CHECK(curve(scale, 127) == doctest::Approx(127).epsilon(0.01));
+  CHECK(curve(scale, 95) > 10);
+  CHECK(curve(util::curve_scale_clamp(-50), 10) <= 10);
 }
 
 TEST_CASE("absolute_angle_to_point: all four quadrants") {

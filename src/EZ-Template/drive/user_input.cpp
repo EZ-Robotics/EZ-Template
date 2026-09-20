@@ -4,6 +4,7 @@ License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
+#include <cmath>
 #include <cstdlib>
 
 #include "EZ-Template/PID.hpp"
@@ -19,8 +20,8 @@ double Drive::opcontrol_curvature_point_turn_gain_get() { return curvature_point
 
 // Set curve defaults
 void Drive::opcontrol_curve_default_set(double left, double right) {
-  left_curve_scale = left;
-  right_curve_scale = right;
+  left_curve_scale = util::curve_scale_clamp(left);
+  right_curve_scale = util::curve_scale_clamp(right);
 
   save_l_curve_sd();
   save_r_curve_sd();
@@ -43,10 +44,12 @@ void Drive::opcontrol_curve_sd_initialize() {
     fclose(l_usd_file_read);
     char* end = nullptr;
     double parsed = strtod(buf, &end);
-    if (end != buf)
-      left_curve_scale = parsed;
-    else
+    if (end != buf && !std::isnan(parsed)) {
+      left_curve_scale = util::curve_scale_clamp(parsed);
+      if (left_curve_scale != parsed) printf("EZ-Template: /usd/left_curve.txt was out of range, using %.1f\n", left_curve_scale);
+    } else {
       printf("EZ-Template: couldn't parse /usd/left_curve.txt, keeping current curve\n");
+    }
   }
   // If file doesn't exist, create file
   else {
@@ -62,10 +65,12 @@ void Drive::opcontrol_curve_sd_initialize() {
     fclose(r_usd_file_read);
     char* end = nullptr;
     double parsed = strtod(buf, &end);
-    if (end != buf)
-      right_curve_scale = parsed;
-    else
+    if (end != buf && !std::isnan(parsed)) {
+      right_curve_scale = util::curve_scale_clamp(parsed);
+      if (right_curve_scale != parsed) printf("EZ-Template: /usd/right_curve.txt was out of range, using %.1f\n", right_curve_scale);
+    } else {
       printf("EZ-Template: couldn't parse /usd/right_curve.txt, keeping current curve\n");
+    }
   }
   // If file doesn't exist, create file
   else {
@@ -120,16 +125,10 @@ std::vector<pros::controller_digital_e_t> Drive::opcontrol_curve_buttons_right_g
 }
 
 // Increase / decrease left and right curves
-void Drive::l_increase() { left_curve_scale += 0.1; }
-void Drive::l_decrease() {
-  left_curve_scale -= 0.1;
-  left_curve_scale = left_curve_scale < 0 ? 0 : left_curve_scale;
-}
-void Drive::r_increase() { right_curve_scale += 0.1; }
-void Drive::r_decrease() {
-  right_curve_scale -= 0.1;
-  right_curve_scale = right_curve_scale < 0 ? 0 : right_curve_scale;
-}
+void Drive::l_increase() { left_curve_scale = util::curve_scale_clamp(left_curve_scale + 0.1); }
+void Drive::l_decrease() { left_curve_scale = util::curve_scale_clamp(left_curve_scale - 0.1); }
+void Drive::r_increase() { right_curve_scale = util::curve_scale_clamp(right_curve_scale + 0.1); }
+void Drive::r_decrease() { right_curve_scale = util::curve_scale_clamp(right_curve_scale - 0.1); }
 
 // Button press logic for increase/decrease curves
 void Drive::button_press(button_* input_name, int button, std::function<void()> change_curve, std::function<void()> save) {

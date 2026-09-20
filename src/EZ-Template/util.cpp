@@ -170,6 +170,11 @@ double clamp(double input, double max, double min) {
 
 double clamp(double input, double max) { return clamp(input, fabs(max), -fabs(max)); }
 
+double curve_scale_clamp(double scale) {
+  if (std::isnan(scale)) return 0;
+  return clamp(scale, MAX_CURVE_SCALE, 0.0);
+}
+
 std::pair<double, double> curvature_mix(double fwd, double turn, double point_turn_gain) {
   double gain = fmax(fabs(fwd) / 127.0, clamp(point_turn_gain, 1.0, 0.0));
   double l = fwd + turn * gain;
