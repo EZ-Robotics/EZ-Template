@@ -2687,7 +2687,7 @@ void autonomous() {
 
 
 ### pid_swing_min_set()
-Sets minimum power for swings when kI and startI are enabled.    
+When kI and startI are enabled, sets the maximum output allowed while error is inside startI, for swings larger than startI.  This lets I accumulate without overshoot.  Despite the name this is a cap on the output, not a floor.    
 
 `min` new clipped speed
 <Tabs
@@ -2945,7 +2945,7 @@ double pid_swing_chain_backward_constant_get();
 
 
 ### pid_swing_min_get()
-Returns minimum power for swings when kI and startI are enabled.         
+Returns the maximum output allowed while error is inside startI, for swings larger than startI, when kI and startI are enabled.         
 <Tabs
   groupId="examples16"
   defaultValue="proto"
