@@ -117,7 +117,7 @@ void Drive::pid_turn_set(double target, int speed, e_angle_behavior behavior, bo
 // Turn to angle internal
 /////
 void Drive::turn_set_internal(double target, int speed, e_angle_behavior behavior, bool slew_on) {
-  ez::PlainGuard<pros::RecursiveMutex> lock(drive_mutex);
+  ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
 
   interfered = false;
 
@@ -180,7 +180,7 @@ void Drive::pid_turn_set(united_pose p_itarget, drive_directions dir, int speed,
 // Turn to point base
 /////
 void Drive::pid_turn_set(pose itarget, drive_directions dir, int speed, e_angle_behavior behavior, bool slew_on) {
-  ez::PlainGuard<pros::RecursiveMutex> lock(drive_mutex);
+  ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
 
   odom_imu_start = drive_angle_get();
 

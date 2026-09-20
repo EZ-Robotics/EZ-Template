@@ -286,7 +286,7 @@ void Drive::pid_swing_set(e_swing type, double target, int speed, int opposite_s
 // Swing set internal
 /////
 void Drive::swing_set_internal(e_swing type, double target, int speed, int opposite_speed, e_angle_behavior behavior, bool slew_on) {
-  ez::PlainGuard<pros::RecursiveMutex> lock(drive_mutex);
+  ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
 
   interfered = false;
 
