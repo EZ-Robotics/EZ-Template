@@ -32,6 +32,8 @@ You can use controller buttons to modify these curves live.  What the buttons d
 
 The higher the number, the more of the joystick will control lower speeds.  Drive around and play with these values until you find something you like.  
 
+Curves are kept between 0 and 20, and 0 is no curve.  Holding a curve button stops at 20.  Past that, a stick at three quarters is already driving the wheels at a few percent, so there's nothing useful up there.  A value outside of that range, from `opcontrol_curve_default_set()` or from the SD card, is changed to the nearest end of it.  
+
 ## Saving Your Values
 You've found values you're happy with!  There are two ways of saving them:
 - hard code them
