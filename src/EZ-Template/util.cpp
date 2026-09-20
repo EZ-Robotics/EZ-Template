@@ -55,6 +55,14 @@ std::string get_rest_of_the_word(std::string text, int position) {
 
 void screen_print(std::string text, int line) {
   int CurrAutoLine = line;
+
+  if (CurrAutoLine < 0 || CurrAutoLine > 7) return;
+
+  if (text.empty()) {
+    screen_line_clear(CurrAutoLine);
+    return;
+  }
+
   std::vector<std::string> texts = {};
   std::string temp = "";
 
@@ -91,14 +99,22 @@ void screen_print(std::string text, int line) {
       temp += text[i];
     }
   }
+  std::string last_line = "";
   for (auto i : texts) {
     if (CurrAutoLine > 7) {
-      screen_lines_clear();
-      screen_line_set(7, "Out of Bounds. Print Line is too far down");
+      // Too many wrapped lines to fit on screen. Mark the last line that did
+      // fit with an ellipsis instead of wiping every line already printed.
+      std::string truncated = last_line;
+      if (truncated.length() + 3 > 38)
+        truncated = truncated.substr(0, 35);
+      truncated += "...";
+      screen_line_clear(7);
+      screen_line_set(7, truncated);
       return;
     }
     screen_line_clear(CurrAutoLine);
     screen_line_set(CurrAutoLine, i);
+    last_line = i;
     CurrAutoLine++;
   }
 }
