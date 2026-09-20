@@ -22,7 +22,7 @@ void Drive::ez_auto_task() {
     ez::detail::stats.auto_task_passes.fetch_add(1, std::memory_order_relaxed);
 
     {
-      std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
+      ez::PlainGuard<pros::RecursiveMutex> lock(drive_mutex);
 
       // Check IMUs for redundancy
       check_imu_task();

@@ -15,9 +15,14 @@
 using namespace ez;
 
 namespace {
+// A Drive owns a lock and a background task that points back at it, so it cannot be copied. It is built where the
+// caller needs it (returning a prvalue copies nothing) and then set up in place by configure_chassis().
 Drive make_chassis() {
   test_stub::reset_all();
-  Drive chassis({1, -2}, {-3, 4}, 5, 3.25, 360, 1.0);
+  return Drive({1, -2}, {-3, 4}, 5, 3.25, 360, 1.0);
+}
+
+void configure_chassis(Drive& chassis) {
   DriveTestAccess::imu_calibration_complete(chassis) = true;
 
   // The velocity and mA exits are off, so only the position exits can end a wait.
@@ -25,7 +30,6 @@ Drive make_chassis() {
   chassis.pid_odom_drive_exit_condition_set(90, 1.0, 250, 3.0, 0, 0);
   chassis.pid_odom_turn_exit_condition_set(90, 3.0, 250, 7.0, 0, 0);
   chassis.odom_look_ahead_set(7.0);
-  return chassis;
 }
 
 // One pass of ez_auto_task(). pros::Task never runs its callable in the host
@@ -105,6 +109,7 @@ TEST_CASE("pid_wait_until on an odom move returns once the move has ended short 
   for (bool point_to_point : {false, true}) {
     CAPTURE(point_to_point);
     Drive chassis = make_chassis();
+    configure_chassis(chassis);
     chassis.odom_xyt_set(0.0, 0.0, 0.0);
     chassis.drive_sensor_reset();
 
@@ -120,6 +125,7 @@ TEST_CASE("pid_wait_until on a reverse odom move returns once the move has ended
   for (bool point_to_point : {false, true}) {
     CAPTURE(point_to_point);
     Drive chassis = make_chassis();
+    configure_chassis(chassis);
     chassis.odom_xyt_set(0.0, 0.0, 0.0);
     chassis.drive_sensor_reset();
 
@@ -134,6 +140,7 @@ TEST_CASE("pid_wait_until on an odom move keeps waiting while the robot is still
   for (bool point_to_point : {false, true}) {
     CAPTURE(point_to_point);
     Drive chassis = make_chassis();
+    configure_chassis(chassis);
     chassis.odom_xyt_set(0.0, 0.0, 0.0);
     chassis.drive_sensor_reset();
 
@@ -150,6 +157,7 @@ TEST_CASE("odom moves aim each side's wait_until exit at its own sensor plus the
       CAPTURE(point_to_point);
       CAPTURE(direction == fwd);
       Drive chassis = make_chassis();
+      configure_chassis(chassis);
       chassis.odom_xyt_set(0.0, 0.0, 0.0);
       chassis.drive_sensor_reset();
 

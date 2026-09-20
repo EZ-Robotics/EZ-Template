@@ -75,9 +75,8 @@ class Mutex {
   bool try_lock() { return true; }
 };
 
-// Needs lock()/unlock() (not just take()/give()) to satisfy the BasicLockable
-// requirement std::lock_guard<pros::RecursiveMutex> depends on, since
-// EZ-Template guards drive_mutex with std::lock_guard throughout.
+// EZ-Template takes this through ez::Lock, which only needs take()/give(). lock()/unlock() are kept so a test can
+// still hold it with a std::lock_guard.
 class RecursiveMutex {
  public:
   bool take(std::uint32_t timeout = 0xFFFFFFFF) { return true; }
