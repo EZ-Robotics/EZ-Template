@@ -638,3 +638,75 @@ void initialize() {
 ```
 </TabItem>
 </Tabs>
+
+
+
+## Version macros
+Macros that tell you which version of EZ-Template your code is being built against.  They're for libraries and shared code that need to work with more than one EZ-Template version.  Include `EZ-Template/api.hpp` and they're available, there's nothing to call.  
+
+:::caution 3.x and early betas don't have these
+
+The version macros are new in 4.0.0, and they're not in 4.0.0-beta.1 or 4.0.0-beta.2.  On those, and on 3.x, every macro on this page is missing, so your code has to cope with that.  
+
+:::
+
+| Macro | What it is |
+| --- | --- |
+| `EZ_TEMPLATE_VERSION_MAJOR`, `EZ_TEMPLATE_VERSION_MINOR`, `EZ_TEMPLATE_VERSION_PATCH` | The version numbers |
+| `EZ_TEMPLATE_VERSION_STAGE` | `EZ_TEMPLATE_STAGE_ALPHA`, `EZ_TEMPLATE_STAGE_BETA`, `EZ_TEMPLATE_STAGE_RC` or `EZ_TEMPLATE_STAGE_RELEASE` |
+| `EZ_TEMPLATE_VERSION_PRERELEASE_NUM` | The `N` in `beta.N`, or `0` on a full release |
+| `EZ_TEMPLATE_VERSION_PRERELEASE` | `"beta.2"`, or `""` on a full release |
+| `EZ_TEMPLATE_VERSION_STRING` | `"4.0.0-beta.2"` |
+| `EZ_TEMPLATE_VERSION` | One integer that sorts correctly: alpha, then beta, then rc, then release.  `4.0.0-rc.1` is less than `4.0.0` |
+| `EZ_TEMPLATE_VERSION_ENCODE(major, minor, patch, stage, num)` | Builds that integer, for comparing against an exact version |
+| `EZ_TEMPLATE_VERSION_AT_LEAST(major, minor, patch)` | Feature check.  Ignores the prerelease, so `4.0.0-beta.2` counts as `4.0.0` |
+
+Minor, patch and the prerelease number must each stay under 100.  
+
+### Checking for a version
+Include EZ-Template first, then give 3.x a fallback.  3.x doesn't define the macro, so without the fallback the `#if` would fail to compile.  If the fallback comes before the include, the header's own definition still wins, but the compiler warns `macro redefined`.  
+
+```cpp
+#include "EZ-Template/api.hpp"  // before the fallback below
+
+#ifndef EZ_TEMPLATE_VERSION_AT_LEAST
+#define EZ_TEMPLATE_VERSION_AT_LEAST(major, minor, patch) 0  // 3.x
+#endif
+
+#if EZ_TEMPLATE_VERSION_AT_LEAST(4, 0, 0)
+  // 4.0 or newer
+#else
+  // 3.x
+#endif
+```
+
+Don't write `#if defined(EZ_TEMPLATE_VERSION_MAJOR) && EZ_TEMPLATE_VERSION_AT_LEAST(4, 0, 0)`.  The preprocessor still reads the second half on 3.x, where that macro doesn't exist, and stops with a syntax error.  Nest the `#if` instead.  
+
+### Prereleases are not final
+Alpha, beta and rc releases are not final.  APIs can change or be removed between them, and the final release may differ from any prerelease.  `EZ_TEMPLATE_VERSION_AT_LEAST(4, 0, 0)` is true on every 4.0.0 prerelease, so if your code depends on something that changed during the prereleases, compare against a specific stage with `EZ_TEMPLATE_VERSION_ENCODE` instead.  
+
+```cpp
+#ifdef EZ_TEMPLATE_VERSION
+#if EZ_TEMPLATE_VERSION >= EZ_TEMPLATE_VERSION_ENCODE(4, 0, 0, EZ_TEMPLATE_STAGE_RC, 1)
+  // 4.0.0-rc.1 or newer
+#endif
+#endif
+```
+
+To be told when you're building against a prerelease, add a warning:  
+
+```cpp
+#ifdef EZ_TEMPLATE_VERSION_STAGE
+#if EZ_TEMPLATE_VERSION_STAGE != EZ_TEMPLATE_STAGE_RELEASE
+#warning "Built against an EZ-Template prerelease, the API may change"
+#endif
+#endif
+```
+
+### Printing the version
+
+```cpp
+void initialize() {
+  printf("EZ-Template %s\n", EZ_TEMPLATE_VERSION_STRING);  // EZ-Template 4.0.0-beta.2
+}
+```
