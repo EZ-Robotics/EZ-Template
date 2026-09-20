@@ -225,6 +225,20 @@ void Drive::wait_until_drive(double target) {
 
     // Before robot has reached target, use the exit conditions to avoid getting stuck in this while loop
     if (util::sgn(l_error) == l_sgn || util::sgn(r_error) == r_sgn) {
+      // An odom move ends on its xy exit, which only pid_wait() checks.  The left and right exits below are aimed
+      // one look ahead from where the move started, so when the robot drives past that point they can never fire.
+      // If the move ends before it reaches this target, return instead of waiting forever.
+      bool on_last_point = mode == POINT_TO_POINT || (mode == PURE_PURSUIT && pp_index == (int)pp_movements.size() - 1);
+      if (on_last_point) {
+        xyPID.velocity_sensor_secondary_set(drive_imu_accel_get());
+        exit_output xy_exit = xyPID.exit_condition({left_motors[0], right_motors[0]});
+        if (xy_exit != RUNNING) {
+          if (print_toggle) std::cout << "  XY: " << exit_to_string(xy_exit) << " Wait Until Exit Failsafe, the move ended before reaching " << target << "\n";
+          if (xy_exit == mA_EXIT || xy_exit == VELOCITY_EXIT) interfered = true;
+          return;
+        }
+      }
+
       if (left_exit == RUNNING || right_exit == RUNNING) {
         leftPID.velocity_sensor_secondary_set(drive_imu_accel_get());
         rightPID.velocity_sensor_secondary_set(drive_imu_accel_get());

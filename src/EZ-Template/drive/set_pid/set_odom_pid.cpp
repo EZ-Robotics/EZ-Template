@@ -560,7 +560,7 @@ void Drive::raw_pid_odom_ptp_set(odom imovement, bool slew_on, bool is_boomerang
   // This is used for wait_until
   int dir = current_drive_direction == REV ? -1 : 1;  // If we're going backwards, add a -1
   leftPID.target_set(l_start + (odom_look_ahead_get() * dir));
-  rightPID.target_set(l_start + (odom_look_ahead_get() * dir));
+  rightPID.target_set(r_start + (odom_look_ahead_get() * dir));
   leftPID.exit = xyPID.exit;  // Switch over to xy pid exits
   rightPID.exit = xyPID.exit;
 }
