@@ -67,7 +67,7 @@ void Drive::check_imu_task() {
   }
   bool keep_front = bad_count > 0 && bad_count == static_cast<int>(good_imus.size());
   if (keep_front && !imu_only_imu_warning_shown) {
-    printf("EZ-Template: IMU on port %d looks unhealthy but it is the only IMU, keeping it\n", good_imus.front()->get_port());
+    drive_mutex.print_after_unlock("EZ-Template: IMU on port %d looks unhealthy but it is the only IMU, keeping it\n", good_imus.front()->get_port());
     imu_only_imu_warning_shown = true;
   }
 
@@ -110,13 +110,13 @@ void Drive::check_imu_task() {
       good_imus.push_back(n);
       imu_healthy_passes[port] = 0;
       imu_stuck_passes[port] = 0;
-      printf("EZ-Template: IMU on port %d recovered\n", port);
+      drive_mutex.print_after_unlock("EZ-Template: IMU on port %d recovered\n", port);
     }
   }
 
   // Keep the primary IMU pointed at the front of the healthy deque
   if (!good_imus.empty() && good_imus.front() != imu) {
     imu = good_imus.front();
-    printf("EZ-Template: switching primary IMU to port %d\n", imu->get_port());
+    drive_mutex.print_after_unlock("EZ-Template: switching primary IMU to port %d\n", imu->get_port());
   }
 }

@@ -131,7 +131,7 @@ void Drive::turn_set_internal(double target, int speed, e_angle_behavior behavio
   target = new_turn_target_compute(target, drive_angle_get(), current_angle_behavior);
 
   // Print targets
-  if (print_toggle) printf("Turn Started... Target Value: %.2f\n", target);
+  if (print_toggle) drive_mutex.print_after_unlock("Turn Started... Target Value: %.2f\n", target);
   chain_sensor_start = drive_angle_get();
   chain_target_start = target;
   used_motion_chain_scale = 0.0;
@@ -196,7 +196,7 @@ void Drive::pid_turn_set(pose itarget, drive_directions dir, int speed, e_angle_
   // angle_adder = (new_turn_target_compute(target, odom_imu_start, current_angle_behavior)) - target;
   // ANGLE_ADDER_WAS_RESET = false;
 
-  if (print_toggle) printf("Turn to Point PID Started... Target Point: (%.2f, %.2f) \n", itarget.x, itarget.y);
+  if (print_toggle) drive_mutex.print_after_unlock("Turn to Point PID Started... Target Point: (%.2f, %.2f) \n", itarget.x, itarget.y);
   turn_set_internal(target, speed, behavior, slew_on);
 
   drive_mode_set(TURN_TO_POINT);

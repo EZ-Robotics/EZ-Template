@@ -507,7 +507,7 @@ void Drive::drive_imus_scalers_3600_set(std::vector<double> imu_values_after_360
 
   for (std::size_t i = 0; i < std::min(all_imus.size(), imu_values_after_3600.size()); i++) {
     if (!imu_3600_reading_valid(imu_values_after_3600[i])) {
-      printf("EZ-Template: drive_imus_scalers_3600_set rejected %g for imu on port %i, value must be the imu's reading after physically turning the robot 3600 degrees (about 3600)\n", imu_values_after_3600[i], all_imus[i]->get_port());
+      drive_mutex.print_after_unlock("EZ-Template: drive_imus_scalers_3600_set rejected %g for imu on port %i, value must be the imu's reading after physically turning the robot 3600 degrees (about 3600)\n", imu_values_after_3600[i], all_imus[i]->get_port());
       continue;
     }
     imu_scale_map[all_imus[i]->get_port()] = 3600.0 / imu_values_after_3600[i];

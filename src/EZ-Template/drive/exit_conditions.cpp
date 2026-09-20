@@ -572,7 +572,7 @@ void Drive::pid_wait_quick_chain() {
                                 pp_movements[pp_movements.size() - 1].max_xy_speed});
 
     } else {
-      printf("Not in a supported drive mode!\n");
+      drive_mutex.print_after_unlock("Not in a supported drive mode!\n");
       return;
     }
   }

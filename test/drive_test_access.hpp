@@ -32,6 +32,8 @@ struct DriveTestAccess {
   static bool& imu_calibration_complete(Drive& d) { return d.imu_calibration_complete; }
   static bool& last_was_autonomous(Drive& d) { return d.last_was_autonomous; }
   static void ez_auto_task(Drive& d) { d.ez_auto_task(); }
+  static void check_imu_task(Drive& d) { d.check_imu_task(); }
+  static Lock<pros::RecursiveMutex>& drive_mutex(Drive& d) { return d.drive_mutex; }
   static void turn_pid_task(Drive& d) { d.turn_pid_task(); }
 
   static bool is_swing_slew_enabled(Drive& d, e_swing type, double target, double current) {

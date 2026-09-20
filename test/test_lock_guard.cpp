@@ -11,31 +11,10 @@
 
 #include "EZ-Template/lock.hpp"
 #include "doctest.h"
+#include "lock_test_access.hpp"
 
 using namespace ez;
 using test_stub::g_sched;
-
-namespace ez {
-// Lets these tests see a Lock's private state. Declared a friend inside Lock, defined only here.
-struct LockTestAccess {
-  template <typename M>
-  static M& mutex(Lock<M>& lock) {
-    return lock.mutex_;
-  }
-  template <typename M>
-  static pros::task_t owner(Lock<M>& lock) {
-    return lock.owner_.load();
-  }
-  template <typename M>
-  static const std::atomic<pros::task_t>& owner_field(Lock<M>& lock) {
-    return lock.owner_;
-  }
-  template <typename M>
-  static int depth(Lock<M>& lock) {
-    return lock.depth_;
-  }
-};
-}  // namespace ez
 
 namespace {
 
@@ -88,10 +67,16 @@ void sink(const char* text) {
   printed.priority_when_printed = g_sched.tasks[g_sched.current].effective;
 }
 
-void capture_prints(FakeMutex* mutex = nullptr) {
+// Removes the sink when the test ends, so text printed by a later test goes to stdout again.
+struct SinkScope {
+  ~SinkScope() { detail::print_sink = nullptr; }
+};
+
+SinkScope capture_prints(FakeMutex* mutex = nullptr) {
   printed = Printed{};
   printed.mutex = mutex;
   detail::print_sink = sink;
+  return {};
 }
 
 const Calls RAISE = {"get", "set:15", "get"};
@@ -246,7 +231,7 @@ TEST_CASE("a plain task on an inherited priority of 15 is not stranded at 15 by 
 TEST_CASE("a task that does not hold the lock is not treated as nested, even while another task does") {
   reset();
   scheduler_is_running();
-  capture_prints();
+  auto sink_scope = capture_prints();
   TestLock lock;
   {
     PlainGuard<FakeMutex> holder(lock);  // task 0 holds it, depth 1
@@ -367,7 +352,7 @@ TEST_CASE("with the switch off a kill safe guard is a plain lock") {
 TEST_CASE("text is held until the outermost guard lets go, in order") {
   reset();
   TestLock lock;
-  capture_prints();
+  auto sink_scope = capture_prints();
   {
     PlainGuard<FakeMutex> outer(lock);
     lock.print_after_unlock("a");
@@ -384,7 +369,7 @@ TEST_CASE("text is printed after the lock is given and after the priority is put
   reset();
   scheduler_is_running();
   TestLock lock;
-  capture_prints(&Access::mutex(lock));
+  auto sink_scope = capture_prints(&Access::mutex(lock));
   {
     KillSafeGuard<FakeMutex> guard(lock);
     lock.print_after_unlock("hello");
@@ -398,7 +383,7 @@ TEST_CASE("text is printed after the lock is given and after the priority is put
 TEST_CASE("queued text is cleared once printed, so it is never printed twice") {
   reset();
   TestLock lock;
-  capture_prints();
+  auto sink_scope = capture_prints();
   {
     PlainGuard<FakeMutex> guard(lock);
     lock.print_after_unlock("a");
@@ -413,7 +398,7 @@ TEST_CASE("queued text is cleared once printed, so it is never printed twice") {
 TEST_CASE("text printed by a task that holds no guard goes out at once") {
   reset();
   TestLock lock;
-  capture_prints();
+  auto sink_scope = capture_prints();
   lock.print_after_unlock("now %d", 7);
   CHECK(printed.text == "now 7");
 }
@@ -421,7 +406,7 @@ TEST_CASE("text printed by a task that holds no guard goes out at once") {
 TEST_CASE("text longer than the buffer is cut off, not overrun") {
   reset();
   TestLock lock;
-  capture_prints();
+  auto sink_scope = capture_prints();
   {
     PlainGuard<FakeMutex> guard(lock);
     lock.print_after_unlock("%s", std::string(400, 'x').c_str());

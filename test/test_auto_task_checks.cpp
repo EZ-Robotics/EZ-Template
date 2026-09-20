@@ -43,9 +43,15 @@ void run_auto_task(Drive& chassis, int passes) {
 
 std::string printed;
 void sink(const char* text) { printed += text; }
-void capture_prints() {
+// Removes the sink when the test ends, so text printed by a later test goes to stdout again.
+struct SinkScope {
+  ~SinkScope() { detail::print_sink = nullptr; }
+};
+
+SinkScope capture_prints() {
   printed.clear();
   detail::print_sink = sink;
+  return {};
 }
 
 void drop_priority_between_passes() {
@@ -97,7 +103,7 @@ TEST_CASE("every task EZ-Template creates starts by saying the scheduler is runn
 
 TEST_CASE("a daemon below the guard's priority is not reported") {
   Drive chassis = make_chassis();
-  capture_prints();
+  auto sink_scope = capture_prints();
   g_sched.tasks[3] = {14, 14};
   run_auto_task(chassis, 2);
   CHECK(printed.empty());
@@ -105,7 +111,7 @@ TEST_CASE("a daemon below the guard's priority is not reported") {
 
 TEST_CASE("a daemon at or above the guard's priority, or missing, is reported once") {
   Drive chassis = make_chassis();
-  capture_prints();
+  auto sink_scope = capture_prints();
   g_sched.tasks[3] = {15, 15};
   run_auto_task(chassis, 3);
   CHECK(printed.find("priority 15") != std::string::npos);
@@ -115,13 +121,13 @@ TEST_CASE("a daemon at or above the guard's priority, or missing, is reported on
   CHECK(printed.find("PROS system daemon", first + 1) == std::string::npos);  // once, however many ask
 
   Drive missing = make_chassis();
-  capture_prints();
+  auto sink_scope2 = capture_prints();
   g_sched.daemon_present = false;
   run_auto_task(missing, 2);
   CHECK(printed.find("could not find the PROS system daemon") != std::string::npos);
 
   Drive too_high = make_chassis();
-  capture_prints();
+  auto sink_scope3 = capture_prints();
   g_sched.tasks[3] = {16, 16};
   run_auto_task(too_high, 1);
   CHECK(printed.find("priority 16") != std::string::npos);

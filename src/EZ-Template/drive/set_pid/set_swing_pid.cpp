@@ -302,7 +302,7 @@ void Drive::swing_set_internal(e_swing type, double target, int speed, int oppos
   target = new_turn_target_compute(target, drive_angle_get(), current_angle_behavior);
 
   // Print targets
-  if (print_toggle) printf("Swing Started... Target Value: %.2f\n", target);
+  if (print_toggle) drive_mutex.print_after_unlock("Swing Started... Target Value: %.2f\n", target);
 
   chain_sensor_start = drive_angle_get();
   chain_target_start = target;

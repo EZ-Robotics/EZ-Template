@@ -117,9 +117,7 @@ void Drive::pid_drive_set(double target, int speed, bool slew_on, bool toggle_he
   headingPID.motion_reset(drive_angle_get());
 
   // Print targets
-  if (print_toggle) printf("Drive Started... Target Value: %.2f", target);
-  if (slew_on && print_toggle) printf(" with slew");
-  if (print_toggle) printf("\n");
+  if (print_toggle) drive_mutex.print_after_unlock("Drive Started... Target Value: %.2f%s\n", target, slew_on ? " with slew" : "");
   chain_target_start = target;
   chain_sensor_start = drive_sensor_left();
   used_motion_chain_scale = 0.0;
