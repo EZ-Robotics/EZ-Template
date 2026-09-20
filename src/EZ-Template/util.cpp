@@ -54,12 +54,14 @@ std::string get_rest_of_the_word(std::string text, int position) {
 }
 
 void screen_print(std::string text, int line) {
+  const int max_line_length = 38;
+  const int line_count = 8;
   int CurrAutoLine = line;
   std::vector<std::string> texts = {};
   std::string temp = "";
 
   for (int i = 0; i < (int)text.length(); i++) {
-    if (text[i] != '\n' && temp.length() + 1 > 38) {
+    if (text[i] != '\n' && (int)temp.length() + 1 > max_line_length) {
       auto last_word = get_last_word(temp);
       if (last_word == temp) {
         texts.push_back(temp);
@@ -91,12 +93,29 @@ void screen_print(std::string text, int line) {
       temp += text[i];
     }
   }
+
+  // Nothing to wrap, so print an empty line to clear the one asked for
+  if (texts.empty()) {
+    screen_line_clear(line);
+    return;
+  }
+
+  // Starting below the screen is a mistake in the call, not text that ran long
+  if (line > line_count - 1) {
+    screen_lines_clear();
+    screen_line_set(line_count - 1, "Out of Bounds. Print Line is too far down");
+    return;
+  }
+
+  // Text that runs past the bottom of the screen is cut off, with "..." ending the last line
+  int lines_left = line_count - line;
+  if ((int)texts.size() > lines_left) {
+    texts.resize(lines_left);
+    if ((int)texts.back().length() > max_line_length - 3) texts.back().resize(max_line_length - 3);
+    texts.back() += "...";
+  }
+
   for (auto i : texts) {
-    if (CurrAutoLine > 7) {
-      screen_lines_clear();
-      screen_line_set(7, "Out of Bounds. Print Line is too far down");
-      return;
-    }
     screen_line_clear(CurrAutoLine);
     screen_line_set(CurrAutoLine, i);
     CurrAutoLine++;

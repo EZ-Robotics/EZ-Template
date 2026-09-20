@@ -36,6 +36,8 @@ void ez_template_print();
  * Prints to the brain screen in one string.
  *
  * Splits input between lines with '\n' or when text longer then 32 characters.
+ * Text that does not fit on the lines left on the screen is cut off, with "..." ending the last line.
+ * An empty string clears the line it is given.
  *
  * \param text
  *        input string

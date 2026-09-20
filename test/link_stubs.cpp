@@ -6,15 +6,21 @@
 // ez::screen_line_set/screen_line_clear/screen_lines_clear are declared in
 // display.hpp and defined in display.cpp (excluded -- it's the screen code
 // being replaced, per repo rules). util.cpp's screen_print() and
-// auton_selector.cpp's selected_auton_print() both call them.
+// auton_selector.cpp's selected_auton_print() both call them. They write to
+// the fake screen in fake_screen.hpp, so a test can read back what was printed.
 #include <string>
 
 #include "EZ-Template/api.hpp"
+#include "fake_screen.hpp"
 
 namespace ez {
-void screen_line_set(int line, std::string text) {}
-void screen_line_clear(int line) {}
-void screen_lines_clear() {}
+// Like the real ones, lines outside the screen are ignored.
+void screen_line_set(int line, std::string text) {
+  if (line < 0 || line >= test_stub::SCREEN_LINE_COUNT) return;
+  test_stub::screen_lines()[line] = text;
+}
+void screen_line_clear(int line) { screen_line_set(line, ""); }
+void screen_lines_clear() { test_stub::screen_reset(); }
 
 namespace as {
 // Declared in sdcard.hpp, defined in sdcard.cpp (excluded). Called from
