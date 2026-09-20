@@ -2012,9 +2012,11 @@ Sets the constants for smoothing out a path.
 
 Path smoothing based on [https://medium.com/@jaems33/understanding-robot-motion-path-smoothing-5970c8363bc4](https://medium.com/@jaems33/understanding-robot-motion-path-smoothing-5970c8363bc4)  
 
-`weight_smooth` how much weight to update the data, 0 or more and less than 1  
-`weight_data` how much weight to smooth the coordinates, 0 or more  
+`weight_smooth` how much weight to smooth the coordinates, 0 or more and less than 1  
+`weight_data` how much weight to keep the coordinates near the original path, 0 or more  
 `tolerance` how much change per iteration is necessary to keep iterating, greater than 0  
+
+`weight_data + 2 * weight_smooth` must also be less than 2.  Smoothing makes repeated passes over the points, and at 2 or more each pass moves them further from the path instead of settling, so it would never finish.  With the defaults that's 1.53.  
 
 If any of these are out of range, all of the constants are rejected, a message is printed to the terminal naming the first one that is out of range, and the previous constants are kept.  
 <Tabs
