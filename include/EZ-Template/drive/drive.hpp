@@ -2952,6 +2952,9 @@ class Drive {
 
   /**
    * Returns PID constants with PID::Constants.
+   *
+   * These are the constants a forward swing will use.  If no forward constants were set,
+   * this returns the constants from pid_swing_constants_set().
    */
   PID::Constants pid_swing_constants_forward_get();
 
@@ -2971,6 +2974,9 @@ class Drive {
 
   /**
    * Returns PID constants with PID::Constants.
+   *
+   * These are the constants a backward swing will use.  If no backward constants were set,
+   * this returns the constants from pid_swing_constants_set().
    */
   PID::Constants pid_swing_constants_backward_get();
 
@@ -3100,6 +3106,9 @@ class Drive {
 
   /**
    * Returns PID constants with PID::Constants.
+   *
+   * These are the constants a forward drive will use.  If no forward constants were set,
+   * this returns the constants from pid_drive_constants_set().
    */
   PID::Constants pid_drive_constants_forward_get();
 
@@ -3119,6 +3128,9 @@ class Drive {
 
   /**
    * Returns PID constants with PID::Constants.
+   *
+   * These are the constants a backward drive will use.  If no backward constants were set,
+   * this returns the constants from pid_drive_constants_set().
    */
   PID::Constants pid_drive_constants_backward_get();
 

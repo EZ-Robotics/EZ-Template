@@ -27,8 +27,18 @@ void Drive::pid_swing_constants_forward_set(double p, double i, double d, double
 void Drive::pid_swing_constants_backward_set(double p, double i, double d, double p_start_i) {
   backward_swingPID.constants_set(p, i, d, p_start_i);
 }
-PID::Constants Drive::pid_swing_constants_forward_get() { return forward_swingPID.constants_get(); }
-PID::Constants Drive::pid_swing_constants_backward_get() { return backward_swingPID.constants_get(); }
+// The directional getters return what pid_swing_set() will use for that direction: the directional constants
+// if they were set, otherwise the ones from the plain setter
+PID::Constants Drive::pid_swing_constants_forward_get() {
+  if (!forward_swingPID.constants_set_check() && fwd_rev_swingPID.constants_set_check())
+    return fwd_rev_swingPID.constants_get();
+  return forward_swingPID.constants_get();
+}
+PID::Constants Drive::pid_swing_constants_backward_get() {
+  if (!backward_swingPID.constants_set_check() && fwd_rev_swingPID.constants_set_check())
+    return fwd_rev_swingPID.constants_get();
+  return backward_swingPID.constants_get();
+}
 PID::Constants Drive::pid_swing_constants_get() {
   // The plain setter zeroes forward/backward and stores the constants in fwd_rev,
   // so return those rather than the zeros they were replaced with
