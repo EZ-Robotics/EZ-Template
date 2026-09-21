@@ -36,7 +36,7 @@ ez::PID liftPID{0.45, 0, 0, 0, "Lift"};
 ```
 
 ### Multi File Support
-If you want to use any of these functions across multiple files, you can put them in `subsystems.hpp`.  But in order to do this, you'll need to add `inline` in front of it.  The following code could be added to `subsytems.hpp`:  
+If you want to use any of these functions across multiple files, you can put them in `subsystems.hpp`.  But in order to do this, you'll need to add `inline` in front of it.  The following code could be added to `subsystems.hpp`:  
 
 ```cpp
 #pragma once
@@ -44,7 +44,7 @@ If you want to use any of these functions across multiple files, you can put the
 #include "EZ-Template/api.hpp"
 #include "api.h"
 
-extern Drive chassis;
+extern ez::Drive chassis;
 
 // Your motors, sensors, etc. should go here.  Below are examples
 
@@ -256,14 +256,14 @@ void opcontrol() {
 }
 ```
 
-`subsytems.hpp`
+`subsystems.hpp`
 ```cpp
 #pragma once
 
 #include "EZ-Template/api.hpp"
 #include "api.h"
 
-extern Drive chassis;
+extern ez::Drive chassis;
 
 // Your motors, sensors, etc. should go here.  Below are examples
 

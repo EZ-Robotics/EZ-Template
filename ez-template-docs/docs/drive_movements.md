@@ -13,7 +13,7 @@ import TabItem from '@theme/TabItem';
 
 
 ### pid_drive_set()
-Sets the robot to move forward using PID with units, using slew if enabled for this motion.  
+Sets the robot to move forward using PID with units, only using slew if globally enabled.  
 
 `p_target` target, in units 
 `speed` 0 to 127, max speed during motion   
@@ -174,8 +174,8 @@ Set's constants for drive exit conditions.
 `p_big_exit_time` time to exit when within big_error, in units             
 `p_big_error` big timer will start when error is within this, in units        
 `p_velocity_exit_time` time, in units, for velocity to be 0 after the robot has moved (or after 1 second if it never moves)          
-`p_mA_timeout` velocity timer will start when velocity is 0, in units     
-`use_imu` true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't         
+`p_mA_timeout` mA timer will start when the first motor on the side(s) being driven is over its current limit, in units     
+`use_imu` true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for `p_velocity_exit_time`), false uses only the main sensor         
 <Tabs
   groupId="pid_drive_Exit_set_okapi"
   defaultValue="proto"
@@ -201,7 +201,7 @@ void initialize() {
 <TabItem value="proto">
 
 ```cpp
-void pid_drive_exit_condition_set(ez::QTime p_small_exit_time, ez::QLength p_small_error, ez::QTime p_big_exit_time, ez::QLength p_big_error, ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, use_imu = true);
+void pid_drive_exit_condition_set(ez::QTime p_small_exit_time, ez::QLength p_small_error, ez::QTime p_big_exit_time, ez::QLength p_big_error, ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = true);
 ```
 
 </TabItem>
@@ -483,7 +483,7 @@ void slew_drive_constants_backward_set(ez::QLength distance, int min_speed);
 
 
 ### pid_drive_set()
-Sets the robot to move forward using PID with units, using slew if enabled for this motion.  
+Sets the robot to move forward using PID without units, only using slew if globally enabled.  
 
 `target` target in inches
 `speed` 0 to 127, max speed during motion   
@@ -528,7 +528,7 @@ void pid_drive_set(double target, int speed);
 
 
 ### pid_drive_set()
-Sets the robot to move forward using PID with units, using slew if enabled for this motion.  
+Sets the robot to move forward using PID without units, using slew if enabled for this motion.  
 
 `target` target in inches
 `speed` 0 to 127, max speed during motion  
@@ -596,8 +596,8 @@ Set's constants for drive exit conditions.
 `p_big_exit_time` time to exit when within big_error, in ms             
 `p_big_error` big timer will start when error is within this, in inches        
 `p_velocity_exit_time` velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), in ms   
-`p_mA_timeout` mA timer will start when the motors are pulling too much current, in ms      
-`use_imu` true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't         
+`p_mA_timeout` mA timer will start when the first motor on the side(s) being driven is over its current limit, in ms      
+`use_imu` true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for `p_velocity_exit_time`), false uses only the main sensor         
 <Tabs
   groupId="pid_drive_exit_set_double"
   defaultValue="proto"
@@ -623,7 +623,7 @@ void initialize() {
 <TabItem value="proto">
 
 ```cpp
-void pid_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, use_imu = true);
+void pid_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = true);
 ```
 
 </TabItem>
@@ -1014,7 +1014,7 @@ void autonomous() {
 
 
 ### slew_drive_backward_set()
-Sets the default slew for drive forwards motions, can be overwritten in movement functions.      
+Sets the default slew for drive backward motions, can be overwritten in movement functions.      
  
 `slew_on` true enables, false disables  
 <Tabs
@@ -1081,6 +1081,135 @@ void autonomous() {
 
 
 ## Getter
+
+### pid_drive_constants_get()
+Returns the PID constants for driving, as a `PID::Constants` with `kp`, `ki`, `kd` and `start_i`.  If the forward and backward constants were set to different values, this prints `Forward and Reverse constants are not the same!` and returns `{-1, -1, -1, -1}`.  Use the forward and backward getters when they differ.  
+<Tabs
+  groupId="pid_drive_constants_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  chassis.pid_drive_constants_set(20.0, 0.0, 100.0);
+  ez::PID::Constants c = chassis.pid_drive_constants_get();
+  printf("kp %.2f  ki %.2f  kd %.2f  start_i %.2f\n", c.kp, c.ki, c.kd, c.start_i);  // Prints kp 20.00  ki 0.00  kd 100.00  start_i 0.00
+}
+```
+
+</TabItem>
+
+<TabItem value="proto">
+
+```cpp
+PID::Constants pid_drive_constants_get();
+```
+
+</TabItem>
+</Tabs>
+
+### pid_drive_constants_forward_get()
+Returns the PID constants for driving forward, as a `PID::Constants` with `kp`, `ki`, `kd` and `start_i`.  
+<Tabs
+  groupId="pid_drive_constants_forward_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  chassis.pid_drive_constants_forward_set(20.0, 0.0, 100.0);
+  ez::PID::Constants c = chassis.pid_drive_constants_forward_get();
+  printf("kp %.2f  ki %.2f  kd %.2f  start_i %.2f\n", c.kp, c.ki, c.kd, c.start_i);  // Prints kp 20.00  ki 0.00  kd 100.00  start_i 0.00
+}
+```
+
+</TabItem>
+
+<TabItem value="proto">
+
+```cpp
+PID::Constants pid_drive_constants_forward_get();
+```
+
+</TabItem>
+</Tabs>
+
+### pid_drive_constants_backward_get()
+Returns the PID constants for driving backward, as a `PID::Constants` with `kp`, `ki`, `kd` and `start_i`.  
+<Tabs
+  groupId="pid_drive_constants_backward_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  chassis.pid_drive_constants_backward_set(20.0, 0.0, 100.0);
+  ez::PID::Constants c = chassis.pid_drive_constants_backward_get();
+  printf("kp %.2f  ki %.2f  kd %.2f  start_i %.2f\n", c.kp, c.ki, c.kd, c.start_i);  // Prints kp 20.00  ki 0.00  kd 100.00  start_i 0.00
+}
+```
+
+</TabItem>
+
+<TabItem value="proto">
+
+```cpp
+PID::Constants pid_drive_constants_backward_get();
+```
+
+</TabItem>
+</Tabs>
+
+### pid_heading_constants_get()
+Returns the PID constants that correct the robot's heading during drive motions, as a `PID::Constants` with `kp`, `ki`, `kd` and `start_i`.  
+<Tabs
+  groupId="pid_heading_constants_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  chassis.pid_heading_constants_set(11.0, 0.0, 20.0);
+  ez::PID::Constants c = chassis.pid_heading_constants_get();
+  printf("kp %.2f  ki %.2f  kd %.2f  start_i %.2f\n", c.kp, c.ki, c.kd, c.start_i);  // Prints kp 11.00  ki 0.00  kd 20.00  start_i 0.00
+}
+```
+
+</TabItem>
+
+<TabItem value="proto">
+
+```cpp
+PID::Constants pid_heading_constants_get();
+```
+
+</TabItem>
+</Tabs>
+
 
 
 
@@ -1222,7 +1351,7 @@ void autonomous() {
 
 
 ### slew_drive_backward_get()
-Returns true if slew is enabled for all drive forward movements, false otherwise.    
+Returns true if slew is enabled for all drive backward movements, false otherwise.    
 <Tabs
   groupId="slew_drive_backward_get"
   defaultValue="proto"

@@ -16,7 +16,7 @@ All versions of EZ-Template require you to use an [IMU](https://www.vexrobotics.
 PROS is an open-source project developed by students at Purdue that gives us functions to interact with our V5 brain and other devices that connect to it.  If you don't have it installed, you can read their [Getting Started page here](https://pros.cs.purdue.edu/v5/getting-started/index.html).
 
 ## Download EZ-Template
-Download the latest `EZ-Template-Example-Project.zip` by [clicking here](https://github.com/EZ-Robotics/EZ-Template/releases/download/v4.0.0-beta.2/EZ-Template-Example-Project.zip) and extract the zip file.  [Click here](https://www.filecenter.com/blog/how-to-unzip-files-mac-iphone-android-windows/) if you're unsure how to extract a zip file.  
+Download the latest `EZ-Template-Example-Project.zip` by [clicking here](https://github.com/EZ-Robotics/EZ-Template/releases/download/v4.0.0-beta.3/EZ-Template-Example-Project.zip) and extract the zip file.  [Click here](https://www.filecenter.com/blog/how-to-unzip-files-mac-iphone-android-windows/) if you're unsure how to extract a zip file.  
 
 ## Open EZ-Template-Example-Project
 Add the folder to your workspace.  You can do this by going to the very top of your screen and selecting `File` -> `Add Folder to Workspace`.  This will bring up a window and you'll have to navigate to where you extracted the example project.  If you're unsure where you extracted it, it's most likely in your `Downloads` folder.  
@@ -63,7 +63,7 @@ If you have:
   
 But, **EZ-Template works without tracking wheels!**  If you use no tracking wheels, you'll need to be aware of wheel slip and try to avoid it.  Odometry and tracking are not magic and you'll need to do as much as possible to help the robot be consistent.  If you're able to, just fit a parallel and perpendicular tracking wheel :D you'll be thankful in the long run.  
 
-EZ-Template supports any combination of tracking wheels.  
+EZ-Template supports any combination of left, right and one horizontal tracking wheel.  If you set both a front and a back tracker, only the back one is used.  
 
 `2.75`  is the wheel diameter, and `4.0` is the distance to the center of the robot.  You can use a tape measure to find this value, or you can follow [this tutorial](/tutorials/tuning_tracking_wheel_width).  Your parallel tracking wheels will be the left/right trackers, and your perpendicular trackers will be the front/back trackers.  
 
@@ -162,7 +162,7 @@ The default drive mode for EZ-Template is tank drive, where the left stick contr
 If the motors sound like they're running but they get locked up, you have a motor going in the wrong direction.  I suggest unplugging motors until you find the 1 going the wrong way, find out which port is going the wrong way, and update your drive constructor accordingly.  
 
 ## Making Sure Tracking Wheels are Reversed Correctly
-Once you start up your code, go left on the autonomous selector once.  This will bring you to a blank page that ships with the example project.  
+Once you start up your code, go left on the autonomous selector until the top line of the brain screen ends with `Blank page 1`.  This is a blank page that ships with the example project, and it shows your tracker readouts.  The example project has two blank pages and going left from the first autonomous page wraps around to the last one, so from the first autonomous page this takes two presses.  
 
 Ensure that your left/right tracking wheels increase positively when pushing the robot forward, and your front/back tracking wheels increase positively when pushing the robot to the right.  
 

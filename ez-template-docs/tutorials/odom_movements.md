@@ -81,20 +81,20 @@ Boomerang motions can also be a bit slower than Pure Pursuit motions.  Boomerang
 ## Turn to Point
 At minimum, you need to give the robot a point to face, if it's facing it forward or backward, and a speed limit.  You can do this with and without units.  
 ```cpp
-// Turn to face 12, 12 forward
-chassis.pid_turn_set({24, 24}, fwd,  90);
+// Turn to face 24, 24 forward
+chassis.pid_turn_set({24, 24}, ez::fwd,  90);
 chassis.pid_wait();
 
 // Turn to 0, 24 forward
-chassis.pid_turn_set({0_in, 24_in}, fwd, 90);
+chassis.pid_turn_set({0_in, 24_in}, ez::fwd, 90);
 chassis.pid_wait();
 
-// Turn to face 12, 12 backward
-chassis.pid_turn_set({24, 24}, rev,  90);
+// Turn to face 24, 24 backward
+chassis.pid_turn_set({24, 24}, ez::rev,  90);
 chassis.pid_wait();
 
 // Turn to 0, 24 backward
-chassis.pid_turn_set({0_in, 24_in}, rev, 90);
+chassis.pid_turn_set({0_in, 24_in}, ez::rev, 90);
 chassis.pid_wait();
 ```
 
@@ -107,19 +107,19 @@ Beyond this, all of the syntax for absolute turns applies to turning to a point,
 At minimum, you need to give the robot a point to go to, a direction to get there, and a speed limit (0-127).  You can do this with and without units.  
 ```cpp
 // Drive forward to (0, 36) forward
-chassis.pid_odom_set({{0_in, 36_in}, fwd, 110});
+chassis.pid_odom_set({{0_in, 36_in}, ez::fwd, 110});
 chassis.pid_wait();
 
 // Drive back to (0, 0) forward
-chassis.pid_odom_set({{0_in, 0_in}, fwd, 110});
+chassis.pid_odom_set({{0_in, 0_in}, ez::fwd, 110});
 chassis.pid_wait();
 
 // Drive forward to (0, 36) backward
-chassis.pid_odom_set({{0, 36}, rev, 110});
+chassis.pid_odom_set({{0, 36}, ez::rev, 110});
 chassis.pid_wait();
 
 // Drive back to (0, 0) backward
-chassis.pid_odom_set({{0, 0}, rev, 110});
+chassis.pid_odom_set({{0, 0}, ez::rev, 110});
 chassis.pid_wait();
 ```
 
@@ -129,11 +129,11 @@ You can specify an ending angle for the robot to reach.  If no angle is specifie
 Points that have angle specified use an algorithm called Boomerang, and they will be a little slower.  
 ```cpp
 // Drive forward to (0, 36) forward, end at 45 degrees
-chassis.pid_odom_set({{0_in, 36_in, 45_deg}, fwd, 110});
+chassis.pid_odom_set({{0_in, 36_in, 45_deg}, ez::fwd, 110});
 chassis.pid_wait();
 
 // Drive back to (0, 0) backward, end at 0 degrees
-chassis.pid_odom_set({{0, 0, 0}, rev, 110});
+chassis.pid_odom_set({{0, 0, 0}, ez::rev, 110});
 chassis.pid_wait();
 ```
 
@@ -143,7 +143,7 @@ You can set the robot to always turn a specific direction.
 chassis.pid_odom_behavior_set(ez::shortest);
 
 // This go to (0, 24) ending at 45 deg, the fastest way
-chassis.pid_odom_set({{0_in, 24_in, 45_deg}, fwd, 110});
+chassis.pid_odom_set({{0_in, 24_in, 45_deg}, ez::fwd, 110});
 chassis.pid_wait();
 ```
 
@@ -152,7 +152,7 @@ But you can override these defaults in each motion.
 chassis.pid_odom_behavior_set(ez::shortest);
 
 // This go to (0, 24) ending at 45 deg, the longest way
-chassis.pid_odom_set({{0_in, 24_in, 45_deg}, fwd, 110, ez::longest});
+chassis.pid_odom_set({{0_in, 24_in, 45_deg}, ez::fwd, 110, ez::longest});
 chassis.pid_wait();
 ```
 
@@ -161,14 +161,14 @@ You can also pick between turning clockwise and counterclockwise.
 chassis.pid_odom_behavior_set(ez::shortest);
 
 // This go to (24, 24) but it'll turn clockwise
-chassis.pid_odom_set({{24_in, 24_in}, fwd, 110, ez::cw});
+chassis.pid_odom_set({{24_in, 24_in}, ez::fwd, 110, ez::cw});
 chassis.pid_wait();
 
 chassis.pid_turn_set(0_deg, 90);
 chassis.pid_wait();
 
 // This go to (48, 48) but it'll turn counter clockwise
-chassis.pid_odom_set({{48_in, 48_in}, fwd, 110, ez::ccw});
+chassis.pid_odom_set({{48_in, 48_in}, ez::fwd, 110, ez::ccw});
 chassis.pid_wait();
 ```
 
@@ -180,7 +180,7 @@ chassis.slew_drive_constants_set(5_in, 50);
 
 // The speed limit ramps from 50 up to full speed (127) over the first 5 inches
 // This motion is capped at 110, so the ramp stops after about 4 inches
-chassis.pid_odom_set({{0_in, 36_in}, fwd, 110});
+chassis.pid_odom_set({{0_in, 36_in}, ez::fwd, 110});
 chassis.pid_wait();
 ```
 
@@ -191,11 +191,11 @@ chassis.slew_drive_constants_set(5_in, 50);
 
 // The speed limit ramps from 50 up to full speed (127) over the first 5 inches
 // This motion is capped at 110, so the ramp stops after about 4 inches
-chassis.pid_odom_set({{0_in, 36_in}, fwd, 110}, true);  // Slew will be enabled for this motion
+chassis.pid_odom_set({{0_in, 36_in}, ez::fwd, 110}, true);  // Slew will be enabled for this motion
 chassis.pid_wait();
 
 // This will not use slew to travel backwards to (0, 0)
-chassis.pid_odom_set({{0_in, 0_in}, rev, 110});
+chassis.pid_odom_set({{0_in, 0_in}, ez::rev, 110});
 chassis.pid_wait();
 ```
 
@@ -204,16 +204,16 @@ chassis.pid_wait();
 You can use slew in conjunction with different turn behavior. 
 ```cpp
 chassis.pid_odom_behavior_set(ez::shortest);
-chassis.slew_drive_set(false);  // Enables global slew
+chassis.slew_drive_set(false);  // Disables global slew
 chassis.slew_drive_constants_set(5_in, 50);
 
 
 // This will go to (0, 24) ending at 45 deg, the longest way, with slew
-chassis.pid_odom_set({{0_in, 24_in, 45_deg}, fwd, 110, ez::longest}, true);
+chassis.pid_odom_set({{0_in, 24_in, 45_deg}, ez::fwd, 110, ez::longest}, true);
 chassis.pid_wait();
 
 // This will go to (0, 0) the shortest way, without slew
-chassis.pid_odom_set({{0_in, 0_in}, rev, 110);
+chassis.pid_odom_set({{0_in, 0_in}, ez::rev, 110});
 chassis.pid_wait();
 ```
 
@@ -222,17 +222,17 @@ chassis.pid_wait();
 You can string multiple points together and the robot will go through all of them.  
 ```cpp
 // Drive to (0, 30) and pass through (6, 10) and (0, 20) on the way, with slew
-chassis.pid_odom_set({{{6_in, 10_in}, fwd, 110},
-                      {{0_in, 20_in}, fwd, 110},
-                      {{0_in, 30_in}, fwd, 110}},
+chassis.pid_odom_set({{{6_in, 10_in}, ez::fwd, 110},
+                      {{0_in, 20_in}, ez::fwd, 110},
+                      {{0_in, 30_in}, ez::fwd, 110}},
                       true);
 chassis.pid_wait();
 ```
 
 ```cpp
 // Drive to (0, 24) ending at 45deg, then go to (24, 24)
-chassis.pid_odom_set({{{0_in, 24_in, 45_deg}, fwd, 110},
-                      {{24_in, 24_in}, fwd, 110}},
+chassis.pid_odom_set({{{0_in, 24_in, 45_deg}, ez::fwd, 110},
+                      {{24_in, 24_in}, ez::fwd, 110}},
                       true);
 chassis.pid_wait();
 ```

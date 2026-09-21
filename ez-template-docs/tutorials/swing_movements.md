@@ -10,7 +10,7 @@ import TabItem from '@theme/TabItem';
 
 
 ## How does it work?
-`pid_swing_set()` turns the robot by moving one side of the drive with PID and the other side to a fixed amount.  This is called a swing turn because the robot "swings" around a point.  
+`pid_swing_set()` turns the robot by moving one side of the drive with PID and the other side either held in place or at up to a speed you choose.  This is called a swing turn because the robot "swings" around a point.  
 
 Clockwise is positive and counter-clockwise is negative by default:
 - going to 90 degree is clockwise
@@ -81,7 +81,7 @@ chassis.pid_swing_set(ez::LEFT_SWING, 45_deg, 90, 30);
 chassis.pid_wait();
 
 // Turn to 0deg with the left side of the drive, and the right side going 30
-chassis.pid_swing_set(ez::LEFT_SWING, 0, 90);
+chassis.pid_swing_set(ez::LEFT_SWING, 0, 90, 30);
 chassis.pid_wait();
 
 // Turn to 45deg with the right side of the drive, and the left side going 30
@@ -107,7 +107,7 @@ But you can override these defaults in each motion.
 ```cpp
 chassis.pid_swing_behavior_set(ez::shortest);
 
-// This will turn 361 degrees to the left
+// This will turn 359 degrees to the left
 chassis.pid_swing_set(ez::LEFT_SWING, 361_deg, 90, ez::longest);
 chassis.pid_wait();
 ```
@@ -148,7 +148,7 @@ chassis.pid_swing_set(ez::LEFT_SWING, 90_deg, 110, true);  // Slew will be enabl
 chassis.pid_wait();
 
 // This will not use slew to return to 0 degrees
-chassis.pid_swing_set(ez::LEFT_SWING, 0_deg, 110, true);  
+chassis.pid_swing_set(ez::LEFT_SWING, 0_deg, 110);  
 chassis.pid_wait();
 ```
 
@@ -170,14 +170,14 @@ chassis.pid_wait();
 ### Arcs and Slew
 You can use slew in conjunction with different turn behavior.  
 ```cpp
-chassis.slew_swing_set(false);  // Enables global slew
+chassis.slew_swing_set(false);  // Disables global slew
 chassis.slew_swing_constants_set(5_deg, 50);
 
 // This will turn to 270deg while slewing, with the right side going 30
 chassis.pid_swing_set(ez::LEFT_SWING, 270_deg, 90, 30, true);
 chassis.pid_wait();
 
-// This will turn to 270deg without slew, with the right side going 30
+// This will turn to 0deg without slew, with the right side going 30
 chassis.pid_swing_set(ez::LEFT_SWING, 360_deg, 90, 30);
 chassis.pid_wait();
 ```
@@ -187,7 +187,7 @@ chassis.pid_wait();
 You can use slew in conjunction with different turn behavior.  
 ```cpp
 chassis.pid_swing_behavior_set(ez::shortest);
-chassis.slew_swing_set(false);  // Enables global slew
+chassis.slew_swing_set(false);  // Disables global slew
 chassis.slew_swing_constants_set(5_deg, 50);
 
 // This will turn to 270 deg clockwise while slewing, with the right side going 30
@@ -211,7 +211,7 @@ chassis.pid_wait();
 ## Relative Swing Turns
 All of the syntax for absolute swing turns above applies to relative turns, use `pid_swing_relative_set()` instead.  
 
-"Relative" means the robot will swing turn X degrees relative to where it is before it starts the swing turn.  The two code blocks below do the same thing.  
+"Relative" means the robot will swing turn X degrees relative to the last heading target it was given.  The two code blocks below do the same thing.  
 
 <!---
 IMAGE
@@ -282,11 +282,11 @@ You can also change your starting angle from 0 to whatever you want.  Here are t
 chassis.drive_angle_set(10_deg);
 
 // Turn to Heading + 35deg
-chassis.pid_turn_relative_set(ez::LEFT_SWING, 35_deg, 90);
+chassis.pid_swing_relative_set(ez::LEFT_SWING, 35_deg, 90);
 chassis.pid_wait();
 
 // Turn to Heading - 35deg
-chassis.pid_turn_relative_set(ez::LEFT_SWING, -35, 90);
+chassis.pid_swing_relative_set(ez::LEFT_SWING, -35, 90);
 chassis.pid_wait();
 ```
 </TabItem>
@@ -367,7 +367,7 @@ chassis.pid_drive_set(24_in, 110);
 chassis.pid_wait();
 
 // This was changed to 95
-chassis.pid_swing_set(ez::LEFT_SWING, 95_deg, 11900);
+chassis.pid_swing_set(ez::LEFT_SWING, 95_deg, 90);
 chassis.pid_wait();
 
 chassis.pid_drive_set(24_in, 110);

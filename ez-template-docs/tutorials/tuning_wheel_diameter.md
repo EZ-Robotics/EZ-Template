@@ -19,11 +19,11 @@ Tuning wheel diameter will change how far the robot goes when you input 1".  Th
 Blank pages are a feature of v3.2.0.  Please upgrade if you're on an older version!
 
 :::
-We'll print our drive sensors to a new blank page on the brain.  The code below will go in the screen task that starting shipping with the 3.2.0 example project.  
+We'll print our drive sensors to a new blank page on the brain.  The code below goes in `ez_screen_task()` in `main.cpp`, which ships with the example project, under `// Add your own blank pages here!`.  In the example project blank page 0 shows odometry and blank page 1 shows motor temperatures, so this is page 2.  If you've added pages of your own, use the next number that's free.  
 ```cpp
-else if (ez::as::page_blank_is_on(1)) {
-  ez::screen_print("Left: " + util::to_string_with_precision(chassis.drive_sensor_left()) +
-                   "\nRight: " + util::to_string_with_precision(chassis.drive_sensor_right()), 1);
+else if (ez::as::page_blank_is_on(2)) {
+  ez::screen_print("Left: " + ez::util::to_string_with_precision(chassis.drive_sensor_left()) +
+                   "\nRight: " + ez::util::to_string_with_precision(chassis.drive_sensor_right()), 1);
 }
 ```
 
@@ -42,7 +42,7 @@ if (master.get_digital(DIGITAL_L1)) {
 }
 ```
 
-Place your robot carefully, ideally against a wall to ensure consistency.  After resetting the drive sensors by pressing L1, we'll push the robot a known distance.  Some number will be in our terminal now, probably close to the known distance but not quite exact.  Keep track of what these numbers are and this test can be repeated a couple of times.  That'll leave us with this:
+Place your robot carefully, ideally against a wall to ensure consistency.  After resetting the drive sensors by pressing L1, we'll push the robot a known distance.  The numbers will be on the blank page now, probably close to the known distance but not quite exact.  Keep track of what these numbers are and this test can be repeated a couple of times.  That'll leave us with this:
 ```
 Left: 24.29   Right: 24.22
 Left: 24.38   Right: 24.40

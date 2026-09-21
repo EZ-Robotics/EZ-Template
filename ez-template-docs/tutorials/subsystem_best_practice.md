@@ -134,7 +134,7 @@ In `doinker.hpp` we can create all of our pistons and anything else we're using 
 In the example below, `set_doinker()` is a wrapper for setting the piston.  This allows us to later modify this function and do something else every time the doinker is called.  This can include adding more pistons, setting flags for other subsystems, etc.  Having wrappers like this make maintenance easier over time.  
 
 
-We also have `doinker_opcontrol()` which is how we'll be controlling the intake.  This makes our `main.cpp` very clean as we'll just need to call `doinker_opcontrol();`.
+We also have `doinker_opcontrol()` which is how we'll be controlling the doinker.  This makes our `main.cpp` very clean as we'll just need to call `doinker_opcontrol();`.
 
 `include/doinker.hpp`
 ```cpp

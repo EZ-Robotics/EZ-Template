@@ -102,9 +102,9 @@ void autonomous() {
 
 
 ### pid_wait_until()
-Lock the code in a while loop until this position has passed for driving with units.               
+Lock the code in a while loop until this position has passed for driving with units.  If an odom movement ends before the robot has traveled `target`, for example a 24 inch move waiting until 30 inches, the loop is released when the movement finishes.              
 
-`target` for driving and swings, using units     
+`target` for driving, using units     
 <Tabs
   groupId="pid_wait_until_distance"
   defaultValue="proto"
@@ -250,6 +250,7 @@ When your brain is connected to a competition switch or field control, EZ-Templa
 :::
 
 `p_mode` the current task running for the drive.  accepts `ez::DISABLE`, `ez::SWING`, `ez::TURN`, `ez::DRIVE`           
+`stop_drive` if the drive motors stop when `p_mode` is `ez::DISABLE`.  Defaults to true  
 <Tabs
   groupId="examples13"
   defaultValue="proto"
@@ -280,7 +281,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void drive_mode_set(e_mode p_mode);
+void drive_mode_set(e_mode p_mode, bool stop_drive = true);
 ```
 
 
@@ -395,7 +396,7 @@ void autonomous() {
   chassis.pid_drive_set(12, DRIVE_SPEED);
   chassis.pid_wait();
 
-  pid_drive_toggle(false); // Disable drive
+  chassis.pid_drive_toggle(false); // Disable drive
 
   chassis.pid_drive_set(-12, DRIVE_SPEED);
   while (true) {
@@ -446,7 +447,7 @@ void autonomous() {
   chassis.pid_drive_set(12, DRIVE_SPEED); // This will print
   chassis.pid_wait(); // This will print
 
-  pid_print_toggle(false); // Disable prints
+  chassis.pid_print_toggle(false); // Disable prints
 
   chassis.pid_drive_set(-12, DRIVE_SPEED); // This won't print
   chassis.pid_wait(); // This won't print
@@ -469,7 +470,7 @@ void pid_print_toggle(bool toggle);
 
 
 ### pid_wait_until()
-Lock the code in a while loop until this position has passed for driving without units.           
+Lock the code in a while loop until this position has passed for driving without units.  If an odom movement ends before the robot has traveled `target`, for example a 24 inch move waiting until 30 inches, the loop is released when the movement finishes.          
 
 `target` for driving or turning, using a double.  degrees for turns/swings, inches for driving  
 <Tabs
@@ -518,7 +519,7 @@ void pid_wait_until(double target);
 ### pid_angle_behavior_set()
 Sets the default behavior for turns in odom, swinging, and turning.   
 
-`behavior` ez::shortest, ez::longest, ez::left, ez::right, ez::raw    
+`behavior` ez::shortest, ez::longest, ez::ccw, ez::cw, ez::raw    
 <Tabs
   groupId="pid_angle_behavior_set"
   defaultValue="proto"
@@ -548,7 +549,7 @@ void autonomous() {
   chassis.pid_wait();
 
   // This will make the robot go the long way around to get to 24, 0
-  chassis.pid_odom_set({{24_in, 0_in}, fwd, 110});
+  chassis.pid_odom_set({{24_in, 0_in}, ez::fwd, 110});
   chassis.pid_wait();
 }
 ```
@@ -656,7 +657,7 @@ void pid_angle_behavior_tolerance_set(double tolerance);
 ### pid_angle_behavior_bias_set()
 When a turn is within its tolerance, you can have it bias left or right.   
 
-`behavior` ez::left or ez::right  
+`behavior` ez::ccw or ez::cw  
 <Tabs
   groupId="pid_angle_behavior_bias_set"
   defaultValue="proto"
@@ -705,7 +706,7 @@ void pid_angle_behavior_bias_set(e_angle_behavior behavior);
 ### drive_mode_get()
 Returns the current drive mode that the task is running.  
 
-Returns `ez::DISABLE`, `ez::SWING`, `ez::TURN`, `ez::DRIVE`.           
+Returns `ez::DISABLE`, `ez::SWING`, `ez::TURN`, `ez::TURN_TO_POINT`, `ez::DRIVE`, `ez::POINT_TO_POINT`, or `ez::PURE_PURSUIT`.           
 <Tabs
   groupId="examples19"
   defaultValue="proto"
@@ -970,7 +971,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-e_angle_behavior pid_angle_behavior_bias_get(e_angle_behavior);
+e_angle_behavior pid_angle_behavior_bias_get();
 ```
 </TabItem>
 </Tabs>
@@ -1024,7 +1025,7 @@ void pid_wait();
 
 
 ### pid_wait_quick()
-Lock the code in a while loop until the robot has settled.   
+Lock the code in a while loop until the robot has passed its target (or an exit condition fires first).   
 
 Wrapper for pid_wait_until(target), target is your previously input target.        
 <Tabs
@@ -1068,7 +1069,7 @@ void pid_wait_quick();
 
 
 ### pid_wait_quick_chain()
-Lock the code in a while loop until the robot has settled.   
+Lock the code in a while loop until the robot has passed its target (or an exit condition fires first).   
 
 This also adds distance to target, and then exits with pid_wait_quick.   
 
@@ -1159,7 +1160,7 @@ void pid_targets_reset();
 
 
 ### interfered
-Boolean that returns true when `pid_wait()` or `pid_wait_until()` exit with velocity or is_over_current.  This can be used to detect unwanted motion and stop the drive motors from overheating during autonomous.     
+Boolean that returns true when `pid_wait()` or `pid_wait_until()` exit with velocity or is_over_current.  It goes back to false at the start of every new motion.  This can be used to detect unwanted motion and stop the drive motors from overheating during autonomous.     
 <Tabs
   groupId="examples18"
   defaultValue="proto"

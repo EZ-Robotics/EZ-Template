@@ -74,7 +74,7 @@ But you can override these defaults in each motion.
 ```cpp
 chassis.pid_turn_behavior_set(ez::shortest);
 
-// This will turn 361 degrees to the left
+// This will turn 359 degrees to the left
 chassis.pid_turn_set(361_deg, 90, ez::longest);
 chassis.pid_wait();
 ```
@@ -115,7 +115,7 @@ chassis.pid_turn_set(90_deg, 110, true);  // Slew will be enabled for this motio
 chassis.pid_wait();
 
 // This will not use slew to return to 0 degrees
-chassis.pid_turn_set(0_deg, 110, true);  
+chassis.pid_turn_set(0_deg, 110);  
 chassis.pid_wait();
 ```
 
@@ -123,7 +123,7 @@ chassis.pid_wait();
 You can use slew in conjunction with different turn behavior.  
 ```cpp
 chassis.pid_turn_behavior_set(ez::shortest);
-chassis.slew_turn_set(false);  // Enables global slew
+chassis.slew_turn_set(false);  // Disables global slew
 chassis.slew_turn_constants_set(5_deg, 50);
 
 // This will turn to 270 deg clockwise while slewing
@@ -144,7 +144,7 @@ chassis.pid_wait();
 ## Relative Turns
 All of the syntax for absolute turns above applies to relative turns, use `pid_turn_relative_set()` instead.  
 
-"Relative" means the robot will turn X degrees relative to where it is before it starts the turn.  The two code blocks below do the same thing.  
+"Relative" means the robot will turn X degrees relative to the last heading target it was given.  The two code blocks below do the same thing.  
 
 <!---
 IMAGE
@@ -296,7 +296,7 @@ chassis.pid_drive_set(24_in, 110);
 chassis.pid_wait();
 
 // This was changed to 95
-chassis.pid_turn_set(95_deg, 11900);
+chassis.pid_turn_set(95_deg, 90);
 chassis.pid_wait();
 
 chassis.pid_drive_set(24_in, 110);

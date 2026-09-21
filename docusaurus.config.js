@@ -62,7 +62,7 @@ const config = {
           lastVersion: '3.2.2',
           versions: {
             current: {
-              label: '4.0.0-beta.2',
+              label: '4.0.0-beta.3',
               banner: 'unreleased',
             },
             '3.2.2': {

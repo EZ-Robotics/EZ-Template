@@ -17,6 +17,7 @@ Track width is calculated at your tracking wheel by default.  Modifying tracking
 
 Modifying width on left/right trackers will move your tracking center to the left/right.  
  - If this isn't accurate, the robot may behave differently when moving to the right vs moving to the left
+ - This only applies when you have just one of the two.  If you have both a left and a right tracker, EZ-Template averages them and ignores their widths, so there's nothing to tune on that axis
 
 Modifying width on front/back trackers will move your tracking center forwards and backwards.  
 - If this isn't accurate, the robot's XY position will change during turns and will make where the robot currently is unintuitive
@@ -62,7 +63,7 @@ void measure_offsets() {
     pros::delay(250);
 
     // Calculate delta in angle
-    double t_delta = util::to_rad(fabs(util::wrap_angle(chassis.odom_theta_get() - imu_start)));
+    double t_delta = ez::util::to_rad(fabs(ez::util::wrap_angle(chassis.odom_theta_get() - imu_start)));
 
     // Calculate delta in sensor values that exist
     double l_delta = chassis.odom_tracker_left != nullptr ? chassis.odom_tracker_left->get() : 0.0;
@@ -102,8 +103,8 @@ void screen_print_tracker(ez::tracking_wheel *tracker, std::string name, int lin
   std::string tracker_value = "", tracker_width = "";
   // Check if the tracker exists
   if (tracker != nullptr) {
-    tracker_value = name + " tracker: " + util::to_string_with_precision(tracker->get());             // Make text for the tracker value
-    tracker_width = "  width: " + util::to_string_with_precision(tracker->distance_to_center_get());  // Make text for the distance to center
+    tracker_value = name + " tracker: " + ez::util::to_string_with_precision(tracker->get());             // Make text for the tracker value
+    tracker_width = "  width: " + ez::util::to_string_with_precision(tracker->distance_to_center_get());  // Make text for the distance to center
   }
   ez::screen_print(tracker_value + tracker_width, line);  // Print final tracker text
 }
@@ -122,9 +123,9 @@ void ez_screen_task() {
         // If we're on the first blank page...
         if (ez::as::page_blank_is_on(0)) {
           // Display X, Y, and Theta
-          ez::screen_print("x: " + util::to_string_with_precision(chassis.odom_x_get()) +
-                               "\ny: " + util::to_string_with_precision(chassis.odom_y_get()) +
-                               "\na: " + util::to_string_with_precision(chassis.odom_theta_get()),
+          ez::screen_print("x: " + ez::util::to_string_with_precision(chassis.odom_x_get()) +
+                               "\ny: " + ez::util::to_string_with_precision(chassis.odom_y_get()) +
+                               "\na: " + ez::util::to_string_with_precision(chassis.odom_theta_get()),
                            1);  // Don't override the top Page line
 
           // Display all trackers that are being used

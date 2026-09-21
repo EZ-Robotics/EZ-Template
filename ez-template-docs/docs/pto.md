@@ -33,9 +33,9 @@ Returns true if it's already in pto_list.
 void initialize() {
   pros::delay(500);
 
-  printf("Check: %i %i\n", chassis.pto_check(chassis.left_motors[1]), chassis.pto_check(chassis.right_motors[1]))); // This prints 0 0
+  printf("Check: %i %i\n", chassis.pto_check(chassis.left_motors[1]), chassis.pto_check(chassis.right_motors[1])); // This prints 0 0
   chassis.pto_add({chassis.left_motors[1], chassis.right_motors[1]});
-  printf("Check: %i %i\n", chassis.pto_check(chassis.left_motors[1]), chassis.pto_check(chassis.right_motors[1]))); // This prints 1 1
+  printf("Check: %i %i\n", chassis.pto_check(chassis.left_motors[1]), chassis.pto_check(chassis.right_motors[1])); // This prints 1 1
 }
 ```
 
@@ -81,9 +81,9 @@ You cannot add the first index because it's used for autonomous.
 void initialize() {
   pros::delay(500);
 
-  printf("Check: %i %i\n", chassis.pto_check(chassis.left_motors[1]), chassis.pto_check(chassis.right_motors[1]))); // This prints 0 0
+  printf("Check: %i %i\n", chassis.pto_check(chassis.left_motors[1]), chassis.pto_check(chassis.right_motors[1])); // This prints 0 0
   chassis.pto_add({chassis.left_motors[1], chassis.right_motors[1]});
-  printf("Check: %i %i\n", chassis.pto_check(chassis.left_motors[1]), chassis.pto_check(chassis.right_motors[1]))); // This prints 1 1
+  printf("Check: %i %i\n", chassis.pto_check(chassis.left_motors[1]), chassis.pto_check(chassis.right_motors[1])); // This prints 1 1
 }
 ```
 
@@ -127,11 +127,11 @@ Removes motors from the pto list, adding them to the drive.
 void initialize() {
   pros::delay(500);
 
-  printf("Check: %i %i\n", chassis.pto_check(chassis.left_motors[1]), chassis.pto_check(chassis.right_motors[1]))); // This prints 0 0
+  printf("Check: %i %i\n", chassis.pto_check(chassis.left_motors[1]), chassis.pto_check(chassis.right_motors[1])); // This prints 0 0
   chassis.pto_add({chassis.left_motors[1], chassis.right_motors[1]});
-  printf("Check: %i %i\n", chassis.pto_check(chassis.left_motors[1]), chassis.pto_check(chassis.right_motors[1]))); // This prints 1 1
+  printf("Check: %i %i\n", chassis.pto_check(chassis.left_motors[1]), chassis.pto_check(chassis.right_motors[1])); // This prints 1 1
   chassis.pto_remove({chassis.left_motors[1], chassis.right_motors[1]});
-  printf("Check: %i %i\n", chassis.pto_check(chassis.left_motors[1]), chassis.pto_check(chassis.right_motors[1]))); // This prints 0 0
+  printf("Check: %i %i\n", chassis.pto_check(chassis.left_motors[1]), chassis.pto_check(chassis.right_motors[1])); // This prints 0 0
 
 }
 ```
@@ -158,12 +158,12 @@ void pto_remove(std::vector<pros::Motor> pto_list);
 
 
 ## pto_toggle()
-Adds/removes motors from drive.   
+Moves motors between the drive and the pto list.   
 
 You cannot add the first index because it's used for autonomous.         
 
 `pto_list` list of motors to add/remove from the drive   
-`toggle` list of motors to add/remove from the drive   
+`toggle` true removes the motors from the drive and adds them to the pto list, false removes them from the pto list and adds them back to the drive   
 <Tabs
   groupId="ex4"
   defaultValue="proto"

@@ -6,12 +6,12 @@ description: honey!  new version released!  time to upgrade!
 
 :::warning
 
-This only works for 2.x and beyond.  You cannot upgrade from 1.x to 2.x, or 2.x to 3.x without changing code.  See more about migration [here](/category/migration).
+This only works for 2.x and beyond.  You cannot upgrade from 1.x to 2.x, 2.x to 3.x, or 3.x to 4.0 without changing code.  See more about migration [here](/category/migration).
 
 :::
 
 ## Download EZ-Template
-Download the most recent `EZ-Template@x.x.x.zip` [here](https://github.com/EZ-Robotics/EZ-Template/releases/tag/v4.0.0-beta.2).  
+Download the most recent `EZ-Template@x.x.x.zip` [here](https://github.com/EZ-Robotics/EZ-Template/releases/tag/v4.0.0-beta.3).  
 
 ## Bring the File Into Your Project
 Bring this file into your project.  You can do this through file explorer or by dragging it into VScode.  
@@ -36,7 +36,7 @@ pros c fetch EZ-Template@x.x.x.zip
 ## Apply EZ-Template to Your Project
 :::warning
 
-Ensure that your PROS kernel version at least the same as EZ-Template!  Run `pros c upgrade kernel@latest` if you're unsure.  
+Ensure that your PROS kernel version at least the same as EZ-Template!  EZ-Template 4.0 needs PROS kernel 4.2.2 or newer, and `pros c apply` refuses to install it on an older one.  Run `pros c upgrade kernel@latest` if you're unsure.  
 
 :::
 

@@ -46,7 +46,7 @@ void initialize();
 ### limit_switch_lcd_initialize() 
 Sets external buttons to increase/decrease the current autonomous page.  
 
-The library never takes ownership of the pointers you pass in and will never delete them, so they can be global or stack objects.  Passing `nullptr` for both disables the limit switches.  
+The library never takes ownership of the pointers you pass in and will never delete them, but it keeps using them after this call returns, so the switches must stay alive for the whole program.  Make them global, not locals inside `initialize()`.  Passing `nullptr` for both disables the limit switches.  
 
 `right_limit` a button to go forward a page
 `left_limit` a button to go backwards a page
@@ -137,7 +137,7 @@ void shutdown();
 
 
 ### autons_add();
-Appends autonomous routines to the autonomous selector's list.  Calling this more than once keeps the routines you've already added, and the selector goes back to the first page.  Uses `ez::print_to_screen()` to display to the brain.  
+Appends autonomous routines to the autonomous selector's list.  Calling this more than once keeps the routines you've already added, and the selector goes back to the first page.  Uses `ez::screen_print()` to display to the brain.  
 
 `autons` accepts an object of a string and a function
 <Tabs
@@ -164,9 +164,9 @@ void auto3() {
 
 void initialize() {
   ez::as::auton_selector.autons_add({
-    Auton("Autonomous 1\nDoes Something", auto1),
-    Auton("Autonomous 2\nDoes Something Else", auto2),
-    Auton("Autonomous 3\nDoes Something More", auto3),
+    ez::Auton("Autonomous 1\nDoes Something", auto1),
+    ez::Auton("Autonomous 2\nDoes Something Else", auto2),
+    ez::Auton("Autonomous 3\nDoes Something More", auto3),
   });
 }
 ```
@@ -299,7 +299,6 @@ void initialize() {
 
 
 ```cpp
-void page_down();
 void page_up();
 ```
 
@@ -315,7 +314,7 @@ void page_up();
 
 
 ### selected_auton_call()
-Runs the current autonomous that's selected.    
+Runs the current autonomous that's selected.  If the selector is on a blank page instead of an autonomous, it runs the last autonomous page you were on.    
 <Tabs
   groupId="selected_auton_call"
   defaultValue="proto"
@@ -383,7 +382,7 @@ void initialize() {
 
 
 ```cpp
-bool ez::as::enabled();
+bool enabled();
 ```
 
 
@@ -439,7 +438,6 @@ void opcontrol() {
 
 
 
-void page_blank_remove_all();
 ### page_blank_remove_all()
 Removes all blank pages.     
 <Tabs
@@ -470,7 +468,7 @@ void opcontrol() {
     }
 
     if (master.get_digital_new_press(DIGITAL_L1)) {
-      ez::as::pagE_blank_remove_all();
+      ez::as::page_blank_remove_all();
     }
 
     pros::delay(ez::util::DELAY_TIME);  // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
@@ -479,3 +477,5 @@ void opcontrol() {
 ```
 </TabItem>
 </Tabs>
+
+The next `page_blank_is_on()` call creates its page again, so stop calling it once you have removed the pages (for example, only call it while `pros::competition::is_connected()` is false, as the Blank Pages tutorial does).

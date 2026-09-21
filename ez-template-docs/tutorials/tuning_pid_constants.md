@@ -60,7 +60,7 @@ chassis.pid_tuner_full_enable(true);  // Enable full PID Tuner
 ### Adding your own PIDs
 If you have PID on your own subsystem, you can add it to the PID Tuner!
 ```cpp
-ez::PID liftPID(0.45, 0.0, 0.0, "Lift");
+ez::PID liftPID(0.45, 0.0, 0.0, 0.0, "Lift");
 
 void initialize() {
   // Print our branding over your terminal :D
@@ -69,8 +69,7 @@ void initialize() {
   pros::delay(500);  // Stop the user from doing anything while legacy ports configure
 
   // Add liftPID to the PID Tuner!
-  chassis.pid_tuner_pids.push_back({"Lift PID", &liftPID.constants});
-  chassis.pid_tuner_full_pids.push_back({"Lift PID", &liftPID.constants});
+  chassis.pid_tuner_add({"Lift PID", &liftPID.constants});
 
   // . . .
 ```
@@ -195,7 +194,7 @@ chassis.pid_turn_constants_set(3, 0.003, 20, 15);
 Just like with driving, you can have independent forward and backward constants for your swing turns. 
 ```cpp
 chassis.pid_swing_constants_forward_set(6.0, 0.0, 65.0);
-chassis.pid_swing_constants_forward_set(6.0, 0.0, 65.0);
+chassis.pid_swing_constants_backward_set(6.0, 0.0, 65.0);
 ```
 
 And if this isn't a problem for your robot, you can just use this function. 
@@ -217,7 +216,7 @@ This number can be closer to 1.0 if you have traction wheels or if you have a ho
 Using the default constants, have the robot travel to (0, 24) then (24, 24) with pure pursuit.  Adjust this number until it looks like the robot is sticking to the path.  You might need to come in and change this number more later, but doing this to start will give you a good starting point.   
 ```cpp
 // The amount that turns are prioritized over driving in odom motions
-// - if you have tracking wheels, you can run this higher.  1.0 is the max
+// - if you have tracking wheels, you can run this higher.  Values above 1.0 are allowed, they make the robot prioritize turning less.
 chassis.odom_turn_bias_set(0.9);
 ```
 

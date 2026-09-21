@@ -22,7 +22,7 @@ You can use controller buttons to modify these curves live.  What the buttons d
 
 | Drive Type | Left/Right Buttons | Y/A Buttons |
 | --- | --- | --- |
-| tank | left drive curve | right drive curve | 
+| tank | curve for both sticks | nothing (tank only has one curve) | 
 | left split arcade | fwd/rev curve | turn curve |
 | right split arcade | turn curve | fwd/rev curve |
 | left single arcade | fwd/rev curve | turn curve |
@@ -32,13 +32,15 @@ You can use controller buttons to modify these curves live.  What the buttons d
 
 The higher the number, the more of the joystick will control lower speeds.  Drive around and play with these values until you find something you like.  
 
+Curves are kept between 0 and 20, and 0 is no curve.  Holding a curve button stops at 20.  At 20, a stick at three quarters is already driving the wheels at only about 13%, and higher numbers get flatter still, so there's nothing useful up there.  A value outside of that range, from `opcontrol_curve_default_set()` or from the SD card, is changed to the nearest end of it.  
+
 ## Saving Your Values
 You've found values you're happy with!  There are two ways of saving them:
 - hard code them
 - use an SD card
 
 ### Hard Coding
-In `main.cpp` you'll find `chassis.opcontrol_curve_default_set();` in `initialize()`.  This function takes 2 variables.  One for the left stick and one for the right stick (this is the same as the chart above).  
+In `main.cpp` you'll find `chassis.opcontrol_curve_default_set();` in `initialize()`.  This function takes 2 variables.  For arcade these are the Left/Right buttons curve and the Y/A buttons curve from the chart above.  Tank only has one curve, used by both sticks, so it only needs the first.  
 <Tabs
   groupId="tank_arcade"
   defaultValue="example"

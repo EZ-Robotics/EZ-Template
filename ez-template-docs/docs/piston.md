@@ -15,7 +15,7 @@ import TabItem from '@theme/TabItem';
 Creates a new Piston object.  
 
 `input_port` ADI port the solenoid is plugged into.  
-`default_state` sets the default state of the piston.    
+`default_state` the level the solenoid's pin starts at.  `get()` and `set()` are relative to it: `get()` is `false` at startup, and `set(true)` moves the piston to the opposite of `default_state`.    
 <Tabs
   groupId="piston_no_expander"
   defaultValue="proto"
@@ -48,7 +48,8 @@ Piston(int input_port, bool default_state = false);
 Creates a new Piston object where the solenoid is plugged into a 3 wire expander.  
 
 `input_port` ADI port the solenoid is plugged into.  
-`default_state` sets the default state of the piston.    
+`expander_smart_port` smart port the 3 wire expander is plugged into.  
+`default_state` the level the solenoid's pin starts at.  `get()` and `set()` are relative to it: `get()` is `false` at startup, and `set(true)` moves the piston to the opposite of `default_state`.    
 <Tabs
   groupId="slew_backward_constant_set"
   defaultValue="proto"

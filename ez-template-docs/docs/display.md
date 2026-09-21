@@ -195,7 +195,7 @@ Returns true while the portrait screen is the loaded screen (rotation 90 or 270)
 
 ```cpp
 ez::screen_rotation_set(90);
-printf("%i\n", ez::screen_portrait_enabled()); // Prints true
+printf("%i\n", ez::screen_portrait_enabled()); // Prints 1
 ```
 
 </TabItem>
@@ -215,7 +215,7 @@ bool screen_portrait_enabled();
 ### screen_touch_rotate()
 Maps a raw panel touch into the coordinate space of a screen rotated by `degrees`.
 
-LVGL already applies this to its own pointer input, so widgets need no help; this is only for code that reads the panel directly (`pros::screen_touch_status()`) and so bypasses LVGL.  Do not apply it to `lv_indev` data or the point is transformed twice.
+LVGL already applies this to its own pointer input, so widgets need no help; this is only for code that reads the panel directly (`pros::screen::touch_status()`) and so bypasses LVGL.  Do not apply it to `lv_indev` data or the point is transformed twice.
 
 `degrees` 0, 90, 180, or 270  
 `panel_w` the physical, unrotated panel width (480 on the V5)  
@@ -234,7 +234,7 @@ LVGL already applies this to its own pointer input, so widgets need no help; thi
 <TabItem value="example">
 
 ```cpp
-pros::screen_touch_status_s_t status = pros::screen_touch_status();
+pros::screen_touch_status_s_t status = pros::screen::touch_status();
 ez::screen_point p = ez::screen_touch_rotate(ez::screen_rotation_get(), 480, 272, status.x, status.y);
 printf("x: %i, y: %i\n", p.x, p.y);
 ```
