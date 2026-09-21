@@ -375,7 +375,7 @@ class Drive {
    * \param p_mode
    *        the new drive mode
    * \param stop_drive
-   *        if the drive will stop when p_mode is DISABLED
+   *        if the drive will stop when p_mode is ez::DISABLE
    */
   void drive_mode_set(e_mode p_mode, bool stop_drive = true);
 
@@ -860,7 +860,7 @@ class Drive {
    * Sets the default behavior for turns in odom, swinging, and turning.
    *
    * \param behavior
-   *        ez::shortest, ez::longest, ez::left, ez::right, ez::raw
+   *        ez::shortest, ez::longest, ez::ccw, ez::cw, ez::raw
    */
   void pid_angle_behavior_set(e_angle_behavior behavior);
 
@@ -868,7 +868,7 @@ class Drive {
    * Sets the default behavior for turns in turning movements.
    *
    * \param behavior
-   *        ez::shortest, ez::longest, ez::left, ez::right, ez::raw
+   *        ez::shortest, ez::longest, ez::ccw, ez::cw, ez::raw
    */
   void pid_turn_behavior_set(e_angle_behavior behavior);
 
@@ -876,7 +876,7 @@ class Drive {
    * Sets the default behavior for turns in swinging movements.
    *
    * \param behavior
-   *        ez::shortest, ez::longest, ez::left, ez::right, ez::raw
+   *        ez::shortest, ez::longest, ez::ccw, ez::cw, ez::raw
    */
   void pid_swing_behavior_set(e_angle_behavior behavior);
 
@@ -884,7 +884,7 @@ class Drive {
    * Sets the default behavior for turns in odom turning movements.
    *
    * \param behavior
-   *        ez::shortest, ez::longest, ez::left, ez::right, ez::raw
+   *        ez::shortest, ez::longest, ez::ccw, ez::cw, ez::raw
    */
   void pid_odom_behavior_set(e_angle_behavior behavior);
 
@@ -928,7 +928,7 @@ class Drive {
    * When a turn is within its tolerance, you can have it bias left or right.
    *
    * \param behavior
-   *        ez::left or ez::right
+   *        ez::ccw or ez::cw
    */
   void pid_angle_behavior_bias_set(e_angle_behavior behavior);
 
@@ -1957,7 +1957,7 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param behavior
-   *        changes what direction the robot will turn.  can be left, right, shortest, longest, raw
+   *        changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw
    */
   void pid_turn_set(pose itarget, drive_directions dir, int speed, e_angle_behavior behavior);
 
@@ -1971,7 +1971,7 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param behavior
-   *        changes what direction the robot will turn.  can be left, right, shortest, longest, raw
+   *        changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw
    * \param slew_on
    *        ramp up from a lower speed to your target speed
    */
@@ -2013,7 +2013,7 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param behavior
-   *        changes what direction the robot will turn.  can be left, right, shortest, longest, raw
+   *        changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw
    */
   void pid_turn_set(united_pose p_itarget, drive_directions dir, int speed, e_angle_behavior behavior);
 
@@ -2027,7 +2027,7 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param behavior
-   *        changes what direction the robot will turn.  can be left, right, shortest, longest, raw
+   *        changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw
    * \param slew_on
    *        ramp up from a lower speed to your target speed
    */
@@ -2051,7 +2051,7 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param behavior
-   *        changes what direction the robot will turn.  can be left, right, shortest, longest, raw
+   *        changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw
    */
   void pid_turn_set(double target, int speed, e_angle_behavior behavior);
 
@@ -2075,7 +2075,7 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param behavior
-   *        changes what direction the robot will turn.  can be left, right, shortest, longest, raw
+   *        changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw
    * \param slew_on
    *        ramp up from a lower speed to your target speed
    */
@@ -2099,7 +2099,7 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param behavior
-   *        changes what direction the robot will turn.  can be left, right, shortest, longest, raw
+   *        changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw
    */
   void pid_turn_set(ez::QAngle p_target, int speed, e_angle_behavior behavior);
 
@@ -2123,7 +2123,7 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param behavior
-   *        changes what direction the robot will turn.  can be left, right, shortest, longest, raw
+   *        changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw
    * \param slew_on
    *        ramp up from a lower speed to your target speed
    */
@@ -2147,7 +2147,7 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param behavior
-   *        changes what direction the robot will turn.  can be left, right, shortest, longest, raw
+   *        changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw
    */
   void pid_turn_relative_set(ez::QAngle p_target, int speed, e_angle_behavior behavior);
 
@@ -2171,7 +2171,7 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param behavior
-   *        changes what direction the robot will turn.  can be left, right, shortest, longest, raw
+   *        changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw
    * \param slew_on
    *        ramp up from a lower speed to your target speed
    */
@@ -2195,7 +2195,7 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param behavior
-   *        changes what direction the robot will turn.  can be left, right, shortest, longest, raw
+   *        changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw
    */
   void pid_turn_relative_set(double target, int speed, e_angle_behavior behavior);
 
@@ -2219,7 +2219,7 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param behavior
-   *        changes what direction the robot will turn.  can be left, right, shortest, longest, raw
+   *        changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw
    * \param slew_on
    *        ramp up from a lower speed to your target speed
    */
@@ -2229,7 +2229,7 @@ class Drive {
    * Sets the robot to turn using only the left or right side relative to initial heading without units, only using slew if globally enabled.
    *
    * \param type
-   *        L_SWING or R_SWING
+   *        ez::LEFT_SWING or ez::RIGHT_SWING
    * \param target
    *        target value as a double, unit is degrees
    * \param speed
@@ -2241,13 +2241,13 @@ class Drive {
    * Sets the robot to turn using only the left or right side relative to initial heading without units, only using slew if globally enabled.
    *
    * \param type
-   *        L_SWING or R_SWING
+   *        ez::LEFT_SWING or ez::RIGHT_SWING
    * \param target
    *        target value as a double, unit is degrees
    * \param speed
    *        0 to 127, max speed during motion
    * \param behavior
-   *        changes what direction the robot will turn.  can be left, right, shortest, longest, raw
+   *        changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw
    */
   void pid_swing_set(e_swing type, double target, int speed, e_angle_behavior behavior);
 
@@ -2255,7 +2255,7 @@ class Drive {
    * Sets the robot to turn using only the left or right side relative to initial heading without units, using slew if enabled for this motion.
    *
    * \param type
-   *        L_SWING or R_SWING
+   *        ez::LEFT_SWING or ez::RIGHT_SWING
    * \param target
    *        target value as a double, unit is degrees
    * \param speed
@@ -2269,7 +2269,7 @@ class Drive {
    * Sets the robot to turn using only the left or right side relative to initial heading without units, using slew if enabled for this motion.
    *
    * \param type
-   *        L_SWING or R_SWING
+   *        ez::LEFT_SWING or ez::RIGHT_SWING
    * \param target
    *        target value as a double, unit is degrees
    * \param speed
@@ -2285,7 +2285,7 @@ class Drive {
    * Sets the robot to turn using only the left or right side relative to initial heading without units, only using slew if globally enabled.
    *
    * \param type
-   *        L_SWING or R_SWING
+   *        ez::LEFT_SWING or ez::RIGHT_SWING
    * \param target
    *        target value as a double, unit is degrees
    * \param speed
@@ -2299,7 +2299,7 @@ class Drive {
    * Sets the robot to turn using only the left or right side relative to initial heading without units, only using slew if globally enabled.
    *
    * \param type
-   *        L_SWING or R_SWING
+   *        ez::LEFT_SWING or ez::RIGHT_SWING
    * \param target
    *        target value as a double, unit is degrees
    * \param speed
@@ -2315,7 +2315,7 @@ class Drive {
    * Sets the robot to turn using only the left or right side relative to initial heading without units, using slew if enabled for this motion.
    *
    * \param type
-   *        L_SWING or R_SWING
+   *        ez::LEFT_SWING or ez::RIGHT_SWING
    * \param target
    *        target value as a double, unit is degrees
    * \param speed
@@ -2331,7 +2331,7 @@ class Drive {
    * Sets the robot to turn using only the left or right side relative to initial heading without units, using slew if enabled for this motion.
    *
    * \param type
-   *        L_SWING or R_SWING
+   *        ez::LEFT_SWING or ez::RIGHT_SWING
    * \param target
    *        target value as a double, unit is degrees
    * \param speed
@@ -2339,7 +2339,7 @@ class Drive {
    * \param opposite_speed
    *        -127 to 127, max speed of the opposite side of the drive during the swing, scaled down as the swing slows.  positive moves the opposite side in the same direction as the swinging side.  0 (the default) holds the opposite side in place with the drive PID.  this is used for arcs
    * \param behavior
-   *        changes what direction the robot will turn.  can be left, right, shortest, longest, raw
+   *        changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw
    * \param slew_on
    *        ramp up from a lower speed to your target speed
    */
@@ -2349,7 +2349,7 @@ class Drive {
    * Sets the robot to turn using only the left or right side relative to initial heading with units, only using slew if globally enabled.
    *
    * \param type
-   *        L_SWING or R_SWING
+   *        ez::LEFT_SWING or ez::RIGHT_SWING
    * \param p_target
    *        target value in angle units
    * \param speed
@@ -2361,13 +2361,13 @@ class Drive {
    * Sets the robot to turn using only the left or right side relative to initial heading with units, only using slew if globally enabled.
    *
    * \param type
-   *        L_SWING or R_SWING
+   *        ez::LEFT_SWING or ez::RIGHT_SWING
    * \param p_target
    *        target value in angle units
    * \param speed
    *        0 to 127, max speed during motion
    * \param behavior
-   *        changes what direction the robot will turn.  can be left, right, shortest, longest, raw
+   *        changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw
    */
   void pid_swing_set(e_swing type, ez::QAngle p_target, int speed, e_angle_behavior behavior);
 
@@ -2375,7 +2375,7 @@ class Drive {
    * Sets the robot to turn using only the left or right side relative to initial heading with units, using slew if enabled for this motion.
    *
    * \param type
-   *        L_SWING or R_SWING
+   *        ez::LEFT_SWING or ez::RIGHT_SWING
    * \param p_target
    *        target value in angle units
    * \param speed
@@ -2389,13 +2389,13 @@ class Drive {
    * Sets the robot to turn using only the left or right side relative to initial heading with units, using slew if enabled for this motion.
    *
    * \param type
-   *        L_SWING or R_SWING
+   *        ez::LEFT_SWING or ez::RIGHT_SWING
    * \param p_target
    *        target value in angle units
    * \param speed
    *        0 to 127, max speed during motion
    * \param behavior
-   *        changes what direction the robot will turn.  can be left, right, shortest, longest, raw
+   *        changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw
    * \param slew_on
    *        ramp up from a lower speed to your target speed
    */
@@ -2405,7 +2405,7 @@ class Drive {
    * Sets the robot to turn using only the left or right side relative to initial heading with units, only using slew if globally enabled.
    *
    * \param type
-   *        L_SWING or R_SWING
+   *        ez::LEFT_SWING or ez::RIGHT_SWING
    * \param p_target
    *        target value in angle units
    * \param speed
@@ -2419,7 +2419,7 @@ class Drive {
    * Sets the robot to turn using only the left or right side relative to initial heading with units, only using slew if globally enabled.
    *
    * \param type
-   *        L_SWING or R_SWING
+   *        ez::LEFT_SWING or ez::RIGHT_SWING
    * \param p_target
    *        target value in angle units
    * \param speed
@@ -2427,7 +2427,7 @@ class Drive {
    * \param opposite_speed
    *        -127 to 127, max speed of the opposite side of the drive during the swing, scaled down as the swing slows.  positive moves the opposite side in the same direction as the swinging side.  0 (the default) holds the opposite side in place with the drive PID.  this is used for arcs
    * \param behavior
-   *        changes what direction the robot will turn.  can be left, right, shortest, longest, raw
+   *        changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw
    */
   void pid_swing_set(e_swing type, ez::QAngle p_target, int speed, int opposite_speed, e_angle_behavior behavior);
 
@@ -2435,7 +2435,7 @@ class Drive {
    * Sets the robot to turn using only the left or right side relative to initial heading with units, using slew if enabled for this motion.
    *
    * \param type
-   *        L_SWING or R_SWING
+   *        ez::LEFT_SWING or ez::RIGHT_SWING
    * \param p_target
    *        target value in angle units
    * \param speed
@@ -2451,7 +2451,7 @@ class Drive {
    * Sets the robot to turn only using the left or right side relative to initial heading using PID with units, using slew if enabled for this motion.
    *
    * \param type
-   *        L_SWING or R_SWING
+   *        ez::LEFT_SWING or ez::RIGHT_SWING
    * \param p_target
    *        target value in angle units
    * \param speed
@@ -2459,7 +2459,7 @@ class Drive {
    * \param opposite_speed
    *        -127 to 127, max speed of the opposite side of the drive during the swing, scaled down as the swing slows.  positive moves the opposite side in the same direction as the swinging side.  0 (the default) holds the opposite side in place with the drive PID.  this is used for arcs
    * \param behavior
-   *        changes what direction the robot will turn.  can be left, right, shortest, longest, raw
+   *        changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw
    * \param slew_on
    *        ramp up from a lower speed to your target speed
    */
@@ -2469,7 +2469,7 @@ class Drive {
    * Sets the robot to turn only using the left or right side relative to the last heading target, not the robot's measured heading, using PID with units, only using slew if globally enabled.
    *
    * \param type
-   *        L_SWING or R_SWING
+   *        ez::LEFT_SWING or ez::RIGHT_SWING
    * \param p_target
    *        target value in angle units
    * \param speed
@@ -2481,7 +2481,7 @@ class Drive {
    * Sets the robot to turn only using the left or right side relative to the last heading target, not the robot's measured heading, using PID with units, only using slew if globally enabled.
    *
    * \param type
-   *        L_SWING or R_SWING
+   *        ez::LEFT_SWING or ez::RIGHT_SWING
    * \param p_target
    *        target value in angle units
    * \param speed
@@ -2495,7 +2495,7 @@ class Drive {
    * Sets the robot to turn only using the left or right side relative to the last heading target, not the robot's measured heading, using PID with units, using slew if enabled for this motion.
    *
    * \param type
-   *        L_SWING or R_SWING
+   *        ez::LEFT_SWING or ez::RIGHT_SWING
    * \param p_target
    *        target value in angle units
    * \param speed
@@ -2509,7 +2509,7 @@ class Drive {
    * Sets the robot to turn only using the left or right side relative to the last heading target, not the robot's measured heading, using PID with units, using slew if enabled for this motion.
    *
    * \param type
-   *        L_SWING or R_SWING
+   *        ez::LEFT_SWING or ez::RIGHT_SWING
    * \param p_target
    *        target value in angle units
    * \param speed
@@ -2525,7 +2525,7 @@ class Drive {
    * Sets the robot to turn only using the left or right side relative to the last heading target, not the robot's measured heading, using PID with units, only using slew if globally enabled.
    *
    * \param type
-   *        L_SWING or R_SWING
+   *        ez::LEFT_SWING or ez::RIGHT_SWING
    * \param p_target
    *        target value in angle units
    * \param speed
@@ -2539,7 +2539,7 @@ class Drive {
    * Sets the robot to turn only using the left or right side relative to the last heading target, not the robot's measured heading, using PID with units, only using slew if globally enabled.
    *
    * \param type
-   *        L_SWING or R_SWING
+   *        ez::LEFT_SWING or ez::RIGHT_SWING
    * \param p_target
    *        target value in angle units
    * \param speed
@@ -2555,7 +2555,7 @@ class Drive {
    * Sets the robot to turn only using the left or right side relative to the last heading target, not the robot's measured heading, using PID with units, using slew if enabled for this motion.
    *
    * \param type
-   *        L_SWING or R_SWING
+   *        ez::LEFT_SWING or ez::RIGHT_SWING
    * \param p_target
    *        target value in angle units
    * \param speed
@@ -2571,7 +2571,7 @@ class Drive {
    * Sets the robot to turn only using the left or right side relative to the last heading target, not the robot's measured heading, using PID with units, using slew if enabled for this motion.
    *
    * \param type
-   *        L_SWING or R_SWING
+   *        ez::LEFT_SWING or ez::RIGHT_SWING
    * \param p_target
    *        target value in angle units
    * \param speed
@@ -2589,7 +2589,7 @@ class Drive {
    * Sets the robot to turn only using the left or right side relative to the last heading target, not the robot's measured heading, using PID without units, only using slew if globally enabled.
    *
    * \param type
-   *        L_SWING or R_SWING
+   *        ez::LEFT_SWING or ez::RIGHT_SWING
    * \param target
    *        target value as a double, unit is degrees
    * \param speed
@@ -2601,7 +2601,7 @@ class Drive {
    * Sets the robot to turn only using the left or right side relative to the last heading target, not the robot's measured heading, using PID without units, only using slew if globally enabled.
    *
    * \param type
-   *        L_SWING or R_SWING
+   *        ez::LEFT_SWING or ez::RIGHT_SWING
    * \param target
    *        target value as a double, unit is degrees
    * \param speed
@@ -2615,7 +2615,7 @@ class Drive {
    * Sets the robot to turn only using the left or right side relative to the last heading target, not the robot's measured heading, using PID without units, using slew if enabled for this motion.
    *
    * \param type
-   *        L_SWING or R_SWING
+   *        ez::LEFT_SWING or ez::RIGHT_SWING
    * \param target
    *        target value as a double, unit is degrees
    * \param speed
@@ -2629,7 +2629,7 @@ class Drive {
    * Sets the robot to turn only using the left or right side relative to the last heading target, not the robot's measured heading, using PID without units, using slew if enabled for this motion.
    *
    * \param type
-   *        L_SWING or R_SWING
+   *        ez::LEFT_SWING or ez::RIGHT_SWING
    * \param target
    *        target value as a double, unit is degrees
    * \param speed
@@ -2645,7 +2645,7 @@ class Drive {
    * Sets the robot to turn only using the left or right side relative to the last heading target, not the robot's measured heading, using PID without units, only using slew if globally enabled.
    *
    * \param type
-   *        L_SWING or R_SWING
+   *        ez::LEFT_SWING or ez::RIGHT_SWING
    * \param target
    *        target value as a double, unit is degrees
    * \param speed
@@ -2659,7 +2659,7 @@ class Drive {
    * Sets the robot to turn only using the left or right side relative to the last heading target, not the robot's measured heading, using PID without units, only using slew if globally enabled.
    *
    * \param type
-   *        L_SWING or R_SWING
+   *        ez::LEFT_SWING or ez::RIGHT_SWING
    * \param target
    *        target value as a double, unit is degrees
    * \param speed
@@ -2675,7 +2675,7 @@ class Drive {
    * Sets the robot to turn only using the left or right side relative to the last heading target, not the robot's measured heading, using PID without units, using slew if enabled for this motion.
    *
    * \param type
-   *        L_SWING or R_SWING
+   *        ez::LEFT_SWING or ez::RIGHT_SWING
    * \param target
    *        target value as a double, unit is degrees
    * \param speed
@@ -2691,7 +2691,7 @@ class Drive {
    * Sets the robot to turn only using the left or right side relative to the last heading target, not the robot's measured heading, using PID without units, using slew if enabled for this motion.
    *
    * \param type
-   *        L_SWING or R_SWING
+   *        ez::LEFT_SWING or ez::RIGHT_SWING
    * \param target
    *        target value as a double, unit is degrees
    * \param speed
@@ -3449,7 +3449,7 @@ class Drive {
   void pid_swing_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = true);
 
   /**
-   * Returns current tick_per_inch.
+   * Returns current TICK_PER_INCH.
    */
   double drive_tick_per_inch();
 
@@ -3857,7 +3857,7 @@ class Drive {
   void private_drive_set(int left, int right);
 
   /**
-   * Returns joystick value clipped to JOYSTICK_THRESH
+   * Returns joystick value clipped to JOYSTICK_THRESHOLD
    *
    * \param joystick
    *        joystick value, -127 to 127
