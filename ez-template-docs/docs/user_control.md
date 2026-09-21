@@ -18,8 +18,7 @@ import TabItem from '@theme/TabItem';
 Sets the chassis to controller joysticks using tank control.   
 Run in usercontrol.   
 
-This passes the controller through the curve functions, but is disabled by default.    
-Use opcontrol_curve_buttons_toggle() to enable it.     
+This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.  The controller buttons that change the curves are enabled by default, use `opcontrol_curve_buttons_toggle(false)` to turn them off.     
 <Tabs
   groupId="opcontrol_tank"
   defaultValue="proto"
@@ -63,8 +62,7 @@ void opcontrol_tank();
 Sets the chassis to controller joysticks using standard arcade control, where left stick is fwd/rev.    
 Run in usercontrol.    
 
-This passes the controller through the curve functions, but is disabled by default.    
-Use opcontrol_curve_buttons_toggle() to enable it.    
+This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.  The controller buttons that change the curves are enabled by default, use `opcontrol_curve_buttons_toggle(false)` to turn them off.    
 
 `stick_type` ez::SINGLE or ez::SPLIT control  
 <Tabs
@@ -81,7 +79,7 @@ Use opcontrol_curve_buttons_toggle() to enable it.
 ```cpp
 void opcontrol() {
   while (true) {
-    chassis.opcontrol_arcade_standard(ez::SPIT); // For split arcade
+    chassis.opcontrol_arcade_standard(ez::SPLIT); // For split arcade
     // chassis.opcontrol_arcade_standard(ez::SINGLE); // For single arcade
     
     pros::delay(ez::util::DELAY_TIME);
@@ -113,8 +111,7 @@ void opcontrol_arcade_standard(e_type stick_type);
 Sets the chassis to controller joysticks using flipped arcade control, where right stick is fwd/rev.   
 Run in usercontrol.   
 
-This passes the controller through the curve functions, but is disabled by default.   
-Use opcontrol_curve_buttons_toggle() to enable it.   
+This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.  The controller buttons that change the curves are enabled by default, use `opcontrol_curve_buttons_toggle(false)` to turn them off.   
 
 `stick_type` ez::SINGLE or ez::SPLIT control   
 <Tabs
@@ -131,7 +128,7 @@ Use opcontrol_curve_buttons_toggle() to enable it.
 ```cpp
 void opcontrol() {
   while (true) {
-    chassis.opcontrol_arcade_flipped(ez::SPIT); // For split arcade
+    chassis.opcontrol_arcade_flipped(ez::SPLIT); // For split arcade
     // chassis.opcontrol_arcade_flipped(ez::SINGLE); // For single arcade
     
     pros::delay(ez::util::DELAY_TIME);
@@ -173,8 +170,7 @@ Curvature is like arcade, but the turn stick sets the curvature of the arc the r
 
 Because the turn is scaled by how fast you're driving, the robot would not be able to turn while stopped.  `opcontrol_curvature_point_turn_gain_set()` controls how much the robot can turn on a point.    
 
-This passes the controller through the curve functions, but is disabled by default.    
-Use opcontrol_curve_buttons_toggle() to enable it.    
+This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.  The controller buttons that change the curves are enabled by default, use `opcontrol_curve_buttons_toggle(false)` to turn them off.    
 
 `stick_type` ez::SINGLE or ez::SPLIT control  
 <Tabs
@@ -223,8 +219,7 @@ Curvature is like arcade, but the turn stick sets the curvature of the arc the r
 
 Because the turn is scaled by how fast you're driving, the robot would not be able to turn while stopped.  `opcontrol_curvature_point_turn_gain_set()` controls how much the robot can turn on a point.    
 
-This passes the controller through the curve functions, but is disabled by default.    
-Use opcontrol_curve_buttons_toggle() to enable it.    
+This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.  The controller buttons that change the curves are enabled by default, use `opcontrol_curve_buttons_toggle(false)` to turn them off.    
 
 `stick_type` ez::SINGLE or ez::SPLIT control  
 <Tabs
@@ -507,9 +502,9 @@ True enabled, false disabled.
 
 ```cpp
 void initialize() {
-  printf("Enabled? %i\n", chassis.opcontrol_curve_buttons_toggle_get()); // Returns false
-  chassis.opcontrol_curve_buttons_toggle(true);
   printf("Enabled? %i\n", chassis.opcontrol_curve_buttons_toggle_get()); // Returns true
+  chassis.opcontrol_curve_buttons_toggle(false);
+  printf("Enabled? %i\n", chassis.opcontrol_curve_buttons_toggle_get()); // Returns false
 }
 ```
 
@@ -638,8 +633,8 @@ This gives more control over the robot at lower speeds.
 ```cpp
 void opcontrol() {
   while (true) {
-    int l_stick = opcontrol_curve_left(master.get_analog(ANALOG_LEFT_Y));
-    int r_stick = opcontrol_curve_left(master.get_analog(ANALOG_RIGHT_Y));
+    int l_stick = chassis.opcontrol_curve_left(master.get_analog(ANALOG_LEFT_Y));
+    int r_stick = chassis.opcontrol_curve_left(master.get_analog(ANALOG_RIGHT_Y));
     
     chassis.drive_set(l_stick, r_stick);
     
@@ -685,8 +680,8 @@ This gives more control over the robot at lower speeds.
 ```cpp
 void opcontrol() {
   while (true) {
-    int l_stick = opcontrol_curve_left(master.get_analog(ANALOG_LEFT_Y));
-    int r_stick = opcontrol_curve_left(master.get_analog(ANALOG_RIGHT_Y));
+    int l_stick = chassis.opcontrol_curve_left(master.get_analog(ANALOG_LEFT_Y));
+    int r_stick = chassis.opcontrol_curve_right(master.get_analog(ANALOG_RIGHT_Y));
     
     chassis.drive_set(l_stick, r_stick);
     
@@ -728,13 +723,12 @@ Allows the user to modify the curve with the controller.
 ```cpp
 void opcontrol() {
   while (true) {
-    chassis.opcontrol_joystick_threshold_opcontrol(master.get_analog(ANALOG_LEFT_Y), master.get_analog(ANALOG_RIGHT_Y));
+    chassis.opcontrol_joystick_threshold_iterate(master.get_analog(ANALOG_LEFT_Y), master.get_analog(ANALOG_RIGHT_Y));
 
     chassis.opcontrol_curve_buttons_iterate();
 
     pros::delay(ez::util::DELAY_TIME);
   }
-  chassis.opcontrol_joystick_threshold_set(5);
 }
 ```
 
@@ -764,7 +758,7 @@ void opcontrol_curve_buttons_iterate();
 ### opcontrol_joystick_threshold_set()
 Sets a new threshold for the joystick.  
 
-The joysticks wil not return a value if they are within this.   
+The joysticks will not return a value if they are within this.   
 
 `threshold` new threshold  
 <Tabs
@@ -808,10 +802,10 @@ void opcontrol_joystick_threshold_set(int threshold);
   
 
 ### opcontrol_joystick_threshold_iterate()
-Runs the joystick control.  Sets the left drive to `l_stick`, and right drive to `r_stick`.  Runs active brake and joystick thresholds.    
+Runs the joystick control.  Sets the left drive to `l_stick` and the right drive to `r_stick`, and runs active brake when both are 0.  This applies practice mode, `opcontrol_drive_reverse_set()` and the opcontrol max speed.  It does not apply `opcontrol_joystick_threshold_set()`, the `opcontrol_` drive functions apply that before calling this.    
 
-`l_stick` left joystick value    
-`r_stick` right joystick value   
+`l_stick` left drive input, -127 to 127    
+`r_stick` right drive input, -127 to 127   
 <Tabs
   groupId="opcontrol_joystick_threshold_iterate"
   defaultValue="proto"
@@ -825,7 +819,6 @@ Runs the joystick control.  Sets the left drive to `l_stick`, and right drive to
 
 ```cpp
 void opcontrol() {
-  chassis.opcontrol_joystick_threshold_set(5);
   while (true) {
     chassis.opcontrol_joystick_threshold_iterate(master.get_analog(ANALOG_LEFT_Y), master.get_analog(ANALOG_RIGHT_Y));
 
@@ -861,7 +854,7 @@ void opcontrol_joystick_threshold_iterate(int l_stick, int r_stick);
 
 
 ### opcontrol_joystick_practicemode_toggle()
-Practice mode for driver practice that shuts off the drive if you go max speed.
+Practice mode for driver practice that shuts off the drive if either side of the drive is asked to go faster than 120 (out of 127).  In arcade this is checked after the forward and turn sticks are combined.
  
 `toggle`  true enables, false disables      
 <Tabs
@@ -916,7 +909,7 @@ True is enabled, false is disabled.
 <TabItem value="proto">
 
 ```cpp
-ool opcontrol_joystick_practicemode_toggle_get();
+bool opcontrol_joystick_practicemode_toggle_get();
 ```
 </TabItem>
 <TabItem value="example">
@@ -1002,7 +995,7 @@ Returns kP of active brake.
 ```cpp
 void initialize() {
   chassis.opcontrol_drive_activebrake_set(0.1);
-  printf("kP is: %f\n", chassis.opcontrol_drive_activebrake_get);
+  printf("kP is: %f\n", chassis.opcontrol_drive_activebrake_get());
 }
 ```
 </TabItem>
@@ -1036,7 +1029,7 @@ void initialize() {
 
   ez::PID::Constants consts = chassis.opcontrol_drive_activebrake_constants_get();
 
-  printf("kP is: %f\n", consts.kP);
+  printf("kP is: %f\n", consts.kp);
 }
 ```
 </TabItem>
