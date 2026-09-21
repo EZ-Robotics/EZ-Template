@@ -27,8 +27,8 @@ The pros controller is defined globally in our library as `master`.
 ```cpp
 void opcontrol() {
   while (true) {
-    int l_stick = opcontrol_curve_left(master.get_analog(ANALOG_LEFT_Y));
-    int r_stick = opcontrol_curve_left(master.get_analog(ANALOG_RIGHT_Y));
+    int l_stick = chassis.opcontrol_curve_left(master.get_analog(ANALOG_LEFT_Y));
+    int r_stick = chassis.opcontrol_curve_right(master.get_analog(ANALOG_RIGHT_Y));
     
     chassis.drive_set(l_stick, r_stick);
     
@@ -43,7 +43,7 @@ void opcontrol() {
 <TabItem value="proto">
 
 ```cpp
-extern pros::Controller master();
+extern pros::Controller master;
 ```
 
 
@@ -159,7 +159,7 @@ void initialize() {
  
 
 
-## print_ez_template() 
+## ez_template_print() 
 Prints our branding on your terminal :D.   
 <Tabs
   groupId="ex4"
@@ -174,7 +174,7 @@ Prints our branding on your terminal :D.
 
 ```cpp
 void initialize() {
-  print_ez_template();
+  ez::ez_template_print();
 }
 ```
 
@@ -184,7 +184,7 @@ void initialize() {
 <TabItem value="proto">
 
 ```cpp
-void print_ez_template();
+void ez_template_print();
 ```
 
 
@@ -218,7 +218,7 @@ Returns the sign of the input.  Returns 1 if positive, -1 if negative, and 0 if 
 ```cpp
 void opcontrol() {
   while (true) {
-    printf("Sgn of Controller: %i \n", sgn(master.get_analog(ANALOG_LEFT_Y)));
+    printf("Sgn of Controller: %i \n", ez::util::sgn(master.get_analog(ANALOG_LEFT_Y)));
 
     pros::delay(ez::util::DELAY_TIME);
   }
@@ -231,7 +231,7 @@ void opcontrol() {
 <TabItem value="proto">
 
 ```cpp
-double sgn(double input);
+int sgn(double input);
 ```
 
 
@@ -271,7 +271,7 @@ void opcontrol() {
 
     // When the joystick is between 100 and 127
     // (or -100 and -127) this will print 100 (or -100).
-    printf("Clipped Controller: %i \n", clamp(joy, 100, -100)); 
+    printf("Clipped Controller: %.0f \n", ez::util::clamp(joy, 100, -100)); 
   }
 }
 ```
@@ -299,8 +299,7 @@ Returns input restricted to min-max threshold.
 The minimum used is negative max.      
 
 `input` your input value     
-`max` the maximum input can be    
-`min` the absolute value maximum input can be    
+`max` the absolute value maximum input can be    
 <Tabs
   groupId="ex66"
   defaultValue="proto"
@@ -319,7 +318,7 @@ void opcontrol() {
 
     // When the joystick is between 100 and 127
     // (or -100 and -127) this will print 100 (or -100).
-    printf("Clipped Controller: %i \n", clamp(joy, 100)); 
+    printf("Clipped Controller: %.0f \n", ez::util::clamp(joy, 100)); 
   }
 }
 ```
@@ -391,7 +390,7 @@ const int DELAY_TIME = 10;
  
 
 
-## IS_SD_CARD
+## SD_CARD_ACTIVE
 Boolean that checks if an SD card is installed.  True if there is one, false if there isn't.    
 <Tabs
   groupId="ex8"
@@ -406,7 +405,7 @@ Boolean that checks if an SD card is installed.  True if there is one, false if 
 
 ```cpp
 void initialize() {
-  if (!ez::util::IS_SD_CARD) 
+  if (!ez::util::SD_CARD_ACTIVE) 
     printf("No SD Card Found!\n");
 }
 ```
@@ -418,7 +417,7 @@ void initialize() {
 <TabItem value="proto">
 
 ```cpp
-const bool IS_SD_CARD = pros::usd::is_installed();
+const bool SD_CARD_ACTIVE = pros::usd::is_installed();
 ```
 
 
@@ -497,7 +496,7 @@ Converts degrees to radians.
 <TabItem value="proto">
 
 ```cpp
-double to_deg(double input);
+double to_rad(double input);
 ```
 </TabItem>
 <TabItem value="example">
@@ -582,7 +581,7 @@ void initialize() {
 ## wrap_angle() 
 Constrains an angle between 180 and -180.     
 
-`wrap_angle` input angle in degrees  
+`theta` input angle in degrees  
 <Tabs
   groupId="wrap_angle"
   defaultValue="proto"
