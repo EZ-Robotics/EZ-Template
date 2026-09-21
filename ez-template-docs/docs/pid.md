@@ -518,10 +518,8 @@ void name_set(std::string name);
 ## Getters
  
 
-### target_set()
-Sets PID target.   
-
-`target` the goal position for your subsystem  
+### target_get()
+Returns the PID target.   
 <Tabs
   groupId="ex4"
   defaultValue="proto"
@@ -560,7 +558,45 @@ void opcontrol() {
 <TabItem value="proto">
 
 ```cpp
-double target_set();
+double target_get();
+```
+
+
+
+</TabItem>
+</Tabs>
+
+
+
+### name_get()
+Returns the name of the PID, the string that prints when exit conditions are met.     
+<Tabs
+  groupId="name_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+ez::PID liftPID{1, 0.003, 4, 100};
+void initialize() {
+  liftPID.name_set("Lift");
+  printf("%s\n", liftPID.name_get().c_str());  // This prints Lift
+}
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+std::string name_get();
 ```
 
 
@@ -908,7 +944,8 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-ez::exit_output exit_condition(std::vector<pros::Motor> sensor, bool print = false);
+ez::exit_output exit_condition(const std::vector<pros::Motor>& sensor, bool print = false);
+ez::exit_output exit_condition(const pros::MotorGroup& sensor, bool print = false);
 ```
 
 
@@ -959,6 +996,58 @@ void opcontrol() {
 
 ```cpp
 void timers_reset();
+```
+
+
+
+</TabItem>
+</Tabs>
+
+### motion_reset()
+Resets the parts of the PID that shouldn't carry over from one motion to the next.  It clears the integral and primes the derivative, so the first `compute()` of a new motion doesn't see a spike from where the last motion ended.  Call it when you reuse one PID for several targets, alongside `timers_reset()`.  
+
+`current` the sensor value the next `compute()` will be given
+<Tabs
+  groupId="motion_reset"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+ez::PID liftPID{1, 0.003, 4, 100, "Lift"};
+pros::Motor lift_motor(1);
+void opcontrol() {
+  while (true) {
+    if (master.get_digital(DIGITAL_L1)) {
+      liftPID.motion_reset(lift_motor.get_position());  // Start fresh from where the lift is now
+      liftPID.timers_reset();
+      liftPID.target_set(500);
+    }
+    else if (master.get_digital(DIGITAL_L2)) {
+      liftPID.motion_reset(lift_motor.get_position());
+      liftPID.timers_reset();
+      liftPID.target_set(0);
+    }
+    lift_motor.move(liftPID.compute(lift_motor.get_position()));
+
+    pros::delay(ez::util::DELAY_TIME);
+  }
+}
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+void motion_reset(double current);
 ```
 
 

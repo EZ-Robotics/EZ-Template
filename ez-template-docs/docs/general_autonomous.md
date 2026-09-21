@@ -1159,7 +1159,7 @@ void pid_targets_reset();
 
 
 ### interfered
-Boolean that returns true when `pid_wait()` or `pid_wait_until()` exit with velocity or is_over_current.  This can be used to detect unwanted motion and stop the drive motors from overheating during autonomous.     
+Boolean that returns true when `pid_wait()` or `pid_wait_until()` exit with velocity or is_over_current.  It goes back to false at the start of every new motion.  This can be used to detect unwanted motion and stop the drive motors from overheating during autonomous.     
 <Tabs
   groupId="examples18"
   defaultValue="proto"
