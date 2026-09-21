@@ -37,9 +37,10 @@ struct DriveTestAccess {
   static void turn_pid_task(Drive& d) { d.turn_pid_task(); }
   static void swing_pid_task(Drive& d) { d.swing_pid_task(); }
 
-  static bool is_swing_slew_enabled(Drive& d, e_swing type, double target, double current) {
-    return d.is_swing_slew_enabled(type, target, current);
+  static bool is_swing_slew_enabled(Drive& d, e_swing type, double target, double current, e_angle_behavior behavior) {
+    return d.is_swing_slew_enabled(type, target, current, behavior);
   }
+  static bool& current_slew_on(Drive& d) { return d.current_slew_on; }
 
   static double get_this_imu(Drive& d, pros::Imu* imu) { return d.get_this_imu(imu); }
 
