@@ -35,7 +35,7 @@ void ez_template_print();
 /**
  * Prints to the brain screen in one string.
  *
- * Splits input between lines with '\n' or when text longer then 32 characters.
+ * Splits input between lines with '\n' or when text is longer than 38 characters.
  *
  * \param text
  *        input string
@@ -180,7 +180,7 @@ int places_after_decimal(double input, int min = 0);
 std::string to_string_with_precision(double input, int n = 2);
 
 /**
- * Returns 1 if input is positive and -1 if input is negative.
+ * Returns 1 if input is positive, -1 if input is negative, and 0 if input is 0.
  *
  * \param input
  *        your input value
@@ -221,7 +221,7 @@ double clamp(double input, double max);
 
 /**
  * The largest joystick curve scale the library will hold.  Past this, a stick at three quarters
- * already drives the wheels at a few percent, so there is nothing useful above it.
+ * already drives the wheels at only about 13%, so there is nothing useful above it.
  */
 const double MAX_CURVE_SCALE = 20.0;
 
@@ -353,10 +353,10 @@ double turn_longest(double target, double current, bool print = false);
 pose united_pose_to_pose(united_pose input);
 
 /**
- * Converts vector of poses with units to a vector of poses without units.
+ * Converts vector of odom movements with units to a vector of odom movements without units.
  *
  * \param inputs
- *        poses with units
+ *        odom movements with units
  */
 std::vector<odom> united_odoms_to_odoms(std::vector<united_odom> inputs);
 

@@ -61,7 +61,7 @@ class Drive {
   std::vector<pros::Motor> right_motors;
 
   /**
-   * Vector of pros motors that are disconnected from the drive.
+   * Vector of smart ports of the motors that are disconnected from the drive.
    */
   std::vector<int> pto_active;
 
@@ -1088,7 +1088,7 @@ class Drive {
   void opcontrol_curve_buttons_left_set(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase);
 
   /**
-   * Returns a vector of pros controller buttons user for the left joystick curve, in {decrease, increase}
+   * Returns a vector of pros controller buttons used for the left joystick curve, in {decrease, increase}
    */
   std::vector<pros::controller_digital_e_t> opcontrol_curve_buttons_left_get();
 
@@ -1103,7 +1103,7 @@ class Drive {
   void opcontrol_curve_buttons_right_set(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase);
 
   /**
-   * Returns a vector of pros controller buttons user for the right joystick curve, in {decrease, increase}
+   * Returns a vector of pros controller buttons used for the right joystick curve, in {decrease, increase}
    */
   std::vector<pros::controller_digital_e_t> opcontrol_curve_buttons_right_get();
 
@@ -1130,7 +1130,7 @@ class Drive {
   /**
    * Sets a new threshold for the joystick.
    *
-   * The joysticks wil not return a value if they are within this.
+   * The joysticks will not return a value if they are within this.
    *
    * \param threshold
    *        new threshold
@@ -1143,17 +1143,19 @@ class Drive {
   int opcontrol_joystick_threshold_get();
 
   /**
-   * Resets drive sensors at the start of opcontrol.
+   * Sets the active brake targets to the current drive sensor values, once after autonomous has run.  Called by the opcontrol_ drive functions.  Does not reset any sensors.
    */
   void opcontrol_drive_sensors_reset();
 
   /**
-   * Sets minimum value distance constants.
+   * Sets the left drive to l_stick and the right drive to r_stick, and runs active brake when both are 0.
+   *
+   * This applies practice mode, opcontrol_drive_reverse_set() and the opcontrol max speed.  It does not apply opcontrol_joystick_threshold_set(), the opcontrol_ drive functions apply that before calling this.
    *
    * \param l_stick
-   *        input for left joystick
+   *        left drive input, -127 to 127
    * \param r_stick
-   *        input for right joystick
+   *        right drive input, -127 to 127
    */
   void opcontrol_joystick_threshold_iterate(int l_stick, int r_stick);
 
@@ -1192,14 +1194,14 @@ class Drive {
   void pto_remove(std::vector<pros::Motor> pto_list);
 
   /**
-   * Adds/removes motors from drive.
+   * Moves motors between the drive and the pto list.
    *
    * You cannot add the first index because it's used for autonomous.
    *
    * \param pto_list
    *        list of motors to add/remove from the drive
    * \param toggle
-   *        list of motors to add/remove from the drive
+   *        true removes the motors from the drive and adds them to the pto list, false removes them from the pto list and adds them back to the drive
    */
   void pto_toggle(std::vector<pros::Motor> pto_list, bool toggle);
 
@@ -1222,7 +1224,7 @@ class Drive {
   void drive_set(int left, int right);
 
   /**
-   * Gets the chassis to voltage, -127 to 127.  Returns {left, right}.
+   * Gets the chassis voltage, -127 to 127.  Returns {left, right}.
    */
   std::vector<int> drive_get();
 
@@ -1235,7 +1237,7 @@ class Drive {
   void drive_brake_set(pros::motor_brake_mode_e_t brake_type);
 
   /**
-   * Returns the brake mode of the drive in pros_brake_mode_e_t_.
+   * Returns the brake mode of the drive as a pros::motor_brake_mode_e_t.
    */
   pros::motor_brake_mode_e_t drive_brake_get();
 
@@ -1389,7 +1391,7 @@ class Drive {
   int drive_velocity_right();
 
   /**
-   * The watts of the right motor.
+   * The current draw of the first right motor, in milliamps.
    */
   double drive_mA_right();
 
@@ -1418,7 +1420,7 @@ class Drive {
   int drive_velocity_left();
 
   /**
-   * The watts of the left motor.
+   * The current draw of the first left motor, in milliamps.
    */
   double drive_mA_left();
 
@@ -1446,7 +1448,7 @@ class Drive {
   double drive_imu_get();
 
   /**
-   * Returns the current imu accel x + accel y value.
+   * Returns the size of the imu's acceleration in the x-y plane, sqrt(x^2 + y^2), so it is never negative.  Returns 0 if there is no imu.
    */
   double drive_imu_accel_get();
 
@@ -1906,7 +1908,7 @@ class Drive {
   void pid_drive_set(double target, int speed, bool slew_on, bool toggle_heading = true);
 
   /**
-   * Sets the robot to turn face a point using PID and odometry.
+   * Sets the robot to turn to face a point using PID and odometry.
    *
    * \param target
    *        {x, y}  a target point to face
@@ -1916,7 +1918,7 @@ class Drive {
   void pid_turn_set(pose itarget, drive_directions dir, int speed);
 
   /**
-   * Sets the robot to turn face a point using PID and odometry.
+   * Sets the robot to turn to face a point using PID and odometry.
    *
    * \param target
    *        {x, y}  a target point to face
@@ -1928,7 +1930,7 @@ class Drive {
   void pid_turn_set(pose itarget, drive_directions dir, int speed, bool slew_on);
 
   /**
-   * Sets the robot to turn face a point using PID and odometry.
+   * Sets the robot to turn to face a point using PID and odometry.
    *
    * \param target
    *        {x, y}  a target point to face
@@ -1940,7 +1942,7 @@ class Drive {
   void pid_turn_set(pose itarget, drive_directions dir, int speed, e_angle_behavior behavior);
 
   /**
-   * Sets the robot to turn face a point using PID and odometry.
+   * Sets the robot to turn to face a point using PID and odometry.
    *
    * \param target
    *        {x, y}  a target point to face
@@ -1954,7 +1956,7 @@ class Drive {
   void pid_turn_set(pose itarget, drive_directions dir, int speed, e_angle_behavior behavior, bool slew_on);
 
   /**
-   * Sets the robot to turn face a point using PID and odometry.
+   * Sets the robot to turn to face a point using PID and odometry.
    *
    * \param target
    *        {x, y}  a target point to face.  this uses units
@@ -1964,7 +1966,7 @@ class Drive {
   void pid_turn_set(united_pose p_itarget, drive_directions dir, int speed);
 
   /**
-   * Sets the robot to turn face a point using PID and odometry.
+   * Sets the robot to turn to face a point using PID and odometry.
    *
    * \param target
    *        {x, y}  a target point to face.  this uses units
@@ -1976,7 +1978,7 @@ class Drive {
   void pid_turn_set(united_pose p_itarget, drive_directions dir, int speed, bool slew_on);
 
   /**
-   * Sets the robot to turn face a point using PID and odometry.
+   * Sets the robot to turn to face a point using PID and odometry.
    *
    * \param target
    *        {x, y}  a target point to face.  this uses units
@@ -1988,7 +1990,7 @@ class Drive {
   void pid_turn_set(united_pose p_itarget, drive_directions dir, int speed, e_angle_behavior behavior);
 
   /**
-   * Sets the robot to turn face a point using PID and odometry.
+   * Sets the robot to turn to face a point using PID and odometry.
    *
    * \param target
    *        {x, y}  a target point to face.  this uses units
@@ -3567,7 +3569,7 @@ class Drive {
   void opcontrol_arcade_scaling(bool enable);
 
   /**
-   * Returns if vector scaling for arcade control is enabled.  True enables, false disables.
+   * Returns true if vector scaling for arcade control is enabled, false if it is disabled.
    */
   bool opcontrol_arcade_scaling_enabled();
 
