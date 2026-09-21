@@ -1,8 +1,11 @@
 // chassis.interfered is set when a wait gives up because the robot stalled or its motors were pulling too
 // much current.  pid_wait() and the distance and angle waits already do that.  The waits for a point and for a
 // pure pursuit index have to as well, otherwise a check like `if (chassis.interfered)` after them never fires.
+// When the pure pursuit index wait gives up it also prints where it gave up and where it was headed, that has to
+// be the waypoint the caller asked about.
 #include "doctest.h"
 #include "drive_test_access.hpp"
+#include "stdout_capture.hpp"
 
 using namespace ez;
 
@@ -136,4 +139,34 @@ TEST_CASE("starting a new motion clears interfered") {
   motors_pull_too_much_current(chassis, false);
   start_point_move(chassis);
   CHECK_FALSE(chassis.interfered);
+}
+
+TEST_CASE("pid_wait_until_index_started names the waypoint it was waiting for when it gives up") {
+  Drive chassis = make_chassis();
+  configure(chassis);
+  // The path the robot follows has an injected point every half inch, so the injected points are nowhere near
+  // the waypoints.  Waiting on waypoint 1 has to name (0, 36), not a point next to the start of the path.
+  chassis.pid_odom_set({{{0.0, 12.0}, fwd, 110}, {{0.0, 36.0}, fwd, 110}, {{0.0, 60.0}, fwd, 110}});
+  REQUIRE(DriveTestAccess::injected_pp_index(chassis).size() == 4);
+  only_the_current_exit_ends_waits(chassis);
+  motors_pull_too_much_current(chassis, true);
+  REQUIRE(chassis.pid_print_toggle_get());
+
+  // What the wait printed when it gave up on waypoint `index`.
+  auto printed_waiting_for = [&](int index) {
+    return test_stub::capture_stdout([&] { CHECK(returns(500, [&] { chassis.pid_wait_until_index_started(index); })); });
+  };
+
+  std::string printed = printed_waiting_for(1);
+  INFO(printed);
+  CHECK(printed.find("instead of (0.00, 36.00)") != std::string::npos);
+
+  // The first and last waypoints name their own points too.
+  printed = printed_waiting_for(0);
+  INFO(printed);
+  CHECK(printed.find("instead of (0.00, 12.00)") != std::string::npos);
+
+  printed = printed_waiting_for(2);
+  INFO(printed);
+  CHECK(printed.find("instead of (0.00, 60.00)") != std::string::npos);
 }
