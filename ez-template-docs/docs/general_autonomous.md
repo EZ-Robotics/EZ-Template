@@ -250,6 +250,7 @@ When your brain is connected to a competition switch or field control, EZ-Templa
 :::
 
 `p_mode` the current task running for the drive.  accepts `ez::DISABLE`, `ez::SWING`, `ez::TURN`, `ez::DRIVE`           
+`stop_drive` if the drive motors stop when `p_mode` is `ez::DISABLE`.  Defaults to true  
 <Tabs
   groupId="examples13"
   defaultValue="proto"
@@ -280,7 +281,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void drive_mode_set(e_mode p_mode);
+void drive_mode_set(e_mode p_mode, bool stop_drive = true);
 ```
 
 
@@ -518,7 +519,7 @@ void pid_wait_until(double target);
 ### pid_angle_behavior_set()
 Sets the default behavior for turns in odom, swinging, and turning.   
 
-`behavior` ez::shortest, ez::longest, ez::left, ez::right, ez::raw    
+`behavior` ez::shortest, ez::longest, ez::ccw, ez::cw, ez::raw    
 <Tabs
   groupId="pid_angle_behavior_set"
   defaultValue="proto"
@@ -656,7 +657,7 @@ void pid_angle_behavior_tolerance_set(double tolerance);
 ### pid_angle_behavior_bias_set()
 When a turn is within its tolerance, you can have it bias left or right.   
 
-`behavior` ez::left or ez::right  
+`behavior` ez::ccw or ez::cw  
 <Tabs
   groupId="pid_angle_behavior_bias_set"
   defaultValue="proto"
@@ -970,7 +971,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-e_angle_behavior pid_angle_behavior_bias_get(e_angle_behavior);
+e_angle_behavior pid_angle_behavior_bias_get();
 ```
 </TabItem>
 </Tabs>
