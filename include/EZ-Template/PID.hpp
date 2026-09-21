@@ -73,9 +73,9 @@ class PID {
    * Set's constants for exit conditions.
    *
    * \param p_small_exit_time
-   *        sets small_exit_time, timer for to exit within smalL_error
+   *        sets small_exit_time, timer for to exit within small_error
    * \param p_small_error
-   *        sets smalL_error, timer will start when error is within this
+   *        sets small_error, timer will start when error is within this
    * \param p_big_exit_time
    *        sets big_exit_time, timer for to exit within big_error
    * \param p_big_error

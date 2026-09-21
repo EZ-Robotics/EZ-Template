@@ -2746,14 +2746,14 @@ class Drive {
   void pid_wait_until(double target);
 
   /**
-   * Lock the code in a while loop until the robot has settled.
+   * Lock the code in a while loop until the robot has passed its target (or an exit condition fires first).
    *
    * Wrapper for pid_wait_until(target), target is your previously input target.
    */
   void pid_wait_quick();
 
   /**
-   * Lock the code in a while loop until the robot has settled.
+   * Lock the code in a while loop until the robot has passed its target (or an exit condition fires first).
    *
    * This also adds distance to target, and then exits with pid_wait_quick.
    *
@@ -3242,7 +3242,7 @@ class Drive {
    * Set's constants for odom driving exit conditions.
    *
    * \param p_small_exit_time
-   *        time to exit when within smalL_error, in ms
+   *        time to exit when within small_error, in ms
    * \param p_small_error
    *        small timer will start when error is within this, in inches
    * \param p_big_exit_time
@@ -3250,11 +3250,11 @@ class Drive {
    * \param p_big_error
    *        big timer will start when error is within this, in inches
    * \param p_velocity_exit_time
-   *        velocity timer will start when velocity is 0 after the robot has moved, in ms
+   *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), in ms
    * \param p_mA_timeout
-   *        mA timer will start when the motors are pulling too much current, in ms
+   *        mA timer will start when the first motor on the side(s) being driven is over its current limit, in ms
    * \param use_imu
-   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
+   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time), false uses only the main sensor
    */
   void pid_odom_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = true);
 
@@ -3262,7 +3262,7 @@ class Drive {
    * Set's constants for odom turning exit conditions.
    *
    * \param p_small_exit_time
-   *        time to exit when within smalL_error, in ms
+   *        time to exit when within small_error, in ms
    * \param p_small_error
    *        small timer will start when error is within this, in degrees
    * \param p_big_exit_time
@@ -3270,11 +3270,11 @@ class Drive {
    * \param p_big_error
    *        big timer will start when error is within this, in degrees
    * \param p_velocity_exit_time
-   *        velocity timer will start when velocity is 0 after the robot has moved, in ms
+   *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), in ms
    * \param p_mA_timeout
-   *        mA timer will start when the motors are pulling too much current, in ms
+   *        mA timer will start when the first motor on the side(s) being driven is over its current limit, in ms
    * \param use_imu
-   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
+   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time), false uses only the main sensor
    */
   void pid_odom_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = true);
 
@@ -3282,7 +3282,7 @@ class Drive {
    * Set's constants for odom turning exit conditions.
    *
    * \param p_small_exit_time
-   *        time to exit when within smalL_error, unit
+   *        time to exit when within small_error, unit
    * \param p_small_error
    *        small timer will start when error is within this, unit
    * \param p_big_exit_time
@@ -3290,11 +3290,11 @@ class Drive {
    * \param p_big_error
    *        big timer will start when error is within this, unit
    * \param p_velocity_exit_time
-   *        velocity timer will start when velocity is 0 after the robot has moved, unit
+   *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), unit
    * \param p_mA_timeout
-   *        mA timer will start when the motors are pulling too much current, unit
+   *        mA timer will start when the first motor on the side(s) being driven is over its current limit, unit
    * \param use_imu
-   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
+   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time), false uses only the main sensor
    */
   void pid_odom_turn_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error, ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = true);
 
@@ -3302,7 +3302,7 @@ class Drive {
    * Set's constants for odom driving exit conditions.
    *
    * \param p_small_exit_time
-   *        time to exit when within smalL_error, unit
+   *        time to exit when within small_error, unit
    * \param p_small_error
    *        small timer will start when error is within this, unit
    * \param p_big_exit_time
@@ -3310,11 +3310,11 @@ class Drive {
    * \param p_big_error
    *        big timer will start when error is within this, unit
    * \param p_velocity_exit_time
-   *        velocity timer will start when velocity is 0 after the robot has moved, unit
+   *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), unit
    * \param p_mA_timeout
-   *        mA timer will start when the motors are pulling too much current, unit
+   *        mA timer will start when the first motor on the side(s) being driven is over its current limit, unit
    * \param use_imu
-   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
+   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time), false uses only the main sensor
    */
   void pid_odom_drive_exit_condition_set(ez::QTime p_small_exit_time, ez::QLength p_small_error, ez::QTime p_big_exit_time, ez::QLength p_big_error, ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = true);
 
@@ -3322,7 +3322,7 @@ class Drive {
    * Set's constants for drive exit conditions.
    *
    * \param p_small_exit_time
-   *        time to exit when within smalL_error, unit
+   *        time to exit when within small_error, unit
    * \param p_small_error
    *        small timer will start when error is within this, unit
    * \param p_big_exit_time
@@ -3330,11 +3330,11 @@ class Drive {
    * \param p_big_error
    *        big timer will start when error is within this, unit
    * \param p_velocity_exit_time
-   *        velocity timer will start when velocity is 0 after the robot has moved, unit
+   *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), unit
    * \param p_mA_timeout
-   *        mA timer will start when the motors are pulling too much current, unit
+   *        mA timer will start when the first motor on the side(s) being driven is over its current limit, unit
    * \param use_imu
-   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
+   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time), false uses only the main sensor
    */
   void pid_drive_exit_condition_set(ez::QTime p_small_exit_time, ez::QLength p_small_error, ez::QTime p_big_exit_time, ez::QLength p_big_error, ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = true);
 
@@ -3342,7 +3342,7 @@ class Drive {
    * Set's constants for turn exit conditions.
    *
    * \param p_small_exit_time
-   *        time to exit when within smalL_error, unit
+   *        time to exit when within small_error, unit
    * \param p_small_error
    *        small timer will start when error is within this, unit
    * \param p_big_exit_time
@@ -3350,11 +3350,11 @@ class Drive {
    * \param p_big_error
    *        big timer will start when error is within this, unit
    * \param p_velocity_exit_time
-   *        velocity timer will start when velocity is 0 after the robot has moved, unit
+   *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), unit
    * \param p_mA_timeout
-   *        mA timer will start when the motors are pulling too much current, unit
+   *        mA timer will start when the first motor on the side(s) being driven is over its current limit, unit
    * \param use_imu
-   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
+   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time), false uses only the main sensor
    */
   void pid_turn_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error, ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = true);
 
@@ -3362,7 +3362,7 @@ class Drive {
    * Set's constants for swing exit conditions.
    *
    * \param p_small_exit_time
-   *        time to exit when within smalL_error, unit
+   *        time to exit when within small_error, unit
    * \param p_small_error
    *        small timer will start when error is within this, unit
    * \param p_big_exit_time
@@ -3370,11 +3370,11 @@ class Drive {
    * \param p_big_error
    *        big timer will start when error is within this, unit
    * \param p_velocity_exit_time
-   *        velocity timer will start when velocity is 0 after the robot has moved, unit
+   *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), unit
    * \param p_mA_timeout
-   *        mA timer will start when the motors are pulling too much current, unit
+   *        mA timer will start when the first motor on the side(s) being driven is over its current limit, unit
    * \param use_imu
-   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
+   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time), false uses only the main sensor
    */
   void pid_swing_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error, ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = true);
 
@@ -3382,7 +3382,7 @@ class Drive {
    * Set's constants for drive exit conditions.
    *
    * \param p_small_exit_time
-   *        time to exit when within smalL_error, in ms
+   *        time to exit when within small_error, in ms
    * \param p_small_error
    *        small timer will start when error is within this, in inches
    * \param p_big_exit_time
@@ -3390,11 +3390,11 @@ class Drive {
    * \param p_big_error
    *        big timer will start when error is within this, in inches
    * \param p_velocity_exit_time
-   *        velocity timer will start when velocity is 0 after the robot has moved, in ms
+   *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), in ms
    * \param p_mA_timeout
-   *        mA timer will start when the motors are pulling too much current, in ms
+   *        mA timer will start when the first motor on the side(s) being driven is over its current limit, in ms
    * \param use_imu
-   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
+   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time), false uses only the main sensor
    */
   void pid_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = true);
 
@@ -3402,7 +3402,7 @@ class Drive {
    * Set's constants for turn exit conditions.
    *
    * \param p_small_exit_time
-   *        time to exit when within smalL_error, in ms
+   *        time to exit when within small_error, in ms
    * \param p_small_error
    *        small timer will start when error is within this, in degrees
    * \param p_big_exit_time
@@ -3410,11 +3410,11 @@ class Drive {
    * \param p_big_error
    *        big timer will start when error is within this, in degrees
    * \param p_velocity_exit_time
-   *        velocity timer will start when velocity is 0 after the robot has moved, in ms
+   *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), in ms
    * \param p_mA_timeout
-   *        mA timer will start when the motors are pulling too much current, in ms
+   *        mA timer will start when the first motor on the side(s) being driven is over its current limit, in ms
    * \param use_imu
-   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
+   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time), false uses only the main sensor
    */
   void pid_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = true);
 
@@ -3422,7 +3422,7 @@ class Drive {
    * Set's constants for swing exit conditions.
    *
    * \param p_small_exit_time
-   *        time to exit when within smalL_error, in ms
+   *        time to exit when within small_error, in ms
    * \param p_small_error
    *        small timer will start when error is within this, in degrees
    * \param p_big_exit_time
@@ -3430,11 +3430,11 @@ class Drive {
    * \param p_big_error
    *        big timer will start when error is within this, in degrees
    * \param p_velocity_exit_time
-   *        velocity timer will start when velocity is 0 after the robot has moved, in ms
+   *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), in ms
    * \param p_mA_timeout
-   *        mA timer will start when the motors are pulling too much current, in ms
+   *        mA timer will start when the first motor on the side(s) being driven is over its current limit, in ms
    * \param use_imu
-   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
+   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time), false uses only the main sensor
    */
   void pid_swing_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = true);
 
