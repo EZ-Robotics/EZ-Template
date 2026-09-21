@@ -137,7 +137,7 @@ void shutdown();
 
 
 ### autons_add();
-Appends autonomous routines to the autonomous selector's list.  Calling this more than once keeps the routines you've already added, and the selector goes back to the first page.  Uses `ez::print_to_screen()` to display to the brain.  
+Appends autonomous routines to the autonomous selector's list.  Calling this more than once keeps the routines you've already added, and the selector goes back to the first page.  Uses `ez::screen_print()` to display to the brain.  
 
 `autons` accepts an object of a string and a function
 <Tabs
@@ -315,7 +315,7 @@ void page_up();
 
 
 ### selected_auton_call()
-Runs the current autonomous that's selected.    
+Runs the current autonomous that's selected.  If the selector is on a blank page instead of an autonomous, it runs the last autonomous page you were on.    
 <Tabs
   groupId="selected_auton_call"
   defaultValue="proto"
@@ -439,7 +439,6 @@ void opcontrol() {
 
 
 
-void page_blank_remove_all();
 ### page_blank_remove_all()
 Removes all blank pages.     
 <Tabs
@@ -470,7 +469,7 @@ void opcontrol() {
     }
 
     if (master.get_digital_new_press(DIGITAL_L1)) {
-      ez::as::pagE_blank_remove_all();
+      ez::as::page_blank_remove_all();
     }
 
     pros::delay(ez::util::DELAY_TIME);  // This is used for timer calculations!  Keep this ez::util::DELAY_TIME

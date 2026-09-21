@@ -220,7 +220,7 @@ else {
 
 To remove all blank pages, we can use the following line.
 ```cpp
-ez::as::blank_page_remove_all()
+ez::as::page_blank_remove_all();
 ```
 
 Combining all of that, this following code is the same as the Screen Task example above but will only run when the controller isn't connected to a competition.  
