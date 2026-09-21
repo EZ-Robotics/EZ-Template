@@ -16,7 +16,7 @@ Typically, moving the joystick halfway means the robot goes half speed. With an 
 EZ-Template uses [this curve](https://www.desmos.com/calculator/7oyvwwpmed) that [5225A](https://www.vexforum.com/t/team-5225a-in-the-zone-code-release-yes-you-read-that-right/63199/10) used during In the Zone.  The x-axis is the joystick input and the y-axis is the motor output.
 
 ## Using the Joystick Curves
-You can use controller buttons to modify these curves live.  What the buttons do depends on which drive style you're using.  Here's a list of all of them.     
+You can use controller buttons to modify these curves live, once you turn that on with `chassis.opcontrol_curve_buttons_toggle(true);`.  It's off by default, and the example project turns it on in `initialize()`.  What the buttons do depends on which drive style you're using.  Here's a list of all of them.     
 
 <APITable>
 
