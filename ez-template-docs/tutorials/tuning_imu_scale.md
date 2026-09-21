@@ -24,16 +24,22 @@ No imu reports exactly 1 degree of rotation for every degree the robot actually 
 ## Tuning 
 Place your robot carefully, ideally aligned with tiles on the field so you know it's facing forward, and make sure nothing is calling `drive_imu_scaler_3600_set()` yet, since a freshly constructed drive's imu is unscaled.  
 
-Physically turn the robot exactly 3600 degrees (10 full rotations), either by hand or with a raw, unscaled auton.  
+Physically turn the robot exactly 3600 degrees (10 full rotations) by hand.  Don't use an autonomous routine for this.  `pid_turn_set()` stops when the imu reads its target, so the imu would report 3600 no matter how far the robot really turned.  Line the robot up with a tile edge at the start and after every rotation so you know each one was a full turn.  
+
+While you turn it, print what the imu reports.  Put this in `opcontrol()` for now, upload it, and watch the terminal.  
 ```cpp
-chassis.pid_turn_set(3600_deg, 40, ez::raw);
-chassis.pid_wait();
+void opcontrol() {
+  chassis.drive_brake_set(MOTOR_BRAKE_COAST);  // Lets the wheels spin freely
+  chassis.drive_imu_reset();                   // Start counting from 0
+
+  while (true) {
+    printf("%.2f\n", chassis.drive_imu_get());  // What the imu has measured so far, in degrees
+    pros::delay(ez::util::DELAY_TIME);
+  }
+}
 ```
 
-Read what the imu reported for that turn.  
-```cpp
-printf("%.2f\n", chassis.drive_imu_get());
-```
+Once you've finished the 10th rotation, write down the last number it printed.  
 
 Whatever that number is, pass it directly into `drive_imu_scaler_3600_set()`.  You'll do this by adding this line of code to `default_constants()` in `src/autons.cpp`.  
 ```cpp
