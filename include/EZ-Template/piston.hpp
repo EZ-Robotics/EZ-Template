@@ -25,7 +25,8 @@ class Piston {
    * \param input_port
    *        the ports of your pistons
    * \param default_state
-   *        starting state of your piston
+   *        level the solenoid's pin starts at.  get() and set() are relative to it: get() is false at startup,
+   *        and set(true) moves the piston to the opposite of default_state
    */
   Piston(int input_port, bool default_state = false);
 
@@ -37,7 +38,8 @@ class Piston {
    * \param input_ports
    *        the ports of your pistons
    * \param default_state
-   *        starting state of your piston
+   *        level the solenoid's pin starts at.  get() and set() are relative to it: get() is false at startup,
+   *        and set(true) moves the piston to the opposite of default_state
    */
   Piston(int input_port, int expander_smart_port, bool default_state = false);
 

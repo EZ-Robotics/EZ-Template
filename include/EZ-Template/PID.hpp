@@ -130,7 +130,8 @@ class PID {
   bool constants_set_check();
 
   /**
-   * Resets all variables to 0.  This does not reset constants.
+   * Resets output, target, error, previous error and the integral to 0.  This does not reset constants, exit
+   * condition timers, or the previous sensor value used for the derivative (see motion_reset() and timers_reset()).
    */
   void variables_reset();
 
@@ -148,7 +149,9 @@ class PID {
    * Updates a secondary sensor for velocity exiting.  Ideal use is IMU during normal drive motions.
    *
    * \param secondary_sensor
-   *        secondary sensor value
+   *        the secondary sensor's current velocity or acceleration reading, not its position.  It counts as
+   *        stopped while the absolute value of this is at or below velocity_sensor_secondary_exit_get().
+   *        EZ-Template passes the IMU acceleration magnitude.
    */
   void velocity_sensor_secondary_set(double secondary_sensor);
 

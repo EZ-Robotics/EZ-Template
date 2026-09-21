@@ -60,7 +60,7 @@ extern pros::adi::DigitalIn* limit_switch_right;
  *
  * The library never takes ownership of the pointers passed in and will not
  * delete them, including when called with both pointers null to disable this
- * feature.
+ * feature.  The switches must outlive this call, the library keeps polling the pointers.
  *
  * @param left_limit_port
  *        port for the left limit switch
