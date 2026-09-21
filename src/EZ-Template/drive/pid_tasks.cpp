@@ -126,6 +126,7 @@ void Drive::turn_pid_task() {
     double a_target = util::absolute_angle_to_point(point_to_face[!ptf1_running], odom_pose_get());  // Calculate the point for angle to face
     a_target = new_turn_target_compute(a_target, odom_imu_start, current_angle_behavior);
     double error = a_target - odom_theta_get();
+    error += used_motion_chain_scale;  // Aim a little past the point when chaining into the next motion, 0 otherwise
     turnPID.compute_error(error, odom_theta_get());
   }
 
