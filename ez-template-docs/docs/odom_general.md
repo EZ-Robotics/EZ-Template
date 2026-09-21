@@ -221,7 +221,9 @@ By default, position is computed by `tracking_wheels_tracking()`, using whatever
 ### odom_tracking_set()
 Sets a new task to use for tracking.
 
-In the function you pass in, you must set `odom_current.x`, `odom_current.y`, and `odom_current.theta`.  The function does not need to loop, that is done for you by EZ-Template.
+In the function you pass in, you must set `odom_current.x`, `odom_current.y`, and `odom_current.theta`.  `x` and `y` are in inches and `theta` is in degrees.  The function does not need to loop, that is done for you by EZ-Template.
+
+EZ-Template calls your function about every 10 ms from its background task, while that task holds the drive lock.  Setters like `pid_drive_set()` wait for that lock, so don't call `pros::delay()` or anything else that blocks in your function, or every setter will wait on it.
 
 `tracking_task` new function for tracking
 <Tabs
