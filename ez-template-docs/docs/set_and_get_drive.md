@@ -71,9 +71,9 @@ Disables PID when called.
 
 ```cpp
 void autonomous() {
-  drive_set(127, 127);
+  chassis.drive_set(127, 127);
   pros::delay(1000); // Wait 1 second
-  drive_set(0, 0);
+  chassis.drive_set(0, 0);
 }
 ```
 
@@ -113,7 +113,7 @@ Changes the way the drive behaves when it is not under active user control.
 
 ```cpp
 void initialize() {
-  drive_brake_set_mode(MOTOR_BRAKE_COAST);
+  chassis.drive_brake_set(MOTOR_BRAKE_COAST);
 }
 ```
 
@@ -140,7 +140,7 @@ void drive_brake_set(pros::motor_brake_mode_e_t brake_type);
 ### drive_current_limit_set()
 Sets the limit for the current on the drive.  
 
-`mA` input in miliamps    
+`mA` input in milliamps    
 <Tabs
   groupId="drive_current_limit_set"
   defaultValue="proto"
@@ -154,7 +154,7 @@ Sets the limit for the current on the drive.
 
 ```cpp
 void initialize() {
-  drive_brake_set_mode(1000);
+  chassis.drive_current_limit_set(1000);
 }
 ```
 
@@ -278,7 +278,7 @@ void opcontrol() {
   while (true) {
     chassis.opcontrol_tank();
 
-    printf("Right Sensor: %i \n", chassis.drive_sensor_right());
+    printf("Right Sensor: %f \n", chassis.drive_sensor_right());
 
     pros::delay(ez::util::DELAY_TIME);
   }
@@ -291,7 +291,7 @@ void opcontrol() {
 <TabItem value="proto">
 
 ```cpp
-int drive_sensor_right();
+double drive_sensor_right();
 ```
 
 </TabItem>
@@ -347,7 +347,7 @@ int drive_velocity_right();
 
 
 ### drive_mA_right()
-The watts of the right motor.      
+The current draw of the first right motor, in milliamps.      
 <Tabs
   groupId="edrive_mA_rightx7"
   defaultValue="proto"
@@ -364,7 +364,7 @@ void opcontrol() {
   while (true) {
     chassis.opcontrol_tank();
 
-    printf("Right mA: %i \n", chassis.drive_mA_right());
+    printf("Right mA: %f \n", chassis.drive_mA_right());
 
     pros::delay(ez::util::DELAY_TIME);
   }
@@ -454,7 +454,7 @@ void opcontrol() {
   while (true) {
     chassis.opcontrol_tank();
 
-    printf("Left Sensor: %i \n", chassis.drive_sensor_left());
+    printf("Left Sensor: %f \n", chassis.drive_sensor_left());
 
     pros::delay(ez::util::DELAY_TIME);
   }
@@ -467,7 +467,7 @@ void opcontrol() {
 <TabItem value="proto">
 
 ```cpp
-int drive_sensor_left();
+double drive_sensor_left();
 ```
 
 </TabItem>
@@ -525,7 +525,7 @@ int drive_velocity_left();
 
 
 ### drive_mA_left()
-The watts of the left motor.      
+The current draw of the first left motor, in milliamps.      
 <Tabs
   groupId="drive_mA_left"
   defaultValue="proto"
@@ -542,7 +542,7 @@ void opcontrol() {
   while (true) {
     chassis.opcontrol_tank();
 
-    printf("Left mA: %i \n", chassis.drive_mA_left());
+    printf("Left mA: %f \n", chassis.drive_mA_left());
 
     pros::delay(ez::util::DELAY_TIME);
   }
