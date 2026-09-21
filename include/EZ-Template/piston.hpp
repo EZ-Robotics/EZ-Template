@@ -23,7 +23,7 @@ class Piston {
    * The starting position of your piston defaults to false.
    *
    * \param input_port
-   *        the ports of your pistons
+   *        the ADI port of your piston
    * \param default_state
    *        starting state of your piston
    */
@@ -34,8 +34,10 @@ class Piston {
    *
    * The starting position of your piston defaults to false.
    *
-   * \param input_ports
-   *        the ports of your pistons
+   * \param input_port
+   *        the ADI port of your piston on the expander
+   * \param expander_smart_port
+   *        the smart port the 3 wire expander is plugged into
    * \param default_state
    *        starting state of your piston
    */
