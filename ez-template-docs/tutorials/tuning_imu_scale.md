@@ -26,20 +26,14 @@ Place your robot carefully, ideally aligned with tiles on the field so you know 
 
 Physically turn the robot exactly 3600 degrees (10 full rotations) by hand.  Don't use an autonomous routine for this.  `pid_turn_set()` stops when the imu reads its target, so the imu would report 3600 no matter how far the robot really turned.  Line the robot up with a tile edge at the start and after every rotation so you know each one was a full turn.  
 
-While you turn it, print what the imu reports to the brain's screen.  Put this in `opcontrol()` for now, upload it, and watch the screen.  
+While you turn it, show what the imu reports on a blank page.  Add this to `ez_screen_task()` in `main.cpp`, under `// Add your own blank pages here!`, and upload it.  In the example project blank page 0 shows odometry and blank page 1 shows motor temperatures, so this is page 2.  If you've added pages of your own, use the next number that's free.  Then go left on the autonomous selector until you're on the page.  [Blank Pages](blank_pages.md) explains how they work.  
 ```cpp
-void opcontrol() {
-  chassis.drive_brake_set(MOTOR_BRAKE_COAST);  // Lets the wheels spin freely
-  chassis.drive_imu_reset();                   // Start counting from 0
-
-  while (true) {
-    ez::screen_print("IMU: " + ez::util::to_string_with_precision(chassis.drive_imu_get()), 5);  // What the imu has measured so far, in degrees
-    pros::delay(ez::util::DELAY_TIME);
-  }
+else if (ez::as::page_blank_is_on(2)) {
+  ez::screen_print("IMU: " + ez::util::to_string_with_precision(chassis.drive_imu_get()), 1);  // What the imu has measured so far, in degrees
 }
 ```
 
-Once you've finished the 10th rotation, write down the number on the screen.  
+The imu reads 0 once it finishes calibrating, so wait for the loading bar to finish before you start turning the robot.  Once you've finished the 10th rotation, write down the number on the screen.  
 
 Whatever that number is, pass it directly into `drive_imu_scaler_3600_set()`.  You'll do this by adding this line of code to `default_constants()` in `src/autons.cpp`.  
 ```cpp
