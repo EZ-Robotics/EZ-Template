@@ -9,6 +9,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include <cstdlib>
 #include <filesystem>
 
+#include "auton_pages.hpp"
 #include "auton_selector.hpp"
 #include "display.hpp"
 #include "liblvgl/llemu.hpp"
@@ -41,12 +42,11 @@ void auton_selector_initialize() {
     char buf[32] = {0};
     fread(buf, 1, sizeof(buf) - 1, as_usd_file_read);
     fclose(as_usd_file_read);
-    char* end = nullptr;
-    double parsed = strtod(buf, &end);
-    if (end != buf)
-      ez::as::auton_selector.auton_page_current = parsed;
+    int saved_page = 0;
+    if (internal::saved_page_parse(buf, saved_page))
+      ez::as::auton_selector.auton_page_current = saved_page;
     else
-      printf("EZ-Template: couldn't parse /usd/auto.txt, keeping current auton page\n");
+      printf("EZ-Template: /usd/auto.txt doesn't hold a valid auton page, keeping current auton page\n");
   }
   // If file doesn't exist, create file
   else {
@@ -74,20 +74,18 @@ void print_page() {
 }
 
 void page_up() {
+  int page = auton_selector.auton_page_current;
+  if (!internal::page_move(page, auton_selector.auton_count, 1)) return;  // no pages to go through
   if (util::sgn(page_blank_current()) == -1) auton_selector.last_auton_page_current = auton_selector.auton_page_current;
-  if (auton_selector.auton_page_current == auton_selector.auton_count - 1)
-    auton_selector.auton_page_current = 0;
-  else
-    auton_selector.auton_page_current++;
+  auton_selector.auton_page_current = page;
   print_page();
 }
 
 void page_down() {
+  int page = auton_selector.auton_page_current;
+  if (!internal::page_move(page, auton_selector.auton_count, -1)) return;  // no pages to go through
   if (util::sgn(page_blank_current()) == -1) auton_selector.last_auton_page_current = auton_selector.auton_page_current;
-  if (auton_selector.auton_page_current == 0)
-    auton_selector.auton_page_current = auton_selector.auton_count - 1;
-  else
-    auton_selector.auton_page_current--;
+  auton_selector.auton_page_current = page;
   print_page();
 }
 
