@@ -389,13 +389,13 @@ void autonomous() {
   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
 
-  chassis.pid_odom_set({{24_in, 0_in}, fwd, 110});
+  chassis.pid_odom_set({{24_in, 0_in}, ez::fwd, 110});
   chassis.pid_wait();
 
   chassis.odom_x_set(0);  // Set current x to 0
 
   // This will go back to the starting location
-  chassis.pid_odom_set({{-24_in, 0_in}, rev, 110});
+  chassis.pid_odom_set({{-24_in, 0_in}, ez::rev, 110});
   chassis.pid_wait();
 }
 ```
@@ -433,13 +433,13 @@ void autonomous() {
   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
 
-  chassis.pid_odom_set({{24_in, 0_in}, fwd, 110});
+  chassis.pid_odom_set({{24_in, 0_in}, ez::fwd, 110});
   chassis.pid_wait();
 
   chassis.odom_x_set(0_in);  // Set current x to 0
 
   // This will go back to the starting location
-  chassis.pid_odom_set({{-24_in, 0_in}, rev, 110});
+  chassis.pid_odom_set({{-24_in, 0_in}, ez::rev, 110});
   chassis.pid_wait();
 }
 ```
@@ -478,13 +478,13 @@ void autonomous() {
   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
 
-  chassis.pid_odom_set({{0_in, 24_in}, fwd, 110});
+  chassis.pid_odom_set({{0_in, 24_in}, ez::fwd, 110});
   chassis.pid_wait();
 
   chassis.odom_y_set(0);  // Set current y to 0
 
   // This will go back to the starting location
-  chassis.pid_odom_set({{0_in, -24_in}, rev, 110});
+  chassis.pid_odom_set({{0_in, -24_in}, ez::rev, 110});
   chassis.pid_wait();
 }
 ```
@@ -522,13 +522,13 @@ void autonomous() {
   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
 
-  chassis.pid_odom_set({{0_in, 24_in}, fwd, 110});
+  chassis.pid_odom_set({{0_in, 24_in}, ez::fwd, 110});
   chassis.pid_wait();
 
   chassis.odom_y_set(0_in);  // Set current y to 0
 
   // This will go back to the starting location
-  chassis.pid_odom_set({{0_in, -24_in}, rev, 110});
+  chassis.pid_odom_set({{0_in, -24_in}, ez::rev, 110});
   chassis.pid_wait();
 }
 ```
@@ -679,13 +679,13 @@ void autonomous() {
   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
 
-  chassis.pid_odom_set({{24_in, 24_in}, fwd, 110});
+  chassis.pid_odom_set({{24_in, 24_in}, ez::fwd, 110});
   chassis.pid_wait();
 
   chassis.odom_xy_set(0, 0);  // Set current x and y to 0
 
   // This will go back to the starting location
-  chassis.pid_odom_set({{-24_in, -24_in}, rev, 110});
+  chassis.pid_odom_set({{-24_in, -24_in}, ez::rev, 110});
   chassis.pid_wait();
 }
 ```
@@ -733,13 +733,13 @@ void autonomous() {
   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
 
-  chassis.pid_odom_set({{24_in, 24_in}, fwd, 110});
+  chassis.pid_odom_set({{24_in, 24_in}, ez::fwd, 110});
   chassis.pid_wait();
 
   chassis.odom_xy_set(0_in, 0_in);  // Set current x and y to 0
 
   // This will go back to the starting location
-  chassis.pid_odom_set({{-24_in, -24_in}, rev, 110});
+  chassis.pid_odom_set({{-24_in, -24_in}, ez::rev, 110});
   chassis.pid_wait();
 }
 ```
@@ -788,13 +788,13 @@ void autonomous() {
   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
 
-  chassis.pid_odom_set({{24_in, 24_in, 45_deg}, fwd, 110});
+  chassis.pid_odom_set({{24_in, 24_in, 45_deg}, ez::fwd, 110});
   chassis.pid_wait();
 
   chassis.odom_xyt_set(0, 0, -45);  
 
   // This will go back to the starting location
-  chassis.pid_odom_set({{-24_in, -24_in}, rev, 110});
+  chassis.pid_odom_set({{-24_in, -24_in}, ez::rev, 110});
   chassis.pid_wait();
 }
 ```
@@ -843,13 +843,13 @@ void autonomous() {
   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
 
-  chassis.pid_odom_set({{24_in, 24_in, 45_deg}, fwd, 110});
+  chassis.pid_odom_set({{24_in, 24_in, 45_deg}, ez::fwd, 110});
   chassis.pid_wait();
 
   chassis.odom_xyt_set(0_in, 0_in, -45_deg);  
 
   // This will go back to the starting location
-  chassis.pid_odom_set({{-24_in, -24_in}, rev, 110});
+  chassis.pid_odom_set({{-24_in, -24_in}, ez::rev, 110});
   chassis.pid_wait();
 }
 ```
@@ -897,14 +897,14 @@ void autonomous() {
   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
 
-  chassis.pid_odom_set({{24_in, 24_in, 45_deg}, fwd, 110});
+  chassis.pid_odom_set({{24_in, 24_in, 45_deg}, ez::fwd, 110});
   chassis.pid_wait();
 
   ez::pose new_pose = {0, 0, -45};
   chassis.odom_xyt_set(new_pose);  
 
   // This will go back to the starting location
-  chassis.pid_odom_set({{-24_in, -24_in}, rev, 110});
+  chassis.pid_odom_set({{-24_in, -24_in}, ez::rev, 110});
   chassis.pid_wait();
 }
 ```
@@ -950,14 +950,14 @@ void autonomous() {
   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
 
-  chassis.pid_odom_set({{24_in, 24_in, 45_deg}, fwd, 110});
+  chassis.pid_odom_set({{24_in, 24_in, 45_deg}, ez::fwd, 110});
   chassis.pid_wait();
 
   ez::united_pose new_pose = {0_in, 0_in, -45_deg};
   chassis.odom_xyt_set(new_pose);  
 
   // This will go back to the starting location
-  chassis.pid_odom_set({{-24_in, -24_in}, rev, 110});
+  chassis.pid_odom_set({{-24_in, -24_in}, ez::rev, 110});
   chassis.pid_wait();
 }
 ```
@@ -1027,7 +1027,7 @@ void autonomous() {
   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
 
-  chassis.pid_odom_set({{24_in, 24_in, 45_deg}, fwd, 110});
+  chassis.pid_odom_set({{24_in, 24_in, 45_deg}, ez::fwd, 110});
   chassis.pid_wait();
 
   printf("X: %.2f  Y: %.2f  T: %.2f\n", chassis.odom_x_get(), chassis.odom_y_get(), chassis.odom_theta_get());
@@ -1071,7 +1071,7 @@ void autonomous() {
   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
 
-  chassis.pid_odom_set({{24_in, 24_in, 45_deg}, fwd, 110});
+  chassis.pid_odom_set({{24_in, 24_in, 45_deg}, ez::fwd, 110});
   chassis.pid_wait();
 
   printf("X: %.2f  Y: %.2f  T: %.2f\n", chassis.odom_x_get(), chassis.odom_y_get(), chassis.odom_theta_get());
@@ -1112,7 +1112,7 @@ void autonomous() {
   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
 
-  chassis.pid_odom_set({{24_in, 24_in, 45_deg}, fwd, 110});
+  chassis.pid_odom_set({{24_in, 24_in, 45_deg}, ez::fwd, 110});
   chassis.pid_wait();
 
   printf("X: %.2f  Y: %.2f  T: %.2f\n", chassis.odom_x_get(), chassis.odom_y_get(), chassis.odom_theta_get());
@@ -1157,7 +1157,7 @@ void autonomous() {
   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
 
-  chassis.pid_odom_set({{24_in, 24_in, 45_deg}, fwd, 110});
+  chassis.pid_odom_set({{24_in, 24_in, 45_deg}, ez::fwd, 110});
   chassis.pid_wait();
 
   ez::pose c_pose = chassis.odom_pose_get();
@@ -1271,7 +1271,7 @@ void autonomous() {
   chassis.odom_turn_bias_set(1.0);  // Set turn bias to 1
 
   // Go to 24, 24
-  chassis.pid_odom_set({{24_in, 24_in}, fwd, 110});
+  chassis.pid_odom_set({{24_in, 24_in}, ez::fwd, 110});
   chassis.pid_wait();
 
   // Reset your angle and position
@@ -1282,7 +1282,7 @@ void autonomous() {
   chassis.odom_turn_bias_set(0.5);  // Set turn bias to 0.5
 
   // Go to 24, 24 relative to where the robot ended, but with a new turn bias
-  chassis.pid_odom_set({{24_in, 24_in}, fwd, 110});
+  chassis.pid_odom_set({{24_in, 24_in}, ez::fwd, 110});
   chassis.pid_wait();
 }
 ```
@@ -1482,7 +1482,7 @@ void autonomous() {
   chassis.odom_look_ahead_set(7.0);  // Set look ahead to 7in
 
   // Go to 24, 24
-  chassis.pid_odom_set({{24_in, 24_in}, fwd, 110});
+  chassis.pid_odom_set({{24_in, 24_in}, ez::fwd, 110});
   chassis.pid_wait();
 
   // Reset your angle and position
@@ -1493,7 +1493,7 @@ void autonomous() {
   chassis.odom_look_ahead_set(14.0);  // Set look ahead to 14in
 
   // Go to 24, 24 relative to where the robot ended, but with a new look ahead
-  chassis.pid_odom_set({{24_in, 24_in}, fwd, 110});
+  chassis.pid_odom_set({{24_in, 24_in}, ez::fwd, 110});
   chassis.pid_wait();
 }
 ```
@@ -1540,7 +1540,7 @@ void autonomous() {
   chassis.odom_look_ahead_set(7_in);  // Set look ahead to 7in
 
   // Go to 24, 24
-  chassis.pid_odom_set({{24_in, 24_in}, fwd, 110});
+  chassis.pid_odom_set({{24_in, 24_in}, ez::fwd, 110});
   chassis.pid_wait();
 
   // Reset your angle and position
@@ -1551,7 +1551,7 @@ void autonomous() {
   chassis.odom_look_ahead_set(14_in);  // Set look ahead to 14in
 
   // Go to 24, 24 relative to where the robot ended, but with a new look ahead
-  chassis.pid_odom_set({{24_in, 24_in}, fwd, 110});
+  chassis.pid_odom_set({{24_in, 24_in}, ez::fwd, 110});
   chassis.pid_wait();
 }
 ```
@@ -1590,7 +1590,7 @@ void autonomous() {
   chassis.pid_odom_behavior_set(ez::longest);  // Set the robot to take the longest path there
 
   // This will make the robot go the long way around to get to 24, 0
-  chassis.pid_odom_set({{24_in, 0_in}, fwd, 110});
+  chassis.pid_odom_set({{24_in, 0_in}, ez::fwd, 110});
   chassis.pid_wait();
 }
 ```
@@ -1632,7 +1632,7 @@ void autonomous() {
   }
 
   // This will make the robot go the long way around to get to 24, 0
-  chassis.pid_odom_set({{24_in, 0_in}, fwd, 110});
+  chassis.pid_odom_set({{24_in, 0_in}, ez::fwd, 110});
   chassis.pid_wait();
 }
 ```
@@ -1684,7 +1684,7 @@ void autonomous() {
   printf("Path Spacing: %.2f\n", chassis.odom_path_spacing_get());
 
   // Go to 24, 24
-  chassis.pid_odom_set({{24_in, 24_in}, fwd, 110});
+  chassis.pid_odom_set({{24_in, 24_in}, ez::fwd, 110});
   chassis.pid_wait();
 }
 ```
@@ -1728,7 +1728,7 @@ void autonomous() {
   printf("Path Spacing: %.2f\n", chassis.odom_path_spacing_get());
 
   // Go to 24, 24
-  chassis.pid_odom_set({{24_in, 24_in}, fwd, 110});
+  chassis.pid_odom_set({{24_in, 24_in}, ez::fwd, 110});
   chassis.pid_wait();
 }
 ```
@@ -1774,7 +1774,7 @@ void autonomous() {
   printf("Turn Bias: %.2f\n", chassis.odom_turn_bias_get());
 
   // Go to 24, 24
-  chassis.pid_odom_set({{24_in, 24_in}, fwd, 110});
+  chassis.pid_odom_set({{24_in, 24_in}, ez::fwd, 110});
   chassis.pid_wait();
 
   // Reset your angle and position
@@ -1786,7 +1786,7 @@ void autonomous() {
   printf("Turn Bias: %.2f\n", chassis.odom_turn_bias_get());
 
   // Go to 24, 24 relative to where the robot ended, but with a new turn bias
-  chassis.pid_odom_set({{24_in, 24_in}, fwd, 110});
+  chassis.pid_odom_set({{24_in, 24_in}, ez::fwd, 110});
   chassis.pid_wait();
 }
 ```
@@ -1829,7 +1829,7 @@ void autonomous() {
   printf("Look Ahead: %.2f\n", chassis.odom_look_ahead_get());
 
   // Go to 24, 24
-  chassis.pid_odom_set({{24_in, 24_in}, fwd, 110});
+  chassis.pid_odom_set({{24_in, 24_in}, ez::fwd, 110});
   chassis.pid_wait();
 
   // Reset your angle and position
@@ -1841,7 +1841,7 @@ void autonomous() {
   printf("Look Ahead: %.2f\n", chassis.odom_look_ahead_get());
 
   // Go to 24, 24 relative to where the robot ended, but with a new look ahead
-  chassis.pid_odom_set({{24_in, 24_in}, fwd, 110});
+  chassis.pid_odom_set({{24_in, 24_in}, ez::fwd, 110});
   chassis.pid_wait();
 }
 ```
@@ -1897,7 +1897,7 @@ void autonomous() {
   printf("Path Spacing: %.2f\n", chassis.odom_path_spacing_get());
 
   // Go to 24, 24
-  chassis.pid_odom_set({{24_in, 24_in}, fwd, 110});
+  chassis.pid_odom_set({{24_in, 24_in}, ez::fwd, 110});
   chassis.pid_wait();
 }
 ```
@@ -1944,9 +1944,9 @@ void autonomous() {
 
   // This will slew from the start to 110, 
   // and once the speed dips down to 50 it'll slew again up to 90
-  chassis.pid_odom_set({{{6_in, 10_in}, fwd, 110},
-                        {{0_in, 20_in}, fwd, 50},
-                        {{0_in, 30_in}, fwd, 90}},
+  chassis.pid_odom_set({{{6_in, 10_in}, ez::fwd, 110},
+                        {{0_in, 20_in}, ez::fwd, 50},
+                        {{0_in, 30_in}, ez::fwd, 90}},
                        true);
   chassis.pid_wait();
 }
@@ -1993,9 +1993,9 @@ void autonomous() {
 
   // This will slew from the start to 110, 
   // and once the speed dips down to 50 it'll slew again up to 90
-  chassis.pid_odom_set({{{6_in, 10_in}, fwd, 110},
-                        {{0_in, 20_in}, fwd, 50},
-                        {{0_in, 30_in}, fwd, 90}},
+  chassis.pid_odom_set({{{6_in, 10_in}, ez::fwd, 110},
+                        {{0_in, 20_in}, ez::fwd, 50},
+                        {{0_in, 30_in}, ez::fwd, 90}},
                        true);
   chassis.pid_wait();
 }
@@ -2051,8 +2051,8 @@ void autonomous() {
   std::vector<double> smooth_consts = chassis.odom_path_smooth_constants_get();
   printf("Weight Smooth: %.2f   Weight Data: %.2f   Tolerance: %.2f\n", smooth_consts[0], smooth_consts[1], smooth_consts[2]);
 
-  chassis.pid_odom_set({{{0_in, 24_in}, fwd, 110},
-                        {{24_in, 24_in}, fwd, 110}},
+  chassis.pid_odom_set({{{0_in, 24_in}, ez::fwd, 110},
+                        {{24_in, 24_in}, ez::fwd, 110}},
                        false);
   chassis.odom_path_print();  // Print the full path to terminal
 
@@ -2061,8 +2061,8 @@ void autonomous() {
   smooth_consts = chassis.odom_path_smooth_constants_get();
   printf("Weight Smooth: %.2f   Weight Data: %.2f   Tolerance: %.2f\n", smooth_consts[0], smooth_consts[1], smooth_consts[2]);
 
-  chassis.pid_odom_set({{{0_in, 24_in}, fwd, 110},
-                        {{24_in, 24_in}, fwd, 110}},
+  chassis.pid_odom_set({{{0_in, 24_in}, ez::fwd, 110},
+                        {{24_in, 24_in}, ez::fwd, 110}},
                        false);
   chassis.odom_path_print();  // Print the full path to terminal
 }
@@ -2114,8 +2114,8 @@ void autonomous() {
   std::vector<double> smooth_consts = chassis.odom_path_smooth_constants_get();
   printf("Weight Smooth: %.2f   Weight Data: %.2f   Tolerance: %.2f\n", smooth_consts[0], smooth_consts[1], smooth_consts[2]);
 
-  chassis.pid_odom_set({{{0_in, 24_in}, fwd, 110},
-                        {{24_in, 24_in}, fwd, 110}},
+  chassis.pid_odom_set({{{0_in, 24_in}, ez::fwd, 110},
+                        {{24_in, 24_in}, ez::fwd, 110}},
                        false);
   chassis.odom_path_print();  // Print the full path to terminal
 
@@ -2124,8 +2124,8 @@ void autonomous() {
   smooth_consts = chassis.odom_path_smooth_constants_get();
   printf("Weight Smooth: %.2f   Weight Data: %.2f   Tolerance: %.2f\n", smooth_consts[0], smooth_consts[1], smooth_consts[2]);
 
-  chassis.pid_odom_set({{{0_in, 24_in}, fwd, 110},
-                        {{24_in, 24_in}, fwd, 110}},
+  chassis.pid_odom_set({{{0_in, 24_in}, ez::fwd, 110},
+                        {{24_in, 24_in}, ez::fwd, 110}},
                        false);
   chassis.odom_path_print();  // Print the full path to terminal
 }
@@ -2168,8 +2168,8 @@ void autonomous() {
   std::vector<double> smooth_consts = chassis.odom_path_smooth_constants_get();
   printf("Weight Smooth: %.2f   Weight Data: %.2f   Tolerance: %.2f\n", smooth_consts[0], smooth_consts[1], smooth_consts[2]);
 
-  chassis.pid_odom_set({{{0_in, 24_in}, fwd, 110},
-                        {{24_in, 24_in}, fwd, 110}},
+  chassis.pid_odom_set({{{0_in, 24_in}, ez::fwd, 110},
+                        {{24_in, 24_in}, ez::fwd, 110}},
                        false);
   chassis.odom_path_print();  // Print the full path to terminal
 
@@ -2178,8 +2178,8 @@ void autonomous() {
   smooth_consts = chassis.odom_path_smooth_constants_get();
   printf("Weight Smooth: %.2f   Weight Data: %.2f   Tolerance: %.2f\n", smooth_consts[0], smooth_consts[1], smooth_consts[2]);
 
-  chassis.pid_odom_set({{{0_in, 24_in}, fwd, 110},
-                        {{24_in, 24_in}, fwd, 110}},
+  chassis.pid_odom_set({{{0_in, 24_in}, ez::fwd, 110},
+                        {{24_in, 24_in}, ez::fwd, 110}},
                        false);
   chassis.odom_path_print();  // Print the full path to terminal
 }
