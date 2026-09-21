@@ -153,10 +153,10 @@ class Drive {
   /**
    * Sets constants for slew for swing movements.
    *
-   * Slew ramps up the speed of the robot until the set distance is traveled.
+   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set distance.  A movement with a lower max speed is capped at that speed, so it reaches that speed before the distance is traveled.
    *
    * \param distance
-   *        the distance the robot travels before reaching max speed, a distance unit
+   *        the distance the robot travels to ramp up to full speed (127), a distance unit
    * \param min_speed
    *        the starting speed for the movement, 0 - 127
    */
@@ -165,10 +165,10 @@ class Drive {
   /**
    * Sets constants for slew for forward swing movements.
    *
-   * Slew ramps up the speed of the robot until the set distance is traveled.
+   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set distance.  A movement with a lower max speed is capped at that speed, so it reaches that speed before the distance is traveled.
    *
    * \param distance
-   *        the distance the robot travels before reaching max speed, a distance unit
+   *        the distance the robot travels to ramp up to full speed (127), a distance unit
    * \param min_speed
    *        the starting speed for the movement, 0 - 127
    */
@@ -177,10 +177,10 @@ class Drive {
   /**
    * Sets constants for slew for backward swing movements.
    *
-   * Slew ramps up the speed of the robot until the set distance is traveled.
+   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set distance.  A movement with a lower max speed is capped at that speed, so it reaches that speed before the distance is traveled.
    *
    * \param distance
-   *        the distance the robot travels before reaching max speed, a distance unit
+   *        the distance the robot travels to ramp up to full speed (127), a distance unit
    * \param min_speed
    *        the starting speed for the movement, 0 - 127
    */
@@ -189,10 +189,10 @@ class Drive {
   /**
    * Sets constants for slew for swing movements.
    *
-   * Slew ramps up the speed of the robot until the set distance is traveled.
+   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set distance.  A movement with a lower max speed is capped at that speed, so it reaches that speed before the distance is traveled.
    *
    * \param distance
-   *        the distance the robot travels before reaching max speed, an angle unit
+   *        the distance the robot travels to ramp up to full speed (127), an angle unit
    * \param min_speed
    *        the starting speed for the movement, 0 - 127
    */
@@ -201,10 +201,10 @@ class Drive {
   /**
    * Sets constants for slew for swing forward movements.
    *
-   * Slew ramps up the speed of the robot until the set distance is traveled.
+   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set distance.  A movement with a lower max speed is capped at that speed, so it reaches that speed before the distance is traveled.
    *
    * \param distance
-   *        the distance the robot travels before reaching max speed, an angle unit
+   *        the distance the robot travels to ramp up to full speed (127), an angle unit
    * \param min_speed
    *        the starting speed for the movement, 0 - 127
    */
@@ -213,10 +213,10 @@ class Drive {
   /**
    * Sets constants for slew for swing backward movements.
    *
-   * Slew ramps up the speed of the robot until the set distance is traveled.
+   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set distance.  A movement with a lower max speed is capped at that speed, so it reaches that speed before the distance is traveled.
    *
    * \param distance
-   *        the distance the robot travels before reaching max speed, an angle unit
+   *        the distance the robot travels to ramp up to full speed (127), an angle unit
    * \param min_speed
    *        the starting speed for the movement, 0 - 127
    */
@@ -225,10 +225,10 @@ class Drive {
   /**
    * Sets constants for slew for turns.
    *
-   * Slew ramps up the speed of the robot until the set distance is traveled.
+   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set distance.  A movement with a lower max speed is capped at that speed, so it reaches that speed before the distance is traveled.
    *
    * \param distance
-   *        the distance the robot travels before reaching max speed, an angle unit
+   *        the distance the robot travels to ramp up to full speed (127), an angle unit
    * \param min_speed
    *        the starting speed for the movement, 0 - 127
    */
@@ -237,10 +237,10 @@ class Drive {
   /**
    * Sets constants for slew for driving forward.
    *
-   * Slew ramps up the speed of the robot until the set distance is traveled.
+   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set distance.  A movement with a lower max speed is capped at that speed, so it reaches that speed before the distance is traveled.
    *
    * \param distance
-   *        the distance the robot travels before reaching max speed, a distance unit
+   *        the distance the robot travels to ramp up to full speed (127), a distance unit
    * \param min_speed
    *        the starting speed for the movement, 0 - 127
    */
@@ -249,10 +249,10 @@ class Drive {
   /**
    * Sets constants for slew for driving backward.
    *
-   * Slew ramps up the speed of the robot until the set distance is traveled.
+   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set distance.  A movement with a lower max speed is capped at that speed, so it reaches that speed before the distance is traveled.
    *
    * \param distance
-   *        the distance the robot travels before reaching max speed, a distance unit
+   *        the distance the robot travels to ramp up to full speed (127), a distance unit
    * \param min_speed
    *        the starting speed for the movement, 0 - 127
    */
@@ -261,10 +261,10 @@ class Drive {
   /**
    * Sets constants for slew for driving.
    *
-   * Slew ramps up the speed of the robot until the set distance is traveled.
+   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set distance.  A movement with a lower max speed is capped at that speed, so it reaches that speed before the distance is traveled.
    *
    * \param distance
-   *        the distance the robot travels before reaching max speed, a distance unit
+   *        the distance the robot travels to ramp up to full speed (127), a distance unit
    * \param min_speed
    *        the starting speed for the movement, 0 - 127
    */
@@ -1630,7 +1630,7 @@ class Drive {
   void pid_odom_set(odom imovement, bool slew_on);
 
   /**
-   * Takes in an odom movement to go to a single point.  If an angle is set, this will run boomerang.  Uses slew if globally enabled.
+   * Takes in an odom movement to go to a single point using point to point.  The angle in the movement is not used to steer (use pid_odom_boomerang_set for that).  Uses slew if globally enabled.
    *
    * \param imovement
    *        {{x, y, t}, fwd/rev, 1-127}  an odom movement
@@ -1638,7 +1638,7 @@ class Drive {
   void pid_odom_ptp_set(odom imovement);
 
   /**
-   * Takes in an odom movement to go to a single point.  If an angle is set, this will run boomerang.  Uses slew if enabled for this motion.
+   * Takes in an odom movement to go to a single point using point to point.  The angle in the movement is not used to steer (use pid_odom_boomerang_set for that).  Uses slew if enabled for this motion.
    *
    * \param imovement
    *        {{x, y, t}, fwd/rev, 1-127}  an odom movement
@@ -1684,7 +1684,7 @@ class Drive {
   void pid_odom_boomerang_set(united_odom p_imovement, bool slew_on);
 
   /**
-   * Takes in an odom movement to go to a single point.  If an angle is set, this will run boomerang.  Uses slew if globally enabled.
+   * Takes in an odom movement to go to a single point using point to point.  The angle in the movement is not used to steer (use pid_odom_boomerang_set for that).  Uses slew if globally enabled.
    *
    * \param p_imovement
    *        {{x, y, t}, fwd/rev, 1-127}  an odom movement.  values are united here with units
@@ -1692,7 +1692,7 @@ class Drive {
   void pid_odom_ptp_set(united_odom p_imovement);
 
   /**
-   * Takes in an odom movement to go to a single point.  If an angle is set, this will run boomerang.  Uses slew if enabled for this motion.
+   * Takes in an odom movement to go to a single point using point to point.  The angle in the movement is not used to steer (use pid_odom_boomerang_set for that).  Uses slew if enabled for this motion.
    *
    * \param p_imovement
    *        {{x, y, t}, fwd/rev, 1-127}  an odom movement.  values are united here with units
@@ -2281,7 +2281,7 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
+   *        -127 to 127, max speed of the opposite side of the drive during the swing, scaled down as the swing slows.  positive moves the opposite side in the same direction as the swinging side.  0 (the default) holds the opposite side in place with the drive PID.  this is used for arcs
    */
   void pid_swing_set(e_swing type, double target, int speed, int opposite_speed);
 
@@ -2295,7 +2295,7 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
+   *        -127 to 127, max speed of the opposite side of the drive during the swing, scaled down as the swing slows.  positive moves the opposite side in the same direction as the swinging side.  0 (the default) holds the opposite side in place with the drive PID.  this is used for arcs
    * \param behavior
    *        changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw
    */
@@ -2311,7 +2311,7 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
+   *        -127 to 127, max speed of the opposite side of the drive during the swing, scaled down as the swing slows.  positive moves the opposite side in the same direction as the swinging side.  0 (the default) holds the opposite side in place with the drive PID.  this is used for arcs
    * \param slew_on
    *        ramp up from a lower speed to your target speed
    */
@@ -2327,7 +2327,7 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
+   *        -127 to 127, max speed of the opposite side of the drive during the swing, scaled down as the swing slows.  positive moves the opposite side in the same direction as the swinging side.  0 (the default) holds the opposite side in place with the drive PID.  this is used for arcs
    * \param behavior
    *        changes what direction the robot will turn.  can be left, right, shortest, longest, raw
    * \param slew_on
@@ -2401,7 +2401,7 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
+   *        -127 to 127, max speed of the opposite side of the drive during the swing, scaled down as the swing slows.  positive moves the opposite side in the same direction as the swinging side.  0 (the default) holds the opposite side in place with the drive PID.  this is used for arcs
    */
   void pid_swing_set(e_swing type, ez::QAngle p_target, int speed, int opposite_speed);
 
@@ -2415,7 +2415,7 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
+   *        -127 to 127, max speed of the opposite side of the drive during the swing, scaled down as the swing slows.  positive moves the opposite side in the same direction as the swinging side.  0 (the default) holds the opposite side in place with the drive PID.  this is used for arcs
    * \param behavior
    *        changes what direction the robot will turn.  can be left, right, shortest, longest, raw
    */
@@ -2431,7 +2431,7 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
+   *        -127 to 127, max speed of the opposite side of the drive during the swing, scaled down as the swing slows.  positive moves the opposite side in the same direction as the swinging side.  0 (the default) holds the opposite side in place with the drive PID.  this is used for arcs
    * \param slew_on
    *        ramp up from a lower speed to your target speed
    */
@@ -2447,7 +2447,7 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
+   *        -127 to 127, max speed of the opposite side of the drive during the swing, scaled down as the swing slows.  positive moves the opposite side in the same direction as the swinging side.  0 (the default) holds the opposite side in place with the drive PID.  this is used for arcs
    * \param behavior
    *        changes what direction the robot will turn.  can be left, right, shortest, longest, raw
    * \param slew_on
@@ -2456,7 +2456,7 @@ class Drive {
   void pid_swing_set(e_swing type, ez::QAngle p_target, int speed, int opposite_speed, e_angle_behavior behavior, bool slew_on);
 
   /**
-   * Sets the robot to turn only using the left or right side relative to current heading using PID with units, only using slew if globally enabled.
+   * Sets the robot to turn only using the left or right side relative to the last heading target, not the robot's measured heading, using PID with units, only using slew if globally enabled.
    *
    * \param type
    *        L_SWING or R_SWING
@@ -2468,7 +2468,7 @@ class Drive {
   void pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed);
 
   /**
-   * Sets the robot to turn only using the left or right side relative to current heading using PID with units, only using slew if globally enabled.
+   * Sets the robot to turn only using the left or right side relative to the last heading target, not the robot's measured heading, using PID with units, only using slew if globally enabled.
    *
    * \param type
    *        L_SWING or R_SWING
@@ -2482,7 +2482,7 @@ class Drive {
   void pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, e_angle_behavior behavior);
 
   /**
-   * Sets the robot to turn only using the left or right side relative to current heading using PID with units, using slew if enabled for this motion.
+   * Sets the robot to turn only using the left or right side relative to the last heading target, not the robot's measured heading, using PID with units, using slew if enabled for this motion.
    *
    * \param type
    *        L_SWING or R_SWING
@@ -2496,7 +2496,7 @@ class Drive {
   void pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, bool slew_on);
 
   /**
-   * Sets the robot to turn only using the left or right side relative to current heading using PID with units, using slew if enabled for this motion.
+   * Sets the robot to turn only using the left or right side relative to the last heading target, not the robot's measured heading, using PID with units, using slew if enabled for this motion.
    *
    * \param type
    *        L_SWING or R_SWING
@@ -2512,7 +2512,7 @@ class Drive {
   void pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, e_angle_behavior behavior, bool slew_on);
 
   /**
-   * Sets the robot to turn only using the left or right side relative to current heading using PID with units, only using slew if globally enabled.
+   * Sets the robot to turn only using the left or right side relative to the last heading target, not the robot's measured heading, using PID with units, only using slew if globally enabled.
    *
    * \param type
    *        L_SWING or R_SWING
@@ -2521,12 +2521,12 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
+   *        -127 to 127, max speed of the opposite side of the drive during the swing, scaled down as the swing slows.  positive moves the opposite side in the same direction as the swinging side.  0 (the default) holds the opposite side in place with the drive PID.  this is used for arcs
    */
   void pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, int opposite_speed);
 
   /**
-   * Sets the robot to turn only using the left or right side relative to current heading using PID with units, only using slew if globally enabled.
+   * Sets the robot to turn only using the left or right side relative to the last heading target, not the robot's measured heading, using PID with units, only using slew if globally enabled.
    *
    * \param type
    *        L_SWING or R_SWING
@@ -2535,14 +2535,14 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
+   *        -127 to 127, max speed of the opposite side of the drive during the swing, scaled down as the swing slows.  positive moves the opposite side in the same direction as the swinging side.  0 (the default) holds the opposite side in place with the drive PID.  this is used for arcs
    * \param behavior
    *        changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw
    */
   void pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, int opposite_speed, e_angle_behavior behavior);
 
   /**
-   * Sets the robot to turn only using the left or right side relative to current heading using PID with units, using slew if enabled for this motion.
+   * Sets the robot to turn only using the left or right side relative to the last heading target, not the robot's measured heading, using PID with units, using slew if enabled for this motion.
    *
    * \param type
    *        L_SWING or R_SWING
@@ -2551,14 +2551,14 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
+   *        -127 to 127, max speed of the opposite side of the drive during the swing, scaled down as the swing slows.  positive moves the opposite side in the same direction as the swinging side.  0 (the default) holds the opposite side in place with the drive PID.  this is used for arcs
    * \param slew_on
    *        ramp up from a lower speed to your target speed
    */
   void pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, int opposite_speed, bool slew_on);
 
   /**
-   * Sets the robot to turn only using the left or right side relative to current heading using PID with units, using slew if enabled for this motion.
+   * Sets the robot to turn only using the left or right side relative to the last heading target, not the robot's measured heading, using PID with units, using slew if enabled for this motion.
    *
    * \param type
    *        L_SWING or R_SWING
@@ -2567,7 +2567,7 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
+   *        -127 to 127, max speed of the opposite side of the drive during the swing, scaled down as the swing slows.  positive moves the opposite side in the same direction as the swinging side.  0 (the default) holds the opposite side in place with the drive PID.  this is used for arcs
    * \param behavior
    *        changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw
    * \param slew_on
@@ -2576,7 +2576,7 @@ class Drive {
   void pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, int opposite_speed, e_angle_behavior behavior, bool slew_on);
 
   /**
-   * Sets the robot to turn only using the left or right side relative to current heading using PID without units, only using slew if globally enabled.
+   * Sets the robot to turn only using the left or right side relative to the last heading target, not the robot's measured heading, using PID without units, only using slew if globally enabled.
    *
    * \param type
    *        L_SWING or R_SWING
@@ -2588,7 +2588,7 @@ class Drive {
   void pid_swing_relative_set(e_swing type, double target, int speed);
 
   /**
-   * Sets the robot to turn only using the left or right side relative to current heading using PID without units, only using slew if globally enabled.
+   * Sets the robot to turn only using the left or right side relative to the last heading target, not the robot's measured heading, using PID without units, only using slew if globally enabled.
    *
    * \param type
    *        L_SWING or R_SWING
@@ -2602,7 +2602,7 @@ class Drive {
   void pid_swing_relative_set(e_swing type, double target, int speed, e_angle_behavior behavior);
 
   /**
-   * Sets the robot to turn only using the left or right side relative to current heading using PID without units, using slew if enabled for this motion.
+   * Sets the robot to turn only using the left or right side relative to the last heading target, not the robot's measured heading, using PID without units, using slew if enabled for this motion.
    *
    * \param type
    *        L_SWING or R_SWING
@@ -2616,7 +2616,7 @@ class Drive {
   void pid_swing_relative_set(e_swing type, double target, int speed, bool slew_on);
 
   /**
-   * Sets the robot to turn only using the left or right side relative to current heading using PID without units, using slew if enabled for this motion.
+   * Sets the robot to turn only using the left or right side relative to the last heading target, not the robot's measured heading, using PID without units, using slew if enabled for this motion.
    *
    * \param type
    *        L_SWING or R_SWING
@@ -2632,7 +2632,7 @@ class Drive {
   void pid_swing_relative_set(e_swing type, double target, int speed, e_angle_behavior behavior, bool slew_on);
 
   /**
-   * Sets the robot to turn only using the left or right side relative to current heading using PID without units, only using slew if globally enabled.
+   * Sets the robot to turn only using the left or right side relative to the last heading target, not the robot's measured heading, using PID without units, only using slew if globally enabled.
    *
    * \param type
    *        L_SWING or R_SWING
@@ -2641,12 +2641,12 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
+   *        -127 to 127, max speed of the opposite side of the drive during the swing, scaled down as the swing slows.  positive moves the opposite side in the same direction as the swinging side.  0 (the default) holds the opposite side in place with the drive PID.  this is used for arcs
    */
   void pid_swing_relative_set(e_swing type, double target, int speed, int opposite_speed);
 
   /**
-   * Sets the robot to turn only using the left or right side relative to current heading using PID without units, only using slew if globally enabled.
+   * Sets the robot to turn only using the left or right side relative to the last heading target, not the robot's measured heading, using PID without units, only using slew if globally enabled.
    *
    * \param type
    *        L_SWING or R_SWING
@@ -2655,14 +2655,14 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
+   *        -127 to 127, max speed of the opposite side of the drive during the swing, scaled down as the swing slows.  positive moves the opposite side in the same direction as the swinging side.  0 (the default) holds the opposite side in place with the drive PID.  this is used for arcs
    * \param behavior
    *        changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw
    */
   void pid_swing_relative_set(e_swing type, double target, int speed, int opposite_speed, e_angle_behavior behavior);
 
   /**
-   * Sets the robot to turn only using the left or right side relative to current heading using PID without units, using slew if enabled for this motion.
+   * Sets the robot to turn only using the left or right side relative to the last heading target, not the robot's measured heading, using PID without units, using slew if enabled for this motion.
    *
    * \param type
    *        L_SWING or R_SWING
@@ -2671,14 +2671,14 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
+   *        -127 to 127, max speed of the opposite side of the drive during the swing, scaled down as the swing slows.  positive moves the opposite side in the same direction as the swinging side.  0 (the default) holds the opposite side in place with the drive PID.  this is used for arcs
    * \param slew_on
    *        ramp up from a lower speed to your target speed
    */
   void pid_swing_relative_set(e_swing type, double target, int speed, int opposite_speed, bool slew_on);
 
   /**
-   * Sets the robot to turn only using the left or right side relative to current heading using PID without units, using slew if enabled for this motion.
+   * Sets the robot to turn only using the left or right side relative to the last heading target, not the robot's measured heading, using PID without units, using slew if enabled for this motion.
    *
    * \param type
    *        L_SWING or R_SWING
@@ -2687,7 +2687,7 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
+   *        -127 to 127, max speed of the opposite side of the drive during the swing, scaled down as the swing slows.  positive moves the opposite side in the same direction as the swinging side.  0 (the default) holds the opposite side in place with the drive PID.  this is used for arcs
    * \param behavior
    *        changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw
    * \param slew_on
