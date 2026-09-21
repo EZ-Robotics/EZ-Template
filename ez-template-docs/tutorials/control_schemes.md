@@ -77,7 +77,7 @@ EZ-Template lets you call "standard" arcade or "flipped" arcade.  Standard is w
 <TabItem value="example">
 
 ```cpp
-chassis.opcontrol_arcade_standard(ez::SINGLE); // Standard split arcade
+chassis.opcontrol_arcade_standard(ez::SINGLE); // Standard single arcade
 ```
 </TabItem>
 
@@ -85,7 +85,7 @@ chassis.opcontrol_arcade_standard(ez::SINGLE); // Standard split arcade
 <TabItem value="proto">
 
 ```cpp
-chassis.opcontrol_arcade_flipped(ez::SINGLE); // Flipped split arcade
+chassis.opcontrol_arcade_flipped(ez::SINGLE); // Flipped single arcade
 ```
 </TabItem>
 </Tabs>

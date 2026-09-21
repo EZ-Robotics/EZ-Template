@@ -22,7 +22,7 @@ You can use controller buttons to modify these curves live.  What the buttons d
 
 | Drive Type | Left/Right Buttons | Y/A Buttons |
 | --- | --- | --- |
-| tank | left drive curve | right drive curve | 
+| tank | curve for both sticks | nothing (tank only has one curve) | 
 | left split arcade | fwd/rev curve | turn curve |
 | right split arcade | turn curve | fwd/rev curve |
 | left single arcade | fwd/rev curve | turn curve |
@@ -40,7 +40,7 @@ You've found values you're happy with!  There are two ways of saving them:
 - use an SD card
 
 ### Hard Coding
-In `main.cpp` you'll find `chassis.opcontrol_curve_default_set();` in `initialize()`.  This function takes 2 variables.  One for the left stick and one for the right stick (this is the same as the chart above).  
+In `main.cpp` you'll find `chassis.opcontrol_curve_default_set();` in `initialize()`.  This function takes 2 variables.  For arcade these are the Left/Right buttons curve and the Y/A buttons curve from the chart above.  Tank only has one curve, used by both sticks, so it only needs the first.  
 <Tabs
   groupId="tank_arcade"
   defaultValue="example"
