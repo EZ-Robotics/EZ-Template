@@ -8,6 +8,7 @@ All EZ-Template releases, from [GitHub Releases](https://github.com/EZ-Robotics/
 
 ## 4.x
 
+- [v4.0.0-beta.3](https://github.com/EZ-Robotics/EZ-Template/releases/tag/v4.0.0-beta.3)
 - [v4.0.0-beta.2](https://github.com/EZ-Robotics/EZ-Template/releases/tag/v4.0.0-beta.2)
 - [v4.0.0-beta.1](https://github.com/EZ-Robotics/EZ-Template/releases/tag/v4.0.0-beta.1)
 

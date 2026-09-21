@@ -11,7 +11,7 @@ This only works for 2.x and beyond.  You cannot upgrade from 1.x to 2.x, or 2.x 
 :::
 
 ## Download EZ-Template
-Download the most recent `EZ-Template@x.x.x.zip` [here](https://github.com/EZ-Robotics/EZ-Template/releases/tag/v4.0.0-beta.2).  
+Download the most recent `EZ-Template@x.x.x.zip` [here](https://github.com/EZ-Robotics/EZ-Template/releases/tag/v4.0.0-beta.3).  
 
 ## Bring the File Into Your Project
 Bring this file into your project.  You can do this through file explorer or by dragging it into VScode.  
