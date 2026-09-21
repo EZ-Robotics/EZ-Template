@@ -129,3 +129,36 @@ TEST_CASE("screen_print ignores a start line that is not on the screen") {
   CHECK(test::screen_lines[0] == "keep");
   for (int i = 1; i < 8; i++) CHECK(test::screen_lines[i] == "");
 }
+
+TEST_CASE("screen_print hard wraps a word that is wider than the screen without repeating a character") {
+  clear_screen();
+  // 40 different characters in a row, so a repeated or dropped one shows up.
+  std::string word = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn";
+  screen_print(word);
+
+  CHECK(test::screen_lines[0] == word.substr(0, 38));
+  CHECK(test::screen_lines[1] == word.substr(38));
+  CHECK(test::screen_lines[2] == "");
+}
+
+TEST_CASE("screen_print hard wraps a word that takes more than two lines") {
+  clear_screen();
+  std::string word;
+  for (int i = 0; i < 100; i++) word += (char)('a' + i % 26);
+  screen_print(word);
+
+  CHECK(test::screen_lines[0] == word.substr(0, 38));
+  CHECK(test::screen_lines[1] == word.substr(38, 38));
+  CHECK(test::screen_lines[2] == word.substr(76));
+  CHECK(test::screen_lines[3] == "");
+}
+
+TEST_CASE("screen_print hard wraps a word that ends exactly on a line boundary") {
+  clear_screen();
+  std::string word(76, 'x');
+  screen_print(word);
+
+  CHECK(test::screen_lines[0] == std::string(38, 'x'));
+  CHECK(test::screen_lines[1] == std::string(38, 'x'));
+  CHECK(test::screen_lines[2] == "");
+}

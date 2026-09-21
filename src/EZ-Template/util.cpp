@@ -70,8 +70,10 @@ void screen_print(std::string text, int line) {
     if (text[i] != '\n' && temp.length() + 1 > 38) {
       auto last_word = get_last_word(temp);
       if (last_word == temp) {
+        // One word fills the whole line, so hard wrap it.  The character that
+        // didn't fit is added to the new line below, don't add it here too.
         texts.push_back(temp);
-        temp = text[i];
+        temp = "";
       } else {
         int size = last_word.length();
 
