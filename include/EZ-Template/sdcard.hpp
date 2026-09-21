@@ -14,7 +14,8 @@ namespace as {
 extern AutonSelector auton_selector;
 
 /**
- * Sets sd card to current page.
+ * Sets the current page to what's saved on the SD card.  Creates the save file if it isn't there,
+ * and goes to page 0 if the saved page doesn't exist.
  */
 void auton_selector_initialize();
 
@@ -70,7 +71,8 @@ extern pros::adi::DigitalIn* limit_switch_right;
 void limit_switch_lcd_initialize(pros::adi::DigitalIn* right_limit, pros::adi::DigitalIn* left_limit = nullptr);
 
 /**
- * pre_auto_task
+ * Task that polls the limit switches and changes pages on a new press.  Runs as an internal task,
+ * it is not meant to be called.
  */
 void limitSwitchTask();
 
@@ -101,7 +103,7 @@ void page_blank_remove(int page);
 void page_blank_remove_all();
 
 /**
- * Removes the current amount of blank pages.
+ * Returns the current amount of blank pages.
  */
 int page_blank_amount();
 
