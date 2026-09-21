@@ -90,7 +90,8 @@ void screen_print(std::string text, int line) {
       }
     }
     if (i >= (int)text.length() - 1) {
-      temp += text[i];
+      // A trailing newline ends the last line, it isn't a character to draw.
+      if (text[i] != '\n') temp += text[i];
       texts.push_back(temp);
       temp = "";
       break;
