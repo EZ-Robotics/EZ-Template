@@ -18,10 +18,20 @@ bool Drive::opcontrol_arcade_scaling_enabled() { return arcade_vector_scaling; }
 void Drive::opcontrol_curvature_point_turn_gain_set(double gain) { curvature_point_turn_gain = util::clamp(gain, 1.0, 0.0); }
 double Drive::opcontrol_curvature_point_turn_gain_get() { return curvature_point_turn_gain; }
 
+namespace {
+// Clamps a curve given to opcontrol_curve_default_set, and says so when it had to change it.
+double curve_default_clamp(const char* side, double value) {
+  double used = util::curve_scale_clamp(value);
+  if (std::isnan(value) || used != value)
+    printf("EZ-Template: opcontrol_curve_default_set was given a %s curve of %g, using %g (the range is 0 to %g)\n", side, value, used, util::MAX_CURVE_SCALE);
+  return used;
+}
+}  // namespace
+
 // Set curve defaults
 void Drive::opcontrol_curve_default_set(double left, double right) {
-  left_curve_scale = util::curve_scale_clamp(left);
-  right_curve_scale = util::curve_scale_clamp(right);
+  left_curve_scale = curve_default_clamp("left", left);
+  right_curve_scale = curve_default_clamp("right", right);
 
   save_l_curve_sd();
   save_r_curve_sd();
@@ -315,7 +325,9 @@ void Drive::opcontrol_joystick_threshold_iterate(int l_stick, int r_stick) {
   drive_set(l_out, r_out);
 }
 
-void Drive::opcontrol_speed_max_set(int speed) { opcontrol_speed_max = (double)speed; }
+// This is used as a multiplier, so a negative value would reverse the whole drive and a value over 127 would
+// cut off the top of the stick's travel
+void Drive::opcontrol_speed_max_set(int speed) { opcontrol_speed_max = std::fabs(util::clamp((double)speed, 127.0)); }
 int Drive::opcontrol_speed_max_get() { return (int)opcontrol_speed_max; }
 
 // Clip joysticks based on joystick threshold

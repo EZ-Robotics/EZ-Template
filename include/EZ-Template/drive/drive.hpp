@@ -3624,7 +3624,7 @@ class Drive {
    * Sets the max speed for user control.
    *
    * \param speed
-   *        the speed limit
+   *        the speed limit, 0 - 127.  A value above 127 is set to 127 and a negative value is treated as its magnitude
    */
   void opcontrol_speed_max_set(int speed);
 
@@ -3729,7 +3729,7 @@ class Drive {
   double watchdog_l_last = 0.0, watchdog_r_last = 0.0;
   bool imu_only_imu_warning_shown = false;
 
-  bool is_swing_slew_enabled(e_swing type, double target, double current);
+  bool is_swing_slew_enabled(e_swing type, double target, double current, e_angle_behavior behavior);
   void swing_set_internal(e_swing type, double target, int speed, int opposite_speed, e_angle_behavior behavior, bool slew_on);
   bool slew_reenables_when_max_speed_changes = true;
   int slew_min_when_it_enabled = 0;
