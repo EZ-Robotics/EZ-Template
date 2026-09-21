@@ -60,7 +60,7 @@ chassis.pid_tuner_full_enable(true);  // Enable full PID Tuner
 ### Adding your own PIDs
 If you have PID on your own subsystem, you can add it to the PID Tuner!
 ```cpp
-ez::PID liftPID(0.45, 0.0, 0.0, "Lift");
+ez::PID liftPID(0.45, 0.0, 0.0, 0.0, "Lift");
 
 void initialize() {
   // Print our branding over your terminal :D
@@ -69,8 +69,7 @@ void initialize() {
   pros::delay(500);  // Stop the user from doing anything while legacy ports configure
 
   // Add liftPID to the PID Tuner!
-  chassis.pid_tuner_pids.push_back({"Lift PID", &liftPID.constants});
-  chassis.pid_tuner_full_pids.push_back({"Lift PID", &liftPID.constants});
+  chassis.pid_tuner_add({"Lift PID", &liftPID.constants});
 
   // . . .
 ```

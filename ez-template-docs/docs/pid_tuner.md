@@ -117,7 +117,7 @@ void pid_tuner_disable();
 
 
 ### pid_tuner_toggle()
-Toggles PID tuner between enabled and disables.  
+Toggles PID tuner between enabled and disabled.  
 <Tabs
   groupId="pid_tuner_toggle"
   defaultValue="proto"
@@ -227,7 +227,7 @@ void pid_tuner_iterate();
 
 
 ### pid_tuner_print_brain_set()
-Toggle for printing the display of the PID Tuner to the brain.    
+Toggle for printing the display of the PID Tuner to the brain.  It prints to the brain by default, and this only does something while the PID Tuner is enabled.    
 
 `input` true prints to brain, false doesn't  
 <Tabs
@@ -246,7 +246,7 @@ void opcontrol() {
   // This is preference to what you like to drive on
   chassis.drive_brake_set(MOTOR_BRAKE_COAST);
 
-  chassis.pid_tuner_print_brain_set(true);
+  chassis.pid_tuner_print_brain_set(true);  // Does nothing until the PID Tuner is enabled
   
   while (true) {
     
@@ -598,7 +598,7 @@ Adds a PID to the PID Tuner.  This adds to both the default tuner and the full t
 <TabItem value="example">
 
 ```cpp
-ez::PID lift_pid{{20.0, 0.0, 100.0}};
+ez::PID lift_pid{20.0, 0.0, 100.0};
 
 void initialize() {
   chassis.pid_tuner_add({"Lift", &lift_pid.constants});
