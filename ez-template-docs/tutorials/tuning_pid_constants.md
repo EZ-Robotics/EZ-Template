@@ -194,7 +194,7 @@ chassis.pid_turn_constants_set(3, 0.003, 20, 15);
 Just like with driving, you can have independent forward and backward constants for your swing turns. 
 ```cpp
 chassis.pid_swing_constants_forward_set(6.0, 0.0, 65.0);
-chassis.pid_swing_constants_forward_set(6.0, 0.0, 65.0);
+chassis.pid_swing_constants_backward_set(6.0, 0.0, 65.0);
 ```
 
 And if this isn't a problem for your robot, you can just use this function. 
@@ -216,7 +216,7 @@ This number can be closer to 1.0 if you have traction wheels or if you have a ho
 Using the default constants, have the robot travel to (0, 24) then (24, 24) with pure pursuit.  Adjust this number until it looks like the robot is sticking to the path.  You might need to come in and change this number more later, but doing this to start will give you a good starting point.   
 ```cpp
 // The amount that turns are prioritized over driving in odom motions
-// - if you have tracking wheels, you can run this higher.  1.0 is the max
+// - if you have tracking wheels, you can run this higher.  Values above 1.0 are allowed, they make the robot prioritize turning less.
 chassis.odom_turn_bias_set(0.9);
 ```
 

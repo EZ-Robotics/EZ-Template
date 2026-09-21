@@ -34,10 +34,10 @@ There are 2 parameters to tune in EZ-Template.
 
 There is a push and pull balance between these two variables and you have to find the middle ground.  
 
-I will tune slew by running normal motions but having the robot go slower.  The goal is to find the fastest the robot can go without any of the undesirable behaviors described above.  To enable slew you need the `true` parameter at the end of your `x_pid_set()`.  
+I will tune slew by running normal motions but having the robot go slower.  The goal is to find the fastest the robot can go without any of the undesirable behaviors described above.  To enable slew you need the `true` parameter at the end of your `pid_x_set()`.  
 ```cpp
 void tuning_slew() {
-  chassis.drive_pid_set(24_in, 80, true);
+  chassis.pid_drive_set(24_in, 80, true);
   chassis.pid_wait();
 }
 ```
@@ -55,7 +55,7 @@ Now you can lower the distance until the robot is able to successfully reach `DR
 Any motion with a speed limit at or below `DRIVE_SPEED` will accelerate no faster than what you just tested.  
 ```cpp
 void tuning_slew() {
-  chassis.drive_pid_set(24_in, DRIVE_SPEED, true);
+  chassis.pid_drive_set(24_in, DRIVE_SPEED, true);
   chassis.pid_wait();
 }
 ```
@@ -86,7 +86,7 @@ chassis.slew_swing_constants_backward_set(5_deg, 50);
 
 Using inches, these are your options for setting slew constants. 
 ```cpp
-chassis.slew_drive_constants_set(7_in, 80);  // This sets forwards and backwards constants
-chassis.slew_drive_constants_forward_set(7_in, 80);
-chassis.slew_drive_constants_backward_set(7_in, 80);
+chassis.slew_swing_constants_set(7_in, 80);  // This sets forwards and backwards constants
+chassis.slew_swing_constants_forward_set(7_in, 80);
+chassis.slew_swing_constants_backward_set(7_in, 80);
 ```
