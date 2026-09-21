@@ -54,8 +54,10 @@ double slew::iterate(double current) {
     error = x_intercept - current;
 
     // When the sign of error flips, slew is completed
-    if (util::sgn(error) != sign)
+    if (util::sgn(error) != sign) {
       is_enabled = false;
+      last_output = max_speed;  // Return max speed on this pass too, otherwise this pass returns the output from the pass before it
+    }
 
     // Return y=mx+b
     else if (util::sgn(error) == sign) {
