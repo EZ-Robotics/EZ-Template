@@ -3978,6 +3978,13 @@ class Drive {
   double right_curve_scale = 0.0;
 
   /**
+   * The curve text last written to the controller, and when.  The controller link can't take a write every 10 ms,
+   * so the text is only written again when it changes, or slowly to keep the screen right after a reconnect.
+   */
+  std::string last_controller_text = "";
+  uint32_t last_controller_text_ms = 0;
+
+  /**
    * Increase and decrease left and right curve scale.
    */
   void l_decrease();

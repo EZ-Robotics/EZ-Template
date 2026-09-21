@@ -175,8 +175,10 @@ void Drive::opcontrol_curve_buttons_toggle(bool toggle) {
     return;
   }
   disable_controller = toggle;
-  if (!disable_controller)
+  if (!disable_controller) {
     master.set_text(2, 0, "            ");
+    last_controller_text = "";  // The curve text is gone from the screen, so it has to be written again when this is turned back on
+  }
 }
 bool Drive::opcontrol_curve_buttons_toggle_get() { return disable_controller; }
 
@@ -193,10 +195,21 @@ void Drive::opcontrol_curve_buttons_iterate() {
 
   auto sl = util::to_string_with_precision(left_curve_scale, 1);
   auto sr = util::to_string_with_precision(right_curve_scale, 1);
-  if (!is_tank)
-    master.set_text(2, 0, sl + "         " + sr);
-  else
-    master.set_text(2, 0, sl);
+  std::string text = is_tank ? sl : sl + "         " + sr;
+
+  // The controller link isn't built for a write every 10 ms.  PROS says continuous fast updates don't work, and a
+  // saturated link shows up as joystick lag.  Only write when the text changed, and never faster than
+  // CONTROLLER_TEXT_MS.  The text is also written once in a while when nothing changed, because a controller that
+  // reconnects comes back with a blank screen
+  const uint32_t CONTROLLER_TEXT_MS = 50;
+  const uint32_t CONTROLLER_TEXT_REFRESH_MS = 1000;
+  uint32_t since_last_write = pros::millis() - last_controller_text_ms;
+  bool changed = text != last_controller_text;
+  if (since_last_write < (changed ? CONTROLLER_TEXT_MS : CONTROLLER_TEXT_REFRESH_MS)) return;
+
+  last_controller_text = text;
+  last_controller_text_ms = pros::millis();
+  master.set_text(2, 0, text);
 }
 
 // Left curve function
