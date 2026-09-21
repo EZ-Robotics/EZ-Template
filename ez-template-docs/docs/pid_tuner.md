@@ -912,9 +912,9 @@ void opcontrol() {
   chassis.drive_brake_set(MOTOR_BRAKE_COAST);
 
   chassis.pid_tuner_print_terminal_set(true);
-  printf("Printing to Terminal? %i\n", chassis.pid_tuner_print_terminal_enabled()); // Prints true
+  printf("Printing to Terminal? %i\n", chassis.pid_tuner_print_terminal_enabled());  // Prints 1
   chassis.pid_tuner_print_terminal_set(false);
-  printf("Printing to Terminal? %i\n", chassis.pid_tuner_print_terminal_enabled()); // Prints false
+  printf("Printing to Terminal? %i\n", chassis.pid_tuner_print_terminal_enabled());  // Prints 0
   
   while (true) {
     
@@ -922,10 +922,8 @@ void opcontrol() {
     // After you find values that you're happy with, you'll have to set them in auton.cpp
     if (!pros::competition::is_connected()) { 
       // Enable / Disable PID Tuner
-      if (master.get_digital_new_press(DIGITAL_X)) {
-        if (chassis.pid_tuner_enabled())
-          chassis.pid_tuner_toggle();
-      }
+      if (master.get_digital_new_press(DIGITAL_X))
+        chassis.pid_tuner_toggle();
         
       // Trigger the selected autonomous routine
       if (master.get_digital_new_press(DIGITAL_B)) 
@@ -972,10 +970,11 @@ void opcontrol() {
   // This is preference to what you like to drive on
   chassis.drive_brake_set(MOTOR_BRAKE_COAST);
 
-  chassis.pid_tuner_print_terminal_set(false);
-  printf("Printing to Terminal? %i\n", chassis.pid_tuner_print_brain_enabled()); // Prints false
-  chassis.pid_tuner_print_terminal_set(true);
-  printf("Printing to Terminal? %i\n", chassis.pid_tuner_print_brain_enabled()); // Prints true
+  chassis.pid_tuner_enable();  // pid_tuner_print_brain_set() only does something while the PID Tuner is enabled
+  chassis.pid_tuner_print_brain_set(false);
+  printf("Printing to Brain? %i\n", chassis.pid_tuner_print_brain_enabled());  // Prints 0
+  chassis.pid_tuner_print_brain_set(true);
+  printf("Printing to Brain? %i\n", chassis.pid_tuner_print_brain_enabled());  // Prints 1
   
   while (true) {
     
@@ -983,10 +982,8 @@ void opcontrol() {
     // After you find values that you're happy with, you'll have to set them in auton.cpp
     if (!pros::competition::is_connected()) { 
       // Enable / Disable PID Tuner
-      if (master.get_digital_new_press(DIGITAL_X)) {
-        if (chassis.pid_tuner_enabled())
-          chassis.pid_tuner_toggle();
-      }
+      if (master.get_digital_new_press(DIGITAL_X))
+        chassis.pid_tuner_toggle();
         
       // Trigger the selected autonomous routine
       if (master.get_digital_new_press(DIGITAL_B)) 
@@ -1066,14 +1063,14 @@ void opcontrol() {
 <TabItem value="proto">
 
 ```cpp
-double pid_tuner_increment_p_set();
+double pid_tuner_increment_p_get();
 ```
 </TabItem>
 </Tabs>
 
 
 
-### pid_tuner_increment_i_set()
+### pid_tuner_increment_i_get()
 Returns the value that PID Tuner increments I.  
 <Tabs
   groupId="get_i_increment"
@@ -1123,14 +1120,14 @@ void opcontrol() {
 <TabItem value="proto">
 
 ```cpp
-double pid_tuner_increment_i_set();
+double pid_tuner_increment_i_get();
 ```
 </TabItem>
 </Tabs>
 
 
 
-### pid_tuner_increment_d_set()
+### pid_tuner_increment_d_get()
 Returns the value that PID Tuner increments D.  
 <Tabs
   groupId="get_d_increment"
@@ -1180,14 +1177,14 @@ void opcontrol() {
 <TabItem value="proto">
 
 ```cpp
-double pid_tuner_increment_d_set();
+double pid_tuner_increment_d_get();
 ```
 </TabItem>
 </Tabs>
 
 
 
-### pid_tuner_increment_start_i_set()
+### pid_tuner_increment_start_i_get()
 Returns the value that PID Tuner increments Start I.  
 <Tabs
   groupId="get_starti_increment"
@@ -1237,7 +1234,7 @@ void opcontrol() {
 <TabItem value="proto">
 
 ```cpp
-double pid_tuner_increment_start_i_set();
+double pid_tuner_increment_start_i_get();
 ```
 </TabItem>
 </Tabs>
