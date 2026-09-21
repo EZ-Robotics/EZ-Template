@@ -443,7 +443,7 @@ void pid_swing_set(e_swing type, ez::QAngle p_target, int speed, int opposite_sp
 
 
 ### pid_swing_relative_set()
-Sets the robot to turn using only one side of the drive with PID relative to the current heading.  
+Sets the robot to turn using only one side of the drive with PID relative to the last heading target, not the robot's measured heading.  
 
 `type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `p_target` target value, in units  
@@ -496,7 +496,7 @@ void pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed);
 
 
 ### pid_swing_relative_set()
-Sets the robot to turn using only one side of the drive with PID relative to the current heading.  
+Sets the robot to turn using only one side of the drive with PID relative to the last heading target, not the robot's measured heading.  
 
 `type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `p_target` target value, in units  
@@ -550,7 +550,7 @@ void pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, bool s
 
 
 ### pid_swing_relative_set()
-Sets the robot to turn using only one side of the drive with PID relative to the current heading.  
+Sets the robot to turn using only one side of the drive with PID relative to the last heading target, not the robot's measured heading.  
 
 `type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `p_target` target value, in units  
@@ -600,7 +600,7 @@ void pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, e_angl
 
 
 ### pid_swing_relative_set()
-Sets the robot to turn using only one side of the drive with PID relative to the current heading.  
+Sets the robot to turn using only one side of the drive with PID relative to the last heading target, not the robot's measured heading.  
 
 `type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `p_target` target value, in units  
@@ -670,7 +670,7 @@ void pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, e_angl
 
 
 ### pid_swing_relative_set()
-Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to the current heading.  
+Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to the last heading target, not the robot's measured heading.  
 
 `type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `p_target` target value, in units  
@@ -724,7 +724,7 @@ void pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, int op
 
 
 ### pid_swing_relative_set()
-Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to the current heading.  
+Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to the last heading target, not the robot's measured heading.  
 
 `type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `p_target` target value, in units  
@@ -779,7 +779,7 @@ void pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, int op
 
 
 ### pid_swing_relative_set()
-Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to the current heading.  
+Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to the last heading target, not the robot's measured heading.  
 
 `type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `p_target` target value, in units  
@@ -830,7 +830,7 @@ void pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, int op
 
 
 ### pid_swing_relative_set()
-Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to the current heading.  
+Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to the last heading target, not the robot's measured heading.  
 
 `type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `p_target` target value, in units  
@@ -1849,7 +1849,7 @@ void pid_swing_set(e_swing type, double target, int speed, int opposite_speed, e
 
 
 ### pid_swing_relative_set()
-Sets the robot to turn using only one side of the drive with PID relative to the current heading.  
+Sets the robot to turn using only one side of the drive with PID relative to the last heading target, not the robot's measured heading.  
 
 `type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `target` target value in degrees  
@@ -1902,7 +1902,7 @@ void pid_swing_relative_set(e_swing type, double target, int speed);
 
 
 ### pid_swing_relative_set()
-Sets the robot to turn using only one side of the drive with PID relative to the current heading.  
+Sets the robot to turn using only one side of the drive with PID relative to the last heading target, not the robot's measured heading.  
 
 `type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `target` target value in degrees  
@@ -1956,7 +1956,7 @@ void pid_swing_relative_set(e_swing type, double target, int speed, bool slew_on
 
 
 ### pid_swing_relative_set()
-Sets the robot to turn using only one side of the drive with PID relative to the current heading.  
+Sets the robot to turn using only one side of the drive with PID relative to the last heading target, not the robot's measured heading.  
 
 `type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `target` target value in degrees  
@@ -2006,7 +2006,7 @@ void pid_swing_relative_set(e_swing type, double target, int speed, e_angle_beha
 
 
 ### pid_swing_relative_set()
-Sets the robot to turn using only one side of the drive with PID relative to the current heading.  
+Sets the robot to turn using only one side of the drive with PID relative to the last heading target, not the robot's measured heading.  
 
 `type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `target` target value in degrees  
@@ -2071,7 +2071,7 @@ void pid_swing_relative_set(e_swing type, double target, int speed, e_angle_beha
 
 
 ### pid_swing_relative_set()
-Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to the current heading.  
+Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to the last heading target, not the robot's measured heading.  
 
 `type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `target` target value in degrees  
@@ -2125,7 +2125,7 @@ void pid_swing_relative_set(e_swing type, double target, int speed, int opposite
 
 
 ### pid_swing_relative_set()
-Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to the current heading.  
+Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to the last heading target, not the robot's measured heading.  
 
 `type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `target` target value in degrees  
@@ -2180,7 +2180,7 @@ void pid_swing_relative_set(e_swing type, double target, int speed, int opposite
 
 
 ### pid_swing_relative_set()
-Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to the current heading.  
+Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to the last heading target, not the robot's measured heading.  
 
 `type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `target` target value in degrees  
@@ -2231,7 +2231,7 @@ void pid_swing_relative_set(e_swing type, double target, int speed, int opposite
 
 
 ### pid_swing_relative_set()
-Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to the current heading.  
+Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to the last heading target, not the robot's measured heading.  
 
 `type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `target` target value in degrees  
