@@ -13,7 +13,7 @@ import TabItem from '@theme/TabItem';
 
 
 ### pid_drive_set()
-Sets the robot to move forward using PID with units, using slew if enabled for this motion.  
+Sets the robot to move forward using PID with units, only using slew if globally enabled.  
 
 `p_target` target, in units 
 `speed` 0 to 127, max speed during motion   
@@ -174,8 +174,8 @@ Set's constants for drive exit conditions.
 `p_big_exit_time` time to exit when within big_error, in units             
 `p_big_error` big timer will start when error is within this, in units        
 `p_velocity_exit_time` time, in units, for velocity to be 0 after the robot has moved (or after 1 second if it never moves)          
-`p_mA_timeout` velocity timer will start when velocity is 0, in units     
-`use_imu` true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't         
+`p_mA_timeout` mA timer will start when the first motor on the side(s) being driven is over its current limit, in units     
+`use_imu` true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for `p_velocity_exit_time`), false uses only the main sensor         
 <Tabs
   groupId="pid_drive_Exit_set_okapi"
   defaultValue="proto"
@@ -483,7 +483,7 @@ void slew_drive_constants_backward_set(ez::QLength distance, int min_speed);
 
 
 ### pid_drive_set()
-Sets the robot to move forward using PID with units, using slew if enabled for this motion.  
+Sets the robot to move forward using PID without units, only using slew if globally enabled.  
 
 `target` target in inches
 `speed` 0 to 127, max speed during motion   
@@ -528,7 +528,7 @@ void pid_drive_set(double target, int speed);
 
 
 ### pid_drive_set()
-Sets the robot to move forward using PID with units, using slew if enabled for this motion.  
+Sets the robot to move forward using PID without units, using slew if enabled for this motion.  
 
 `target` target in inches
 `speed` 0 to 127, max speed during motion  
@@ -596,8 +596,8 @@ Set's constants for drive exit conditions.
 `p_big_exit_time` time to exit when within big_error, in ms             
 `p_big_error` big timer will start when error is within this, in inches        
 `p_velocity_exit_time` velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), in ms   
-`p_mA_timeout` mA timer will start when the motors are pulling too much current, in ms      
-`use_imu` true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't         
+`p_mA_timeout` mA timer will start when the first motor on the side(s) being driven is over its current limit, in ms      
+`use_imu` true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for `p_velocity_exit_time`), false uses only the main sensor         
 <Tabs
   groupId="pid_drive_exit_set_double"
   defaultValue="proto"
@@ -1014,7 +1014,7 @@ void autonomous() {
 
 
 ### slew_drive_backward_set()
-Sets the default slew for drive forwards motions, can be overwritten in movement functions.      
+Sets the default slew for drive backward motions, can be overwritten in movement functions.      
  
 `slew_on` true enables, false disables  
 <Tabs
@@ -1351,7 +1351,7 @@ void autonomous() {
 
 
 ### slew_drive_backward_get()
-Returns true if slew is enabled for all drive forward movements, false otherwise.    
+Returns true if slew is enabled for all drive backward movements, false otherwise.    
 <Tabs
   groupId="slew_drive_backward_get"
   defaultValue="proto"
