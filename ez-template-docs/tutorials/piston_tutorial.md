@@ -9,7 +9,7 @@ import TabItem from '@theme/TabItem';
 
 :::note
 
-As of v3.1.0, example projects come with `include/subsystems.hpp`.  If you do not have this, create this file in `include/`.  Now open `include/main.h`, add `#include "subsytems.hpp"`.  You're all caught up and can follow along below!  
+As of v3.1.0, example projects come with `include/subsystems.hpp`.  If you do not have this, create this file in `include/`.  Now open `include/main.h`, add `#include "subsystems.hpp"`.  You're all caught up and can follow along below!  
 
 :::
 
@@ -91,7 +91,7 @@ else if (master.get_digital(DIGITAL_R2)) {
 
 EZ-Template also has a shortcut for two button control.  Instead of the if/else block, you can use this instead.  This will do the same thing as the code above.  
 ```cpp
-doinker.set(master.get_digital(DIGITAL_R1), master.get_digital(DIGITAL_R2));
+doinker.buttons(master.get_digital(DIGITAL_R1), master.get_digital(DIGITAL_R2));
 ```
 
 Adding this to opcontrol looks like this.  
@@ -114,7 +114,7 @@ void opcontrol() {
     // Put more user control code here!
     // . . .
     
-    doinker.set(master.get_digital(DIGITAL_R1), master.get_digital(DIGITAL_R2));
+    doinker.buttons(master.get_digital(DIGITAL_R1), master.get_digital(DIGITAL_R2));
 
     pros::delay(ez::util::DELAY_TIME);  // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
   }

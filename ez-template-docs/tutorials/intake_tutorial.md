@@ -8,7 +8,7 @@ import TabItem from '@theme/TabItem';
 
 :::note
 
-As of v3.1.0, example projects come with `include/subsystems.hpp`.  If you do not have this, create this file in `include/`.  Now open `include/main.h`, add `#include "subsytems.hpp"`.  You're all caught up and can follow along below!  
+As of v3.1.0, example projects come with `include/subsystems.hpp`.  If you do not have this, create this file in `include/`.  Now open `include/main.h`, add `#include "subsystems.hpp"`.  You're all caught up and can follow along below!  
 
 :::
 
@@ -167,7 +167,7 @@ void opcontrol() {
 ```
 
 ## Using it in Autonomous
-Because the motor is created in `subsystmes.hpp`, we can access is in autonomous exactly the same way!  
+Because the motor is created in `subsystems.hpp`, we can access is in autonomous exactly the same way!  
 
 In the example below, the robot will start to intake after driving 6" and will stop once it's driven 24".  The intake will not spin again until it starts to come back and will outtake until it's back where it started.  
 ```cpp
