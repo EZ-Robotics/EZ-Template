@@ -50,7 +50,7 @@ struct screen_point {
 /// on the V5). Unsupported angles pass the point through unchanged.
 ///
 /// LVGL already applies this to its own pointer input, so widgets need no help;
-/// this is for code that reads the panel directly (pros::screen_touch_status)
+/// this is for code that reads the panel directly (pros::screen::touch_status)
 /// and so bypasses LVGL. Do not apply it to lv_indev data or the point is
 /// transformed twice.
 ///

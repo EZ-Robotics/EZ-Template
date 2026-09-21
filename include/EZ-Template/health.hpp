@@ -22,9 +22,10 @@ struct Report {
 };
 
 /// Checks that the IMU, every drive motor, every configured odom tracker, and
-/// every device registered with device_add() responds. Prints each failure with
-/// its port and rumbles the controller when anything is wrong. Safe to call
-/// from initialize() and again at the start of autonomous.
+/// every device registered with device_add() responds. Prints each failure, with
+/// its port where the device has one, and rumbles the controller when anything
+/// is wrong. Safe to call from initialize() and again at the start of
+/// autonomous.
 Report preflight(ez::Drive& chassis, pros::Controller& controller);
 
 /// Registers a smart device (a motor that isn't on the drive, a distance,

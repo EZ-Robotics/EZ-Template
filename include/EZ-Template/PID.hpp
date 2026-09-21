@@ -26,7 +26,7 @@ class PID {
    *        ki
    * \param d
    *        kD
-   * \param p_start_i
+   * \param start_i
    *        error value that i starts within
    * \param name
    *        std::string of name that prints
@@ -73,9 +73,9 @@ class PID {
    * Set's constants for exit conditions.
    *
    * \param p_small_exit_time
-   *        sets small_exit_time, timer for to exit within smalL_error
+   *        sets small_exit_time, timer for to exit within small_error
    * \param p_small_error
-   *        sets smalL_error, timer will start when error is within this
+   *        sets small_error, timer will start when error is within this
    * \param p_big_exit_time
    *        sets big_exit_time, timer for to exit within big_error
    * \param p_big_error
@@ -83,13 +83,15 @@ class PID {
    * \param p_velocity_exit_time
    *        sets velocity_exit_time, timer will start when velocity is 0 after the robot has moved.
    *        If the robot never moves, it starts after 1 second.
+   * \param p_mA_timeout
+   *        sets mA_timeout, time the motor can be over its current limit before exiting.  Only checked by the exit_condition overloads that take a motor or motors.
    */
   void exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time = 0, double p_big_error = 0, int p_velocity_exit_time = 0, int p_mA_timeout = 0);
 
   /**
    * Sets PID target.
    *
-   * \param target
+   * \param input
    *        new target for PID
    */
   void target_set(double input);
@@ -130,7 +132,8 @@ class PID {
   bool constants_set_check();
 
   /**
-   * Resets all variables to 0.  This does not reset constants.
+   * Resets output, target, error, previous error and the integral to 0.  This does not reset constants, exit
+   * condition timers, or the previous sensor value used for the derivative (see motion_reset() and timers_reset()).
    */
   void variables_reset();
 
@@ -148,7 +151,9 @@ class PID {
    * Updates a secondary sensor for velocity exiting.  Ideal use is IMU during normal drive motions.
    *
    * \param secondary_sensor
-   *        secondary sensor value
+   *        the secondary sensor's current velocity or acceleration reading, not its position.  It counts as
+   *        stopped while the absolute value of this is at or below velocity_sensor_secondary_exit_get().
+   *        EZ-Template passes the IMU acceleration magnitude.
    */
   void velocity_sensor_secondary_set(double secondary_sensor);
 
