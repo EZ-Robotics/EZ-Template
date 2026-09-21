@@ -119,7 +119,7 @@ To add the autonomous mode to the on-screen selector, in `src/main.cpp` go to `v
 void initialize() {
  // . . . 
 
-  // Autonomous Selector using LLEMMU
+  // Autonomous Selector using LLEMU
   ez::as::auton_selector.autons_add({
     {"Solo AWP\n\nStarting Position: Plat Down", SoloAWP},
     {"Score Rings on Amogo\n\nStarting Position: Plat Down", ScoreRingsPlatDown},
