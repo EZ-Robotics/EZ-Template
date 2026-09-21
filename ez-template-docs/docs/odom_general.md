@@ -593,7 +593,7 @@ void autonomous() {
 ### odom_theta_set()
 Sets the current angle of the robot.     
 
-`p_y` new angle as a unit
+`p_a` new angle as a unit
 <Tabs
   groupId="odom_theta_set_oka"
   defaultValue="proto"
@@ -810,7 +810,7 @@ void autonomous() {
   
 
 
-### odom_xy_set()
+### odom_xyt_set()
 Sets the current X, Y, and Theta values for the robot.     
 
 `p_x` new x value, in units   
@@ -903,7 +903,7 @@ void autonomous() {
   chassis.pid_wait();
 
   ez::pose new_pose = {0, 0, -45};
-  chassis.odom_xyt_set(new_pose);  
+  chassis.odom_pose_set(new_pose);  
 
   // This will go back to the starting location
   chassis.pid_odom_set({{-24_in, -24_in}, ez::rev, 110});
@@ -956,7 +956,7 @@ void autonomous() {
   chassis.pid_wait();
 
   ez::united_pose new_pose = {0_in, 0_in, -45_deg};
-  chassis.odom_xyt_set(new_pose);  
+  chassis.odom_pose_set(new_pose);  
 
   // This will go back to the starting location
   chassis.pid_odom_set({{-24_in, -24_in}, ez::rev, 110});
@@ -1240,7 +1240,7 @@ Values below 1 make the robot stop driving once turning has gone past a certain 
 
 Non-positive values are rejected, a message is printed to the terminal, and the previous value is kept.  
 
-`bias` a positive number, default is 1.375
+`bias` a positive number, default is 0.9
 <Tabs
   groupId="odom_turn_bias_set"
   defaultValue="proto"
@@ -1279,7 +1279,7 @@ void autonomous() {
   // Reset your angle and position
   chassis.pid_turn_set(0_deg, 110);
   chassis.pid_wait();
-  chassis.odom_xyt_set(0_in, 0_in);
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);
 
   chassis.odom_turn_bias_set(0.5);  // Set turn bias to 0.5
 
@@ -1303,8 +1303,8 @@ Set's constants for odom driving exit conditions.
 `p_big_exit_time` time to exit when within big_error, in units             
 `p_big_error` big timer will start when error is within this, in units        
 `p_velocity_exit_time` time, in units, for velocity to be 0 after the robot has moved (or after 1 second if it never moves)          
-`p_mA_timeout` velocity timer will start when velocity is 0, in units     
-`use_imu` true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't         
+`p_mA_timeout` mA timer will start when the first motor on the side(s) being driven is over its current limit, in units     
+`use_imu` true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time), false uses only the main sensor         
 <Tabs
   groupId="pid_odom_drive_exit_condition_set_oka"
   defaultValue="proto"
@@ -1341,8 +1341,8 @@ Set's constants for odom driving exit conditions.
 `p_big_exit_time` time to exit when within big_error, in ms             
 `p_big_error` big timer will start when error is within this, in inches        
 `p_velocity_exit_time` velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), in ms   
-`p_mA_timeout` mA timer will start when the motors are pulling too much current, in ms      
-`use_imu` true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't         
+`p_mA_timeout` mA timer will start when the first motor on the side(s) being driven is over its current limit, in ms      
+`use_imu` true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time), false uses only the main sensor         
 <Tabs
   groupId="pid_odom_drive_exit_condition_set"
   defaultValue="proto"
@@ -1380,8 +1380,8 @@ Set's constants for odom turning exit conditions.
 `p_big_exit_time` time to exit when within big_error, in units             
 `p_big_error` big timer will start when error is within this, in units        
 `p_velocity_exit_time` time, in units, for velocity to be 0 after the robot has moved (or after 1 second if it never moves)          
-`p_mA_timeout` velocity timer will start when velocity is 0, in units     
-`use_imu` true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't         
+`p_mA_timeout` mA timer will start when the first motor on the side(s) being driven is over its current limit, in units     
+`use_imu` true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time), false uses only the main sensor         
 <Tabs
   groupId="pid_odom_turn_exit_condition_set_oka"
   defaultValue="proto"
@@ -1401,7 +1401,7 @@ void pid_odom_turn_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_
 
 ```cpp
 void initialize() {
-  chassis.pid_odom_turn_exit_condition_set(300_ms, 3_deg, 500_ms, 3_deg, 750_ms, 750_ms);
+  chassis.pid_odom_turn_exit_condition_set(300_ms, 3_deg, 500_ms, 7_deg, 750_ms, 750_ms);
 }
 ```
 </TabItem>
@@ -1415,8 +1415,8 @@ Set's constants for odom turning exit conditions.
 `p_big_exit_time` time to exit when within big_error, in ms
 `p_big_error` big timer will start when error is within this, in degrees
 `p_velocity_exit_time`  velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), in ms
-`p_mA_timeout` mA timer will start when the motors are pulling too much current, in ms   
-`use_imu` true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't    
+`p_mA_timeout` mA timer will start when the first motor on the side(s) being driven is over its current limit, in ms   
+`use_imu` true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time), false uses only the main sensor    
 <Tabs
   groupId="pid_odom_turn_exit_condition_set"
   defaultValue="proto"
@@ -1490,7 +1490,7 @@ void autonomous() {
   // Reset your angle and position
   chassis.pid_turn_set(0_deg, 110);
   chassis.pid_wait();
-  chassis.odom_xyt_set(0_in, 0_in);
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);
 
   chassis.odom_look_ahead_set(14.0);  // Set look ahead to 14in
 
@@ -1509,7 +1509,7 @@ void autonomous() {
 ### odom_look_ahead_set()
 Sets how far away the robot looks in the path during pure pursuits.  
 
-`distance` how long the "carrot on a stick" is, in units.  Must be greater than 0.  Otherwise it is rejected, a message is printed to the terminal, and the previous value is kept.
+`p_distance` how long the "carrot on a stick" is, in units.  Must be greater than 0.  Otherwise it is rejected, a message is printed to the terminal, and the previous value is kept.
 <Tabs
   groupId="odom_look_ahead_se_okat"
   defaultValue="proto"
@@ -1548,7 +1548,7 @@ void autonomous() {
   // Reset your angle and position
   chassis.pid_turn_set(0_deg, 110);
   chassis.pid_wait();
-  chassis.odom_xyt_set(0_in, 0_in);
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);
 
   chassis.odom_look_ahead_set(14_in);  // Set look ahead to 14in
 
@@ -1782,7 +1782,7 @@ void autonomous() {
   // Reset your angle and position
   chassis.pid_turn_set(0_deg, 110);
   chassis.pid_wait();
-  chassis.odom_xyt_set(0_in, 0_in);
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);
 
   chassis.odom_turn_bias_set(0.5);  // Set turn bias to 0.5
   printf("Turn Bias: %.2f\n", chassis.odom_turn_bias_get());
@@ -1837,7 +1837,7 @@ void autonomous() {
   // Reset your angle and position
   chassis.pid_turn_set(0_deg, 110);
   chassis.pid_wait();
-  chassis.odom_xyt_set(0_in, 0_in);
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);
 
   chassis.odom_look_ahead_set(14_in);  // Set look ahead to 14in
   printf("Look Ahead: %.2f\n", chassis.odom_look_ahead_get());
@@ -1915,7 +1915,7 @@ void autonomous() {
 ### slew_odom_reenable()
 Allows slew to reenable when the new input speed is larger than the current speed during pure pursuits.        
 
-`slew_on` true enables, false disables   
+`reenable` true enables, false disables   
 <Tabs
   groupId="slew_odom_reenable"
   defaultValue="proto"
@@ -1962,7 +1962,7 @@ void autonomous() {
 
 
 ### slew_odom_reenabled()
-Allows slew to reenable when the new input speed is larger than the current speed during pure pursuits.          
+Returns if slew will reenable when the new input speed is larger than the current speed during pure pursuits.          
 <Tabs
   groupId="slew_odom_reenabled"
   defaultValue="proto"
@@ -2328,7 +2328,7 @@ void initialize() {
 ### odom_boomerang_distance_set()
 Sets how far away the carrot point can be from the target point.   
 
-`distance` distance as a unit  
+`p_distance` distance as a unit  
 <Tabs
   groupId="odom_boomerang_distance_set_oka"
   defaultValue="proto"
