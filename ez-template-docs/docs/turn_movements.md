@@ -1319,6 +1319,39 @@ void pid_turn_behavior_set(e_angle_behavior behavior);
 
 ## Getter
 
+### pid_turn_constants_get()
+Returns the PID constants for turns, as a `PID::Constants` with `kp`, `ki`, `kd` and `start_i`.  
+<Tabs
+  groupId="pid_turn_constants_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  chassis.pid_turn_constants_set(3.0, 0.05, 20.0, 15.0);
+  ez::PID::Constants c = chassis.pid_turn_constants_get();
+  printf("kp %.2f  ki %.2f  kd %.2f  start_i %.2f\n", c.kp, c.ki, c.kd, c.start_i);  // Prints kp 3.00  ki 0.05  kd 20.00  start_i 15.00
+}
+```
+
+</TabItem>
+
+<TabItem value="proto">
+
+```cpp
+PID::Constants pid_turn_constants_get();
+```
+
+</TabItem>
+</Tabs>
+
+
 
 
 ### pid_turn_chain_constant_get()
