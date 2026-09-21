@@ -61,7 +61,7 @@ Sets the robot to turn using only one side of the drive with PID relative to ini
 `type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `p_target` target value, in units  
 `speed` 0 to 127, max speed during motion   
-`behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
+`behavior` changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw   
 <Tabs
   groupId="pi12kj3hkcd872913z_turn_s098sfa8et_okapi"
   defaultValue="proto"
@@ -155,7 +155,7 @@ Sets the robot to turn using only one side of the drive with PID relative to ini
 `type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `p_target` target value, in units  
 `speed` 0 to 127, max speed during motion   
-`behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
+`behavior` changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw   
 `slew_on` ramp up from a lower speed to your target speed   
 <Tabs
   groupId="pid_tkjh123gurn_set_okapa09123zsdasdasi"
@@ -219,7 +219,7 @@ void pid_swing_set(e_swing type, ez::QAngle p_target, int speed, e_angle_behavio
 
 
 ### pid_swing_set()
-Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to initial heading.  
+Sets the robot to turn using only one side of the drive with PID and the opposite side at up to `opposite_speed`, scaled down as the swing slows, relative to initial heading.  
 
 `type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `p_target` target value, in units  
@@ -266,13 +266,13 @@ void pid_swing_set(e_swing type, ez::QAngle p_target, int speed, int opposite_sp
 
 
 ### pid_swing_set()
-Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to initial heading.  
+Sets the robot to turn using only one side of the drive with PID and the opposite side at up to `opposite_speed`, scaled down as the swing slows, relative to initial heading.  
 
 `type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `p_target` target value, in units  
 `speed` 0 to 127, max speed during motion   
 `opposite_speed` -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs   
-`behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
+`behavior` changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw   
 <Tabs
   groupId="pi12kj3kjhk43zhkcd872913z_turn_s098sfa8et_okapi"
   defaultValue="proto"
@@ -315,7 +315,7 @@ void pid_swing_set(e_swing type, ez::QAngle p_target, int speed, int opposite_sp
 
 
 ### pid_swing_set()
-Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to initial heading.  
+Sets the robot to turn using only one side of the drive with PID and the opposite side at up to `opposite_speed`, scaled down as the swing slows, relative to initial heading.  
 
 `type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `p_target` target value, in units  
@@ -362,13 +362,13 @@ void pid_swing_set(e_swing type, ez::QAngle p_target, int speed, int opposite_sp
 
 
 ### pid_swing_set()
-Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to initial heading.  
+Sets the robot to turn using only one side of the drive with PID and the opposite side at up to `opposite_speed`, scaled down as the swing slows, relative to initial heading.  
 
 `type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `p_target` target value, in units  
 `speed` 0 to 127, max speed during motion   
 `opposite_speed` -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs    
-`behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
+`behavior` changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw   
 `slew_on` ramp up from a lower speed to your target speed   
 <Tabs
   groupId="pid_tkjhk2134zkjh123gurn_set_okapa09123zsdasdasi"
@@ -471,7 +471,7 @@ void autonomous() {
   chassis.pid_swing_relative_set(ez::LEFT_SWING, 90, 110);
   chassis.pid_wait();
 
-  // Swing the long way around to go -45 from where it started
+  // Swing -45 from the previous target, to 45 deg
   chassis.pid_swing_relative_set(ez::RIGHT_SWING, -45, 110);
   chassis.pid_wait();
 }
@@ -525,7 +525,7 @@ void autonomous() {
   chassis.pid_swing_relative_set(ez::LEFT_SWING, 90, 110, true);
   chassis.pid_wait();
 
-  // Swing the long way around to go -45 from where it started
+  // Swing -45 from the previous target, to 45 deg
   chassis.pid_swing_relative_set(ez::RIGHT_SWING, -45, 110, true);
   chassis.pid_wait();
 }
@@ -555,7 +555,7 @@ Sets the robot to turn using only one side of the drive with PID relative to the
 `type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `p_target` target value, in units  
 `speed` 0 to 127, max speed during motion   
-`behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
+`behavior` changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw   
 <Tabs
   groupId="pid_tu09aarn_rel0091z29zx12_set_okapi"
   defaultValue="proto"
@@ -579,7 +579,7 @@ void autonomous() {
   chassis.pid_swing_relative_set(ez::LEFT_SWING, 90, 110, ez::shortest);
   chassis.pid_wait();
 
-  // Swing the long way around to go -45 from where it started
+  // Swing to 45 deg (-45 from the previous target), taking the long way around
   chassis.pid_swing_relative_set(ez::RIGHT_SWING, -45, 110, ez::longest);
   chassis.pid_wait();
 }
@@ -605,7 +605,7 @@ Sets the robot to turn using only one side of the drive with PID relative to the
 `type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `p_target` target value, in units  
 `speed` 0 to 127, max speed during motion   
-`behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
+`behavior` changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw   
 `slew_on` ramp up from a lower speed to your target speed     
 <Tabs
   groupId="pid_t123surn_rel_se182735ct1231235_okapi"
@@ -630,7 +630,7 @@ void autonomous() {
   chassis.pid_swing_relative_set(ez::LEFT_SWING, 90, 110, ez::shortest, true);
   chassis.pid_wait();
 
-  // Swing the long way around to go -45 from where it started
+  // Swing to 45 deg (-45 from the previous target), taking the long way around
   chassis.pid_swing_relative_set(ez::RIGHT_SWING, -45, 110, ez::longest, true);
   chassis.pid_wait();
 }
@@ -670,7 +670,7 @@ void pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, e_angl
 
 
 ### pid_swing_relative_set()
-Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to the last heading target, not the robot's measured heading.  
+Sets the robot to turn using only one side of the drive with PID and the opposite side at up to `opposite_speed`, scaled down as the swing slows, relative to the last heading target, not the robot's measured heading.  
 
 `type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `p_target` target value, in units  
@@ -699,7 +699,7 @@ void autonomous() {
   chassis.pid_swing_relative_set(ez::LEFT_SWING, 90, 110, 30);
   chassis.pid_wait();
 
-  // Swing the long way around to go -45 from where it started
+  // Swing -45 from the previous target, to 45 deg
   chassis.pid_swing_relative_set(ez::RIGHT_SWING, -45, 110, 30);
   chassis.pid_wait();
 }
@@ -724,7 +724,7 @@ void pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, int op
 
 
 ### pid_swing_relative_set()
-Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to the last heading target, not the robot's measured heading.  
+Sets the robot to turn using only one side of the drive with PID and the opposite side at up to `opposite_speed`, scaled down as the swing slows, relative to the last heading target, not the robot's measured heading.  
 
 `type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `p_target` target value, in units  
@@ -754,7 +754,7 @@ void autonomous() {
   chassis.pid_swing_relative_set(ez::LEFT_SWING, 90, 110, 30, true);
   chassis.pid_wait();
 
-  // Swing the long way around to go -45 from where it started
+  // Swing -45 from the previous target, to 45 deg
   chassis.pid_swing_relative_set(ez::RIGHT_SWING, -45, 110, 30, true);
   chassis.pid_wait();
 }
@@ -779,13 +779,13 @@ void pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, int op
 
 
 ### pid_swing_relative_set()
-Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to the last heading target, not the robot's measured heading.  
+Sets the robot to turn using only one side of the drive with PID and the opposite side at up to `opposite_speed`, scaled down as the swing slows, relative to the last heading target, not the robot's measured heading.  
 
 `type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `p_target` target value, in units  
 `speed` 0 to 127, max speed during motion   
 `opposite_speed` -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs     
-`behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
+`behavior` changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw   
 <Tabs
   groupId="pid_tu09aa90872143zrn_rel0091z29zx12_set_okapi"
   defaultValue="proto"
@@ -809,7 +809,7 @@ void autonomous() {
   chassis.pid_swing_relative_set(ez::LEFT_SWING, 90, 110, 30, ez::shortest);
   chassis.pid_wait();
 
-  // Swing the long way around to go -45 from where it started
+  // Swing to 45 deg (-45 from the previous target), taking the long way around
   chassis.pid_swing_relative_set(ez::RIGHT_SWING, -45, 110, 30, ez::longest);
   chassis.pid_wait();
 }
@@ -830,13 +830,13 @@ void pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, int op
 
 
 ### pid_swing_relative_set()
-Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to the last heading target, not the robot's measured heading.  
+Sets the robot to turn using only one side of the drive with PID and the opposite side at up to `opposite_speed`, scaled down as the swing slows, relative to the last heading target, not the robot's measured heading.  
 
 `type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `p_target` target value, in units  
 `speed` 0 to 127, max speed during motion   
 `opposite_speed` -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs     
-`behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
+`behavior` changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw   
 `slew_on` ramp up from a lower speed to your target speed     
 <Tabs
   groupId="pid_t123surn_re12342134l_se182735ct1231235_okapi"
@@ -861,7 +861,7 @@ void autonomous() {
   chassis.pid_swing_relative_set(ez::LEFT_SWING, 90, 110, 30, ez::shortest, true);
   chassis.pid_wait();
 
-  // Swing the long way around to go -45 from where it started
+  // Swing to 45 deg (-45 from the previous target), taking the long way around
   chassis.pid_swing_relative_set(ez::RIGHT_SWING, -45, 110, 30, ez::longest, true);
   chassis.pid_wait();
 }
@@ -909,8 +909,8 @@ Set's constants for swing exit conditions.
 `p_big_exit_time` time to exit when within big_error, in ms
 `p_big_error` big timer will start when error is within this, in degrees
 `p_velocity_exit_time`  velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), in ms
-`p_mA_timeout` mA timer will start when the motors are pulling too much current, in ms   
-`use_imu` true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't    
+`p_mA_timeout` mA timer will start when the first motor on the side(s) being driven is over its current limit, in ms   
+`use_imu` true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for `p_velocity_exit_time`), false uses only the main sensor    
 <Tabs
   groupId="pid_swing_exit_set_double"
   defaultValue="proto"
@@ -925,7 +925,7 @@ Set's constants for swing exit conditions.
 
 ```cpp
 void initialize() {
-  chassis.pid_swing_exit_condition_set(300, 1, 500, 3, 750, 750);
+  chassis.pid_swing_exit_condition_set(300, 3, 500, 7, 750, 750);
 }
 ```
 
@@ -951,8 +951,8 @@ Set's constants for swing exit conditions.
 `p_big_exit_time` time to exit when within big_error, in units             
 `p_big_error` big timer will start when error is within this, in units        
 `p_velocity_exit_time` velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), in units   
-`p_mA_timeout` mA timer will start when the motors are pulling too much current, in units      
-`use_imu` true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't         
+`p_mA_timeout` mA timer will start when the first motor on the side(s) being driven is over its current limit, in units      
+`use_imu` true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for `p_velocity_exit_time`), false uses only the main sensor         
 <Tabs
   groupId="pid_swing_Exit_set_okapi"
   defaultValue="proto"
@@ -1439,7 +1439,7 @@ Sets the robot to turn using only one side of the drive with PID relative to ini
 `type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `target` target value in degrees  
 `speed` 0 to 127, max speed during motion   
-`behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
+`behavior` changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw   
 <Tabs
   groupId="pi12kj3hkcd_turn_s098sfa8et_okapi"
   defaultValue="proto"
@@ -1533,7 +1533,7 @@ Sets the robot to turn using only one side of the drive with PID relative to ini
 `type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `target` target value in degrees  
 `speed` 0 to 127, max speed during motion   
-`behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
+`behavior` changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw   
 `slew_on` ramp up from a lower speed to your target speed   
 <Tabs
   groupId="pid_tkjh123gurn_set_okapasdasdasi"
@@ -1625,7 +1625,7 @@ void pid_swing_set(e_swing type, double target, int speed, e_angle_behavior beha
 
 
 ### pid_swing_set()
-Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to initial heading.  
+Sets the robot to turn using only one side of the drive with PID and the opposite side at up to `opposite_speed`, scaled down as the swing slows, relative to initial heading.  
 
 `type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `target` target value in degrees  
@@ -1672,13 +1672,13 @@ void pid_swing_set(e_swing type, double target, int speed, int opposite_speed);
 
 
 ### pid_swing_set()
-Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to initial heading.  
+Sets the robot to turn using only one side of the drive with PID and the opposite side at up to `opposite_speed`, scaled down as the swing slows, relative to initial heading.  
 
 `type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `target` target value in degrees  
 `speed` 0 to 127, max speed during motion   
 `opposite_speed` -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs    
-`behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
+`behavior` changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw   
 <Tabs
   groupId="pi12kj3hk987512zcd_turn_s098sfa8et_okapi"
   defaultValue="proto"
@@ -1721,7 +1721,7 @@ void pid_swing_set(e_swing type, double target, int speed, int opposite_speed, e
 
 
 ### pid_swing_set()
-Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to initial heading.  
+Sets the robot to turn using only one side of the drive with PID and the opposite side at up to `opposite_speed`, scaled down as the swing slows, relative to initial heading.  
 
 `type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `target` target value in degrees  
@@ -1768,13 +1768,13 @@ void pid_swing_set(e_swing type, double target, int speed, int opposite_speed, b
 
 
 ### pid_swing_set()
-Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to initial heading.  
+Sets the robot to turn using only one side of the drive with PID and the opposite side at up to `opposite_speed`, scaled down as the swing slows, relative to initial heading.  
 
 `type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `target` target value in degrees  
 `speed` 0 to 127, max speed during motion   
 `opposite_speed` -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs   
-`behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
+`behavior` changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw   
 `slew_on` ramp up from a lower speed to your target speed   
 <Tabs
   groupId="pid_tkjh0987134z123gurn_set_okapasdasdasi"
@@ -1877,7 +1877,7 @@ void autonomous() {
   chassis.pid_swing_relative_set(ez::LEFT_SWING, 90, 110);
   chassis.pid_wait();
 
-  // Swing the long way around to go -45 from where it started
+  // Swing -45 from the previous target, to 45 deg
   chassis.pid_swing_relative_set(ez::RIGHT_SWING, -45, 110);
   chassis.pid_wait();
 }
@@ -1931,7 +1931,7 @@ void autonomous() {
   chassis.pid_swing_relative_set(ez::LEFT_SWING, 90, 110, true);
   chassis.pid_wait();
 
-  // Swing the long way around to go -45 from where it started
+  // Swing -45 from the previous target, to 45 deg
   chassis.pid_swing_relative_set(ez::RIGHT_SWING, -45, 110, true);
   chassis.pid_wait();
 }
@@ -1961,7 +1961,7 @@ Sets the robot to turn using only one side of the drive with PID relative to the
 `type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `target` target value in degrees  
 `speed` 0 to 127, max speed during motion   
-`behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
+`behavior` changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw   
 <Tabs
   groupId="pid_tu09aarn_rel09zx12_set_okapi"
   defaultValue="proto"
@@ -1985,7 +1985,7 @@ void autonomous() {
   chassis.pid_swing_relative_set(ez::LEFT_SWING, 90, 110, ez::shortest);
   chassis.pid_wait();
 
-  // Swing the long way around to go -45 from where it started
+  // Swing to 45 deg (-45 from the previous target), taking the long way around
   chassis.pid_swing_relative_set(ez::RIGHT_SWING, -45, 110, ez::longest);
   chassis.pid_wait();
 }
@@ -2011,7 +2011,7 @@ Sets the robot to turn using only one side of the drive with PID relative to the
 `type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `target` target value in degrees  
 `speed` 0 to 127, max speed during motion   
-`behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
+`behavior` changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw   
 `slew_on` ramp up from a lower speed to your target speed     
 <Tabs
   groupId="pid_turn_rel_se182735ct1231235_okapi"
@@ -2036,7 +2036,7 @@ void autonomous() {
   chassis.pid_swing_relative_set(ez::LEFT_SWING, 90, 110, ez::shortest, true);
   chassis.pid_wait();
 
-  // Swing the long way around to go -45 from where it started
+  // Swing to 45 deg (-45 from the previous target), taking the long way around
   chassis.pid_swing_relative_set(ez::RIGHT_SWING, -45, 110, ez::longest, true);
   chassis.pid_wait();
 }
@@ -2071,7 +2071,7 @@ void pid_swing_relative_set(e_swing type, double target, int speed, e_angle_beha
 
 
 ### pid_swing_relative_set()
-Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to the last heading target, not the robot's measured heading.  
+Sets the robot to turn using only one side of the drive with PID and the opposite side at up to `opposite_speed`, scaled down as the swing slows, relative to the last heading target, not the robot's measured heading.  
 
 `type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `target` target value in degrees  
@@ -2100,7 +2100,7 @@ void autonomous() {
   chassis.pid_swing_relative_set(ez::LEFT_SWING, 90, 110, 30);
   chassis.pid_wait();
 
-  // Swing the long way around to go -45 from where it started
+  // Swing -45 from the previous target, to 45 deg
   chassis.pid_swing_relative_set(ez::RIGHT_SWING, -45, 110, 30);
   chassis.pid_wait();
 }
@@ -2111,7 +2111,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void pid_swing_relative_set(e_swing type, double target, int speed, int opposite_speed,);
+void pid_swing_relative_set(e_swing type, double target, int speed, int opposite_speed);
 ```
 
 </TabItem>
@@ -2125,7 +2125,7 @@ void pid_swing_relative_set(e_swing type, double target, int speed, int opposite
 
 
 ### pid_swing_relative_set()
-Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to the last heading target, not the robot's measured heading.  
+Sets the robot to turn using only one side of the drive with PID and the opposite side at up to `opposite_speed`, scaled down as the swing slows, relative to the last heading target, not the robot's measured heading.  
 
 `type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `target` target value in degrees  
@@ -2155,7 +2155,7 @@ void autonomous() {
   chassis.pid_swing_relative_set(ez::LEFT_SWING, 90, 110, 30, true);
   chassis.pid_wait();
 
-  // Swing the long way around to go -45 from where it started
+  // Swing -45 from the previous target, to 45 deg
   chassis.pid_swing_relative_set(ez::RIGHT_SWING, -45, 110, 30, true);
   chassis.pid_wait();
 }
@@ -2180,13 +2180,13 @@ void pid_swing_relative_set(e_swing type, double target, int speed, int opposite
 
 
 ### pid_swing_relative_set()
-Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to the last heading target, not the robot's measured heading.  
+Sets the robot to turn using only one side of the drive with PID and the opposite side at up to `opposite_speed`, scaled down as the swing slows, relative to the last heading target, not the robot's measured heading.  
 
 `type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `target` target value in degrees  
 `speed` 0 to 127, max speed during motion   
 `opposite_speed` -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs   
-`behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
+`behavior` changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw   
 <Tabs
   groupId="pid_tu09aarn_rel9087213z09zx12_set_okapi"
   defaultValue="proto"
@@ -2210,7 +2210,7 @@ void autonomous() {
   chassis.pid_swing_relative_set(ez::LEFT_SWING, 90, 110, 30, ez::shortest);
   chassis.pid_wait();
 
-  // Swing the long way around to go -45 from where it started
+  // Swing to 45 deg (-45 from the previous target), taking the long way around
   chassis.pid_swing_relative_set(ez::RIGHT_SWING, -45, 110, 30, ez::longest);
   chassis.pid_wait();
 }
@@ -2231,13 +2231,13 @@ void pid_swing_relative_set(e_swing type, double target, int speed, int opposite
 
 
 ### pid_swing_relative_set()
-Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to the last heading target, not the robot's measured heading.  
+Sets the robot to turn using only one side of the drive with PID and the opposite side at up to `opposite_speed`, scaled down as the swing slows, relative to the last heading target, not the robot's measured heading.  
 
 `type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `target` target value in degrees  
 `speed` 0 to 127, max speed during motion   
 `opposite_speed` -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs   
-`behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
+`behavior` changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw   
 `slew_on` ramp up from a lower speed to your target speed     
 <Tabs
   groupId="pid_turn_rel_se18290872134z98735ct1231235_okapi"
@@ -2262,7 +2262,7 @@ void autonomous() {
   chassis.pid_swing_relative_set(ez::LEFT_SWING, 90, 110, 30, ez::shortest, true);
   chassis.pid_wait();
 
-  // Swing the long way around to go -45 from where it started
+  // Swing to 45 deg (-45 from the previous target), taking the long way around
   chassis.pid_swing_relative_set(ez::RIGHT_SWING, -45, 110, 30, ez::longest, true);
   chassis.pid_wait();
 }
@@ -2307,7 +2307,7 @@ void pid_swing_relative_set(e_swing type, double target, int speed, int opposite
 
 
 ### pid_swing_constants_set()
-Set PID drive constants for forward and backward swings.   
+Set PID constants for forward and backward swings.   
  
 `p` proportional term   
 `i` integral term  
@@ -2349,7 +2349,7 @@ void pid_swing_constants_set(double p, double i = 0.0, double d = 0.0, double p_
 
 
 ### pid_swing_constants_forward_set()
-Set PID drive constants for forward swings.   
+Set PID constants for forward swings.   
  
 `p` proportional term   
 `i` integral term  
@@ -2390,7 +2390,7 @@ void pid_swing_constants_forward_set(double p, double i = 0.0, double d = 0.0, d
 
 
 ### pid_swing_constants_backward_set()
-Set PID drive constants for backward swings.   
+Set PID constants for backward swings.   
  
 `p` proportional term   
 `i` integral term  
@@ -2712,7 +2712,7 @@ void autonomous() {
 
   chassis.pid_swing_min_set(30);
 
-  chassis.pid_swing_set(45, 110);
+  chassis.pid_swing_set(ez::LEFT_SWING, 45, 110);
   chassis.pid_wait();
 }
 ```
