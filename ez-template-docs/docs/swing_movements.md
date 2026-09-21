@@ -12,7 +12,7 @@ import TabItem from '@theme/TabItem';
 ### pid_swing_set()
 Sets the robot to turn using only one side of the drive with PID relative to initial heading.  
 
-`type` L_SWING or R_SWING  
+`type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `p_target` target value, in units  
 `speed` 0 to 127, max speed during motion   
 <Tabs
@@ -58,7 +58,7 @@ void pid_swing_set(e_swing type, ez::QAngle p_target, int speed);
 ### pid_swing_set()
 Sets the robot to turn using only one side of the drive with PID relative to initial heading.  
 
-`type` L_SWING or R_SWING  
+`type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `p_target` target value, in units  
 `speed` 0 to 127, max speed during motion   
 `behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
@@ -106,7 +106,7 @@ void pid_swing_set(e_swing type, ez::QAngle p_target, int speed, e_angle_behavio
 ### pid_swing_set()
 Sets the robot to turn using only one side of the drive with PID relative to initial heading.  
 
-`type` L_SWING or R_SWING  
+`type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `p_target` target value, in units  
 `speed` 0 to 127, max speed during motion   
 `slew_on` ramp up from a lower speed to your target speed   
@@ -152,7 +152,7 @@ void pid_swing_set(e_swing type, ez::QAngle p_target, int speed, bool slew_on);
 ### pid_swing_set()
 Sets the robot to turn using only one side of the drive with PID relative to initial heading.  
 
-`type` L_SWING or R_SWING  
+`type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `p_target` target value, in units  
 `speed` 0 to 127, max speed during motion   
 `behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
@@ -221,7 +221,7 @@ void pid_swing_set(e_swing type, ez::QAngle p_target, int speed, e_angle_behavio
 ### pid_swing_set()
 Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to initial heading.  
 
-`type` L_SWING or R_SWING  
+`type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `p_target` target value, in units  
 `speed` 0 to 127, max speed during motion   
 `opposite_speed` -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs   
@@ -268,7 +268,7 @@ void pid_swing_set(e_swing type, ez::QAngle p_target, int speed, int opposite_sp
 ### pid_swing_set()
 Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to initial heading.  
 
-`type` L_SWING or R_SWING  
+`type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `p_target` target value, in units  
 `speed` 0 to 127, max speed during motion   
 `opposite_speed` -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs   
@@ -317,7 +317,7 @@ void pid_swing_set(e_swing type, ez::QAngle p_target, int speed, int opposite_sp
 ### pid_swing_set()
 Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to initial heading.  
 
-`type` L_SWING or R_SWING  
+`type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `p_target` target value, in units  
 `speed` 0 to 127, max speed during motion   
 `opposite_speed` -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs    
@@ -364,7 +364,7 @@ void pid_swing_set(e_swing type, ez::QAngle p_target, int speed, int opposite_sp
 ### pid_swing_set()
 Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to initial heading.  
 
-`type` L_SWING or R_SWING  
+`type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `p_target` target value, in units  
 `speed` 0 to 127, max speed during motion   
 `opposite_speed` -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs    
@@ -445,7 +445,7 @@ void pid_swing_set(e_swing type, ez::QAngle p_target, int speed, int opposite_sp
 ### pid_swing_relative_set()
 Sets the robot to turn using only one side of the drive with PID relative to the last heading target, not the robot's measured heading.  
 
-`type` L_SWING or R_SWING  
+`type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `p_target` target value, in units  
 `speed` 0 to 127, max speed during motion   
 <Tabs
@@ -498,7 +498,7 @@ void pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed);
 ### pid_swing_relative_set()
 Sets the robot to turn using only one side of the drive with PID relative to the last heading target, not the robot's measured heading.  
 
-`type` L_SWING or R_SWING  
+`type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `p_target` target value, in units  
 `speed` 0 to 127, max speed during motion   
 `slew_on` ramp up from a lower speed to your target speed   
@@ -552,7 +552,7 @@ void pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, bool s
 ### pid_swing_relative_set()
 Sets the robot to turn using only one side of the drive with PID relative to the last heading target, not the robot's measured heading.  
 
-`type` L_SWING or R_SWING  
+`type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `p_target` target value, in units  
 `speed` 0 to 127, max speed during motion   
 `behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
@@ -602,7 +602,7 @@ void pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, e_angl
 ### pid_swing_relative_set()
 Sets the robot to turn using only one side of the drive with PID relative to the last heading target, not the robot's measured heading.  
 
-`type` L_SWING or R_SWING  
+`type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `p_target` target value, in units  
 `speed` 0 to 127, max speed during motion   
 `behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
@@ -672,7 +672,7 @@ void pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, e_angl
 ### pid_swing_relative_set()
 Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to the last heading target, not the robot's measured heading.  
 
-`type` L_SWING or R_SWING  
+`type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `p_target` target value, in units  
 `speed` 0 to 127, max speed during motion   
 `opposite_speed` -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs     
@@ -726,7 +726,7 @@ void pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, int op
 ### pid_swing_relative_set()
 Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to the last heading target, not the robot's measured heading.  
 
-`type` L_SWING or R_SWING  
+`type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `p_target` target value, in units  
 `speed` 0 to 127, max speed during motion   
 `opposite_speed` -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs     
@@ -781,7 +781,7 @@ void pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, int op
 ### pid_swing_relative_set()
 Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to the last heading target, not the robot's measured heading.  
 
-`type` L_SWING or R_SWING  
+`type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `p_target` target value, in units  
 `speed` 0 to 127, max speed during motion   
 `opposite_speed` -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs     
@@ -832,7 +832,7 @@ void pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, int op
 ### pid_swing_relative_set()
 Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to the last heading target, not the robot's measured heading.  
 
-`type` L_SWING or R_SWING  
+`type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `p_target` target value, in units  
 `speed` 0 to 127, max speed during motion   
 `opposite_speed` -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs     
@@ -936,7 +936,7 @@ void initialize() {
 <TabItem value="proto">
 
 ```cpp
-void pid_swing_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, use_imu = true);
+void pid_swing_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = true);
 ```
 
 </TabItem>
@@ -978,7 +978,7 @@ void initialize() {
 <TabItem value="proto">
 
 ```cpp
-void pid_swing_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error, ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, use_imu = true);
+void pid_swing_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error, ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = true);
 ```
 
 </TabItem>
@@ -1390,7 +1390,7 @@ void slew_swing_constants_backward_set(ez::QAngle distance, int min_speed);
 ### pid_swing_set()
 Sets the robot to turn using only one side of the drive with PID relative to initial heading.  
 
-`type` L_SWING or R_SWING  
+`type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `target` target value in degrees  
 `speed` 0 to 127, max speed during motion   
 <Tabs
@@ -1436,7 +1436,7 @@ void pid_swing_set(e_swing type, double target, int speed);
 ### pid_swing_set()
 Sets the robot to turn using only one side of the drive with PID relative to initial heading.  
 
-`type` L_SWING or R_SWING  
+`type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `target` target value in degrees  
 `speed` 0 to 127, max speed during motion   
 `behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
@@ -1484,7 +1484,7 @@ void pid_swing_set(e_swing type, double target, int speed, e_angle_behavior beha
 ### pid_swing_set()
 Sets the robot to turn using only one side of the drive with PID relative to initial heading.  
 
-`type` L_SWING or R_SWING  
+`type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `target` target value in degrees  
 `speed` 0 to 127, max speed during motion   
 `slew_on` ramp up from a lower speed to your target speed   
@@ -1530,7 +1530,7 @@ void pid_swing_set(e_swing type, double target, int speed, bool slew_on);
 ### pid_swing_set()
 Sets the robot to turn using only one side of the drive with PID relative to initial heading.  
 
-`type` L_SWING or R_SWING  
+`type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `target` target value in degrees  
 `speed` 0 to 127, max speed during motion   
 `behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
@@ -1627,7 +1627,7 @@ void pid_swing_set(e_swing type, double target, int speed, e_angle_behavior beha
 ### pid_swing_set()
 Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to initial heading.  
 
-`type` L_SWING or R_SWING  
+`type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `target` target value in degrees  
 `speed` 0 to 127, max speed during motion   
 `opposite_speed` -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs    
@@ -1674,7 +1674,7 @@ void pid_swing_set(e_swing type, double target, int speed, int opposite_speed);
 ### pid_swing_set()
 Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to initial heading.  
 
-`type` L_SWING or R_SWING  
+`type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `target` target value in degrees  
 `speed` 0 to 127, max speed during motion   
 `opposite_speed` -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs    
@@ -1723,7 +1723,7 @@ void pid_swing_set(e_swing type, double target, int speed, int opposite_speed, e
 ### pid_swing_set()
 Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to initial heading.  
 
-`type` L_SWING or R_SWING  
+`type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `target` target value in degrees  
 `speed` 0 to 127, max speed during motion   
 `opposite_speed` -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs   
@@ -1770,7 +1770,7 @@ void pid_swing_set(e_swing type, double target, int speed, int opposite_speed, b
 ### pid_swing_set()
 Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to initial heading.  
 
-`type` L_SWING or R_SWING  
+`type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `target` target value in degrees  
 `speed` 0 to 127, max speed during motion   
 `opposite_speed` -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs   
@@ -1851,7 +1851,7 @@ void pid_swing_set(e_swing type, double target, int speed, int opposite_speed, e
 ### pid_swing_relative_set()
 Sets the robot to turn using only one side of the drive with PID relative to the last heading target, not the robot's measured heading.  
 
-`type` L_SWING or R_SWING  
+`type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `target` target value in degrees  
 `speed` 0 to 127, max speed during motion   
 <Tabs
@@ -1904,7 +1904,7 @@ void pid_swing_relative_set(e_swing type, double target, int speed);
 ### pid_swing_relative_set()
 Sets the robot to turn using only one side of the drive with PID relative to the last heading target, not the robot's measured heading.  
 
-`type` L_SWING or R_SWING  
+`type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `target` target value in degrees  
 `speed` 0 to 127, max speed during motion   
 `slew_on` ramp up from a lower speed to your target speed   
@@ -1958,7 +1958,7 @@ void pid_swing_relative_set(e_swing type, double target, int speed, bool slew_on
 ### pid_swing_relative_set()
 Sets the robot to turn using only one side of the drive with PID relative to the last heading target, not the robot's measured heading.  
 
-`type` L_SWING or R_SWING  
+`type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `target` target value in degrees  
 `speed` 0 to 127, max speed during motion   
 `behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
@@ -2008,7 +2008,7 @@ void pid_swing_relative_set(e_swing type, double target, int speed, e_angle_beha
 ### pid_swing_relative_set()
 Sets the robot to turn using only one side of the drive with PID relative to the last heading target, not the robot's measured heading.  
 
-`type` L_SWING or R_SWING  
+`type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `target` target value in degrees  
 `speed` 0 to 127, max speed during motion   
 `behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
@@ -2073,7 +2073,7 @@ void pid_swing_relative_set(e_swing type, double target, int speed, e_angle_beha
 ### pid_swing_relative_set()
 Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to the last heading target, not the robot's measured heading.  
 
-`type` L_SWING or R_SWING  
+`type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `target` target value in degrees  
 `speed` 0 to 127, max speed during motion   
 `opposite_speed` -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs   
@@ -2127,7 +2127,7 @@ void pid_swing_relative_set(e_swing type, double target, int speed, int opposite
 ### pid_swing_relative_set()
 Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to the last heading target, not the robot's measured heading.  
 
-`type` L_SWING or R_SWING  
+`type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `target` target value in degrees  
 `speed` 0 to 127, max speed during motion   
 `opposite_speed` -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs   
@@ -2182,7 +2182,7 @@ void pid_swing_relative_set(e_swing type, double target, int speed, int opposite
 ### pid_swing_relative_set()
 Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to the last heading target, not the robot's measured heading.  
 
-`type` L_SWING or R_SWING  
+`type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `target` target value in degrees  
 `speed` 0 to 127, max speed during motion   
 `opposite_speed` -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs   
@@ -2233,7 +2233,7 @@ void pid_swing_relative_set(e_swing type, double target, int speed, int opposite
 ### pid_swing_relative_set()
 Sets the robot to turn using only one side of the drive with PID and the opposite side to a constant speed, relative to the last heading target, not the robot's measured heading.  
 
-`type` L_SWING or R_SWING  
+`type` ez::LEFT_SWING or ez::RIGHT_SWING  
 `target` target value in degrees  
 `speed` 0 to 127, max speed during motion   
 `opposite_speed` -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs   
@@ -2737,7 +2737,7 @@ void pid_swing_min_set(int min);
 ### pid_swing_behavior_set()
 Sets the default behavior for turns in swinging movements.   
 
-`behavior` ez::shortest, ez::longest, ez::left, ez::right, ez::raw     
+`behavior` ez::shortest, ez::longest, ez::ccw, ez::cw, ez::raw     
 <Tabs
   groupId="pid_swing_behavior_set"
   defaultValue="proto"

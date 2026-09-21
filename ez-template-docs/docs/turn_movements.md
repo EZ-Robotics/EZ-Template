@@ -514,7 +514,7 @@ void initialize() {
 <TabItem value="proto">
 
 ```cpp
-void pid_turn_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error, ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, use_imu = true);
+void pid_turn_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error, ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = true);
 ```
 
 </TabItem>
@@ -1088,7 +1088,7 @@ void initialize() {
 <TabItem value="proto">
 
 ```cpp
-void pid_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, use_imu = true);
+void pid_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = true);
 ```
 
 </TabItem>
@@ -1272,7 +1272,7 @@ void pid_turn_min_set(int min);
 ### pid_turn_behavior_set()
 Sets the default behavior for turns in turning movements.   
 
-`behavior` ez::shortest, ez::longest, ez::left, ez::right, ez::raw        
+`behavior` ez::shortest, ez::longest, ez::ccw, ez::cw, ez::raw        
 <Tabs
   groupId="pid_turn_behavior_set"
   defaultValue="proto"
