@@ -536,7 +536,9 @@ class Drive {
   /**
    * Sets the width of the drive.
    *
-   * This is used for tracking.
+   * Odometry uses this for a side that has no parallel tracking wheel (it is tracking with that side's drive
+   * motors).  A side with an odom_tracker_left / odom_tracker_right uses that tracking wheel's distance to
+   * center instead.
    *
    * \param input
    *        a unit in inches, from center of the wheel to center of the wheel
@@ -546,7 +548,9 @@ class Drive {
   /**
    * Sets the width of the drive.
    *
-   * This is used for tracking.
+   * Odometry uses this for a side that has no parallel tracking wheel (it is tracking with that side's drive
+   * motors).  A side with an odom_tracker_left / odom_tracker_right uses that tracking wheel's distance to
+   * center instead.
    *
    * \param p_input
    *        a unit, from center of the wheel to center of the wheel
@@ -736,7 +740,7 @@ class Drive {
    * Non-positive values are rejected and the previous value is kept, since this is used as a divisor.
    *
    * \param bias
-   *        a positive number, default is 1.375
+   *        a positive number, default is 0.9
    */
   void odom_turn_bias_set(double bias);
 
@@ -943,8 +947,9 @@ class Drive {
    * Sets the chassis to controller joysticks using tank control.
    * Run in usercontrol.
    *
-   * This passes the controller through the curve functions, but is disabled by default.
-   * Use opcontrol_curve_buttons_toggle() to enable it.
+   * This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.
+   * The controller buttons that change the curves are enabled by default, use opcontrol_curve_buttons_toggle(false)
+   * to turn them off.
    */
   void opcontrol_tank();
 
@@ -952,8 +957,9 @@ class Drive {
    * Sets the chassis to controller joysticks using standard arcade control, where left stick is fwd/rev.
    * Run in usercontrol.
    *
-   * This passes the controller through the curve functions, but is disabled by default.
-   * Use opcontrol_curve_buttons_toggle() to enable it.
+   * This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.
+   * The controller buttons that change the curves are enabled by default, use opcontrol_curve_buttons_toggle(false)
+   * to turn them off.
    *
    * \param stick_type
    *        ez::SINGLE or ez::SPLIT control
@@ -964,8 +970,9 @@ class Drive {
    * Sets the chassis to controller joysticks using flipped arcade control, where right stick is fwd/rev.
    * Run in usercontrol.
    *
-   * This passes the controller through the curve functions, but is disabled by default.
-   * Use opcontrol_curve_buttons_toggle() to enable it.
+   * This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.
+   * The controller buttons that change the curves are enabled by default, use opcontrol_curve_buttons_toggle(false)
+   * to turn them off.
    *
    * \param stick_type
    *        ez::SINGLE or ez::SPLIT control
@@ -980,8 +987,9 @@ class Drive {
    * robot turns the same arc at any speed, like a steering wheel.  Turning on a point is scaled with
    * opcontrol_curvature_point_turn_gain_set().
    *
-   * This passes the controller through the curve functions, but is disabled by default.
-   * Use opcontrol_curve_buttons_toggle() to enable it.
+   * This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.
+   * The controller buttons that change the curves are enabled by default, use opcontrol_curve_buttons_toggle(false)
+   * to turn them off.
    *
    * \param stick_type
    *        ez::SINGLE or ez::SPLIT control
@@ -996,8 +1004,9 @@ class Drive {
    * robot turns the same arc at any speed, like a steering wheel.  Turning on a point is scaled with
    * opcontrol_curvature_point_turn_gain_set().
    *
-   * This passes the controller through the curve functions, but is disabled by default.
-   * Use opcontrol_curve_buttons_toggle() to enable it.
+   * This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.
+   * The controller buttons that change the curves are enabled by default, use opcontrol_curve_buttons_toggle(false)
+   * to turn them off.
    *
    * \param stick_type
    *        ez::SINGLE or ez::SPLIT control
@@ -1524,7 +1533,8 @@ class Drive {
   double drive_angle_get();
 
   /**
-   * Practice mode for driver practice that shuts off the drive if you go max speed.
+   * Practice mode for driver practice that shuts off the drive if either side of the drive is asked to go faster
+   * than 120 (out of 127).  In arcade this is checked after the forward and turn sticks are combined.
    *
    * \param toggle
    *        true enables, false disables
@@ -3476,7 +3486,8 @@ class Drive {
   void pid_tuner_iterate();
 
   /**
-   * Toggle for printing the display of the PID Tuner to the brain.
+   * Toggle for printing the display of the PID Tuner to the brain.  It prints to the brain by default.  This only
+   * does something while the PID Tuner is enabled, calling it while the PID Tuner is disabled is ignored.
    *
    * \param input
    *        true prints to brain, false doesn't
