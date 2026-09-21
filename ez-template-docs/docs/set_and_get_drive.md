@@ -652,7 +652,7 @@ void drive_sensor_reset();
 ### drive_imu_reset()
 Resets the current imu value.  Defaults to 0, recommended to run at the start of your autonomous routine.   
 
-`new_heading_value` new heading value
+`new_heading` new heading value
 <Tabs
   groupId="drive_imu_reset"
   defaultValue="proto"
@@ -729,7 +729,7 @@ double drive_imu_get();
 
 
 ### drive_imu_accel_get()
-Returns the current imu accel x + accel y value.  
+Returns the size of the imu's acceleration in the x-y plane, `sqrt(x^2 + y^2)`, so it is never negative.  Returns 0 if there is no imu.  
 <Tabs
   groupId="drive_imu_accel_get"
   defaultValue="proto"
@@ -746,7 +746,7 @@ void opcontrol() {
   while (true) {
     chassis.opcontrol_tank();
 
-    printf("Accel x + y: %f \n", chassis.drive_imu_accel_get());
+    printf("Accel: %f \n", chassis.drive_imu_accel_get());
 
     pros::delay(ez::util::DELAY_TIME);
   }
