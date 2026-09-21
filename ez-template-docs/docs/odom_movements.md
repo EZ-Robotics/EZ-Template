@@ -12,7 +12,7 @@ import TabItem from '@theme/TabItem';
 
 
 ### pid_odom_set()
-Sets the robot to go forward/backward the distance you give it, but it uses odometry, without slew.     
+Sets the robot to go forward/backward the distance you give it, but it uses odometry, using slew only if it is enabled globally.     
 
 `p_target` is in a length unit.  
 `speed` is 0 to 127.  It's recommended to keep this at 110.  
@@ -112,9 +112,9 @@ void pid_odom_set(ez::QLength p_target, int speed, bool slew_on);
 
 
 ### pid_odom_set()
-Go to an xy coordinate without slew.  This is a wrapper for `pid_odom_ptp_set()`.  
+Go to an xy coordinate, using slew only if it is enabled globally.  If the point has an angle this runs boomerang, otherwise it runs injected pure pursuit.  This is a wrapper for `pid_odom_boomerang_set()` and `pid_odom_injected_pp_set()`.  
 
-`p_imovement` united_pose, expecting `{0_in, 0_in}`
+`p_imovement` united_odom, expecting `{{0_in, 0_in}, ez::fwd, 110}`
 <Tabs
   groupId="as0d98f0f"
   defaultValue="proto"
@@ -152,9 +152,9 @@ void autonomous() {
  
 
 ### pid_odom_set()
-Go to an xy coordinate with slew.  This is a wrapper for `pid_odom_ptp_set()`.  
+Go to an xy coordinate.  If the point has an angle this runs boomerang, otherwise it runs injected pure pursuit.  This is a wrapper for `pid_odom_boomerang_set()` and `pid_odom_injected_pp_set()`.  
 
-`p_imovement` united_pose, expecting `{0_in, 0_in}`
+`p_imovement` united_odom, expecting `{{0_in, 0_in}, ez::fwd, 110}`
 `slew_on` increases the speed of the drive gradually.  You must set slew constants for this to work!  
 <Tabs
   groupId="as0d9809asdf0f"
@@ -196,9 +196,9 @@ void autonomous() {
 
 
 ### pid_odom_set()
-Create and smooth out a path from the given points without slew.  The path will switch to boomerang is angle is specified for that point.  This is a wrapper for `pid_odom_smooth_pp_set`.  
+Create and smooth out a path from the given points, using slew only if it is enabled globally.  The path will switch to boomerang if an angle is specified for that point.  This is a wrapper for `pid_odom_smooth_pp_set`.  
 
-`p_imovements` vector of united_pose
+`p_imovements` vector of united_odom
 <Tabs
   groupId="as0d9123jsad8f0f"
   defaultValue="proto"
@@ -211,7 +211,7 @@ Create and smooth out a path from the given points without slew.  The path will 
 <TabItem value="proto">
 
 ```cpp
-void pid_odom_set(std::vector{united_odom} p_imovements);
+void pid_odom_set(std::vector<united_odom> p_imovements);
 ```
 
 </TabItem>
@@ -240,9 +240,9 @@ chassis.pid_wait();
 
 
 ### pid_odom_set()
-Create and smooth out a path from the given points.  The path will switch to boomerang is angle is specified for that point.  This is a wrapper for `pid_odom_smooth_pp_set`.  
+Create and smooth out a path from the given points.  The path will switch to boomerang if an angle is specified for that point.  This is a wrapper for `pid_odom_smooth_pp_set`.  
 
-`p_imovements` vector of united_pose
+`p_imovements` vector of united_odom
 `slew_on` increases the speed of the drive gradually.  You must set slew constants for this to work!  
 <Tabs
   groupId="as0d9809z123f0f"
@@ -256,7 +256,7 @@ Create and smooth out a path from the given points.  The path will switch to boo
 <TabItem value="proto">
 
 ```cpp
-void pid_odom_set(std::vector{united_odom} p_imovements, bool slew_on);
+void pid_odom_set(std::vector<united_odom> p_imovements, bool slew_on);
 ```
 
 </TabItem>
@@ -298,9 +298,9 @@ chassis.pid_wait();
 
 
 ### pid_odom_ptp_set()
-Go to an xy coordinate without slew.   
+Go to an xy coordinate, using slew only if it is enabled globally.   
 
-`p_imovement` united_pose, expecting `{0_in, 0_in}`
+`p_imovement` united_odom, expecting `{{0_in, 0_in}, ez::fwd, 110}`
 <Tabs
   groupId="as0d98098asdf0f"
   defaultValue="proto"
@@ -342,7 +342,7 @@ void autonomous() {
 ### pid_odom_ptp_set()
 Go to an xy coordinate with slew.  
 
-`p_imovement` united_pose, expecting `{0_in, 0_in}`
+`p_imovement` united_odom, expecting `{{0_in, 0_in}, ez::fwd, 110}`
 `slew_on` increases the speed of the drive gradually.  You must set slew constants for this to work!  
 <Tabs
   groupId="as0d9kljhlkjhasd8f0f"
@@ -406,7 +406,7 @@ void autonomous() {
 ### pid_odom_pp_set()
 Pure pursuits through all the points given.    
 
-`p_imovements` vector of united_pose
+`p_imovements` vector of united_odom
 <Tabs
   groupId="as0d98iuqec098asdf0f"
   defaultValue="proto"
@@ -419,7 +419,7 @@ Pure pursuits through all the points given.
 <TabItem value="proto">
 
 ```cpp
-void pid_odom_pp_set(std::vector{united_odom} p_imovements);
+void pid_odom_pp_set(std::vector<united_odom> p_imovements);
 ```
 
 </TabItem>
@@ -448,7 +448,7 @@ void autonomous() {
 ### pid_odom_pp_set()
 Pure pursuits through all the points given.    
 
-`p_imovements` vector of united_pose   
+`p_imovements` vector of united_odom   
 `slew_on` increases the speed of the drive gradually.  You must set slew constants for this to work!  
 <Tabs
   groupId="as0d9klasdsadkjhjhlkjhaadasdsd8f0f"
@@ -462,7 +462,7 @@ Pure pursuits through all the points given.
 <TabItem value="proto">
 
 ```cpp
-void pid_odom_pp_set(std::vector{united_odom} p_imovements, bool slew_on);
+void pid_odom_pp_set(std::vector<united_odom> p_imovements, bool slew_on);
 ```
 
 </TabItem>
@@ -502,7 +502,7 @@ void autonomous() {
 ### pid_odom_injected_pp_set()
 Creates a new path that injects points between the input points, then pure pursuits along this new path.       
 
-`p_imovements` vector of united_pose
+`p_imovements` vector of united_odom
 <Tabs
   groupId="as0d9asdhh8iasdsadu97865qec098asdf0f"
   defaultValue="proto"
@@ -515,7 +515,7 @@ Creates a new path that injects points between the input points, then pure pursu
 <TabItem value="proto">
 
 ```cpp
-void pid_odom_injected_pp_set(std::vector{united_odom} p_imovements);
+void pid_odom_injected_pp_set(std::vector<united_odom> p_imovements);
 ```
 
 </TabItem>
@@ -544,7 +544,7 @@ void autonomous() {
 ### pid_odom_injected_pp_set()
 Creates a new path that injects points between the input points, then pure pursuits along this new path.       
 
-`p_imovements` vector of united_pose
+`p_imovements` vector of united_odom
 `slew_on` increases the speed of the drive gradually.  You must set slew constants for this to work!  
 <Tabs
   groupId="as0d98iasdsadu9asdasdsadgf7865qec098asdf0f"
@@ -558,7 +558,7 @@ Creates a new path that injects points between the input points, then pure pursu
 <TabItem value="proto">
 
 ```cpp
-void pid_odom_injected_pp_set(std::vector{united_odom} p_imovements, bool slew_on);
+void pid_odom_injected_pp_set(std::vector<united_odom> p_imovements, bool slew_on);
 ```
 
 </TabItem>
@@ -601,7 +601,7 @@ void autonomous() {
 ### pid_odom_smooth_pp_set()
 Creates a new path that injects points between the input points, then smooths the corners of this path, then pure pursuits along this new path.       
 
-`p_imovements` vector of united_pose
+`p_imovements` vector of united_odom
 <Tabs
   groupId="as0d98iasdsadu9asdasdsadgf78a0918234sdads65qec098asdf0f"
   defaultValue="proto"
@@ -614,7 +614,7 @@ Creates a new path that injects points between the input points, then smooths th
 <TabItem value="proto">
 
 ```cpp
-void pid_odom_smooth_pp_set(std::vector{united_odom} p_imovements);
+void pid_odom_smooth_pp_set(std::vector<united_odom> p_imovements);
 ```
 
 </TabItem>
@@ -647,7 +647,7 @@ void autonomous() {
 ### pid_odom_smooth_pp_set()
 Creates a new path that injects points between the input points, then smooths the corners of this path, then pure pursuits along this new path.       
 
-`p_imovements` vector of united_pose
+`p_imovements` vector of united_odom
 `slew_on` increases the speed of the drive gradually.  You must set slew constants for this to work!  
 <Tabs
   groupId="as0d98iasdsadu9asdasdsadgf78asdads65qec098asdf0f"
@@ -661,7 +661,7 @@ Creates a new path that injects points between the input points, then smooths th
 <TabItem value="proto">
 
 ```cpp
-void pid_odom_smooth_pp_set(std::vector{united_odom} p_imovements, bool slew_on);
+void pid_odom_smooth_pp_set(std::vector<united_odom> p_imovements, bool slew_on);
 ```
 
 </TabItem>
@@ -710,7 +710,7 @@ void autonomous() {
 ### pid_odom_boomerang_set()
 Goes to an xy coordinate at a set heading.  
 
-`p_imovement` united_pose, expecting `{0_in, 0_in, 0_deg}`
+`p_imovement` united_odom, expecting `{{0_in, 0_in, 0_deg}, ez::fwd, 110}`
 <Tabs
   groupId="as0d098098fa98f0f"
   defaultValue="proto"
@@ -738,7 +738,7 @@ void autonomous() {
   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
 
-  chassis.pid_odom_set({{24_in, 24_in, 0_deg}, ez::fwd, 110});
+  chassis.pid_odom_boomerang_set({{24_in, 24_in, 0_deg}, ez::fwd, 110});
   chassis.pid_wait();
 }
 ```
@@ -752,7 +752,7 @@ void autonomous() {
 ### pid_odom_boomerang_set()
 Goes to an xy coordinate at a set heading.  
 
-`p_imovement` united_pose, expecting `{0_in, 0_in, 0_deg}`
+`p_imovement` united_odom, expecting `{{0_in, 0_in, 0_deg}, ez::fwd, 110}`
 `slew_on` increases the speed of the drive gradually.  You must set slew constants for this to work!  
 <Tabs
   groupId="as0asd190984d98f0f"
@@ -781,7 +781,7 @@ void autonomous() {
   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
 
-  chassis.pid_odom_set({{24_in, 24_in, 0_deg}, ez::fwd, 110}, true);
+  chassis.pid_odom_boomerang_set({{24_in, 24_in, 0_deg}, ez::fwd, 110}, true);
   chassis.pid_wait();
 }
 ```
@@ -799,7 +799,7 @@ void autonomous() {
 
 
 ### pid_turn_set()
-Sets the robot to turn face a point using PID and odometry.  
+Sets the robot to turn to face a point using PID and odometry.  
 
 `p_itarget` `{x, y}` a target point to face.  this uses units
 `dir` face the point fwd or rev
@@ -844,7 +844,7 @@ void pid_turn_set(united_pose p_itarget, drive_directions dir, int speed);
 
 
 ### pid_turn_set()
-Sets the robot to turn face a point using PID and odometry.  
+Sets the robot to turn to face a point using PID and odometry.  
 
 `p_itarget` `{x, y}` a target point to face.  this uses units
 `dir` face the point fwd or rev
@@ -890,12 +890,12 @@ void pid_turn_set(united_pose p_itarget, drive_directions dir, int speed, bool s
 
 
 ### pid_turn_set()
-Sets the robot to turn face a point using PID and odometry.  
+Sets the robot to turn to face a point using PID and odometry.  
 
 `p_itarget` `{x, y}` a target point to face.  this uses units
 `dir` face the point fwd or rev
 `speed` 0 to 127, max speed during motion   
-`behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
+`behavior` changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw   
 <Tabs
   groupId="pid_turn_set_okapasdasdas98721309587zi"
   defaultValue="proto"
@@ -935,12 +935,12 @@ void pid_turn_set(united_pose p_itarget, drive_directions dir, int speed, e_angl
 
 
 ### pid_turn_set()
-Sets the robot to turn face a point using PID and odometry.  
+Sets the robot to turn to face a point using PID and odometry.  
 
 `p_itarget` `{x, y}` a target point to face.  this uses units
 `dir` face the point fwd or rev
 `speed` 0 to 127, max speed during motion   
-`behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
+`behavior` changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw   
 `slew_on` ramp up from a lower speed to your target speed   
 <Tabs
   groupId="90872130945zpid_turn_set_okapasdasdasi"
@@ -1106,7 +1106,7 @@ void autonomous() {
 
 
 ### pid_odom_set()
-Sets the robot to go forward/backward the distance you give it, but it uses odometry, without slew.      
+Sets the robot to go forward/backward the distance you give it, but it uses odometry, using slew only if it is enabled globally.      
 
 `target` double, expecting inches
 `speed` is 0 to 127.  It's recommended to keep this at 110.  
@@ -1196,9 +1196,9 @@ void pid_odom_set(double target, int speed, bool slew_on);
 
 
 ### pid_odom_set()
-Go to an xy coordinate without slew.  This is a wrapper for `pid_odom_ptp_set()`.  
+Go to an xy coordinate, using slew only if it is enabled globally.  If the point has an angle this runs boomerang, otherwise it runs injected pure pursuit.  This is a wrapper for `pid_odom_boomerang_set()` and `pid_odom_injected_pp_set()`.  
 
-`imovement` pose, expecting `{0, 0}`
+`imovement` odom, expecting `{{0, 0}, ez::fwd, 110}`
 <Tabs
   groupId="saldkjasdfdsaf"
   defaultValue="proto"
@@ -1240,9 +1240,9 @@ void autonomous() {
 
 
 ### pid_odom_set()
-Go to an xy coordinate with slew.  This is a wrapper for `pid_odom_ptp_set()`.  
+Go to an xy coordinate.  If the point has an angle this runs boomerang, otherwise it runs injected pure pursuit.  This is a wrapper for `pid_odom_boomerang_set()` and `pid_odom_injected_pp_set()`.  
 
-`imovement` pose, expecting `{0, 0}`
+`imovement` odom, expecting `{{0, 0}, ez::fwd, 110}`
 `slew_on` increases the speed of the drive gradually.  You must set slew constants for this to work!  
 <Tabs
   groupId="as0d98ljlksajdhlkjf0f"
@@ -1285,9 +1285,9 @@ void autonomous() {
 
 
 ### pid_odom_set()
-Create and smooth out a path from the given points without slew.  The path will switch to boomerang is angle is specified for that point.  This is a wrapper for `pid_odom_smooth_pp_set`.    
+Create and smooth out a path from the given points, using slew only if it is enabled globally.  The path will switch to boomerang if an angle is specified for that point.  This is a wrapper for `pid_odom_smooth_pp_set`.    
 
-`imovements` vector of united_pose
+`imovements` vector of odom
 <Tabs
   groupId="as0sadfdsgd98f0f"
   defaultValue="proto"
@@ -1300,7 +1300,7 @@ Create and smooth out a path from the given points without slew.  The path will 
 <TabItem value="proto">
 
 ```cpp
-void pid_odom_set(std::vector{odom} imovements)
+void pid_odom_set(std::vector<odom> imovements);
 ```
 
 </TabItem>
@@ -1328,9 +1328,9 @@ chassis.pid_wait();
 
 
 ### pid_odom_set()
-Create and smooth out a path from the given points.  The path will switch to boomerang is angle is specified for that point.  This is a wrapper for `pid_odom_smooth_pp_set`.  
+Create and smooth out a path from the given points.  The path will switch to boomerang if an angle is specified for that point.  This is a wrapper for `pid_odom_smooth_pp_set`.  
 
-`imovements` vector of pose
+`imovements` vector of odom
 `slew_on` increases the speed of the drive gradually.  You must set slew constants for this to work!  
 <Tabs
   groupId="as0d98kaljhflkjhf0f"
@@ -1344,7 +1344,7 @@ Create and smooth out a path from the given points.  The path will switch to boo
 <TabItem value="proto">
 
 ```cpp
-void pid_odom_set(std::vector{odom} imovements, bool slew_on);
+void pid_odom_set(std::vector<odom> imovements, bool slew_on);
 ```
 
 </TabItem>
@@ -1375,9 +1375,9 @@ chassis.pid_wait();
 
 
 ### pid_odom_ptp_set()
-Go to an xy coordinate without slew.   
+Go to an xy coordinate, using slew only if it is enabled globally.   
 
-`imovement` pose, expecting `{0, 0}`
+`imovement` odom, expecting `{{0, 0}, ez::fwd, 110}`
 <Tabs
   groupId="as0d9809adsasd8asdf0f"
   defaultValue="proto"
@@ -1420,7 +1420,7 @@ void autonomous() {
 ### pid_odom_ptp_set()
 Go to an xy coordinate with slew.  
 
-`imovement` united_pose, expecting `{0_in, 0_in}`
+`imovement` odom, expecting `{{0, 0}, ez::fwd, 110}`
 `slew_on` increases the speed of the drive gradually.  You must set slew constants for this to work!  
 <Tabs
   groupId="as0d9kljhlkjhasasdasdd8f0f"
@@ -1466,7 +1466,7 @@ void autonomous() {
 ### pid_odom_pp_set()
 Pure pursuits through all the points given.    
 
-`imovements` vector of pose
+`imovements` vector of odom
 <Tabs
   groupId="as0d98iu97865qec098asdf0f"
   defaultValue="proto"
@@ -1479,7 +1479,7 @@ Pure pursuits through all the points given.
 <TabItem value="proto">
 
 ```cpp
-void pid_odom_pp_set(std::vector{odom} imovements);
+void pid_odom_pp_set(std::vector<odom> imovements);
 ```
 
 </TabItem>
@@ -1509,7 +1509,7 @@ void autonomous() {
 ### pid_odom_pp_set()
 Pure pursuits through all the points given with slew.    
 
-`imovements` vector of united_pose   
+`imovements` vector of odom   
 `slew_on` increases the speed of the drive gradually.  You must set slew constants for this to work!  
 <Tabs
   groupId="as0d9klasdsadkjhkgrkjejhlkjhaadasdsd8f0f"
@@ -1523,7 +1523,7 @@ Pure pursuits through all the points given with slew.
 <TabItem value="proto">
 
 ```cpp
-void pid_odom_pp_set(std::vector{odom} imovements, bool slew_on);
+void pid_odom_pp_set(std::vector<odom> imovements, bool slew_on);
 ```
 
 </TabItem>
@@ -1558,7 +1558,7 @@ void autonomous() {
 ### pid_odom_injected_pp_set()
 Creates a new path that injects points between the input points, then pure pursuits along this new path.       
 
-`imovements` vector of pose
+`imovements` vector of odom
 <Tabs
   groupId="as0d98iasdsadu91231231237865qec098asdf0f"
   defaultValue="proto"
@@ -1571,7 +1571,7 @@ Creates a new path that injects points between the input points, then pure pursu
 <TabItem value="proto">
 
 ```cpp
-void pid_odom_injected_pp_set(std::vector{odom} imovements);
+void pid_odom_injected_pp_set(std::vector<odom> imovements);
 ```
 
 </TabItem>
@@ -1600,7 +1600,7 @@ void autonomous() {
 ### pid_odom_injected_pp_set()
 Creates a new path that injects points between the input points, then pure pursuits along this new path.       
 
-`imovements` vector of pose
+`imovements` vector of odom
 `slew_on` increases the speed of the drive gradually.  You must set slew constants for this to work!  
 <Tabs
   groupId="as0d98iasdsadu97860809ads5qec098asdf0f"
@@ -1614,7 +1614,7 @@ Creates a new path that injects points between the input points, then pure pursu
 <TabItem value="proto">
 
 ```cpp
-void pid_odom_injected_pp_set(std::vector{odom} imovements, bool slew_on);
+void pid_odom_injected_pp_set(std::vector<odom> imovements, bool slew_on);
 ```
 
 </TabItem>
@@ -1655,7 +1655,7 @@ void autonomous() {
 ### pid_odom_smooth_pp_set()
 Creates a new path that injects points between the input points, then smooths the corners of this path, then pure pursuits along this new path.       
 
-`imovements` vector of pose
+`imovements` vector of odom
 <Tabs
   groupId="as0d98iasdsadu9asdasdsadgf78asasdas12dads65qec098asdf0f"
   defaultValue="proto"
@@ -1668,7 +1668,7 @@ Creates a new path that injects points between the input points, then smooths th
 <TabItem value="proto">
 
 ```cpp
-void pid_odom_smooth_pp_set(std::vector{odom} imovements);
+void pid_odom_smooth_pp_set(std::vector<odom> imovements);
 ```
 
 </TabItem>
@@ -1698,7 +1698,7 @@ void autonomous() {
 ### pid_odom_smooth_pp_set()
 Creates a new path that injects points between the input points, then smooths the corners of this path, then pure pursuits along this new path.       
 
-`imovements` vector of pose
+`imovements` vector of odom
 `slew_on` increases the speed of the drive gradually.  You must set slew constants for this to work!   
 <Tabs
   groupId="as0d98iasdsadu9asdasdsadgf78asasdas12dads65qec098asdf0f"
@@ -1712,7 +1712,7 @@ Creates a new path that injects points between the input points, then smooths th
 <TabItem value="proto">
 
 ```cpp
-void pid_odom_smooth_pp_set(std::vector{odom} imovements, bool slew_on);
+void pid_odom_smooth_pp_set(std::vector<odom> imovements, bool slew_on);
 ```
 
 </TabItem>
@@ -1746,7 +1746,7 @@ void autonomous() {
 ### pid_odom_boomerang_set()
 Goes to an xy coordinate at a set heading.  
 
-`imovement` united_pose, expecting `{0, 0, 0}`
+`imovement` odom, expecting `{{0, 0, 0}, ez::fwd, 110}`
 <Tabs
   groupId="as0d9098af0988f0f"
   defaultValue="proto"
@@ -1774,7 +1774,7 @@ void autonomous() {
   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
 
-  chassis.pid_odom_set({{24, 24, 0}, ez::fwd, 110});
+  chassis.pid_odom_boomerang_set({{24, 24, 0}, ez::fwd, 110});
   chassis.pid_wait();
 }
 ```
@@ -1788,7 +1788,7 @@ void autonomous() {
 ### pid_odom_boomerang_set()
 Goes to an xy coordinate at a set heading.  
 
-`imovement` united_pose, expecting `{0, 0, 0}`
+`imovement` odom, expecting `{{0, 0, 0}, ez::fwd, 110}`
 `slew_on` increases the speed of the drive gradually.  You must set slew constants for this to work!  
 <Tabs
   groupId="as0asd191j23h0984d98f0f"
@@ -1817,7 +1817,7 @@ void autonomous() {
   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
 
-  chassis.pid_odom_set({{24, 24,  0}, ez::fwd, 110}, true);
+  chassis.pid_odom_boomerang_set({{24, 24,  0}, ez::fwd, 110}, true);
   chassis.pid_wait();
 }
 ```
@@ -1839,9 +1839,9 @@ void autonomous() {
 
 
 ### pid_turn_set()
-Sets the robot to turn face a point using PID and odometry.  
+Sets the robot to turn to face a point using PID and odometry.  
 
-`p_itarget` `{x, y`} a target point to face
+`itarget` `{x, y}` a target point to face
 `dir` face the point fwd or rev
 `speed` 0 to 127, max speed during motion   
 <Tabs
@@ -1884,9 +1884,9 @@ void pid_turn_set(pose itarget, drive_directions dir, int speed);
 
 
 ### pid_turn_set()
-Sets the robot to turn face a point using PID and odometry.  
+Sets the robot to turn to face a point using PID and odometry.  
 
-`p_itarget` `{x, y`} a target point to face
+`itarget` `{x, y}` a target point to face
 `dir` face the point fwd or rev
 `speed` 0 to 127, max speed during motion   
 `slew_on` ramp up from a lower speed to your target speed   
@@ -1919,7 +1919,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void pid_turn_set(pose p_itarget, drive_directions dir, int speed, bool slew_on);
+void pid_turn_set(pose itarget, drive_directions dir, int speed, bool slew_on);
 ```
 
 </TabItem>
@@ -1930,12 +1930,12 @@ void pid_turn_set(pose p_itarget, drive_directions dir, int speed, bool slew_on)
 
 
 ### pid_turn_set()
-Sets the robot to turn face a point using PID and odometry.  
+Sets the robot to turn to face a point using PID and odometry.  
 
-`p_itarget` `{x, y`} a target point to face
+`itarget` `{x, y}` a target point to face
 `dir` face the point fwd or rev
 `speed` 0 to 127, max speed during motion   
-`behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
+`behavior` changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw   
 <Tabs
   groupId="pp59870941z45etid_turn_set_okapasdasdasi"
   defaultValue="proto"
@@ -1965,7 +1965,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void pid_turn_set(pose p_itarget, drive_directions dir, int speed, e_angle_behavior behavior);
+void pid_turn_set(pose itarget, drive_directions dir, int speed, e_angle_behavior behavior);
 ```
 
 </TabItem>
@@ -1975,12 +1975,12 @@ void pid_turn_set(pose p_itarget, drive_directions dir, int speed, e_angle_behav
 
 
 ### pid_turn_set()
-Sets the robot to turn face a point using PID and odometry.  
+Sets the robot to turn to face a point using PID and odometry.  
 
-`p_itarget` `{x, y`} a target point to face
+`itarget` `{x, y}` a target point to face
 `dir` face the point fwd or rev
 `speed` 0 to 127, max speed during motion   
-`behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
+`behavior` changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw   
 `slew_on` ramp up from a lower speed to your target speed   
 <Tabs
   groupId="pid_turnktar872145e_set_okapasdasdasi"
@@ -2011,7 +2011,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-void pid_turn_set(pose p_itarget, drive_directions dir, int speed, e_angle_behavior behavior, bool slew_on);
+void pid_turn_set(pose itarget, drive_directions dir, int speed, e_angle_behavior behavior, bool slew_on);
 ```
 
 </TabItem>
