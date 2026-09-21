@@ -81,7 +81,7 @@ Boomerang motions can also be a bit slower than Pure Pursuit motions.  Boomerang
 ## Turn to Point
 At minimum, you need to give the robot a point to face, if it's facing it forward or backward, and a speed limit.  You can do this with and without units.  
 ```cpp
-// Turn to face 12, 12 forward
+// Turn to face 24, 24 forward
 chassis.pid_turn_set({24, 24}, ez::fwd,  90);
 chassis.pid_wait();
 
@@ -89,7 +89,7 @@ chassis.pid_wait();
 chassis.pid_turn_set({0_in, 24_in}, ez::fwd, 90);
 chassis.pid_wait();
 
-// Turn to face 12, 12 backward
+// Turn to face 24, 24 backward
 chassis.pid_turn_set({24, 24}, ez::rev,  90);
 chassis.pid_wait();
 
@@ -204,7 +204,7 @@ chassis.pid_wait();
 You can use slew in conjunction with different turn behavior. 
 ```cpp
 chassis.pid_odom_behavior_set(ez::shortest);
-chassis.slew_drive_set(false);  // Enables global slew
+chassis.slew_drive_set(false);  // Disables global slew
 chassis.slew_drive_constants_set(5_in, 50);
 
 
@@ -213,7 +213,7 @@ chassis.pid_odom_set({{0_in, 24_in, 45_deg}, ez::fwd, 110, ez::longest}, true);
 chassis.pid_wait();
 
 // This will go to (0, 0) the shortest way, without slew
-chassis.pid_odom_set({{0_in, 0_in}, ez::rev, 110);
+chassis.pid_odom_set({{0_in, 0_in}, ez::rev, 110});
 chassis.pid_wait();
 ```
 
