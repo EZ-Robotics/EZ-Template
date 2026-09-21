@@ -22,8 +22,8 @@ Blank pages are a feature of v3.2.0.  Please upgrade if you're on an older versi
 We'll print our drive sensors to a new blank page on the brain.  The code below will go in the screen task that starting shipping with the 3.2.0 example project.  
 ```cpp
 else if (ez::as::page_blank_is_on(1)) {
-  ez::screen_print("Left: " + util::to_string_with_precision(chassis.drive_sensor_left()) +
-                   "\nRight: " + util::to_string_with_precision(chassis.drive_sensor_right()), 1);
+  ez::screen_print("Left: " + ez::util::to_string_with_precision(chassis.drive_sensor_left()) +
+                   "\nRight: " + ez::util::to_string_with_precision(chassis.drive_sensor_right()), 1);
 }
 ```
 

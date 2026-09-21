@@ -44,7 +44,7 @@ If you want to use any of these functions across multiple files, you can put the
 #include "EZ-Template/api.hpp"
 #include "api.h"
 
-extern Drive chassis;
+extern ez::Drive chassis;
 
 // Your motors, sensors, etc. should go here.  Below are examples
 
@@ -263,7 +263,7 @@ void opcontrol() {
 #include "EZ-Template/api.hpp"
 #include "api.h"
 
-extern Drive chassis;
+extern ez::Drive chassis;
 
 // Your motors, sensors, etc. should go here.  Below are examples
 
