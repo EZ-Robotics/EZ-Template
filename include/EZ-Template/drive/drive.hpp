@@ -354,7 +354,7 @@ class Drive {
   /**
    * Allows slew to reenable when the new input speed is larger than the current speed during pure pursuits.
    *
-   * \param slew_on
+   * \param reenable
    *        true enables, false disables
    */
   void slew_odom_reenable(bool reenable);
@@ -386,6 +386,9 @@ class Drive {
 
   /**
    * Calibrates imu and initializes sd card to curve.
+   *
+   * \param run_loading_animation
+   *        false skips the loading animation on the brain screen while the IMU calibrates
    */
   void initialize(bool run_loading_animation = true);
 
@@ -471,9 +474,9 @@ class Drive {
    *        diameter of your sensored wheel
    * \param ratio
    *        external gear ratio, wheel gear / sensor gear
-   * \param left_tracker_port
+   * \param left_rotation_port
    *        make ports negative if reversed
-   * \param right_tracker_port
+   * \param right_rotation_port
    *        make ports negative if reversed
    */
   Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ratio, int left_rotation_port, int right_rotation_port) __attribute__((deprecated("Use the integrated encoder constructor with odom_tracker_left_set() and odom_tracker_right_set() instead!")));
@@ -485,7 +488,7 @@ class Drive {
    *        input {1, -2...}. make ports negative if reversed
    * \param right_motor_ports
    *        input {-3, 4...}. make ports negative if reversed
-   * \param imu_port
+   * \param imu_ports
    *        input {5, 6...}. multiple IMU ports
    * \param wheel_diameter
    *        diameter of your drive wheels
@@ -545,7 +548,7 @@ class Drive {
    *
    * This is used for tracking.
    *
-   * \param input
+   * \param p_input
    *        a unit, from center of the wheel to center of the wheel
    */
   void drive_width_set(ez::QLength p_input);
@@ -714,7 +717,7 @@ class Drive {
   /**
    * Sets how far away the carrot point can be from the target point.
    *
-   * \param distance
+   * \param p_distance
    *        distance as a unit
    */
   void odom_boomerang_distance_set(ez::QLength p_distance);
@@ -753,7 +756,7 @@ class Drive {
   /**
    * Sets the spacing between points when points get injected into the path.
    *
-   * \param spacing
+   * \param p_spacing
    *        a small number in units
    */
   void odom_path_spacing_set(ez::QLength p_spacing);
@@ -807,7 +810,7 @@ class Drive {
   /**
    * Sets how far away the robot looks in the path during pure pursuits.
    *
-   * \param distance
+   * \param p_distance
    *        how long the "carrot on a stick" is, in units
    */
   void odom_look_ahead_set(ez::QLength p_distance);
@@ -907,7 +910,7 @@ class Drive {
   /**
    * Gives some wiggle room in shortest vs longest, so a 180.1 and 179.9 degree turns have consistent behavior.
    *
-   * \param p_tolerance
+   * \param tolerance
    *        angle wiggle room, in degrees
    */
   void pid_angle_behavior_tolerance_set(double tolerance);
@@ -1065,7 +1068,7 @@ class Drive {
   /**
    * Enables/disables modifying the joystick input curves with the controller.
    *
-   * \param input
+   * \param toggle
    *        true enables, false disables
    */
   void opcontrol_curve_buttons_toggle(bool toggle);
@@ -1472,7 +1475,7 @@ class Drive {
   std::map<int, double> imu_scale_map;
   std::map<int, std::pair<double, int>> prev_imu_values;
 
-  /*
+  /**
    * Calibrates the scale of all IMUs using a physical turn.
    *
    * Physically turn the robot 3600 degrees (10 full rotations) and pass in
@@ -1481,12 +1484,14 @@ class Drive {
    * A value under 100 is rejected and that imu's previous scale is kept.
    *
    * \param imu_values_after_3600
-   *        what each imu reads after physically turning the robot 3600 degrees, input {3550, 3625...}
+   *        what each imu reads after physically turning the robot 3600 degrees, in the same order as the IMU ports passed to the constructor, input {3550, 3625...}
    */
   void drive_imus_scalers_3600_set(std::vector<double> imu_values_after_3600);
 
-  /*
+  /**
    * Returns the imu value after a 3600 degree turn that produces each imu's current scale.
+   *
+   * Returned as a map of imu port to value.
    */
   std::map<int, double> drive_imus_scalers_3600_get();
 
@@ -1507,6 +1512,9 @@ class Drive {
 
   /**
    * Loading display while the IMU calibrates.
+   *
+   * \param iter
+   *        milliseconds since calibration started
    */
   void drive_imu_display_loading(int iter);
 
@@ -1582,7 +1590,7 @@ class Drive {
    *
    * This function is actually odom
    *
-   * \param target
+   * \param p_target
    *        target value in inches
    * \param speed
    *        0 to 127, max speed during motion
@@ -1594,14 +1602,12 @@ class Drive {
    *
    * This function is actually odom
    *
-   * \param target
+   * \param p_target
    *        target value in inches
    * \param speed
    *        0 to 127, max speed during motion
    * \param slew_on
    *        ramp up from a lower speed to your target speed
-   * \param toggle_heading
-   *        toggle for heading correction.  true enables, false disables
    */
   void pid_odom_set(ez::QLength p_target, int speed, bool slew_on);
 
@@ -1662,7 +1668,7 @@ class Drive {
   /**
    * Takes in an odom movement to go to a single point using boomerang.  If an angle is set, this will run boomerang.  Uses slew if globally enabled.
    *
-   * \param imovement
+   * \param p_imovement
    *        {{x, y, t}, fwd/rev, 1-127}  an odom movement.  values are united here with units
    */
   void pid_odom_boomerang_set(united_odom p_imovement);
@@ -1670,7 +1676,7 @@ class Drive {
   /**
    * Takes in an odom movement to go to a single point using boomerang.  If an angle is set, this will run boomerang.  Uses slew if enabled for this motion.
    *
-   * \param imovement
+   * \param p_imovement
    *        {{x, y, t}, fwd/rev, 1-127}  an odom movement.  values are united here with units
    * \param slew_on
    *        ramp up from a lower speed to your target speed
@@ -1680,7 +1686,7 @@ class Drive {
   /**
    * Takes in an odom movement to go to a single point.  If an angle is set, this will run boomerang.  Uses slew if globally enabled.
    *
-   * \param imovement
+   * \param p_imovement
    *        {{x, y, t}, fwd/rev, 1-127}  an odom movement.  values are united here with units
    */
   void pid_odom_ptp_set(united_odom p_imovement);
@@ -1688,7 +1694,7 @@ class Drive {
   /**
    * Takes in an odom movement to go to a single point.  If an angle is set, this will run boomerang.  Uses slew if enabled for this motion.
    *
-   * \param imovement
+   * \param p_imovement
    *        {{x, y, t}, fwd/rev, 1-127}  an odom movement.  values are united here with units
    * \param slew_on
    *        ramp up from a lower speed to your target speed
@@ -1698,7 +1704,7 @@ class Drive {
   /**
    * Takes in an odom movement to go to a single point.  If an angle is set, this will run boomerang.  Uses slew if globally enabled.
    *
-   * \param imovement
+   * \param p_imovement
    *        {{x, y, t}, fwd/rev, 1-127}  an odom movement.  values are united here with units
    */
   void pid_odom_set(united_odom p_imovement);
@@ -1706,7 +1712,7 @@ class Drive {
   /**
    * Takes in an odom movement to go to a single point.  If an angle is set, this will run boomerang.  Uses slew if enabled for this motion.
    *
-   * \param imovement
+   * \param p_imovement
    *        {{x, y, t}, fwd/rev, 1-127}  an odom movement.  values are united here with units
    * \param slew_on
    *        ramp up from a lower speed to your target speed
@@ -1788,7 +1794,7 @@ class Drive {
   /**
    * Takes in odom movements to go through multiple points, will inject and smooth the path.  If an angle is set, this will run boomerang for that point.  Uses slew if globally enabled.
    *
-   * \param imovements
+   * \param p_imovements
    *        {{{x, y, t}, fwd/rev, 1-127}, {{x, y, t}, fwd/rev, 1-127}}  odom movements.  values are united here with units
    */
   void pid_odom_smooth_pp_set(std::vector<united_odom> p_imovements);
@@ -1796,7 +1802,7 @@ class Drive {
   /**
    * Takes in odom movements to go through multiple points, will inject and smooth the path.  If an angle is set, this will run boomerang for that point.  Uses slew if enabled for this motion.
    *
-   * \param imovements
+   * \param p_imovements
    *        {{{x, y, t}, fwd/rev, 1-127}, {{x, y, t}, fwd/rev, 1-127}}  odom movements.  values are united here with units
    * \param slew_on
    *        ramp up from a lower speed to your target speed
@@ -1806,7 +1812,7 @@ class Drive {
   /**
    * Takes in odom movements to go through multiple points, will inject into the path.  If an angle is set, this will run boomerang for that point.  Uses slew if globally enabled.
    *
-   * \param imovements
+   * \param p_imovements
    *        {{{x, y, t}, fwd/rev, 1-127}, {{x, y, t}, fwd/rev, 1-127}}  odom movements.  values are united here with units
    */
   void pid_odom_injected_pp_set(std::vector<united_odom> p_imovements);
@@ -1814,7 +1820,7 @@ class Drive {
   /**
    * Takes in odom movements to go through multiple points, will inject into the path.  If an angle is set, this will run boomerang for that point.  Uses slew if enabled for this motion.
    *
-   * \param imovements
+   * \param p_imovements
    *        {{{x, y, t}, fwd/rev, 1-127}, {{x, y, t}, fwd/rev, 1-127}}  odom movements.  values are united here with units
    * \param slew_on
    *        ramp up from a lower speed to your target speed
@@ -1824,7 +1830,7 @@ class Drive {
   /**
    * Takes in odom movements to go through multiple points.  If an angle is set, this will run boomerang for that point.  Uses slew if globally enabled.
    *
-   * \param imovements
+   * \param p_imovements
    *        {{{x, y, t}, fwd/rev, 1-127}, {{x, y, t}, fwd/rev, 1-127}}  odom movements.  values are united here with units
    */
   void pid_odom_pp_set(std::vector<united_odom> p_imovements);
@@ -1832,7 +1838,7 @@ class Drive {
   /**
    * Takes in odom movements to go through multiple points.  If an angle is set, this will run boomerang for that point.  Uses slew if enabled for this motion.
    *
-   * \param imovements
+   * \param p_imovements
    *        {{{x, y, t}, fwd/rev, 1-127}, {{x, y, t}, fwd/rev, 1-127}}  odom movements.  values are united here with units
    * \param slew_on
    *        ramp up from a lower speed to your target speed
@@ -1842,7 +1848,7 @@ class Drive {
   /**
    * Takes in odom movements to go through multiple points, will inject and smooth the path.  If an angle is set, this will run boomerang for that point.  Uses slew if globally enabled.
    *
-   * \param imovements
+   * \param p_imovements
    *        {{{x, y, t}, fwd/rev, 1-127}, {{x, y, t}, fwd/rev, 1-127}}  odom movements.  values are united here with units
    */
   void pid_odom_set(std::vector<united_odom> p_imovements);
@@ -1850,7 +1856,7 @@ class Drive {
   /**
    * Takes in odom movements to go through multiple points, will inject and smooth the path.  If an angle is set, this will run boomerang for that point.  Uses slew if enabled for this motion.
    *
-   * \param imovements
+   * \param p_imovements
    *        {{{x, y, t}, fwd/rev, 1-127}, {{x, y, t}, fwd/rev, 1-127}}  odom movements.  values are united here with units
    * \param slew_on
    *        ramp up from a lower speed to your target speed
@@ -1908,8 +1914,10 @@ class Drive {
   /**
    * Sets the robot to turn face a point using PID and odometry.
    *
-   * \param target
+   * \param itarget
    *        {x, y}  a target point to face
+   * \param dir
+   *        fwd or rev, which end of the robot faces the point
    * \param speed
    *        0 to 127, max speed during motion
    */
@@ -1918,8 +1926,10 @@ class Drive {
   /**
    * Sets the robot to turn face a point using PID and odometry.
    *
-   * \param target
+   * \param itarget
    *        {x, y}  a target point to face
+   * \param dir
+   *        fwd or rev, which end of the robot faces the point
    * \param speed
    *        0 to 127, max speed during motion
    * \param slew_on
@@ -1930,8 +1940,10 @@ class Drive {
   /**
    * Sets the robot to turn face a point using PID and odometry.
    *
-   * \param target
+   * \param itarget
    *        {x, y}  a target point to face
+   * \param dir
+   *        fwd or rev, which end of the robot faces the point
    * \param speed
    *        0 to 127, max speed during motion
    * \param behavior
@@ -1942,8 +1954,10 @@ class Drive {
   /**
    * Sets the robot to turn face a point using PID and odometry.
    *
-   * \param target
+   * \param itarget
    *        {x, y}  a target point to face
+   * \param dir
+   *        fwd or rev, which end of the robot faces the point
    * \param speed
    *        0 to 127, max speed during motion
    * \param behavior
@@ -1956,8 +1970,10 @@ class Drive {
   /**
    * Sets the robot to turn face a point using PID and odometry.
    *
-   * \param target
+   * \param p_itarget
    *        {x, y}  a target point to face.  this uses units
+   * \param dir
+   *        fwd or rev, which end of the robot faces the point
    * \param speed
    *        0 to 127, max speed during motion
    */
@@ -1966,8 +1982,10 @@ class Drive {
   /**
    * Sets the robot to turn face a point using PID and odometry.
    *
-   * \param target
+   * \param p_itarget
    *        {x, y}  a target point to face.  this uses units
+   * \param dir
+   *        fwd or rev, which end of the robot faces the point
    * \param speed
    *        0 to 127, max speed during motion
    * \param slew_on
@@ -1978,8 +1996,10 @@ class Drive {
   /**
    * Sets the robot to turn face a point using PID and odometry.
    *
-   * \param target
+   * \param p_itarget
    *        {x, y}  a target point to face.  this uses units
+   * \param dir
+   *        fwd or rev, which end of the robot faces the point
    * \param speed
    *        0 to 127, max speed during motion
    * \param behavior
@@ -1990,8 +2010,10 @@ class Drive {
   /**
    * Sets the robot to turn face a point using PID and odometry.
    *
-   * \param target
+   * \param p_itarget
    *        {x, y}  a target point to face.  this uses units
+   * \param dir
+   *        fwd or rev, which end of the robot faces the point
    * \param speed
    *        0 to 127, max speed during motion
    * \param behavior
@@ -2008,8 +2030,6 @@ class Drive {
    *        target value as a double, unit is degrees
    * \param speed
    *        0 to 127, max speed during motion
-   * \param slew_on
-   *        ramp up from a lower speed to your target speed
    */
   void pid_turn_set(double target, int speed);
 
@@ -2150,7 +2170,7 @@ class Drive {
   /**
    * Sets the robot to turn relative to the last commanded heading target using PID without units, only using slew if globally enabled. Adds to the last target rather than the current heading, so error doesn't accumulate across chained relative turns.
    *
-   * \param p_target
+   * \param target
    *        target value as a double, unit is degrees
    * \param speed
    *        0 to 127, max speed during motion
@@ -2160,7 +2180,7 @@ class Drive {
   /**
    * Sets the robot to turn relative to the last commanded heading target using PID without units, only using slew if globally enabled. Adds to the last target rather than the current heading, so error doesn't accumulate across chained relative turns.
    *
-   * \param p_target
+   * \param target
    *        target value as a double, unit is degrees
    * \param speed
    *        0 to 127, max speed during motion
@@ -2172,7 +2192,7 @@ class Drive {
   /**
    * Sets the robot to turn relative to the last commanded heading target using PID without units, using slew if enabled for this motion. Adds to the last target rather than the current heading, so error doesn't accumulate across chained relative turns.
    *
-   * \param p_target
+   * \param target
    *        target value as a double, unit is degrees
    * \param speed
    *        0 to 127, max speed during motion
@@ -2184,7 +2204,7 @@ class Drive {
   /**
    * Sets the robot to turn relative to the last commanded heading target using PID without units, using slew if enabled for this motion. Adds to the last target rather than the current heading, so error doesn't accumulate across chained relative turns.
    *
-   * \param p_target
+   * \param target
    *        target value as a double, unit is degrees
    * \param speed
    *        0 to 127, max speed during motion
@@ -2244,6 +2264,8 @@ class Drive {
    *        target value as a double, unit is degrees
    * \param speed
    *        0 to 127, max speed during motion
+   * \param behavior
+   *        changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw
    * \param slew_on
    *        ramp up from a lower speed to your target speed
    */
@@ -2274,6 +2296,8 @@ class Drive {
    *        0 to 127, max speed during motion
    * \param opposite_speed
    *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
+   * \param behavior
+   *        changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw
    */
   void pid_swing_set(e_swing type, double target, int speed, int opposite_speed, e_angle_behavior behavior);
 
@@ -2452,6 +2476,8 @@ class Drive {
    *        target value in angle units
    * \param speed
    *        0 to 127, max speed during motion
+   * \param behavior
+   *        changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw
    */
   void pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, e_angle_behavior behavior);
 
@@ -2464,6 +2490,8 @@ class Drive {
    *        target value in angle units
    * \param speed
    *        0 to 127, max speed during motion
+   * \param slew_on
+   *        ramp up from a lower speed to your target speed
    */
   void pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, bool slew_on);
 
@@ -2476,6 +2504,10 @@ class Drive {
    *        target value in angle units
    * \param speed
    *        0 to 127, max speed during motion
+   * \param behavior
+   *        changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw
+   * \param slew_on
+   *        ramp up from a lower speed to your target speed
    */
   void pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, e_angle_behavior behavior, bool slew_on);
 
@@ -2504,6 +2536,8 @@ class Drive {
    *        0 to 127, max speed during motion
    * \param opposite_speed
    *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
+   * \param behavior
+   *        changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw
    */
   void pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, int opposite_speed, e_angle_behavior behavior);
 
@@ -2518,6 +2552,8 @@ class Drive {
    *        0 to 127, max speed during motion
    * \param opposite_speed
    *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
+   * \param slew_on
+   *        ramp up from a lower speed to your target speed
    */
   void pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, int opposite_speed, bool slew_on);
 
@@ -2532,6 +2568,10 @@ class Drive {
    *        0 to 127, max speed during motion
    * \param opposite_speed
    *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
+   * \param behavior
+   *        changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw
+   * \param slew_on
+   *        ramp up from a lower speed to your target speed
    */
   void pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, int opposite_speed, e_angle_behavior behavior, bool slew_on);
 
@@ -2540,7 +2580,7 @@ class Drive {
    *
    * \param type
    *        L_SWING or R_SWING
-   * \param p_target
+   * \param target
    *        target value as a double, unit is degrees
    * \param speed
    *        0 to 127, max speed during motion
@@ -2552,10 +2592,12 @@ class Drive {
    *
    * \param type
    *        L_SWING or R_SWING
-   * \param p_target
+   * \param target
    *        target value as a double, unit is degrees
    * \param speed
    *        0 to 127, max speed during motion
+   * \param behavior
+   *        changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw
    */
   void pid_swing_relative_set(e_swing type, double target, int speed, e_angle_behavior behavior);
 
@@ -2564,10 +2606,12 @@ class Drive {
    *
    * \param type
    *        L_SWING or R_SWING
-   * \param p_target
+   * \param target
    *        target value as a double, unit is degrees
    * \param speed
    *        0 to 127, max speed during motion
+   * \param slew_on
+   *        ramp up from a lower speed to your target speed
    */
   void pid_swing_relative_set(e_swing type, double target, int speed, bool slew_on);
 
@@ -2576,10 +2620,14 @@ class Drive {
    *
    * \param type
    *        L_SWING or R_SWING
-   * \param p_target
+   * \param target
    *        target value as a double, unit is degrees
    * \param speed
    *        0 to 127, max speed during motion
+   * \param behavior
+   *        changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw
+   * \param slew_on
+   *        ramp up from a lower speed to your target speed
    */
   void pid_swing_relative_set(e_swing type, double target, int speed, e_angle_behavior behavior, bool slew_on);
 
@@ -2588,7 +2636,7 @@ class Drive {
    *
    * \param type
    *        L_SWING or R_SWING
-   * \param p_target
+   * \param target
    *        target value as a double, unit is degrees
    * \param speed
    *        0 to 127, max speed during motion
@@ -2602,12 +2650,14 @@ class Drive {
    *
    * \param type
    *        L_SWING or R_SWING
-   * \param p_target
+   * \param target
    *        target value as a double, unit is degrees
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
    *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
+   * \param behavior
+   *        changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw
    */
   void pid_swing_relative_set(e_swing type, double target, int speed, int opposite_speed, e_angle_behavior behavior);
 
@@ -2616,12 +2666,14 @@ class Drive {
    *
    * \param type
    *        L_SWING or R_SWING
-   * \param p_target
+   * \param target
    *        target value as a double, unit is degrees
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
    *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
+   * \param slew_on
+   *        ramp up from a lower speed to your target speed
    */
   void pid_swing_relative_set(e_swing type, double target, int speed, int opposite_speed, bool slew_on);
 
@@ -2630,12 +2682,16 @@ class Drive {
    *
    * \param type
    *        L_SWING or R_SWING
-   * \param p_target
+   * \param target
    *        target value as a double, unit is degrees
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
    *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
+   * \param behavior
+   *        changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw
+   * \param slew_on
+   *        ramp up from a lower speed to your target speed
    */
   void pid_swing_relative_set(e_swing type, double target, int speed, int opposite_speed, e_angle_behavior behavior, bool slew_on);
 
@@ -2646,11 +2702,17 @@ class Drive {
 
   /**
    * Sets heading of imu and target of PID, angle.
+   *
+   * \param p_angle
+   *        angle that the robot will think it is now facing, angle unit
    */
   void drive_angle_set(ez::QAngle p_angle);
 
   /**
    * Sets heading of imu and target of PID, takes double as an angle.
+   *
+   * \param angle
+   *        angle that the robot will think it is now facing, in degrees
    */
   void drive_angle_set(double angle);
 
@@ -3757,10 +3819,16 @@ class Drive {
   /**
    * @brief
    * Get the scaled imu value from given imu
+   *
+   * \param imu
+   *        the imu to read
    */
   double get_this_imu(pros::Imu* imu);
   /**
    * Private wait until for drive
+   *
+   * \param target
+   *        distance from where the movement started to wait for, in inches
    */
   void wait_until_drive(double target);
   void wait_until_turn_swing(double target);
@@ -3779,6 +3847,9 @@ class Drive {
 
   /**
    * Returns joystick value clipped to JOYSTICK_THRESH
+   *
+   * \param joystick
+   *        joystick value, -127 to 127
    */
   int clipped_joystick(int joystick);
 
@@ -3875,6 +3946,15 @@ class Drive {
 
   /**
    * Function for button presses.
+   *
+   * \param input_name
+   *        state of the button that is being handled
+   * \param button
+   *        nonzero while the button is held
+   * \param changeCurve
+   *        changes the curve, runs when the button is first pressed and repeats while it is held
+   * \param save
+   *        saves the curve, runs once the button has been released for 250 ms after the curve changed
    */
   void button_press(button_* input_name, int button, std::function<void()> changeCurve, std::function<void()> save);
 
