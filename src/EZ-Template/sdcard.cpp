@@ -12,6 +12,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include "auton_selector.hpp"
 #include "display.hpp"
 #include "liblvgl/llemu.hpp"
+#include "lock.hpp"
 #include "pros/llemu.hpp"
 #include "util.hpp"
 
@@ -166,6 +167,7 @@ void limit_switch_lcd_initialize(pros::adi::DigitalIn* right_limit, pros::adi::D
 }
 
 void limitSwitchTask() {
+  ez::detail::mark_scheduler_running();
   while (true) {
     if (limit_switch_right && limit_switch_right->get_new_press())
       ez::as::page_up();

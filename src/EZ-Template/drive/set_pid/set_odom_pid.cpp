@@ -392,7 +392,7 @@ void Drive::pid_odom_pp_set(std::vector<odom> imovements, bool slew_on) {
 // External base ptp
 /////
 void Drive::pid_odom_ptp_set(odom imovement, bool slew_on) {
-  std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
+  ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
 
   interfered = false;
 
@@ -435,7 +435,7 @@ void Drive::raw_pid_odom_pp_set(std::vector<odom> imovements, bool slew_on) {
     return;
   }
 
-  std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
+  ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
 
   odom_second_to_last = imovements[imovements.size() - 2].target;
   odom_target_start = imovements[imovements.size() - 1].target;
@@ -537,9 +537,7 @@ void Drive::raw_pid_odom_ptp_set(odom imovement, bool slew_on, bool is_boomerang
 
   bool is_current_boomerang = is_boomerang;
   if (print_toggle && !was_last_pp_mode_boomerang) {
-    if (mode == PURE_PURSUIT)
-      printf(" ");
-    printf("Odom Motion Started... Target Coordinates: (%.2f, %.2f, %.2f) \n", imovement.target.x, imovement.target.y, imovement.target.theta);
+    drive_mutex.print_after_unlock("%sOdom Motion Started... Target Coordinates: (%.2f, %.2f, %.2f) \n", mode == PURE_PURSUIT ? " " : "", imovement.target.x, imovement.target.y, imovement.target.theta);
   }
   if (mode == PURE_PURSUIT)
     was_last_pp_mode_boomerang = is_current_boomerang;

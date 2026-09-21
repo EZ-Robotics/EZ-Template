@@ -14,6 +14,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include <tuple>
 
 #include "EZ-Template/PID.hpp"
+#include "EZ-Template/lock.hpp"
 #include "EZ-Template/slew.hpp"
 #include "EZ-Template/tracking_wheel.hpp"
 #include "EZ-Template/util.hpp"
@@ -3605,7 +3606,7 @@ class Drive {
    * Guards state shared between the ez_auto task and the public setters.
    * Recursive so nested public calls and user callbacks that call setters are safe.
    */
-  pros::RecursiveMutex drive_mutex;
+  ez::Lock<pros::RecursiveMutex> drive_mutex;
 
   std::function<void(void)> tracking;
   void opcontrol_drive_activebrake_targets_set();

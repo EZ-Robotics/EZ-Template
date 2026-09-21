@@ -5,15 +5,24 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
 #include "EZ-Template/drive/drive.hpp"
+#include "EZ-Template/lock.hpp"
 #include "EZ-Template/util.hpp"
 #include "pros/misc.hpp"
 
 using namespace ez;
 
 void Drive::ez_auto_task() {
+  ez::detail::mark_scheduler_running();
+  ez::detail::report_daemon_priority_once();
+  const std::uint32_t own_priority = pros::c::task_get_priority(nullptr);
+
   while (true) {
+    // Nothing should change this task's priority between passes. If something has, a guard leaked one.
+    if (pros::c::task_get_priority(nullptr) != own_priority) ez::detail::stats.auto_task_priority_starts.fetch_add(1, std::memory_order_relaxed);
+    ez::detail::stats.auto_task_passes.fetch_add(1, std::memory_order_relaxed);
+
     {
-      std::lock_guard<pros::RecursiveMutex> lock(drive_mutex);
+      ez::PlainGuard<pros::RecursiveMutex> lock(drive_mutex);
 
       // Check IMUs for redundancy
       check_imu_task();
