@@ -153,6 +153,9 @@ typedef struct united_odom {
 
 /**
  * Outputs string for exit_condition enum.
+ *
+ * \param input
+ *        exit condition output to convert to a string
  */
 std::string exit_to_string(exit_output input);
 

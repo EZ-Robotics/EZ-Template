@@ -27,7 +27,7 @@ class slew {
    * Sets constants for slew.  Slew ramps up the speed of the robot until the set distance is traveled.
    *
    * \param distance
-   *        the distance the robot travels before reaching max speed
+   *        the distance the robot travels to ramp from minimum_speed up to full speed (127).  A movement with a lower maximum speed is capped at that speed, so it reaches that speed before this distance has been traveled
    * \param minimum_speed
    *        the starting speed for the movement
    */
@@ -37,7 +37,7 @@ class slew {
    * Sets constants for slew.  Slew ramps up the speed of the robot until the set distance is traveled.
    *
    * \param distance
-   *        the distance the robot travels before reaching max speed
+   *        the distance the robot travels to ramp from minimum_speed up to full speed (127).  A movement with a lower maximum speed is capped at that speed, so it reaches that speed before this distance has been traveled
    * \param minimum_speed
    *        the starting speed for the movement
    */
@@ -50,7 +50,7 @@ class slew {
    * \param enabled
    *        true enables slew, false disables slew
    * \param maximum_speed
-   *        the target speed the robot will ramp up too
+   *        the most speed slew is allowed to output for this movement.  This caps the output, it does not change how fast slew ramps up
    * \param target
    *        the target position for the motion
    * \param current

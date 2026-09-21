@@ -62,10 +62,10 @@ extern pros::adi::DigitalIn* limit_switch_right;
  * delete them, including when called with both pointers null to disable this
  * feature.  The switches must outlive this call, the library keeps polling the pointers.
  *
- * @param left_limit_port
- *        port for the left limit switch
- * @param right_limit_port
- *        port for the right limit switch
+ * @param right_limit
+ *        limit switch that goes forward a page
+ * @param left_limit
+ *        limit switch that goes back a page, defaults to nullptr
  */
 void limit_switch_lcd_initialize(pros::adi::DigitalIn* right_limit, pros::adi::DigitalIn* left_limit = nullptr);
 
@@ -81,11 +81,17 @@ int page_blank_current();
 
 /**
  * Checks if this blank page is open.  If this page doesn't exist, this will create it.
+ *
+ * @param page
+ *        blank page to check, starting at 0
  */
 bool page_blank_is_on(int page);
 
 /**
  * Removes the blank page if it exists, and previous ones.
+ *
+ * @param page
+ *        blank page to remove, starting at 0.  The blank pages before it are removed too
  */
 void page_blank_remove(int page);
 
