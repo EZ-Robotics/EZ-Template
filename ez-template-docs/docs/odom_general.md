@@ -1568,7 +1568,7 @@ void autonomous() {
 ### pid_odom_behavior_set()
 Sets the default behavior for turns in odom turning movements.   
 
-`behavior` ez::shortest, ez::longest, ez::left, ez::right, ez::raw     
+`behavior` ez::shortest, ez::longest, ez::ccw, ez::cw, ez::raw     
 <Tabs
   groupId="pid_odom_behavior_set"
   defaultValue="proto"
