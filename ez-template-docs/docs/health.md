@@ -133,7 +133,7 @@ void preflight_register(ez::Drive& chassis);
 
 ## Report
 
-`preflight()` returns a `Report`.  Temperature is a warning rather than a failure, so `motors_hot` and `motors_warm` deliberately do not count against `all_ok()`.
+`preflight()` returns a `Report`.  Temperature is a warning rather than a failure, so `motors_hot` and `motors_warm` deliberately do not count against `all_ok()`.  A drive motor at 55 C or more counts in `motors_hot`, because the V5 starts cutting motor power at that temperature.  One from 45 C up to 55 C counts in `motors_warm`, which is still at full power.  When everything else passes but a motor is hot or warm, the controller rumbles a short `.` instead of the `---` it rumbles for a failure.
 <Tabs
   groupId="health_report"
   defaultValue="proto"
