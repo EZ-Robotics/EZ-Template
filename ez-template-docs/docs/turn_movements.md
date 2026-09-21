@@ -85,7 +85,7 @@ Sets the robot to turn using PID relative to initial heading.
 
 `p_target` target value in angle units   
 `speed` 0 to 127, max speed during motion   
-`behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
+`behavior` changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw   
 <Tabs
   groupId="pid_turn_s01239874z98sfa8et_okapi"
   defaultValue="proto"
@@ -177,7 +177,7 @@ Sets the robot to turn using PID relative to initial heading.
 
 `p_target` target value in angle units   
 `speed` 0 to 127, max speed during motion   
-`behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
+`behavior` changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw   
 `slew_on` ramp up from a lower speed to your target speed   
 <Tabs
   groupId="pid_turn_set9879134z_okapasdasdasi"
@@ -361,7 +361,7 @@ Sets the robot to turn using PID relative to the last heading target, not the ro
 
 `p_target` target value in angle units   
 `speed` 0 to 127, max speed during motion   
-`behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
+`behavior` changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw   
 <Tabs
   groupId="pi907132z4d_tu09aarn_rel_set_okapi"
   defaultValue="proto"
@@ -408,7 +408,7 @@ Sets the robot to turn using PID relative to the last heading target, not the ro
 
 `p_target` target value in angle units   
 `speed` 0 to 127, max speed during motion   
-`behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
+`behavior` changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw   
 `slew_on` ramp up from a lower speed to your target speed     
 <Tabs
   groupId="pid_turn_rel_set1231209872134z3435_okapi"
@@ -487,8 +487,8 @@ Set's constants for turn exit conditions.
 `p_big_exit_time` time to exit when within big_error, in units             
 `p_big_error` big timer will start when error is within this, in units        
 `p_velocity_exit_time` velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), in units   
-`p_mA_timeout` mA timer will start when the motors are pulling too much current, in units      
-`use_imu` true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't         
+`p_mA_timeout` mA timer will start when the first motor on the side(s) being driven is over its current limit, in units      
+`use_imu` true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for `p_velocity_exit_time`), false uses only the main sensor         
 <Tabs
   groupId="pid_turn_Exit_set_okapi"
   defaultValue="proto"
@@ -671,7 +671,7 @@ Sets the robot to turn using PID relative to initial heading.
 
 `target` target value in degrees  
 `speed` 0 to 127, max speed during motion   
-`behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
+`behavior` changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw   
 <Tabs
   groupId="pi09721345d_turn_s098sfa8et_okapi"
   defaultValue="proto"
@@ -763,7 +763,7 @@ Sets the robot to turn using PID relative to initial heading.
 
 `target` target value in degrees  
 `speed` 0 to 127, max speed during motion   
-`behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
+`behavior` changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw   
 `slew_on` ramp up from a lower speed to your target speed   
 <Tabs
   groupId="pid_turn_set90871234z5_okapasdasdasi"
@@ -947,7 +947,7 @@ Sets the robot to turn using PID relative to the last heading target, not the ro
 
 `target` target value in degrees  
 `speed` 0 to 127, max speed during motion   
-`behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
+`behavior` changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw   
 <Tabs
   groupId="pid_tu09aarn_rel_09873215zset_okapi"
   defaultValue="proto"
@@ -994,7 +994,7 @@ Sets the robot to turn using PID relative to the last heading target, not the ro
 
 `target` target value in degrees  
 `speed` 0 to 127, max speed during motion   
-`behavior` changes what direction the robot will turn.  can be left, right, shortest, longest, raw   
+`behavior` changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw   
 `slew_on` ramp up from a lower speed to your target speed     
 <Tabs
   groupId="pi908732145zd_turn_rel_set1231235_okapi"
@@ -1061,8 +1061,8 @@ Set's constants for turn exit conditions.
 `p_big_exit_time` time to exit when within big_error, in ms
 `p_big_error` big timer will start when error is within this, in degrees
 `p_velocity_exit_time`  velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), in ms
-`p_mA_timeout` mA timer will start when the motors are pulling too much current, in ms   
-`use_imu` true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't    
+`p_mA_timeout` mA timer will start when the first motor on the side(s) being driven is over its current limit, in ms   
+`use_imu` true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for `p_velocity_exit_time`), false uses only the main sensor    
 <Tabs
   groupId="pid_turn_exit_set_double"
   defaultValue="proto"
@@ -1077,7 +1077,7 @@ Set's constants for turn exit conditions.
 
 ```cpp
 void initialize() {
-  chassis.pid_turn_exit_condition_set(300, 1, 500, 3, 750, 750);
+  chassis.pid_turn_exit_condition_set(300, 3, 500, 7, 750, 750);
 }
 ```
 
@@ -1104,7 +1104,7 @@ void pid_turn_exit_condition_set(int p_small_exit_time, double p_small_error, in
 
 
 ### pid_turn_constants_set()
-Set PID drive constants for turns.   
+Set PID constants for turns.   
  
 `p` proportional term   
 `i` integral term  
@@ -1214,7 +1214,7 @@ void autonomous() {
   chassis.pid_wait();
 
   // This will slew because it's the default state
-  chassis.pid_drive_set(0_deg, 90);
+  chassis.pid_turn_set(0_deg, 90);
   chassis.pid_wait();
 }
 ```
@@ -1427,7 +1427,7 @@ void autonomous() {
   chassis.pid_wait();
 
   // This will slew because it's the default state
-  chassis.pid_drive_set(0_deg, 90);
+  chassis.pid_turn_set(0_deg, 90);
   chassis.pid_wait();
 }
 ```
