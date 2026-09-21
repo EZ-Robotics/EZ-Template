@@ -57,7 +57,7 @@ enum e_type { SINGLE = 0,
               SPLIT = 1 };
 
 /**
- * Enum for split and single stick arcade.
+ * Enum for which side of the drive a swing is run on (LEFT_SWING or RIGHT_SWING).
  */
 enum e_swing { LEFT_SWING = 0,
                RIGHT_SWING = 1 };
@@ -73,7 +73,7 @@ enum exit_output { RUNNING = 1,
                    ERROR_NO_CONSTANTS = 6 };
 
 /**
- * Enum for split and single stick arcade.
+ * Enum for the drive's current mode: which movement, if any, is running.
  */
 enum e_mode { DISABLE = 0,
               SWING = 1,
@@ -153,6 +153,9 @@ typedef struct united_odom {
 
 /**
  * Outputs string for exit_condition enum.
+ *
+ * \param input
+ *        exit condition output to convert to a string
  */
 std::string exit_to_string(exit_output input);
 
