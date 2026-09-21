@@ -63,7 +63,7 @@ If you have:
   
 But, **EZ-Template works without tracking wheels!**  If you use no tracking wheels, you'll need to be aware of wheel slip and try to avoid it.  Odometry and tracking are not magic and you'll need to do as much as possible to help the robot be consistent.  If you're able to, just fit a parallel and perpendicular tracking wheel :D you'll be thankful in the long run.  
 
-EZ-Template supports any combination of tracking wheels.  
+EZ-Template supports any combination of left, right and one horizontal tracking wheel.  If you set both a front and a back tracker, only the back one is used.  
 
 `2.75`  is the wheel diameter, and `4.0` is the distance to the center of the robot.  You can use a tape measure to find this value, or you can follow [this tutorial](/tutorials/tuning_tracking_wheel_width).  Your parallel tracking wheels will be the left/right trackers, and your perpendicular trackers will be the front/back trackers.  
 
@@ -162,7 +162,7 @@ The default drive mode for EZ-Template is tank drive, where the left stick contr
 If the motors sound like they're running but they get locked up, you have a motor going in the wrong direction.  I suggest unplugging motors until you find the 1 going the wrong way, find out which port is going the wrong way, and update your drive constructor accordingly.  
 
 ## Making Sure Tracking Wheels are Reversed Correctly
-Once you start up your code, go left on the autonomous selector once.  This will bring you to a blank page that ships with the example project.  
+Once you start up your code, go left on the autonomous selector until the top line of the brain screen ends with `Blank page 1`.  This is a blank page that ships with the example project, and it shows your tracker readouts.  The example project has two blank pages and going left from the first autonomous page wraps around to the last one, so from the first autonomous page this takes two presses.  
 
 Ensure that your left/right tracking wheels increase positively when pushing the robot forward, and your front/back tracking wheels increase positively when pushing the robot to the right.  
 
