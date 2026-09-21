@@ -26,20 +26,20 @@ Place your robot carefully, ideally aligned with tiles on the field so you know 
 
 Physically turn the robot exactly 3600 degrees (10 full rotations) by hand.  Don't use an autonomous routine for this.  `pid_turn_set()` stops when the imu reads its target, so the imu would report 3600 no matter how far the robot really turned.  Line the robot up with a tile edge at the start and after every rotation so you know each one was a full turn.  
 
-While you turn it, print what the imu reports.  Put this in `opcontrol()` for now, upload it, and watch the terminal.  
+While you turn it, print what the imu reports to the brain's screen.  Put this in `opcontrol()` for now, upload it, and watch the screen.  
 ```cpp
 void opcontrol() {
   chassis.drive_brake_set(MOTOR_BRAKE_COAST);  // Lets the wheels spin freely
   chassis.drive_imu_reset();                   // Start counting from 0
 
   while (true) {
-    printf("%.2f\n", chassis.drive_imu_get());  // What the imu has measured so far, in degrees
+    ez::screen_print("IMU: " + ez::util::to_string_with_precision(chassis.drive_imu_get()), 5);  // What the imu has measured so far, in degrees
     pros::delay(ez::util::DELAY_TIME);
   }
 }
 ```
 
-Once you've finished the 10th rotation, write down the last number it printed.  
+Once you've finished the 10th rotation, write down the number on the screen.  
 
 Whatever that number is, pass it directly into `drive_imu_scaler_3600_set()`.  You'll do this by adding this line of code to `default_constants()` in `src/autons.cpp`.  
 ```cpp
