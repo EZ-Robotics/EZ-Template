@@ -1471,7 +1471,7 @@ class Drive {
    * what the imu reported for that turn.  Internally, this is used to divide
    * the imu's raw reading so it reports the true 3600.
    *
-   * A value under 100 is rejected and the previous scale is kept.
+   * A value under 100, which includes any negative value, is rejected and the previous scale is kept.
    *
    * \param imu_value_after_3600
    *        what the imu reads after physically turning the robot 3600 degrees
@@ -1492,7 +1492,7 @@ class Drive {
    * Physically turn the robot 3600 degrees (10 full rotations) and pass in
    * what each imu reported for that turn.
    *
-   * A value under 100 is rejected and that imu's previous scale is kept.
+   * A value under 100, which includes any negative value, is rejected and that imu's previous scale is kept.
    *
    * \param imu_values_after_3600
    *        what each imu reads after physically turning the robot 3600 degrees, in the same order as the IMU ports passed to the constructor, input {3550, 3625...}
