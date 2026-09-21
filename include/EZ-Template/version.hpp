@@ -9,7 +9,7 @@
  * These were added in 4.0.0. EZ-Template 3.x has none of them, so your code has
  * to cope with them being missing.
  *
- * Check whether an API exists (prereleases count, so 4.0.0-beta.2 passes). Include
+ * Check whether an API exists (prereleases count, so 4.0.0-beta.3 passes). Include
  * EZ-Template first, then give 3.x a fallback:
  * \code{.cpp}
  * #include "EZ-Template/api.hpp"  // before the fallback below
@@ -81,6 +81,6 @@
                              EZ_TEMPLATE_VERSION_PATCH, EZ_TEMPLATE_VERSION_STAGE, \
                              EZ_TEMPLATE_VERSION_PRERELEASE_NUM)
 
-// Feature check. Ignores prerelease, so 4.0.0-beta.2 counts as 4.0.0.
+// Feature check. Ignores prerelease, so 4.0.0-beta.3 counts as 4.0.0.
 #define EZ_TEMPLATE_VERSION_AT_LEAST(major, minor, patch)                    \
   (EZ_TEMPLATE_VERSION >= EZ_TEMPLATE_VERSION_ENCODE(major, minor, patch, EZ_TEMPLATE_STAGE_ALPHA, 0))
