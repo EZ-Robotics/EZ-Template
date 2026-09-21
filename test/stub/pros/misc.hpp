@@ -2,6 +2,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 
 #include "pros/misc.h"
 
@@ -20,6 +21,8 @@ class Controller {
   std::int32_t get_digital_new_press(controller_digital_e_t button) const { return fake_digital_new_press[button]; }
   std::int32_t get_analog(controller_analog_e_t channel) const { return fake_analog[channel]; }
   std::int32_t rumble(const char* pattern) const { return 1; }
+  std::int32_t set_text(std::uint8_t line, std::uint8_t col, const char* str) const { return 1; }
+  std::int32_t set_text(std::uint8_t line, std::uint8_t col, const std::string& str) const { return 1; }
   controller_id_e_t get_id() const { return id_; }
 
  private:

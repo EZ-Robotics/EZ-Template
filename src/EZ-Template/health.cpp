@@ -3,6 +3,7 @@
 #include "EZ-Template/api.hpp"
 #include "pros/error.h"
 #include <cstdio>
+#include <cstdlib>
 #include <utility>
 #include <vector>
 
@@ -38,17 +39,20 @@ Report preflight(ez::Drive& chassis, pros::Controller& controller) {
       // reported on its own so a dead motor never picks up a temperature line
       // as well. The temperature tiers below are a separate, softer concern.
       double temp = m.get_temperature();
+      // get_port() is negative for a reversed motor and there is no port -7 on the
+      // brain, so the messages print its absolute value, the port to look at.
+      int port = std::abs(m.get_port());
       if (temp == PROS_ERR_F) {
         r.motors_bad++;
-        printf("[health] Drive motor on port %d not responding\n", m.get_port());
+        printf("[health] Drive motor on port %d not responding\n", port);
         continue;
       }
       if (temp >= MOTOR_TEMP_HOT_C) {
         r.motors_hot++;
-        printf("[health] Drive motor on port %d is overheating (%.0fC) - v5 throttles at 55\n", m.get_port(), temp);
+        printf("[health] Drive motor on port %d is overheating (%.0fC) - v5 throttles at 55\n", port, temp);
       } else if (temp >= MOTOR_TEMP_WARM_C) {
         r.motors_warm++;
-        printf("[health] Drive motor on port %d is getting warm (%.0fC)\n", m.get_port(), temp);
+        printf("[health] Drive motor on port %d is getting warm (%.0fC)\n", port, temp);
       }
     }
   };
