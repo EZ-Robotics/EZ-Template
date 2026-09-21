@@ -46,7 +46,7 @@ void initialize();
 ### limit_switch_lcd_initialize() 
 Sets external buttons to increase/decrease the current autonomous page.  
 
-The library never takes ownership of the pointers you pass in and will never delete them, so they can be global or stack objects.  Passing `nullptr` for both disables the limit switches.  
+The library never takes ownership of the pointers you pass in and will never delete them, but it keeps using them after this call returns, so the switches must stay alive for the whole program.  Make them global, not locals inside `initialize()`.  Passing `nullptr` for both disables the limit switches.  
 
 `right_limit` a button to go forward a page
 `left_limit` a button to go backwards a page
@@ -299,7 +299,6 @@ void initialize() {
 
 
 ```cpp
-void page_down();
 void page_up();
 ```
 
@@ -383,7 +382,7 @@ void initialize() {
 
 
 ```cpp
-bool ez::as::enabled();
+bool enabled();
 ```
 
 
@@ -478,3 +477,5 @@ void opcontrol() {
 ```
 </TabItem>
 </Tabs>
+
+The next `page_blank_is_on()` call creates its page again, so stop calling it once you have removed the pages (for example, only call it while `pros::competition::is_connected()` is false, as the Blank Pages tutorial does).

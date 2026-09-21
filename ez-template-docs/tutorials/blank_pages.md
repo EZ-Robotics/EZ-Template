@@ -110,7 +110,7 @@ void opcontrol() {
 ### Variables 
 `ez::screen_print` expects a string, so you can't just give it a double or a float and have it work.  
 
-You can use `util::to_string_with_precision` to convert variables to strings.  This code will print `test_variable` to the blank page.  
+You can use `ez::util::to_string_with_precision` to convert variables to strings.  This code will print `test_variable` to the blank page.  
 ```cpp
 void opcontrol() {
   // This is preference to what you like to drive on
@@ -364,7 +364,7 @@ if (chassis.odom_tracker_left != nullptr) {
 }
 ```
 
-Using `util::to_string_with_precision()` we can print these values only if the tracker exists.  
+Using `ez::util::to_string_with_precision()` we can print these values only if the tracker exists.  
 ```cpp
 if (chassis.odom_tracker_left != nullptr) {
   ez::screen_print("l tracker: " + ez::util::to_string_with_precision(chassis.odom_tracker_left->get()) +

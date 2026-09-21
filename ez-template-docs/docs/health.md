@@ -11,7 +11,7 @@ import TabItem from '@theme/TabItem';
 ## Functions
 
 ### preflight()
-Checks that the IMU, every drive motor, every configured odom tracker, and every device registered with `device_add()` responds.  Prints each failure with its port and rumbles the controller when anything is wrong.
+Checks that the IMU, every drive motor, every configured odom tracker, and every device registered with `device_add()` responds.  Prints each failure, with its port where the device has one, and rumbles the controller when anything is wrong.
 
 Safe to call from `initialize()` and again at the start of `autonomous()`.
 
