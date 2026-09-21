@@ -301,8 +301,9 @@ void Drive::drive_defaults_set() {
   pid_drive_toggle(true);
   pid_print_toggle(true);
 
-  // Disables limit switch for auto selector
-  as::limit_switch_lcd_initialize(nullptr, nullptr);
+  // Disables limit switch for auto selector, unless the user has already turned it on
+  if (!as::limit_switch_right && !as::limit_switch_left)
+    as::limit_switch_lcd_initialize(nullptr, nullptr);
 }
 
 double Drive::drive_angle_get() {

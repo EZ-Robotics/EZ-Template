@@ -156,8 +156,10 @@ pros::adi::DigitalIn* limit_switch_right = nullptr;
 pros::Task limit_switch_task(ez::as::limitSwitchTask);
 void limit_switch_lcd_initialize(pros::adi::DigitalIn* right_limit, pros::adi::DigitalIn* left_limit) {
   if (!left_limit && !right_limit) {
-    if (pros::millis() <= 100)
-      turn_off = true;
+    // Disable at any time, not just during startup.  Forget the switches so the task stops polling them.
+    limit_switch_right = nullptr;
+    limit_switch_left = nullptr;
+    turn_off = true;
     return;
   }
   turn_off = false;
@@ -169,9 +171,12 @@ void limit_switch_lcd_initialize(pros::adi::DigitalIn* right_limit, pros::adi::D
 void limitSwitchTask() {
   ez::detail::mark_scheduler_running();
   while (true) {
-    if (limit_switch_right && limit_switch_right->get_new_press())
+    // Copy the pointers, they can be cleared by limit_switch_lcd_initialize() between the check and the use
+    pros::adi::DigitalIn* right = limit_switch_right;
+    pros::adi::DigitalIn* left = limit_switch_left;
+    if (right && right->get_new_press())
       ez::as::page_up();
-    else if (limit_switch_left && limit_switch_left->get_new_press())
+    else if (left && left->get_new_press())
       ez::as::page_down();
 
     if (pros::millis() >= 500 && turn_off)
