@@ -17,6 +17,7 @@ Track width is calculated at your tracking wheel by default.  Modifying tracking
 
 Modifying width on left/right trackers will move your tracking center to the left/right.  
  - If this isn't accurate, the robot may behave differently when moving to the right vs moving to the left
+ - This only applies when you have just one of the two.  If you have both a left and a right tracker, EZ-Template averages them and ignores their widths, so there's nothing to tune on that axis
 
 Modifying width on front/back trackers will move your tracking center forwards and backwards.  
 - If this isn't accurate, the robot's XY position will change during turns and will make where the robot currently is unintuitive
