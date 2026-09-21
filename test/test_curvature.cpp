@@ -1,5 +1,5 @@
 // Curvature drive: the point turn gain defaults to 0.8.  Read straight from the
-// member, because the getter lives in user_input.cpp, which the host build excludes.
+// member, so this checks the default and not the getter.
 #include "doctest.h"
 
 #include "drive_test_access.hpp"
