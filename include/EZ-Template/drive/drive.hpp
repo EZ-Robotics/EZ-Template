@@ -153,10 +153,10 @@ class Drive {
   /**
    * Sets constants for slew for swing movements.
    *
-   * Slew ramps up the speed of the robot until the set distance is traveled.
+   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set distance.  A movement with a lower max speed is capped at that speed, so it reaches that speed before the distance is traveled.
    *
    * \param distance
-   *        the distance the robot travels before reaching max speed, a distance unit
+   *        the distance the robot travels to ramp up to full speed (127), a distance unit
    * \param min_speed
    *        the starting speed for the movement, 0 - 127
    */
@@ -165,10 +165,10 @@ class Drive {
   /**
    * Sets constants for slew for forward swing movements.
    *
-   * Slew ramps up the speed of the robot until the set distance is traveled.
+   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set distance.  A movement with a lower max speed is capped at that speed, so it reaches that speed before the distance is traveled.
    *
    * \param distance
-   *        the distance the robot travels before reaching max speed, a distance unit
+   *        the distance the robot travels to ramp up to full speed (127), a distance unit
    * \param min_speed
    *        the starting speed for the movement, 0 - 127
    */
@@ -177,10 +177,10 @@ class Drive {
   /**
    * Sets constants for slew for backward swing movements.
    *
-   * Slew ramps up the speed of the robot until the set distance is traveled.
+   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set distance.  A movement with a lower max speed is capped at that speed, so it reaches that speed before the distance is traveled.
    *
    * \param distance
-   *        the distance the robot travels before reaching max speed, a distance unit
+   *        the distance the robot travels to ramp up to full speed (127), a distance unit
    * \param min_speed
    *        the starting speed for the movement, 0 - 127
    */
@@ -189,10 +189,10 @@ class Drive {
   /**
    * Sets constants for slew for swing movements.
    *
-   * Slew ramps up the speed of the robot until the set distance is traveled.
+   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set distance.  A movement with a lower max speed is capped at that speed, so it reaches that speed before the distance is traveled.
    *
    * \param distance
-   *        the distance the robot travels before reaching max speed, an angle unit
+   *        the distance the robot travels to ramp up to full speed (127), an angle unit
    * \param min_speed
    *        the starting speed for the movement, 0 - 127
    */
@@ -201,10 +201,10 @@ class Drive {
   /**
    * Sets constants for slew for swing forward movements.
    *
-   * Slew ramps up the speed of the robot until the set distance is traveled.
+   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set distance.  A movement with a lower max speed is capped at that speed, so it reaches that speed before the distance is traveled.
    *
    * \param distance
-   *        the distance the robot travels before reaching max speed, an angle unit
+   *        the distance the robot travels to ramp up to full speed (127), an angle unit
    * \param min_speed
    *        the starting speed for the movement, 0 - 127
    */
@@ -213,10 +213,10 @@ class Drive {
   /**
    * Sets constants for slew for swing backward movements.
    *
-   * Slew ramps up the speed of the robot until the set distance is traveled.
+   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set distance.  A movement with a lower max speed is capped at that speed, so it reaches that speed before the distance is traveled.
    *
    * \param distance
-   *        the distance the robot travels before reaching max speed, an angle unit
+   *        the distance the robot travels to ramp up to full speed (127), an angle unit
    * \param min_speed
    *        the starting speed for the movement, 0 - 127
    */
@@ -225,10 +225,10 @@ class Drive {
   /**
    * Sets constants for slew for turns.
    *
-   * Slew ramps up the speed of the robot until the set distance is traveled.
+   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set distance.  A movement with a lower max speed is capped at that speed, so it reaches that speed before the distance is traveled.
    *
    * \param distance
-   *        the distance the robot travels before reaching max speed, an angle unit
+   *        the distance the robot travels to ramp up to full speed (127), an angle unit
    * \param min_speed
    *        the starting speed for the movement, 0 - 127
    */
@@ -237,10 +237,10 @@ class Drive {
   /**
    * Sets constants for slew for driving forward.
    *
-   * Slew ramps up the speed of the robot until the set distance is traveled.
+   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set distance.  A movement with a lower max speed is capped at that speed, so it reaches that speed before the distance is traveled.
    *
    * \param distance
-   *        the distance the robot travels before reaching max speed, a distance unit
+   *        the distance the robot travels to ramp up to full speed (127), a distance unit
    * \param min_speed
    *        the starting speed for the movement, 0 - 127
    */
@@ -249,10 +249,10 @@ class Drive {
   /**
    * Sets constants for slew for driving backward.
    *
-   * Slew ramps up the speed of the robot until the set distance is traveled.
+   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set distance.  A movement with a lower max speed is capped at that speed, so it reaches that speed before the distance is traveled.
    *
    * \param distance
-   *        the distance the robot travels before reaching max speed, a distance unit
+   *        the distance the robot travels to ramp up to full speed (127), a distance unit
    * \param min_speed
    *        the starting speed for the movement, 0 - 127
    */
@@ -261,10 +261,10 @@ class Drive {
   /**
    * Sets constants for slew for driving.
    *
-   * Slew ramps up the speed of the robot until the set distance is traveled.
+   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set distance.  A movement with a lower max speed is capped at that speed, so it reaches that speed before the distance is traveled.
    *
    * \param distance
-   *        the distance the robot travels before reaching max speed, a distance unit
+   *        the distance the robot travels to ramp up to full speed (127), a distance unit
    * \param min_speed
    *        the starting speed for the movement, 0 - 127
    */
@@ -536,7 +536,9 @@ class Drive {
   /**
    * Sets the width of the drive.
    *
-   * This is used for tracking.
+   * Odometry uses this for a side that has no parallel tracking wheel (it is tracking with that side's drive
+   * motors).  A side with an odom_tracker_left / odom_tracker_right uses that tracking wheel's distance to
+   * center instead.
    *
    * \param input
    *        a unit in inches, from center of the wheel to center of the wheel
@@ -546,7 +548,9 @@ class Drive {
   /**
    * Sets the width of the drive.
    *
-   * This is used for tracking.
+   * Odometry uses this for a side that has no parallel tracking wheel (it is tracking with that side's drive
+   * motors).  A side with an odom_tracker_left / odom_tracker_right uses that tracking wheel's distance to
+   * center instead.
    *
    * \param p_input
    *        a unit, from center of the wheel to center of the wheel
@@ -736,7 +740,7 @@ class Drive {
    * Non-positive values are rejected and the previous value is kept, since this is used as a divisor.
    *
    * \param bias
-   *        a positive number, default is 1.375
+   *        a positive number, default is 0.9
    */
   void odom_turn_bias_set(double bias);
 
@@ -943,8 +947,9 @@ class Drive {
    * Sets the chassis to controller joysticks using tank control.
    * Run in usercontrol.
    *
-   * This passes the controller through the curve functions, but is disabled by default.
-   * Use opcontrol_curve_buttons_toggle() to enable it.
+   * This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.
+   * The controller buttons that change the curves are enabled by default, use opcontrol_curve_buttons_toggle(false)
+   * to turn them off.
    */
   void opcontrol_tank();
 
@@ -952,8 +957,9 @@ class Drive {
    * Sets the chassis to controller joysticks using standard arcade control, where left stick is fwd/rev.
    * Run in usercontrol.
    *
-   * This passes the controller through the curve functions, but is disabled by default.
-   * Use opcontrol_curve_buttons_toggle() to enable it.
+   * This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.
+   * The controller buttons that change the curves are enabled by default, use opcontrol_curve_buttons_toggle(false)
+   * to turn them off.
    *
    * \param stick_type
    *        ez::SINGLE or ez::SPLIT control
@@ -964,8 +970,9 @@ class Drive {
    * Sets the chassis to controller joysticks using flipped arcade control, where right stick is fwd/rev.
    * Run in usercontrol.
    *
-   * This passes the controller through the curve functions, but is disabled by default.
-   * Use opcontrol_curve_buttons_toggle() to enable it.
+   * This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.
+   * The controller buttons that change the curves are enabled by default, use opcontrol_curve_buttons_toggle(false)
+   * to turn them off.
    *
    * \param stick_type
    *        ez::SINGLE or ez::SPLIT control
@@ -980,8 +987,9 @@ class Drive {
    * robot turns the same arc at any speed, like a steering wheel.  Turning on a point is scaled with
    * opcontrol_curvature_point_turn_gain_set().
    *
-   * This passes the controller through the curve functions, but is disabled by default.
-   * Use opcontrol_curve_buttons_toggle() to enable it.
+   * This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.
+   * The controller buttons that change the curves are enabled by default, use opcontrol_curve_buttons_toggle(false)
+   * to turn them off.
    *
    * \param stick_type
    *        ez::SINGLE or ez::SPLIT control
@@ -996,8 +1004,9 @@ class Drive {
    * robot turns the same arc at any speed, like a steering wheel.  Turning on a point is scaled with
    * opcontrol_curvature_point_turn_gain_set().
    *
-   * This passes the controller through the curve functions, but is disabled by default.
-   * Use opcontrol_curve_buttons_toggle() to enable it.
+   * This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.
+   * The controller buttons that change the curves are enabled by default, use opcontrol_curve_buttons_toggle(false)
+   * to turn them off.
    *
    * \param stick_type
    *        ez::SINGLE or ez::SPLIT control
@@ -1524,7 +1533,8 @@ class Drive {
   double drive_angle_get();
 
   /**
-   * Practice mode for driver practice that shuts off the drive if you go max speed.
+   * Practice mode for driver practice that shuts off the drive if either side of the drive is asked to go faster
+   * than 120 (out of 127).  In arcade this is checked after the forward and turn sticks are combined.
    *
    * \param toggle
    *        true enables, false disables
@@ -1630,7 +1640,7 @@ class Drive {
   void pid_odom_set(odom imovement, bool slew_on);
 
   /**
-   * Takes in an odom movement to go to a single point.  If an angle is set, this will run boomerang.  Uses slew if globally enabled.
+   * Takes in an odom movement to go to a single point using point to point.  The angle in the movement is not used to steer (use pid_odom_boomerang_set for that).  Uses slew if globally enabled.
    *
    * \param imovement
    *        {{x, y, t}, fwd/rev, 1-127}  an odom movement
@@ -1638,7 +1648,7 @@ class Drive {
   void pid_odom_ptp_set(odom imovement);
 
   /**
-   * Takes in an odom movement to go to a single point.  If an angle is set, this will run boomerang.  Uses slew if enabled for this motion.
+   * Takes in an odom movement to go to a single point using point to point.  The angle in the movement is not used to steer (use pid_odom_boomerang_set for that).  Uses slew if enabled for this motion.
    *
    * \param imovement
    *        {{x, y, t}, fwd/rev, 1-127}  an odom movement
@@ -1684,7 +1694,7 @@ class Drive {
   void pid_odom_boomerang_set(united_odom p_imovement, bool slew_on);
 
   /**
-   * Takes in an odom movement to go to a single point.  If an angle is set, this will run boomerang.  Uses slew if globally enabled.
+   * Takes in an odom movement to go to a single point using point to point.  The angle in the movement is not used to steer (use pid_odom_boomerang_set for that).  Uses slew if globally enabled.
    *
    * \param p_imovement
    *        {{x, y, t}, fwd/rev, 1-127}  an odom movement.  values are united here with units
@@ -1692,7 +1702,7 @@ class Drive {
   void pid_odom_ptp_set(united_odom p_imovement);
 
   /**
-   * Takes in an odom movement to go to a single point.  If an angle is set, this will run boomerang.  Uses slew if enabled for this motion.
+   * Takes in an odom movement to go to a single point using point to point.  The angle in the movement is not used to steer (use pid_odom_boomerang_set for that).  Uses slew if enabled for this motion.
    *
    * \param p_imovement
    *        {{x, y, t}, fwd/rev, 1-127}  an odom movement.  values are united here with units
@@ -2281,7 +2291,7 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
+   *        -127 to 127, max speed of the opposite side of the drive during the swing, scaled down as the swing slows.  positive moves the opposite side in the same direction as the swinging side.  0 (the default) holds the opposite side in place with the drive PID.  this is used for arcs
    */
   void pid_swing_set(e_swing type, double target, int speed, int opposite_speed);
 
@@ -2295,7 +2305,7 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
+   *        -127 to 127, max speed of the opposite side of the drive during the swing, scaled down as the swing slows.  positive moves the opposite side in the same direction as the swinging side.  0 (the default) holds the opposite side in place with the drive PID.  this is used for arcs
    * \param behavior
    *        changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw
    */
@@ -2311,7 +2321,7 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
+   *        -127 to 127, max speed of the opposite side of the drive during the swing, scaled down as the swing slows.  positive moves the opposite side in the same direction as the swinging side.  0 (the default) holds the opposite side in place with the drive PID.  this is used for arcs
    * \param slew_on
    *        ramp up from a lower speed to your target speed
    */
@@ -2327,7 +2337,7 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
+   *        -127 to 127, max speed of the opposite side of the drive during the swing, scaled down as the swing slows.  positive moves the opposite side in the same direction as the swinging side.  0 (the default) holds the opposite side in place with the drive PID.  this is used for arcs
    * \param behavior
    *        changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw
    * \param slew_on
@@ -2401,7 +2411,7 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
+   *        -127 to 127, max speed of the opposite side of the drive during the swing, scaled down as the swing slows.  positive moves the opposite side in the same direction as the swinging side.  0 (the default) holds the opposite side in place with the drive PID.  this is used for arcs
    */
   void pid_swing_set(e_swing type, ez::QAngle p_target, int speed, int opposite_speed);
 
@@ -2415,7 +2425,7 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
+   *        -127 to 127, max speed of the opposite side of the drive during the swing, scaled down as the swing slows.  positive moves the opposite side in the same direction as the swinging side.  0 (the default) holds the opposite side in place with the drive PID.  this is used for arcs
    * \param behavior
    *        changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw
    */
@@ -2431,7 +2441,7 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
+   *        -127 to 127, max speed of the opposite side of the drive during the swing, scaled down as the swing slows.  positive moves the opposite side in the same direction as the swinging side.  0 (the default) holds the opposite side in place with the drive PID.  this is used for arcs
    * \param slew_on
    *        ramp up from a lower speed to your target speed
    */
@@ -2447,7 +2457,7 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
+   *        -127 to 127, max speed of the opposite side of the drive during the swing, scaled down as the swing slows.  positive moves the opposite side in the same direction as the swinging side.  0 (the default) holds the opposite side in place with the drive PID.  this is used for arcs
    * \param behavior
    *        changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw
    * \param slew_on
@@ -2456,7 +2466,7 @@ class Drive {
   void pid_swing_set(e_swing type, ez::QAngle p_target, int speed, int opposite_speed, e_angle_behavior behavior, bool slew_on);
 
   /**
-   * Sets the robot to turn only using the left or right side relative to current heading using PID with units, only using slew if globally enabled.
+   * Sets the robot to turn only using the left or right side relative to the last heading target, not the robot's measured heading, using PID with units, only using slew if globally enabled.
    *
    * \param type
    *        ez::LEFT_SWING or ez::RIGHT_SWING
@@ -2468,7 +2478,7 @@ class Drive {
   void pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed);
 
   /**
-   * Sets the robot to turn only using the left or right side relative to current heading using PID with units, only using slew if globally enabled.
+   * Sets the robot to turn only using the left or right side relative to the last heading target, not the robot's measured heading, using PID with units, only using slew if globally enabled.
    *
    * \param type
    *        ez::LEFT_SWING or ez::RIGHT_SWING
@@ -2482,7 +2492,7 @@ class Drive {
   void pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, e_angle_behavior behavior);
 
   /**
-   * Sets the robot to turn only using the left or right side relative to current heading using PID with units, using slew if enabled for this motion.
+   * Sets the robot to turn only using the left or right side relative to the last heading target, not the robot's measured heading, using PID with units, using slew if enabled for this motion.
    *
    * \param type
    *        ez::LEFT_SWING or ez::RIGHT_SWING
@@ -2496,7 +2506,7 @@ class Drive {
   void pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, bool slew_on);
 
   /**
-   * Sets the robot to turn only using the left or right side relative to current heading using PID with units, using slew if enabled for this motion.
+   * Sets the robot to turn only using the left or right side relative to the last heading target, not the robot's measured heading, using PID with units, using slew if enabled for this motion.
    *
    * \param type
    *        ez::LEFT_SWING or ez::RIGHT_SWING
@@ -2512,7 +2522,7 @@ class Drive {
   void pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, e_angle_behavior behavior, bool slew_on);
 
   /**
-   * Sets the robot to turn only using the left or right side relative to current heading using PID with units, only using slew if globally enabled.
+   * Sets the robot to turn only using the left or right side relative to the last heading target, not the robot's measured heading, using PID with units, only using slew if globally enabled.
    *
    * \param type
    *        ez::LEFT_SWING or ez::RIGHT_SWING
@@ -2521,12 +2531,12 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
+   *        -127 to 127, max speed of the opposite side of the drive during the swing, scaled down as the swing slows.  positive moves the opposite side in the same direction as the swinging side.  0 (the default) holds the opposite side in place with the drive PID.  this is used for arcs
    */
   void pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, int opposite_speed);
 
   /**
-   * Sets the robot to turn only using the left or right side relative to current heading using PID with units, only using slew if globally enabled.
+   * Sets the robot to turn only using the left or right side relative to the last heading target, not the robot's measured heading, using PID with units, only using slew if globally enabled.
    *
    * \param type
    *        ez::LEFT_SWING or ez::RIGHT_SWING
@@ -2535,14 +2545,14 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
+   *        -127 to 127, max speed of the opposite side of the drive during the swing, scaled down as the swing slows.  positive moves the opposite side in the same direction as the swinging side.  0 (the default) holds the opposite side in place with the drive PID.  this is used for arcs
    * \param behavior
    *        changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw
    */
   void pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, int opposite_speed, e_angle_behavior behavior);
 
   /**
-   * Sets the robot to turn only using the left or right side relative to current heading using PID with units, using slew if enabled for this motion.
+   * Sets the robot to turn only using the left or right side relative to the last heading target, not the robot's measured heading, using PID with units, using slew if enabled for this motion.
    *
    * \param type
    *        ez::LEFT_SWING or ez::RIGHT_SWING
@@ -2551,14 +2561,14 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
+   *        -127 to 127, max speed of the opposite side of the drive during the swing, scaled down as the swing slows.  positive moves the opposite side in the same direction as the swinging side.  0 (the default) holds the opposite side in place with the drive PID.  this is used for arcs
    * \param slew_on
    *        ramp up from a lower speed to your target speed
    */
   void pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, int opposite_speed, bool slew_on);
 
   /**
-   * Sets the robot to turn only using the left or right side relative to current heading using PID with units, using slew if enabled for this motion.
+   * Sets the robot to turn only using the left or right side relative to the last heading target, not the robot's measured heading, using PID with units, using slew if enabled for this motion.
    *
    * \param type
    *        ez::LEFT_SWING or ez::RIGHT_SWING
@@ -2567,7 +2577,7 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
+   *        -127 to 127, max speed of the opposite side of the drive during the swing, scaled down as the swing slows.  positive moves the opposite side in the same direction as the swinging side.  0 (the default) holds the opposite side in place with the drive PID.  this is used for arcs
    * \param behavior
    *        changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw
    * \param slew_on
@@ -2576,7 +2586,7 @@ class Drive {
   void pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, int opposite_speed, e_angle_behavior behavior, bool slew_on);
 
   /**
-   * Sets the robot to turn only using the left or right side relative to current heading using PID without units, only using slew if globally enabled.
+   * Sets the robot to turn only using the left or right side relative to the last heading target, not the robot's measured heading, using PID without units, only using slew if globally enabled.
    *
    * \param type
    *        ez::LEFT_SWING or ez::RIGHT_SWING
@@ -2588,7 +2598,7 @@ class Drive {
   void pid_swing_relative_set(e_swing type, double target, int speed);
 
   /**
-   * Sets the robot to turn only using the left or right side relative to current heading using PID without units, only using slew if globally enabled.
+   * Sets the robot to turn only using the left or right side relative to the last heading target, not the robot's measured heading, using PID without units, only using slew if globally enabled.
    *
    * \param type
    *        ez::LEFT_SWING or ez::RIGHT_SWING
@@ -2602,7 +2612,7 @@ class Drive {
   void pid_swing_relative_set(e_swing type, double target, int speed, e_angle_behavior behavior);
 
   /**
-   * Sets the robot to turn only using the left or right side relative to current heading using PID without units, using slew if enabled for this motion.
+   * Sets the robot to turn only using the left or right side relative to the last heading target, not the robot's measured heading, using PID without units, using slew if enabled for this motion.
    *
    * \param type
    *        ez::LEFT_SWING or ez::RIGHT_SWING
@@ -2616,7 +2626,7 @@ class Drive {
   void pid_swing_relative_set(e_swing type, double target, int speed, bool slew_on);
 
   /**
-   * Sets the robot to turn only using the left or right side relative to current heading using PID without units, using slew if enabled for this motion.
+   * Sets the robot to turn only using the left or right side relative to the last heading target, not the robot's measured heading, using PID without units, using slew if enabled for this motion.
    *
    * \param type
    *        ez::LEFT_SWING or ez::RIGHT_SWING
@@ -2632,7 +2642,7 @@ class Drive {
   void pid_swing_relative_set(e_swing type, double target, int speed, e_angle_behavior behavior, bool slew_on);
 
   /**
-   * Sets the robot to turn only using the left or right side relative to current heading using PID without units, only using slew if globally enabled.
+   * Sets the robot to turn only using the left or right side relative to the last heading target, not the robot's measured heading, using PID without units, only using slew if globally enabled.
    *
    * \param type
    *        ez::LEFT_SWING or ez::RIGHT_SWING
@@ -2641,12 +2651,12 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
+   *        -127 to 127, max speed of the opposite side of the drive during the swing, scaled down as the swing slows.  positive moves the opposite side in the same direction as the swinging side.  0 (the default) holds the opposite side in place with the drive PID.  this is used for arcs
    */
   void pid_swing_relative_set(e_swing type, double target, int speed, int opposite_speed);
 
   /**
-   * Sets the robot to turn only using the left or right side relative to current heading using PID without units, only using slew if globally enabled.
+   * Sets the robot to turn only using the left or right side relative to the last heading target, not the robot's measured heading, using PID without units, only using slew if globally enabled.
    *
    * \param type
    *        ez::LEFT_SWING or ez::RIGHT_SWING
@@ -2655,14 +2665,14 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
+   *        -127 to 127, max speed of the opposite side of the drive during the swing, scaled down as the swing slows.  positive moves the opposite side in the same direction as the swinging side.  0 (the default) holds the opposite side in place with the drive PID.  this is used for arcs
    * \param behavior
    *        changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw
    */
   void pid_swing_relative_set(e_swing type, double target, int speed, int opposite_speed, e_angle_behavior behavior);
 
   /**
-   * Sets the robot to turn only using the left or right side relative to current heading using PID without units, using slew if enabled for this motion.
+   * Sets the robot to turn only using the left or right side relative to the last heading target, not the robot's measured heading, using PID without units, using slew if enabled for this motion.
    *
    * \param type
    *        ez::LEFT_SWING or ez::RIGHT_SWING
@@ -2671,14 +2681,14 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
+   *        -127 to 127, max speed of the opposite side of the drive during the swing, scaled down as the swing slows.  positive moves the opposite side in the same direction as the swinging side.  0 (the default) holds the opposite side in place with the drive PID.  this is used for arcs
    * \param slew_on
    *        ramp up from a lower speed to your target speed
    */
   void pid_swing_relative_set(e_swing type, double target, int speed, int opposite_speed, bool slew_on);
 
   /**
-   * Sets the robot to turn only using the left or right side relative to current heading using PID without units, using slew if enabled for this motion.
+   * Sets the robot to turn only using the left or right side relative to the last heading target, not the robot's measured heading, using PID without units, using slew if enabled for this motion.
    *
    * \param type
    *        ez::LEFT_SWING or ez::RIGHT_SWING
@@ -2687,7 +2697,7 @@ class Drive {
    * \param speed
    *        0 to 127, max speed during motion
    * \param opposite_speed
-   *        -127 to 127, max speed of the opposite side of the drive during the swing. this is used for arcs, and is defaulted to 0
+   *        -127 to 127, max speed of the opposite side of the drive during the swing, scaled down as the swing slows.  positive moves the opposite side in the same direction as the swinging side.  0 (the default) holds the opposite side in place with the drive PID.  this is used for arcs
    * \param behavior
    *        changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw
    * \param slew_on
@@ -2746,14 +2756,14 @@ class Drive {
   void pid_wait_until(double target);
 
   /**
-   * Lock the code in a while loop until the robot has settled.
+   * Lock the code in a while loop until the robot has passed its target (or an exit condition fires first).
    *
    * Wrapper for pid_wait_until(target), target is your previously input target.
    */
   void pid_wait_quick();
 
   /**
-   * Lock the code in a while loop until the robot has settled.
+   * Lock the code in a while loop until the robot has passed its target (or an exit condition fires first).
    *
    * This also adds distance to target, and then exits with pid_wait_quick.
    *
@@ -3242,7 +3252,7 @@ class Drive {
    * Set's constants for odom driving exit conditions.
    *
    * \param p_small_exit_time
-   *        time to exit when within smalL_error, in ms
+   *        time to exit when within small_error, in ms
    * \param p_small_error
    *        small timer will start when error is within this, in inches
    * \param p_big_exit_time
@@ -3250,11 +3260,11 @@ class Drive {
    * \param p_big_error
    *        big timer will start when error is within this, in inches
    * \param p_velocity_exit_time
-   *        velocity timer will start when velocity is 0 after the robot has moved, in ms
+   *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), in ms
    * \param p_mA_timeout
-   *        mA timer will start when the motors are pulling too much current, in ms
+   *        mA timer will start when the first motor on the side(s) being driven is over its current limit, in ms
    * \param use_imu
-   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
+   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time), false uses only the main sensor
    */
   void pid_odom_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = true);
 
@@ -3262,7 +3272,7 @@ class Drive {
    * Set's constants for odom turning exit conditions.
    *
    * \param p_small_exit_time
-   *        time to exit when within smalL_error, in ms
+   *        time to exit when within small_error, in ms
    * \param p_small_error
    *        small timer will start when error is within this, in degrees
    * \param p_big_exit_time
@@ -3270,11 +3280,11 @@ class Drive {
    * \param p_big_error
    *        big timer will start when error is within this, in degrees
    * \param p_velocity_exit_time
-   *        velocity timer will start when velocity is 0 after the robot has moved, in ms
+   *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), in ms
    * \param p_mA_timeout
-   *        mA timer will start when the motors are pulling too much current, in ms
+   *        mA timer will start when the first motor on the side(s) being driven is over its current limit, in ms
    * \param use_imu
-   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
+   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time), false uses only the main sensor
    */
   void pid_odom_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = true);
 
@@ -3282,7 +3292,7 @@ class Drive {
    * Set's constants for odom turning exit conditions.
    *
    * \param p_small_exit_time
-   *        time to exit when within smalL_error, unit
+   *        time to exit when within small_error, unit
    * \param p_small_error
    *        small timer will start when error is within this, unit
    * \param p_big_exit_time
@@ -3290,11 +3300,11 @@ class Drive {
    * \param p_big_error
    *        big timer will start when error is within this, unit
    * \param p_velocity_exit_time
-   *        velocity timer will start when velocity is 0 after the robot has moved, unit
+   *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), unit
    * \param p_mA_timeout
-   *        mA timer will start when the motors are pulling too much current, unit
+   *        mA timer will start when the first motor on the side(s) being driven is over its current limit, unit
    * \param use_imu
-   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
+   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time), false uses only the main sensor
    */
   void pid_odom_turn_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error, ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = true);
 
@@ -3302,7 +3312,7 @@ class Drive {
    * Set's constants for odom driving exit conditions.
    *
    * \param p_small_exit_time
-   *        time to exit when within smalL_error, unit
+   *        time to exit when within small_error, unit
    * \param p_small_error
    *        small timer will start when error is within this, unit
    * \param p_big_exit_time
@@ -3310,11 +3320,11 @@ class Drive {
    * \param p_big_error
    *        big timer will start when error is within this, unit
    * \param p_velocity_exit_time
-   *        velocity timer will start when velocity is 0 after the robot has moved, unit
+   *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), unit
    * \param p_mA_timeout
-   *        mA timer will start when the motors are pulling too much current, unit
+   *        mA timer will start when the first motor on the side(s) being driven is over its current limit, unit
    * \param use_imu
-   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
+   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time), false uses only the main sensor
    */
   void pid_odom_drive_exit_condition_set(ez::QTime p_small_exit_time, ez::QLength p_small_error, ez::QTime p_big_exit_time, ez::QLength p_big_error, ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = true);
 
@@ -3322,7 +3332,7 @@ class Drive {
    * Set's constants for drive exit conditions.
    *
    * \param p_small_exit_time
-   *        time to exit when within smalL_error, unit
+   *        time to exit when within small_error, unit
    * \param p_small_error
    *        small timer will start when error is within this, unit
    * \param p_big_exit_time
@@ -3330,11 +3340,11 @@ class Drive {
    * \param p_big_error
    *        big timer will start when error is within this, unit
    * \param p_velocity_exit_time
-   *        velocity timer will start when velocity is 0 after the robot has moved, unit
+   *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), unit
    * \param p_mA_timeout
-   *        mA timer will start when the motors are pulling too much current, unit
+   *        mA timer will start when the first motor on the side(s) being driven is over its current limit, unit
    * \param use_imu
-   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
+   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time), false uses only the main sensor
    */
   void pid_drive_exit_condition_set(ez::QTime p_small_exit_time, ez::QLength p_small_error, ez::QTime p_big_exit_time, ez::QLength p_big_error, ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = true);
 
@@ -3342,7 +3352,7 @@ class Drive {
    * Set's constants for turn exit conditions.
    *
    * \param p_small_exit_time
-   *        time to exit when within smalL_error, unit
+   *        time to exit when within small_error, unit
    * \param p_small_error
    *        small timer will start when error is within this, unit
    * \param p_big_exit_time
@@ -3350,11 +3360,11 @@ class Drive {
    * \param p_big_error
    *        big timer will start when error is within this, unit
    * \param p_velocity_exit_time
-   *        velocity timer will start when velocity is 0 after the robot has moved, unit
+   *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), unit
    * \param p_mA_timeout
-   *        mA timer will start when the motors are pulling too much current, unit
+   *        mA timer will start when the first motor on the side(s) being driven is over its current limit, unit
    * \param use_imu
-   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
+   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time), false uses only the main sensor
    */
   void pid_turn_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error, ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = true);
 
@@ -3362,7 +3372,7 @@ class Drive {
    * Set's constants for swing exit conditions.
    *
    * \param p_small_exit_time
-   *        time to exit when within smalL_error, unit
+   *        time to exit when within small_error, unit
    * \param p_small_error
    *        small timer will start when error is within this, unit
    * \param p_big_exit_time
@@ -3370,11 +3380,11 @@ class Drive {
    * \param p_big_error
    *        big timer will start when error is within this, unit
    * \param p_velocity_exit_time
-   *        velocity timer will start when velocity is 0 after the robot has moved, unit
+   *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), unit
    * \param p_mA_timeout
-   *        mA timer will start when the motors are pulling too much current, unit
+   *        mA timer will start when the first motor on the side(s) being driven is over its current limit, unit
    * \param use_imu
-   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
+   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time), false uses only the main sensor
    */
   void pid_swing_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error, ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = true);
 
@@ -3382,7 +3392,7 @@ class Drive {
    * Set's constants for drive exit conditions.
    *
    * \param p_small_exit_time
-   *        time to exit when within smalL_error, in ms
+   *        time to exit when within small_error, in ms
    * \param p_small_error
    *        small timer will start when error is within this, in inches
    * \param p_big_exit_time
@@ -3390,11 +3400,11 @@ class Drive {
    * \param p_big_error
    *        big timer will start when error is within this, in inches
    * \param p_velocity_exit_time
-   *        velocity timer will start when velocity is 0 after the robot has moved, in ms
+   *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), in ms
    * \param p_mA_timeout
-   *        mA timer will start when the motors are pulling too much current, in ms
+   *        mA timer will start when the first motor on the side(s) being driven is over its current limit, in ms
    * \param use_imu
-   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
+   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time), false uses only the main sensor
    */
   void pid_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = true);
 
@@ -3402,7 +3412,7 @@ class Drive {
    * Set's constants for turn exit conditions.
    *
    * \param p_small_exit_time
-   *        time to exit when within smalL_error, in ms
+   *        time to exit when within small_error, in ms
    * \param p_small_error
    *        small timer will start when error is within this, in degrees
    * \param p_big_exit_time
@@ -3410,11 +3420,11 @@ class Drive {
    * \param p_big_error
    *        big timer will start when error is within this, in degrees
    * \param p_velocity_exit_time
-   *        velocity timer will start when velocity is 0 after the robot has moved, in ms
+   *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), in ms
    * \param p_mA_timeout
-   *        mA timer will start when the motors are pulling too much current, in ms
+   *        mA timer will start when the first motor on the side(s) being driven is over its current limit, in ms
    * \param use_imu
-   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
+   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time), false uses only the main sensor
    */
   void pid_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = true);
 
@@ -3422,7 +3432,7 @@ class Drive {
    * Set's constants for swing exit conditions.
    *
    * \param p_small_exit_time
-   *        time to exit when within smalL_error, in ms
+   *        time to exit when within small_error, in ms
    * \param p_small_error
    *        small timer will start when error is within this, in degrees
    * \param p_big_exit_time
@@ -3430,11 +3440,11 @@ class Drive {
    * \param p_big_error
    *        big timer will start when error is within this, in degrees
    * \param p_velocity_exit_time
-   *        velocity timer will start when velocity is 0 after the robot has moved, in ms
+   *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), in ms
    * \param p_mA_timeout
-   *        mA timer will start when the motors are pulling too much current, in ms
+   *        mA timer will start when the first motor on the side(s) being driven is over its current limit, in ms
    * \param use_imu
-   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
+   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time), false uses only the main sensor
    */
   void pid_swing_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = true);
 
@@ -3476,7 +3486,8 @@ class Drive {
   void pid_tuner_iterate();
 
   /**
-   * Toggle for printing the display of the PID Tuner to the brain.
+   * Toggle for printing the display of the PID Tuner to the brain.  It prints to the brain by default.  This only
+   * does something while the PID Tuner is enabled, calling it while the PID Tuner is disabled is ignored.
    *
    * \param input
    *        true prints to brain, false doesn't

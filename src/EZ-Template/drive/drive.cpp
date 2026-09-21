@@ -282,7 +282,7 @@ void Drive::drive_defaults_set() {
   pid_swing_chain_constant_set(5_deg);
   pid_drive_chain_constant_set(3_in);
 
-  // Modify joystick curve on controller (defaults to disabled)
+  // Modify joystick curve on controller (defaults to enabled)
   opcontrol_curve_buttons_toggle(true);
 
   // Left / Right modify buttons
