@@ -124,7 +124,9 @@ void Drive::turn_pid_task() {
   // Compute PID if we're turning to point
   else {
     double a_target = util::absolute_angle_to_point(point_to_face[!ptf1_running], odom_pose_get());  // Calculate the point for angle to face
-    a_target = new_turn_target_compute(a_target, odom_imu_start, current_angle_behavior);
+    // The tracking center is usually off the pivot, so the bearing drifts during the turn. See ptp_task().
+    double resolve_from = current_angle_behavior == shortest ? odom_theta_get() : odom_imu_start;
+    a_target = new_turn_target_compute(a_target, resolve_from, current_angle_behavior);
     double error = a_target - odom_theta_get();
     turnPID.compute_error(error, odom_theta_get());
   }
@@ -200,7 +202,11 @@ void Drive::ptp_task() {
   // Compute angle
   pose ptf = point_to_face[!ptf1_running];
   double a_target = util::absolute_angle_to_point(ptf, odom_pose_get());  // Calculate the point for angle to face
-  a_target = new_turn_target_compute(a_target, odom_imu_start, current_angle_behavior);
+  // cw, ccw and longest pick their direction from where the motion started, so the error keeps that size.
+  // Shortest has to follow the robot instead: the bearing changes as the robot moves, and measured from a
+  // fixed start heading it steps by a full turn when it crosses the edge of that heading's +/-180 range.
+  double resolve_from = current_angle_behavior == shortest ? odom_theta_get() : odom_imu_start;
+  a_target = new_turn_target_compute(a_target, resolve_from, current_angle_behavior);
   double wrapped_a_target = a_target - odom_theta_get();
   current_a_odomPID.compute_error(wrapped_a_target, odom_theta_get());
   // printf("shortest_a_target: %.2f      error: %.2f\n", a_target, wrapped_a_target);
