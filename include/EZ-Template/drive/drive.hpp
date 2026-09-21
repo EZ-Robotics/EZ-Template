@@ -14,6 +14,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include <tuple>
 
 #include "EZ-Template/PID.hpp"
+#include "EZ-Template/lock.hpp"
 #include "EZ-Template/slew.hpp"
 #include "EZ-Template/tracking_wheel.hpp"
 #include "EZ-Template/util.hpp"
@@ -32,7 +33,7 @@ class Drive {
    *
    * Set with opcontrol_joystick_threshold_set()
    */
-  int JOYSTICK_THRESHOLD;
+  int JOYSTICK_THRESHOLD = 0;
 
   /**
    * Global current brake mode.
@@ -47,7 +48,7 @@ class Drive {
   /**
    * Current swing type.
    */
-  e_swing current_swing;
+  e_swing current_swing = LEFT_SWING;
 
   /**
    * Vector of pros motors for the left chassis.
@@ -67,7 +68,7 @@ class Drive {
   /**
    * Current focused Inertial sensor.
    */
-  pros::Imu* imu;
+  pros::Imu* imu = nullptr;
 
   /**
    * All good imus, for redundancy.
@@ -97,22 +98,22 @@ class Drive {
   /**
    * Left vertical tracking wheel.
    */
-  tracking_wheel* odom_tracker_left;
+  tracking_wheel* odom_tracker_left = nullptr;
 
   /**
    * Right vertical tracking wheel.
    */
-  tracking_wheel* odom_tracker_right;
+  tracking_wheel* odom_tracker_right = nullptr;
 
   /**
    * Front horizontal tracking wheel.
    */
-  tracking_wheel* odom_tracker_front;
+  tracking_wheel* odom_tracker_front = nullptr;
 
   /**
    * Back horizontal tracking wheel.
    */
-  tracking_wheel* odom_tracker_back;
+  tracking_wheel* odom_tracker_back = nullptr;
 
   /**
    * PID objects.
@@ -366,7 +367,7 @@ class Drive {
   /**
    * Current mode of the drive.
    */
-  e_mode mode;
+  e_mode mode = DISABLE;
 
   /**
    * Sets current mode of drive.
@@ -767,10 +768,14 @@ class Drive {
    *
    * Path smoothing based on https://medium.com/@jaems33/understanding-robot-motion-path-smoothing-5970c8363bc4
    *
+   * Values that would make the smoothing diverge instead of settle are rejected with a message in the terminal,
+   * and the previous constants stay in place.  weight_smooth must be in [0, 1), weight_data must be at least 0,
+   * tolerance must be above 0, and weight_data + 2 * weight_smooth must be below 2.
+   *
    * \param weight_smooth
-   *        how much weight to update the data
-   * \param weight_data
    *        how much weight to smooth the coordinates
+   * \param weight_data
+   *        how much weight to keep the coordinates near the original path
    * \param tolerance
    *        how much change per iteration is necessary to keep iterating
    */
@@ -1018,7 +1023,8 @@ class Drive {
   void opcontrol_curve_sd_initialize();
 
   /**
-   * Sets the default joystick curves.
+   * Sets the default joystick curves.  Values are kept between 0 and 20, which is also the range
+   * the curve buttons and the SD card files are held to.
    *
    * \param left
    *        left default curve
@@ -1451,15 +1457,17 @@ class Drive {
    * what the imu reported for that turn.  Internally, this is used to divide
    * the imu's raw reading so it reports the true 3600.
    *
+   * A value under 100 is rejected and the previous scale is kept.
+   *
    * \param imu_value_after_3600
    *        what the imu reads after physically turning the robot 3600 degrees
    */
-  void drive_imu_scaler_set(double imu_value_after_3600);
+  void drive_imu_scaler_3600_set(double imu_value_after_3600);
 
   /**
    * Returns the imu value after a 3600 degree turn that produces the imu's current scale.
    */
-  double drive_imu_scaler_get();
+  double drive_imu_scaler_3600_get();
 
   std::map<int, double> imu_scale_map;
   std::map<int, std::pair<double, int>> prev_imu_values;
@@ -1470,15 +1478,17 @@ class Drive {
    * Physically turn the robot 3600 degrees (10 full rotations) and pass in
    * what each imu reported for that turn.
    *
+   * A value under 100 is rejected and that imu's previous scale is kept.
+   *
    * \param imu_values_after_3600
    *        what each imu reads after physically turning the robot 3600 degrees, input {3550, 3625...}
    */
-  void drive_imus_scalers_set(std::vector<double> imu_values_after_3600);
+  void drive_imus_scalers_3600_set(std::vector<double> imu_values_after_3600);
 
   /*
    * Returns the imu value after a 3600 degree turn that produces each imu's current scale.
    */
-  std::map<int, double> drive_imus_scalers_get();
+  std::map<int, double> drive_imus_scalers_3600_get();
 
   /**
    * Calibrates the IMU, recommended to run in initialize().
@@ -3596,7 +3606,7 @@ class Drive {
    * Guards state shared between the ez_auto task and the public setters.
    * Recursive so nested public calls and user callbacks that call setters are safe.
    */
-  pros::RecursiveMutex drive_mutex;
+  ez::Lock<pros::RecursiveMutex> drive_mutex;
 
   std::function<void(void)> tracking;
   void opcontrol_drive_activebrake_targets_set();
@@ -3608,7 +3618,7 @@ class Drive {
   double odom_ime_track_width_right = 0.0;
   bool imu_calibrate_took_too_long = false;
   bool is_full_pid_tuner_enabled = false;
-  std::vector<const_and_name>* used_pid_tuner_pids;
+  std::vector<const_and_name>* used_pid_tuner_pids = &pid_tuner_pids;
   double opcontrol_speed_max = 127.0;
   bool arcade_vector_scaling = false;
   double curvature_point_turn_gain = 0.8;
@@ -3737,12 +3747,12 @@ class Drive {
   std::string complete_pid_tuner_output = "";
   float p_increment = 0.1, i_increment = 0.001, d_increment = 0.25, start_i_increment = 1.0;
 
-  pros::controller_digital_e_t pid_tuner_increase;  // is this place good?
-  pros::controller_digital_e_t pid_tuner_decrease;  // ^yes this placement is fine :D
-  pros::controller_digital_e_t pid_tuner_pageLeft;
-  pros::controller_digital_e_t pid_tuner_pageRight;
-  pros::controller_digital_e_t pid_tuner_pageUp;
-  pros::controller_digital_e_t pid_tuner_pageDown;
+  pros::controller_digital_e_t pid_tuner_increase = pros::E_CONTROLLER_DIGITAL_A;  // is this place good?
+  pros::controller_digital_e_t pid_tuner_decrease = pros::E_CONTROLLER_DIGITAL_Y;  // ^yes this placement is fine :D
+  pros::controller_digital_e_t pid_tuner_pageLeft = pros::E_CONTROLLER_DIGITAL_LEFT;
+  pros::controller_digital_e_t pid_tuner_pageRight = pros::E_CONTROLLER_DIGITAL_RIGHT;
+  pros::controller_digital_e_t pid_tuner_pageUp = pros::E_CONTROLLER_DIGITAL_UP;
+  pros::controller_digital_e_t pid_tuner_pageDown = pros::E_CONTROLLER_DIGITAL_DOWN;
 
   /**
    * @brief
@@ -3780,9 +3790,9 @@ class Drive {
   /**
    * Tick per inch calculation.
    */
-  double TICK_PER_REV;
-  double TICK_PER_INCH;
-  double CIRCUMFERENCE;
+  double TICK_PER_REV = 0.0;
+  double TICK_PER_INCH = 0.0;
+  double CIRCUMFERENCE = 0.0;
 
   /**
    * Recomputes TICK_PER_REV/CIRCUMFERENCE/TICK_PER_INCH from WHEEL_DIAMETER,
@@ -3793,14 +3803,14 @@ class Drive {
    */
   void drive_tick_per_inch_compute();
 
-  double CARTRIDGE;
-  double RATIO;
-  double WHEEL_DIAMETER;
+  double CARTRIDGE = 0.0;
+  double RATIO = 0.0;
+  double WHEEL_DIAMETER = 0.0;
 
   /**
    * Max speed for autonomous.
    */
-  int max_speed;
+  int max_speed = 0;
 
   /**
    * Tasks
@@ -3828,7 +3838,7 @@ class Drive {
   /**
    * Is tank drive running?
    */
-  bool is_tank;
+  bool is_tank = false;
 
 #define DRIVE_INTEGRATED 1
 #define DRIVE_ADI_ENCODER 2
@@ -3854,8 +3864,8 @@ class Drive {
     bool release_reset = false;
     int release_timer = 0;
     int hold_timer = 0;
-    int increase_timer;
-    pros::controller_digital_e_t button;
+    int increase_timer = 0;
+    pros::controller_digital_e_t button = pros::E_CONTROLLER_DIGITAL_A;
   };
 
   button_ l_increase_;
@@ -3871,8 +3881,8 @@ class Drive {
   /**
    * The left and right curve scalers.
    */
-  double left_curve_scale;
-  double right_curve_scale;
+  double left_curve_scale = 0.0;
+  double right_curve_scale = 0.0;
 
   /**
    * Increase and decrease left and right curve scale.
