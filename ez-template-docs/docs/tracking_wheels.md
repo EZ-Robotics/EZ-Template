@@ -145,7 +145,7 @@ void opcontrol() {
     chassis.opcontrol_tank();  // Tank control
 
     if (ez::as::page_blank_is_on(0)) {
-      ez::screen_print(to_string(right_tracker.get()), 1);
+      ez::screen_print(std::to_string(right_tracker.get()), 1);
     }
 
     pros::delay(ez::util::DELAY_TIME);  // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
@@ -185,7 +185,7 @@ void opcontrol() {
     chassis.opcontrol_tank();  // Tank control
 
     if (ez::as::page_blank_is_on(0)) {
-      ez::screen_print(to_string(right_tracker.get_raw()), 1);
+      ez::screen_print(std::to_string(right_tracker.get_raw()), 1);
     }
 
     pros::delay(ez::util::DELAY_TIME);  // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
@@ -224,7 +224,7 @@ void opcontrol() {
     chassis.opcontrol_tank();  // Tank control
 
     if (ez::as::page_blank_is_on(0)) {
-      ez::screen_print(to_string(right_tracker.distance_to_center_get()), 1);
+      ez::screen_print(std::to_string(right_tracker.distance_to_center_get()), 1);
     }
 
     pros::delay(ez::util::DELAY_TIME);  // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
@@ -251,7 +251,7 @@ Returns if the distance to center is flipped or not.  False is not, true is.
 <TabItem value="proto">
 
 ```cpp
-double distance_to_center_flip_get();
+bool distance_to_center_flip_get();
 ```
 </TabItem>
 <TabItem value="example">
@@ -263,7 +263,7 @@ void opcontrol() {
     chassis.opcontrol_tank();  // Tank control
 
     if (ez::as::page_blank_is_on(0)) {
-      ez::screen_print(to_string(right_tracker.distance_to_center_flip_get()), 1);
+      ez::screen_print(std::to_string(right_tracker.distance_to_center_flip_get()), 1);
     }
 
     pros::delay(ez::util::DELAY_TIME);  // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
@@ -303,7 +303,7 @@ void opcontrol() {
     chassis.opcontrol_tank();  // Tank control
 
     if (ez::as::page_blank_is_on(0)) {
-      ez::screen_print(to_string(right_tracker.ticks_per_inch()), 1);
+      ez::screen_print(std::to_string(right_tracker.ticks_per_inch()), 1);
     }
 
     pros::delay(ez::util::DELAY_TIME);  // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
@@ -345,7 +345,7 @@ void opcontrol() {
     chassis.opcontrol_tank();  // Tank control
 
     if (ez::as::page_blank_is_on(0)) {
-      ez::screen_print(to_string(right_tracker.ticks_per_rev_get()), 1);
+      ez::screen_print(std::to_string(right_tracker.ticks_per_rev_get()), 1);
     }
 
     pros::delay(ez::util::DELAY_TIME);  // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
@@ -386,7 +386,7 @@ void opcontrol() {
     chassis.opcontrol_tank();  // Tank control
 
     if (ez::as::page_blank_is_on(0)) {
-      ez::screen_print(to_string(right_tracker.ratio_get()), 1);
+      ez::screen_print(std::to_string(right_tracker.ratio_get()), 1);
     }
 
     pros::delay(ez::util::DELAY_TIME);  // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
@@ -425,7 +425,7 @@ void opcontrol() {
     chassis.opcontrol_tank();  // Tank control
 
     if (ez::as::page_blank_is_on(0)) {
-      ez::screen_print(to_string(right_tracker.wheel_diameter_get()), 1);
+      ez::screen_print(std::to_string(right_tracker.wheel_diameter_get()), 1);
     }
 
     pros::delay(ez::util::DELAY_TIME);  // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
@@ -454,7 +454,7 @@ void opcontrol() {
 
 
 ### reset()
-Returns the diameter of your wheel.    
+Resets your sensor.    
 <Tabs
   groupId="reset"
   defaultValue="proto"
@@ -511,7 +511,7 @@ void opcontrol() {
     chassis.opcontrol_tank();  // Tank control
 
     if (ez::as::page_blank_is_on(0)) {
-      ez::screen_print(to_string(right_tracker.distance_to_center_get()), 1);
+      ez::screen_print(std::to_string(right_tracker.distance_to_center_get()), 1);
     }
 
     pros::delay(ez::util::DELAY_TIME);  // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
@@ -554,7 +554,7 @@ void opcontrol() {
     chassis.opcontrol_tank();  // Tank control
 
     if (ez::as::page_blank_is_on(0)) {
-      ez::screen_print(to_string(right_tracker.wheel_diameter_get()), 1);
+      ez::screen_print(std::to_string(right_tracker.wheel_diameter_get()), 1);
     }
 
     pros::delay(ez::util::DELAY_TIME);  // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
@@ -597,7 +597,7 @@ void opcontrol() {
     chassis.opcontrol_tank();  // Tank control
 
     if (ez::as::page_blank_is_on(0)) {
-      ez::screen_print(to_string(right_tracker.ticks_per_rev_get()), 1);
+      ez::screen_print(std::to_string(right_tracker.ticks_per_rev_get()), 1);
     }
 
     pros::delay(ez::util::DELAY_TIME);  // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
@@ -640,7 +640,7 @@ void opcontrol() {
     chassis.opcontrol_tank();  // Tank control
 
     if (ez::as::page_blank_is_on(0)) {
-      ez::screen_print(to_string(right_tracker.ratio_get()), 1);
+      ez::screen_print(std::to_string(right_tracker.ratio_get()), 1);
     }
 
     pros::delay(ez::util::DELAY_TIME);  // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
@@ -682,7 +682,7 @@ void opcontrol() {
     chassis.opcontrol_tank();  // Tank control
 
     if (ez::as::page_blank_is_on(0)) {
-      ez::screen_print(to_string(right_tracker.wheel_diameter_get()), 1);
+      ez::screen_print(std::to_string(right_tracker.wheel_diameter_get()), 1);
     }
 
     pros::delay(ez::util::DELAY_TIME);  // This is used for timer calculations!  Keep this ez::util::DELAY_TIME

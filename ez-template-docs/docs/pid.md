@@ -18,7 +18,7 @@ Creates a PID object with constants.  Everything past kP has a default starting 
 `p` kP  
 `i` kI  
 `d` kD  
-`p_start_i` i will start when error is within this  
+`start_i` i will start when error is within this  
 `name` a string for the name of the PID
 <Tabs
   groupId="ex2"
@@ -108,7 +108,7 @@ double compute(double current);
 ### compute_error()
 Computes PID based on error.  This function ignores target entirely and the user has to calculate error.  
 
-`error` the target minus current, you calculate this yourself    
+`err` the target minus current, you calculate this yourself    
 `current` the current sensor value for the subsystem
 <Tabs
   groupId="compute_error"
@@ -211,7 +211,7 @@ void constants_set(double p, double i = 0, double d = 0, double p_start_i = 0);
 ### target_set()
 Sets PID target.   
 
-`target` the goal position for your subsystem  
+`input` the goal position for your subsystem  
 <Tabs
   groupId="ex4"
   defaultValue="proto"
@@ -310,7 +310,7 @@ void exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_e
 ### velocity_sensor_secondary_toggle_set()  
 Enables / disables the use of the second sensor.  True enables this and uses the secondary sensor in velocity exits, false disables.    
 
-`toggle` sensor value for the secondary sensor  
+`toggle` true uses the secondary sensor in velocity exits, false does not  
 <Tabs
   groupId="velocity_sensor_secondary_toggle_set"
   defaultValue="proto"
@@ -348,9 +348,9 @@ void velocity_sensor_secondary_toggle_set(bool toggle);
 
 
 ### velocity_sensor_secondary_set()
-This sets the sensor value for the secondary sensor.  The secondary sensor is used in addition to the main sensor for determining velocity exits, if enabled.      
+This sets the velocity (or acceleration) reading for the secondary sensor.  The secondary sensor is used in addition to the main sensor for determining velocity exits, if enabled.      
  
-`secondary_sensor` sensor value for the secondary sensor  
+`secondary_sensor` the secondary sensor's current velocity or acceleration reading, not its position.  It counts as stopped while the absolute value of this is at or below `velocity_sensor_secondary_exit_get()`.  EZ-Template passes the IMU acceleration magnitude.  
 <Tabs
   groupId="velocity_sensor_secondary_set"
   defaultValue="proto"
@@ -363,7 +363,13 @@ This sets the sensor value for the secondary sensor.  The secondary sensor is us
 <TabItem value="example">
 
 ```cpp
-...
+ez::PID liftPID;
+pros::Imu imu(5);
+
+void autonomous() {
+  liftPID.velocity_sensor_secondary_toggle_set(true);  // Enable the secondary sensor
+  liftPID.velocity_sensor_secondary_set(imu.get_gyro_rate().z);  // Degrees per second, near 0 when the imu is still
+}
 ```
 
 </TabItem>
@@ -419,7 +425,7 @@ Sets a threshold for the main sensors velocity.  The velocity timer will start i
 ```cpp
 ez::PID liftPID;
 void initialize() {
-  liftPID.velocity_sensor_secondary_toggle_set(true);  // Enable the secondary sensor
+  liftPID.velocity_sensor_main_exit_set(0.1);  // The main sensor counts as stopped within 0.1
 }
 ```
 
@@ -438,7 +444,7 @@ void velocity_sensor_main_exit_set(double zero);
 
 
 ### velocity_sensor_secondary_exit_set()
-Sets a threshold for the secondary sensors velocity.  The velocity timer will start increasing when the secondary sensor is within this value.  This is defaulted to `0.1`.  This is only used when the secondary sensor is enabled.  The velocity timer also waits until the robot has moved, see `velocity_sensor_main_exit_set()`, or 1 second if it never moves.   
+Sets a threshold for the secondary sensors velocity.  The velocity timer will start increasing when the secondary sensor is within this value.  This is defaulted to `0.075`.  This is only used when the secondary sensor is enabled.  The velocity timer also waits until the robot has moved, see `velocity_sensor_main_exit_set()`, or 1 second if it never moves.   
 
 `zero` double, a small threshold   
 <Tabs
@@ -456,6 +462,7 @@ Sets a threshold for the secondary sensors velocity.  The velocity timer will st
 ez::PID liftPID;
 void initialize() {
   liftPID.velocity_sensor_secondary_toggle_set(true);  // Enable the secondary sensor
+  liftPID.velocity_sensor_secondary_exit_set(0.1);  // The secondary sensor counts as stopped within 0.1
 }
 ```
 
@@ -607,7 +614,7 @@ std::string name_get();
 
 
 ### velocity_sensor_secondary_toggle_get()
-Returns the value for the secondary sensor.  The secondary sensor is used in addition to the main sensor for determining velocity exits, if enabled.   
+Returns if the secondary sensor is enabled for velocity exits.  True means it is in use, false means it is not.   
 <Tabs
   groupId="velocity_sensor_secondary_toggle_get()"
   defaultValue="proto"
@@ -634,7 +641,7 @@ void initialize() {
 <TabItem value="proto">
 
 ```cpp
-double velocity_sensor_secondary_toggle_get();
+bool velocity_sensor_secondary_toggle_get();
 ```
 
 </TabItem>
@@ -688,7 +695,7 @@ double velocity_sensor_main_exit_get();
 
 
 ### velocity_sensor_secondary_exit_get()
-Gets a threshold for the secondary sensors velocity.  The velocity timer will start increasing when the secondary sensor is within this value.  This is defaulted to `0.1`.  This is only used when the secondary sensor is enabled.  The velocity timer also waits until the robot has moved, see `velocity_sensor_main_exit_set()`, or 1 second if it never moves.     
+Gets a threshold for the secondary sensors velocity.  The velocity timer will start increasing when the secondary sensor is within this value.  This is defaulted to `0.075`.  This is only used when the secondary sensor is enabled.  The velocity timer also waits until the robot has moved, see `velocity_sensor_main_exit_set()`, or 1 second if it never moves.     
 <Tabs
   groupId="velocity_sensor_secondary_exit_get()"
   defaultValue="proto"
@@ -704,7 +711,7 @@ Gets a threshold for the secondary sensors velocity.  The velocity timer will st
 ez::PID liftPID;
 void initialize() {
   liftPID.velocity_sensor_secondary_toggle_set(true);  // Enable the secondary sensor
-  printf("%.2f\n",liftPID.velocity_sensor_secondary_exit_get());  // This prints 0.1
+  printf("%.3f\n",liftPID.velocity_sensor_secondary_exit_get());  // This prints 0.075
 }
 ```
 
@@ -726,7 +733,7 @@ double velocity_sensor_secondary_exit_get();
 
 
 ### velocity_sensor_secondary_get()
-Returns if the secondary sensor is enabled or disables.  True means this is enabled and the secondary sensor is in use, false means disabled.    
+Returns the last value given to `velocity_sensor_secondary_set()`.    
 <Tabs
   groupId="velocity_sensor_secondary_get()"
   defaultValue="proto"
@@ -741,7 +748,8 @@ Returns if the secondary sensor is enabled or disables.  True means this is enab
 ```cpp
 ez::PID liftPID;
 void initialize() {
-  liftPID.velocity_sensor_secondary_toggle_set(true);  // Enable the secondary sensor
+  liftPID.velocity_sensor_secondary_set(0.0);
+  printf("%.2f\n", liftPID.velocity_sensor_secondary_get());  // This prints 0.00
 }
 ```
 
@@ -925,13 +933,13 @@ void initialize() {
 void autonomous() {
   liftPID.target_set(500);
   while (liftPID.exit_condition({r_lift_motor, l_lift_motor}, true) == ez::RUNNING) {
-    set_lift(liftPID.compute(lift_motor.get_position()));
+    set_lift(liftPID.compute(l_lift_motor.get_position()));
     pros::delay(ez::util::DELAY_TIME);
   }
 
   liftPID.target_set(0);
   while (liftPID.exit_condition({r_lift_motor, l_lift_motor}, true) == ez::RUNNING) {
-    set_lift(liftPID.compute(lift_motor.get_position()));
+    set_lift(liftPID.compute(l_lift_motor.get_position()));
     pros::delay(ez::util::DELAY_TIME);
   }
 }
