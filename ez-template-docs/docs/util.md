@@ -648,7 +648,7 @@ Macros that tell you which version of EZ-Template your code is being built again
 
 :::caution 3.x and early betas don't have these
 
-The version macros are new in 4.0.0, and they're not in 4.0.0-beta.1 or 4.0.0-beta.2.  On those, and on 3.x, every macro on this page is missing, so your code has to cope with that.  
+The version macros are new in 4.0.0-beta.3, and they're not in 4.0.0-beta.1 or 4.0.0-beta.2.  On those, and on 3.x, every macro on this page is missing, so your code has to cope with that.  
 
 :::
 
@@ -657,11 +657,11 @@ The version macros are new in 4.0.0, and they're not in 4.0.0-beta.1 or 4.0.0-be
 | `EZ_TEMPLATE_VERSION_MAJOR`, `EZ_TEMPLATE_VERSION_MINOR`, `EZ_TEMPLATE_VERSION_PATCH` | The version numbers |
 | `EZ_TEMPLATE_VERSION_STAGE` | `EZ_TEMPLATE_STAGE_ALPHA`, `EZ_TEMPLATE_STAGE_BETA`, `EZ_TEMPLATE_STAGE_RC` or `EZ_TEMPLATE_STAGE_RELEASE` |
 | `EZ_TEMPLATE_VERSION_PRERELEASE_NUM` | The `N` in `beta.N`, or `0` on a full release |
-| `EZ_TEMPLATE_VERSION_PRERELEASE` | `"beta.2"`, or `""` on a full release |
-| `EZ_TEMPLATE_VERSION_STRING` | `"4.0.0-beta.2"` |
+| `EZ_TEMPLATE_VERSION_PRERELEASE` | `"beta.3"`, or `""` on a full release |
+| `EZ_TEMPLATE_VERSION_STRING` | `"4.0.0-beta.3"` |
 | `EZ_TEMPLATE_VERSION` | One integer that sorts correctly: alpha, then beta, then rc, then release.  `4.0.0-rc.1` is less than `4.0.0` |
 | `EZ_TEMPLATE_VERSION_ENCODE(major, minor, patch, stage, num)` | Builds that integer, for comparing against an exact version |
-| `EZ_TEMPLATE_VERSION_AT_LEAST(major, minor, patch)` | Feature check.  Ignores the prerelease, so `4.0.0-beta.2` counts as `4.0.0` |
+| `EZ_TEMPLATE_VERSION_AT_LEAST(major, minor, patch)` | Feature check.  Ignores the prerelease, so `4.0.0-beta.3` counts as `4.0.0` |
 
 Minor, patch and the prerelease number must each stay under 100.  
 
@@ -709,6 +709,6 @@ To be told when you're building against a prerelease, add a warning:
 
 ```cpp
 void initialize() {
-  printf("EZ-Template %s\n", EZ_TEMPLATE_VERSION_STRING);  // EZ-Template 4.0.0-beta.2
+  printf("EZ-Template %s\n", EZ_TEMPLATE_VERSION_STRING);  // EZ-Template 4.0.0-beta.3
 }
 ```
