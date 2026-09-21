@@ -312,7 +312,9 @@ void Drive::opcontrol_joystick_threshold_iterate(int l_stick, int r_stick) {
   drive_set(l_out, r_out);
 }
 
-void Drive::opcontrol_speed_max_set(int speed) { opcontrol_speed_max = (double)speed; }
+// This is used as a multiplier, so a negative value would reverse the whole drive and a value over 127 would
+// cut off the top of the stick's travel
+void Drive::opcontrol_speed_max_set(int speed) { opcontrol_speed_max = std::fabs(util::clamp((double)speed, 127.0)); }
 int Drive::opcontrol_speed_max_get() { return (int)opcontrol_speed_max; }
 
 // Clip joysticks based on joystick threshold

@@ -3624,7 +3624,7 @@ class Drive {
    * Sets the max speed for user control.
    *
    * \param speed
-   *        the speed limit
+   *        the speed limit, 0 - 127.  A value above 127 is set to 127 and a negative value is treated as its magnitude
    */
   void opcontrol_speed_max_set(int speed);
 
