@@ -195,7 +195,7 @@ Returns true while the portrait screen is the loaded screen (rotation 90 or 270)
 
 ```cpp
 ez::screen_rotation_set(90);
-printf("%i\n", ez::screen_portrait_enabled()); // Prints true
+printf("%i\n", ez::screen_portrait_enabled()); // Prints 1
 ```
 
 </TabItem>
