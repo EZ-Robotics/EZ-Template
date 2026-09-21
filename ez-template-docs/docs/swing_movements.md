@@ -2783,6 +2783,103 @@ void pid_swing_behavior_set(e_angle_behavior behavior);
 
 ## Getter
 
+### pid_swing_constants_get()
+Returns the PID constants for swings, as a `PID::Constants` with `kp`, `ki`, `kd` and `start_i`.  If the forward and backward constants were set to different values, this prints `Forward and Reverse constants are not the same!` and returns `{-1, -1, -1, -1}`.  Use the forward and backward getters when they differ.  
+<Tabs
+  groupId="pid_swing_constants_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  chassis.pid_swing_constants_set(6.0, 0.0, 65.0);
+  ez::PID::Constants c = chassis.pid_swing_constants_get();
+  printf("kp %.2f  ki %.2f  kd %.2f  start_i %.2f\n", c.kp, c.ki, c.kd, c.start_i);  // Prints kp 6.00  ki 0.00  kd 65.00  start_i 0.00
+}
+```
+
+</TabItem>
+
+<TabItem value="proto">
+
+```cpp
+PID::Constants pid_swing_constants_get();
+```
+
+</TabItem>
+</Tabs>
+
+### pid_swing_constants_forward_get()
+Returns the PID constants for forward swings, as a `PID::Constants` with `kp`, `ki`, `kd` and `start_i`.  
+<Tabs
+  groupId="pid_swing_constants_forward_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  chassis.pid_swing_constants_forward_set(6.0, 0.0, 65.0);
+  ez::PID::Constants c = chassis.pid_swing_constants_forward_get();
+  printf("kp %.2f  ki %.2f  kd %.2f  start_i %.2f\n", c.kp, c.ki, c.kd, c.start_i);  // Prints kp 6.00  ki 0.00  kd 65.00  start_i 0.00
+}
+```
+
+</TabItem>
+
+<TabItem value="proto">
+
+```cpp
+PID::Constants pid_swing_constants_forward_get();
+```
+
+</TabItem>
+</Tabs>
+
+### pid_swing_constants_backward_get()
+Returns the PID constants for backward swings, as a `PID::Constants` with `kp`, `ki`, `kd` and `start_i`.  
+<Tabs
+  groupId="pid_swing_constants_backward_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  chassis.pid_swing_constants_backward_set(6.0, 0.0, 65.0);
+  ez::PID::Constants c = chassis.pid_swing_constants_backward_get();
+  printf("kp %.2f  ki %.2f  kd %.2f  start_i %.2f\n", c.kp, c.ki, c.kd, c.start_i);  // Prints kp 6.00  ki 0.00  kd 65.00  start_i 0.00
+}
+```
+
+</TabItem>
+
+<TabItem value="proto">
+
+```cpp
+PID::Constants pid_swing_constants_backward_get();
+```
+
+</TabItem>
+</Tabs>
+
+
 ### slew_swing_forward_get()
 Returns true if slew is enabled for all swing forward motions, false otherwise.       
 <Tabs

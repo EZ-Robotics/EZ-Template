@@ -1082,6 +1082,135 @@ void autonomous() {
 
 ## Getter
 
+### pid_drive_constants_get()
+Returns the PID constants for driving, as a `PID::Constants` with `kp`, `ki`, `kd` and `start_i`.  If the forward and backward constants were set to different values, this prints `Forward and Reverse constants are not the same!` and returns `{-1, -1, -1, -1}`.  Use the forward and backward getters when they differ.  
+<Tabs
+  groupId="pid_drive_constants_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  chassis.pid_drive_constants_set(20.0, 0.0, 100.0);
+  ez::PID::Constants c = chassis.pid_drive_constants_get();
+  printf("kp %.2f  ki %.2f  kd %.2f  start_i %.2f\n", c.kp, c.ki, c.kd, c.start_i);  // Prints kp 20.00  ki 0.00  kd 100.00  start_i 0.00
+}
+```
+
+</TabItem>
+
+<TabItem value="proto">
+
+```cpp
+PID::Constants pid_drive_constants_get();
+```
+
+</TabItem>
+</Tabs>
+
+### pid_drive_constants_forward_get()
+Returns the PID constants for driving forward, as a `PID::Constants` with `kp`, `ki`, `kd` and `start_i`.  
+<Tabs
+  groupId="pid_drive_constants_forward_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  chassis.pid_drive_constants_forward_set(20.0, 0.0, 100.0);
+  ez::PID::Constants c = chassis.pid_drive_constants_forward_get();
+  printf("kp %.2f  ki %.2f  kd %.2f  start_i %.2f\n", c.kp, c.ki, c.kd, c.start_i);  // Prints kp 20.00  ki 0.00  kd 100.00  start_i 0.00
+}
+```
+
+</TabItem>
+
+<TabItem value="proto">
+
+```cpp
+PID::Constants pid_drive_constants_forward_get();
+```
+
+</TabItem>
+</Tabs>
+
+### pid_drive_constants_backward_get()
+Returns the PID constants for driving backward, as a `PID::Constants` with `kp`, `ki`, `kd` and `start_i`.  
+<Tabs
+  groupId="pid_drive_constants_backward_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  chassis.pid_drive_constants_backward_set(20.0, 0.0, 100.0);
+  ez::PID::Constants c = chassis.pid_drive_constants_backward_get();
+  printf("kp %.2f  ki %.2f  kd %.2f  start_i %.2f\n", c.kp, c.ki, c.kd, c.start_i);  // Prints kp 20.00  ki 0.00  kd 100.00  start_i 0.00
+}
+```
+
+</TabItem>
+
+<TabItem value="proto">
+
+```cpp
+PID::Constants pid_drive_constants_backward_get();
+```
+
+</TabItem>
+</Tabs>
+
+### pid_heading_constants_get()
+Returns the PID constants that correct the robot's heading during drive motions, as a `PID::Constants` with `kp`, `ki`, `kd` and `start_i`.  
+<Tabs
+  groupId="pid_heading_constants_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  chassis.pid_heading_constants_set(11.0, 0.0, 20.0);
+  ez::PID::Constants c = chassis.pid_heading_constants_get();
+  printf("kp %.2f  ki %.2f  kd %.2f  start_i %.2f\n", c.kp, c.ki, c.kd, c.start_i);  // Prints kp 11.00  ki 0.00  kd 20.00  start_i 0.00
+}
+```
+
+</TabItem>
+
+<TabItem value="proto">
+
+```cpp
+PID::Constants pid_heading_constants_get();
+```
+
+</TabItem>
+</Tabs>
+
+
 
 
 
