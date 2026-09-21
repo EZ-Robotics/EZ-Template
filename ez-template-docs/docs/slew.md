@@ -256,14 +256,14 @@ void initialize() {
 }
 
 void autonomous() {
-  printf("Slew Enabled? %f\n", lift_slew.enabled()); // Returns true
+  printf("Slew Enabled? %i\n", lift_slew.enabled()); // Returns true
   while (lift.get_position() <= 500) {
     lift_slew.iterate(lift.get_position());
     lift = lift_slew.output();
     pros::delay(10);
   }
   lift = 0;
-  printf("Slew Enabled? %f\n", lift_slew.enabled()); // Returns false
+  printf("Slew Enabled? %i\n", lift_slew.enabled()); // Returns false
 }
 ```
 
@@ -273,7 +273,7 @@ void autonomous() {
 <TabItem value="proto">
 
 ```cpp
-double output();
+bool enabled();
 ```
 
 
@@ -340,10 +340,10 @@ void speed_max_set(double speed);
 
 
 
-### speed_max_set()
+### speed_max_get()
 Returns the max speed slew can be.   
 <Tabs
-  groupId="speed_max_set"
+  groupId="speed_max_get"
   defaultValue="proto"
   values={[
     { label: 'Prototype',  value: 'proto', },
@@ -390,16 +390,3 @@ double speed_max_get();
 
 </TabItem>
 </Tabs>
-
-  /**
-   * Sets the max speed the slew can be
-   *
-   * \param speed
-   *        maximum speed
-   */
-  void speed_max_set(double speed);
-
-  /**
-   * Returns the max speed the slew can be
-   */
-  double speed_max_get();
