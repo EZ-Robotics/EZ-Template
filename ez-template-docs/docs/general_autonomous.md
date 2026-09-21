@@ -104,7 +104,7 @@ void autonomous() {
 ### pid_wait_until()
 Lock the code in a while loop until this position has passed for driving with units.  If an odom movement ends before the robot has traveled `target`, for example a 24 inch move waiting until 30 inches, the loop is released when the movement finishes.              
 
-`target` for driving and swings, using units     
+`target` for driving, using units     
 <Tabs
   groupId="pid_wait_until_distance"
   defaultValue="proto"
@@ -396,7 +396,7 @@ void autonomous() {
   chassis.pid_drive_set(12, DRIVE_SPEED);
   chassis.pid_wait();
 
-  pid_drive_toggle(false); // Disable drive
+  chassis.pid_drive_toggle(false); // Disable drive
 
   chassis.pid_drive_set(-12, DRIVE_SPEED);
   while (true) {
@@ -447,7 +447,7 @@ void autonomous() {
   chassis.pid_drive_set(12, DRIVE_SPEED); // This will print
   chassis.pid_wait(); // This will print
 
-  pid_print_toggle(false); // Disable prints
+  chassis.pid_print_toggle(false); // Disable prints
 
   chassis.pid_drive_set(-12, DRIVE_SPEED); // This won't print
   chassis.pid_wait(); // This won't print
@@ -706,7 +706,7 @@ void pid_angle_behavior_bias_set(e_angle_behavior behavior);
 ### drive_mode_get()
 Returns the current drive mode that the task is running.  
 
-Returns `ez::DISABLE`, `ez::SWING`, `ez::TURN`, `ez::DRIVE`.           
+Returns `ez::DISABLE`, `ez::SWING`, `ez::TURN`, `ez::TURN_TO_POINT`, `ez::DRIVE`, `ez::POINT_TO_POINT`, or `ez::PURE_PURSUIT`.           
 <Tabs
   groupId="examples19"
   defaultValue="proto"
@@ -1025,7 +1025,7 @@ void pid_wait();
 
 
 ### pid_wait_quick()
-Lock the code in a while loop until the robot has settled.   
+Lock the code in a while loop until the robot has passed its target (or an exit condition fires first).   
 
 Wrapper for pid_wait_until(target), target is your previously input target.        
 <Tabs
@@ -1069,7 +1069,7 @@ void pid_wait_quick();
 
 
 ### pid_wait_quick_chain()
-Lock the code in a while loop until the robot has settled.   
+Lock the code in a while loop until the robot has passed its target (or an exit condition fires first).   
 
 This also adds distance to target, and then exits with pid_wait_quick.   
 
