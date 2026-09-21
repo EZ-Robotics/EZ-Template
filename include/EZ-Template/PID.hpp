@@ -26,7 +26,7 @@ class PID {
    *        ki
    * \param d
    *        kD
-   * \param p_start_i
+   * \param start_i
    *        error value that i starts within
    * \param name
    *        std::string of name that prints
@@ -83,13 +83,15 @@ class PID {
    * \param p_velocity_exit_time
    *        sets velocity_exit_time, timer will start when velocity is 0 after the robot has moved.
    *        If the robot never moves, it starts after 1 second.
+   * \param p_mA_timeout
+   *        sets mA_timeout, time the motor can be over its current limit before exiting.  Only checked by the exit_condition overloads that take a motor or motors.
    */
   void exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time = 0, double p_big_error = 0, int p_velocity_exit_time = 0, int p_mA_timeout = 0);
 
   /**
    * Sets PID target.
    *
-   * \param target
+   * \param input
    *        new target for PID
    */
   void target_set(double input);
