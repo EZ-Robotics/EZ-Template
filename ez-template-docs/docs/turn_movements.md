@@ -252,7 +252,7 @@ void pid_turn_set(ez::QAngle p_target, int speed, e_angle_behavior behavior, boo
 
 
 ### pid_turn_relative_set()
-Sets the robot to turn using PID relative to the current heading.  
+Sets the robot to turn using PID relative to the last heading target, not the robot's measured heading.  
 
 `p_target` target value in angle units   
 `speed` 0 to 127, max speed during motion   
@@ -304,7 +304,7 @@ void pid_turn_relative_set(ez::QAngle p_target, int speed);
 
 
 ### pid_turn_relative_set()
-Sets the robot to turn using PID relative to the current heading.  
+Sets the robot to turn using PID relative to the last heading target, not the robot's measured heading.  
 
 `p_target` target value in angle units   
 `speed` 0 to 127, max speed during motion   
@@ -357,7 +357,7 @@ void pid_turn_relative_set(ez::QAngle p_target, int speed, bool slew_on);
 
 
 ### pid_turn_relative_set()
-Sets the robot to turn using PID relative to the current heading.  
+Sets the robot to turn using PID relative to the last heading target, not the robot's measured heading.  
 
 `p_target` target value in angle units   
 `speed` 0 to 127, max speed during motion   
@@ -404,7 +404,7 @@ void pid_turn_relative_set(ez::QAngle p_target, int speed, e_angle_behavior beha
 
 
 ### pid_turn_relative_set()
-Sets the robot to turn using PID relative to the current heading.  
+Sets the robot to turn using PID relative to the last heading target, not the robot's measured heading.  
 
 `p_target` target value in angle units   
 `speed` 0 to 127, max speed during motion   
@@ -838,7 +838,7 @@ void pid_turn_set(double target, int speed, e_angle_behavior behavior, bool slew
 
 
 ### pid_turn_relative_set()
-Sets the robot to turn using PID relative to the current heading.  
+Sets the robot to turn using PID relative to the last heading target, not the robot's measured heading.  
 
 `target` target value in degrees  
 `speed` 0 to 127, max speed during motion   
@@ -890,7 +890,7 @@ void pid_turn_relative_set(double target, int speed);
 
 
 ### pid_turn_relative_set()
-Sets the robot to turn using PID relative to the current heading.  
+Sets the robot to turn using PID relative to the last heading target, not the robot's measured heading.  
 
 `target` target value in degrees  
 `speed` 0 to 127, max speed during motion   
@@ -943,7 +943,7 @@ void pid_turn_relative_set(double target, int speed, bool slew_on);
 
 
 ### pid_turn_relative_set()
-Sets the robot to turn using PID relative to the current heading.  
+Sets the robot to turn using PID relative to the last heading target, not the robot's measured heading.  
 
 `target` target value in degrees  
 `speed` 0 to 127, max speed during motion   
@@ -990,7 +990,7 @@ void pid_turn_relative_set(double target, int speed, e_angle_behavior behavior);
 
 
 ### pid_turn_relative_set()
-Sets the robot to turn using PID relative to the current heading.  
+Sets the robot to turn using PID relative to the last heading target, not the robot's measured heading.  
 
 `target` target value in degrees  
 `speed` 0 to 127, max speed during motion   
