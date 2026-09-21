@@ -48,7 +48,7 @@ chassis.pid_wait();
 chassis.pid_swing_set(ez::RIGHT_SWING, 0_deg, 90);
 chassis.pid_wait();
 
-chassis.pid_odom_set({{0_in, 0_in}, ez::rev, 110);
+chassis.pid_odom_set({{0_in, 0_in}, ez::rev, 110});
 chassis.pid_wait();
 ```
 
@@ -93,7 +93,7 @@ The two examples below do the same thing.
   defaultValue="example"
   values={[
     { label: 'pid_wait_until()',  value: 'example', },
-    { label: 'pid_wait_quick()',  value: 'proto', },
+    { label: 'pid_wait_quick_chain()',  value: 'proto', },
   ]
 }>
 
@@ -247,7 +247,7 @@ chassis.pid_odom_set({{{0_in, 24_in}, ez::fwd, 110},
                       {{12_in, 24_in}, ez::fwd, 110},
                       {{24_in, 24_in}, ez::fwd, 110}},
                      true);
-chassis.pid_wait_until_index_started(1));  // Waits until 12, 24 becomes the target point
+chassis.pid_wait_until_index_started(1);  // Waits until 12, 24 becomes the target point
 Intake.move(127);
 chassis.pid_wait();
 ```
