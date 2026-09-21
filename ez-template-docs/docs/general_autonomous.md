@@ -549,7 +549,7 @@ void autonomous() {
   chassis.pid_wait();
 
   // This will make the robot go the long way around to get to 24, 0
-  chassis.pid_odom_set({{24_in, 0_in}, fwd, 110});
+  chassis.pid_odom_set({{24_in, 0_in}, ez::fwd, 110});
   chassis.pid_wait();
 }
 ```

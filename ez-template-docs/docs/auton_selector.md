@@ -164,9 +164,9 @@ void auto3() {
 
 void initialize() {
   ez::as::auton_selector.autons_add({
-    Auton("Autonomous 1\nDoes Something", auto1),
-    Auton("Autonomous 2\nDoes Something Else", auto2),
-    Auton("Autonomous 3\nDoes Something More", auto3),
+    ez::Auton("Autonomous 1\nDoes Something", auto1),
+    ez::Auton("Autonomous 2\nDoes Something Else", auto2),
+    ez::Auton("Autonomous 3\nDoes Something More", auto3),
   });
 }
 ```

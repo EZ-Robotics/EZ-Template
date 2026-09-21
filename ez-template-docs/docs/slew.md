@@ -71,7 +71,7 @@ Sets slew constants.
 <TabItem value="example">
 
 ```cpp
-PID lift_slew;
+ez::slew lift_slew;
 void initialize() {
   lift_slew.constants_set(100, 50);
 }
@@ -111,7 +111,7 @@ Setup for slew.  Keeps track of where the starting sensor value is and what the 
 <TabItem value="example">
 
 ```cpp
-PID lift_slew;
+ez::slew lift_slew;
 pros::Motor lift(1);
 void initialize() {
   lift_slew.constants_set(100, 50);
@@ -153,7 +153,7 @@ Iterates slew calculation and returns what the current max speed should be.
 <TabItem value="example">
 
 ```cpp
-PID lift_slew;
+ez::slew lift_slew;
 pros::Motor lift(1);
 void initialize() {
   lift_slew.constants_set(100, 50);
@@ -162,7 +162,7 @@ void initialize() {
 
 void autonomous() {
   while (lift.get_position() <= 500) {
-    lift = lift_slew.iterate(lift.get_position();
+    lift = lift_slew.iterate(lift.get_position());
     pros::delay(10);
   }
   lift = 0;
@@ -200,7 +200,7 @@ Returns what the current max speed should be.
 <TabItem value="example">
 
 ```cpp
-PID lift_slew;
+ez::slew lift_slew;
 pros::Motor lift(1);
 void initialize() {
   lift_slew.constants_set(100, 50);
@@ -209,7 +209,7 @@ void initialize() {
 
 void autonomous() {
   while (lift.get_position() <= 500) {
-    lift_slew.iterate(lift.get_position();
+    lift_slew.iterate(lift.get_position());
     lift = lift_slew.output();
     pros::delay(10);
   }
@@ -248,7 +248,7 @@ Returns if slew is currently active or not.
 <TabItem value="example">
 
 ```cpp
-PID lift_slew;
+ez::slew lift_slew;
 pros::Motor lift(1);
 void initialize() {
   lift_slew.constants_set(100, 50);
@@ -258,7 +258,7 @@ void initialize() {
 void autonomous() {
   printf("Slew Enabled? %f\n", lift_slew.enabled()); // Returns true
   while (lift.get_position() <= 500) {
-    lift_slew.iterate(lift.get_position();
+    lift_slew.iterate(lift.get_position());
     lift = lift_slew.output();
     pros::delay(10);
   }
@@ -302,7 +302,7 @@ Sets the max speed slew can be.
 <TabItem value="example">
 
 ```cpp
-PID lift_slew;
+ez::slew lift_slew;
 pros::Motor lift(1);
 void initialize() {
   lift_slew.constants_set(100, 50);
@@ -315,7 +315,7 @@ void autonomous() {
       lift_slew.speed_max_set(50);
     else 
       lift_slew.speed_max_set(127);
-    lift_slew.iterate(lift.get_position();
+    lift_slew.iterate(lift.get_position());
     lift = lift_slew.output();
     pros::delay(10);
   }
@@ -354,7 +354,7 @@ Returns the max speed slew can be.
 <TabItem value="example">
 
 ```cpp
-PID lift_slew;
+ez::slew lift_slew;
 pros::Motor lift(1);
 void initialize() {
   lift_slew.constants_set(100, 50);
@@ -369,7 +369,7 @@ void autonomous() {
       lift_slew.speed_max_set(127);
     printf("%.2f", lift_slew.speed_max_get());
 
-    lift_slew.iterate(lift.get_position();
+    lift_slew.iterate(lift.get_position());
     lift = lift_slew.output();
     pros::delay(10);
   }

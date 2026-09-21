@@ -136,7 +136,7 @@ void opcontrol() {
 
     // Print test_variable to the second line
     if (ez::as::page_blank_is_on(0)) {
-      ez::screen_print("test_variable: " + util::to_string_with_precision(test_variable), 1);
+      ez::screen_print("test_variable: " + ez::util::to_string_with_precision(test_variable), 1);
     }
 
     pros::delay(ez::util::DELAY_TIME);  // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
@@ -190,7 +190,7 @@ void ez_screen_task() {
 
     // Print test_variable to the second line
     if (ez::as::page_blank_is_on(0)) {
-      ez::screen_print("test_variable: " + util::to_string_with_precision(test_variable), 1);
+      ez::screen_print("test_variable: " + ez::util::to_string_with_precision(test_variable), 1);
     }
 
     // Constantly update test_variable
@@ -235,7 +235,7 @@ void ez_screen_task() {
 
       // Print test_variable to the second line
       if (ez::as::page_blank_is_on(0)) {
-        ez::screen_print("test_variable: " + util::to_string_with_precision(test_variable), 1);
+        ez::screen_print("test_variable: " + ez::util::to_string_with_precision(test_variable), 1);
       }
 
       // Constantly update test_variable
@@ -297,9 +297,9 @@ chassis.odom_theta_get();
 
 We can use this line of code to take our XYT values and print them with 1 function call.   
 ```cpp
-ez::screen_print("x: " + util::to_string_with_precision(chassis.odom_x_get()) +
-                     "\ny: " + util::to_string_with_precision(chassis.odom_y_get()) +
-                     "\na: " + util::to_string_with_precision(chassis.odom_theta_get()),
+ez::screen_print("x: " + ez::util::to_string_with_precision(chassis.odom_x_get()) +
+                     "\ny: " + ez::util::to_string_with_precision(chassis.odom_y_get()) +
+                     "\na: " + ez::util::to_string_with_precision(chassis.odom_theta_get()),
                1);  // Don't override the top Page line
 ```
 
@@ -314,9 +314,9 @@ void ez_screen_task() {
         // If we're on the first blank page...
         if (ez::as::page_blank_is_on(0)) {
           // Display X, Y, and Theta
-          ez::screen_print("x: " + util::to_string_with_precision(chassis.odom_x_get()) +
-                               "\ny: " + util::to_string_with_precision(chassis.odom_y_get()) +
-                               "\na: " + util::to_string_with_precision(chassis.odom_theta_get()),
+          ez::screen_print("x: " + ez::util::to_string_with_precision(chassis.odom_x_get()) +
+                               "\ny: " + ez::util::to_string_with_precision(chassis.odom_y_get()) +
+                               "\na: " + ez::util::to_string_with_precision(chassis.odom_theta_get()),
                            1);  // Don't override the top Page line
         }
       }
@@ -367,8 +367,8 @@ if (chassis.odom_tracker_left != nullptr) {
 Using `util::to_string_with_precision()` we can print these values only if the tracker exists.  
 ```cpp
 if (chassis.odom_tracker_left != nullptr) {
-  ez::screen_print("l tracker: " + util::to_string_with_precision(chassis.odom_tracker_left->get()) +
-                       "  width: " + util::to_string_with_precision(chassis.odom_tracker_left->distance_to_center_get()),
+  ez::screen_print("l tracker: " + ez::util::to_string_with_precision(chassis.odom_tracker_left->get()) +
+                       "  width: " + ez::util::to_string_with_precision(chassis.odom_tracker_left->distance_to_center_get()),
                    4);
 }
 ```
@@ -384,29 +384,29 @@ void ez_screen_task() {
         // If we're on the first blank page...
         if (ez::as::page_blank_is_on(0)) {
           // Display X, Y, and Theta
-          ez::screen_print("x: " + util::to_string_with_precision(chassis.odom_x_get()) +
-                               "\ny: " + util::to_string_with_precision(chassis.odom_y_get()) +
-                               "\na: " + util::to_string_with_precision(chassis.odom_theta_get()),
+          ez::screen_print("x: " + ez::util::to_string_with_precision(chassis.odom_x_get()) +
+                               "\ny: " + ez::util::to_string_with_precision(chassis.odom_y_get()) +
+                               "\na: " + ez::util::to_string_with_precision(chassis.odom_theta_get()),
                            1);  // Don't override the top Page line
 
           if (chassis.odom_tracker_left != nullptr) {
-            ez::screen_print("l tracker: " + util::to_string_with_precision(chassis.odom_tracker_left->get()) +
-                                 "  width: " + util::to_string_with_precision(chassis.odom_tracker_left->distance_to_center_get()),
+            ez::screen_print("l tracker: " + ez::util::to_string_with_precision(chassis.odom_tracker_left->get()) +
+                                 "  width: " + ez::util::to_string_with_precision(chassis.odom_tracker_left->distance_to_center_get()),
                              4);
           }
           if (chassis.odom_tracker_right != nullptr) {
-            ez::screen_print("r tracker: " + util::to_string_with_precision(chassis.odom_tracker_right->get()) +
-                                 "  width: " + util::to_string_with_precision(chassis.odom_tracker_right->distance_to_center_get()),
+            ez::screen_print("r tracker: " + ez::util::to_string_with_precision(chassis.odom_tracker_right->get()) +
+                                 "  width: " + ez::util::to_string_with_precision(chassis.odom_tracker_right->distance_to_center_get()),
                              5);
           }
           if (chassis.odom_tracker_back != nullptr) {
-            ez::screen_print("b tracker: " + util::to_string_with_precision(chassis.odom_tracker_back->get()) +
-                                 "  width: " + util::to_string_with_precision(chassis.odom_tracker_back->distance_to_center_get()),
+            ez::screen_print("b tracker: " + ez::util::to_string_with_precision(chassis.odom_tracker_back->get()) +
+                                 "  width: " + ez::util::to_string_with_precision(chassis.odom_tracker_back->distance_to_center_get()),
                              6);
           }
           if (chassis.odom_tracker_front != nullptr) {
-            ez::screen_print("f tracker: " + util::to_string_with_precision(chassis.odom_tracker_front->get()) +
-                                 "  width: " + util::to_string_with_precision(chassis.odom_tracker_front->distance_to_center_get()),
+            ez::screen_print("f tracker: " + ez::util::to_string_with_precision(chassis.odom_tracker_front->get()) +
+                                 "  width: " + ez::util::to_string_with_precision(chassis.odom_tracker_front->distance_to_center_get()),
                              7);
           }
         }
@@ -460,8 +460,8 @@ void screen_print_tracker(ez::tracking_wheel *tracker, std::string name, int lin
   std::string tracker_value = "", tracker_width = "";
   // Check if the tracker exists
   if (tracker != nullptr) {
-    tracker_value = name + " tracker: " + util::to_string_with_precision(tracker->get());             // Make text for the tracker value
-    tracker_width = "  width: " + util::to_string_with_precision(tracker->distance_to_center_get());  // Make text for the distance to center
+    tracker_value = name + " tracker: " + ez::util::to_string_with_precision(tracker->get());             // Make text for the tracker value
+    tracker_width = "  width: " + ez::util::to_string_with_precision(tracker->distance_to_center_get());  // Make text for the distance to center
   }
   ez::screen_print(tracker_value + tracker_width, line);  // Print final tracker text
 }
@@ -484,8 +484,8 @@ void screen_print_tracker(ez::tracking_wheel *tracker, std::string name, int lin
   std::string tracker_value = "", tracker_width = "";
   // Check if the tracker exists
   if (tracker != nullptr) {
-    tracker_value = name + " tracker: " + util::to_string_with_precision(tracker->get());             // Make text for the tracker value
-    tracker_width = "  width: " + util::to_string_with_precision(tracker->distance_to_center_get());  // Make text for the distance to center
+    tracker_value = name + " tracker: " + ez::util::to_string_with_precision(tracker->get());             // Make text for the tracker value
+    tracker_width = "  width: " + ez::util::to_string_with_precision(tracker->distance_to_center_get());  // Make text for the distance to center
   }
   ez::screen_print(tracker_value + tracker_width, line);  // Print final tracker text
 }
@@ -504,9 +504,9 @@ void ez_screen_task() {
         // If we're on the first blank page...
         if (ez::as::page_blank_is_on(0)) {
           // Display X, Y, and Theta
-          ez::screen_print("x: " + util::to_string_with_precision(chassis.odom_x_get()) +
-                               "\ny: " + util::to_string_with_precision(chassis.odom_y_get()) +
-                               "\na: " + util::to_string_with_precision(chassis.odom_theta_get()),
+          ez::screen_print("x: " + ez::util::to_string_with_precision(chassis.odom_x_get()) +
+                               "\ny: " + ez::util::to_string_with_precision(chassis.odom_y_get()) +
+                               "\na: " + ez::util::to_string_with_precision(chassis.odom_theta_get()),
                            1);  // Don't override the top Page line
 
           // Display all trackers that are being used

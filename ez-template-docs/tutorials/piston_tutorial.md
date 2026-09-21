@@ -35,7 +35,7 @@ We want to create a piston and have it accessible by `main.cpp` and `autons.cpp`
 #include "EZ-Template/api.hpp"
 #include "api.h"
 
-extern Drive chassis;
+extern ez::Drive chassis;
 
 // Your motors, sensors, etc. should go here.  Below are examples
 
@@ -54,7 +54,7 @@ inline ez::Piston doinker('A');
 #include "EZ-Template/api.hpp"
 #include "api.h"
 
-extern Drive chassis;
+extern ez::Drive chassis;
 
 // Your motors, sensors, etc. should go here.  Below are examples
 

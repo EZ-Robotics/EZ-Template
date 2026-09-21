@@ -48,7 +48,7 @@ chassis.pid_wait();
 chassis.pid_swing_set(ez::RIGHT_SWING, 0_deg, 90);
 chassis.pid_wait();
 
-chassis.pid_odom_set({{0_in, 0_in}, rev, 110);
+chassis.pid_odom_set({{0_in, 0_in}, ez::rev, 110);
 chassis.pid_wait();
 ```
 
@@ -170,8 +170,8 @@ chassis.pid_wait();
 ### Odometrying
 For odometry motions, the same example used above cannot be used.  This is what has to be written to get that behavior.  
 ```cpp
-chassis.pid_odom_set({{{0_in, 6_in}, fwd, 30},
-                      {{0_in, 24_in}, fwd, 110}},
+chassis.pid_odom_set({{{0_in, 6_in}, ez::fwd, 30},
+                      {{0_in, 24_in}, ez::fwd, 110}},
                       true);
 chassis.pid_wait();
 ```
@@ -180,7 +180,7 @@ chassis.pid_wait();
 
 Here, the robot waits until the robot has driven 6 inches, then it will start the intake spinning.  Then it will wait for the motion to complete.  
 ```cpp
-chassis.pid_odom_set({{0_in, 24_in}, fwd, 110});
+chassis.pid_odom_set({{0_in, 24_in}, ez::fwd, 110});
 chassis.pid_wait_until(6_in);
 intake.move(127);
 chassis.pid_wait();
@@ -188,7 +188,7 @@ chassis.pid_wait();
 
 Here, the robot waits until the robot has driven passed `(0, 6)`, then it will start the intake spinning.  Then it will wait for the motion to complete.  
 ```cpp
-chassis.pid_odom_set({{0_in, 24_in}, fwd, 110});
+chassis.pid_odom_set({{0_in, 24_in}, ez::fwd, 110});
 chassis.pid_wait_until({0_in, 6_in});
 intake.move(127);
 chassis.pid_wait();
@@ -213,9 +213,9 @@ chassis.pid_wait();
 <TabItem value="example">
 
 ```cpp
-chassis.pid_odom_set({{{0_in, 24_in}, fwd, 110},
-                      {{12_in, 24_in}, fwd, 110},
-                      {{24_in, 24_in}, fwd, 110}},
+chassis.pid_odom_set({{{0_in, 24_in}, ez::fwd, 110},
+                      {{12_in, 24_in}, ez::fwd, 110},
+                      {{24_in, 24_in}, ez::fwd, 110}},
                      true);
 chassis.pid_wait_until_index(1);  // Waits until the robot passes 12, 24
 Intake.move(127);
@@ -227,9 +227,9 @@ chassis.pid_wait();
 <TabItem value="proto">
 
 ```cpp
-chassis.pid_odom_set({{{0_in, 24_in}, fwd, 110},
-                      {{12_in, 24_in}, fwd, 110},
-                      {{24_in, 24_in}, fwd, 110}},
+chassis.pid_odom_set({{{0_in, 24_in}, ez::fwd, 110},
+                      {{12_in, 24_in}, ez::fwd, 110},
+                      {{24_in, 24_in}, ez::fwd, 110}},
                      true);
 chassis.pid_wait_until({12_in, 24_in});  // Waits until the robot passes 12, 24
 Intake.move(127);
@@ -243,9 +243,9 @@ chassis.pid_wait();
 ## pid_wait_until_index_started()
 This function is a little different to the ones above.  This exits once the input point **becomes the target**.  This is a key difference, as instead of starting to spin the intake at `{12, 24}`, this code will have the robot starting to intake earlier so by the time it's at `{12, 24}` it's already intaking.  
 ```cpp
-chassis.pid_odom_set({{{0_in, 24_in}, fwd, 110},
-                      {{12_in, 24_in}, fwd, 110},
-                      {{24_in, 24_in}, fwd, 110}},
+chassis.pid_odom_set({{{0_in, 24_in}, ez::fwd, 110},
+                      {{12_in, 24_in}, ez::fwd, 110},
+                      {{24_in, 24_in}, ez::fwd, 110}},
                      true);
 chassis.pid_wait_until_index_started(1));  // Waits until 12, 24 becomes the target point
 Intake.move(127);
