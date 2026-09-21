@@ -62,10 +62,10 @@ extern pros::Controller master();
 ## screen_print() 
 Prints to the LLEMU.  This function handles text that's too long for a line by finding the last word and starting it on a new line, and takes `\n` to set a new line.   
 
-There are 8 lines, 0 through 7.  If the text wraps past line 7, the last line is cut off and ends in `...`, and the lines above it are left alone.  A `line` outside of 0 to 7 does nothing, and an empty string clears that line.   
+There are 8 lines, 0 through 7, and a line holds 38 characters.  If the text wraps past line 7, the last line is cut off and ends in `...`, and the lines above it are left alone.  A `line` outside of 0 to 7 does nothing, and an empty string clears that line.   
 
 `text` input string   
-`line` starting line, 0 through 7     
+`line` starting line, 0 through 7.  Defaults to 0     
 <Tabs
   groupId="ex3"
   defaultValue="proto"
@@ -94,7 +94,7 @@ void initialize() {
 <TabItem value="proto">
 
 ```cpp
-void screen_print(std::string text, int line)
+void screen_print(std::string text, int line = 0);
 ```
 
 
@@ -105,14 +105,14 @@ void screen_print(std::string text, int line)
 <TabItem value="ex2">
 
 **Returns:**  
-  01234567890123456789012345678901   
+  01234567890123456789012345678901234567   
   hello
 
 
 ```cpp
 void initialize() {
-  std::string 32char = 01234567890123456789012345678901;
-  ez::print_to_screen(32char + "hello", 2);
+  std::string digits = "01234567890123456789012345678901234567";  // 38 characters, a full line
+  ez::screen_print(digits + "hello", 2);                          // "hello" doesn't fit, so it goes on line 3
 }
 ```
 
