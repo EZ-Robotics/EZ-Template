@@ -207,6 +207,31 @@ class PID {
   double velocity_sensor_secondary_exit_get();
 
   /**
+   * Freezes both velocity exit timers at their current value while true, instead of letting them
+   * advance or reset. For a caller who has independent information that a low measured velocity
+   * right now is not a stall -- for example, EZ-Template's own point-to-point/pure-pursuit driving
+   * holds this while turn bias has intentionally zeroed forward output to prioritize turning, which
+   * otherwise reads identically to a stall to this PID. Neither counts toward nor against the exit
+   * while held; it resumes from wherever it left off once released.
+   *
+   * A caller cannot hold this forever: after VELOCITY_EXIT_HOLD_FALLBACK ms of continuous hold, it's
+   * ignored until the caller releases it and asks again, the same safety valve velocity_armed uses
+   * against a robot that never moves. Without this, a caller that holds indefinitely (for example
+   * because a genuinely stalled robot never resolves whatever also has it holding) could keep this
+   * exit's caller waiting forever.
+   *
+   * \param hold
+   *        true freezes both velocity exit timers, false lets them run normally
+   */
+  void velocity_exit_hold_set(bool hold);
+
+  /**
+   * Returns whether a caller is currently asking to freeze the velocity exit timers. This does not
+   * reflect whether the fallback has overridden that request -- see velocity_exit_hold_set().
+   */
+  bool velocity_exit_hold_get();
+
+  /**
    * Iterative exit condition for PID.
    *
    * \param print = false
@@ -313,6 +338,9 @@ class PID {
   // exit before anyone has ever called velocity_sensor_secondary_set().  exit_condition() only treats
   // this as stopped when it's finite.
   double second_sensor = std::numeric_limits<double>::quiet_NaN();
+  bool velocity_exit_hold = false;
+  int hold_timer = 0;
+  static constexpr int VELOCITY_EXIT_HOLD_FALLBACK = 2000;
 
   std::string name;
   bool name_active = false;

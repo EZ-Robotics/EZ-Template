@@ -3726,6 +3726,12 @@ class Drive {
   bool is_odom_turn_bias_enabled = true;
   bool odom_turn_bias_enabled();
   void odom_turn_bias_enable(bool set);
+  // Set every tick by ptp_task() (pid_tasks.cpp) right after it computes turn bias's xy_out scale.
+  // True exactly when turn bias has fully zeroed xy_out to prioritize turning: xy_delta_fake reads
+  // ~0 then because the robot genuinely isn't translating, not because it's stalled, and xyPID's
+  // velocity exit can't tell those apart on its own. See xy_velocity_exit_hold_update().
+  bool xy_translation_bias_gated = false;
+  void xy_velocity_exit_hold_update();
   double angle_rad = 0.0;
   double global_track_width = 0.0;
   bool odometry_enabled = true;
