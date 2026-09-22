@@ -468,7 +468,10 @@ double Drive::drive_imu_get() {
   return last_good_angle;
 }
 double Drive::drive_imu_accel_get() {
-  if (imu == nullptr) return 0.0;
+  // NaN, not 0.0.  0.0 means "not accelerating", which is exactly what the secondary velocity exit
+  // channel treats as stopped -- returning it with no imu would make that channel fire on every
+  // motion for anyone who turns it on without one.  NaN says "no reading" instead.
+  if (imu == nullptr) return std::nan("");
 
   auto accel = imu->get_accel();
   return std::hypot(accel.x, accel.y);

@@ -14,6 +14,9 @@
 // A robot that never moves still velocity-exits once the 1000 ms fallback window
 // passes (101 passes to arm, then the same 6 passes), so pid_wait can't hang.
 // timers_reset() disarms.  The secondary sensor is gated by the same flag.
+// A non-finite secondary reading (no imu, or before the first update) never counts as stopped.
+#include <limits>
+
 #include "doctest.h"
 
 #include "EZ-Template/api.hpp"
@@ -215,4 +218,33 @@ TEST_CASE("PID secondary velocity sensor is gated by the same arming") {
     INFO("pass ", pass);
     CHECK(pid.exit_condition() == RUNNING);
   }
+}
+
+TEST_CASE("PID secondary velocity sensor never exits on a reading that was never taken") {
+  // second_sensor defaults to NaN (no imu, or velocity_sensor_secondary_set() was never called).
+  // drive_imu_accel_get() also returns NaN with no imu (see Drive::drive_imu_accel_get). Either
+  // way this must never be misread as "0 acceleration", which would falsely count as stopped.
+  PID pid;
+  pid.exit_condition_set(0, 0, 0, 0, 50, 0);
+  pid.velocity_sensor_secondary_toggle_set(true);
+  pid.error = 10.0;
+  pid.derivative = 1.0;  // real, continuous movement: arms immediately, keeps the main channel from firing too
+
+  CHECK_FALSE(std::isfinite(pid.velocity_sensor_secondary_get()));
+
+  for (int pass = 1; pass <= 200; pass++) {
+    INFO("pass ", pass);
+    CHECK(pid.exit_condition() == RUNNING);
+  }
+
+  // A real reading afterwards is still honored by the secondary channel (main stays non-zero throughout).
+  pid.velocity_sensor_secondary_set(0.0);
+  int pass = 0;
+  exit_output result = RUNNING;
+  while (result == RUNNING) {
+    pass++;
+    REQUIRE(pass <= 50);  // don't hang the suite if this regresses
+    result = pid.exit_condition();
+  }
+  CHECK(result == VELOCITY_EXIT);
 }
