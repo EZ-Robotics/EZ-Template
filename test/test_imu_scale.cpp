@@ -170,3 +170,43 @@ TEST_CASE("imu scaler: drive_imus_scalers_3600_set rejects only the bad entries"
   CHECK(DriveTestAccess::get_this_imu(chassis, chassis.good_imus[1]) == doctest::Approx(90.0 * 3600.0 / 3550.0));
   CHECK(DriveTestAccess::get_this_imu(chassis, chassis.good_imus[2]) == doctest::Approx(90.0 * 3600.0 / 3650.0));
 }
+
+// A physical 3600 degree turn in the direction the imu counts as negative reads about -3600. Accepting it
+// would give a scale of 3600 / -3597 = -1.0008 and negate every heading afterwards, so it has to be
+// rejected like any other reading that is not about 3600.
+TEST_CASE("imu scaler: drive_imu_scaler_3600_set rejects a negative reading and leaves the previous scale in place") {
+  Drive chassis = make_chassis();
+  chassis.good_imus[0]->fake_rotation = 90.0;
+
+  chassis.drive_imu_scaler_3600_set(3550.0);
+  for (double negative : {-3597.0, -3600.0, -100.0}) {
+    CAPTURE(negative);
+    chassis.drive_imu_scaler_3600_set(negative);
+
+    CHECK(chassis.drive_imu_scaler_3600_get() == doctest::Approx(3550.0));
+    CHECK(DriveTestAccess::get_this_imu(chassis, chassis.good_imus[0]) == doctest::Approx(90.0 * 3600.0 / 3550.0));
+  }
+}
+
+TEST_CASE("imu scaler: a negative reading on an unscaled imu leaves the heading positive") {
+  Drive chassis = make_chassis();
+  chassis.good_imus[0]->fake_rotation = 90.0;
+
+  chassis.drive_imu_scaler_3600_set(-3597.0);
+
+  CHECK(DriveTestAccess::get_this_imu(chassis, chassis.good_imus[0]) == doctest::Approx(90.0));
+}
+
+TEST_CASE("imu scaler: drive_imus_scalers_3600_set rejects only the negative entries") {
+  Drive chassis = make_chassis();
+
+  chassis.drive_imus_scalers_3600_set({-3597.0, 3550.0, -3650.0});
+
+  chassis.good_imus[0]->fake_rotation = 90.0;
+  chassis.good_imus[1]->fake_rotation = 90.0;
+  chassis.good_imus[2]->fake_rotation = 90.0;
+
+  CHECK(DriveTestAccess::get_this_imu(chassis, chassis.good_imus[0]) == doctest::Approx(90.0));  // rejected, default scale
+  CHECK(DriveTestAccess::get_this_imu(chassis, chassis.good_imus[1]) == doctest::Approx(90.0 * 3600.0 / 3550.0));
+  CHECK(DriveTestAccess::get_this_imu(chassis, chassis.good_imus[2]) == doctest::Approx(90.0));  // rejected, default scale
+}

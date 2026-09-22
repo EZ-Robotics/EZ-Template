@@ -628,6 +628,8 @@ class Drive {
   /**
    * Sets the current pose of the robot.
    *
+   * If t is left out, only x and y are set and the heading is left as it is.
+   *
    * \param itarget
    *        {x, y, t} units in inches and degrees
    */
@@ -635,6 +637,8 @@ class Drive {
 
   /**
    * Sets the current pose of the robot.
+   *
+   * If t is left out, only x and y are set and the heading is left as it is.
    *
    * \param itarget
    *        {x, y, t} as a unit
@@ -948,8 +952,8 @@ class Drive {
    * Run in usercontrol.
    *
    * This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.
-   * The controller buttons that change the curves are enabled by default, use opcontrol_curve_buttons_toggle(false)
-   * to turn them off.
+   * The controller buttons that change the curves are disabled by default, use opcontrol_curve_buttons_toggle(true)
+   * to turn them on.
    */
   void opcontrol_tank();
 
@@ -958,8 +962,8 @@ class Drive {
    * Run in usercontrol.
    *
    * This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.
-   * The controller buttons that change the curves are enabled by default, use opcontrol_curve_buttons_toggle(false)
-   * to turn them off.
+   * The controller buttons that change the curves are disabled by default, use opcontrol_curve_buttons_toggle(true)
+   * to turn them on.
    *
    * \param stick_type
    *        ez::SINGLE or ez::SPLIT control
@@ -971,8 +975,8 @@ class Drive {
    * Run in usercontrol.
    *
    * This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.
-   * The controller buttons that change the curves are enabled by default, use opcontrol_curve_buttons_toggle(false)
-   * to turn them off.
+   * The controller buttons that change the curves are disabled by default, use opcontrol_curve_buttons_toggle(true)
+   * to turn them on.
    *
    * \param stick_type
    *        ez::SINGLE or ez::SPLIT control
@@ -988,8 +992,8 @@ class Drive {
    * opcontrol_curvature_point_turn_gain_set().
    *
    * This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.
-   * The controller buttons that change the curves are enabled by default, use opcontrol_curve_buttons_toggle(false)
-   * to turn them off.
+   * The controller buttons that change the curves are disabled by default, use opcontrol_curve_buttons_toggle(true)
+   * to turn them on.
    *
    * \param stick_type
    *        ez::SINGLE or ez::SPLIT control
@@ -1005,8 +1009,8 @@ class Drive {
    * opcontrol_curvature_point_turn_gain_set().
    *
    * This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.
-   * The controller buttons that change the curves are enabled by default, use opcontrol_curve_buttons_toggle(false)
-   * to turn them off.
+   * The controller buttons that change the curves are disabled by default, use opcontrol_curve_buttons_toggle(true)
+   * to turn them on.
    *
    * \param stick_type
    *        ez::SINGLE or ez::SPLIT control
@@ -1075,7 +1079,7 @@ class Drive {
   PID::Constants opcontrol_drive_activebrake_constants_get();
 
   /**
-   * Enables/disables modifying the joystick input curves with the controller.
+   * Enables/disables modifying the joystick input curves with the controller.  This is disabled by default.
    *
    * \param toggle
    *        true enables, false disables
@@ -1190,7 +1194,8 @@ class Drive {
   /**
    * Adds motors to the pto list, removing them from the drive.
    *
-   * You cannot add the first index because it's used for autonomous.
+   * You cannot add the first index because it's used for autonomous.  A motor that can't be added, or is already
+   * in the list, is skipped and the rest of pto_list is still added.
    *
    * \param pto_list
    *        list of motors to remove from the drive
@@ -1199,6 +1204,8 @@ class Drive {
 
   /**
    * Removes motors from the pto list, adding them to the drive.
+   *
+   * A motor that isn't in the pto list is skipped and the rest of pto_list is still removed.
    *
    * \param pto_list
    *        list of motors to add to the drive
@@ -1460,7 +1467,8 @@ class Drive {
   double drive_imu_get();
 
   /**
-   * Returns the size of the imu's acceleration in the x-y plane, sqrt(x^2 + y^2), so it is never negative.  Returns 0 if there is no imu.
+   * Returns the size of the imu's acceleration in the x-y plane, sqrt(x^2 + y^2), so it is never negative.
+   * Returns NaN if there is no imu, not 0 -- 0 would read as "not accelerating".
    */
   double drive_imu_accel_get();
 
@@ -1471,7 +1479,7 @@ class Drive {
    * what the imu reported for that turn.  Internally, this is used to divide
    * the imu's raw reading so it reports the true 3600.
    *
-   * A value under 100 is rejected and the previous scale is kept.
+   * A value under 100, which includes any negative value, is rejected and the previous scale is kept.
    *
    * \param imu_value_after_3600
    *        what the imu reads after physically turning the robot 3600 degrees
@@ -1492,7 +1500,7 @@ class Drive {
    * Physically turn the robot 3600 degrees (10 full rotations) and pass in
    * what each imu reported for that turn.
    *
-   * A value under 100 is rejected and that imu's previous scale is kept.
+   * A value under 100, which includes any negative value, is rejected and that imu's previous scale is kept.
    *
    * \param imu_values_after_3600
    *        what each imu reads after physically turning the robot 3600 degrees, in the same order as the IMU ports passed to the constructor, input {3550, 3625...}
@@ -2952,6 +2960,9 @@ class Drive {
 
   /**
    * Returns PID constants with PID::Constants.
+   *
+   * These are the constants a forward swing will use.  If no forward constants were set,
+   * this returns the constants from pid_swing_constants_set().
    */
   PID::Constants pid_swing_constants_forward_get();
 
@@ -2971,6 +2982,9 @@ class Drive {
 
   /**
    * Returns PID constants with PID::Constants.
+   *
+   * These are the constants a backward swing will use.  If no backward constants were set,
+   * this returns the constants from pid_swing_constants_set().
    */
   PID::Constants pid_swing_constants_backward_get();
 
@@ -3100,6 +3114,9 @@ class Drive {
 
   /**
    * Returns PID constants with PID::Constants.
+   *
+   * These are the constants a forward drive will use.  If no forward constants were set,
+   * this returns the constants from pid_drive_constants_set().
    */
   PID::Constants pid_drive_constants_forward_get();
 
@@ -3119,6 +3136,9 @@ class Drive {
 
   /**
    * Returns PID constants with PID::Constants.
+   *
+   * These are the constants a backward drive will use.  If no backward constants were set,
+   * this returns the constants from pid_drive_constants_set().
    */
   PID::Constants pid_drive_constants_backward_get();
 
@@ -3266,9 +3286,11 @@ class Drive {
    * \param p_mA_timeout
    *        mA timer will start when the first motor on the side(s) being driven is over its current limit, in ms
    * \param use_imu
-   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time), false uses only the main sensor
+   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time).  Off by default: acceleration reads
+   *        near 0 during an ordinary constant-speed cruise too, so this can't tell cruising from stalled and used to cause exits mid-motion.  It's the only exit that can catch wheels spinning free (lifted or
+   *        high-centered), which the main sensor and mA_timeout both miss -- turn it on if that case matters more to you than early exits on a slow cruise.
    */
-  void pid_odom_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = true);
+  void pid_odom_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = false);
 
   /**
    * Set's constants for odom turning exit conditions.
@@ -3286,9 +3308,11 @@ class Drive {
    * \param p_mA_timeout
    *        mA timer will start when the first motor on the side(s) being driven is over its current limit, in ms
    * \param use_imu
-   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time), false uses only the main sensor
+   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time).  Off by default: acceleration reads
+   *        near 0 during an ordinary constant-speed cruise too, so this can't tell cruising from stalled and used to cause exits mid-motion.  It's the only exit that can catch wheels spinning free (lifted or
+   *        high-centered), which the main sensor and mA_timeout both miss -- turn it on if that case matters more to you than early exits on a slow cruise.
    */
-  void pid_odom_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = true);
+  void pid_odom_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = false);
 
   /**
    * Set's constants for odom turning exit conditions.
@@ -3306,9 +3330,11 @@ class Drive {
    * \param p_mA_timeout
    *        mA timer will start when the first motor on the side(s) being driven is over its current limit, unit
    * \param use_imu
-   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time), false uses only the main sensor
+   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time).  Off by default: acceleration reads
+   *        near 0 during an ordinary constant-speed cruise too, so this can't tell cruising from stalled and used to cause exits mid-motion.  It's the only exit that can catch wheels spinning free (lifted or
+   *        high-centered), which the main sensor and mA_timeout both miss -- turn it on if that case matters more to you than early exits on a slow cruise.
    */
-  void pid_odom_turn_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error, ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = true);
+  void pid_odom_turn_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error, ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = false);
 
   /**
    * Set's constants for odom driving exit conditions.
@@ -3326,9 +3352,11 @@ class Drive {
    * \param p_mA_timeout
    *        mA timer will start when the first motor on the side(s) being driven is over its current limit, unit
    * \param use_imu
-   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time), false uses only the main sensor
+   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time).  Off by default: acceleration reads
+   *        near 0 during an ordinary constant-speed cruise too, so this can't tell cruising from stalled and used to cause exits mid-motion.  It's the only exit that can catch wheels spinning free (lifted or
+   *        high-centered), which the main sensor and mA_timeout both miss -- turn it on if that case matters more to you than early exits on a slow cruise.
    */
-  void pid_odom_drive_exit_condition_set(ez::QTime p_small_exit_time, ez::QLength p_small_error, ez::QTime p_big_exit_time, ez::QLength p_big_error, ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = true);
+  void pid_odom_drive_exit_condition_set(ez::QTime p_small_exit_time, ez::QLength p_small_error, ez::QTime p_big_exit_time, ez::QLength p_big_error, ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = false);
 
   /**
    * Set's constants for drive exit conditions.
@@ -3346,9 +3374,11 @@ class Drive {
    * \param p_mA_timeout
    *        mA timer will start when the first motor on the side(s) being driven is over its current limit, unit
    * \param use_imu
-   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time), false uses only the main sensor
+   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time).  Off by default: acceleration reads
+   *        near 0 during an ordinary constant-speed cruise too, so this can't tell cruising from stalled and used to cause exits mid-motion.  It's the only exit that can catch wheels spinning free (lifted or
+   *        high-centered), which the main sensor and mA_timeout both miss -- turn it on if that case matters more to you than early exits on a slow cruise.
    */
-  void pid_drive_exit_condition_set(ez::QTime p_small_exit_time, ez::QLength p_small_error, ez::QTime p_big_exit_time, ez::QLength p_big_error, ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = true);
+  void pid_drive_exit_condition_set(ez::QTime p_small_exit_time, ez::QLength p_small_error, ez::QTime p_big_exit_time, ez::QLength p_big_error, ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = false);
 
   /**
    * Set's constants for turn exit conditions.
@@ -3366,9 +3396,11 @@ class Drive {
    * \param p_mA_timeout
    *        mA timer will start when the first motor on the side(s) being driven is over its current limit, unit
    * \param use_imu
-   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time), false uses only the main sensor
+   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time).  Off by default: acceleration reads
+   *        near 0 during an ordinary constant-speed cruise too, so this can't tell cruising from stalled and used to cause exits mid-motion.  It's the only exit that can catch wheels spinning free (lifted or
+   *        high-centered), which the main sensor and mA_timeout both miss -- turn it on if that case matters more to you than early exits on a slow cruise.
    */
-  void pid_turn_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error, ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = true);
+  void pid_turn_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error, ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = false);
 
   /**
    * Set's constants for swing exit conditions.
@@ -3386,9 +3418,11 @@ class Drive {
    * \param p_mA_timeout
    *        mA timer will start when the first motor on the side(s) being driven is over its current limit, unit
    * \param use_imu
-   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time), false uses only the main sensor
+   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time).  Off by default: acceleration reads
+   *        near 0 during an ordinary constant-speed cruise too, so this can't tell cruising from stalled and used to cause exits mid-motion.  It's the only exit that can catch wheels spinning free (lifted or
+   *        high-centered), which the main sensor and mA_timeout both miss -- turn it on if that case matters more to you than early exits on a slow cruise.
    */
-  void pid_swing_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error, ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = true);
+  void pid_swing_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error, ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = false);
 
   /**
    * Set's constants for drive exit conditions.
@@ -3406,9 +3440,11 @@ class Drive {
    * \param p_mA_timeout
    *        mA timer will start when the first motor on the side(s) being driven is over its current limit, in ms
    * \param use_imu
-   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time), false uses only the main sensor
+   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time).  Off by default: acceleration reads
+   *        near 0 during an ordinary constant-speed cruise too, so this can't tell cruising from stalled and used to cause exits mid-motion.  It's the only exit that can catch wheels spinning free (lifted or
+   *        high-centered), which the main sensor and mA_timeout both miss -- turn it on if that case matters more to you than early exits on a slow cruise.
    */
-  void pid_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = true);
+  void pid_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = false);
 
   /**
    * Set's constants for turn exit conditions.
@@ -3426,9 +3462,11 @@ class Drive {
    * \param p_mA_timeout
    *        mA timer will start when the first motor on the side(s) being driven is over its current limit, in ms
    * \param use_imu
-   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time), false uses only the main sensor
+   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time).  Off by default: acceleration reads
+   *        near 0 during an ordinary constant-speed cruise too, so this can't tell cruising from stalled and used to cause exits mid-motion.  It's the only exit that can catch wheels spinning free (lifted or
+   *        high-centered), which the main sensor and mA_timeout both miss -- turn it on if that case matters more to you than early exits on a slow cruise.
    */
-  void pid_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = true);
+  void pid_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = false);
 
   /**
    * Set's constants for swing exit conditions.
@@ -3446,9 +3484,11 @@ class Drive {
    * \param p_mA_timeout
    *        mA timer will start when the first motor on the side(s) being driven is over its current limit, in ms
    * \param use_imu
-   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time), false uses only the main sensor
+   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time).  Off by default: acceleration reads
+   *        near 0 during an ordinary constant-speed cruise too, so this can't tell cruising from stalled and used to cause exits mid-motion.  It's the only exit that can catch wheels spinning free (lifted or
+   *        high-centered), which the main sensor and mA_timeout both miss -- turn it on if that case matters more to you than early exits on a slow cruise.
    */
-  void pid_swing_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = true);
+  void pid_swing_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = false);
 
   /**
    * Returns current TICK_PER_INCH.
@@ -3488,8 +3528,8 @@ class Drive {
   void pid_tuner_iterate();
 
   /**
-   * Toggle for printing the display of the PID Tuner to the brain.  It prints to the brain by default.  This only
-   * does something while the PID Tuner is enabled, calling it while the PID Tuner is disabled is ignored.
+   * Toggle for printing the display of the PID Tuner to the brain.  It prints to the brain by default.  This can be set
+   * before the PID Tuner is enabled.  With this off the PID Tuner leaves the brain screen alone, including the auton selector.
    *
    * \param input
    *        true prints to brain, false doesn't
@@ -3624,7 +3664,7 @@ class Drive {
    * Sets the max speed for user control.
    *
    * \param speed
-   *        the speed limit
+   *        the speed limit, 0 - 127.  A value above 127 is set to 127 and a negative value is treated as its magnitude
    */
   void opcontrol_speed_max_set(int speed);
 
@@ -3704,6 +3744,10 @@ class Drive {
   int pp_index = 0;
   std::vector<odom> smooth_path(std::vector<odom> ipath, double weight_smooth, double weight_data, double tolerance);
   double is_past_target(pose target, pose current);
+  // Feeds a PID's secondary velocity-exit channel from the imu, but only when that channel is
+  // turned on (off by default -- see pid_drive_exit_condition_set and friends).  Skips the imu
+  // entirely when it's off, instead of polling it every loop just to be discarded.
+  void secondary_velocity_sensor_update(PID& pid);
   void raw_pid_odom_pp_set(std::vector<odom> imovements, bool slew_on);
   bool ptf1_running = false;
   std::vector<pose> find_point_to_face(pose current, pose target, drive_directions dir, bool set_global);
@@ -3729,7 +3773,7 @@ class Drive {
   double watchdog_l_last = 0.0, watchdog_r_last = 0.0;
   bool imu_only_imu_warning_shown = false;
 
-  bool is_swing_slew_enabled(e_swing type, double target, double current);
+  bool is_swing_slew_enabled(e_swing type, double target, double current, e_angle_behavior behavior);
   void swing_set_internal(e_swing type, double target, int speed, int opposite_speed, e_angle_behavior behavior, bool slew_on);
   bool slew_reenables_when_max_speed_changes = true;
   int slew_min_when_it_enabled = 0;
@@ -3917,7 +3961,7 @@ class Drive {
   /**
    * Enable/disable modifying controller curve with controller.
    */
-  bool disable_controller = true;  // True enables, false disables.
+  bool disable_controller = false;  // True enables, false disables.  Disabled until the user turns it on.
 
   /**
    * Is tank drive running?
@@ -3976,6 +4020,13 @@ class Drive {
    */
   double left_curve_scale = 0.0;
   double right_curve_scale = 0.0;
+
+  /**
+   * The curve text last written to the controller, and when.  The controller link can't take a write every 10 ms,
+   * so the text is only written again when it changes, or slowly to keep the screen right after a reconnect.
+   */
+  std::string last_controller_text = "";
+  uint32_t last_controller_text_ms = 0;
 
   /**
    * Increase and decrease left and right curve scale.

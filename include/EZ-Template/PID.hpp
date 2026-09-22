@@ -6,6 +6,8 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #pragma once
 
+#include <limits>
+
 #include "EZ-Template/util.hpp"
 #include "api.h"
 
@@ -189,7 +191,10 @@ class PID {
   double velocity_sensor_main_exit_get();
 
   /**
-   * Sets the threshold that the secondary sensor will return 0 velocity within.
+   * Sets the threshold that the secondary sensor will read as stopped within.  Despite the name, EZ-Template
+   * feeds this sensor an acceleration (the imu's), not a velocity: a steady cruise also reads near 0
+   * acceleration, so this can't tell cruising from actually stalled.  That's why the secondary sensor is off
+   * by default (see Drive::pid_drive_exit_condition_set and friends).
    *
    * \param zero
    *        a small double
@@ -304,7 +309,10 @@ class PID {
   bool velocity_armed = false;
   static constexpr int VELOCITY_ARM_FALLBACK = 1000;
   bool is_mA = false;
-  double second_sensor = 0.0;
+  // NaN, not 0.0: 0.0 would read as "not accelerating" and falsely satisfy the secondary velocity
+  // exit before anyone has ever called velocity_sensor_secondary_set().  exit_condition() only treats
+  // this as stopped when it's finite.
+  double second_sensor = std::numeric_limits<double>::quiet_NaN();
 
   std::string name;
   bool name_active = false;

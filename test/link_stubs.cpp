@@ -46,15 +46,10 @@ int amount_of_blank_pages = 0;
 }  // namespace ez
 
 // Every Drive constructor calls Drive::drive_defaults_set(), which reaches
-// into these ten setters -- six declared in drive.hpp and defined in
-// pid_tuner.cpp, four defined in user_input.cpp (both excluded, see
-// test/Makefile). Real bodies just assign a private member or touch the SD
-// card / controller display, none of which any test needs, so these are
-// no-ops rather than copies of the real assignments.
-void ez::Drive::opcontrol_curve_sd_initialize() {}
-void ez::Drive::opcontrol_curve_buttons_toggle(bool toggle) {}
-void ez::Drive::opcontrol_curve_buttons_left_set(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase) {}
-void ez::Drive::opcontrol_curve_buttons_right_set(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase) {}
+// into these six setters, declared in drive.hpp and defined in pid_tuner.cpp
+// (excluded, see test/Makefile). Real bodies just assign a private member,
+// which no test needs, so these are no-ops rather than copies of the real
+// assignments.
 void ez::Drive::pid_tuner_button_increment_set(pros::controller_digital_e_t increase) {}
 void ez::Drive::pid_tuner_button_decrement_set(pros::controller_digital_e_t decrease) {}
 void ez::Drive::pid_tuner_button_up_set(pros::controller_digital_e_t pageUp) {}
