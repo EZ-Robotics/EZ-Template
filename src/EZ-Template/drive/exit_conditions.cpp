@@ -547,6 +547,12 @@ void Drive::pid_wait_quick_chain() {
       turnPID.target_set(turnPID.target_get() + used_motion_chain_scale);
     }
 
+    // If turning to a point, the turn task works out its target from the point every pass and never reads the
+    // PID's target.  It adds used_motion_chain_scale to its error instead.
+    else if (mode == TURN_TO_POINT) {
+      used_motion_chain_scale = turn_motion_chain_scale * util::sgn(chain_target_start - chain_sensor_start);
+    }
+
     // If swinging, add swing_motion_chain_scale to target
     else if (mode == SWING) {
       double chain_scale = motion_chain_backward ? swing_backward_motion_chain_scale : swing_forward_motion_chain_scale;

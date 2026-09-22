@@ -628,6 +628,8 @@ class Drive {
   /**
    * Sets the current pose of the robot.
    *
+   * If t is left out, only x and y are set and the heading is left as it is.
+   *
    * \param itarget
    *        {x, y, t} units in inches and degrees
    */
@@ -635,6 +637,8 @@ class Drive {
 
   /**
    * Sets the current pose of the robot.
+   *
+   * If t is left out, only x and y are set and the heading is left as it is.
    *
    * \param itarget
    *        {x, y, t} as a unit
@@ -1190,7 +1194,8 @@ class Drive {
   /**
    * Adds motors to the pto list, removing them from the drive.
    *
-   * You cannot add the first index because it's used for autonomous.
+   * You cannot add the first index because it's used for autonomous.  A motor that can't be added, or is already
+   * in the list, is skipped and the rest of pto_list is still added.
    *
    * \param pto_list
    *        list of motors to remove from the drive
@@ -1199,6 +1204,8 @@ class Drive {
 
   /**
    * Removes motors from the pto list, adding them to the drive.
+   *
+   * A motor that isn't in the pto list is skipped and the rest of pto_list is still removed.
    *
    * \param pto_list
    *        list of motors to add to the drive
