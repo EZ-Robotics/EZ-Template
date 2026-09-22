@@ -11,6 +11,93 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 using namespace ez;
 
+namespace {
+// Tells an odom wait when the robot is stuck: no progress for the xy velocity exit's time.  Progress is pure
+// pursuit moving onto a new point, or the distance to the point being driven to or the heading error coming down
+// to a new low, a full step (that PID's small exit error) below the last one.  That holds at any heading error and
+// whether or not something is turning or pushing the robot, and it can't keep a wait going forever: each new low is
+// a step below the last, so a robot that isn't getting anywhere runs out of them.  Going past the point (the PID's
+// error changing sign) and coming back counts, measured from how far past it went, but only once per point: a robot
+// being spun or shoved back and forth crosses its target over and over.
+//
+// Until the robot has moved a step from where the motion started, it also gets the time the velocity exit gives a
+// robot that hasn't moved yet (PID's VELOCITY_ARM_FALLBACK).  Pure pursuit steps through its first few points before
+// the robot moves at all, so those don't count as moving; and a second wait on the same motion doesn't get the
+// allowance again once the robot has moved.  With the velocity exit off the current exit's time is used, and with
+// both off this never fires.
+//
+// The window has to pass on the clock and in ez_auto_task passes both: the errors only change when that task runs,
+// so a task starved of time (a busy higher priority task) freezes them without the robot being stuck.  But a task
+// that never runs again (blocked for good, or deleted) must not hold the wait forever, so past STARVED_WINDOWS windows
+// on the clock alone it counts as stuck anyway.
+class StuckWatch {
+ public:
+  // travelled and turned: how far the robot has moved and turned since the motion started
+  StuckWatch(PID& xy, PID& angle, int index, double distance, double travelled, double turned)
+      : xy_(step(xy), distance, xy.error), a_(step(angle), std::fabs(angle.error), angle.error), index_(index), window_(xy.exit.velocity_exit_time != 0 ? xy.exit.velocity_exit_time : xy.exit.mA_timeout), moved_(travelled > xy_.step || turned > a_.step) {
+    int allowance = moved_ ? 0 : START_ALLOWANCE_MS;
+    last_progress_ = pros::millis() + allowance;
+    last_progress_pass_ = passes() + allowance / util::DELAY_TIME;
+  }
+
+  // distance: how far the robot is from the point it's driving to.  xy_error and a_error: the PIDs' signed errors.
+  bool stuck(int index, double distance, double xy_error, double a_error, double travelled, double turned) {
+    if (window_ == 0) return false;
+    std::uint32_t now = pros::millis();
+    std::uint32_t pass = passes();
+    bool progress = false;
+    if (index != index_) {
+      index_ = index;
+      xy_ = Channel(xy_.step, distance, xy_error);
+      a_ = Channel(a_.step, std::fabs(a_error), a_error);
+      progress = true;
+    }
+    if (xy_.made(distance, xy_error)) progress = true;
+    if (a_.made(std::fabs(a_error), a_error)) progress = true;
+    if (!moved_ && (travelled > xy_.step || turned > a_.step)) moved_ = progress = true;
+    // Before the robot has moved, progress can't cut the start allowance short
+    if (progress && (moved_ || (std::int32_t)(now - last_progress_) > 0)) {
+      last_progress_ = now;
+      last_progress_pass_ = pass;
+    }
+    std::int32_t waited = now - last_progress_;
+    return waited > window_ && ((std::int32_t)(pass - last_progress_pass_) > window_ / util::DELAY_TIME || waited > STARVED_WINDOWS * window_);
+  }
+
+ private:
+  static constexpr int START_ALLOWANCE_MS = 1000;  // PID::VELOCITY_ARM_FALLBACK, which is private
+  static constexpr int STARVED_WINDOWS = 4;
+  static std::uint32_t passes() { return ez::detail::stats.auto_task_passes.load(std::memory_order_relaxed); }
+  static double step(PID& pid) {
+    if (pid.exit.small_error > 0) return pid.exit.small_error;
+    return pid.velocity_sensor_main_exit_get() * pid.exit.velocity_exit_time / util::DELAY_TIME;
+  }
+  struct Channel {
+    double step, low;
+    bool side, rebound = false, rebounded = false;
+    Channel(double p_step, double size, double error) : step(p_step), low(size), side(error > 0) {}
+    bool made(double size, double error) {
+      if ((error > 0) != side && !rebounded) rebound = rebounded = true;
+      side = error > 0;
+      if (rebound) low = std::fmax(low, size);
+      if (size >= low - step) return false;
+      low = size;
+      rebound = false;
+      return true;
+    }
+  };
+  Channel xy_, a_;
+  int index_;
+  int window_;
+  bool moved_;
+  std::uint32_t last_progress_, last_progress_pass_;
+};
+
+// A velocity exit doesn't end an odom wait: a robot pivoting at a corner, or just slow, reads as stopped to it while
+// it's still getting somewhere.  StuckWatch decides stuck instead.  Small, big and current exits end it as always.
+exit_output without_velocity(exit_output e) { return e == VELOCITY_EXIT ? RUNNING : e; }
+}  // namespace
+
 // Feeds a PID's secondary velocity-exit channel from the imu's acceleration, but only when that PID's
 // secondary channel is turned on.  It's off by default: acceleration reads near 0 during an ordinary
 // constant-speed cruise too, so on its own it can't tell cruising from stalled (see PID::exit_condition
@@ -145,34 +232,33 @@ void Drive::pid_wait() {
     exit_output xy_exit = RUNNING;
     exit_output a_exit = RUNNING;
 
-    // Wait until pure pursuit is on the last point, then continue as normal
+    // The point being driven to right now (a boomerang's target, not its carrot, which moves as the robot does).
+    // Locked: a motion started from another task can replace pp_movements while this reads it.
+    auto target_distance = [&]() {
+      ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+      pose t = mode == PURE_PURSUIT && pp_index < (int)pp_movements.size() ? pp_movements[pp_index].target : odom_target;
+      return util::distance_to_point(t, odom_pose_get());
+    };
+    auto travelled = [&]() { return util::distance_to_point(odom_start, odom_pose_get()); };
+    auto turned = [&]() { return std::fabs(odom_theta_get() - odom_start.theta); };
+    StuckWatch watch(xyPID, current_a_odomPID, pp_index, target_distance(), travelled(), turned());
+    bool stalled = false;
+
+    // Wait until pure pursuit is on the last point, then continue as normal.  xy's exit is checked every pass
+    // and not kept: before the last point its target is only a look ahead away and keeps moving, so a small,
+    // big or velocity exit here says nothing about the path, and one kept from a pause earlier on must not end
+    // the wait later.  A current exit still ends it.
     if (mode == PURE_PURSUIT) {
       while (pp_index != (int)pp_movements.size() - 1) {
         secondary_velocity_sensor_update(xyPID);
         secondary_velocity_sensor_update(current_a_odomPID);
         xy_velocity_exit_hold_update();
-        xy_exit = xy_exit != RUNNING ? xy_exit : xyPID.exit_condition({left_motors[0], right_motors[0]});
-        a_exit = a_exit != RUNNING ? a_exit : current_a_odomPID.exit_condition({left_motors[0], right_motors[0]});
+        exit_output xy_pass = xyPID.exit_condition({left_motors[0], right_motors[0]});
+        a_exit = a_exit != RUNNING ? a_exit : without_velocity(current_a_odomPID.exit_condition({left_motors[0], right_motors[0]}));
 
-        // Angle only needs to have settled (any exit type), not specifically stalled itself -
-        // requiring mA/VELOCITY_EXIT from angle too left this unreachable on straight segments,
-        // where angle latches SMALL_EXIT almost immediately and never gets re-evaluated. But
-        // a_exit is itself latched the same way: once it stops running, exit_condition() is never
-        // called on it again for the rest of the path, so a settled flag latched on an earlier,
-        // straighter stretch stays true even after the robot turns to face a sharp corner. A
-        // corner sharp enough to pass odom_turn_bias's cutoff (~84 degrees at the library default)
-        // legitimately drives xy's commanded output - and so its own velocity reading - to zero
-        // while the robot pivots to face the next segment, which is a normal pause, not a stall.
-        // Require angle to currently be near its target for a settled (small/big exit) flag to
-        // count; a genuine stall in angle itself (mA/VELOCITY_EXIT) still counts unconditionally,
-        // same as before, since that is a real stuck-heading event, not a pause between segments.
-        bool a_stall_exit = a_exit == mA_EXIT || a_exit == VELOCITY_EXIT;
-        bool a_near_target_now = current_a_odomPID.exit.small_error == 0 ||
-                                  std::fabs(current_a_odomPID.error) < current_a_odomPID.exit.small_error;
-        bool a_settled = a_stall_exit || (a_exit != RUNNING && a_near_target_now);
-
-        if ((xy_exit == mA_EXIT || xy_exit == VELOCITY_EXIT) && a_settled) {
-          if (print_toggle) std::cout << "  XY: " << exit_to_string(xy_exit) << " Exited early, error: " << xyPID.error << ".   Angle: " << exit_to_string(a_exit) << " Exited early, error: " << current_a_odomPID.error << ".\n";
+        if (xy_pass == mA_EXIT || watch.stuck(pp_index, target_distance(), xyPID.error, current_a_odomPID.error, travelled(), turned())) {
+          stalled = true;
+          if (print_toggle) std::cout << "  XY: " << (xy_pass == mA_EXIT ? exit_to_string(xy_pass) : "Stuck") << " Exited early at point " << pp_index << " of " << (int)pp_movements.size() - 1 << ", error: " << xyPID.error << ".   Angle error: " << current_a_odomPID.error << ".\n";
           break;
         }
 
@@ -181,17 +267,25 @@ void Drive::pid_wait() {
     }
 
     // When we're at the last point in PP / we're just going to point
-    while (xy_exit == RUNNING || a_exit == RUNNING) {
+    while (!stalled && (xy_exit == RUNNING || a_exit == RUNNING)) {
       secondary_velocity_sensor_update(xyPID);
       secondary_velocity_sensor_update(current_a_odomPID);
       xy_velocity_exit_hold_update();
-      xy_exit = xy_exit != RUNNING ? xy_exit : xyPID.exit_condition({left_motors[0], right_motors[0]});
-      a_exit = a_exit != RUNNING ? a_exit : current_a_odomPID.exit_condition({left_motors[0], right_motors[0]});
+      xy_exit = xy_exit != RUNNING ? xy_exit : without_velocity(xyPID.exit_condition({left_motors[0], right_motors[0]}));
+      a_exit = a_exit != RUNNING ? a_exit : without_velocity(current_a_odomPID.exit_condition({left_motors[0], right_motors[0]}));
+      if ((xy_exit == RUNNING || a_exit == RUNNING) && watch.stuck(pp_index, target_distance(), xyPID.error, current_a_odomPID.error, travelled(), turned())) {
+        // Stopped inside both big error windows is where a big exit would have left it: that's settled, not stuck.
+        // (A robot hovering across the small error window can keep both exit timers from ever finishing.)
+        bool settled = target_distance() < xyPID.exit.big_error && std::fabs(current_a_odomPID.error) < current_a_odomPID.exit.big_error;
+        stalled = !settled;
+        if (print_toggle) std::cout << "  XY: " << exit_to_string(xy_exit) << ", error: " << xyPID.error << ".   Angle: " << exit_to_string(a_exit) << ", error: " << current_a_odomPID.error << (settled ? ".   Stopped inside the big error windows, counted as settled.\n" : ".   Stuck before settling on the target.\n");
+        break;
+      }
       pros::delay(util::DELAY_TIME);
     }
-    if (print_toggle) std::cout << "  XY: " << exit_to_string(xy_exit) << " Exit, error: " << xyPID.error << ".   Angle: " << exit_to_string(a_exit) << " Exit, error: " << current_a_odomPID.error << ".\n";
+    if (print_toggle && !stalled && xy_exit != RUNNING && a_exit != RUNNING) std::cout << "  XY: " << exit_to_string(xy_exit) << " Exit, error: " << xyPID.error << ".   Angle: " << exit_to_string(a_exit) << " Exit, error: " << current_a_odomPID.error << ".\n";
 
-    if (xy_exit == mA_EXIT || xy_exit == VELOCITY_EXIT || a_exit == mA_EXIT || a_exit == VELOCITY_EXIT) {
+    if (stalled || xy_exit == mA_EXIT || xy_exit == VELOCITY_EXIT || a_exit == mA_EXIT || a_exit == VELOCITY_EXIT) {
       interfered = true;
     }
 
@@ -424,13 +518,21 @@ void Drive::pid_wait_until_point(pose target) {
 
   exit_output xy_exit = RUNNING;
   exit_output a_exit = RUNNING;
+  StuckWatch watch(xyPID, current_a_odomPID, pp_index, util::distance_to_point(target, odom_pose_get()), util::distance_to_point(odom_start, odom_pose_get()), std::fabs(odom_theta_get() - odom_start.theta));
 
   while (true) {
     secondary_velocity_sensor_update(xyPID);
     secondary_velocity_sensor_update(current_a_odomPID);
     xy_velocity_exit_hold_update();
-    xy_exit = xy_exit != RUNNING ? xy_exit : xyPID.exit_condition({left_motors[0], right_motors[0]});
-    a_exit = a_exit != RUNNING ? a_exit : current_a_odomPID.exit_condition({left_motors[0], right_motors[0]});
+    xy_exit = xy_exit != RUNNING ? xy_exit : without_velocity(xyPID.exit_condition({left_motors[0], right_motors[0]}));
+    a_exit = a_exit != RUNNING ? a_exit : without_velocity(current_a_odomPID.exit_condition({left_motors[0], right_motors[0]}));
+
+    // Same stuck check as pid_wait(), for a robot that is stuck but moving, which the exits above miss
+    if (watch.stuck(pp_index, util::distance_to_point(target, odom_pose_get()), xyPID.error, current_a_odomPID.error, util::distance_to_point(odom_start, odom_pose_get()), std::fabs(odom_theta_get() - odom_start.theta))) {
+      if (print_toggle) std::cout << "  Stuck before reaching (" << target.x << ", " << target.y << "), at (" << odom_x_get() << ", " << odom_y_get() << ")\n";
+      interfered = true;
+      return;
+    }
 
     if (xy_exit != RUNNING && a_exit != RUNNING) {
       if (print_toggle) {
@@ -472,12 +574,25 @@ void Drive::pid_wait_until_index_started(int index) {
 
   exit_output xy_exit = RUNNING;
   exit_output a_exit = RUNNING;
+  // Locked: a motion started from another task can replace pp_movements while this reads it
+  auto point_distance = [&]() {
+    ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+    return pp_index < (int)pp_movements.size() ? util::distance_to_point(pp_movements[pp_index].target, odom_pose_get()) : 0.0;
+  };
+  StuckWatch watch(xyPID, current_a_odomPID, pp_index, point_distance(), util::distance_to_point(odom_start, odom_pose_get()), std::fabs(odom_theta_get() - odom_start.theta));
   while (pp_index < injected_pp_index[index]) {
     secondary_velocity_sensor_update(xyPID);
     secondary_velocity_sensor_update(current_a_odomPID);
     xy_velocity_exit_hold_update();
-    xy_exit = xy_exit != RUNNING ? xy_exit : xyPID.exit_condition({left_motors[0], right_motors[0]});
-    a_exit = a_exit != RUNNING ? a_exit : current_a_odomPID.exit_condition({left_motors[0], right_motors[0]});
+    xy_exit = xy_exit != RUNNING ? xy_exit : without_velocity(xyPID.exit_condition({left_motors[0], right_motors[0]}));
+    a_exit = a_exit != RUNNING ? a_exit : without_velocity(current_a_odomPID.exit_condition({left_motors[0], right_motors[0]}));
+
+    // Same stuck check as pid_wait(), for a robot that is stuck but moving, which the exits above miss
+    if (watch.stuck(pp_index, point_distance(), xyPID.error, current_a_odomPID.error, util::distance_to_point(odom_start, odom_pose_get()), std::fabs(odom_theta_get() - odom_start.theta))) {
+      if (print_toggle) std::cout << "  Stuck before reaching point " << injected_pp_index[index] << ", at (" << odom_x_get() << ", " << odom_y_get() << ")\n";
+      interfered = true;
+      break;
+    }
 
     if (xy_exit != RUNNING && a_exit != RUNNING) {
       if (print_toggle) {

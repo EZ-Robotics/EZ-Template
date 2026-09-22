@@ -13,6 +13,8 @@
 // cornering pause alone satisfies the break, and pid_wait() returns with the path nowhere near
 // its last point while ez_auto_task keeps driving it in the background.
 //
+// (The first case below was reversed when pid_wait() moved to a progress-based stuck check; see its comment.)
+//
 // These tests never run ez_auto_task/pp_task: nothing advances pp_index or calls compute_error,
 // so xyPID/current_a_odomPID.error stay exactly where the test sets them. That is enough to
 // drive exit_condition() -- pid_wait() is pure PID/geometry logic here, no motion synthesis.
@@ -91,7 +93,12 @@ void run_scenario(Drive& chassis, bool simulate_corner) {
 }
 }  // namespace
 
-TEST_CASE("pid_wait does not end a pure pursuit path just because xy stalls while angle is mid-corner") {
+// This case used to assert that pid_wait() never returns here.  But the script is a robot stuck against
+// something, drawing too much current for 750 ms, with its heading 90 degrees off: that is a stall at a
+// corner, not a pause between segments, and waiting on it hung the auton for the rest of the match.  A stall
+// has to end the wait at any heading error, so it now asserts the opposite.  test_pp_wait_stuck.cpp covers
+// the healthy pause the old assertion was protecting (a slow pivot at a corner does not end the wait).
+TEST_CASE("pid_wait ends a pure pursuit path when xy stalls on current while angle is mid-corner") {
   Drive chassis = make_chassis();
   configure(chassis);
   start_path(chassis);
@@ -103,7 +110,8 @@ TEST_CASE("pid_wait does not end a pure pursuit path just because xy stalls whil
   // Nothing in this test drives pp_task, so the path never advances past its first point.
   // Returning at all can only be the mid-path early break firing.
   REQUIRE(DriveTestAccess::pp_index(chassis) != (int)DriveTestAccess::pp_movements(chassis).size() - 1);
-  CHECK_FALSE(done);
+  CHECK(done);
+  CHECK(chassis.interfered);
 }
 
 TEST_CASE("pid_wait still ends a pure pursuit path when xy stalls while angle stays settled") {
