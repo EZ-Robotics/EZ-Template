@@ -35,10 +35,15 @@ struct DriveTestAccess {
   static void check_imu_task(Drive& d) { d.check_imu_task(); }
   static Lock<pros::RecursiveMutex>& drive_mutex(Drive& d) { return d.drive_mutex; }
   static void turn_pid_task(Drive& d) { d.turn_pid_task(); }
+  static void ptp_task(Drive& d) { d.ptp_task(); }
+  static void pp_task(Drive& d) { d.pp_task(); }
+  static pose& odom_current(Drive& d) { return d.odom_current; }
+  static void swing_pid_task(Drive& d) { d.swing_pid_task(); }
 
-  static bool is_swing_slew_enabled(Drive& d, e_swing type, double target, double current) {
-    return d.is_swing_slew_enabled(type, target, current);
+  static bool is_swing_slew_enabled(Drive& d, e_swing type, double target, double current, e_angle_behavior behavior) {
+    return d.is_swing_slew_enabled(type, target, current, behavior);
   }
+  static bool& current_slew_on(Drive& d) { return d.current_slew_on; }
 
   static double get_this_imu(Drive& d, pros::Imu* imu) { return d.get_this_imu(imu); }
 
@@ -48,6 +53,8 @@ struct DriveTestAccess {
   static bool is_tank(Drive& d) { return d.is_tank; }
   static double left_curve_scale(Drive& d) { return d.left_curve_scale; }
   static double right_curve_scale(Drive& d) { return d.right_curve_scale; }
+  // opcontrol_curve_buttons_toggle_get() lives in user_input.cpp, which the host build leaves out
+  static bool curve_buttons_enabled(Drive& d) { return d.disable_controller; }
 };
 
 }  // namespace ez

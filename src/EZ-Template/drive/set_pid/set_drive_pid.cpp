@@ -65,8 +65,18 @@ void Drive::drive_angle_set(ez::QAngle p_angle) {
   drive_angle_set(angle);
 }
 PID::Constants Drive::pid_heading_constants_get() { return headingPID.constants_get(); }
-PID::Constants Drive::pid_drive_constants_backward_get() { return backward_drivePID.constants_get(); }
-PID::Constants Drive::pid_drive_constants_forward_get() { return forward_drivePID.constants_get(); }
+// The directional getters return what pid_drive_set() will use for that direction: the directional constants
+// if they were set, otherwise the ones from the plain setter
+PID::Constants Drive::pid_drive_constants_backward_get() {
+  if (!backward_drivePID.constants_set_check() && fwd_rev_drivePID.constants_set_check())
+    return fwd_rev_drivePID.constants_get();
+  return backward_drivePID.constants_get();
+}
+PID::Constants Drive::pid_drive_constants_forward_get() {
+  if (!forward_drivePID.constants_set_check() && fwd_rev_drivePID.constants_set_check())
+    return fwd_rev_drivePID.constants_get();
+  return forward_drivePID.constants_get();
+}
 PID::Constants Drive::pid_drive_constants_get() {
   // The plain setter zeroes forward/backward and stores the constants in fwd_rev,
   // so return those rather than the zeros they were replaced with
