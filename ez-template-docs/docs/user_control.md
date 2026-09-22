@@ -18,7 +18,7 @@ import TabItem from '@theme/TabItem';
 Sets the chassis to controller joysticks using tank control.   
 Run in usercontrol.   
 
-This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.  The controller buttons that change the curves are enabled by default, use `opcontrol_curve_buttons_toggle(false)` to turn them off.     
+This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.  The controller buttons that change the curves are disabled by default, use `opcontrol_curve_buttons_toggle(true)` to turn them on.     
 <Tabs
   groupId="opcontrol_tank"
   defaultValue="proto"
@@ -62,7 +62,7 @@ void opcontrol_tank();
 Sets the chassis to controller joysticks using standard arcade control, where left stick is fwd/rev.    
 Run in usercontrol.    
 
-This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.  The controller buttons that change the curves are enabled by default, use `opcontrol_curve_buttons_toggle(false)` to turn them off.    
+This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.  The controller buttons that change the curves are disabled by default, use `opcontrol_curve_buttons_toggle(true)` to turn them on.    
 
 `stick_type` ez::SINGLE or ez::SPLIT control  
 <Tabs
@@ -111,7 +111,7 @@ void opcontrol_arcade_standard(e_type stick_type);
 Sets the chassis to controller joysticks using flipped arcade control, where right stick is fwd/rev.   
 Run in usercontrol.   
 
-This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.  The controller buttons that change the curves are enabled by default, use `opcontrol_curve_buttons_toggle(false)` to turn them off.   
+This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.  The controller buttons that change the curves are disabled by default, use `opcontrol_curve_buttons_toggle(true)` to turn them on.   
 
 `stick_type` ez::SINGLE or ez::SPLIT control   
 <Tabs
@@ -170,7 +170,7 @@ Curvature is like arcade, but the turn stick sets the curvature of the arc the r
 
 Because the turn is scaled by how fast you're driving, the robot would not be able to turn while stopped.  `opcontrol_curvature_point_turn_gain_set()` controls how much the robot can turn on a point.    
 
-This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.  The controller buttons that change the curves are enabled by default, use `opcontrol_curve_buttons_toggle(false)` to turn them off.    
+This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.  The controller buttons that change the curves are disabled by default, use `opcontrol_curve_buttons_toggle(true)` to turn them on.    
 
 `stick_type` ez::SINGLE or ez::SPLIT control  
 <Tabs
@@ -219,7 +219,7 @@ Curvature is like arcade, but the turn stick sets the curvature of the arc the r
 
 Because the turn is scaled by how fast you're driving, the robot would not be able to turn while stopped.  `opcontrol_curvature_point_turn_gain_set()` controls how much the robot can turn on a point.    
 
-This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.  The controller buttons that change the curves are enabled by default, use `opcontrol_curve_buttons_toggle(false)` to turn them off.    
+This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.  The controller buttons that change the curves are disabled by default, use `opcontrol_curve_buttons_toggle(true)` to turn them on.    
 
 `stick_type` ez::SINGLE or ez::SPLIT control  
 <Tabs
@@ -448,7 +448,7 @@ void opcontrol_curve_default_set(double left, double right = 0);
 
 
 ### opcontrol_curve_buttons_toggle()
-Enables/disables modifying the joystick input curves with the controller.   
+Enables/disables modifying the joystick input curves with the controller.  This is disabled by default.   
 
 `toggle` true enables, false disables  
 <Tabs
@@ -502,9 +502,9 @@ True enabled, false disabled.
 
 ```cpp
 void initialize() {
-  printf("Enabled? %i\n", chassis.opcontrol_curve_buttons_toggle_get()); // Returns true
-  chassis.opcontrol_curve_buttons_toggle(false);
   printf("Enabled? %i\n", chassis.opcontrol_curve_buttons_toggle_get()); // Returns false
+  chassis.opcontrol_curve_buttons_toggle(true);
+  printf("Enabled? %i\n", chassis.opcontrol_curve_buttons_toggle_get()); // Returns true
 }
 ```
 
