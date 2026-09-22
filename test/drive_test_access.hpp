@@ -50,6 +50,8 @@ struct DriveTestAccess {
   static bool is_tank(Drive& d) { return d.is_tank; }
   static double left_curve_scale(Drive& d) { return d.left_curve_scale; }
   static double right_curve_scale(Drive& d) { return d.right_curve_scale; }
+  // opcontrol_curve_buttons_toggle_get() lives in user_input.cpp, which the host build leaves out
+  static bool curve_buttons_enabled(Drive& d) { return d.disable_controller; }
 };
 
 }  // namespace ez

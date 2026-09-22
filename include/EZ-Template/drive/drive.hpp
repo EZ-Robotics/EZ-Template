@@ -948,8 +948,8 @@ class Drive {
    * Run in usercontrol.
    *
    * This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.
-   * The controller buttons that change the curves are enabled by default, use opcontrol_curve_buttons_toggle(false)
-   * to turn them off.
+   * The controller buttons that change the curves are disabled by default, use opcontrol_curve_buttons_toggle(true)
+   * to turn them on.
    */
   void opcontrol_tank();
 
@@ -958,8 +958,8 @@ class Drive {
    * Run in usercontrol.
    *
    * This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.
-   * The controller buttons that change the curves are enabled by default, use opcontrol_curve_buttons_toggle(false)
-   * to turn them off.
+   * The controller buttons that change the curves are disabled by default, use opcontrol_curve_buttons_toggle(true)
+   * to turn them on.
    *
    * \param stick_type
    *        ez::SINGLE or ez::SPLIT control
@@ -971,8 +971,8 @@ class Drive {
    * Run in usercontrol.
    *
    * This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.
-   * The controller buttons that change the curves are enabled by default, use opcontrol_curve_buttons_toggle(false)
-   * to turn them off.
+   * The controller buttons that change the curves are disabled by default, use opcontrol_curve_buttons_toggle(true)
+   * to turn them on.
    *
    * \param stick_type
    *        ez::SINGLE or ez::SPLIT control
@@ -988,8 +988,8 @@ class Drive {
    * opcontrol_curvature_point_turn_gain_set().
    *
    * This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.
-   * The controller buttons that change the curves are enabled by default, use opcontrol_curve_buttons_toggle(false)
-   * to turn them off.
+   * The controller buttons that change the curves are disabled by default, use opcontrol_curve_buttons_toggle(true)
+   * to turn them on.
    *
    * \param stick_type
    *        ez::SINGLE or ez::SPLIT control
@@ -1005,8 +1005,8 @@ class Drive {
    * opcontrol_curvature_point_turn_gain_set().
    *
    * This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.
-   * The controller buttons that change the curves are enabled by default, use opcontrol_curve_buttons_toggle(false)
-   * to turn them off.
+   * The controller buttons that change the curves are disabled by default, use opcontrol_curve_buttons_toggle(true)
+   * to turn them on.
    *
    * \param stick_type
    *        ez::SINGLE or ez::SPLIT control
@@ -1075,7 +1075,7 @@ class Drive {
   PID::Constants opcontrol_drive_activebrake_constants_get();
 
   /**
-   * Enables/disables modifying the joystick input curves with the controller.
+   * Enables/disables modifying the joystick input curves with the controller.  This is disabled by default.
    *
    * \param toggle
    *        true enables, false disables
@@ -3917,7 +3917,7 @@ class Drive {
   /**
    * Enable/disable modifying controller curve with controller.
    */
-  bool disable_controller = true;  // True enables, false disables.
+  bool disable_controller = false;  // True enables, false disables.  Disabled until the user turns it on.
 
   /**
    * Is tank drive running?
