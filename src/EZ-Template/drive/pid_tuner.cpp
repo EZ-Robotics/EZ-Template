@@ -49,7 +49,15 @@ void Drive::pid_tuner_brain_init() {
 
 // Toggle printing to brain
 void Drive::pid_tuner_print_brain_set(bool input) {
-  if (pid_tuner_on && input != pid_tuner_lcd_b) {
+  // While the PID Tuner is off there is no screen to change, but the setting still has to stick.  Otherwise a team
+  // that sets terminal only in initialize() gets the brain page anyway the first time they enable the tuner, and
+  // loses their auton selector with it
+  if (!pid_tuner_on) {
+    pid_tuner_lcd_b = input;
+    return;
+  }
+
+  if (input != pid_tuner_lcd_b) {
     if (!pid_tuner_lcd_b) {
       pid_tuner_lcd_b = input;
       pid_tuner_brain_init();
@@ -70,7 +78,8 @@ bool Drive::pid_tuner_print_brain_enabled() { return pid_tuner_lcd_b; }
 void Drive::pid_tuner_enable() {
   if (pid_tuner_on) return;
 
-  pid_tuner_brain_init();
+  // Only take over the brain screen when the tuner prints to it
+  if (pid_tuner_lcd_b) pid_tuner_brain_init();
 
   if (pid_tuner_full_enabled())
     used_pid_tuner_pids = &pid_tuner_full_pids;
@@ -91,6 +100,9 @@ void Drive::pid_tuner_disable() {
 
   pid_tuner_on = false;
   opcontrol_curve_buttons_toggle(last_controller_curve_state);
+
+  // The brain screen was only taken over if the tuner was printing to it
+  if (!pid_tuner_lcd_b) return;
   if (last_auton_selector_state) {
     ez::as::initialize();
   } else {

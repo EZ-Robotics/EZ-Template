@@ -9,6 +9,16 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 using namespace ez;
 
+// Feeds a PID's secondary velocity-exit channel from the imu's acceleration, but only when that PID's
+// secondary channel is turned on.  It's off by default: acceleration reads near 0 during an ordinary
+// constant-speed cruise too, so on its own it can't tell cruising from stalled (see PID::exit_condition
+// and velocity_sensor_secondary_exit_set).  Skipping the read when the channel is off also avoids
+// polling the imu over the smart port every loop just to have exit_condition() throw the value away.
+void Drive::secondary_velocity_sensor_update(PID& pid) {
+  if (!pid.velocity_sensor_secondary_toggle_get()) return;
+  pid.velocity_sensor_secondary_set(drive_imu_accel_get());
+}
+
 void Drive::pid_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu) {
   leftPID.exit_condition_set(p_small_exit_time, p_small_error, p_big_exit_time, p_big_error, p_velocity_exit_time, p_mA_timeout);
   rightPID.exit_condition_set(p_small_exit_time, p_small_error, p_big_exit_time, p_big_error, p_velocity_exit_time, p_mA_timeout);
@@ -107,8 +117,8 @@ void Drive::pid_wait() {
     exit_output left_exit = RUNNING;
     exit_output right_exit = RUNNING;
     while (left_exit == RUNNING || right_exit == RUNNING) {
-      leftPID.velocity_sensor_secondary_set(drive_imu_accel_get());
-      rightPID.velocity_sensor_secondary_set(drive_imu_accel_get());
+      secondary_velocity_sensor_update(leftPID);
+      secondary_velocity_sensor_update(rightPID);
       left_exit = left_exit != RUNNING ? left_exit : leftPID.exit_condition(left_motors[0]);
       right_exit = right_exit != RUNNING ? right_exit : rightPID.exit_condition(right_motors[0]);
       pros::delay(util::DELAY_TIME);
@@ -128,8 +138,8 @@ void Drive::pid_wait() {
     // Wait until pure pursuit is on the last point, then continue as normal
     if (mode == PURE_PURSUIT) {
       while (pp_index != (int)pp_movements.size() - 1) {
-        xyPID.velocity_sensor_secondary_set(drive_imu_accel_get());
-        current_a_odomPID.velocity_sensor_secondary_set(drive_imu_accel_get());
+        secondary_velocity_sensor_update(xyPID);
+        secondary_velocity_sensor_update(current_a_odomPID);
         xy_exit = xy_exit != RUNNING ? xy_exit : xyPID.exit_condition({left_motors[0], right_motors[0]});
         a_exit = a_exit != RUNNING ? a_exit : current_a_odomPID.exit_condition({left_motors[0], right_motors[0]});
 
@@ -147,8 +157,8 @@ void Drive::pid_wait() {
 
     // When we're at the last point in PP / we're just going to point
     while (xy_exit == RUNNING || a_exit == RUNNING) {
-      xyPID.velocity_sensor_secondary_set(drive_imu_accel_get());
-      current_a_odomPID.velocity_sensor_secondary_set(drive_imu_accel_get());
+      secondary_velocity_sensor_update(xyPID);
+      secondary_velocity_sensor_update(current_a_odomPID);
       xy_exit = xy_exit != RUNNING ? xy_exit : xyPID.exit_condition({left_motors[0], right_motors[0]});
       a_exit = a_exit != RUNNING ? a_exit : current_a_odomPID.exit_condition({left_motors[0], right_motors[0]});
       pros::delay(util::DELAY_TIME);
@@ -171,7 +181,7 @@ void Drive::pid_wait() {
   else if (mode == TURN || mode == TURN_TO_POINT) {
     exit_output turn_exit = RUNNING;
     while (turn_exit == RUNNING) {
-      turnPID.velocity_sensor_secondary_set(drive_imu_accel_get());
+      secondary_velocity_sensor_update(turnPID);
       turn_exit = turn_exit != RUNNING ? turn_exit : turnPID.exit_condition({left_motors[0], right_motors[0]});
       pros::delay(util::DELAY_TIME);
     }
@@ -187,7 +197,7 @@ void Drive::pid_wait() {
     exit_output swing_exit = RUNNING;
     pros::Motor& sensor = current_swing == ez::LEFT_SWING ? left_motors[0] : right_motors[0];
     while (swing_exit == RUNNING) {
-      swingPID.velocity_sensor_secondary_set(drive_imu_accel_get());
+      secondary_velocity_sensor_update(swingPID);
       swing_exit = swing_exit != RUNNING ? swing_exit : swingPID.exit_condition(sensor);
       pros::delay(util::DELAY_TIME);
     }
@@ -230,7 +240,7 @@ void Drive::wait_until_drive(double target) {
       // If the move ends before it reaches this target, return instead of waiting forever.
       bool on_last_point = mode == POINT_TO_POINT || (mode == PURE_PURSUIT && pp_index == (int)pp_movements.size() - 1);
       if (on_last_point) {
-        xyPID.velocity_sensor_secondary_set(drive_imu_accel_get());
+        secondary_velocity_sensor_update(xyPID);
         exit_output xy_exit = xyPID.exit_condition({left_motors[0], right_motors[0]});
         if (xy_exit != RUNNING) {
           if (print_toggle) std::cout << "  XY: " << exit_to_string(xy_exit) << " Wait Until Exit Failsafe, the move ended before reaching " << target << "\n";
@@ -240,15 +250,15 @@ void Drive::wait_until_drive(double target) {
       }
 
       if (left_exit == RUNNING || right_exit == RUNNING) {
-        leftPID.velocity_sensor_secondary_set(drive_imu_accel_get());
-        rightPID.velocity_sensor_secondary_set(drive_imu_accel_get());
+        secondary_velocity_sensor_update(leftPID);
+        secondary_velocity_sensor_update(rightPID);
         left_exit = left_exit != RUNNING ? left_exit : leftPID.exit_condition(left_motors[0]);
         right_exit = right_exit != RUNNING ? right_exit : rightPID.exit_condition(right_motors[0]);
         pros::delay(util::DELAY_TIME);
       } else {
         if (print_toggle) {
-          std::cout << "  Left: " << exit_to_string(left_exit) << " Wait Until Exit Failsafe, triggered at " << drive_sensor_left() - l_start << " instead of " << l_tar << "\n";
-          std::cout << "  Right: " << exit_to_string(right_exit) << " Wait Until Exit Failsafe, triggered at " << drive_sensor_right() - r_start << " instead of " << r_tar << "\n";
+          std::cout << "  Left: " << exit_to_string(left_exit) << " Wait Until Exit Failsafe, triggered at " << drive_sensor_left() - l_start << " instead of " << target << "\n";
+          std::cout << "  Right: " << exit_to_string(right_exit) << " Wait Until Exit Failsafe, triggered at " << drive_sensor_right() - r_start << " instead of " << target << "\n";
         }
         if (left_exit == mA_EXIT || left_exit == VELOCITY_EXIT || right_exit == mA_EXIT || right_exit == VELOCITY_EXIT) {
           interfered = true;
@@ -258,7 +268,7 @@ void Drive::wait_until_drive(double target) {
     }
     // Once we've past target, return
     else if (util::sgn(l_error) != l_sgn || util::sgn(r_error) != r_sgn) {
-      if (print_toggle) printf("  Drive Wait Until Exit Success. Triggered at: L,R(%.2f, %.2f)  Target: L,R(%.2f, %.2f)\n", drive_sensor_left() - l_start, drive_sensor_right() - r_start, l_tar, r_tar);
+      if (print_toggle) printf("  Drive Wait Until Exit Success. Triggered at: L,R(%.2f, %.2f)  Target: L,R(%.2f, %.2f)\n", drive_sensor_left() - l_start, drive_sensor_right() - r_start, target, target);
       leftPID.timers_reset();
       rightPID.timers_reset();
       return;
@@ -300,7 +310,7 @@ void Drive::wait_until_turn_swing_internal(double target) {
       // Before robot has reached target, use the exit conditions to avoid getting stuck in this while loop
       if (util::sgn(g_error) == g_sgn) {
         if (turn_exit == RUNNING) {
-          turnPID.velocity_sensor_secondary_set(drive_imu_accel_get());
+          secondary_velocity_sensor_update(turnPID);
           turn_exit = turn_exit != RUNNING ? turn_exit : turnPID.exit_condition({left_motors[0], right_motors[0]});
           pros::delay(util::DELAY_TIME);
         } else {
@@ -325,7 +335,7 @@ void Drive::wait_until_turn_swing_internal(double target) {
       // Before robot has reached target, use the exit conditions to avoid getting stuck in this while loop
       if (util::sgn(g_error) == g_sgn) {
         if (swing_exit == RUNNING) {
-          swingPID.velocity_sensor_secondary_set(drive_imu_accel_get());
+          secondary_velocity_sensor_update(swingPID);
           swing_exit = swing_exit != RUNNING ? swing_exit : swingPID.exit_condition(sensor);
           pros::delay(util::DELAY_TIME);
         } else {
@@ -389,8 +399,8 @@ void Drive::pid_wait_until_point(pose target) {
   exit_output a_exit = RUNNING;
 
   while (true) {
-    xyPID.velocity_sensor_secondary_set(drive_imu_accel_get());
-    current_a_odomPID.velocity_sensor_secondary_set(drive_imu_accel_get());
+    secondary_velocity_sensor_update(xyPID);
+    secondary_velocity_sensor_update(current_a_odomPID);
     xy_exit = xy_exit != RUNNING ? xy_exit : xyPID.exit_condition({left_motors[0], right_motors[0]});
     a_exit = a_exit != RUNNING ? a_exit : current_a_odomPID.exit_condition({left_motors[0], right_motors[0]});
 
@@ -399,6 +409,9 @@ void Drive::pid_wait_until_point(pose target) {
         std::cout << "  XY: " << exit_to_string(xy_exit) << " Wait Until Exit Failsafe, triggered at (" << odom_x_get() << ", " << odom_y_get() << ") instead of (" << target.x << ", " << target.y << ")\n";
         xyPID.timers_reset();
         current_a_odomPID.timers_reset();
+      }
+      if (xy_exit == mA_EXIT || xy_exit == VELOCITY_EXIT || a_exit == mA_EXIT || a_exit == VELOCITY_EXIT) {
+        interfered = true;
       }
       return;
     }
@@ -432,16 +445,20 @@ void Drive::pid_wait_until_index_started(int index) {
   exit_output xy_exit = RUNNING;
   exit_output a_exit = RUNNING;
   while (pp_index < injected_pp_index[index]) {
-    xyPID.velocity_sensor_secondary_set(drive_imu_accel_get());
-    current_a_odomPID.velocity_sensor_secondary_set(drive_imu_accel_get());
+    secondary_velocity_sensor_update(xyPID);
+    secondary_velocity_sensor_update(current_a_odomPID);
     xy_exit = xy_exit != RUNNING ? xy_exit : xyPID.exit_condition({left_motors[0], right_motors[0]});
     a_exit = a_exit != RUNNING ? a_exit : current_a_odomPID.exit_condition({left_motors[0], right_motors[0]});
 
     if (xy_exit != RUNNING && a_exit != RUNNING) {
       if (print_toggle) {
-        std::cout << "  XY: " << exit_to_string(xy_exit) << " Wait Until Exit Failsafe, triggered at (" << odom_x_get() << ", " << odom_y_get() << ") instead of (" << pp_movements[index].target.x << ", " << pp_movements[index].target.y << ")\n";
+        // index points into injected_pp_index, which holds where each waypoint sits in pp_movements
+        std::cout << "  XY: " << exit_to_string(xy_exit) << " Wait Until Exit Failsafe, triggered at (" << odom_x_get() << ", " << odom_y_get() << ") instead of (" << pp_movements[injected_pp_index[index]].target.x << ", " << pp_movements[injected_pp_index[index]].target.y << ")\n";
         xyPID.timers_reset();
         current_a_odomPID.timers_reset();
+      }
+      if (xy_exit == mA_EXIT || xy_exit == VELOCITY_EXIT || a_exit == mA_EXIT || a_exit == VELOCITY_EXIT) {
+        interfered = true;
       }
       break;
     }
@@ -538,6 +555,12 @@ void Drive::pid_wait_quick_chain() {
     else if (mode == TURN) {
       used_motion_chain_scale = turn_motion_chain_scale * util::sgn(chain_target_start - chain_sensor_start);
       turnPID.target_set(turnPID.target_get() + used_motion_chain_scale);
+    }
+
+    // If turning to a point, the turn task works out its target from the point every pass and never reads the
+    // PID's target.  It adds used_motion_chain_scale to its error instead.
+    else if (mode == TURN_TO_POINT) {
+      used_motion_chain_scale = turn_motion_chain_scale * util::sgn(chain_target_start - chain_sensor_start);
     }
 
     // If swinging, add swing_motion_chain_scale to target
