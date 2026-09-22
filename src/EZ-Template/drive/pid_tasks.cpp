@@ -220,6 +220,10 @@ void Drive::ptp_task() {
   // double scale = std::cos(util::to_rad(current_a_odomPID.error)) / odom_turn_bias_amount;
   double scale = 1.0 - ((1.0 - std::cos(util::to_rad(current_a_odomPID.error))) / odom_turn_bias_amount);  // 1 - ((1-0.7)/0.75)
   scale = util::clamp(scale, 1.0, 0.0);
+  // xy_translation_bias_gated feeds xy_velocity_exit_hold_update(): when turn bias has clamped scale
+  // to exactly 0, xy_out (and so real translation) is fully zeroed to prioritize turning, and xyPID's
+  // velocity exit can't tell that apart from a stall on its own.
+  xy_translation_bias_gated = odom_turn_bias_enabled() && scale <= 0.0;
   if (odom_turn_bias_enabled())
     xy_out *= scale;
   double a_out = current_a_odomPID.output;

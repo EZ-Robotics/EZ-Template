@@ -19,6 +19,14 @@ void Drive::secondary_velocity_sensor_update(PID& pid) {
   pid.velocity_sensor_secondary_set(drive_imu_accel_get());
 }
 
+// Holds xyPID's velocity exit while turn bias has fully zeroed xy_out (ptp_task(), pid_tasks.cpp) to
+// prioritize turning.  xy_delta_fake reads ~0 then because the robot genuinely isn't translating, not
+// because it's stalled, and xyPID can't tell those apart from the reading alone.  See
+// PID::velocity_exit_hold_set() for the fallback that keeps this from being able to hang pid_wait().
+void Drive::xy_velocity_exit_hold_update() {
+  xyPID.velocity_exit_hold_set(xy_translation_bias_gated);
+}
+
 void Drive::pid_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu) {
   leftPID.exit_condition_set(p_small_exit_time, p_small_error, p_big_exit_time, p_big_error, p_velocity_exit_time, p_mA_timeout);
   rightPID.exit_condition_set(p_small_exit_time, p_small_error, p_big_exit_time, p_big_error, p_velocity_exit_time, p_mA_timeout);
@@ -140,6 +148,7 @@ void Drive::pid_wait() {
       while (pp_index != (int)pp_movements.size() - 1) {
         secondary_velocity_sensor_update(xyPID);
         secondary_velocity_sensor_update(current_a_odomPID);
+        xy_velocity_exit_hold_update();
         xy_exit = xy_exit != RUNNING ? xy_exit : xyPID.exit_condition({left_motors[0], right_motors[0]});
         a_exit = a_exit != RUNNING ? a_exit : current_a_odomPID.exit_condition({left_motors[0], right_motors[0]});
 
@@ -159,6 +168,7 @@ void Drive::pid_wait() {
     while (xy_exit == RUNNING || a_exit == RUNNING) {
       secondary_velocity_sensor_update(xyPID);
       secondary_velocity_sensor_update(current_a_odomPID);
+      xy_velocity_exit_hold_update();
       xy_exit = xy_exit != RUNNING ? xy_exit : xyPID.exit_condition({left_motors[0], right_motors[0]});
       a_exit = a_exit != RUNNING ? a_exit : current_a_odomPID.exit_condition({left_motors[0], right_motors[0]});
       pros::delay(util::DELAY_TIME);
@@ -241,6 +251,7 @@ void Drive::wait_until_drive(double target) {
       bool on_last_point = mode == POINT_TO_POINT || (mode == PURE_PURSUIT && pp_index == (int)pp_movements.size() - 1);
       if (on_last_point) {
         secondary_velocity_sensor_update(xyPID);
+        xy_velocity_exit_hold_update();
         exit_output xy_exit = xyPID.exit_condition({left_motors[0], right_motors[0]});
         if (xy_exit != RUNNING) {
           if (print_toggle) std::cout << "  XY: " << exit_to_string(xy_exit) << " Wait Until Exit Failsafe, the move ended before reaching " << target << "\n";
@@ -401,6 +412,7 @@ void Drive::pid_wait_until_point(pose target) {
   while (true) {
     secondary_velocity_sensor_update(xyPID);
     secondary_velocity_sensor_update(current_a_odomPID);
+    xy_velocity_exit_hold_update();
     xy_exit = xy_exit != RUNNING ? xy_exit : xyPID.exit_condition({left_motors[0], right_motors[0]});
     a_exit = a_exit != RUNNING ? a_exit : current_a_odomPID.exit_condition({left_motors[0], right_motors[0]});
 
@@ -447,6 +459,7 @@ void Drive::pid_wait_until_index_started(int index) {
   while (pp_index < injected_pp_index[index]) {
     secondary_velocity_sensor_update(xyPID);
     secondary_velocity_sensor_update(current_a_odomPID);
+    xy_velocity_exit_hold_update();
     xy_exit = xy_exit != RUNNING ? xy_exit : xyPID.exit_condition({left_motors[0], right_motors[0]});
     a_exit = a_exit != RUNNING ? a_exit : current_a_odomPID.exit_condition({left_motors[0], right_motors[0]});
 
