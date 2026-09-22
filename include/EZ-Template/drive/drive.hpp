@@ -3507,8 +3507,8 @@ class Drive {
   void pid_tuner_iterate();
 
   /**
-   * Toggle for printing the display of the PID Tuner to the brain.  It prints to the brain by default.  This only
-   * does something while the PID Tuner is enabled, calling it while the PID Tuner is disabled is ignored.
+   * Toggle for printing the display of the PID Tuner to the brain.  It prints to the brain by default.  This can be set
+   * before the PID Tuner is enabled.  With this off the PID Tuner leaves the brain screen alone, including the auton selector.
    *
    * \param input
    *        true prints to brain, false doesn't
