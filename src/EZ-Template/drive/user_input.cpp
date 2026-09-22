@@ -262,8 +262,16 @@ void Drive::opcontrol_joystick_threshold_set(int threshold) { JOYSTICK_THRESHOLD
 int Drive::opcontrol_joystick_threshold_get() { return JOYSTICK_THRESHOLD; }
 
 void Drive::opcontrol_drive_activebrake_targets_set() {
-  left_activebrakePID.target_set(drive_sensor_left());
-  right_activebrakePID.target_set(drive_sensor_right());
+  double l = drive_sensor_left();
+  double r = drive_sensor_right();
+  left_activebrakePID.target_set(l);
+  right_activebrakePID.target_set(r);
+
+  // compute() only runs while the sticks are released, so prev_current would still hold the sensor value from the
+  // last time the robot stopped.  The first pass after a release would then see the whole distance driven since
+  // as its derivative, and the integral would keep what it built up at the last stop
+  left_activebrakePID.motion_reset(l);
+  right_activebrakePID.motion_reset(r);
 }
 
 void Drive::opcontrol_drive_sensors_reset() {

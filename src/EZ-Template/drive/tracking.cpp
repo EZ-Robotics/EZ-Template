@@ -61,7 +61,9 @@ void Drive::odom_xyt_set(ez::QLength p_x, ez::QLength p_y, ez::QAngle p_t) { odo
 void Drive::odom_pose_set(pose itarget) {
   odom_x_set(itarget.x);
   odom_y_set(itarget.y);
-  odom_theta_set(itarget.theta);
+  // ANGLE_NOT_SET means "leave the heading alone" everywhere else a pose is consumed
+  // (pid_odom_set uses it to pick boomerang vs not), so it has to mean that here too.
+  if (itarget.theta != ANGLE_NOT_SET) odom_theta_set(itarget.theta);
 }
 void Drive::odom_pose_set(united_pose itarget) { odom_pose_set(util::united_pose_to_pose(itarget)); }
 void Drive::odom_reset() { odom_pose_set({0.0, 0.0, 0.0}); }
