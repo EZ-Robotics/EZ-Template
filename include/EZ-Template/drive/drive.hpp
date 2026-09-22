@@ -76,16 +76,6 @@ class Drive {
   std::deque<pros::Imu*> good_imus;
 
   /**
-   * Deprecated left rotation tracker.
-   */
-  pros::Rotation left_rotation;
-
-  /**
-   * Deprecated right rotation tracker.
-   */
-  pros::Rotation right_rotation;
-
-  /**
    * Left vertical tracking wheel.
    */
   tracking_wheel* odom_tracker_left = nullptr;
@@ -404,26 +394,6 @@ class Drive {
    *        external gear ratio, wheel gear / motor gear
    */
   Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks, double ratio = 1.0);
-
-  /**
-   * Creates a Drive Controller using rotation sensors.
-   *
-   * \param left_motor_ports
-   *        input {1, -2...}. make ports negative if reversed
-   * \param right_motor_ports
-   *        input {-3, 4...}. make ports negative if reversed
-   * \param imu_port
-   *        port the IMU is plugged into
-   * \param wheel_diameter
-   *        diameter of your sensored wheel
-   * \param ratio
-   *        external gear ratio, wheel gear / sensor gear
-   * \param left_rotation_port
-   *        make ports negative if reversed
-   * \param right_rotation_port
-   *        make ports negative if reversed
-   */
-  Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ratio, int left_rotation_port, int right_rotation_port) __attribute__((deprecated("Use the integrated encoder constructor with odom_tracker_left_set() and odom_tracker_right_set() instead!")));
 
   /**
    * Creates a Drive Controller using internal encoders with redundant IMUs.
