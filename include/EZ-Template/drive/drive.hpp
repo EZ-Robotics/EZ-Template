@@ -948,8 +948,8 @@ class Drive {
    * Run in usercontrol.
    *
    * This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.
-   * The controller buttons that change the curves are enabled by default, use opcontrol_curve_buttons_toggle(false)
-   * to turn them off.
+   * The controller buttons that change the curves are disabled by default, use opcontrol_curve_buttons_toggle(true)
+   * to turn them on.
    */
   void opcontrol_tank();
 
@@ -958,8 +958,8 @@ class Drive {
    * Run in usercontrol.
    *
    * This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.
-   * The controller buttons that change the curves are enabled by default, use opcontrol_curve_buttons_toggle(false)
-   * to turn them off.
+   * The controller buttons that change the curves are disabled by default, use opcontrol_curve_buttons_toggle(true)
+   * to turn them on.
    *
    * \param stick_type
    *        ez::SINGLE or ez::SPLIT control
@@ -971,8 +971,8 @@ class Drive {
    * Run in usercontrol.
    *
    * This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.
-   * The controller buttons that change the curves are enabled by default, use opcontrol_curve_buttons_toggle(false)
-   * to turn them off.
+   * The controller buttons that change the curves are disabled by default, use opcontrol_curve_buttons_toggle(true)
+   * to turn them on.
    *
    * \param stick_type
    *        ez::SINGLE or ez::SPLIT control
@@ -988,8 +988,8 @@ class Drive {
    * opcontrol_curvature_point_turn_gain_set().
    *
    * This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.
-   * The controller buttons that change the curves are enabled by default, use opcontrol_curve_buttons_toggle(false)
-   * to turn them off.
+   * The controller buttons that change the curves are disabled by default, use opcontrol_curve_buttons_toggle(true)
+   * to turn them on.
    *
    * \param stick_type
    *        ez::SINGLE or ez::SPLIT control
@@ -1005,8 +1005,8 @@ class Drive {
    * opcontrol_curvature_point_turn_gain_set().
    *
    * This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.
-   * The controller buttons that change the curves are enabled by default, use opcontrol_curve_buttons_toggle(false)
-   * to turn them off.
+   * The controller buttons that change the curves are disabled by default, use opcontrol_curve_buttons_toggle(true)
+   * to turn them on.
    *
    * \param stick_type
    *        ez::SINGLE or ez::SPLIT control
@@ -1075,7 +1075,7 @@ class Drive {
   PID::Constants opcontrol_drive_activebrake_constants_get();
 
   /**
-   * Enables/disables modifying the joystick input curves with the controller.
+   * Enables/disables modifying the joystick input curves with the controller.  This is disabled by default.
    *
    * \param toggle
    *        true enables, false disables
@@ -3624,7 +3624,7 @@ class Drive {
    * Sets the max speed for user control.
    *
    * \param speed
-   *        the speed limit
+   *        the speed limit, 0 - 127.  A value above 127 is set to 127 and a negative value is treated as its magnitude
    */
   void opcontrol_speed_max_set(int speed);
 
@@ -3729,7 +3729,7 @@ class Drive {
   double watchdog_l_last = 0.0, watchdog_r_last = 0.0;
   bool imu_only_imu_warning_shown = false;
 
-  bool is_swing_slew_enabled(e_swing type, double target, double current);
+  bool is_swing_slew_enabled(e_swing type, double target, double current, e_angle_behavior behavior);
   void swing_set_internal(e_swing type, double target, int speed, int opposite_speed, e_angle_behavior behavior, bool slew_on);
   bool slew_reenables_when_max_speed_changes = true;
   int slew_min_when_it_enabled = 0;
@@ -3917,7 +3917,7 @@ class Drive {
   /**
    * Enable/disable modifying controller curve with controller.
    */
-  bool disable_controller = true;  // True enables, false disables.
+  bool disable_controller = false;  // True enables, false disables.  Disabled until the user turns it on.
 
   /**
    * Is tank drive running?
@@ -3976,6 +3976,13 @@ class Drive {
    */
   double left_curve_scale = 0.0;
   double right_curve_scale = 0.0;
+
+  /**
+   * The curve text last written to the controller, and when.  The controller link can't take a write every 10 ms,
+   * so the text is only written again when it changes, or slowly to keep the screen right after a reconnect.
+   */
+  std::string last_controller_text = "";
+  uint32_t last_controller_text_ms = 0;
 
   /**
    * Increase and decrease left and right curve scale.
