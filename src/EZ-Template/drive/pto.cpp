@@ -19,13 +19,13 @@ bool Drive::pto_check(pros::Motor check_if_pto) {
 
 void Drive::pto_add(std::vector<pros::Motor> pto_list) {
   for (auto i : pto_list) {
-    // Return if the motor is already in the list
-    if (pto_check(i)) return;
+    // Skip the motor if it's already in the list
+    if (pto_check(i)) continue;
 
-    // Return if the first index was used (this motor is used for velocity)
+    // Skip the motor if it's the first index (this motor is used for velocity)
     if (i.get_port() == left_motors[0].get_port() || i.get_port() == right_motors[0].get_port()) {
       printf("You cannot PTO the first index!\n");
-      return;
+      continue;
     }
 
     pto_active.push_back(i.get_port());
@@ -35,8 +35,8 @@ void Drive::pto_add(std::vector<pros::Motor> pto_list) {
 void Drive::pto_remove(std::vector<pros::Motor> pto_list) {
   for (auto i : pto_list) {
     auto does_exist = std::find(pto_active.begin(), pto_active.end(), i.get_port());
-    // Return if the motor isn't in the list
-    if (does_exist == pto_active.end()) return;
+    // Skip the motor if it isn't in the list
+    if (does_exist == pto_active.end()) continue;
 
     // Find index of motor
     int index = std::distance(pto_active.begin(), does_exist);

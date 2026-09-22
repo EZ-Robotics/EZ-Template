@@ -8,13 +8,13 @@
 CXX ?= g++
 CXXSTD := -std=c++20
 
-# display.cpp, sdcard.cpp, health.cpp, pid_tuner.cpp, and user_input.cpp are
-# excluded: they're screen/SD-card/controller-input code with no host-testable
-# logic of their own, and pulling them in would drag in more of the PROS LCD
-# API than this stub layer is worth building out. Where something we DO
+# display.cpp, sdcard.cpp, health.cpp, and pid_tuner.cpp are excluded:
+# they're screen/SD-card/controller-input code with no host-testable logic of
+# their own, and pulling them in would drag in more of the PROS LCD API than
+# this stub layer is worth building out. Where something we DO
 # compile calls into a symbol only one of those files defines, it's stubbed
 # in link_stubs.cpp instead.
-EXCLUDED_SRC := display.cpp sdcard.cpp health.cpp pid_tuner.cpp user_input.cpp
+EXCLUDED_SRC := display.cpp sdcard.cpp health.cpp pid_tuner.cpp
 ALL_LIB_SRC := $(wildcard ../src/EZ-Template/*.cpp ../src/EZ-Template/drive/*.cpp ../src/EZ-Template/drive/set_pid/*.cpp)
 LIB_SRC := $(filter-out $(foreach f,$(EXCLUDED_SRC),%/$(f)), $(ALL_LIB_SRC))
 
