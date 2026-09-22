@@ -126,7 +126,9 @@ void Drive::turn_pid_task() {
   // Compute PID if we're turning to point
   else {
     double a_target = util::absolute_angle_to_point(point_to_face[!ptf1_running], odom_pose_get());  // Calculate the point for angle to face
-    a_target = new_turn_target_compute(a_target, odom_imu_start, current_angle_behavior);
+    // The tracking center is usually off the pivot, so the bearing drifts during the turn. See ptp_task().
+    double resolve_from = current_angle_behavior == shortest ? odom_theta_get() : odom_imu_start;
+    a_target = new_turn_target_compute(a_target, resolve_from, current_angle_behavior);
     double error = a_target - odom_theta_get();
     error += used_motion_chain_scale;  // Aim a little past the point when chaining into the next motion, 0 otherwise
     turnPID.compute_error(error, odom_theta_get());
@@ -203,7 +205,11 @@ void Drive::ptp_task() {
   // Compute angle
   pose ptf = point_to_face[!ptf1_running];
   double a_target = util::absolute_angle_to_point(ptf, odom_pose_get());  // Calculate the point for angle to face
-  a_target = new_turn_target_compute(a_target, odom_imu_start, current_angle_behavior);
+  // cw, ccw and longest pick their direction from where the motion started, so the error keeps that size.
+  // Shortest has to follow the robot instead: the bearing changes as the robot moves, and measured from a
+  // fixed start heading it steps by a full turn when it crosses the edge of that heading's +/-180 range.
+  double resolve_from = current_angle_behavior == shortest ? odom_theta_get() : odom_imu_start;
+  a_target = new_turn_target_compute(a_target, resolve_from, current_angle_behavior);
   double wrapped_a_target = a_target - odom_theta_get();
   current_a_odomPID.compute_error(wrapped_a_target, odom_theta_get());
   // printf("shortest_a_target: %.2f      error: %.2f\n", a_target, wrapped_a_target);
@@ -214,6 +220,10 @@ void Drive::ptp_task() {
   // double scale = std::cos(util::to_rad(current_a_odomPID.error)) / odom_turn_bias_amount;
   double scale = 1.0 - ((1.0 - std::cos(util::to_rad(current_a_odomPID.error))) / odom_turn_bias_amount);  // 1 - ((1-0.7)/0.75)
   scale = util::clamp(scale, 1.0, 0.0);
+  // xy_translation_bias_gated feeds xy_velocity_exit_hold_update(): when turn bias has clamped scale
+  // to exactly 0, xy_out (and so real translation) is fully zeroed to prioritize turning, and xyPID's
+  // velocity exit can't tell that apart from a stall on its own.
+  xy_translation_bias_gated = odom_turn_bias_enabled() && scale <= 0.0;
   if (odom_turn_bias_enabled())
     xy_out *= scale;
   double a_out = current_a_odomPID.output;

@@ -35,7 +35,12 @@ struct DriveTestAccess {
   static void check_imu_task(Drive& d) { d.check_imu_task(); }
   static Lock<pros::RecursiveMutex>& drive_mutex(Drive& d) { return d.drive_mutex; }
   static void turn_pid_task(Drive& d) { d.turn_pid_task(); }
+  static void ptp_task(Drive& d) { d.ptp_task(); }
+  static void pp_task(Drive& d) { d.pp_task(); }
+  static pose& odom_current(Drive& d) { return d.odom_current; }
   static void swing_pid_task(Drive& d) { d.swing_pid_task(); }
+  static bool& xy_translation_bias_gated(Drive& d) { return d.xy_translation_bias_gated; }
+  static void xy_velocity_exit_hold_update(Drive& d) { d.xy_velocity_exit_hold_update(); }
 
   static bool is_swing_slew_enabled(Drive& d, e_swing type, double target, double current, e_angle_behavior behavior) {
     return d.is_swing_slew_enabled(type, target, current, behavior);
