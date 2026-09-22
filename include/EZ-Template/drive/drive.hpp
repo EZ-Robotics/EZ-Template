@@ -628,6 +628,8 @@ class Drive {
   /**
    * Sets the current pose of the robot.
    *
+   * If t is left out, only x and y are set and the heading is left as it is.
+   *
    * \param itarget
    *        {x, y, t} units in inches and degrees
    */
@@ -635,6 +637,8 @@ class Drive {
 
   /**
    * Sets the current pose of the robot.
+   *
+   * If t is left out, only x and y are set and the heading is left as it is.
    *
    * \param itarget
    *        {x, y, t} as a unit
