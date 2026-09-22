@@ -94,7 +94,11 @@ bool Drive::slew_swing_forward_get() { return global_forward_swing_slew_enabled;
 void Drive::slew_swing_backward_set(bool slew_on) { global_backward_swing_slew_enabled = slew_on; }
 bool Drive::slew_swing_backward_get() { return global_backward_swing_slew_enabled; }
 // Checks if slew is globally enabled or not
-bool Drive::is_swing_slew_enabled(e_swing type, double target, double current) {
+bool Drive::is_swing_slew_enabled(e_swing type, double target, double current, e_angle_behavior behavior) {
+  // The direction the swing really goes is the one of the resolved target, and that can be the opposite of the
+  // requested one.  swing_set_internal() picks the slew constants from the resolved target, so the enable has to
+  // come from the same side
+  target = new_turn_target_compute(target, current, behavior);
   int side = type == ez::LEFT_SWING ? 1 : -1;
   int direction = util::sgn((target - current) * side);
   return direction == 1 ? slew_swing_forward_get() : slew_swing_backward_get();
@@ -109,7 +113,7 @@ ez::e_angle_behavior Drive::pid_swing_behavior_get() { return default_swing_type
 /////
 // Absolute
 void Drive::pid_swing_set(e_swing type, double target, int speed) {
-  bool slew_on = is_swing_slew_enabled(type, target, drive_angle_get());
+  bool slew_on = is_swing_slew_enabled(type, target, drive_angle_get(), pid_swing_behavior_get());
   pid_swing_set(type, target, speed, 0, pid_swing_behavior_get(), slew_on);
 }
 void Drive::pid_swing_set(e_swing type, ez::QAngle p_target, int speed) {
@@ -120,7 +124,7 @@ void Drive::pid_swing_set(e_swing type, ez::QAngle p_target, int speed) {
 void Drive::pid_swing_relative_set(e_swing type, double target, int speed) {
   // Figure out if going forward or backward
   double absolute_heading = target + headingPID.target_get();
-  bool slew_on = is_swing_slew_enabled(type, absolute_heading, drive_angle_get());
+  bool slew_on = is_swing_slew_enabled(type, absolute_heading, drive_angle_get(), pid_swing_behavior_get());
   pid_swing_relative_set(type, target, speed, 0, pid_swing_behavior_get(), slew_on);
 }
 void Drive::pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed) {
@@ -133,7 +137,7 @@ void Drive::pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed)
 /////
 // Absolute
 void Drive::pid_swing_set(e_swing type, double target, int speed, e_angle_behavior behavior) {
-  bool slew_on = is_swing_slew_enabled(type, target, drive_angle_get());
+  bool slew_on = is_swing_slew_enabled(type, target, drive_angle_get(), behavior);
   pid_swing_set(type, target, speed, 0, behavior, slew_on);
 }
 void Drive::pid_swing_set(e_swing type, ez::QAngle p_target, int speed, e_angle_behavior behavior) {
@@ -144,7 +148,7 @@ void Drive::pid_swing_set(e_swing type, ez::QAngle p_target, int speed, e_angle_
 void Drive::pid_swing_relative_set(e_swing type, double target, int speed, e_angle_behavior behavior) {
   // Figure out if going forward or backward
   double absolute_heading = target + headingPID.target_get();
-  bool slew_on = is_swing_slew_enabled(type, absolute_heading, drive_angle_get());
+  bool slew_on = is_swing_slew_enabled(type, absolute_heading, drive_angle_get(), behavior);
   pid_swing_relative_set(type, target, speed, 0, behavior, slew_on);
 }
 void Drive::pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, e_angle_behavior behavior) {
@@ -157,18 +161,18 @@ void Drive::pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed,
 /////
 // Absolute
 void Drive::pid_swing_set(e_swing type, double target, int speed, int opposite_speed) {
-  bool slew_on = is_swing_slew_enabled(type, target, drive_angle_get());
+  bool slew_on = is_swing_slew_enabled(type, target, drive_angle_get(), pid_swing_behavior_get());
   pid_swing_set(type, target, speed, opposite_speed, pid_swing_behavior_get(), slew_on);
 }
 void Drive::pid_swing_set(e_swing type, ez::QAngle p_target, int speed, int opposite_speed) {
   double target = p_target.convert(ez::degree);  // Convert unit to degree
-  bool slew_on = is_swing_slew_enabled(type, target, drive_angle_get());
+  bool slew_on = is_swing_slew_enabled(type, target, drive_angle_get(), pid_swing_behavior_get());
   pid_swing_set(type, target, speed, opposite_speed, slew_on);
 }
 // Relative
 void Drive::pid_swing_relative_set(e_swing type, double target, int speed, int opposite_speed) {
   double absolute_heading = target + headingPID.target_get();
-  bool slew_on = is_swing_slew_enabled(type, absolute_heading, drive_angle_get());
+  bool slew_on = is_swing_slew_enabled(type, absolute_heading, drive_angle_get(), pid_swing_behavior_get());
   pid_swing_relative_set(type, target, speed, opposite_speed, pid_swing_behavior_get(), slew_on);
 }
 void Drive::pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, int opposite_speed) {
@@ -201,7 +205,7 @@ void Drive::pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed,
 /////
 // Absolute
 void Drive::pid_swing_set(e_swing type, double target, int speed, int opposite_speed, e_angle_behavior behavior) {
-  bool slew_on = is_swing_slew_enabled(type, target, drive_angle_get());
+  bool slew_on = is_swing_slew_enabled(type, target, drive_angle_get(), behavior);
   pid_swing_set(type, target, speed, opposite_speed, behavior, slew_on);
 }
 void Drive::pid_swing_set(e_swing type, ez::QAngle p_target, int speed, int opposite_speed, e_angle_behavior behavior) {
@@ -211,7 +215,7 @@ void Drive::pid_swing_set(e_swing type, ez::QAngle p_target, int speed, int oppo
 // Relative
 void Drive::pid_swing_relative_set(e_swing type, double target, int speed, int opposite_speed, e_angle_behavior behavior) {
   double absolute_heading = target + headingPID.target_get();
-  bool slew_on = is_swing_slew_enabled(type, absolute_heading, drive_angle_get());
+  bool slew_on = is_swing_slew_enabled(type, absolute_heading, drive_angle_get(), behavior);
   pid_swing_relative_set(type, target, speed, opposite_speed, behavior, slew_on);
 }
 void Drive::pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, int opposite_speed, e_angle_behavior behavior) {

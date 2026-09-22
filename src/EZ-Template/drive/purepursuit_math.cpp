@@ -266,6 +266,9 @@ std::vector<odom> Drive::smooth_path(std::vector<odom> ipath, double weight_smoo
     }
   }
 
+  if (passes >= MAX_PASSES && change >= tolerance)
+    printf("EZ-Template: path smoothing stopped at %d passes before it settled, so the path is less smooth than the constants ask for\n", MAX_PASSES);
+
   // Convert array to odom
   std::vector<odom> output = ipath;  // Set output to input so target angles, turn types and speed hold
   // Overwrite x and y
