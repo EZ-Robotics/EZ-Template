@@ -18,10 +18,20 @@ bool Drive::opcontrol_arcade_scaling_enabled() { return arcade_vector_scaling; }
 void Drive::opcontrol_curvature_point_turn_gain_set(double gain) { curvature_point_turn_gain = util::clamp(gain, 1.0, 0.0); }
 double Drive::opcontrol_curvature_point_turn_gain_get() { return curvature_point_turn_gain; }
 
+namespace {
+// Clamps a curve given to opcontrol_curve_default_set, and says so when it had to change it.
+double curve_default_clamp(const char* side, double value) {
+  double used = util::curve_scale_clamp(value);
+  if (std::isnan(value) || used != value)
+    printf("EZ-Template: opcontrol_curve_default_set was given a %s curve of %g, using %g (the range is 0 to %g)\n", side, value, used, util::MAX_CURVE_SCALE);
+  return used;
+}
+}  // namespace
+
 // Set curve defaults
 void Drive::opcontrol_curve_default_set(double left, double right) {
-  left_curve_scale = util::curve_scale_clamp(left);
-  right_curve_scale = util::curve_scale_clamp(right);
+  left_curve_scale = curve_default_clamp("left", left);
+  right_curve_scale = curve_default_clamp("right", right);
 
   save_l_curve_sd();
   save_r_curve_sd();
@@ -175,8 +185,10 @@ void Drive::opcontrol_curve_buttons_toggle(bool toggle) {
     return;
   }
   disable_controller = toggle;
-  if (!disable_controller)
+  if (!disable_controller) {
     master.set_text(2, 0, "            ");
+    last_controller_text = "";  // The curve text is gone from the screen, so it has to be written again when this is turned back on
+  }
 }
 bool Drive::opcontrol_curve_buttons_toggle_get() { return disable_controller; }
 
@@ -193,10 +205,21 @@ void Drive::opcontrol_curve_buttons_iterate() {
 
   auto sl = util::to_string_with_precision(left_curve_scale, 1);
   auto sr = util::to_string_with_precision(right_curve_scale, 1);
-  if (!is_tank)
-    master.set_text(2, 0, sl + "         " + sr);
-  else
-    master.set_text(2, 0, sl);
+  std::string text = is_tank ? sl : sl + "         " + sr;
+
+  // The controller link isn't built for a write every 10 ms.  PROS says continuous fast updates don't work, and a
+  // saturated link shows up as joystick lag.  Only write when the text changed, and never faster than
+  // CONTROLLER_TEXT_MS.  The text is also written once in a while when nothing changed, because a controller that
+  // reconnects comes back with a blank screen
+  const uint32_t CONTROLLER_TEXT_MS = 50;
+  const uint32_t CONTROLLER_TEXT_REFRESH_MS = 1000;
+  uint32_t since_last_write = pros::millis() - last_controller_text_ms;
+  bool changed = text != last_controller_text;
+  if (since_last_write < (changed ? CONTROLLER_TEXT_MS : CONTROLLER_TEXT_REFRESH_MS)) return;
+
+  last_controller_text = text;
+  last_controller_text_ms = pros::millis();
+  master.set_text(2, 0, text);
 }
 
 // Left curve function
@@ -302,7 +325,9 @@ void Drive::opcontrol_joystick_threshold_iterate(int l_stick, int r_stick) {
   drive_set(l_out, r_out);
 }
 
-void Drive::opcontrol_speed_max_set(int speed) { opcontrol_speed_max = (double)speed; }
+// This is used as a multiplier, so a negative value would reverse the whole drive and a value over 127 would
+// cut off the top of the stick's travel
+void Drive::opcontrol_speed_max_set(int speed) { opcontrol_speed_max = std::fabs(util::clamp((double)speed, 127.0)); }
 int Drive::opcontrol_speed_max_get() { return (int)opcontrol_speed_max; }
 
 // Clip joysticks based on joystick threshold
