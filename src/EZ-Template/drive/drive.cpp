@@ -282,8 +282,9 @@ void Drive::drive_defaults_set() {
   pid_swing_chain_constant_set(5_deg);
   pid_drive_chain_constant_set(3_in);
 
-  // Modify joystick curve on controller (defaults to enabled)
-  opcontrol_curve_buttons_toggle(true);
+  // Modifying the joystick curve with the controller buttons is disabled by default, the user turns it on with
+  // opcontrol_curve_buttons_toggle(true).  The default lives in disable_controller, calling the toggle here would
+  // write to the controller screen while globals are still being constructed.
 
   // Left / Right modify buttons
   opcontrol_curve_buttons_left_set(pros::E_CONTROLLER_DIGITAL_LEFT, pros::E_CONTROLLER_DIGITAL_RIGHT);
