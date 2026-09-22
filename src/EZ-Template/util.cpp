@@ -70,8 +70,10 @@ void screen_print(std::string text, int line) {
     if (text[i] != '\n' && temp.length() + 1 > 38) {
       auto last_word = get_last_word(temp);
       if (last_word == temp) {
+        // One word fills the whole line, so hard wrap it.  The character that
+        // didn't fit is added to the new line below, don't add it here too.
         texts.push_back(temp);
-        temp = text[i];
+        temp = "";
       } else {
         int size = last_word.length();
 
@@ -88,7 +90,8 @@ void screen_print(std::string text, int line) {
       }
     }
     if (i >= (int)text.length() - 1) {
-      temp += text[i];
+      // A trailing newline ends the last line, it isn't a character to draw.
+      if (text[i] != '\n') temp += text[i];
       texts.push_back(temp);
       temp = "";
       break;
