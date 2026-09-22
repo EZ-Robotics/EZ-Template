@@ -32,11 +32,13 @@ void Drive::ez_auto_task() {
 
       // Stop commanding the drive while disabled, and once when autonomous ends, so a motion
       // that field control cut off cannot resume on its own when driver control starts.
+      // The motors are stopped too, not just left alone: the last output stays latched on them
+      // until something else writes to them, and driver control may not do that for a while.
       // Entering autonomous must NOT trigger this: the autonomous task's first setter can run
       // before this pass sees the status change, and disabling here would cancel that motion.
       bool autonomous_now = pros::competition::is_autonomous();
       if (pros::competition::is_disabled() || (last_was_autonomous && !autonomous_now)) {
-        if (drive_mode_get() != DISABLE) drive_mode_set(DISABLE, false);
+        if (drive_mode_get() != DISABLE) drive_mode_set(DISABLE, true);
       }
       last_was_autonomous = autonomous_now;
 
@@ -128,6 +130,7 @@ void Drive::turn_pid_task() {
     double resolve_from = current_angle_behavior == shortest ? odom_theta_get() : odom_imu_start;
     a_target = new_turn_target_compute(a_target, resolve_from, current_angle_behavior);
     double error = a_target - odom_theta_get();
+    error += used_motion_chain_scale;  // Aim a little past the point when chaining into the next motion, 0 otherwise
     turnPID.compute_error(error, odom_theta_get());
   }
 
@@ -170,7 +173,7 @@ void Drive::swing_pid_task() {
 
   // Set the motors powers, and decide what to do with the "still" side of the drive
   double opposite_output = 0;
-  double scale = swing_out / max_speed;
+  double scale = max_speed == 0 ? 0.0 : swing_out / max_speed;  // A max speed of 0 would make this 0/0, which is NaN, and NaN would reach the motors
   if (drive_toggle) {
     // Check if left or right swing, then set motors accordingly
     if (current_swing == LEFT_SWING) {

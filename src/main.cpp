@@ -50,7 +50,7 @@ void initialize() {
   chassis.odom_tracker_right_set(&right_tracker);
 
   // Configure your chassis controls
-  chassis.opcontrol_curve_buttons_toggle(true);   // Enables modifying the controller curve with buttons on the joysticks
+  // chassis.opcontrol_curve_buttons_toggle(true);  // Uncomment to enable modifying the controller curve with buttons on the joysticks (off by default)
   chassis.opcontrol_drive_activebrake_set(0.0);   // Sets the active brake kP. We recommend ~2.  0 will disable.
   chassis.opcontrol_curve_default_set(0.0, 0.0);  // Defaults for curve. If using tank, only the first parameter is used. (Comment this line out if you have an SD card!)
 
