@@ -32,11 +32,13 @@ void Drive::ez_auto_task() {
 
       // Stop commanding the drive while disabled, and once when autonomous ends, so a motion
       // that field control cut off cannot resume on its own when driver control starts.
+      // The motors are stopped too, not just left alone: the last output stays latched on them
+      // until something else writes to them, and driver control may not do that for a while.
       // Entering autonomous must NOT trigger this: the autonomous task's first setter can run
       // before this pass sees the status change, and disabling here would cancel that motion.
       bool autonomous_now = pros::competition::is_autonomous();
       if (pros::competition::is_disabled() || (last_was_autonomous && !autonomous_now)) {
-        if (drive_mode_get() != DISABLE) drive_mode_set(DISABLE, false);
+        if (drive_mode_get() != DISABLE) drive_mode_set(DISABLE, true);
       }
       last_was_autonomous = autonomous_now;
 
