@@ -4,6 +4,8 @@ License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
+#include <cmath>
+
 #include "EZ-Template/drive/drive.hpp"
 #include "EZ-Template/util.hpp"
 
@@ -145,8 +147,22 @@ void Drive::pid_wait() {
 
         // Angle only needs to have settled (any exit type), not specifically stalled itself -
         // requiring mA/VELOCITY_EXIT from angle too left this unreachable on straight segments,
-        // where angle latches SMALL_EXIT almost immediately and never gets re-evaluated.
-        if ((xy_exit == mA_EXIT || xy_exit == VELOCITY_EXIT) && a_exit != RUNNING) {
+        // where angle latches SMALL_EXIT almost immediately and never gets re-evaluated. But
+        // a_exit is itself latched the same way: once it stops running, exit_condition() is never
+        // called on it again for the rest of the path, so a settled flag latched on an earlier,
+        // straighter stretch stays true even after the robot turns to face a sharp corner. A
+        // corner sharp enough to pass odom_turn_bias's cutoff (~84 degrees at the library default)
+        // legitimately drives xy's commanded output - and so its own velocity reading - to zero
+        // while the robot pivots to face the next segment, which is a normal pause, not a stall.
+        // Require angle to currently be near its target for a settled (small/big exit) flag to
+        // count; a genuine stall in angle itself (mA/VELOCITY_EXIT) still counts unconditionally,
+        // same as before, since that is a real stuck-heading event, not a pause between segments.
+        bool a_stall_exit = a_exit == mA_EXIT || a_exit == VELOCITY_EXIT;
+        bool a_near_target_now = current_a_odomPID.exit.small_error == 0 ||
+                                  std::fabs(current_a_odomPID.error) < current_a_odomPID.exit.small_error;
+        bool a_settled = a_stall_exit || (a_exit != RUNNING && a_near_target_now);
+
+        if ((xy_exit == mA_EXIT || xy_exit == VELOCITY_EXIT) && a_settled) {
           if (print_toggle) std::cout << "  XY: " << exit_to_string(xy_exit) << " Exited early, error: " << xyPID.error << ".   Angle: " << exit_to_string(a_exit) << " Exited early, error: " << current_a_odomPID.error << ".\n";
           break;
         }
