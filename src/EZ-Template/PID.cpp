@@ -207,8 +207,10 @@ exit_output PID::exit_condition(bool print) {
     return RUNNING;
 
   // If the secondary sensors velocity is 0, the code will timeout and set interfered to true.
+  // A non-finite second_sensor means no reading was ever taken (no imu, or the channel was just
+  // turned on) -- never count that as "stopped".
   if (exit.velocity_exit_time != 0 && velocity_armed) {  // Check if this condition is enabled
-    if (std::fabs(second_sensor) <= velocity_zero_secondary) {
+    if (std::isfinite(second_sensor) && std::fabs(second_sensor) <= velocity_zero_secondary) {
       m += util::DELAY_TIME;
       if (m > exit.velocity_exit_time) {
         timers_reset();
