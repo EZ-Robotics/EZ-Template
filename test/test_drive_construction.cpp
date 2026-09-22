@@ -44,3 +44,12 @@ TEST_CASE("a freshly constructed Drive doesn't leak the memory it was built in")
 
   chassis.~Drive();
 }
+
+TEST_CASE("the buttons that modify the joystick curve are off until the user turns them on") {
+  alignas(Drive) unsigned char storage[sizeof(Drive)];
+  Drive& chassis = construct_into_dirty_memory(storage);
+
+  CHECK_FALSE(DriveTestAccess::curve_buttons_enabled(chassis));
+
+  chassis.~Drive();
+}

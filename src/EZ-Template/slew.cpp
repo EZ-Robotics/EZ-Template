@@ -17,8 +17,10 @@ slew::slew(double distance, int minimum_speed) {
 
 // Set constants
 void slew::constants_set(double distance, int minimum_speed) {
-  constants.min_speed = minimum_speed;
-  constants.distance_to_travel = distance;
+  // Both are magnitudes.  A negative min_speed makes iterate() return a negative output, which turns the
+  // clamp in the turn and swing tasks inside out and drives the robot away from its target
+  constants.min_speed = std::abs(minimum_speed);
+  constants.distance_to_travel = std::fabs(distance);
 }
 
 void slew::speed_max_set(double speed) { max_speed = speed; }
@@ -52,8 +54,10 @@ double slew::iterate(double current) {
     error = x_intercept - current;
 
     // When the sign of error flips, slew is completed
-    if (util::sgn(error) != sign)
+    if (util::sgn(error) != sign) {
       is_enabled = false;
+      last_output = max_speed;  // Return max speed on this pass too, otherwise this pass returns the output from the pass before it
+    }
 
     // Return y=mx+b
     else if (util::sgn(error) == sign) {

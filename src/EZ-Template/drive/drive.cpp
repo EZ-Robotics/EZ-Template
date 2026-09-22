@@ -282,8 +282,9 @@ void Drive::drive_defaults_set() {
   pid_swing_chain_constant_set(5_deg);
   pid_drive_chain_constant_set(3_in);
 
-  // Modify joystick curve on controller (defaults to enabled)
-  opcontrol_curve_buttons_toggle(true);
+  // Modifying the joystick curve with the controller buttons is disabled by default, the user turns it on with
+  // opcontrol_curve_buttons_toggle(true).  The default lives in disable_controller, calling the toggle here would
+  // write to the controller screen while globals are still being constructed.
 
   // Left / Right modify buttons
   opcontrol_curve_buttons_left_set(pros::E_CONTROLLER_DIGITAL_LEFT, pros::E_CONTROLLER_DIGITAL_RIGHT);
@@ -474,8 +475,9 @@ double Drive::drive_imu_accel_get() {
 }
 
 // A physical 3600 degree turn reads in the thousands.  Anything under 100 (0, or a
-// leftover 3.2.x style 1.007) would turn into a wildly wrong scale, so refuse it.
-static bool imu_3600_reading_valid(double imu_value_after_3600) { return std::fabs(imu_value_after_3600) >= 100.0; }
+// leftover 3.2.x style 1.007) would turn into a wildly wrong scale, so refuse it.  That
+// includes a negative reading: 3600 / -3597 is a scale of -1.0008, which would negate every heading.
+static bool imu_3600_reading_valid(double imu_value_after_3600) { return imu_value_after_3600 >= 100.0; }
 
 void Drive::drive_imu_scaler_3600_set(double imu_value_after_3600) {
   if (!imu_3600_reading_valid(imu_value_after_3600)) {

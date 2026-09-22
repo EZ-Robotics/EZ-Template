@@ -129,3 +129,141 @@ TEST_CASE("screen_print ignores a start line that is not on the screen") {
   CHECK(test::screen_lines[0] == "keep");
   for (int i = 1; i < 8; i++) CHECK(test::screen_lines[i] == "");
 }
+
+TEST_CASE("screen_print hard wraps a word that is wider than the screen without repeating a character") {
+  clear_screen();
+  // 40 different characters in a row, so a repeated or dropped one shows up.
+  std::string word = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn";
+  screen_print(word);
+
+  CHECK(test::screen_lines[0] == word.substr(0, 38));
+  CHECK(test::screen_lines[1] == word.substr(38));
+  CHECK(test::screen_lines[2] == "");
+}
+
+TEST_CASE("screen_print hard wraps a word that takes more than two lines") {
+  clear_screen();
+  std::string word;
+  for (int i = 0; i < 100; i++) word += (char)('a' + i % 26);
+  screen_print(word);
+
+  CHECK(test::screen_lines[0] == word.substr(0, 38));
+  CHECK(test::screen_lines[1] == word.substr(38, 38));
+  CHECK(test::screen_lines[2] == word.substr(76));
+  CHECK(test::screen_lines[3] == "");
+}
+
+TEST_CASE("screen_print hard wraps a word that ends exactly on a line boundary") {
+  clear_screen();
+  std::string word(76, 'x');
+  screen_print(word);
+
+  CHECK(test::screen_lines[0] == std::string(38, 'x'));
+  CHECK(test::screen_lines[1] == std::string(38, 'x'));
+  CHECK(test::screen_lines[2] == "");
+}
+
+TEST_CASE("screen_print does not draw a trailing newline as a character") {
+  clear_screen();
+  screen_print("abc\n", 2);
+
+  CHECK(test::screen_lines[1] == "");
+  CHECK(test::screen_lines[2] == "abc");
+  CHECK(test::screen_lines[3] == "");
+}
+
+TEST_CASE("screen_print does not draw a trailing newline after several lines") {
+  clear_screen();
+  screen_print("abc\ndef\n", 2);
+
+  CHECK(test::screen_lines[2] == "abc");
+  CHECK(test::screen_lines[3] == "def");
+  CHECK(test::screen_lines[4] == "");
+}
+
+TEST_CASE("screen_print keeps a blank line that comes before a trailing newline") {
+  clear_screen();
+  screen_print("abc\n\n", 2);
+  CHECK(test::screen_lines[2] == "abc");
+  CHECK(test::screen_lines[3] == "");
+  CHECK(test::screen_lines[4] == "");
+
+  // Blank lines in the middle are untouched by the trailing newline too.
+  clear_screen();
+  screen_print("abc\n\ndef\n", 2);
+  CHECK(test::screen_lines[2] == "abc");
+  CHECK(test::screen_lines[3] == "");
+  CHECK(test::screen_lines[4] == "def");
+  CHECK(test::screen_lines[5] == "");
+}
+
+TEST_CASE("screen_print given only a newline leaves the line blank") {
+  clear_screen();
+  screen_print("keep", 1);
+  screen_print("\n", 2);
+
+  CHECK(test::screen_lines[1] == "keep");
+  CHECK(test::screen_lines[2] == "");
+  CHECK(test::screen_lines[3] == "");
+}
+
+TEST_CASE("screen_print still splits lines on a newline in the middle of the text") {
+  clear_screen();
+  screen_print("one\ntwo\nthree", 1);
+
+  CHECK(test::screen_lines[0] == "");
+  CHECK(test::screen_lines[1] == "one");
+  CHECK(test::screen_lines[2] == "two");
+  CHECK(test::screen_lines[3] == "three");
+  CHECK(test::screen_lines[4] == "");
+}
+
+TEST_CASE("screen_print draws the same lines with or without a trailing newline") {
+  const char* texts[] = {
+      "Page 1\nDrive Example",
+      "the quick brown fox jumps over the lazy dog again and again",
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn",
+  };
+  for (const char* text : texts) {
+    clear_screen();
+    screen_print(text, 1);
+    std::string without[8];
+    for (int i = 0; i < 8; i++) without[i] = test::screen_lines[i];
+
+    clear_screen();
+    screen_print(std::string(text) + "\n", 1);
+    for (int i = 0; i < 8; i++) CHECK(test::screen_lines[i] == without[i]);
+  }
+}
+
+TEST_CASE("screen_print hard wraps a word and then ends on a trailing newline") {
+  // The word ends exactly on the line width, so the newline doesn't start a new line.
+  clear_screen();
+  screen_print(std::string(38, 'x') + "\n");
+  CHECK(test::screen_lines[0] == std::string(38, 'x'));
+  CHECK(test::screen_lines[1] == "");
+
+  // Two characters spill onto the second line, which the newline then ends.
+  clear_screen();
+  std::string word = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn";
+  screen_print(word + "\n");
+  CHECK(test::screen_lines[0] == word.substr(0, 38));
+  CHECK(test::screen_lines[1] == word.substr(38));
+  CHECK(test::screen_lines[2] == "");
+}
+
+TEST_CASE("screen_print shows the PID tuner text without a stray character below the last line") {
+  // The tuner's output is a name, a blank line, four value lines that each end in a newline, then one more
+  // newline.  That last newline ends the text, it isn't a line of its own to draw.
+  clear_screen();
+  screen_print("Drive\n\nkp: 1 <--\nki: 0\nkd: 0\nstart i: 0\n\n");
+
+  CHECK(test::screen_lines[0] == "Drive");
+  CHECK(test::screen_lines[1] == "");
+  CHECK(test::screen_lines[2] == "kp: 1 <--");
+  CHECK(test::screen_lines[3] == "ki: 0");
+  CHECK(test::screen_lines[4] == "kd: 0");
+  CHECK(test::screen_lines[5] == "start i: 0");
+  CHECK(test::screen_lines[6] == "");
+  CHECK(test::screen_lines[7] == "");
+}
