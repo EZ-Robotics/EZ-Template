@@ -475,8 +475,9 @@ double Drive::drive_imu_accel_get() {
 }
 
 // A physical 3600 degree turn reads in the thousands.  Anything under 100 (0, or a
-// leftover 3.2.x style 1.007) would turn into a wildly wrong scale, so refuse it.
-static bool imu_3600_reading_valid(double imu_value_after_3600) { return std::fabs(imu_value_after_3600) >= 100.0; }
+// leftover 3.2.x style 1.007) would turn into a wildly wrong scale, so refuse it.  That
+// includes a negative reading: 3600 / -3597 is a scale of -1.0008, which would negate every heading.
+static bool imu_3600_reading_valid(double imu_value_after_3600) { return imu_value_after_3600 >= 100.0; }
 
 void Drive::drive_imu_scaler_3600_set(double imu_value_after_3600) {
   if (!imu_3600_reading_valid(imu_value_after_3600)) {
