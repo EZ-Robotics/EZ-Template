@@ -76,16 +76,6 @@ class Drive {
   std::deque<pros::Imu*> good_imus;
 
   /**
-   * Deprecated left tracking wheel.
-   */
-  pros::adi::Encoder left_tracker;
-
-  /**
-   * Deprecated right tracking wheel.
-   */
-  pros::adi::Encoder right_tracker;
-
-  /**
    * Deprecated left rotation tracker.
    */
   pros::Rotation left_rotation;
@@ -414,52 +404,6 @@ class Drive {
    *        external gear ratio, wheel gear / motor gear
    */
   Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks, double ratio = 1.0);
-
-  /**
-   * Creates a Drive Controller using encoders plugged into the brain.
-   *
-   * \param left_motor_ports
-   *        input {1, -2...}. make ports negative if reversed
-   * \param right_motor_ports
-   *        input {-3, 4...}. make ports negative if reversed
-   * \param imu_port
-   *        port the IMU is plugged into
-   * \param wheel_diameter
-   *        diameter of your sensored wheel
-   * \param ticks
-   *        ticks per revolution of your encoder
-   * \param ratio
-   *        external gear ratio, wheel gear / sensor gear
-   * \param left_tracker_ports
-   *        input {1, 2}. make ports negative if reversed
-   * \param right_tracker_ports
-   *        input {3, 4}. make ports negative if reversed
-   */
-  Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks, double ratio, std::vector<int> left_tracker_ports, std::vector<int> right_tracker_ports) __attribute__((deprecated("Use the integrated encoder constructor with odom_tracker_left_set() and odom_tracker_right_set() instead!")));
-
-  /**
-   * Creates a Drive Controller using encoders plugged into a 3 wire expander.
-   *
-   * \param left_motor_ports
-   *        input {1, -2...}. make ports negative if reversed
-   * \param right_motor_ports
-   *        input {-3, 4...}. make ports negative if reversed
-   * \param imu_port
-   *        port the IMU is plugged into
-   * \param wheel_diameter
-   *        diameter of your sensored wheel
-   * \param ticks
-   *        ticks per revolution of your encoder
-   * \param ratio
-   *        external gear ratio, wheel gear / sensor gear
-   * \param left_tracker_ports
-   *        input {1, 2}. make ports negative if reversed
-   * \param right_tracker_ports
-   *        input {3, 4}. make ports negative if reversed
-   * \param expander_smart_port
-   *        port the expander is plugged into
-   */
-  Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks, double ratio, std::vector<int> left_tracker_ports, std::vector<int> right_tracker_ports, int expander_smart_port) __attribute__((deprecated("Use the integrated encoder constructor with odom_tracker_left_set() and odom_tracker_right_set() instead!")));
 
   /**
    * Creates a Drive Controller using rotation sensors.
