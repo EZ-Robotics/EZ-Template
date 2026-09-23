@@ -33,6 +33,8 @@ struct DriveTestAccess {
   static bool& last_was_autonomous(Drive& d) { return d.last_was_autonomous; }
   static void ez_auto_task(Drive& d) { d.ez_auto_task(); }
   static void check_imu_task(Drive& d) { d.check_imu_task(); }
+  static void drive_pid_task(Drive& d) { d.drive_pid_task(); }
+  static std::deque<pros::Imu*>& all_imus(Drive& d) { return d.all_imus; }
   static Lock<pros::RecursiveMutex>& drive_mutex(Drive& d) { return d.drive_mutex; }
   static void turn_pid_task(Drive& d) { d.turn_pid_task(); }
   static void ptp_task(Drive& d) { d.ptp_task(); }
