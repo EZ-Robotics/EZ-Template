@@ -3889,8 +3889,6 @@ class Drive {
   bool is_tank = false;
 
 #define DRIVE_INTEGRATED 1
-#define DRIVE_ADI_ENCODER 2
-#define DRIVE_ROTATION 3
 #define ODOM_TRACKER 4
 
   /**
