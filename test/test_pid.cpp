@@ -162,20 +162,56 @@ TEST_CASE("PID velocity exit fires on the 6th stationary pass once the robot has
   CHECK(pid.exit_condition() == VELOCITY_EXIT);
 }
 
-TEST_CASE("PID velocity timer restarts when the robot moves again") {
+TEST_CASE("PID velocity timer restarts after two consecutive moving passes, not one") {
+  // A single moving tick no longer fully resets the timer on its own (Step 3 finding #15: an
+  // isolated noisy/jitter reading -- contact defense, drivetrain backlash under a sustained
+  // push -- must not be able to masquerade as "moving again" and erase real accumulated
+  // stillness). Two CONSECUTIVE moving ticks still do, since that's what actually distinguishes
+  // genuine renewed motion from a one-tick blip at a 10ms tick rate.
   PID pid;
   pid.exit_condition_set(0, 0, 0, 0, 50, 0);
   pid.error = 10.0;
 
   pid.derivative = 1.0;
-  CHECK(pid.exit_condition() == RUNNING);
+  CHECK(pid.exit_condition() == RUNNING);  // armed
   pid.derivative = 0.0;
-  for (int pass = 1; pass <= 5; pass++) CHECK(pid.exit_condition() == RUNNING);  // 1 pass short of exiting
+  for (int pass = 1; pass <= 5; pass++) CHECK(pid.exit_condition() == RUNNING);  // k=50, 1 pass short of exiting
+
   pid.derivative = 1.0;
-  CHECK(pid.exit_condition() == RUNNING);  // moving again, timer resets
+  CHECK(pid.exit_condition() == RUNNING);  // a single moving tick: k is NOT reset (still 50)
+  pid.derivative = 1.0;
+  CHECK(pid.exit_condition() == RUNNING);  // a second consecutive one: NOW it resets
+
   pid.derivative = 0.0;
-  for (int pass = 1; pass <= 5; pass++) CHECK(pid.exit_condition() == RUNNING);
+  for (int pass = 1; pass <= 5; pass++) CHECK(pid.exit_condition() == RUNNING);  // fresh 5-pass countdown
   CHECK(pid.exit_condition() == VELOCITY_EXIT);
+}
+
+TEST_CASE("PID velocity timer is not reset by an isolated single-tick blip (finding #15's failure scenario)") {
+  // The scenario finding #15 actually reports: a robot with zero net progress (genuinely
+  // pinned/stuck) whose sensor jitters above the threshold every so often, never for two ticks
+  // in a row. Before this fix, ANY single blip reset k to 0, so this pattern could defeat the
+  // velocity exit indefinitely even though the robot never actually moved. After the fix, only
+  // a majority of consecutive moving ticks does that, so isolated blips can't stop k from
+  // eventually accumulating past velocity_exit_time.
+  PID pid;
+  pid.exit_condition_set(0, 0, 0, 0, 50, 0);
+  pid.error = 10.0;
+  pid.derivative = 1.0;
+  CHECK(pid.exit_condition() == RUNNING);  // armed
+
+  // Genuinely stuck, but with an isolated noisy reading every other pass.
+  bool jitter = false;
+  int pass = 0;
+  exit_output result = RUNNING;
+  while (result == RUNNING) {
+    pass++;
+    REQUIRE(pass <= 200);  // don't hang the suite if this regresses
+    pid.derivative = jitter ? 1.0 : 0.0;
+    jitter = !jitter;
+    result = pid.exit_condition();
+  }
+  CHECK(result == VELOCITY_EXIT);
 }
 
 TEST_CASE("PID velocity exit still fires for a robot that never moves, after the fallback window") {

@@ -103,6 +103,8 @@ void PID::timers_reset() {
   j = 0;
   l = 0;
   m = 0;
+  k_miss = 0;
+  m_miss = 0;
   arm_timer = 0;
   velocity_armed = false;
   is_mA = false;
@@ -209,13 +211,21 @@ exit_output PID::exit_condition(bool print) {
   if (exit.velocity_exit_time != 0 && velocity_armed && !held) {  // Check if this condition is enabled
     if (std::fabs(derivative) <= velocity_zero_main) {
       k += util::DELAY_TIME;
+      k_miss = 0;
       if (k > exit.velocity_exit_time) {
         timers_reset();
         if (print) exit_condition_print(VELOCITY_EXIT);
         return VELOCITY_EXIT;
       }
     } else {
-      k = 0;
+      // A single noisy tick above the threshold doesn't erase accumulated stillness -- only
+      // VELOCITY_MISS_DEBOUNCE_PASSES consecutive ones do, so an isolated blip (contact jitter,
+      // drivetrain backlash under a sustained push) can't indefinitely defeat this exit the same
+      // way a genuine, sustained motion resets it within two ticks either way.
+      if (++k_miss >= VELOCITY_MISS_DEBOUNCE_PASSES) {
+        k = 0;
+        k_miss = 0;
+      }
     }
   }
 
@@ -246,7 +256,11 @@ exit_output PID::exit_condition(bool print) {
 exit_output PID::exit_condition(pros::Motor sensor, bool print) {
   // If the motors are pulling too many mA, the code will timeout and set interfered to true.
   if (exit.mA_timeout != 0) {  // Check if this condition is enabled
-    if (sensor.is_over_current()) {
+    // is_over_current() returns 1 (over limit), 0 (not), or PROS_ERR (the read itself failed,
+    // e.g. the motor is disconnected) -- PROS_ERR is a large nonzero sentinel, so treating any
+    // nonzero return as "over current" mistakes a disconnected motor for a stalled one and
+    // forces an mA_EXIT at exactly mA_timeout regardless of real motion. Only a genuine 1 counts.
+    if (sensor.is_over_current() == 1) {
       l += util::DELAY_TIME;
       if (l > exit.mA_timeout) {
         timers_reset();
@@ -265,8 +279,9 @@ exit_output PID::exit_condition(const std::vector<pros::Motor>& sensor, bool pri
   // If the motors are pulling too many mA, the code will timeout and set interfered to true.
   if (exit.mA_timeout != 0) {  // Check if this condition is enabled
     for (auto i : sensor) {
-      // Check if 1 motor is pulling too many mA
-      if (i.is_over_current()) {
+      // Check if 1 motor is pulling too many mA. Only a genuine 1 counts -- see the single-Motor
+      // overload above for why PROS_ERR (a disconnected motor) must not be treated as overcurrent.
+      if (i.is_over_current() == 1) {
         is_mA = true;
         break;
       }

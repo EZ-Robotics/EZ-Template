@@ -330,6 +330,14 @@ class PID {
   double velocity_zero_main = 0.05;
   double velocity_zero_secondary = 0.075;
   int i = 0, j = 0, k = 0, l = 0, m = 0;
+  // A single tick where the sensor reads above velocity_zero_main/_secondary no longer wipes
+  // k/m to 0 by itself -- real contact jitter or drivetrain backlash under a sustained push can
+  // produce an isolated noisy reading without the robot actually having made progress, and that
+  // used to erase the ONE stuck-detection backstop DRIVE/TURN/SWING have (PID.cpp:raw_compute
+  // area). k/m only reset once VELOCITY_MISS_DEBOUNCE_PASSES consecutive ticks read as moving,
+  // which any real, non-instantaneous motion clears easily at a 10ms tick rate.
+  int k_miss = 0, m_miss = 0;
+  static constexpr int VELOCITY_MISS_DEBOUNCE_PASSES = 2;
   int arm_timer = 0;
   bool velocity_armed = false;
   static constexpr int VELOCITY_ARM_FALLBACK = 1000;
