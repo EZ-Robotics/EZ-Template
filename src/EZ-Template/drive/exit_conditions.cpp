@@ -730,8 +730,18 @@ void Drive::pid_wait_until_index_started(int index) {
     return;
   }
 
-  if (index < 0 || index > (int)injected_pp_index.size() - 2) {
-    printf("  Wait Until PP Error!  Index %i is not within range!  %i is max!\n", index, (int)injected_pp_index.size() - 2);
+  // Snapshotted once, locked: a concurrent motion can rebuild injected_pp_index (a whole-vector move assignment --
+  // see set_odom_pid.cpp / purepursuit_math.cpp) while this function is reading it. Reading a vector mid-reassignment
+  // is undefined behavior, not just stale data, so this takes one consistent copy instead of trusting each of the
+  // several unlocked reads below to happen to land before or after the swap.
+  std::vector<int> injected_pp_index_snapshot;
+  {
+    ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+    injected_pp_index_snapshot = injected_pp_index;
+  }
+
+  if (index < 0 || index > (int)injected_pp_index_snapshot.size() - 2) {
+    printf("  Wait Until PP Error!  Index %i is not within range!  %i is max!\n", index, (int)injected_pp_index_snapshot.size() - 2);
     return;
   }
   index += 1;
@@ -744,7 +754,7 @@ void Drive::pid_wait_until_index_started(int index) {
     return pp_index < (int)pp_movements.size() ? util::distance_to_point(pp_movements[pp_index].target, odom_pose_get()) : 0.0;
   };
   StuckWatch watch(xyPID, current_a_odomPID, pp_index, point_distance(), util::distance_to_point(odom_start, odom_pose_get()), std::fabs(odom_theta_get() - odom_start.theta));
-  while (pp_index < injected_pp_index[index]) {
+  while (pp_index < injected_pp_index_snapshot[index]) {
     secondary_velocity_sensor_update(xyPID);
     secondary_velocity_sensor_update(current_a_odomPID);
     xy_velocity_exit_hold_update();
@@ -753,15 +763,15 @@ void Drive::pid_wait_until_index_started(int index) {
 
     // Same stuck check as pid_wait(), for a robot that is stuck but moving, which the exits above miss
     if (watch.stuck(pp_index, point_distance(), xyPID.error, current_a_odomPID.error, util::distance_to_point(odom_start, odom_pose_get()), std::fabs(odom_theta_get() - odom_start.theta))) {
-      if (print_toggle) std::cout << "  Stuck before reaching point " << injected_pp_index[index] << ", at (" << odom_x_get() << ", " << odom_y_get() << ")\n";
+      if (print_toggle) std::cout << "  Stuck before reaching point " << injected_pp_index_snapshot[index] << ", at (" << odom_x_get() << ", " << odom_y_get() << ")\n";
       interfered = true;
       break;
     }
 
     if (xy_exit != RUNNING && a_exit != RUNNING) {
       if (print_toggle) {
-        // index points into injected_pp_index, which holds where each waypoint sits in pp_movements
-        std::cout << "  XY: " << exit_to_string(xy_exit) << " Wait Until Exit Failsafe, triggered at (" << odom_x_get() << ", " << odom_y_get() << ") instead of (" << pp_movements[injected_pp_index[index]].target.x << ", " << pp_movements[injected_pp_index[index]].target.y << ")\n";
+        // index points into injected_pp_index_snapshot, which holds where each waypoint sits in pp_movements
+        std::cout << "  XY: " << exit_to_string(xy_exit) << " Wait Until Exit Failsafe, triggered at (" << odom_x_get() << ", " << odom_y_get() << ") instead of (" << pp_movements[injected_pp_index_snapshot[index]].target.x << ", " << pp_movements[injected_pp_index_snapshot[index]].target.y << ")\n";
         xyPID.timers_reset();
         current_a_odomPID.timers_reset();
       }
@@ -778,15 +788,25 @@ void Drive::pid_wait_until_index_started(int index) {
 void Drive::pid_wait_until_index(int index) {
   pid_wait_until_index_started(index);
   index += 1;
-  if (index < 0 || index >= (int)injected_pp_index.size()) return;
-  pose target = pp_movements[injected_pp_index[index]].target;
+  std::vector<int> injected_pp_index_snapshot;
+  {
+    ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+    injected_pp_index_snapshot = injected_pp_index;
+  }
+  if (index < 0 || index >= (int)injected_pp_index_snapshot.size()) return;
+  pose target = pp_movements[injected_pp_index_snapshot[index]].target;
   pid_wait_until_point(target);
 }
 
 // Pid wait, but quickly :)
 void Drive::pid_wait_quick() {
   if (mode == PURE_PURSUIT) {
-    pid_wait_until_index(injected_pp_index.size() - 2);
+    int last_index;
+    {
+      ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+      last_index = (int)injected_pp_index.size() - 2;
+    }
+    pid_wait_until_index(last_index);
     {
       ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
       // Same as pid_wait(): store the equivalent angle nearest the IMU.
