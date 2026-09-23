@@ -214,6 +214,26 @@ void Drive::ptp_task() {
   current_a_odomPID.compute_error(wrapped_a_target, odom_theta_get());
   // printf("shortest_a_target: %.2f      error: %.2f\n", a_target, wrapped_a_target);
 
+  // raw_pid_odom_ptp_set() (set_odom_pid.cpp) sets headingPID's target from this same
+  // point-to-face angle, but only once: at motion start for a plain POINT_TO_POINT target
+  // (ptp_task() alone drives the rest of the motion), or on every carrot move/waypoint
+  // advance for PURE_PURSUIT/boomerang (which calls raw_pid_odom_ptp_set() again each time).
+  // A plain point therefore has no intended final heading to resync to and nothing keeps its
+  // one-shot value fresh as the robot's actual approach angle evolves -- unlike boomerang,
+  // which already gets a continuous refresh from those repeated calls, and unlike an explicit
+  // final theta, which gets an exit-time resync in exit_conditions.cpp. Recompute it here
+  // every tick from the same a_target this pass already derived for current_a_odomPID, so a
+  // plain point's headingPID target converges to wherever the robot actually ends up facing
+  // by the time the motion completes, the same way boomerang's already does. Gated to plain
+  // points only (odom_target_start.theta == ANGLE_NOT_SET) so it can't interfere with
+  // boomerang's own continuous refresh or an explicit theta's exit-time resync. headingPID
+  // isn't consumed by anything during odom modes (only drive_pid_task()'s heading-hold reads
+  // its output, and that only runs in DRIVE mode), so this has no effect on the odom motion
+  // itself -- it only changes what the *next* DRIVE/TURN motion inherits.
+  if (odom_target_start.theta == ANGLE_NOT_SET) {
+    headingPID.target_set(a_target);
+  }
+
   // Prioritize turning by scaling xy_out down
   double xy_out = xyPID.output;
   xy_out = util::clamp(xy_out, max_slew_out);
