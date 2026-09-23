@@ -232,6 +232,11 @@ void Drive::pid_odom_injected_pp_set(std::vector<ez::odom> imovements, bool slew
     return;
   }
 
+  // See pid_odom_pp_set()'s matching comment: locked for the whole body so this setter raises
+  // and restores its task's priority exactly once, including inject_points()'s own
+  // injected_pp_index write, which nests inside this for free.
+  ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+
   interfered = false;
 
   xyPID.timers_reset();
@@ -241,7 +246,11 @@ void Drive::pid_odom_injected_pp_set(std::vector<ez::odom> imovements, bool slew
   leftPID.motion_reset(drive_sensor_left());
   rightPID.motion_reset(drive_sensor_right());
 
-  if (print_toggle) printf("Injected ");
+  // print_after_unlock, not printf: this function now holds drive_mutex for its whole body
+  // (see the KillSafeGuard added above), and printf is a blocking call locking rule 2 forbids
+  // making while a guard is held (test_locking_rule.cpp) -- print_after_unlock queues the text
+  // and emits it once the outermost guard's destructor runs.
+  if (print_toggle) drive_mutex.print_after_unlock("Injected ");
   std::vector<odom> input_path = inject_points(imovements);
   odom_turn_bias_enable(true);
   current_slew_on = slew_on;
@@ -277,6 +286,11 @@ void Drive::pid_odom_smooth_pp_set(std::vector<odom> imovements, bool slew_on) {
     return;
   }
 
+  // See pid_odom_pp_set()'s matching comment: locked for the whole body so this setter raises
+  // and restores its task's priority exactly once, including inject_points()'s own
+  // injected_pp_index write, which nests inside this for free.
+  ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+
   interfered = false;
 
   xyPID.timers_reset();
@@ -286,7 +300,8 @@ void Drive::pid_odom_smooth_pp_set(std::vector<odom> imovements, bool slew_on) {
   leftPID.motion_reset(drive_sensor_left());
   rightPID.motion_reset(drive_sensor_right());
 
-  if (print_toggle) printf("Smooth Injected ");
+  // print_after_unlock, not printf: see the matching comment in pid_odom_injected_pp_set().
+  if (print_toggle) drive_mutex.print_after_unlock("Smooth Injected ");
   std::vector<odom> input_path = smooth_path(inject_points(imovements), odom_smooth_weight_smooth, odom_smooth_weight_data, odom_smooth_tolerance);
   odom_turn_bias_enable(true);
   current_slew_on = slew_on;
@@ -335,6 +350,13 @@ void Drive::pid_odom_pp_set(std::vector<odom> imovements, bool slew_on) {
     return;
   }
 
+  // Locked for the whole body, like pid_odom_ptp_set() already is -- not just around the
+  // injected_pp_index publish below -- so this setter raises and restores its task's priority
+  // exactly once (test_kill_safe_setters.cpp), the same as every other public setter. raw_pid_
+  // odom_pp_set()'s own KillSafeGuard nests inside this one for free (Guard doesn't raise again
+  // for a guard nested inside another on the same lock).
+  ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+
   interfered = false;
 
   xyPID.timers_reset();
@@ -371,20 +393,27 @@ void Drive::pid_odom_pp_set(std::vector<odom> imovements, bool slew_on) {
   }
   input.back().turn_behavior = raw;
 
-  // This is used for pid_wait_until_pp()
-  injected_pp_index.clear();
-  injected_pp_index.push_back(0);
+  // This is used for pid_wait_until_pp(). Built into a local vector and published in one move
+  // assignment, not rebuilt member-in-place: this whole function now holds drive_mutex (see
+  // above), but a reader that doesn't itself take the lock (pid_wait_until_index_started() in
+  // exit_conditions.cpp doesn't) could otherwise still observe a partially-rebuilt vector
+  // straddling a clear()-then-push_back() sequence even under our own lock. See finding #16,
+  // Step 3 audit.
+  std::vector<int> new_injected_pp_index;
+  new_injected_pp_index.push_back(0);
   for (std::size_t i = 0; i < input.size(); i++) {
     if (i != 0 && input[i - 1].target.theta == ANGLE_NOT_SET)
-      injected_pp_index.push_back(i);
+      new_injected_pp_index.push_back(i);
   }
+  injected_pp_index = std::move(new_injected_pp_index);
 
   odom_turn_bias_enable(true);
   current_slew_on = slew_on;
   slew_min_when_it_enabled = 0;
   slew_will_enable_later = false;
 
-  if (print_toggle) printf("Pure Pursuit ");
+  // print_after_unlock, not printf: see the matching comment in pid_odom_injected_pp_set().
+  if (print_toggle) drive_mutex.print_after_unlock("Pure Pursuit ");
   raw_pid_odom_pp_set(input, slew_on);
 }
 
