@@ -31,6 +31,15 @@ struct Channel {
   bool side, rebound = false, rebounded = false;
   Channel(double p_step, double size, double error) : step(p_step), low(size), side(error > 0) {}
   bool made(double size, double error) {
+    // A NaN size/error -- e.g. a caller-supplied NaN target, making every pass' distance/error compute to
+    // NaN -- must not read as progress.  Every comparison against NaN is false, so unguarded this fell
+    // through the "still above the last low?" check below no matter how many times it ran, crediting a new
+    // low every single pass AND overwriting that low with NaN, which together defeat this channel (and
+    // whatever backstop owns it) for as long as NaN keeps arriving.  Bailing out first, before side/low/
+    // rebound are touched, makes a NaN reading simply invisible to this channel: no progress credited, and
+    // no corruption of its state -- exactly as if that pass hadn't happened. A finite reading right after
+    // still cures it immediately, the same as before this guard existed.
+    if (!std::isfinite(size) || !std::isfinite(error)) return false;
     bool overshot = (error > 0) != side;
     bool shoved = size > low + step;
     if ((overshot || shoved) && !rebounded) rebound = rebounded = true;
