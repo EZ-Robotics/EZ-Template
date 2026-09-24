@@ -110,6 +110,8 @@ article h1 a, article h2 a, article h3 a { text-decoration:none; }
 .theme-code-block { border:1px solid var(--ez-line); border-radius:4px !important; box-shadow:none !important; }
 div[class^='codeBlockTitle'] { font-size:.8rem; color:var(--ez-muted) !important; border-bottom:1px solid var(--ez-line) !important; }
 code { border:none; border-radius:3px; font-weight:500; }
+/* mobile: wrap instead of horizontal-scrolling code blocks */
+@media (max-width:996px){ .theme-code-block pre code { white-space:pre-wrap; overflow-wrap:anywhere; } }
 .theme-admonition { background:transparent !important; border:none !important;
   border-left:3px solid var(--ifm-color-primary) !important; border-radius:0; padding-left:1.1rem; }
 table th { font-size:.86rem; color:var(--ez-muted); font-weight:600; background:transparent; }
