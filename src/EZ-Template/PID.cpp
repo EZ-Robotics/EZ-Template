@@ -106,6 +106,7 @@ void PID::timers_reset() {
   arm_timer = 0;
   velocity_armed = false;
   is_mA = false;
+  hold_timer = 0;
 }
 
 void PID::motion_reset(double current) {
@@ -142,6 +143,9 @@ double PID::velocity_sensor_main_exit_get() { return velocity_zero_main; }
 
 void PID::velocity_sensor_secondary_exit_set(double zero) { velocity_zero_secondary = zero; }
 double PID::velocity_sensor_secondary_exit_get() { return velocity_zero_secondary; }
+
+void PID::velocity_exit_hold_set(bool hold) { velocity_exit_hold = hold; }
+bool PID::velocity_exit_hold_get() { return velocity_exit_hold; }
 
 exit_output PID::exit_condition(bool print) {
   // If this function is called while all exit constants are 0, print an error
@@ -189,8 +193,20 @@ exit_output PID::exit_condition(bool print) {
       velocity_armed = true;
   }
 
+  // A caller can ask to freeze both velocity timers (see velocity_exit_hold_set()), but not forever:
+  // past VELOCITY_EXIT_HOLD_FALLBACK ms of continuous hold, this ignores the request, the same safety
+  // valve velocity_armed uses against a robot that never moves.  Otherwise a caller that holds
+  // indefinitely -- for example because whatever else has it holding never resolves either -- could
+  // keep this exit's caller waiting forever.
+  if (velocity_exit_hold) {
+    hold_timer += util::DELAY_TIME;
+  } else {
+    hold_timer = 0;
+  }
+  bool held = velocity_exit_hold && hold_timer <= VELOCITY_EXIT_HOLD_FALLBACK;
+
   // If the motor velocity is 0, the code will timeout and set interfered to true.
-  if (exit.velocity_exit_time != 0 && velocity_armed) {  // Check if this condition is enabled
+  if (exit.velocity_exit_time != 0 && velocity_armed && !held) {  // Check if this condition is enabled
     if (std::fabs(derivative) <= velocity_zero_main) {
       k += util::DELAY_TIME;
       if (k > exit.velocity_exit_time) {
@@ -209,7 +225,7 @@ exit_output PID::exit_condition(bool print) {
   // If the secondary sensors velocity is 0, the code will timeout and set interfered to true.
   // A non-finite second_sensor means no reading was ever taken (no imu, or the channel was just
   // turned on) -- never count that as "stopped".
-  if (exit.velocity_exit_time != 0 && velocity_armed) {  // Check if this condition is enabled
+  if (exit.velocity_exit_time != 0 && velocity_armed && !held) {  // Check if this condition is enabled
     if (std::isfinite(second_sensor) && std::fabs(second_sensor) <= velocity_zero_secondary) {
       m += util::DELAY_TIME;
       if (m > exit.velocity_exit_time) {
