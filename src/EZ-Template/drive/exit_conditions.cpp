@@ -158,6 +158,16 @@ class SingleStuckWatch {
 // it's still getting somewhere.  StuckWatch decides stuck instead.  Small, big and current exits end it as always.
 exit_output without_velocity(exit_output e) { return e == VELOCITY_EXIT ? RUNNING : e; }
 
+// wait_until_drive()'s own crossed check -- comparing how far the robot has actually driven to the distance it was
+// asked to wait for -- is the only thing allowed to end an ODOM wait successfully.  On an odom move, leftPID/
+// rightPID's own target is a fixed look-ahead point a few inches past where the motion started (raw_pid_odom_ptp_set,
+// set_odom_pid.cpp), retargeted once and never again, so their SMALL_EXIT/BIG_EXIT below reflect settling on THAT
+// near point, not on the distance actually being waited for -- letting either one end the wait would silently
+// return short of it.  VELOCITY_EXIT and mA_EXIT stay: a stalled motor's velocity or current reads the same
+// regardless of which target produced the error that triggered them, so those are still real stall signals here.
+// DRIVE (a plain, non-odom move) is unaffected: leftPID/rightPID's target there already is the real drive target.
+exit_output without_position_exits(exit_output e) { return (e == SMALL_EXIT || e == BIG_EXIT) ? RUNNING : e; }
+
 // Every motor on both sides, for an mA exit that has to see whichever motor in the group is actually the one
 // absorbing a stall -- checking only index 0 of each side missed a jam or pin that landed on a different motor.
 std::vector<pros::Motor> both_sides(const std::vector<pros::Motor>& left, const std::vector<pros::Motor>& right) {
@@ -465,21 +475,40 @@ void Drive::wait_until_drive(double target) {
   double r_tar = r_start + target;
   double l_error = l_tar - drive_sensor_left();
   double r_error = r_tar - drive_sensor_right();
-  int l_sgn = util::sgn(l_error);
-  int r_sgn = util::sgn(r_error);
+  // The direction each side is expected to close from, taken from the requested target itself rather than from
+  // this first live read: l_error/r_error above are already read after this function's own one-pass delay, so on
+  // a very short target a fast robot could already be on the far side of it by the time they're read, which would
+  // latch the "past it" sign as the starting one and make the crossed check below wait for a second flip that may
+  // never come.  target's sign can't be stale this way, and both sides are offset from their own start by the same
+  // target, so both are expected to close from the same direction.
+  int l_sgn = util::sgn(target);
+  int r_sgn = l_sgn;
+
+  // An odom move's leftPID/rightPID target is a fixed look-ahead point set once at the start of the motion (see
+  // without_position_exits()'s comment above); a plain DRIVE move's leftPID/rightPID target already is the real
+  // drive target.  Only the odom case needs the exit-condition filtering and the real-distance-keyed backstop below
+  // -- DRIVE's own target already tracks what this wait is actually waiting for.
+  bool is_odom = mode == POINT_TO_POINT || mode == PURE_PURSUIT;
 
   exit_output left_exit = RUNNING;
   exit_output right_exit = RUNNING;
-  // Same JC-1 progress backstop as pid_wait()'s DRIVE branch -- this loop's own exits share that gap exactly
-  // (see the comment there), and this function has no other protection against, say, a sustained spin.
-  SingleStuckWatch left_watch(leftPID, leftPID.error), right_watch(rightPID, rightPID.error);
+  // Same progress backstop as pid_wait()'s DRIVE branch -- this loop's own exits share that gap exactly (see the
+  // comment there), and this function has no other protection against, say, a sustained spin.  On an odom move this
+  // has to watch l_error/r_error (the real remaining distance to the real target) instead of leftPID/rightPID's own
+  // error, for the same reason without_position_exits() strips SMALL_EXIT/BIG_EXIT out below: leftPID/rightPID's
+  // error is measured against their frozen look-ahead target, not against `target`, so a healthy drive that has
+  // simply driven past that near point reads to it as permanent non-progress and would be falsely flagged stuck.
+  SingleStuckWatch left_watch(leftPID, is_odom ? l_error : leftPID.error), right_watch(rightPID, is_odom ? r_error : rightPID.error);
 
   while (true) {
     l_error = l_tar - drive_sensor_left();
     r_error = r_tar - drive_sensor_right();
 
-    // Before robot has reached target, use the exit conditions to avoid getting stuck in this while loop
-    if (util::sgn(l_error) == l_sgn || util::sgn(r_error) == r_sgn) {
+    // "I just want to know when the left or right side has driven the wait until distance" -- this ends the wait
+    // successfully the moment EITHER side's own real distance driven (l_error/r_error's sign flipping against
+    // l_sgn/r_sgn, both taken from target's own sign) reaches or passes what was asked for, not only once both
+    // have.  Keeps waiting (and running the failsafes below) only while NEITHER side has gotten there yet.
+    if (util::sgn(l_error) == l_sgn && util::sgn(r_error) == r_sgn) {
       // An odom move ends on its xy exit, which only pid_wait() checks.  The left and right exits below are aimed
       // one look ahead from where the move started, so when the robot drives past that point they can never fire.
       // If the move ends before it reaches this target, return instead of waiting forever.
@@ -498,10 +527,10 @@ void Drive::wait_until_drive(double target) {
       if (left_exit == RUNNING || right_exit == RUNNING) {
         secondary_velocity_sensor_update(leftPID);
         secondary_velocity_sensor_update(rightPID);
-        left_exit = left_exit != RUNNING ? left_exit : leftPID.exit_condition(left_motors);
-        right_exit = right_exit != RUNNING ? right_exit : rightPID.exit_condition(right_motors);
-        bool left_stuck = left_exit == RUNNING && left_watch.stuck(leftPID.error);
-        bool right_stuck = right_exit == RUNNING && right_watch.stuck(rightPID.error);
+        if (left_exit == RUNNING) left_exit = is_odom ? without_position_exits(leftPID.exit_condition(left_motors)) : leftPID.exit_condition(left_motors);
+        if (right_exit == RUNNING) right_exit = is_odom ? without_position_exits(rightPID.exit_condition(right_motors)) : rightPID.exit_condition(right_motors);
+        bool left_stuck = left_exit == RUNNING && left_watch.stuck(is_odom ? l_error : leftPID.error);
+        bool right_stuck = right_exit == RUNNING && right_watch.stuck(is_odom ? r_error : rightPID.error);
         // See the matching comment in pid_wait()'s DRIVE branch -- both sides exiting normally on the same pass
         // must not read as stuck.
         if ((left_exit == RUNNING || right_exit == RUNNING) && (left_exit != RUNNING || left_stuck) && (right_exit != RUNNING || right_stuck)) {
@@ -522,8 +551,8 @@ void Drive::wait_until_drive(double target) {
         return;
       }
     }
-    // Once we've past target, return
-    else if (util::sgn(l_error) != l_sgn || util::sgn(r_error) != r_sgn) {
+    // Once either side has reached or passed target, return
+    else {
       if (print_toggle) printf("  Drive Wait Until Exit Success. Triggered at: L,R(%.2f, %.2f)  Target: L,R(%.2f, %.2f)\n", drive_sensor_left() - l_start, drive_sensor_right() - r_start, target, target);
       leftPID.timers_reset();
       rightPID.timers_reset();
