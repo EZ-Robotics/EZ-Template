@@ -32,6 +32,10 @@ void crawl() {
   DriveTestAccess::odom_current(c) = {0.0, g_y, 0.0};
   c.xyPID.error = TARGET_Y - g_y;
   c.xyPID.derivative = 0.02;  // moving, but below velocity_zero_main(0.05) -- reads as "stopped"
+  // Also drive the raw reading itself (real motion, every tick genuinely fresh), not just
+  // derivative -- so this keeps exercising a real velocity exit even once a raw value that
+  // never changes stops counting as stalled evidence on its own (see test_pid.cpp).
+  c.xyPID.cur += 0.02;
   c.current_a_odomPID.error = 0.0;
   c.current_a_odomPID.derivative = 0.0;
 }

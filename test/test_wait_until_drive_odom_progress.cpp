@@ -118,8 +118,16 @@ void cruise_on_delay() {
   set_sensor_inches(g_chassis->right_motors, tpi, r_pos);
   g_chassis->leftPID.error = g_chassis->leftPID.target_get() - l_pos;
   g_chassis->rightPID.error = g_chassis->rightPID.target_get() - r_pos;
-  g_chassis->leftPID.derivative = pinned ? (g_pass % 2 == 0 ? 0.2 : -0.2) : g_speed;
-  g_chassis->rightPID.derivative = pinned ? (g_pass % 2 == 0 ? 0.2 : -0.2) : g_right_speed;
+  double l_rate = pinned ? (g_pass % 2 == 0 ? 0.2 : -0.2) : g_speed;
+  double r_rate = pinned ? (g_pass % 2 == 0 ? 0.2 : -0.2) : g_right_speed;
+  g_chassis->leftPID.derivative = l_rate;
+  g_chassis->rightPID.derivative = r_rate;
+  // Also drive the raw reading itself, not just derivative, so leftPID/rightPID's own velocity
+  // exit sees genuinely fresh samples matching what real position tracking would report (a real,
+  // nonzero rate always advances the raw value; this harness has no "genuinely frozen" case, so
+  // this never leaves it stale).
+  g_chassis->leftPID.cur += l_rate;
+  g_chassis->rightPID.cur += r_rate;
   pin_xy_running(*g_chassis);
 }
 

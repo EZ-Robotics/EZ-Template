@@ -96,6 +96,18 @@ void pinned_swing_jitter(Drive& c, int n) {
   c.swingPID.error = 45.0;
   c.swingPID.derivative = (n % 2 == 0) ? 0.3 : -0.3;
 }
+
+// A raw sensor reading that's bit-identical to itself every single poll, because the robot is
+// genuinely, fully stalled -- not a refresh artifact. PID::exit_condition()'s own velocity exit
+// can no longer tell this apart from a stale re-read of an unrefreshed sensor (see test_pid.cpp),
+// so it never fires from k alone here. This backstop -- a wall-clock fallback that doesn't read
+// the sensor at all -- is what has to catch it instead.
+void pinned_frozen(Drive& c, int n) {
+  c.leftPID.error = 24.0;
+  c.leftPID.derivative = 0.0;
+  c.rightPID.error = 24.0;
+  c.rightPID.derivative = 0.0;
+}
 }  // namespace
 
 TEST_CASE("pid_wait() DRIVE: a healthy, steadily-closing motion is not falsely flagged stuck") {
@@ -127,6 +139,17 @@ TEST_CASE("wait_until_drive(): the same sustained disturbance is caught, not hun
   CHECK(o.returned);
   CHECK(o.interfered);
   CHECK(o.passes < 300);
+}
+
+TEST_CASE("pid_wait() DRIVE: a raw sensor that never changes at all is still caught, not hung forever") {
+  Drive chassis = make_chassis();
+  chassis.pid_print_toggle(false);
+  chassis.pid_drive_set(24, 100);
+  Outcome o = run(chassis, pinned_frozen, 3000, [&] { chassis.pid_wait(); });
+  MESSAGE("passes=", o.passes);
+  CHECK(o.returned);
+  CHECK(o.interfered);
+  CHECK(o.passes < 200);
 }
 
 TEST_CASE("pid_wait() TURN: a healthy turn is not falsely flagged stuck") {

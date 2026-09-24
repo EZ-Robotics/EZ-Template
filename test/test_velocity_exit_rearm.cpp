@@ -21,16 +21,29 @@
 
 using namespace ez;
 
+namespace {
+// See test_pid.cpp's dither_tick: a raw reading that's always different from the tick before --
+// real sensor dither at a resting position, not a raw value repeating because the sensor hasn't
+// refreshed -- so it stays a genuinely fresh sample every tick while remaining inside the stalled
+// band.
+void dither_tick(PID& pid, double error, bool& toggle, double base, double amplitude = 0.01) {
+  toggle = !toggle;
+  pid.compute_error(error, base + (toggle ? amplitude : -amplitude));
+}
+}  // namespace
+
 TEST_CASE("PID exit_condition automatically re-arms after a VELOCITY_EXIT with no explicit timers_reset() call") {
   PID pid;
   pid.exit_condition_set(0, 0, 0, 0, 50, 0);
-  pid.error = 10.0;
-  pid.derivative = 0.0;
 
-  pid.derivative = 1.0;
-  CHECK(pid.exit_condition() == RUNNING);  // arm
-  pid.derivative = 0.0;
-  for (int pass = 1; pass < 6; pass++) CHECK(pid.exit_condition() == RUNNING);
+  pid.compute_error(10.0, 1.0);  // arm
+  CHECK(pid.exit_condition() == RUNNING);
+  bool toggle = false;
+  for (int pass = 1; pass < 6; pass++) {
+    dither_tick(pid, 10.0, toggle, 1.0);
+    CHECK(pid.exit_condition() == RUNNING);
+  }
+  dither_tick(pid, 10.0, toggle, 1.0);
   CHECK(pid.exit_condition() == VELOCITY_EXIT);  // internally calls timers_reset() -- this is the F5 side effect
 
   // No explicit pid.timers_reset() call here -- this is the real reachable path (a caller
@@ -42,10 +55,13 @@ TEST_CASE("PID exit_condition automatically re-arms after a VELOCITY_EXIT with n
 
   // And the fresh countdown behaves identically to a real motion start: 1 moving tick to arm,
   // then 5 more stationary passes before it can fire again.
-  pid.derivative = 1.0;
+  pid.compute_error(10.0, 3.0);
   CHECK(pid.exit_condition() == RUNNING);
-  pid.derivative = 0.0;
-  for (int pass = 1; pass < 6; pass++) CHECK(pid.exit_condition() == RUNNING);
+  for (int pass = 1; pass < 6; pass++) {
+    dither_tick(pid, 10.0, toggle, 3.0);
+    CHECK(pid.exit_condition() == RUNNING);
+  }
+  dither_tick(pid, 10.0, toggle, 3.0);
   CHECK(pid.exit_condition() == VELOCITY_EXIT);
 }
 

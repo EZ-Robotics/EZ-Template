@@ -23,14 +23,18 @@ using namespace ez;
 TEST_CASE("PID: a steady sub-threshold cruise eventually false-VELOCITY_EXITs once the arm fallback engages") {
   PID pid;
   pid.exit_condition_set(0, 0, 0, 0, 50, 0);
-  pid.error = 100.0;
-  pid.derivative = 0.04;  // a real, steady cruise just under the default 0.05 threshold -- not noise, not a stall
 
+  // A real, steady cruise just under the default 0.05 threshold -- not noise, not a stall, and a
+  // genuinely fresh raw reading every tick (the raw sensor position keeps advancing by 0.04 each
+  // pass, so it's never bit-identical to the tick before).
+  double position = 0.0;
   int pass = 0;
   exit_output result = RUNNING;
   while (result == RUNNING) {
     pass++;
     REQUIRE(pass <= 150);  // 100 passes (1000ms) to arm via the fallback, then ~6 more to exit
+    position += 0.04;
+    pid.compute_error(100.0, position);
     result = pid.exit_condition();
   }
   CHECK(result == VELOCITY_EXIT);  // false exit: the PID never actually stopped moving
