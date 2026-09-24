@@ -504,10 +504,10 @@ void Drive::wait_until_drive(double target) {
     l_error = l_tar - drive_sensor_left();
     r_error = r_tar - drive_sensor_right();
 
-    // "I just want to know when the left or right side has driven the wait until distance" -- this ends the wait
-    // successfully the moment EITHER side's own real distance driven (l_error/r_error's sign flipping against
-    // l_sgn/r_sgn, both taken from target's own sign) reaches or passes what was asked for, not only once both
-    // have.  Keeps waiting (and running the failsafes below) only while NEITHER side has gotten there yet.
+    // Ends the wait successfully the moment EITHER side's own real distance driven (l_error/r_error's sign
+    // flipping against l_sgn/r_sgn, both taken from target's own sign) reaches or passes what was asked for, not
+    // only once both have.  Keeps waiting (and running the failsafes below) only while NEITHER side has gotten
+    // there yet.
     if (util::sgn(l_error) == l_sgn && util::sgn(r_error) == r_sgn) {
       // An odom move ends on its xy exit, which only pid_wait() checks.  The left and right exits below are aimed
       // one look ahead from where the move started, so when the robot drives past that point they can never fire.

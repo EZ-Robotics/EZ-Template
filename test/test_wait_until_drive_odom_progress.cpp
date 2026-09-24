@@ -249,10 +249,10 @@ TEST_CASE("wait_until_drive() odom: a robot pinned past the look ahead point is 
   CHECK(o.left_driven < 40.0);
 }
 
-// "I just want to know when the left or right side has driven the wait until distance" -- Jess's own
-// wording for how this should work. Left and right cruise at different speeds (a turn woven into the
-// path, or simply two sides that never track perfectly); the wait has to end, successfully, the
-// moment EITHER side gets there, not only once both have.
+// The wait ends successfully as soon as either side's distance driven since the motion started
+// reaches the requested target, not only once both have. Left and right cruise at different speeds
+// here (a turn woven into the path, or simply two sides that never track perfectly), so only one
+// side ever gets there within this test's bound.
 TEST_CASE("wait_until_drive() odom: either side reaching the target ends the wait") {
   Drive chassis = make_chassis();
   chassis.pid_print_toggle(false);
