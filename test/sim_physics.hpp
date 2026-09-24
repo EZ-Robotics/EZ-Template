@@ -234,6 +234,16 @@ class SimRobot {
   }
 
   void run_auto_task_pass() {
+    // Mirrors ez_auto_task()'s own bookkeeping (pid_tasks.cpp:22): the real task increments this
+    // every pass, and StuckWatch/SingleStuckWatch's stuck() (exit_conditions.cpp) cross-checks the
+    // wall-clock window against an EXPECTED pass count derived from it, to tell a task genuinely
+    // starved of time from one that's simply dead. This sim calls the task bodies directly instead
+    // of running the real ez_auto_task(), so without this line the counter never moves, the pass
+    // check can never trip, and every sim-backed stuck detection silently falls back to the
+    // wall-clock-only STUCK_STARVED_WINDOWS path (4x the configured window) instead of firing at the
+    // window it's actually configured for. Found auditing a stuck-detection timing test against this
+    // harness -- fixes the harness to match what it's simulating, not a change to the library.
+    ez::detail::stats.auto_task_passes.fetch_add(1, std::memory_order_relaxed);
     ez::DriveTestAccess::check_imu_task(drive_);
     drive_.ez_tracking_task();  // public -- no DriveTestAccess wrapper needed
     switch (drive_.drive_mode_get()) {
@@ -406,7 +416,19 @@ class SimRobot {
 
     auto& imus = ez::DriveTestAccess::all_imus(drive_);
     if (imus.size() > 0) {
-      double reported_heading = heading_deg_ + gaussian(archetype_.imu_noise_stddev_deg);
+      // heading_deg_ is integrated from yaw_rate_deg_s_, itself derived from (right_force - left_force)
+      // -- positive when the right side pushes harder, which is a COUNTERclockwise rotation as this
+      // sim's forces are signed. The real V5 IMU (and this library's own turn_pid_task, which drives
+      // left=+gyro_out/right=-gyro_out for a positive/increasing-heading error, i.e. commands a
+      // CLOCKWISE turn to INCREASE heading) is clockwise-positive. Reporting heading_deg_ unchanged
+      // hands the turn/swing PIDs a mirrored sensor: a correction in the commanded direction reads
+      // back as moving the wrong way, which is unconditional positive feedback, not merely "an
+      // inaccurate sim" -- caught by a turn/swing config-fuzz test whose heading diverged into the
+      // hundreds of degrees within ~1.5s regardless of the commanded target. Straight-line odom tests
+      // are unaffected: heading stays near 0 there regardless of sign convention. Negating here, not
+      // the yaw formula itself, keeps step_physics()'s internal force/torque bookkeeping consistent
+      // and only fixes what's handed to the one consumer that has an external sign convention to match.
+      double reported_heading = -heading_deg_ + gaussian(archetype_.imu_noise_stddev_deg);
       imus[0]->fake_rotation = reported_heading;
     }
   }
