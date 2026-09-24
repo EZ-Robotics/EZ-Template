@@ -22,25 +22,76 @@ In 3.2.x, `drive_imu_scaler_set()` took a multiplier like `1.007`.  In 4.0 it wa
 No imu reports exactly 1 degree of rotation for every degree the robot actually turns.  Rather than hand-tune a scaling factor by trial and error, you calibrate it directly: physically turn the robot 3600 degrees (10 full rotations) and tell EZ-Template what the imu reported for that turn.  Internally, the imu's readings are corrected so that value maps back to a true 3600.  
 
 ## Tuning 
-Place your robot carefully, ideally aligned with tiles on the field so you know it's facing forward, and make sure nothing is calling `drive_imu_scaler_3600_set()` yet, since a freshly constructed drive's imu is unscaled.  
+Place your robot carefully, ideally aligned with tiles on the field so you know it's facing forward, and make sure nothing is calling `drive_imu_scaler_3600_set()` or `drive_imus_scalers_3600_set()` yet, since a freshly constructed drive's imu is unscaled.  
 
-Physically turn the robot exactly 3600 degrees (10 full rotations) by hand.  Don't use an autonomous routine for this.  `pid_turn_set()` stops when the imu reads its target, so the imu would report 3600 no matter how far the robot really turned.  Line the robot up with a tile edge at the start and after every rotation so you know each one was a full turn.  
+:::caution Turn it the right way
 
-While you turn it, show what the imu reports on a blank page.  Add this to `ez_screen_task()` in `main.cpp`, under `// Add your own blank pages here!`, and upload it.  In the example project blank page 0 shows odometry and blank page 1 shows motor temperatures, so this is page 2.  If you've added pages of your own, use the next number that's free.  Then go left on the autonomous selector until you're on the page.  [Blank Pages](blank_pages.md) explains how they work.  
+Turn the robot **clockwise, viewed from above**.  A counterclockwise turn is also accepted (anything with a magnitude of 100 or more passes the sanity check) but comes out negative, which flips the sign of that imu's scale and inverts every heading calculation it feeds from then on.  
+
+:::
+
+This works the same whether your chassis has one imu or several.  List your imu ports below in the same order you passed them to the chassis constructor, paste this into `src/autons.cpp`, and add it to your autonomous selector.  
 ```cpp
-else if (ez::as::page_blank_is_on(2)) {
-  ez::screen_print("IMU: " + ez::util::to_string_with_precision(chassis.drive_imu_get()), 1);  // What the imu has measured so far, in degrees
+///
+// IMU Scale Test
+///
+
+// Your IMU ports, in the same order you passed them to the chassis constructor.
+const std::vector<int> IMU_SCALE_TEST_PORTS = {6};  // {6, 11} for two imus, and so on
+
+void imu_scale_test() {
+  std::vector<pros::Imu*> imus;
+  for (int port : IMU_SCALE_TEST_PORTS) imus.push_back(new pros::Imu(port));
+
+  // Where each imu's rotation starts, so this works no matter what it already reads
+  std::vector<double> start;
+  for (pros::Imu* imu : imus) start.push_back(imu->get_rotation());
+
+  bool done = false;
+  while (!done) {
+    std::string out = "Spin CW 10 turns\n(viewed from above)\nPress A when done\n";
+    for (std::size_t i = 0; i < imus.size(); i++)
+      out += "P" + std::to_string(IMU_SCALE_TEST_PORTS[i]) + ": " + ez::util::to_string_with_precision(imus[i]->get_rotation() - start[i]) + "\n";
+    ez::screen_print(out, 0);
+
+    done = master.get_digital_new_press(DIGITAL_A);
+    pros::delay(ez::util::DELAY_TIME);
+  }
+
+  // Build the exact line to paste into default_constants()
+  std::string paste = "chassis.drive_imus_scalers_3600_set({";
+  for (std::size_t i = 0; i < imus.size(); i++) {
+    paste += ez::util::to_string_with_precision(imus[i]->get_rotation() - start[i]);
+    if (i + 1 < imus.size()) paste += ", ";
+  }
+  paste += "});";
+
+  printf("%s\n", paste.c_str());
+  ez::screen_print("Done!  Paste line is\nin the terminal.  See\nthe docs if you have\nno terminal plugged in.", 0);
+}
+```
+```cpp
+void initialize() {
+  // . . .
+  ez::as::auton_selector.autons_add({
+    // . . .
+    ez::Auton("IMU Scale Test\n\nSpin the robot 10 full turns to calibrate the imu(s)", imu_scale_test),
+  });
 }
 ```
 
-The imu reads 0 once it finishes calibrating, so wait for the loading bar to finish before you start turning the robot.  Once you've finished the 10th rotation, write down the number on the screen.  
+Go to the `IMU Scale Test` page on the autonomous selector and run it (press `B` and `DOWN` at the same time, or use a competition switch).  
 
-Whatever that number is, pass it directly into `drive_imu_scaler_3600_set()`.  You'll do this by adding this line of code to `default_constants()` in `src/autons.cpp`.  
+Physically turn the robot exactly 3600 degrees (10 full rotations) by hand.  Don't use an autonomous routine for this - `pid_turn_set()` stops when the imu reads its target, so the imu would report 3600 no matter how far the robot really turned.  Line the robot up with a tile edge at the start and after every rotation so you know each one was a full turn, since the number on the screen is exactly the thing that might be wrong.  
+
+Once you've finished the 10th rotation, press A.  If you're tethered with `pros terminal` open, the exact line to paste is already sitting in it.  If you're not tethered, read the raw number(s) off the screen instead and build the line yourself, in the same port order shown there.  
+
+Paste whatever it printed into `default_constants()` in `src/autons.cpp`.  
 ```cpp
-chassis.drive_imu_scaler_3600_set(3625.42);  // Whatever your imu printed above
+chassis.drive_imus_scalers_3600_set({3625.42});  // Whatever the test printed above, one entry per imu in port order
 ```
 
-No trial and error needed, this is a one-shot calibration.  For drives built with the redundant IMU constructor, repeat this per imu and pass all the values to `drive_imus_scalers_3600_set()` at once, in the same order as the IMU ports passed to the constructor.  
+No trial and error needed, this is a one-shot calibration.  The same test function and the same call handle any number of imus - a single-imu chassis just has one entry in the braces.  
 
 ## You're Done!
-That's it!  Your IMU is now tuned!  
+That's it!  Your IMU is now tuned!  Spin the robot 10 turns again if you want to double check - each imu should now read close to 3600.  
