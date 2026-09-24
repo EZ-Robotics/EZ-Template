@@ -1345,6 +1345,9 @@ class Drive {
    * The position of the right sensor.
    *
    * If you have two parallel tracking wheels, this will return tracking wheel position.  Otherwise this returns motor position.
+   *
+   * On a failed sensor read, returns the last successfully-read raw value instead of the
+   * PROS_ERR/PROS_ERR_F sentinel the underlying read failed with.
    */
   int drive_sensor_right_raw();
 
@@ -1374,6 +1377,9 @@ class Drive {
    * The position of the left sensor.
    *
    * If you have two parallel tracking wheels, this will return tracking wheel position.  Otherwise this returns motor position.
+   *
+   * On a failed sensor read, returns the last successfully-read raw value instead of the
+   * PROS_ERR/PROS_ERR_F sentinel the underlying read failed with.
    */
   int drive_sensor_left_raw();
 
@@ -3715,6 +3721,11 @@ class Drive {
   std::map<int, int> imu_healthy_passes;
   double last_good_angle = 0.0;
   double watchdog_l_last = 0.0, watchdog_r_last = 0.0;
+
+  // Same fallback pattern as last_good_angle, for drive_sensor_left_raw()/right_raw(): the
+  // last raw reading that wasn't a PROS_ERR/PROS_ERR_F/non-finite sensor-read failure.
+  int last_good_raw_left = 0;
+  int last_good_raw_right = 0;
   bool imu_only_imu_warning_shown = false;
 
   bool is_swing_slew_enabled(e_swing type, double target, double current, e_angle_behavior behavior);

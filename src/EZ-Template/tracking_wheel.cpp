@@ -6,6 +6,8 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "EZ-Template/tracking_wheel.hpp"
 
+#include <cmath>
+
 #include "EZ-Template/util.hpp"
 
 // using namespace ez;
@@ -72,11 +74,18 @@ double tracking_wheel::ticks_per_inch() {
 }
 
 double tracking_wheel::get_raw() {
-  if (IS_TRACKER == DRIVE_ROTATION) {
-    return smart_encoder.get_position();
-  }
-  return adi_encoder.get_value();
+  // Both get_position() and get_value() return their signed 32-bit reading as an int32_t,
+  // widened here to double before it's checked -- so PROS_ERR (a real, finite value,
+  // INT32_MAX) and PROS_ERR_F (a real device could hand back a non-finite double on other
+  // read paths) are both caught the same way, instead of ever being handed to tracking math.
+  double raw = (IS_TRACKER == DRIVE_ROTATION) ? (double)smart_encoder.get_position() : (double)adi_encoder.get_value();
+
+  last_read_ok_ = std::isfinite(raw) && raw != PROS_ERR && raw != PROS_ERR_F;
+  if (last_read_ok_) last_good_raw = raw;
+  return last_good_raw;
 }
+bool tracking_wheel::last_read_ok() { return last_read_ok_; }
+
 double tracking_wheel::get() {
   double tpi = ticks_per_inch();
   double raw = get_raw();
@@ -86,6 +95,11 @@ double tracking_wheel::get() {
 }
 
 void tracking_wheel::reset() {
+  // Otherwise a fault hitting right after a reset would fall back to a stale pre-reset
+  // reading instead of the sensor's freshly-zeroed value.
+  last_good_raw = 0.0;
+  last_read_ok_ = true;
+
   if (IS_TRACKER == DRIVE_ADI_ENCODER) {
     adi_encoder.reset();
     return;

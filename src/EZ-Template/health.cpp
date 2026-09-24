@@ -61,7 +61,12 @@ Report preflight(ez::Drive& chassis, pros::Controller& controller) {
 
   auto check_tracker = [&](ez::tracking_wheel* t, const char* name) {
     if (t == nullptr) return;
-    if (t->get_raw() == PROS_ERR_F || t->get_raw() == PROS_ERR) {
+    // get_raw() itself never returns PROS_ERR/PROS_ERR_F anymore -- it falls back to the
+    // last good reading so a failed tick can't corrupt tracking math -- so a dead tracker is
+    // detected through last_read_ok() instead of comparing get_raw()'s return value to a
+    // sentinel it will never hand back.
+    t->get_raw();
+    if (!t->last_read_ok()) {
       r.trackers_bad++;
       printf("[health] %s tracker not responding\n", name);
     }
