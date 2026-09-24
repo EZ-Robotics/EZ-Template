@@ -15,9 +15,9 @@ Download the most recent `EZ-Template@x.x.x.zip` [here](https://github.com/EZ-Ro
 
 ## Bring the File Into Your Project
 Bring this file into your project.  You can do this through file explorer or by dragging it into VScode.  
-:::note
+:::caution
 
-If you have a previous EZ-Template version in your project, you can remove this if you want.  Leaving it won't harm anything though.  
+If your project has a previous EZ-Template version's files at `src/EZ-Template/` or `include/EZ-Template/`, delete both folders first.  Applying a new version doesn't remove old files it no longer ships, and leftover ones from an older version can fail to compile against the new headers with errors that don't look related to EZ-Template at all.
 
 :::
 
