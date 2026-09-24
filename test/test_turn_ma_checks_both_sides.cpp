@@ -2,8 +2,8 @@
 // check polls both_sides(left_motors, right_motors), not just one side, because a turn drives
 // both sides and a jam or pin can land on either one. If a stall lands on a motor this check
 // didn't poll, turnPID's mA timer would never accumulate at all, and the turn would have to fall
-// all the way back to the much slower JC-1 progress backstop (SingleStuckWatch) -- or hang, if
-// that backstop were also disabled -- instead of catching the stall at its configured mA_timeout.
+// all the way back to the much slower progress-based stuck backstop (SingleStuckWatch) -- or hang,
+// if that backstop were also disabled -- instead of catching the stall at its configured mA_timeout.
 #include "doctest.h"
 #include "drive_test_access.hpp"
 
@@ -20,7 +20,7 @@ TEST_CASE("pid_wait() TURN mA exit catches a stall on either side, not just one"
   Drive chassis = make_chassis();
   chassis.pid_print_toggle(false);
   // mA exit only (100 ms/10 passes); small/big/velocity off, so a genuine over-current on any
-  // polled motor is the only thing that can end this turn quickly. JC-1's SingleStuckWatch
+  // polled motor is the only thing that can end this turn quickly. The SingleStuckWatch progress
   // backstop is still live (window_ falls back to mA_timeout when velocity_exit_time is 0) but
   // only fires after its own much longer 1000 ms start allowance plus window -- comfortably later
   // than 100 ms, so a fast return here can only be the mA exit.
