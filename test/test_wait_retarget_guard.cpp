@@ -125,6 +125,48 @@ void odom_pp_healthy_then_retargeted(Drive& c, int n) {
     c.pid_odom_pp_set(new_path);  // a real second pure pursuit path, mid-wait, still not on its last point
   }
 }
+
+// ---- TURN / TURN_TO_POINT (wait_until_turn_swing_internal(), via pid_wait_until(angle)) ----
+void turn_wait_until_healthy_then_retargeted(Drive& c, int n) {
+  double e = std::fmax(0.0, 60.0 - 0.5 * n);
+  c.turnPID.error = e;
+  c.turnPID.derivative = e > 0.0 ? -0.5 : 0.0;
+  if (n == RETARGET_AT) c.pid_turn_set(150, 100);  // a real second turn, different target, mid-wait
+}
+
+// ---- SWING (wait_until_turn_swing_internal(), via pid_wait_until(angle)) ----
+void swing_wait_until_healthy_then_retargeted(Drive& c, int n) {
+  double e = std::fmax(0.0, 45.0 - 0.4 * n);
+  c.swingPID.error = e;
+  c.swingPID.derivative = e > 0.0 ? -0.4 : 0.0;
+  if (n == RETARGET_AT) c.pid_swing_set(ez::RIGHT_SWING, 120, 100);  // a real second swing, different target, mid-wait
+}
+
+// ---- pid_wait_until_point() ----
+void point_wait_healthy_then_retargeted(Drive& c, int n) {
+  double e = std::fmax(0.0, 20.0 - 0.15 * n);
+  c.xyPID.error = e;
+  c.xyPID.derivative = e > 0.0 ? -0.15 : 0.0;
+  c.current_a_odomPID.error = 0.0;
+  c.current_a_odomPID.derivative = 0.0;
+  if (n == RETARGET_AT) c.pid_odom_ptp_set({{0.0, 90.0, ANGLE_NOT_SET}, fwd, 100});  // a real second odom motion, mid-wait
+}
+
+// ---- Fix #2 regression: a concurrent retarget from a DIFFERENT mode doesn't touch this wait's own
+// PID target at all, so a target-only guard misses it entirely -- turnPID.error freezes at whatever
+// it was, and if that frozen value happens to land inside small_error, the wait would eventually
+// report a clean SMALL_EXIT (interfered=false) for a motion nothing is running anymore.
+void turn_frozen_in_tolerance_then_mode_changed(Drive& c, int n) {
+  if (n < RETARGET_AT) {
+    c.turnPID.error = 60.0 - 0.5 * n;
+    c.turnPID.derivative = -0.5;
+  } else if (n == RETARGET_AT) {
+    c.turnPID.error = 0.5;  // now inside small_error(2.0) -- frozen here, nothing updates it again
+    c.turnPID.derivative = 0.0;
+    c.pid_swing_set(ez::RIGHT_SWING, 45, 100);  // changes mode away from TURN, but never touches turnPID's own target
+  }
+  // n > RETARGET_AT deliberately left untouched -- mirrors turn_pid_task() no longer running once mode left TURN.
+}
 }  // namespace
 
 TEST_CASE("pid_wait() TURN: a concurrent pid_turn_set() mid-wait ends the wait instead of finishing on the new target") {
@@ -192,6 +234,56 @@ TEST_CASE("pid_wait() odom PURE_PURSUIT: a concurrent pid_odom_pp_set() mid-wait
   for (int i = 1; i <= 40; i++) path.push_back({{0.0, 7.0 + i, ANGLE_NOT_SET}, fwd, 100});
   chassis.pid_odom_pp_set(path);
   Outcome o = run(chassis, odom_pp_healthy_then_retargeted, 300, [&] { chassis.pid_wait(); });
+  CHECK(o.returned);
+  CHECK(o.interfered);
+  CHECK(o.passes <= RETARGET_AT + GUARD_SLACK);
+}
+
+// ---- wait_until_turn_swing_internal() had ZERO guard prior to this fix -- unlike every other wait,
+// including its own sibling pid_wait() TURN/SWING branches above. ----
+TEST_CASE("wait_until_turn_swing_internal() TURN: a concurrent pid_turn_set() mid-wait ends the wait instead of finishing on the new target") {
+  Drive chassis = make_chassis();
+  chassis.pid_print_toggle(false);
+  chassis.pid_turn_set(90, 100);
+  Outcome o = run(chassis, turn_wait_until_healthy_then_retargeted, 300, [&] { chassis.pid_wait_until(45.0); });
+  CHECK(o.returned);
+  CHECK(o.interfered);
+  CHECK(o.passes <= RETARGET_AT + GUARD_SLACK);
+}
+
+TEST_CASE("wait_until_turn_swing_internal() SWING: a concurrent pid_swing_set() mid-wait ends the wait instead of finishing on the new target") {
+  Drive chassis = make_chassis();
+  chassis.pid_print_toggle(false);
+  chassis.pid_swing_set(ez::LEFT_SWING, 60, 100);
+  Outcome o = run(chassis, swing_wait_until_healthy_then_retargeted, 300, [&] { chassis.pid_wait_until(30.0); });
+  CHECK(o.returned);
+  CHECK(o.interfered);
+  CHECK(o.passes <= RETARGET_AT + GUARD_SLACK);
+}
+
+// ---- pid_wait_until_point() had the identical total gap. ----
+TEST_CASE("pid_wait_until_point(): a concurrent pid_odom_ptp_set() mid-wait ends the wait instead of finishing on the new target") {
+  Drive chassis = make_chassis();
+  DriveTestAccess::imu_calibration_complete(chassis) = true;
+  chassis.pid_print_toggle(false);
+  chassis.pid_odom_drive_exit_condition_set(90, 1.0, 250, 3.0, 500, 750);
+  chassis.pid_odom_turn_exit_condition_set(90, 3.0, 250, 7.0, 500, 750);
+  chassis.pid_odom_ptp_set({{0.0, 24.0, ANGLE_NOT_SET}, fwd, 100});
+  Outcome o = run(chassis, point_wait_healthy_then_retargeted, 300, [&] { chassis.pid_wait_until_point({0.0, 24.0, ANGLE_NOT_SET}); });
+  CHECK(o.returned);
+  CHECK(o.interfered);
+  CHECK(o.passes <= RETARGET_AT + GUARD_SLACK);
+}
+
+// ---- Every guard above only watched its OWN family's target -- a concurrent setter from a DIFFERENT
+// mode changes `mode` unnoticed, freezing the old PID's error.  If that frozen value happens to land
+// inside its own exit window, the wait reports a clean, uninterfered "success" for an abandoned motion.
+TEST_CASE("pid_wait() TURN: a concurrent pid_swing_set() mid-wait is caught via the mode change even though it never retargets turnPID itself") {
+  Drive chassis = make_chassis();
+  chassis.pid_print_toggle(false);
+  chassis.pid_turn_exit_condition_set(100, 2.0, 0, 0.0, 0, 0);  // small exit only, ~10 passes to fire once in tolerance
+  chassis.pid_turn_set(90, 100);
+  Outcome o = run(chassis, turn_frozen_in_tolerance_then_mode_changed, 300, [&] { chassis.pid_wait(); });
   CHECK(o.returned);
   CHECK(o.interfered);
   CHECK(o.passes <= RETARGET_AT + GUARD_SLACK);
