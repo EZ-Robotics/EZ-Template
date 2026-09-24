@@ -28,8 +28,17 @@ struct ext_adi_port_tuple_t {
 class Encoder {
  public:
   Encoder() = default;
-  Encoder(std::int8_t port_top, std::int8_t port_bottom, bool reversed) {}
-  Encoder(ext_adi_port_tuple_t port_pair, bool reversed) {}
+  Encoder(std::int8_t port_top, std::int8_t port_bottom, bool reversed)
+      : fake_port_top(port_top), fake_port_bottom(port_bottom), fake_reversed(reversed) {}
+  Encoder(ext_adi_port_tuple_t port_pair, bool reversed)
+      : fake_smart_port(port_pair.smart_port), fake_port_top(port_pair.top_port), fake_port_bottom(port_pair.bottom_port), fake_reversed(reversed) {}
+
+  // The ports this encoder was built on, so a test can see which ones a caller picked. -1 is what the library
+  // passes for "no device"; the real class takes a uint8_t, so there it becomes 255.
+  int fake_smart_port = 0;
+  int fake_port_top = 0;
+  int fake_port_bottom = 0;
+  bool fake_reversed = false;
 
   std::int32_t fake_value = 0;
 
