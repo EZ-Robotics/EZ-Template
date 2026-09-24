@@ -105,6 +105,12 @@ void Drive::pid_odom_set(double target, int speed) {
   pid_odom_set(target, speed, slew_on);
 }
 void Drive::pid_odom_set(double target, int speed, bool slew_on) {
+  // See pid_odom_pp_set()'s matching comment: locked for the whole body, like every other public
+  // odom setter, so this raises and restores its task's priority exactly once, including
+  // inject_points()'s own injected_pp_index write and raw_pid_odom_pp_set()'s own guard, both of
+  // which nest inside this one for free.
+  ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+
   interfered = false;
 
   drive_directions fwd_or_rev = util::sgn(target) >= 0 ? fwd : rev;
@@ -118,7 +124,9 @@ void Drive::pid_odom_set(double target, int speed, bool slew_on) {
   leftPID.motion_reset(drive_sensor_left());
   rightPID.motion_reset(drive_sensor_right());
 
-  if (print_toggle) printf("Injected ");
+  // print_after_unlock, not printf: see the matching comment in pid_odom_injected_pp_set() -- this
+  // function now holds drive_mutex for its whole body.
+  if (print_toggle) drive_mutex.print_after_unlock("Injected ");
   std::vector<odom> input_path = inject_points({path});
   odom_turn_bias_enable(false);
   current_slew_on = slew_on;
