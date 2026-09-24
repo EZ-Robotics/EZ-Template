@@ -30,7 +30,7 @@ Turn the robot **clockwise, viewed from above**.  A counterclockwise turn is als
 
 :::
 
-This works the same whether your chassis has one imu or several.  List your imu ports below in the same order you passed them to the chassis constructor, paste this into `src/autons.cpp`, and add it to your autonomous selector.  
+This works the same whether your chassis has one imu or several.  List your imu ports below in the same order you passed them to the chassis constructor, and paste this into `src/autons.cpp` - it doesn't need an autonomous routine to run, so this works even if you aren't using the auton selector.  
 ```cpp
 ///
 // IMU Scale Test
@@ -66,19 +66,22 @@ void imu_scale_test() {
   ez::screen_print(result, 0);
 }
 ```
+Call it from `opcontrol()` behind a button press, so it's there when you want it and out of the way otherwise.  
 ```cpp
-void initialize() {
-  // . . .
-  ez::as::auton_selector.autons_add({
-    // . . .
-    ez::Auton("IMU Scale Test\n\nSpin the robot 10 full turns to calibrate the imu(s)", imu_scale_test),
-  });
+void opcontrol() {
+  while (true) {
+    chassis.opcontrol_tank();  // However you're driving
+
+    if (master.get_digital_new_press(DIGITAL_X)) imu_scale_test();
+
+    pros::delay(ez::util::DELAY_TIME);
+  }
 }
 ```
 
-Go to the `IMU Scale Test` page on the autonomous selector and run it (press `B` and `DOWN` at the same time, or use a competition switch).  
+Enable the robot into driver control and press `X`.  
 
-Physically turn the robot exactly 3600 degrees (10 full rotations) by hand.  Don't use an autonomous routine for this - `pid_turn_set()` stops when the imu reads its target, so the imu would report 3600 no matter how far the robot really turned.  Line the robot up with a tile edge at the start and after every rotation so you know each one was a full turn, since the number on the screen is exactly the thing that might be wrong.  
+Physically turn the robot exactly 3600 degrees (10 full rotations) by hand.  Don't drive it with the joysticks to do this - the imu is what's being measured, so anything that stops on the imu's own reading (like `pid_turn_set()`) would report 3600 no matter how far the robot really turned.  Line the robot up with a tile edge at the start and after every rotation so you know each one was a full turn, since the number on the screen is exactly the thing that might be wrong.  
 
 Once you've finished the 10th rotation, press A.  The screen freezes on each imu's final number - no laptop or terminal needed, just read them off the brain.  
 
