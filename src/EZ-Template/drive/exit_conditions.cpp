@@ -343,6 +343,14 @@ void Drive::pid_wait() {
     StuckWatch watch(xyPID, current_a_odomPID, pp_index, target_distance(), travelled(), turned());
     bool stalled = false;
 
+    // A concurrent pid_odom_*_set() from another task retargets xyPID/current_a_odomPID (and resets pp_index
+    // and pp_movements) mid-wait -- same hazard as the DRIVE branch above, just for odom.  odom_target_start
+    // is set by every odom setter that starts a new motion (raw_pid_odom_ptp_set()/raw_pid_odom_pp_set(),
+    // set_odom_pid.cpp), whether the retarget lands as another plain point, boomerang, or pure pursuit path,
+    // so watching it catches a retarget regardless of what it lands in -- unlike leftPID/rightPID's target,
+    // which raw_pid_odom_ptp_set() also legitimately rewrites on every ordinary pure-pursuit waypoint advance.
+    pose retarget_target = odom_target_start;
+
     // Wait until pure pursuit is on the last point, then continue as normal.  xy's exit is checked every pass
     // and not kept: before the last point its target is only a look ahead away and keeps moving, so a small,
     // big or velocity exit here says nothing about the path, and one kept from a pause earlier on must not end
@@ -353,6 +361,11 @@ void Drive::pid_wait() {
     int a_exit_index = pp_index;
     if (mode == PURE_PURSUIT) {
       while (pp_index != (int)pp_movements.size() - 1) {
+        if (odom_target_start.x != retarget_target.x || odom_target_start.y != retarget_target.y || odom_target_start.theta != retarget_target.theta) {
+          if (print_toggle) std::cout << "  XY: retargeted by a concurrent motion mid-wait, ending early instead of continuing on the wrong path.\n";
+          interfered = true;
+          return;
+        }
         if (pp_index != a_exit_index) {
           a_exit = RUNNING;
           a_exit_index = pp_index;
@@ -376,6 +389,11 @@ void Drive::pid_wait() {
 
     // When we're at the last point in PP / we're just going to point
     while (!stalled && (xy_exit == RUNNING || a_exit == RUNNING)) {
+      if (odom_target_start.x != retarget_target.x || odom_target_start.y != retarget_target.y || odom_target_start.theta != retarget_target.theta) {
+        if (print_toggle) std::cout << "  XY: retargeted by a concurrent motion mid-wait, ending early instead of finishing on the wrong target.\n";
+        interfered = true;
+        return;
+      }
       secondary_velocity_sensor_update(xyPID);
       secondary_velocity_sensor_update(current_a_odomPID);
       xy_velocity_exit_hold_update();
@@ -410,7 +428,17 @@ void Drive::pid_wait() {
     exit_output turn_exit = RUNNING;
     SingleStuckWatch watch(turnPID, turnPID.error);  // see the DRIVE branch's comment on why -- same JC-1 gap.
     bool stalled = false;
+    // Same concurrent-retarget guard as the DRIVE branch above.  turnPID.target is only ever rewritten by
+    // turn_set_internal() (set_turn_pid.cpp) at the start of a new turn -- TURN_TO_POINT recomputes its own
+    // aim point every pass through compute_error() without touching the PID's target, so this can't false-fire
+    // on an ordinary turn-to-point motion, only on a real second pid_turn_set()/pid_turn_relative_set().
+    double turn_target = turnPID.target_get();
     while (turn_exit == RUNNING) {
+      if (turnPID.target_get() != turn_target) {
+        if (print_toggle) std::cout << "  Turn: retargeted by a concurrent motion mid-wait, ending early instead of finishing on the wrong target.\n";
+        interfered = true;
+        return;
+      }
       secondary_velocity_sensor_update(turnPID);
       turn_exit = turn_exit != RUNNING ? turn_exit : turnPID.exit_condition(both_sides(left_motors, right_motors));
       if (turn_exit == RUNNING && watch.stuck(turnPID.error)) {
@@ -433,7 +461,15 @@ void Drive::pid_wait() {
     std::vector<pros::Motor>& sensor = current_swing == ez::LEFT_SWING ? left_motors : right_motors;
     SingleStuckWatch watch(swingPID, swingPID.error);  // see the DRIVE branch's comment on why -- same JC-1 gap.
     bool stalled = false;
+    // Same concurrent-retarget guard as the DRIVE branch above -- swingPID.target is only rewritten by
+    // swing_set_internal() (set_swing_pid.cpp) at the start of a new swing.
+    double swing_target = swingPID.target_get();
     while (swing_exit == RUNNING) {
+      if (swingPID.target_get() != swing_target) {
+        if (print_toggle) std::cout << "  Swing: retargeted by a concurrent motion mid-wait, ending early instead of finishing on the wrong target.\n";
+        interfered = true;
+        return;
+      }
       secondary_velocity_sensor_update(swingPID);
       swing_exit = swing_exit != RUNNING ? swing_exit : swingPID.exit_condition(sensor);
       if (swing_exit == RUNNING && watch.stuck(swingPID.error)) {
@@ -474,7 +510,30 @@ void Drive::wait_until_drive(double target) {
   // (see the comment there), and this function has no other protection against, say, a sustained spin.
   SingleStuckWatch left_watch(leftPID, leftPID.error), right_watch(rightPID, rightPID.error);
 
+  // Same concurrent-retarget guard as pid_wait()'s branches.  In DRIVE mode leftPID/rightPID's target only
+  // changes on a real second pid_drive_set(), same as pid_wait()'s DRIVE branch.  In odom modes (this function
+  // also runs for POINT_TO_POINT/PURE_PURSUIT) leftPID/rightPID's target is the fixed look-ahead point and
+  // legitimately gets rewritten on every ordinary waypoint advance (raw_pid_odom_ptp_set(), set_odom_pid.cpp),
+  // so odom_target_start -- only touched by a top-level odom setter starting a genuinely new motion -- is used
+  // instead, the same as pid_wait()'s odom branch.
+  bool odom_mode = mode == POINT_TO_POINT || mode == PURE_PURSUIT;
+  double left_target = leftPID.target_get();
+  double right_target = rightPID.target_get();
+  pose retarget_target = odom_target_start;
+
   while (true) {
+    if (odom_mode) {
+      if (odom_target_start.x != retarget_target.x || odom_target_start.y != retarget_target.y || odom_target_start.theta != retarget_target.theta) {
+        if (print_toggle) std::cout << "  XY: retargeted by a concurrent motion mid-wait, ending early instead of finishing on the wrong target.\n";
+        interfered = true;
+        return;
+      }
+    } else if (leftPID.target_get() != left_target || rightPID.target_get() != right_target) {
+      if (print_toggle) std::cout << "  Drive: retargeted by a concurrent motion mid-wait, ending early instead of finishing on the wrong target.\n";
+      interfered = true;
+      return;
+    }
+
     l_error = l_tar - drive_sensor_left();
     r_error = r_tar - drive_sensor_right();
 

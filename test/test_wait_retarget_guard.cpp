@@ -1,0 +1,198 @@
+// pid_wait()'s DRIVE branch already snapshots leftPID/rightPID's target at wait start and returns
+// interfered=true the instant it notices a second task retargeting them mid-wait (a concurrent
+// pid_drive_set() from another task) instead of silently finishing on whatever motion happens to be
+// live when its exit condition next fires. Every sibling wait shares the exact same hazard -- none of
+// them lock leftPID/rightPID/turnPID/swingPID/xyPID across their own pros::delay() -- but only the
+// DRIVE branch had the guard. These tests script a real second pid_turn_set()/pid_swing_set()/
+// pid_drive_set()/pid_odom_*_set() call partway through an otherwise healthy, steadily-closing wait
+// (the same on_delay-hook idiom test_jc1_non_odom_stuck.cpp uses) and check the wait ends early with
+// interfered=true instead of continuing to poll -- and eventually cleanly succeed on -- the new motion.
+#include <functional>
+
+#include "doctest.h"
+#include "drive_test_access.hpp"
+
+using namespace ez;
+
+namespace {
+Drive make_chassis() {
+  test_stub::reset_all();
+  return Drive({1, -2}, {-3, 4}, 5, 3.25, 360, 1.0);
+}
+
+Drive* g_chassis = nullptr;
+int g_pass = 0;
+void (*g_script)(Drive&, int) = nullptr;
+
+void on_delay() {
+  ++g_pass;
+  ez::detail::stats.auto_task_passes.fetch_add(1);
+  g_script(*g_chassis, g_pass);
+}
+
+struct Outcome {
+  bool returned;
+  int passes;
+  bool interfered;
+};
+
+Outcome run(Drive& chassis, void (*script)(Drive&, int), int max_passes, std::function<void()> wait) {
+  g_chassis = &chassis;
+  g_pass = 0;
+  g_script = script;
+  script(chassis, 0);
+  test_stub::g_clock.on_delay = on_delay;
+  test_stub::g_clock.delay_calls_until_stop = max_passes;
+  Outcome o{true, 0, false};
+  try {
+    wait();
+  } catch (test_stub::StopLoop&) {
+    o.returned = false;
+  }
+  test_stub::g_clock.delay_calls_until_stop = -1;
+  test_stub::g_clock.on_delay = nullptr;
+  o.passes = g_pass;
+  o.interfered = chassis.interfered;
+  return o;
+}
+
+// The pass a concurrent retarget lands on -- early enough that a healthy, steadily-closing error
+// (chosen so it takes 100+ passes to reach 0 on its own) is nowhere near exiting yet.
+constexpr int RETARGET_AT = 10;
+// How many extra passes the guard is allowed to notice the retarget and return -- generous relative
+// to a single pros::delay() cycle, tight relative to the 100+ passes a silent, uninterrupted finish
+// would take.
+constexpr int GUARD_SLACK = 5;
+
+// ---- TURN / TURN_TO_POINT (pid_wait(), shared branch) ----
+void turn_healthy_then_retargeted(Drive& c, int n) {
+  double e = std::fmax(0.0, 60.0 - 0.5 * n);
+  c.turnPID.error = e;
+  c.turnPID.derivative = e > 0.0 ? -0.5 : 0.0;
+  if (n == RETARGET_AT) c.pid_turn_set(150, 100);  // a real second turn, different target, mid-wait
+}
+
+// ---- SWING (pid_wait()) ----
+void swing_healthy_then_retargeted(Drive& c, int n) {
+  double e = std::fmax(0.0, 45.0 - 0.4 * n);
+  c.swingPID.error = e;
+  c.swingPID.derivative = e > 0.0 ? -0.4 : 0.0;
+  if (n == RETARGET_AT) c.pid_swing_set(ez::RIGHT_SWING, 120, 100);
+}
+
+// ---- wait_until_drive(), DRIVE mode ----
+void drive_healthy_then_retargeted(Drive& c, int n) {
+  double e = std::fmax(0.0, 20.0 - 0.15 * n);
+  c.leftPID.error = e;
+  c.leftPID.derivative = e > 0.0 ? -0.15 : 0.0;
+  c.rightPID.error = e;
+  c.rightPID.derivative = e > 0.0 ? -0.15 : 0.0;
+  if (n == RETARGET_AT) c.pid_drive_set(200, 100);  // a real second drive, different target, mid-wait
+}
+
+// ---- wait_until_drive(), odom (POINT_TO_POINT) mode ----
+void odom_wud_healthy_then_retargeted(Drive& c, int n) {
+  double e = std::fmax(0.0, 20.0 - 0.15 * n);
+  c.leftPID.error = e;
+  c.leftPID.derivative = e > 0.0 ? -0.15 : 0.0;
+  c.rightPID.error = e;
+  c.rightPID.derivative = e > 0.0 ? -0.15 : 0.0;
+  c.xyPID.error = e;
+  c.xyPID.derivative = e > 0.0 ? -0.15 : 0.0;
+  if (n == RETARGET_AT) c.pid_odom_ptp_set({{0.0, 90.0, ANGLE_NOT_SET}, fwd, 100});  // a real second odom motion, mid-wait
+}
+
+// ---- pid_wait(), odom POINT_TO_POINT branch (the "final point" loop) ----
+void odom_ptp_healthy_then_retargeted(Drive& c, int n) {
+  double e = std::fmax(0.0, 20.0 - 0.15 * n);
+  c.xyPID.error = e;
+  c.xyPID.derivative = e > 0.0 ? -0.15 : 0.0;
+  c.current_a_odomPID.error = 0.0;
+  c.current_a_odomPID.derivative = 0.0;
+  if (n == RETARGET_AT) c.pid_odom_ptp_set({{0.0, 90.0, ANGLE_NOT_SET}, fwd, 100});
+}
+
+// ---- pid_wait(), odom PURE_PURSUIT branch (the pre-last-point loop) ----
+void odom_pp_healthy_then_retargeted(Drive& c, int n) {
+  double e = 7.3 - 0.15 * (n % 3);  // same shape as test_pp_wait_stuck.cpp's cruising(), never exits on its own
+  c.xyPID.error = e;
+  c.xyPID.derivative = 0.3;
+  c.current_a_odomPID.error = 0.0;
+  c.current_a_odomPID.derivative = 0.0;
+  if (n == RETARGET_AT) {
+    std::vector<odom> new_path;
+    for (int i = 1; i <= 5; i++) new_path.push_back({{5.0, (double)i, ANGLE_NOT_SET}, fwd, 100});
+    c.pid_odom_pp_set(new_path);  // a real second pure pursuit path, mid-wait, still not on its last point
+  }
+}
+}  // namespace
+
+TEST_CASE("pid_wait() TURN: a concurrent pid_turn_set() mid-wait ends the wait instead of finishing on the new target") {
+  Drive chassis = make_chassis();
+  chassis.pid_print_toggle(false);
+  chassis.pid_turn_set(90, 100);
+  Outcome o = run(chassis, turn_healthy_then_retargeted, 300, [&] { chassis.pid_wait(); });
+  CHECK(o.returned);
+  CHECK(o.interfered);
+  CHECK(o.passes <= RETARGET_AT + GUARD_SLACK);
+}
+
+TEST_CASE("pid_wait() SWING: a concurrent pid_swing_set() mid-wait ends the wait instead of finishing on the new target") {
+  Drive chassis = make_chassis();
+  chassis.pid_print_toggle(false);
+  chassis.pid_swing_set(ez::LEFT_SWING, 45, 100);
+  Outcome o = run(chassis, swing_healthy_then_retargeted, 300, [&] { chassis.pid_wait(); });
+  CHECK(o.returned);
+  CHECK(o.interfered);
+  CHECK(o.passes <= RETARGET_AT + GUARD_SLACK);
+}
+
+TEST_CASE("wait_until_drive() DRIVE: a concurrent pid_drive_set() mid-wait ends the wait instead of finishing on the new target") {
+  Drive chassis = make_chassis();
+  chassis.pid_print_toggle(false);
+  chassis.pid_drive_set(24, 100);
+  Outcome o = run(chassis, drive_healthy_then_retargeted, 300, [&] { chassis.pid_wait_until(12.0); });
+  CHECK(o.returned);
+  CHECK(o.interfered);
+  CHECK(o.passes <= RETARGET_AT + GUARD_SLACK);
+}
+
+TEST_CASE("wait_until_drive() odom: a concurrent pid_odom_ptp_set() mid-wait ends the wait instead of finishing on the new target") {
+  Drive chassis = make_chassis();
+  DriveTestAccess::imu_calibration_complete(chassis) = true;
+  chassis.pid_print_toggle(false);
+  chassis.pid_odom_drive_exit_condition_set(90, 1.0, 250, 3.0, 500, 750);
+  chassis.pid_odom_ptp_set({{0.0, 24.0, ANGLE_NOT_SET}, fwd, 100});
+  Outcome o = run(chassis, odom_wud_healthy_then_retargeted, 300, [&] { chassis.pid_wait_until(12.0); });
+  CHECK(o.returned);
+  CHECK(o.interfered);
+  CHECK(o.passes <= RETARGET_AT + GUARD_SLACK);
+}
+
+TEST_CASE("pid_wait() odom POINT_TO_POINT: a concurrent pid_odom_ptp_set() mid-wait ends the wait instead of finishing on the new target") {
+  Drive chassis = make_chassis();
+  DriveTestAccess::imu_calibration_complete(chassis) = true;
+  chassis.pid_print_toggle(false);
+  chassis.pid_odom_drive_exit_condition_set(90, 1.0, 250, 3.0, 500, 750);
+  chassis.pid_odom_turn_exit_condition_set(90, 3.0, 250, 7.0, 500, 750);
+  chassis.pid_odom_ptp_set({{0.0, 24.0, ANGLE_NOT_SET}, fwd, 100});
+  Outcome o = run(chassis, odom_ptp_healthy_then_retargeted, 300, [&] { chassis.pid_wait(); });
+  CHECK(o.returned);
+  CHECK(o.interfered);
+  CHECK(o.passes <= RETARGET_AT + GUARD_SLACK);
+}
+
+TEST_CASE("pid_wait() odom PURE_PURSUIT: a concurrent pid_odom_pp_set() mid-wait (before the last point) ends the wait instead of continuing on the new path") {
+  Drive chassis = make_chassis();
+  DriveTestAccess::imu_calibration_complete(chassis) = true;
+  chassis.pid_print_toggle(false);
+  chassis.pid_odom_drive_exit_condition_set(90, 1.0, 250, 3.0, 500, 750);
+  chassis.pid_odom_turn_exit_condition_set(90, 3.0, 250, 7.0, 500, 750);
+  std::vector<odom> path;
+  for (int i = 1; i <= 40; i++) path.push_back({{0.0, 7.0 + i, ANGLE_NOT_SET}, fwd, 100});
+  chassis.pid_odom_pp_set(path);
+  Outcome o = run(chassis, odom_pp_healthy_then_retargeted, 300, [&] { chassis.pid_wait(); });
+  CHECK(o.returned);
+  CHECK(o.interfered);
+  CHECK(o.passes <= RETARGET_AT + GUARD_SLACK);
+}
