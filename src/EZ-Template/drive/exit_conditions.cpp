@@ -206,8 +206,13 @@ exit_output without_position_exits(exit_output e) { return (e == SMALL_EXIT || e
 // Every motor on both sides, for an mA exit that has to see whichever motor in the group is actually the one
 // absorbing a stall -- checking only index 0 of each side missed a jam or pin that landed on a different motor.
 std::vector<pros::Motor> both_sides(const std::vector<pros::Motor>& left, const std::vector<pros::Motor>& right) {
-  std::vector<pros::Motor> all = left;
-  all.insert(all.end(), right.begin(), right.end());
+  // pros::Motor has no copy-assignment operator (it inherits pros::Device's const port/type members), so
+  // vector::insert -- which needs assignment to shift/fill elements -- doesn't compile here even though
+  // every element is only ever copy-constructed in practice.  push_back sidesteps that.
+  std::vector<pros::Motor> all;
+  all.reserve(left.size() + right.size());
+  for (const auto& m : left) all.push_back(m);
+  for (const auto& m : right) all.push_back(m);
   return all;
 }
 }  // namespace
