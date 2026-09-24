@@ -151,6 +151,22 @@ void point_wait_healthy_then_retargeted(Drive& c, int n) {
   c.current_a_odomPID.derivative = 0.0;
   if (n == RETARGET_AT) c.pid_odom_ptp_set({{0.0, 90.0, ANGLE_NOT_SET}, fwd, 100});  // a real second odom motion, mid-wait
 }
+
+// ---- Fix #2 regression: a concurrent retarget from a DIFFERENT mode doesn't touch this wait's own
+// PID target at all, so a target-only guard misses it entirely -- turnPID.error freezes at whatever
+// it was, and if that frozen value happens to land inside small_error, the wait would eventually
+// report a clean SMALL_EXIT (interfered=false) for a motion nothing is running anymore.
+void turn_frozen_in_tolerance_then_mode_changed(Drive& c, int n) {
+  if (n < RETARGET_AT) {
+    c.turnPID.error = 60.0 - 0.5 * n;
+    c.turnPID.derivative = -0.5;
+  } else if (n == RETARGET_AT) {
+    c.turnPID.error = 0.5;  // now inside small_error(2.0) -- frozen here, nothing updates it again
+    c.turnPID.derivative = 0.0;
+    c.pid_swing_set(ez::RIGHT_SWING, 45, 100);  // changes mode away from TURN, but never touches turnPID's own target
+  }
+  // n > RETARGET_AT deliberately left untouched -- mirrors turn_pid_task() no longer running once mode left TURN.
+}
 }  // namespace
 
 TEST_CASE("pid_wait() TURN: a concurrent pid_turn_set() mid-wait ends the wait instead of finishing on the new target") {
@@ -254,6 +270,20 @@ TEST_CASE("pid_wait_until_point(): a concurrent pid_odom_ptp_set() mid-wait ends
   chassis.pid_odom_turn_exit_condition_set(90, 3.0, 250, 7.0, 500, 750);
   chassis.pid_odom_ptp_set({{0.0, 24.0, ANGLE_NOT_SET}, fwd, 100});
   Outcome o = run(chassis, point_wait_healthy_then_retargeted, 300, [&] { chassis.pid_wait_until_point({0.0, 24.0, ANGLE_NOT_SET}); });
+  CHECK(o.returned);
+  CHECK(o.interfered);
+  CHECK(o.passes <= RETARGET_AT + GUARD_SLACK);
+}
+
+// ---- Every guard above only watched its OWN family's target -- a concurrent setter from a DIFFERENT
+// mode changes `mode` unnoticed, freezing the old PID's error.  If that frozen value happens to land
+// inside its own exit window, the wait reports a clean, uninterfered "success" for an abandoned motion.
+TEST_CASE("pid_wait() TURN: a concurrent pid_swing_set() mid-wait is caught via the mode change even though it never retargets turnPID itself") {
+  Drive chassis = make_chassis();
+  chassis.pid_print_toggle(false);
+  chassis.pid_turn_exit_condition_set(100, 2.0, 0, 0.0, 0, 0);  // small exit only, ~10 passes to fire once in tolerance
+  chassis.pid_turn_set(90, 100);
+  Outcome o = run(chassis, turn_frozen_in_tolerance_then_mode_changed, 300, [&] { chassis.pid_wait(); });
   CHECK(o.returned);
   CHECK(o.interfered);
   CHECK(o.passes <= RETARGET_AT + GUARD_SLACK);
