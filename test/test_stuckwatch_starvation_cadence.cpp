@@ -1,33 +1,44 @@
 // StuckWatch's starvation-confirmation (exit_conditions.cpp, the `expected_passes` check inside stuck(),
 // gated on the wall-clock window_ already having elapsed) exists to tell "ez_auto_task really ran through
 // this window and made no progress" (confirm stuck now) apart from "wall-clock time passed while the task
-// barely got to run at all" (wait for the STUCK_STARVED_WINDOWS wall-clock fallback instead). It estimated
-// "how fast should the task be ticking" from this watch's own observed passes-per-ms since it was
-// constructed. That estimate shares its own denominator with the very stretch it's judging: expected_passes
-// (window_ / observed_delay) times observed_delay is window_ again, by construction, whatever observed_delay
-// turns out to be measured as -- so "real passes since last progress" exceeding "expected_passes" reduces to
-// nothing more than waited > window_, the same test performed just above it, for any task ticking at a
-// roughly steady rate. That gives a task running a little slower than nominal (ordinary scheduling overhead,
-// not dead) essentially the same detection speed as a perfectly healthy one -- confirmed quickly, at roughly
-// 1x window_, rather than being given the full STUCK_STARVED_WINDOWS margin a truly-dead task gets. The
-// longer a wait has already run (the more precisely that observed rate has settled toward the task's true,
-// steady cadence), the more exactly this collapse holds.
+// barely got to run at all" (wait for the STUCK_STARVED_WINDOWS wall-clock fallback instead, same as a task
+// that never runs again).  It derived "how fast the task should be ticking" from this watch's own observed
+// passes-per-ms since it was constructed: elapsed real ms since construction divided by elapsed real passes
+// since construction.
 //
-// Whether that was ever meant to be prompt-but-tight detection for a busy task, or real extra leniency for
-// one, is genuinely ambiguous from the comment alone -- flagged for Jess, same as the rebound-latch tradeoff.
-// What's unambiguous is the concrete case the round-2 audit raised: at shipped defaults, this can confirm
-// "stuck" on a genuinely healthy, steadily-progressing slow approach in well under what round 1 had already
-// found and accepted (1.5-6x the window) -- because the check's own tolerance shrinks toward bare window_ the
-// longer a busy-but-not-dead task has been running, not because the robot ever stopped moving.
+// During a temporary gap in ez_auto_task (busy with something else -- an SD-card write, a screen redraw, any
+// other higher-priority task) its own pass counter freezes, but the WAITING task's clock (pros::millis(),
+// read from its own un-starved loop) keeps advancing.  So elapsed_ms keeps growing while elapsed_passes stays
+// flat, observed_delay = elapsed_ms/elapsed_passes keeps climbing, and expected_passes = window_/observed_delay
+// keeps shrinking -- while the confirmation numerator, pass - last_progress_pass_, is frozen too (pass itself
+// isn't moving).  Once the shrinking threshold drops below that frozen numerator, the check fires: "confirmed
+// by real ez_auto_task passes" during a gap that produced zero of them, on a robot that was never actually
+// stuck, only unreported on for a while.
 //
-// These tests script a real, steady 70%-duty auto task (it ticks on 7 of every 10 of this loop's own passes,
-// simulating ordinary competing-task overhead, never fully stopping) two ways: alongside a slow but
-// genuinely healthy odom approach at the ~2.5 in/s the audit itself used, closing by a full step every 400ms
-// of TASK time (not wall time -- the odometry and PID error only change on a pass the task actually runs,
-// same as the real system, so a busy task's ticks land farther apart in real wall-clock time too); and
-// alongside a robot that never moves at all, to see how promptly a merely-busy (not dead) task's own stuck
-// robot gets caught. A last scenario has the task stop ticking entirely partway through -- genuinely dead,
-// not just busy -- which the (unchanged) STUCK_STARVED_WINDOWS wall-clock fallback still has to catch.
+// A gap's danger depends on how many passes had already elapsed since the wait started when it begins (call
+// it P): expected_passes only drops below the frozen numerator N once elapsed_ms grows past roughly
+// window_/N * P, i.e. a gap needs to be roughly proportional to P to trip this -- a wait already well
+// established (large P) tolerates a longer gap than one still early in its own start-up allowance (small P).
+// That's the opposite of "degrades the longer a wait has run": an earlier round's summary of this same
+// mechanism said exactly that, but a verifier re-deriving it by hand and confirming by repro found early
+// gaps are the dangerous ones, not late ones -- this file's comments and tests follow the verified mechanism,
+// not the earlier paraphrase.
+//
+// Comparing the real pass count against a FIXED nominal-DELAY_TIME pass count instead removes the shrinking
+// threshold entirely, so a frozen numerator can never catch up to it, at any P. Whether that was ever meant
+// to give a busy task real extra leniency, or just to confirm it about as fast as a healthy one without
+// waiting the full STUCK_STARVED_WINDOWS margin, is genuinely ambiguous from the code alone -- flagged for
+// Jess, same as the Channel rebound latch's own flagged tradeoff -- but removing the shrinking threshold is
+// unambiguously correct: it can only ever fire on real accumulated passes now, never on wall-clock time
+// alone while frozen (that's what STUCK_STARVED_WINDOWS below is for).
+//
+// Tests: (1) the audit's own shape -- a real, single ~1s gap partway through an otherwise-healthy,
+// continuously-progressing 2.5 in/s odom approach (position and PID error held flat through the gap, not
+// simulated as catching up -- what a starved reporting task actually produces). (2) the latency tradeoff this
+// fix trades for that: a robot pinned from the very start under a steady, moderately reduced (not dead) task
+// duty, measuring detection latency since the pin old vs new. (3) a task that stops ticking entirely and
+// never resumes -- genuinely dead, not just gapped -- which the unchanged STUCK_STARVED_WINDOWS wall-clock
+// fallback still has to catch regardless of this fix.
 #include <cmath>
 #include <functional>
 
@@ -44,22 +55,15 @@ Drive make_chassis() {
 
 Drive* g_chassis = nullptr;
 int g_pass = 0;
-int g_task_ticks = 0;  // how many times the simulated auto task has actually ticked so far
-void (*g_script)(Drive&, int, bool, int) = nullptr;
+void (*g_script)(Drive&, int, bool) = nullptr;
 bool g_task_dead = false;  // once true, the simulated auto task never ticks again
 bool (*g_should_tick)(int) = nullptr;
-
-// 70% duty: skips passes 0, 1 and 2 of every block of 10 -- a steady, moderate slowdown, never a full stop.
-bool busy_70_percent(int n) { return (n % 10) >= 3; }
 
 void on_delay() {
   ++g_pass;
   bool ticked = !g_task_dead && (g_should_tick == nullptr || g_should_tick(g_pass));
-  if (ticked) {
-    ez::detail::stats.auto_task_passes.fetch_add(1);
-    ++g_task_ticks;
-  }
-  g_script(*g_chassis, g_pass, ticked, g_task_ticks);
+  if (ticked) ez::detail::stats.auto_task_passes.fetch_add(1);
+  g_script(*g_chassis, g_pass, ticked);
 }
 
 struct Outcome {
@@ -68,14 +72,13 @@ struct Outcome {
   bool interfered;
 };
 
-Outcome run(Drive& chassis, void (*script)(Drive&, int, bool, int), bool (*should_tick)(int), int max_passes, std::function<void()> wait) {
+Outcome run(Drive& chassis, void (*script)(Drive&, int, bool), bool (*should_tick)(int), int max_passes, std::function<void()> wait) {
   g_chassis = &chassis;
   g_pass = 0;
-  g_task_ticks = 0;
   g_script = script;
   g_should_tick = should_tick;
   g_task_dead = false;
-  script(chassis, 0, true, 0);  // initial setup pass always "ticks" -- it's establishing starting state, not timing
+  script(chassis, 0, true);  // initial setup pass always "ticks" -- establishing starting state, not timing
   test_stub::g_clock.on_delay = on_delay;
   test_stub::g_clock.delay_calls_until_stop = max_passes;
   Outcome o{true, 0, false};
@@ -92,83 +95,89 @@ Outcome run(Drive& chassis, void (*script)(Drive&, int, bool, int), bool (*shoul
   return o;
 }
 
-constexpr double CRAWL_STEP_IN = 1.0;         // matches the small_error exit constant set below
-constexpr int TASK_TICKS_PER_STEP = 40;       // 400ms of TASK time per inch => 2.5 in/s, the audit's own figure
-constexpr int CRAWL_STEPS = 12;               // a long wait: 4.8s of task time, longer still in busy real time
-constexpr double PATH_LENGTH_IN = CRAWL_STEPS * CRAWL_STEP_IN;
-constexpr int TOTAL_TASK_TICKS = CRAWL_STEPS * TASK_TICKS_PER_STEP;
-// Inches closed per TASK tick (not per wall tick) for a smooth, continuous crawl averaging one full
-// CRAWL_STEP_IN every TASK_TICKS_PER_STEP task ticks. Continuous, not a staircase that lands exactly on
-// each step boundary, so Channel::made()'s strict "< low - step" check (a size sitting exactly ON the
-// boundary doesn't count, see exit_conditions.cpp) reliably credits progress once each step.
-constexpr double IN_PER_TASK_TICK = CRAWL_STEP_IN / TASK_TICKS_PER_STEP;
+constexpr double IN_PER_WALL_TICK = 0.025;  // 2.5 in/s at a 10ms tick -- the audit's own figure; matches the
+                                             // small_error exit constant (1in) set below as the Channel step
+constexpr double PATH_LENGTH_IN = 24.0;     // long enough to still be under way well past the gap
 
-// Places the fake robot's odom position a shrinking distance short of the target, closing smoothly and
-// continuously at a slow but perfectly steady 2.5 in/s of TASK time -- the same "distance closes by a step
-// every so often" progress StuckWatch's own credit is built around (see test_pp_wait_stuck.cpp), just slow.
-// Only updates when the simulated task actually ticked this pass: "the errors only change when that task
-// runs" (see the class comment in exit_conditions.cpp) -- a busy task's ticks land farther apart on the
-// real wall clock too, exactly like the real system, not just a slower pass counter with the odometry still
-// magically updating every wall-clock tick regardless.
-void slow_healthy_crawl(Drive& c, int, bool ticked, int task_ticks) {
+// A single, real gap in the simulated auto task: ticks normally, freezes for GAP_TICKS starting at
+// GAP_START_TICK, then resumes -- not a steady reduced duty, the shape the audit itself used.
+constexpr int GAP_START_TICK = 75;    // matches the audit's own repro phase
+constexpr int GAP_TICKS = 100;        // a 1000ms gap -- the audit's own primary repro length
+bool one_gap(int n) { return !(n >= GAP_START_TICK && n < GAP_START_TICK + GAP_TICKS); }
+
+// 70% duty, steady: skips ticks 0, 1 and 2 of every block of 10 -- a moderate, never-fully-stopping slowdown,
+// used only for the latency-tradeoff test below (not claimed to reproduce the audit's own gap numbers).
+bool busy_70_percent(int n) { return (n % 10) >= 3; }
+
+// Places the fake robot's odom position a shrinking distance short of the target, closing continuously at a
+// steady 2.5 in/s of real wall-clock time -- the same "distance closes by a step every so often" progress
+// StuckWatch's own credit is built around (see test_pp_wait_stuck.cpp).  Only writes state when the
+// simulated task actually ticked this pass, and otherwise leaves it exactly where it was: "the errors only
+// change when that task runs" (see the class comment in exit_conditions.cpp) -- during a gap nothing
+// refreshes the PID error or the odometry, the same as the real system, not a simulated catch-up jump once
+// the task resumes.
+void healthy_crawl(Drive& c, int n, bool ticked) {
   if (!ticked) return;
-  double remaining = std::fmax(0.0, PATH_LENGTH_IN - IN_PER_TASK_TICK * std::min(task_ticks, TOTAL_TASK_TICKS));
+  double remaining = std::fmax(0.0, PATH_LENGTH_IN - IN_PER_WALL_TICK * n);
   DriveTestAccess::odom_current(c) = {0.0, PATH_LENGTH_IN - remaining, 0.0};
   c.xyPID.error = remaining;
-  c.xyPID.derivative = remaining > 0.0 ? -IN_PER_TASK_TICK : 0.0;
+  c.xyPID.derivative = remaining > 0.0 ? -IN_PER_WALL_TICK : 0.0;
   c.current_a_odomPID.error = 0.0;
   c.current_a_odomPID.derivative = 0.0;
 }
 
-// A robot that never moves at all, under the same steady 70%-duty (busy, not dead) task -- how promptly does
-// a merely-busy task's own genuinely stuck robot get caught?  Jittered derivative so the velocity exit can't
-// end the wait on its own, same idiom as test_jc1_non_odom_stuck.cpp's pinned_jitter().
-void pinned_under_busy_task(Drive& c, int n, bool ticked, int) {
+// A brief healthy crawl (enough to clear the start allowance and set moved_), then pinned in place with a
+// jittering derivative so the velocity exit can't end the wait on its own -- same idiom as
+// test_jc1_non_odom_stuck.cpp's pinned_jitter(), just for xyPID/current_a_odomPID.
+constexpr int PIN_AT_TICK = 60;  // ~1.5in in, comfortably past the start allowance and a full Channel step
+void pinned_after_healthy_start(Drive& c, int n, bool ticked) {
   if (!ticked) return;
-  c.xyPID.error = 20.0;
+  if (n < PIN_AT_TICK) {
+    healthy_crawl(c, n, ticked);
+    return;
+  }
+  c.xyPID.error = PATH_LENGTH_IN - IN_PER_WALL_TICK * PIN_AT_TICK;
   c.xyPID.derivative = (n % 2 == 0) ? 0.2 : -0.2;
   c.current_a_odomPID.error = 0.0;
   c.current_a_odomPID.derivative = 0.0;
 }
 
-// Same healthy crawl, but the simulated auto task stops ticking entirely partway through -- a genuinely dead
-// task, which the STUCK_STARVED_WINDOWS wall-clock fallback (unaffected by this fix) has to still catch.
-constexpr int DIE_AT_TICK = 400;  // ~half a step of real (busy) time into the crawl
-void healthy_then_task_dies(Drive& c, int n, bool ticked, int task_ticks) {
+// Same healthy crawl, but the simulated auto task stops ticking entirely partway through and never resumes
+// -- genuinely dead, which the STUCK_STARVED_WINDOWS wall-clock fallback (unaffected by this fix) has to
+// still catch regardless.
+constexpr int DIE_AT_TICK = 150;
+void healthy_then_task_dies(Drive& c, int n, bool ticked) {
   if (n == DIE_AT_TICK) g_task_dead = true;
-  slow_healthy_crawl(c, n, ticked, task_ticks);  // no-ops once g_task_dead makes on_delay stop passing ticked=true
+  healthy_crawl(c, n, ticked);  // no-ops on its own once g_task_dead makes on_delay stop passing ticked=true
 }
 }  // namespace
 
-TEST_CASE("pid_wait() odom: a steady, merely-busy (not dead) auto task does not false-stuck a genuinely healthy slow approach over a long wait") {
+TEST_CASE("pid_wait() odom: a single ~1s gap in ez_auto_task during an otherwise-healthy 2.5in/s approach does not false-stuck it") {
   Drive chassis = make_chassis();
   DriveTestAccess::imu_calibration_complete(chassis) = true;
   chassis.pid_print_toggle(false);
   chassis.pid_odom_drive_exit_condition_set(90, 1.0, 250, 3.0, 500, 750);
   chassis.pid_odom_turn_exit_condition_set(90, 3.0, 250, 7.0, 500, 750);
   chassis.pid_odom_ptp_set({{0.0, PATH_LENGTH_IN, ANGLE_NOT_SET}, fwd, 30});
-  // At 70% duty, TOTAL_TASK_TICKS task ticks take TOTAL_TASK_TICKS / 0.7 real wall ticks; a healthy margin
-  // on top covers the settling passes after the last step.
-  int max_passes = (int)(TOTAL_TASK_TICKS / 0.7) + 100;
-  Outcome o = run(chassis, slow_healthy_crawl, busy_70_percent, max_passes, [&] { chassis.pid_wait(); });
+  Outcome o = run(chassis, healthy_crawl, one_gap, (int)(PATH_LENGTH_IN / IN_PER_WALL_TICK) + GAP_TICKS + 100, [&] { chassis.pid_wait(); });
   CHECK(o.returned);
   CHECK_FALSE(o.interfered);
 }
 
-TEST_CASE("pid_wait() odom: a merely-busy (not dead) task's own genuinely stuck robot is still caught, sooner than the dead-task fallback") {
+TEST_CASE("pid_wait() odom: a steady, merely-busy (not dead) task's own genuinely stuck robot is still caught") {
   Drive chassis = make_chassis();
   DriveTestAccess::imu_calibration_complete(chassis) = true;
   chassis.pid_print_toggle(false);
   chassis.pid_odom_drive_exit_condition_set(90, 1.0, 250, 3.0, 500, 750);
   chassis.pid_odom_turn_exit_condition_set(90, 3.0, 250, 7.0, 500, 750);
-  chassis.pid_odom_ptp_set({{0.0, 48.0, ANGLE_NOT_SET}, fwd, 30});
-  Outcome o = run(chassis, pinned_under_busy_task, busy_70_percent, 1200, [&] { chassis.pid_wait(); });
+  chassis.pid_odom_ptp_set({{0.0, PATH_LENGTH_IN, ANGLE_NOT_SET}, fwd, 30});
+  Outcome o = run(chassis, pinned_after_healthy_start, busy_70_percent, 1200, [&] { chassis.pid_wait(); });
   CHECK(o.returned);
   CHECK(o.interfered);
-  // Comfortably below the dead-task fallback (STUCK_STARVED_WINDOWS * window_ = 4 * 500ms = 2000ms = 200
-  // passes past the 1s start allowance, ~300 passes total) -- proof this exercises the pass-count check
-  // this fix changed, not just the unrelated wall-clock-only fallback below it.
-  CHECK(o.passes < 250);
+  // Comfortably below the dead-task fallback (STUCK_STARVED_WINDOWS * window_ = 2000ms = 200 passes past
+  // wherever last_progress_pass_ sat when the pin began) -- proof this exercises the pass-count check this
+  // fix changed, not just the unrelated wall-clock-only fallback below it.
+  CHECK(o.passes - PIN_AT_TICK < 200);
 }
 
 TEST_CASE("pid_wait() odom: a genuinely dead auto task is still caught by the unchanged wall-clock fallback") {
@@ -178,10 +187,9 @@ TEST_CASE("pid_wait() odom: a genuinely dead auto task is still caught by the un
   chassis.pid_odom_drive_exit_condition_set(90, 1.0, 250, 3.0, 500, 750);
   chassis.pid_odom_turn_exit_condition_set(90, 3.0, 250, 7.0, 500, 750);
   chassis.pid_odom_ptp_set({{0.0, PATH_LENGTH_IN, ANGLE_NOT_SET}, fwd, 30});
-  // Generous cap: even the old, pre-fix 4x-window wall-clock fallback (500ms * 4 = 2s = 200 passes past the
-  // task's death) has to fit comfortably inside this, so a failure here is the fallback itself missing, not
-  // an unlucky cap.
-  Outcome o = run(chassis, healthy_then_task_dies, busy_70_percent, DIE_AT_TICK + 400, [&] { chassis.pid_wait(); });
+  // Generous cap: even the pre-fix 4x-window wall-clock fallback (2s = 200 passes past the task's death) has
+  // to fit comfortably inside this, so a failure here is the fallback itself missing, not an unlucky cap.
+  Outcome o = run(chassis, healthy_then_task_dies, nullptr, DIE_AT_TICK + 400, [&] { chassis.pid_wait(); });
   CHECK(o.returned);
   CHECK(o.interfered);
 }

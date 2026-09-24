@@ -105,24 +105,38 @@ class StuckWatch {
     // Confirming ez_auto_task really kept running (not just wall-clock time passing while it's starved or dead)
     // needs an expected pass count for window_.  This used to derive that count from this watch's own observed
     // passes-per-ms since it was constructed (elapsed real ms since construction / elapsed real passes since
-    // construction).  That estimate shares its own denominator with the very stretch it's judging:
-    // expected_passes (window_ / observed_delay) times observed_delay is window_ again, by construction,
-    // whatever observed_delay is measured as -- so "real passes since last progress" exceeding
+    // construction).  Two problems with that, both real:
+    //
+    // Steady state: expected_passes (window_ / observed_delay) times observed_delay is window_ again, by
+    // construction, whatever observed_delay is measured as -- so "real passes since last progress" exceeding
     // "expected_passes" reduces to exactly waited > window_, the same test just above, for any task ticking at
-    // a roughly steady rate, healthy or merely busy alike.  In practice that meant a task running a little
-    // slower than DELAY_TIME (ordinary scheduling overhead, not starvation) got confirmed about as fast as a
-    // perfectly healthy one -- at roughly 1x window_, not anywhere near the STUCK_STARVED_WINDOWS margin a
-    // fully dead task gets -- and the longer a wait had already run (the more precisely that observed rate had
-    // settled toward the task's true, steady cadence), the more exactly that held.  Whether prompt-but-tight
-    // detection for a busy task was the original intent, or real extra leniency for one was, is genuinely
-    // ambiguous from that alone; what's concrete is the audit's finding that this let a merely-busy task
-    // false-stuck a genuinely healthy, still-progressing slow approach well under what an earlier pass at this
-    // same mechanism had found and accepted.  Comparing the real pass count against a fixed count of
-    // DELAY_TIME-long passes instead trades that promptness for leniency: a task genuinely running slower than
-    // nominal (without being dead) now needs fewer of its own passes to reach this count, but each of its
-    // passes represents more real wall-clock time, so a genuinely stuck robot under a busy task is now
-    // confirmed measurably later (real-world tolerance now scales with how busy the task is, not fixed at
-    // ~window_) -- while a task that stops passing entirely still can't reach any positive count at all and is
+    // a roughly steady rate, healthy or merely busy alike. A task running a little slower than DELAY_TIME
+    // (ordinary scheduling overhead, not dead) got confirmed about as fast as a perfectly healthy one, not
+    // anywhere near the STUCK_STARVED_WINDOWS margin a fully dead task gets.
+    //
+    // A temporary gap (ez_auto_task busy with something else for a while, then resuming) is worse: while its
+    // own pass counter is frozen, elapsed_passes freezes too, but elapsed_ms keeps climbing (pros::millis() is
+    // read from this, the CALLING task's own un-starved loop) -- so observed_delay climbs and expected_passes
+    // keeps shrinking, while the confirmation numerator (pass - last_progress_pass_) is frozen right along with
+    // pass itself. Once the shrinking threshold drops below that frozen numerator, this fires on a gap that
+    // produced zero confirming passes, on a robot that was never actually stuck, only unreported on for a
+    // while. How dangerous a gap is scales with how many passes had already elapsed when it began (call it P):
+    // roughly, it takes a gap proportional to P before the threshold can fall that far -- so a wait already
+    // well established tolerates a LONGER gap than one still early on, the opposite of "gets worse the longer
+    // the wait runs" (an earlier pass at this same mechanism said exactly that; re-deriving it here and
+    // confirming by repro says otherwise -- early gaps are the dangerous ones).
+    //
+    // Whether prompt-but-tight detection for a merely-busy task was ever the original intent, or real extra
+    // leniency for one was, is genuinely ambiguous from that alone; what's concrete is the audit's own repro:
+    // a real, single ~1s gap during an otherwise-healthy, still-progressing 2.5in/s approach got confirmed
+    // stuck. Comparing the real pass count against a fixed count of DELAY_TIME-long passes instead removes the
+    // shrinking threshold entirely, so a frozen numerator can never catch up to it, at any P -- while it also
+    // trades some promptness for leniency in the steady-state case: a task genuinely running slower than
+    // nominal (without being dead) now needs fewer of its own passes to reach this fixed count, but each of
+    // its passes represents more real wall-clock time, so a genuinely stuck robot under a merely-busy task is
+    // now confirmed measurably later than before (real-world tolerance now scales with how busy the task is,
+    // not fixed at ~window_) -- while a task that stops passing entirely still can't reach any positive count
+    // at all and is
     // still caught by the STARVED_WINDOWS wall-clock fallback below, unchanged.  Flagging the latency tradeoff
     // for a design call, the same as the Channel rebound latch above.
     int expected_passes = (int)(window_ / (double)util::DELAY_TIME);
