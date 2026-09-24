@@ -44,7 +44,20 @@ std::pair<bool, std::uint32_t> run_capped(F&& call, int max_ticks) {
 
 }  // namespace
 
-TEST_CASE("N5: a genuinely slow-but-healthy final approach at default StuckWatch constants") {
+// This test's own conclusion (CHECK_FALSE(chassis.interfered) below) was reached against a sim
+// harness with two bugs: run_auto_task_pass() never advanced ez::detail::stats.auto_task_passes,
+// and the fake IMU's yaw sign was inverted (see round2-context/STEP5_ROUND2_FINDINGS.md's
+// "Cross-cutting caveats", fixed in sim_physics.hpp on this branch). The first bug silently ran
+// every sim-backed StuckWatch check on the lenient 4x-window wall-clock fallback instead of the
+// real configured window -- for THIS scenario specifically, that's the difference between the
+// real ~1.5s trip this fix now produces and the ~3s+ the old bug allowed, long enough for this
+// motion to reach its target before ever being flagged. With the fix, this same scenario now
+// genuinely IS flagged stuck (interfered=true) at 1270ms, y=1.70in, ~1.34in/s -- confirming, not
+// refuting, N5's original floor concern (the real window is 1in/500ms = 2in/s; the old 4x
+// fallback only required 0.5in/s). should_fail() marks this a known, tracked failure rather than
+// silently deleting or rewriting the assertion -- flip the assertion once N5 itself is fixed
+// (a Step 4 item, not part of the sim-harness port that surfaced this).
+TEST_CASE("N5: a genuinely slow-but-healthy final approach at default StuckWatch constants" * doctest::should_fail()) {
   sim::SimArchetype a = sim::archetype_sticky_high_friction();  // highest rolling resistance + scrub
   Drive chassis = make_chassis(a);
   DriveTestAccess::imu_calibration_complete(chassis) = true;
