@@ -246,13 +246,23 @@ exit_output PID::exit_condition(bool print) {
   if (exit.velocity_exit_time != 0 && velocity_armed && !held) {  // Check if this condition is enabled
     if (std::isfinite(second_sensor) && std::fabs(second_sensor) <= velocity_zero_secondary) {
       m += util::DELAY_TIME;
+      m_miss = 0;
       if (m > exit.velocity_exit_time) {
         timers_reset();
         if (print) exit_condition_print(VELOCITY_EXIT);
         return VELOCITY_EXIT;
       }
     } else {
-      m = 0;
+      // Same debounce as the main channel: an isolated above-threshold tick shouldn't erase
+      // accumulated stillness on its own -- only VELOCITY_MISS_DEBOUNCE_PASSES consecutive ones
+      // do. No freshness/staleness tracking on this channel (unlike the main channel's
+      // k_prev_checked) -- second_sensor is a caller-supplied acceleration reading, not a raw
+      // position value, so a repeated reading here doesn't carry the same "sensor hasn't
+      // refreshed yet" meaning a repeated position value does.
+      if (++m_miss >= VELOCITY_MISS_DEBOUNCE_PASSES) {
+        m = 0;
+        m_miss = 0;
+      }
     }
   }
 

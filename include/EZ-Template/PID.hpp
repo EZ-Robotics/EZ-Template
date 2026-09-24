@@ -333,9 +333,11 @@ class PID {
   // A single tick where the sensor reads above velocity_zero_main/_secondary no longer wipes
   // k/m to 0 by itself -- real contact jitter or drivetrain backlash under a sustained push can
   // produce an isolated noisy reading without the robot actually having made progress, and that
-  // used to erase the ONE stuck-detection backstop DRIVE/TURN/SWING have (PID.cpp:raw_compute
-  // area). k/m only reset once VELOCITY_MISS_DEBOUNCE_PASSES consecutive ticks read as moving,
-  // which any real, non-instantaneous motion clears easily at a 10ms tick rate.
+  // used to erase the ONE stuck-detection backstop DRIVE/TURN/SWING have (see the debounce in
+  // exit_condition()). k/m only reset once VELOCITY_MISS_DEBOUNCE_PASSES consecutive ticks read
+  // as moving, which any real, non-instantaneous motion clears easily at a 10ms tick rate. (Only
+  // the main channel additionally checks raw-value freshness first -- see k_prev_checked below;
+  // the secondary channel doesn't, see its own comment in PID.cpp.)
   int k_miss = 0, m_miss = 0;
   static constexpr int VELOCITY_MISS_DEBOUNCE_PASSES = 2;
   // The main channel's own raw reading the last time its velocity-exit check ran. A poll counts
