@@ -58,16 +58,12 @@ void imu_scale_test() {
     pros::delay(ez::util::DELAY_TIME);
   }
 
-  // Build the exact line to paste into default_constants()
-  std::string paste = "chassis.drive_imus_scalers_3600_set({";
-  for (std::size_t i = 0; i < imus.size(); i++) {
-    paste += ez::util::to_string_with_precision(imus[i]->get_rotation() - start[i]);
-    if (i + 1 < imus.size()) paste += ", ";
-  }
-  paste += "});";
-
-  printf("%s\n", paste.c_str());
-  ez::screen_print("Done!  Paste line is\nin the terminal.  See\nthe docs if you have\nno terminal plugged in.", 0);
+  // Freeze each imu's final reading on screen - copy these, in this order,
+  // into drive_imus_scalers_3600_set()
+  std::string result = "Done!  Copy into\ndrive_imus_scalers_3600_set()\nin this order:\n";
+  for (std::size_t i = 0; i < imus.size(); i++)
+    result += "P" + std::to_string(IMU_SCALE_TEST_PORTS[i]) + ": " + ez::util::to_string_with_precision(imus[i]->get_rotation() - start[i]) + "\n";
+  ez::screen_print(result, 0);
 }
 ```
 ```cpp
@@ -84,11 +80,11 @@ Go to the `IMU Scale Test` page on the autonomous selector and run it (press `B`
 
 Physically turn the robot exactly 3600 degrees (10 full rotations) by hand.  Don't use an autonomous routine for this - `pid_turn_set()` stops when the imu reads its target, so the imu would report 3600 no matter how far the robot really turned.  Line the robot up with a tile edge at the start and after every rotation so you know each one was a full turn, since the number on the screen is exactly the thing that might be wrong.  
 
-Once you've finished the 10th rotation, press A.  If you're tethered with `pros terminal` open, the exact line to paste is already sitting in it.  If you're not tethered, read the raw number(s) off the screen instead and build the line yourself, in the same port order shown there.  
+Once you've finished the 10th rotation, press A.  The screen freezes on each imu's final number - no laptop or terminal needed, just read them off the brain.  
 
-Paste whatever it printed into `default_constants()` in `src/autons.cpp`.  
+Paste those numbers into `default_constants()` in `src/autons.cpp`, in the same port order the screen showed them.  
 ```cpp
-chassis.drive_imus_scalers_3600_set({3625.42});  // Whatever the test printed above, one entry per imu in port order
+chassis.drive_imus_scalers_3600_set({3625.42});  // Whatever the test showed on screen, one entry per imu in port order
 ```
 
 No trial and error needed, this is a one-shot calibration.  The same test function and the same call handle any number of imus - a single-imu chassis just has one entry in the braces.  
