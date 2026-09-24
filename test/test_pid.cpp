@@ -10,9 +10,12 @@
 // Velocity exit arming: with velocity_exit_time 50, the velocity timer does not
 // run until the main sensor's derivative has exceeded its zero threshold once
 // (the robot has actually moved), so a robot that hasn't started moving yet is
-// not exited early.  After that it exits on the 6th stationary pass, as before.
-// A robot that never moves still velocity-exits once the 1000 ms fallback window
-// passes (101 passes to arm, then the same 6 passes), so pid_wait can't hang.
+// not exited early.  After that it exits on the 6th genuinely fresh stationary
+// pass.  A raw reading that never changes at all no longer velocity-exits on
+// its own, even past the 1000 ms fallback window -- a caller relying on this
+// exit to bound a permanently frozen sensor (whether that's a real, full stall
+// or the sensor just never refreshing) needs its own progress backstop; see
+// the DRIVE/TURN/SWING wait level's SingleStuckWatch for that.
 // timers_reset() disarms.  The secondary sensor is gated by the same flag.
 // A non-finite secondary reading (no imu, or before the first update) never counts as stopped.
 // velocity_exit_hold freezes both velocity timers while true, but only for up to
@@ -315,6 +318,58 @@ TEST_CASE("PID velocity exit does not fire on a raw reading that never changes, 
     pid.compute_error(10.0, 0.0);
     CHECK(pid.exit_condition() == RUNNING);
   }
+}
+
+TEST_CASE("PID velocity exit does not fire when checked slower than a sensor that refreshes every other tick") {
+  // What could go wrong with keying "fresh" off the raw value alone: a caller whose own poll loop
+  // runs slower than compute() (or that just happens to land after the stale half of a sensor
+  // that refreshes every other tick) can see a raw value that HAS changed since its last check,
+  // paired with THIS tick's derivative reading exactly 0 -- the artifact of the most recent
+  // compute() itself having been a stale re-read. That combination must not count as fresh either:
+  // catching it needs both signals (a changed raw value AND a nonzero latest derivative) to agree,
+  // not just the raw-value comparison on its own.
+  PID pid;
+  pid.exit_condition_set(0, 0, 0, 0, 50, 0);
+
+  pid.compute_error(10.0, 1.0);  // real motion: arms
+  CHECK(pid.exit_condition() == RUNNING);
+
+  double real_position = 1.0;
+  for (int check = 1; check <= 200; check++) {
+    INFO("check ", check);
+    real_position += 0.1;
+    pid.compute_error(10.0, real_position);  // a fresh sample the check below never sees on its own
+    pid.compute_error(10.0, real_position);  // immediately re-read stale: derivative reads exactly 0
+    CHECK(pid.exit_condition() == RUNNING);
+  }
+}
+
+TEST_CASE("PID velocity timer does not double-count one real sample across two checks between one compute") {
+  // The other half of what could go wrong with this fix: a caller polling FASTER than compute()
+  // runs can call exit_condition() twice for the same one real sample. If freshness were judged by
+  // the latest derivative alone, both calls would see that one sample's nonzero derivative and both
+  // would count it -- a single blip read twice looking like two consecutive misses, clearing k the
+  // same way an isolated blip must not (see the jitter test above). Tracking what THIS check last
+  // saw (k_prev_checked), not raw_compute()'s own bookkeeping, is what catches this: the second of
+  // two checks between one compute() sees a raw value that hasn't changed since the first checked it.
+  PID pid;
+  pid.exit_condition_set(0, 0, 0, 0, 50, 0);
+
+  pid.compute_error(10.0, 1.0);  // arms
+  CHECK(pid.exit_condition() == RUNNING);
+
+  bool toggle = false;
+  for (int pass = 1; pass <= 5; pass++) {
+    dither_tick(pid, 10.0, toggle, 1.0);
+    CHECK(pid.exit_condition() == RUNNING);  // k=50, 1 pass short
+  }
+
+  pid.compute_error(10.0, 2.0);            // one real, fresh, moving sample
+  CHECK(pid.exit_condition() == RUNNING);  // 1st check of it: counted once
+  CHECK(pid.exit_condition() == RUNNING);  // 2nd check, no new compute in between: must not count again
+
+  dither_tick(pid, 10.0, toggle, 2.0);
+  CHECK(pid.exit_condition() == VELOCITY_EXIT);  // k was never cleared: still fires right on schedule
 }
 
 TEST_CASE("PID timers_reset disarms velocity exit for the next motion") {

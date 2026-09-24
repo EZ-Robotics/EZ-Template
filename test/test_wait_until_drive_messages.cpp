@@ -41,11 +41,12 @@ std::string two_places(double value) {
   return text;
 }
 
-// The two lines printed when the failsafe ends a wait, and the line printed when the robot gets past its target.
-std::string failsafe_lines(double left_driven, double right_driven, const std::string& target) {
-  std::string left = "  Left: Velocity Wait Until Exit Failsafe, triggered at " + two_places(left_driven) + " instead of " + target + "\n";
-  std::string right = "  Right: Velocity Wait Until Exit Failsafe, triggered at " + two_places(right_driven) + " instead of " + target + "\n";
-  return left + right;
+// The single line printed when the DRIVE-level progress backstop (SingleStuckWatch) ends a wait
+// instead -- what a raw reading that never changes (see below) now falls back to: PID's own
+// velocity exit still arms, but k never accumulates from a reading that never changes
+// (test_pid.cpp's never-changes test).
+std::string stuck_failsafe_line(double left_driven, const std::string& target) {
+  return "  Drive: Stuck Wait Until Exit Failsafe, triggered at " + two_places(left_driven) + " instead of " + target + "\n";
 }
 
 std::string success_line(double left_driven, double right_driven, const std::string& target) {
@@ -89,16 +90,18 @@ TEST_CASE("pid_wait_until failsafe message compares distance driven to the dista
   velocity_exits_only(chassis);
   set_sensors(chassis, 100.0);
   double left_start = chassis.drive_sensor_left();
-  double right_start = chassis.drive_sensor_right();
 
   chassis.pid_drive_set(48.0, 110);
   set_sensors(chassis, 106.0);  // Blocked six inches in, and never gets to 24
   double left_driven = chassis.drive_sensor_left() - left_start;
-  double right_driven = chassis.drive_sensor_right() - right_start;
 
   std::string printed = wait_until_printed(chassis, 24.0);
 
-  CHECK(printed == failsafe_lines(left_driven, right_driven, "24.00"));
+  // The scripted reading never changes again after this (nothing steps the drive task), so PID's
+  // own velocity exit still arms (via the fallback) but k never accumulates from it
+  // (test_pid.cpp's never-changes test) -- this now ends via the DRIVE-level progress backstop
+  // instead, with its own message.
+  CHECK(printed == stuck_failsafe_line(left_driven, "24.00"));
   CHECK(printed.find(two_places(left_start + 24.0)) == std::string::npos);  // The encoder reading 24 inches on is not printed
 }
 
@@ -107,16 +110,15 @@ TEST_CASE("pid_wait_until failsafe message on a reverse drive compares distance 
   velocity_exits_only(chassis);
   set_sensors(chassis, 100.0);
   double left_start = chassis.drive_sensor_left();
-  double right_start = chassis.drive_sensor_right();
 
   chassis.pid_drive_set(-48.0, 110);
   set_sensors(chassis, 94.0);
   double left_driven = chassis.drive_sensor_left() - left_start;
-  double right_driven = chassis.drive_sensor_right() - right_start;
 
   std::string printed = wait_until_printed(chassis, -24.0);
 
-  CHECK(printed == failsafe_lines(left_driven, right_driven, "-24.00"));
+  // Same shift as the forward case above: this now ends via the DRIVE-level progress backstop.
+  CHECK(printed == stuck_failsafe_line(left_driven, "-24.00"));
   CHECK(printed.find(two_places(left_start - 24.0)) == std::string::npos);
 }
 

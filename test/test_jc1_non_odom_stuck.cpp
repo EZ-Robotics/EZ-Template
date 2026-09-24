@@ -108,6 +108,24 @@ void pinned_frozen(Drive& c, int n) {
   c.rightPID.error = 24.0;
   c.rightPID.derivative = 0.0;
 }
+
+// The realistic shape of the frozen-sensor case above: a robot that drives normally for a while
+// (real, fresh, closing readings), then hits a wall and pins there, at which point its sensor
+// starts reading bit-identical every poll. What could go wrong with the fix: does the now-frozen
+// stretch cost this wait anything beyond the ordinary progress-backstop window, i.e. does the fix
+// turn a bounded stop into a materially slower one? It shouldn't -- SingleStuckWatch's own
+// window doesn't care whether PID's own velocity exit could also have fired.
+void drives_then_pins(Drive& c, int n) {
+  bool pinned = n > 20;
+  double e = pinned ? 14.0 : std::fmax(14.0, 24.0 - 0.5 * n);
+  double rate = pinned ? 0.0 : -0.5;
+  c.leftPID.error = e;
+  c.leftPID.derivative = rate;
+  c.leftPID.cur += rate;
+  c.rightPID.error = e;
+  c.rightPID.derivative = rate;
+  c.rightPID.cur += rate;
+}
 }  // namespace
 
 TEST_CASE("pid_wait() DRIVE: a healthy, steadily-closing motion is not falsely flagged stuck") {
@@ -150,6 +168,19 @@ TEST_CASE("pid_wait() DRIVE: a raw sensor that never changes at all is still cau
   CHECK(o.returned);
   CHECK(o.interfered);
   CHECK(o.passes < 200);
+}
+
+TEST_CASE("pid_wait() DRIVE: drives normally, then pins at a wall with a frozen sensor -- still caught promptly") {
+  Drive chassis = make_chassis();
+  chassis.pid_print_toggle(false);
+  chassis.pid_drive_set(24, 100);
+  Outcome o = run(chassis, drives_then_pins, 3000, [&] { chassis.pid_wait(); });
+  MESSAGE("passes=", o.passes);
+  CHECK(o.returned);
+  CHECK(o.interfered);
+  // Pins at pass 20; back within one progress-backstop window (500ms/50 passes) plus slack --
+  // the fix must not add materially more latency than the backstop's own window already allows.
+  CHECK(o.passes <= 20 + 50 + 10);
 }
 
 TEST_CASE("pid_wait() TURN: a healthy turn is not falsely flagged stuck") {

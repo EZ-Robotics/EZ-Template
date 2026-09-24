@@ -338,6 +338,25 @@ class PID {
   // which any real, non-instantaneous motion clears easily at a 10ms tick rate.
   int k_miss = 0, m_miss = 0;
   static constexpr int VELOCITY_MISS_DEBOUNCE_PASSES = 2;
+  // The main channel's own raw reading the last time its velocity-exit check ran. A poll counts
+  // as a genuinely new sample -- may advance k toward a stall, or feed k_miss toward clearing one
+  // -- only when BOTH hold: the raw value differs from what this check saw last time, AND the
+  // latest derivative isn't exactly 0. Either condition alone can be fooled, but by different
+  // callers: the raw-value comparison alone is fooled by a caller polling SLOWER than compute()
+  // runs -- the raw value genuinely changed since the last check, but the latest derivative is a
+  // leftover 0 from a stale re-read inside the gap this check's own polling missed. The derivative
+  // comparison alone is fooled by a caller polling FASTER than compute() runs -- two checks land
+  // between one real compute() call, so both see that same call's nonzero derivative and both
+  // count it: a single blip read twice looks like two consecutive misses and clears k. A tick that
+  // fails this check -- the sensor hasn't produced a new sample, whether its own refresh rate is
+  // slower than the poll rate or the robot is genuinely, fully stopped (those two are
+  // indistinguishable from the raw value alone) -- must not count as evidence toward or against a
+  // stall: k/k_miss are left exactly where they are. Tracked against what THIS check last saw
+  // (updated only in exit_condition()), not raw_compute()'s own prev_current, which is what makes
+  // the polling-faster case above actually get caught. k_prev_checked starts NaN so the very first
+  // check always passes the raw-value half (NaN compares unequal to everything, including itself);
+  // it still needs a nonzero derivative too, same as every later check.
+  double k_prev_checked = std::numeric_limits<double>::quiet_NaN();
   int arm_timer = 0;
   bool velocity_armed = false;
   static constexpr int VELOCITY_ARM_FALLBACK = 1000;

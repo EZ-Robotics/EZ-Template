@@ -26,6 +26,19 @@ void configure_chassis(Drive& chassis) {
   chassis.odom_look_ahead_set(7.0);
 }
 
+// A genuinely fresh, real raw-sensor advance for xyPID's velocity exit to see through
+// ez_tracking_task() -- it runs every pass and rebuilds odom_current from the fake encoders
+// (tracking.cpp), overwriting anything written directly to the pose, so it's the encoders that
+// have to move, not the pose itself or a scripted derivative/error field. Both sides get the same
+// tick count each pass (matching test_wait_until_drive_odom_progress.cpp's set_sensor_inches
+// convention), so this is pure translation -- heading, and so turn bias's own gating, is
+// untouched. 1 tick/pass at this chassis's 360 ticks/rev, 3.25in wheel is ~0.028in/pass, real,
+// fresh motion that stays well under velocity_zero_main's 0.05 default.
+void nudge_encoders(Drive& chassis, int tick) {
+  for (auto& m : chassis.left_motors) m.fake().position = tick;
+  for (auto& m : chassis.right_motors) m.fake().position = tick;
+}
+
 void run_one_auto_task_pass(Drive& chassis) {
   test_stub::g_clock.delay_calls_until_stop = 0;
   try {
@@ -72,19 +85,24 @@ TEST_CASE("xyPID never velocity-exits while turn bias holds it, even once armed 
   chassis.odom_xyt_set(0.0, 0.0, 0.0);
   chassis.drive_sensor_reset();
 
-  // Nothing in this host stub moves the sensors or turns the fake imu, so this arms only through
-  // the 1000ms fallback (velocity_armed, PID.cpp) -- guaranteed armed by pass 101 -- while heading
-  // error, and so xy_translation_bias_gated, stays pinned past the zero crossing the whole time.
-  // 180 passes (1800ms) covers a long stretch of "armed and reading like a stall" while staying
-  // safely under PID::VELOCITY_EXIT_HOLD_FALLBACK (2000ms), which is covered on its own in
-  // test_pid.cpp and would otherwise confound this test.
+  // Nothing turns the fake imu, so heading error, and so xy_translation_bias_gated, stays pinned
+  // past the zero crossing the whole time. The encoders are nudged a hair each pass (see
+  // nudge_encoders) so xyPID gets genuinely fresh, real, sub-threshold readings -- reading exactly
+  // like a stall to the velocity exit, the same as a real robot slow enough to be under
+  // velocity_zero_main, not a raw value that's simply frozen. Arms via that real motion well before
+  // 180 passes (1800ms), which stays safely under PID::VELOCITY_EXIT_HOLD_FALLBACK (2000ms, covered
+  // on its own in test_pid.cpp and would otherwise confound this test).
   odom movement{{0.0, -24.0}, fwd, 60};
   chassis.pid_odom_ptp_set(movement);
 
   for (int pass = 1; pass <= 180; pass++) {
     INFO("pass ", pass);
+    nudge_encoders(chassis, pass);
     run_one_auto_task_pass(chassis);
     DriveTestAccess::xy_velocity_exit_hold_update(chassis);
+    // Confirms the nudge really is staying pure translation -- if this ever lapsed, the test below
+    // would start passing without actually exercising the hold, silently.
+    CHECK(DriveTestAccess::xy_translation_bias_gated(chassis));
     CHECK(chassis.xyPID.exit_condition() != VELOCITY_EXIT);
   }
 }
@@ -96,14 +114,16 @@ TEST_CASE("xyPID still velocity-exits on a real stall that turn bias is not mask
   chassis.drive_sensor_reset();
 
   // Target straight ahead: turn bias never gates xy_out here (see the "ordinary heading error"
-  // case above). The robot never moves -- a genuine stall -- and the hold must not mask that: it
-  // arms via the same 1000ms fallback, then velocity-exits normally a few passes later.
+  // case above), so the hold never engages. A slow, genuinely fresh, sub-threshold crawl (see
+  // nudge_encoders) reads like a stall to the velocity exit -- the same shape test 3 uses, but
+  // unmasked here -- and the hold must not interfere with that: it fires normally.
   odom movement{{0.0, 24.0}, fwd, 60};
   chassis.pid_odom_ptp_set(movement);
 
   exit_output result = RUNNING;
   for (int pass = 1; pass <= 150 && result == RUNNING; pass++) {
     INFO("pass ", pass);
+    nudge_encoders(chassis, pass);
     run_one_auto_task_pass(chassis);
     DriveTestAccess::xy_velocity_exit_hold_update(chassis);
     result = chassis.xyPID.exit_condition();

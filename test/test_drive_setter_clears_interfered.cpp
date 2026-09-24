@@ -39,8 +39,10 @@ void converged() {
 TEST_CASE("pid_drive_set() clears interfered so a clean motion isn't blamed for the previous one's trouble") {
   Drive chassis = make_chassis();
   chassis.pid_print_toggle(false);
-  // Velocity exit only (50 ms/5 passes); small/big/mA off -- isolates the first motion's failure
-  // to a genuine VELOCITY_EXIT.
+  // Small/big/mA off -- isolates the first motion's failure to velocity/stuck-progress alone. The
+  // scripted reading below never changes, so k never accumulates (see test_pid.cpp's never-changes
+  // test) and this now ends via the DRIVE-level SingleStuckWatch progress backstop instead of a
+  // raw VELOCITY_EXIT; either way `interfered` ends up true, which is all this test needs.
   chassis.pid_drive_exit_condition_set(0, 0.0, 0, 0.0, 50, 0);
   chassis.pid_drive_set(100, 100);
 

@@ -209,22 +209,30 @@ exit_output PID::exit_condition(bool print) {
 
   // If the motor velocity is 0, the code will timeout and set interfered to true.
   if (exit.velocity_exit_time != 0 && velocity_armed && !held) {  // Check if this condition is enabled
-    if (std::fabs(derivative) <= velocity_zero_main) {
-      k += util::DELAY_TIME;
-      k_miss = 0;
-      if (k > exit.velocity_exit_time) {
-        timers_reset();
-        if (print) exit_condition_print(VELOCITY_EXIT);
-        return VELOCITY_EXIT;
-      }
-    } else {
-      // A single noisy tick above the threshold doesn't erase accumulated stillness -- only
-      // VELOCITY_MISS_DEBOUNCE_PASSES consecutive ones do, so an isolated blip (contact jitter,
-      // drivetrain backlash under a sustained push) can't indefinitely defeat this exit the same
-      // way a genuine, sustained motion resets it within two ticks either way.
-      if (++k_miss >= VELOCITY_MISS_DEBOUNCE_PASSES) {
-        k = 0;
+    // A stale poll -- the raw value hasn't actually advanced since the last check, or this
+    // derivative is a leftover 0 from a stale re-read inside a gap this check's own polling missed
+    // -- must leave k/k_miss exactly where they are; see k_prev_checked's comment in the header for
+    // why both conditions are needed. Neither branch below runs for a stale poll.
+    bool fresh = cur != k_prev_checked && derivative != 0.0;
+    k_prev_checked = cur;
+    if (fresh) {
+      if (std::fabs(derivative) <= velocity_zero_main) {
+        k += util::DELAY_TIME;
         k_miss = 0;
+        if (k > exit.velocity_exit_time) {
+          timers_reset();
+          if (print) exit_condition_print(VELOCITY_EXIT);
+          return VELOCITY_EXIT;
+        }
+      } else {
+        // A single noisy tick above the threshold doesn't erase accumulated stillness -- only
+        // VELOCITY_MISS_DEBOUNCE_PASSES consecutive ones do, so an isolated blip (contact jitter,
+        // drivetrain backlash under a sustained push) can't indefinitely defeat this exit the same
+        // way a genuine, sustained motion resets it within two ticks either way.
+        if (++k_miss >= VELOCITY_MISS_DEBOUNCE_PASSES) {
+          k = 0;
+          k_miss = 0;
+        }
       }
     }
   }
