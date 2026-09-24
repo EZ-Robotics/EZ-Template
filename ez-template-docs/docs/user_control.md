@@ -1132,6 +1132,81 @@ bool opcontrol_drive_reverse_get();
 </Tabs>
 
 
+### opcontrol_speed_max_set()
+Sets the max speed for user control.
+
+`speed` the speed limit, 0 - 127. A value above 127 is set to 127 and a negative value is treated as its magnitude  
+<Tabs
+  groupId="opcontrol_speed_max_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  chassis.opcontrol_speed_max_set(100);  // Caps user control output at 100
+}
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+
+```cpp
+void opcontrol_speed_max_set(int speed);
+```
+
+
+
+</TabItem>
+</Tabs>
+
+
+### opcontrol_speed_max_get()
+Returns the max speed for user control.
+<Tabs
+  groupId="opcontrol_speed_max_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  chassis.opcontrol_speed_max_set(100);
+  printf("%d\n", chassis.opcontrol_speed_max_get());  // Prints 100
+}
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+
+```cpp
+int opcontrol_speed_max_get();
+```
+
+
+
+</TabItem>
+</Tabs>
+
+
 
 
 
