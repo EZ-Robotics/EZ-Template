@@ -405,6 +405,11 @@ void Drive::drive_imu_display_loading(int iter) {
   }
   // Failsafe time
   else {
+    // loading_bar_last_x is still at the pink phase's fully-filled end
+    // position here; reset it so the red bar animates in from empty
+    // instead of drawing itself fully filled on the first red frame.
+    if (iter == 2000) loading_bar_last_x = border;
+
     pros::screen::set_pen(pros::c::COLOR_RED);
     int x1 = ((iter - 2000) * ((480 - (border * 2)) / 1000.0)) + border;
     pros::screen::fill_rect(loading_bar_last_x, border, x1, 240 - border);
