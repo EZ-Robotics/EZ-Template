@@ -76,26 +76,6 @@ class Drive {
   std::deque<pros::Imu*> good_imus;
 
   /**
-   * Deprecated left tracking wheel.
-   */
-  pros::adi::Encoder left_tracker;
-
-  /**
-   * Deprecated right tracking wheel.
-   */
-  pros::adi::Encoder right_tracker;
-
-  /**
-   * Deprecated left rotation tracker.
-   */
-  pros::Rotation left_rotation;
-
-  /**
-   * Deprecated right rotation tracker.
-   */
-  pros::Rotation right_rotation;
-
-  /**
    * Left vertical tracking wheel.
    */
   tracking_wheel* odom_tracker_left = nullptr;
@@ -414,72 +394,6 @@ class Drive {
    *        external gear ratio, wheel gear / motor gear
    */
   Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks, double ratio = 1.0);
-
-  /**
-   * Creates a Drive Controller using encoders plugged into the brain.
-   *
-   * \param left_motor_ports
-   *        input {1, -2...}. make ports negative if reversed
-   * \param right_motor_ports
-   *        input {-3, 4...}. make ports negative if reversed
-   * \param imu_port
-   *        port the IMU is plugged into
-   * \param wheel_diameter
-   *        diameter of your sensored wheel
-   * \param ticks
-   *        ticks per revolution of your encoder
-   * \param ratio
-   *        external gear ratio, wheel gear / sensor gear
-   * \param left_tracker_ports
-   *        input {1, 2}. make ports negative if reversed
-   * \param right_tracker_ports
-   *        input {3, 4}. make ports negative if reversed
-   */
-  Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks, double ratio, std::vector<int> left_tracker_ports, std::vector<int> right_tracker_ports) __attribute__((deprecated("Use the integrated encoder constructor with odom_tracker_left_set() and odom_tracker_right_set() instead!")));
-
-  /**
-   * Creates a Drive Controller using encoders plugged into a 3 wire expander.
-   *
-   * \param left_motor_ports
-   *        input {1, -2...}. make ports negative if reversed
-   * \param right_motor_ports
-   *        input {-3, 4...}. make ports negative if reversed
-   * \param imu_port
-   *        port the IMU is plugged into
-   * \param wheel_diameter
-   *        diameter of your sensored wheel
-   * \param ticks
-   *        ticks per revolution of your encoder
-   * \param ratio
-   *        external gear ratio, wheel gear / sensor gear
-   * \param left_tracker_ports
-   *        input {1, 2}. make ports negative if reversed
-   * \param right_tracker_ports
-   *        input {3, 4}. make ports negative if reversed
-   * \param expander_smart_port
-   *        port the expander is plugged into
-   */
-  Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks, double ratio, std::vector<int> left_tracker_ports, std::vector<int> right_tracker_ports, int expander_smart_port) __attribute__((deprecated("Use the integrated encoder constructor with odom_tracker_left_set() and odom_tracker_right_set() instead!")));
-
-  /**
-   * Creates a Drive Controller using rotation sensors.
-   *
-   * \param left_motor_ports
-   *        input {1, -2...}. make ports negative if reversed
-   * \param right_motor_ports
-   *        input {-3, 4...}. make ports negative if reversed
-   * \param imu_port
-   *        port the IMU is plugged into
-   * \param wheel_diameter
-   *        diameter of your sensored wheel
-   * \param ratio
-   *        external gear ratio, wheel gear / sensor gear
-   * \param left_rotation_port
-   *        make ports negative if reversed
-   * \param right_rotation_port
-   *        make ports negative if reversed
-   */
-  Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ratio, int left_rotation_port, int right_rotation_port) __attribute__((deprecated("Use the integrated encoder constructor with odom_tracker_left_set() and odom_tracker_right_set() instead!")));
 
   /**
    * Creates a Drive Controller using internal encoders with redundant IMUs.
@@ -3782,6 +3696,12 @@ class Drive {
   bool is_odom_turn_bias_enabled = true;
   bool odom_turn_bias_enabled();
   void odom_turn_bias_enable(bool set);
+  // Set every tick by ptp_task() (pid_tasks.cpp) right after it computes turn bias's xy_out scale.
+  // True exactly when turn bias has fully zeroed xy_out to prioritize turning: xy_delta_fake reads
+  // ~0 then because the robot genuinely isn't translating, not because it's stalled, and xyPID's
+  // velocity exit can't tell those apart on its own. See xy_velocity_exit_hold_update().
+  bool xy_translation_bias_gated = false;
+  void xy_velocity_exit_hold_update();
   double angle_rad = 0.0;
   double global_track_width = 0.0;
   bool odometry_enabled = true;
@@ -3969,8 +3889,6 @@ class Drive {
   bool is_tank = false;
 
 #define DRIVE_INTEGRATED 1
-#define DRIVE_ADI_ENCODER 2
-#define DRIVE_ROTATION 3
 #define ODOM_TRACKER 4
 
   /**
