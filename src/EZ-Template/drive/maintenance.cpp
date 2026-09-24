@@ -6,6 +6,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 
 #include "EZ-Template/drive/drive.hpp"
 #include "EZ-Template/util.hpp"
@@ -20,6 +21,9 @@ constexpr int IMU_STUCK_PASSES_THRESHOLD = 50;  // 500 ms
 constexpr int IMU_REACTIVATE_PASSES_THRESHOLD = 100;  // 1000 ms
 // Minimum drive sensor movement (in) between passes to consider the robot moving.
 constexpr double IMU_DRIVE_MOTION_THRESHOLD_IN = 0.05;
+// Consecutive passes the good IMUs' spread must stay over the (tunable) drift
+// threshold before it's reported, same debounce window as the stuck check.
+constexpr int IMU_DRIFT_PASSES_THRESHOLD = 50;  // 500 ms
 
 void Drive::check_imu_task() {
   // Don't let this function run if IMU calibration is incomplete
@@ -119,4 +123,42 @@ void Drive::check_imu_task() {
     imu = good_imus.front();
     drive_mutex.print_after_unlock("EZ-Template: switching primary IMU to port %d\n", imu->get_port());
   }
+
+  // Cross-check the currently-good IMUs against each other. A frozen sensor
+  // is already caught above; this catches one that's still moving but has
+  // quietly drifted away from the rest, e.g. from heat or a bump. It never
+  // ejects anything -- with only two IMUs there is no way to tell which one
+  // is actually wrong -- it only reports the disagreement.
+  if (good_imus.size() >= 2) {
+    double lo = std::numeric_limits<double>::infinity();
+    double hi = -std::numeric_limits<double>::infinity();
+    for (pros::Imu* n : good_imus) {
+      double reading = get_this_imu(n);
+      if (!std::isfinite(reading)) continue;
+      lo = std::min(lo, reading);
+      hi = std::max(hi, reading);
+    }
+    double spread = (std::isfinite(lo) && std::isfinite(hi)) ? hi - lo : 0.0;
+
+    if (spread > imu_drift_threshold_deg)
+      imu_drift_passes++;
+    else
+      imu_drift_passes = 0;
+
+    bool was_diverged = imu_drift_deg > 0.0;
+    imu_drift_deg = imu_drift_passes >= IMU_DRIFT_PASSES_THRESHOLD ? spread : 0.0;
+    if (imu_drift_deg > 0.0 && !was_diverged) {
+      drive_mutex.print_after_unlock("EZ-Template: good IMUs disagree by %.0f deg (threshold %.0f)\n", imu_drift_deg, imu_drift_threshold_deg);
+    }
+  } else {
+    imu_drift_passes = 0;
+    imu_drift_deg = 0.0;
+  }
 }
+
+void Drive::imu_drift_threshold_set(double degrees) {
+  if (degrees <= 0.0) return;
+  imu_drift_threshold_deg = degrees;
+}
+
+double Drive::imu_drift_threshold_get() { return imu_drift_threshold_deg; }

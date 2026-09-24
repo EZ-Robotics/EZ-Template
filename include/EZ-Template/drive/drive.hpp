@@ -1429,6 +1429,34 @@ class Drive {
   std::map<int, double> drive_imus_scalers_3600_get();
 
   /**
+   * Sets how many degrees apart the most and least agreeing good IMUs'
+   * scaled readings (see get_this_imu()) may spread, sustained for enough
+   * consecutive check_imu_task() passes to rule out a single noisy sample,
+   * before it's surfaced as disagreement in imu_drift_deg and
+   * ez::health::preflight(). This never ejects an IMU or changes which one
+   * drives the heading -- with only two IMUs there is no way to tell which
+   * one actually drifted -- it only reports.
+   *
+   * \param degrees
+   *        disagreement threshold in degrees; non-positive values are rejected and the previous threshold is kept
+   */
+  void imu_drift_threshold_set(double degrees);
+
+  /**
+   * Returns the current IMU disagreement threshold in degrees, see imu_drift_threshold_set().
+   */
+  double imu_drift_threshold_get();
+
+  /**
+   * Degrees between the most and least agreeing good IMU's scaled reading,
+   * once that spread has held above imu_drift_threshold_get() for enough
+   * consecutive passes to rule out a single noisy sample. 0 while the good
+   * IMUs agree, or while there are fewer than 2 of them. Updated every pass
+   * by check_imu_task().
+   */
+  double imu_drift_deg = 0.0;
+
+  /**
    * Calibrates the IMU, recommended to run in initialize().
    *
    * \param run_loading_animation
@@ -3686,6 +3714,12 @@ class Drive {
   double last_good_angle = 0.0;
   double watchdog_l_last = 0.0, watchdog_r_last = 0.0;
   bool imu_only_imu_warning_shown = false;
+
+  // Cross-check state for imu_drift_deg, kept separate from the stuck/eject
+  // tracking above -- disagreement between good IMUs is a different failure
+  // mode than one of them freezing. See imu_drift_threshold_set().
+  double imu_drift_threshold_deg = 15.0;
+  int imu_drift_passes = 0;
 
   bool is_swing_slew_enabled(e_swing type, double target, double current, e_angle_behavior behavior);
   void swing_set_internal(e_swing type, double target, int speed, int opposite_speed, e_angle_behavior behavior, bool slew_on);
