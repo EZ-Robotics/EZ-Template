@@ -691,7 +691,20 @@ void Drive::wait_until_turn_swing_internal(double target) {
   SingleStuckWatch turn_watch(turnPID, turnPID.error);
   SingleStuckWatch swing_watch(swingPID, swingPID.error);
 
+  // Same concurrent-retarget guard as pid_wait()'s TURN/SWING branches -- this function had none, unlike
+  // every other wait.  A concurrent pid_turn_set()/pid_turn_relative_set()/pid_swing_set() mid-wait
+  // retargets turnPID/swingPID, so the specific PID this call cares about is snapshotted and checked
+  // every pass.
+  double turn_target = turnPID.target_get();
+  double swing_target = swingPID.target_get();
+
   while (true) {
+    if (turnPID.target_get() != turn_target || swingPID.target_get() != swing_target) {
+      if (print_toggle) std::cout << "  Turn/Swing: retargeted by a concurrent motion mid-wait, ending early instead of finishing on the wrong target.\n";
+      interfered = true;
+      return;
+    }
+
     g_error = target - drive_angle_get();
 
     // If turning...
@@ -806,7 +819,18 @@ void Drive::pid_wait_until_point(pose target) {
   exit_output a_exit = RUNNING;
   StuckWatch watch(xyPID, current_a_odomPID, pp_index, util::distance_to_point(target, odom_pose_get()), util::distance_to_point(odom_start, odom_pose_get()), std::fabs(odom_theta_get() - odom_start.theta));
 
+  // Same concurrent-retarget guard as pid_wait()'s odom branch -- this function had none, unlike every
+  // other wait_until_*.  odom_target_start is only touched by a top-level odom setter starting a genuinely
+  // new motion (see the comment on pid_wait()'s odom branch), so watching it catches a retarget regardless
+  // of what it lands in.
+  pose retarget_target = odom_target_start;
+
   while (true) {
+    if (odom_target_start.x != retarget_target.x || odom_target_start.y != retarget_target.y || odom_target_start.theta != retarget_target.theta) {
+      if (print_toggle) std::cout << "  XY: retargeted by a concurrent motion mid-wait, ending early instead of finishing on the wrong target.\n";
+      interfered = true;
+      return;
+    }
     secondary_velocity_sensor_update(xyPID);
     secondary_velocity_sensor_update(current_a_odomPID);
     xy_velocity_exit_hold_update();
