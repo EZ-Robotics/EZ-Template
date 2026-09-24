@@ -31,6 +31,15 @@ struct Channel {
   bool side, rebound = false, rebounded = false;
   Channel(double p_step, double size, double error) : step(p_step), low(size), side(error > 0) {}
   bool made(double size, double error) {
+    // A NaN size/error -- e.g. a caller-supplied NaN target, making every pass' distance/error compute to
+    // NaN -- must not read as progress.  Every comparison against NaN is false, so unguarded this fell
+    // through the "still above the last low?" check below no matter how many times it ran, crediting a new
+    // low every single pass AND overwriting that low with NaN, which together defeat this channel (and
+    // whatever backstop owns it) for as long as NaN keeps arriving.  Bailing out first, before side/low/
+    // rebound are touched, makes a NaN reading simply invisible to this channel: no progress credited, and
+    // no corruption of its state -- exactly as if that pass hadn't happened. A finite reading right after
+    // still cures it immediately, the same as before this guard existed.
+    if (!std::isfinite(size) || !std::isfinite(error)) return false;
     bool overshot = (error > 0) != side;
     bool shoved = size > low + step;
     if ((overshot || shoved) && !rebounded) rebound = rebounded = true;
@@ -65,7 +74,7 @@ class StuckWatch {
  public:
   // travelled and turned: how far the robot has moved and turned since the motion started
   StuckWatch(PID& xy, PID& angle, int index, double distance, double travelled, double turned)
-      : xy_(stuck_step(xy), distance, xy.error), a_(stuck_step(angle), std::fabs(angle.error), angle.error), index_(index), window_(xy.exit.velocity_exit_time != 0 ? xy.exit.velocity_exit_time : xy.exit.mA_timeout), moved_(travelled > xy_.step || turned > a_.step), start_ms_(pros::millis()), start_pass_(stuck_passes()) {
+      : xy_(stuck_step(xy), distance, xy.error), a_(stuck_step(angle), std::fabs(angle.error), angle.error), index_(index), window_(xy.exit.velocity_exit_time != 0 ? xy.exit.velocity_exit_time : xy.exit.mA_timeout), moved_(travelled > xy_.step || turned > a_.step) {
     int allowance = moved_ ? 0 : STUCK_START_ALLOWANCE_MS;
     last_progress_ = pros::millis() + allowance;
     last_progress_pass_ = stuck_passes() + allowance / util::DELAY_TIME;
@@ -94,14 +103,43 @@ class StuckWatch {
     std::int32_t waited = now - last_progress_;
     if (waited <= window_) return false;
     // Confirming ez_auto_task really kept running (not just wall-clock time passing while it's starved or dead)
-    // needs an expected pass count for window_ -- using this watch's own observed passes-per-ms since it started,
-    // not DELAY_TIME, so ordinary scheduling overhead (a real pass rate a little under nominal, not starvation)
-    // doesn't get charged the same detection delay as an actually-starved task.  Falls back to DELAY_TIME before
-    // any passes have been observed yet, same as before.
-    std::uint32_t elapsed_ms = now - start_ms_;
-    std::uint32_t elapsed_passes = pass - start_pass_;
-    double observed_delay = elapsed_passes > 0 ? (double)elapsed_ms / elapsed_passes : util::DELAY_TIME;
-    int expected_passes = (int)(window_ / std::fmax(observed_delay, 1.0));
+    // needs an expected pass count for window_.  This used to derive that count from this watch's own observed
+    // passes-per-ms since it was constructed (elapsed real ms since construction / elapsed real passes since
+    // construction).  Two problems with that, both real:
+    //
+    // Steady state: expected_passes (window_ / observed_delay) times observed_delay is window_ again, by
+    // construction, whatever observed_delay is measured as -- so "real passes since last progress" exceeding
+    // "expected_passes" reduces to exactly waited > window_, the same test just above, for any task ticking at
+    // a roughly steady rate, healthy or merely busy alike. A task running a little slower than DELAY_TIME
+    // (ordinary scheduling overhead, not dead) got confirmed about as fast as a perfectly healthy one, not
+    // anywhere near the STUCK_STARVED_WINDOWS margin a fully dead task gets.
+    //
+    // A temporary gap (ez_auto_task busy with something else for a while, then resuming) is worse: while its
+    // own pass counter is frozen, elapsed_passes freezes too, but elapsed_ms keeps climbing (pros::millis() is
+    // read from this, the CALLING task's own un-starved loop) -- so observed_delay climbs and expected_passes
+    // keeps shrinking, while the confirmation numerator (pass - last_progress_pass_) is frozen right along with
+    // pass itself. Once the shrinking threshold drops below that frozen numerator, this fires on a gap that
+    // produced zero confirming passes, on a robot that was never actually stuck, only unreported on for a
+    // while. How dangerous a gap is scales with how many passes had already elapsed when it began (call it P):
+    // roughly, it takes a gap proportional to P before the threshold can fall that far -- so a wait already
+    // well established tolerates a LONGER gap than one still early on, the opposite of "gets worse the longer
+    // the wait runs" (an earlier pass at this same mechanism said exactly that; re-deriving it here and
+    // confirming by repro says otherwise -- early gaps are the dangerous ones).
+    //
+    // Whether prompt-but-tight detection for a merely-busy task was ever the original intent, or real extra
+    // leniency for one was, is genuinely ambiguous from that alone; what's concrete is the audit's own repro:
+    // a real, single ~1s gap during an otherwise-healthy, still-progressing 2.5in/s approach got confirmed
+    // stuck. Comparing the real pass count against a fixed count of DELAY_TIME-long passes instead removes the
+    // shrinking threshold entirely, so a frozen numerator can never catch up to it, at any P -- while it also
+    // trades some promptness for leniency in the steady-state case: a task genuinely running slower than
+    // nominal (without being dead) now needs fewer of its own passes to reach this fixed count, but each of
+    // its passes represents more real wall-clock time, so a genuinely stuck robot under a merely-busy task is
+    // now confirmed measurably later than before (real-world tolerance now scales with how busy the task is,
+    // not fixed at ~window_) -- while a task that stops passing entirely still can't reach any positive count
+    // at all and is
+    // still caught by the STARVED_WINDOWS wall-clock fallback below, unchanged.  Flagging the latency tradeoff
+    // for a design call, the same as the Channel rebound latch above.
+    int expected_passes = (int)(window_ / (double)util::DELAY_TIME);
     return (std::int32_t)(pass - last_progress_pass_) > expected_passes || waited > STUCK_STARVED_WINDOWS * window_;
   }
 
@@ -110,7 +148,6 @@ class StuckWatch {
   int index_;
   int window_;
   bool moved_;
-  std::uint32_t start_ms_, start_pass_;
   std::uint32_t last_progress_, last_progress_pass_;
 };
 
@@ -122,7 +159,7 @@ class StuckWatch {
 class SingleStuckWatch {
  public:
   SingleStuckWatch(PID& pid, double error)
-      : ch_(stuck_step(pid), std::fabs(error), error), window_(pid.exit.velocity_exit_time != 0 ? pid.exit.velocity_exit_time : pid.exit.mA_timeout), moved_(false), start_ms_(pros::millis()), start_pass_(stuck_passes()) {
+      : ch_(stuck_step(pid), std::fabs(error), error), window_(pid.exit.velocity_exit_time != 0 ? pid.exit.velocity_exit_time : pid.exit.mA_timeout), moved_(false) {
     last_progress_ = pros::millis() + STUCK_START_ALLOWANCE_MS;
     last_progress_pass_ = stuck_passes() + STUCK_START_ALLOWANCE_MS / util::DELAY_TIME;
   }
@@ -139,10 +176,9 @@ class SingleStuckWatch {
     }
     std::int32_t waited = now - last_progress_;
     if (waited <= window_) return false;
-    std::uint32_t elapsed_ms = now - start_ms_;
-    std::uint32_t elapsed_passes = pass - start_pass_;
-    double observed_delay = elapsed_passes > 0 ? (double)elapsed_ms / elapsed_passes : util::DELAY_TIME;
-    int expected_passes = (int)(window_ / std::fmax(observed_delay, 1.0));
+    // See the matching comment in StuckWatch::stuck() -- a fixed, nominal-DELAY_TIME pass count, not one
+    // derived from this watch's own observed (and self-referential) cadence.
+    int expected_passes = (int)(window_ / (double)util::DELAY_TIME);
     return (std::int32_t)(pass - last_progress_pass_) > expected_passes || waited > STUCK_STARVED_WINDOWS * window_;
   }
 
@@ -150,7 +186,6 @@ class SingleStuckWatch {
   Channel ch_;
   int window_;
   bool moved_;
-  std::uint32_t start_ms_, start_pass_;
   std::uint32_t last_progress_, last_progress_pass_;
 };
 
@@ -353,6 +388,16 @@ void Drive::pid_wait() {
     StuckWatch watch(xyPID, current_a_odomPID, pp_index, target_distance(), travelled(), turned());
     bool stalled = false;
 
+    // A concurrent pid_odom_*_set() from another task retargets xyPID/current_a_odomPID (and resets pp_index
+    // and pp_movements) mid-wait -- same hazard as the DRIVE branch above, just for odom.  odom_target_start
+    // is set only where a NEW motion actually starts (pid_odom_ptp_set() and raw_pid_odom_pp_set(),
+    // set_odom_pid.cpp), whether the retarget lands as another plain point, boomerang, or pure pursuit path,
+    // so watching it catches a retarget regardless of what it lands in -- unlike leftPID/rightPID's target,
+    // which raw_pid_odom_ptp_set() (the SAME motion's own per-waypoint advance, called again by pp_task() each
+    // time pure pursuit steps onto a new point, pid_tasks.cpp) legitimately rewrites on every ordinary
+    // waypoint advance and so can't be used here without false-firing on a healthy path.
+    pose retarget_target = odom_target_start;
+
     // Wait until pure pursuit is on the last point, then continue as normal.  xy's exit is checked every pass
     // and not kept: before the last point its target is only a look ahead away and keeps moving, so a small,
     // big or velocity exit here says nothing about the path, and one kept from a pause earlier on must not end
@@ -363,6 +408,11 @@ void Drive::pid_wait() {
     int a_exit_index = pp_index;
     if (mode == PURE_PURSUIT) {
       while (pp_index != (int)pp_movements.size() - 1) {
+        if (odom_target_start.x != retarget_target.x || odom_target_start.y != retarget_target.y || odom_target_start.theta != retarget_target.theta) {
+          if (print_toggle) std::cout << "  XY: retargeted by a concurrent motion mid-wait, ending early instead of continuing on the wrong path.\n";
+          interfered = true;
+          return;
+        }
         if (pp_index != a_exit_index) {
           a_exit = RUNNING;
           a_exit_index = pp_index;
@@ -386,6 +436,11 @@ void Drive::pid_wait() {
 
     // When we're at the last point in PP / we're just going to point
     while (!stalled && (xy_exit == RUNNING || a_exit == RUNNING)) {
+      if (odom_target_start.x != retarget_target.x || odom_target_start.y != retarget_target.y || odom_target_start.theta != retarget_target.theta) {
+        if (print_toggle) std::cout << "  XY: retargeted by a concurrent motion mid-wait, ending early instead of finishing on the wrong target.\n";
+        interfered = true;
+        return;
+      }
       secondary_velocity_sensor_update(xyPID);
       secondary_velocity_sensor_update(current_a_odomPID);
       xy_velocity_exit_hold_update();
@@ -420,7 +475,17 @@ void Drive::pid_wait() {
     exit_output turn_exit = RUNNING;
     SingleStuckWatch watch(turnPID, turnPID.error);  // see the DRIVE branch's comment on why -- same JC-1 gap.
     bool stalled = false;
+    // Same concurrent-retarget guard as the DRIVE branch above.  turnPID.target is only ever rewritten by
+    // turn_set_internal() (set_turn_pid.cpp) at the start of a new turn -- TURN_TO_POINT recomputes its own
+    // aim point every pass through compute_error() without touching the PID's target, so this can't false-fire
+    // on an ordinary turn-to-point motion, only on a real second pid_turn_set()/pid_turn_relative_set().
+    double turn_target = turnPID.target_get();
     while (turn_exit == RUNNING) {
+      if (turnPID.target_get() != turn_target) {
+        if (print_toggle) std::cout << "  Turn: retargeted by a concurrent motion mid-wait, ending early instead of finishing on the wrong target.\n";
+        interfered = true;
+        return;
+      }
       secondary_velocity_sensor_update(turnPID);
       turn_exit = turn_exit != RUNNING ? turn_exit : turnPID.exit_condition(both_sides(left_motors, right_motors));
       if (turn_exit == RUNNING && watch.stuck(turnPID.error)) {
@@ -443,7 +508,15 @@ void Drive::pid_wait() {
     std::vector<pros::Motor>& sensor = current_swing == ez::LEFT_SWING ? left_motors : right_motors;
     SingleStuckWatch watch(swingPID, swingPID.error);  // see the DRIVE branch's comment on why -- same JC-1 gap.
     bool stalled = false;
+    // Same concurrent-retarget guard as the DRIVE branch above -- swingPID.target is only rewritten by
+    // swing_set_internal() (set_swing_pid.cpp) at the start of a new swing.
+    double swing_target = swingPID.target_get();
     while (swing_exit == RUNNING) {
+      if (swingPID.target_get() != swing_target) {
+        if (print_toggle) std::cout << "  Swing: retargeted by a concurrent motion mid-wait, ending early instead of finishing on the wrong target.\n";
+        interfered = true;
+        return;
+      }
       secondary_velocity_sensor_update(swingPID);
       swing_exit = swing_exit != RUNNING ? swing_exit : swingPID.exit_condition(sensor);
       if (swing_exit == RUNNING && watch.stuck(swingPID.error)) {
@@ -500,7 +573,30 @@ void Drive::wait_until_drive(double target) {
   // simply driven past that near point reads to it as permanent non-progress and would be falsely flagged stuck.
   SingleStuckWatch left_watch(leftPID, is_odom ? l_error : leftPID.error), right_watch(rightPID, is_odom ? r_error : rightPID.error);
 
+  // Same concurrent-retarget guard as pid_wait()'s branches.  In DRIVE mode leftPID/rightPID's target only
+  // changes on a real second pid_drive_set(), same as pid_wait()'s DRIVE branch.  In odom modes (this function
+  // also runs for POINT_TO_POINT/PURE_PURSUIT) leftPID/rightPID's target is the fixed look-ahead point and
+  // legitimately gets rewritten on every ordinary waypoint advance (raw_pid_odom_ptp_set(), set_odom_pid.cpp),
+  // so odom_target_start -- only touched by a top-level odom setter starting a genuinely new motion -- is used
+  // instead, the same as pid_wait()'s odom branch.
+  bool odom_mode = mode == POINT_TO_POINT || mode == PURE_PURSUIT;
+  double left_target = leftPID.target_get();
+  double right_target = rightPID.target_get();
+  pose retarget_target = odom_target_start;
+
   while (true) {
+    if (odom_mode) {
+      if (odom_target_start.x != retarget_target.x || odom_target_start.y != retarget_target.y || odom_target_start.theta != retarget_target.theta) {
+        if (print_toggle) std::cout << "  XY: retargeted by a concurrent motion mid-wait, ending early instead of finishing on the wrong target.\n";
+        interfered = true;
+        return;
+      }
+    } else if (leftPID.target_get() != left_target || rightPID.target_get() != right_target) {
+      if (print_toggle) std::cout << "  Drive: retargeted by a concurrent motion mid-wait, ending early instead of finishing on the wrong target.\n";
+      interfered = true;
+      return;
+    }
+
     l_error = l_tar - drive_sensor_left();
     r_error = r_tar - drive_sensor_right();
 
