@@ -33,6 +33,14 @@ Report preflight(ez::Drive& chassis, pros::Controller& controller) {
     printf("[health] IMU on port %d not responding\n", chassis.imu != nullptr ? chassis.imu->get_port() : -1);
   }
 
+  // imu_drift_deg is kept up to date every check_imu_task() pass, so this is
+  // just reading a snapshot of it, not measuring anything itself.
+  r.imu_max_drift_deg = chassis.imu_drift_deg;
+  if (r.imu_max_drift_deg > 0.0) {
+    printf("[health] good IMUs disagree by %.0f deg (threshold %.0f) - one of them has likely drifted\n",
+           r.imu_max_drift_deg, chassis.imu_drift_threshold_get());
+  }
+
   auto check_motors = [&](std::vector<pros::Motor>& motors) {
     for (auto& m : motors) {
       // An error return means nothing is answering on the port at all, which is
@@ -89,11 +97,14 @@ Report preflight(ez::Drive& chassis, pros::Controller& controller) {
     printf("[health] Preflight OK.\n");
   }
 
-  // Temperature never fails the preflight, so this trails the verdict above and
-  // only rumbles when that verdict passed, since a failure already buzzed "---".
+  // Temperature and IMU disagreement never fail the preflight, so this trails
+  // the verdict above and only rumbles once when that verdict passed, since a
+  // failure already buzzed "---". The drift line itself already printed above.
   if (r.motors_hot > 0 || r.motors_warm > 0) {
     printf("[health] temp watch: %d hot, %d warm\n", r.motors_hot, r.motors_warm);
-    if (r.all_ok()) controller.rumble(".");
+  }
+  if ((r.motors_hot > 0 || r.motors_warm > 0 || r.imu_max_drift_deg > 0.0) && r.all_ok()) {
+    controller.rumble(".");
   }
   return r;
 }
