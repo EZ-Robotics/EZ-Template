@@ -14,7 +14,7 @@ ez::AutonSelector::AutonSelector() {
 }
 
 ez::AutonSelector::AutonSelector(std::vector<Auton> autons) {
-  auton_count = autons.size();
+  auton_count = autons.size() + ez::as::amount_of_blank_pages;
   auton_page_current = 0;
   last_auton_page_current = 0;
   Autons = {};
@@ -22,7 +22,8 @@ ez::AutonSelector::AutonSelector(std::vector<Auton> autons) {
 }
 
 void ez::AutonSelector::selected_auton_print() {
-  if (auton_count == 0) return;
+  // auton_count includes the blank pages, so it can't be used to check the index
+  if (Autons.empty() || auton_page_current < 0 || auton_page_current >= static_cast<int>(Autons.size())) return;
   for (int i = 0; i < 8; i++)
     ez::screen_line_clear(i);
   ez::screen_print("Page " + std::to_string(auton_page_current + 1) + "\n" + Autons[auton_page_current].Name);

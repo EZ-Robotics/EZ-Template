@@ -9,6 +9,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include <cstdlib>
 #include <filesystem>
 
+#include "auton_pages.hpp"
 #include "auton_selector.hpp"
 #include "display.hpp"
 #include "liblvgl/llemu.hpp"
@@ -41,12 +42,11 @@ void auton_selector_initialize() {
     char buf[32] = {0};
     fread(buf, 1, sizeof(buf) - 1, as_usd_file_read);
     fclose(as_usd_file_read);
-    char* end = nullptr;
-    double parsed = strtod(buf, &end);
-    if (end != buf)
-      ez::as::auton_selector.auton_page_current = parsed;
+    int saved_page = 0;
+    if (internal::saved_page_parse(buf, saved_page))
+      ez::as::auton_selector.auton_page_current = saved_page;
     else
-      printf("EZ-Template: couldn't parse /usd/auto.txt, keeping current auton page\n");
+      printf("EZ-Template: /usd/auto.txt doesn't hold a valid auton page, keeping current auton page\n");
   }
   // If file doesn't exist, create file
   else {
@@ -74,20 +74,18 @@ void print_page() {
 }
 
 void page_up() {
+  int page = auton_selector.auton_page_current;
+  if (!internal::page_move(page, auton_selector.auton_count, 1)) return;  // no pages to go through
   if (util::sgn(page_blank_current()) == -1) auton_selector.last_auton_page_current = auton_selector.auton_page_current;
-  if (auton_selector.auton_page_current == auton_selector.auton_count - 1)
-    auton_selector.auton_page_current = 0;
-  else
-    auton_selector.auton_page_current++;
+  auton_selector.auton_page_current = page;
   print_page();
 }
 
 void page_down() {
+  int page = auton_selector.auton_page_current;
+  if (!internal::page_move(page, auton_selector.auton_count, -1)) return;  // no pages to go through
   if (util::sgn(page_blank_current()) == -1) auton_selector.last_auton_page_current = auton_selector.auton_page_current;
-  if (auton_selector.auton_page_current == 0)
-    auton_selector.auton_page_current = auton_selector.auton_count - 1;
-  else
-    auton_selector.auton_page_current--;
+  auton_selector.auton_page_current = page;
   print_page();
 }
 
@@ -156,8 +154,10 @@ pros::adi::DigitalIn* limit_switch_right = nullptr;
 pros::Task limit_switch_task(ez::as::limitSwitchTask);
 void limit_switch_lcd_initialize(pros::adi::DigitalIn* right_limit, pros::adi::DigitalIn* left_limit) {
   if (!left_limit && !right_limit) {
-    if (pros::millis() <= 100)
-      turn_off = true;
+    // Disable at any time, not just during startup.  Forget the switches so the task stops polling them.
+    limit_switch_right = nullptr;
+    limit_switch_left = nullptr;
+    turn_off = true;
     return;
   }
   turn_off = false;
@@ -169,9 +169,12 @@ void limit_switch_lcd_initialize(pros::adi::DigitalIn* right_limit, pros::adi::D
 void limitSwitchTask() {
   ez::detail::mark_scheduler_running();
   while (true) {
-    if (limit_switch_right && limit_switch_right->get_new_press())
+    // Copy the pointers, they can be cleared by limit_switch_lcd_initialize() between the check and the use
+    pros::adi::DigitalIn* right = limit_switch_right;
+    pros::adi::DigitalIn* left = limit_switch_left;
+    if (right && right->get_new_press())
       ez::as::page_up();
-    else if (limit_switch_left && limit_switch_left->get_new_press())
+    else if (left && left->get_new_press())
       ez::as::page_down();
 
     if (pros::millis() >= 500 && turn_off)
