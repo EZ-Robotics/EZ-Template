@@ -74,7 +74,7 @@ class StuckWatch {
  public:
   // travelled and turned: how far the robot has moved and turned since the motion started
   StuckWatch(PID& xy, PID& angle, int index, double distance, double travelled, double turned)
-      : xy_(stuck_step(xy), distance, xy.error), a_(stuck_step(angle), std::fabs(angle.error), angle.error), index_(index), window_(xy.exit.velocity_exit_time != 0 ? xy.exit.velocity_exit_time : xy.exit.mA_timeout), moved_(travelled > xy_.step || turned > a_.step), start_ms_(pros::millis()), start_pass_(stuck_passes()) {
+      : xy_(stuck_step(xy), distance, xy.error), a_(stuck_step(angle), std::fabs(angle.error), angle.error), index_(index), window_(xy.exit.velocity_exit_time != 0 ? xy.exit.velocity_exit_time : xy.exit.mA_timeout), moved_(travelled > xy_.step || turned > a_.step) {
     int allowance = moved_ ? 0 : STUCK_START_ALLOWANCE_MS;
     last_progress_ = pros::millis() + allowance;
     last_progress_pass_ = stuck_passes() + allowance / util::DELAY_TIME;
@@ -103,14 +103,29 @@ class StuckWatch {
     std::int32_t waited = now - last_progress_;
     if (waited <= window_) return false;
     // Confirming ez_auto_task really kept running (not just wall-clock time passing while it's starved or dead)
-    // needs an expected pass count for window_ -- using this watch's own observed passes-per-ms since it started,
-    // not DELAY_TIME, so ordinary scheduling overhead (a real pass rate a little under nominal, not starvation)
-    // doesn't get charged the same detection delay as an actually-starved task.  Falls back to DELAY_TIME before
-    // any passes have been observed yet, same as before.
-    std::uint32_t elapsed_ms = now - start_ms_;
-    std::uint32_t elapsed_passes = pass - start_pass_;
-    double observed_delay = elapsed_passes > 0 ? (double)elapsed_ms / elapsed_passes : util::DELAY_TIME;
-    int expected_passes = (int)(window_ / std::fmax(observed_delay, 1.0));
+    // needs an expected pass count for window_.  This used to derive that count from this watch's own observed
+    // passes-per-ms since it was constructed (elapsed real ms since construction / elapsed real passes since
+    // construction).  That estimate shares its own denominator with the very stretch it's judging:
+    // expected_passes (window_ / observed_delay) times observed_delay is window_ again, by construction,
+    // whatever observed_delay is measured as -- so "real passes since last progress" exceeding
+    // "expected_passes" reduces to exactly waited > window_, the same test just above, for any task ticking at
+    // a roughly steady rate, healthy or merely busy alike.  In practice that meant a task running a little
+    // slower than DELAY_TIME (ordinary scheduling overhead, not starvation) got confirmed about as fast as a
+    // perfectly healthy one -- at roughly 1x window_, not anywhere near the STUCK_STARVED_WINDOWS margin a
+    // fully dead task gets -- and the longer a wait had already run (the more precisely that observed rate had
+    // settled toward the task's true, steady cadence), the more exactly that held.  Whether prompt-but-tight
+    // detection for a busy task was the original intent, or real extra leniency for one was, is genuinely
+    // ambiguous from that alone; what's concrete is the audit's finding that this let a merely-busy task
+    // false-stuck a genuinely healthy, still-progressing slow approach well under what an earlier pass at this
+    // same mechanism had found and accepted.  Comparing the real pass count against a fixed count of
+    // DELAY_TIME-long passes instead trades that promptness for leniency: a task genuinely running slower than
+    // nominal (without being dead) now needs fewer of its own passes to reach this count, but each of its
+    // passes represents more real wall-clock time, so a genuinely stuck robot under a busy task is now
+    // confirmed measurably later (real-world tolerance now scales with how busy the task is, not fixed at
+    // ~window_) -- while a task that stops passing entirely still can't reach any positive count at all and is
+    // still caught by the STARVED_WINDOWS wall-clock fallback below, unchanged.  Flagging the latency tradeoff
+    // for a design call, the same as the Channel rebound latch above.
+    int expected_passes = (int)(window_ / (double)util::DELAY_TIME);
     return (std::int32_t)(pass - last_progress_pass_) > expected_passes || waited > STUCK_STARVED_WINDOWS * window_;
   }
 
@@ -119,7 +134,6 @@ class StuckWatch {
   int index_;
   int window_;
   bool moved_;
-  std::uint32_t start_ms_, start_pass_;
   std::uint32_t last_progress_, last_progress_pass_;
 };
 
@@ -131,7 +145,7 @@ class StuckWatch {
 class SingleStuckWatch {
  public:
   SingleStuckWatch(PID& pid, double error)
-      : ch_(stuck_step(pid), std::fabs(error), error), window_(pid.exit.velocity_exit_time != 0 ? pid.exit.velocity_exit_time : pid.exit.mA_timeout), moved_(false), start_ms_(pros::millis()), start_pass_(stuck_passes()) {
+      : ch_(stuck_step(pid), std::fabs(error), error), window_(pid.exit.velocity_exit_time != 0 ? pid.exit.velocity_exit_time : pid.exit.mA_timeout), moved_(false) {
     last_progress_ = pros::millis() + STUCK_START_ALLOWANCE_MS;
     last_progress_pass_ = stuck_passes() + STUCK_START_ALLOWANCE_MS / util::DELAY_TIME;
   }
@@ -148,10 +162,9 @@ class SingleStuckWatch {
     }
     std::int32_t waited = now - last_progress_;
     if (waited <= window_) return false;
-    std::uint32_t elapsed_ms = now - start_ms_;
-    std::uint32_t elapsed_passes = pass - start_pass_;
-    double observed_delay = elapsed_passes > 0 ? (double)elapsed_ms / elapsed_passes : util::DELAY_TIME;
-    int expected_passes = (int)(window_ / std::fmax(observed_delay, 1.0));
+    // See the matching comment in StuckWatch::stuck() -- a fixed, nominal-DELAY_TIME pass count, not one
+    // derived from this watch's own observed (and self-referential) cadence.
+    int expected_passes = (int)(window_ / (double)util::DELAY_TIME);
     return (std::int32_t)(pass - last_progress_pass_) > expected_passes || waited > STUCK_STARVED_WINDOWS * window_;
   }
 
@@ -159,7 +172,6 @@ class SingleStuckWatch {
   Channel ch_;
   int window_;
   bool moved_;
-  std::uint32_t start_ms_, start_pass_;
   std::uint32_t last_progress_, last_progress_pass_;
 };
 
