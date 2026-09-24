@@ -478,7 +478,17 @@ void Drive::pid_wait() {
       ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
       // Store the heading as the equivalent angle nearest the IMU.  The raw target can be a full turn away from it
       // (IMU at 270, target -90), which the next drive or relative turn would read as a 360 degree error.
-      if (odom_target_start.theta != ANGLE_NOT_SET) headingPID.target_set(new_turn_target_compute(odom_target_start.theta, drive_angle_get(), shortest));
+      //
+      // Re-checked here, not just at the top of each loop above: this loop's own exit condition can become
+      // satisfied on the very pass a concurrent retarget lands during THAT pass' own trailing pros::delay() --
+      // after the pass' retarget check already ran clean, but before the loop re-enters to find both exits
+      // non-RUNNING and fall out here.  A stale wait can reach this point having genuinely, cleanly finished
+      // its OWN old motion while mode/odom_target_start already belong to a new one.  Without this re-check,
+      // the write below would use whatever odom_target_start now holds -- the hijacking task's own in-flight
+      // target -- corrupting shared PID state that task already relies on.  A stale wait must not touch shared
+      // PID state on its way out once it notices it's been retargeted out from under it.
+      bool retargeted_since_snapshot = mode != mode_snapshot || odom_target_start.x != retarget_target.x || odom_target_start.y != retarget_target.y || odom_target_start.theta != retarget_target.theta;
+      if (!retargeted_since_snapshot && odom_target_start.theta != ANGLE_NOT_SET) headingPID.target_set(new_turn_target_compute(odom_target_start.theta, drive_angle_get(), shortest));
     }
   }
 
