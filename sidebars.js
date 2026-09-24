@@ -136,7 +136,7 @@ const sidebars = {
         'tutorials/blank_pages',
         'tutorials/pid',
         'tutorials/pto_tutorial',
-        'migration/3.1-3.2',
+        'migration/3.2-4.0',
       ],
 
     },
