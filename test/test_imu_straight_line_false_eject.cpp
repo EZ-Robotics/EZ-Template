@@ -42,6 +42,18 @@ void turn_one_pass(Drive& c, pros::Imu* healthy) {
   healthy->fake_rotation += 2.0;
   DriveTestAccess::check_imu_task(c);
 }
+
+// Drives the fake encoders apart the ASYMMETRIC way -- only the left side moves, the right sits
+// dead still -- the shape of a swing turn, not a pivot where both sides move oppositely. The
+// fix reads the *difference* between the two side-deltas; an implementation that instead required
+// BOTH sides to move (or move above threshold individually) would wrongly treat this as
+// stationary and never flag anything, silently reopening the straight-leg bug for every swing.
+void swing_turn_one_pass(Drive& c, pros::Imu* healthy) {
+  c.left_motors.front().fake().position += 50;
+  // right side untouched: a swing turn's non-driving side doesn't move at all
+  healthy->fake_rotation += 2.0;
+  DriveTestAccess::check_imu_task(c);
+}
 }  // namespace
 
 TEST_CASE("check_imu_task(): a long straight-line drive in AUTON mode does not eject a healthy redundant IMU") {
@@ -84,6 +96,27 @@ TEST_CASE("check_imu_task(): a genuinely frozen IMU during an actual turn is sti
 
   REQUIRE(chassis.good_imus.size() == 2);
   for (int pass = 0; pass < 500 && chassis.good_imus.size() == 2; pass++) turn_one_pass(chassis, healthy);
+
+  CHECK(chassis.good_imus.size() == 1);
+  CHECK(std::find(chassis.good_imus.begin(), chassis.good_imus.end(), frozen) == chassis.good_imus.end());
+  CHECK(chassis.good_imus.front() == healthy);
+}
+
+// Regression guard for the fix itself: gating on the two sides *diverging* (not on both moving)
+// must still catch a frozen IMU during an asymmetric swing turn, where only one side's encoder
+// ever moves.
+TEST_CASE("check_imu_task(): a genuinely frozen IMU during a swing turn (only one side moving) is still ejected") {
+  reset_before_construction();
+  Drive chassis({1, -2}, {-3, 4}, {5, 6}, 3.25, 360, 1.0);
+  mark_calibrated(chassis);
+  chassis.pid_print_toggle(false);
+  chassis.pid_swing_set(ez::LEFT_SWING, 45, 100);
+
+  pros::Imu* frozen = chassis.good_imus[0];   // port 5, never updated below -- the broken sensor
+  pros::Imu* healthy = chassis.good_imus[1];  // port 6, updated every pass -- turning for real
+
+  REQUIRE(chassis.good_imus.size() == 2);
+  for (int pass = 0; pass < 500 && chassis.good_imus.size() == 2; pass++) swing_turn_one_pass(chassis, healthy);
 
   CHECK(chassis.good_imus.size() == 1);
   CHECK(std::find(chassis.good_imus.begin(), chassis.good_imus.end(), frozen) == chassis.good_imus.end());
