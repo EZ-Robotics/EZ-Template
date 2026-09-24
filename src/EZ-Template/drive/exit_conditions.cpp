@@ -380,10 +380,12 @@ void Drive::pid_wait() {
 
     // A concurrent pid_odom_*_set() from another task retargets xyPID/current_a_odomPID (and resets pp_index
     // and pp_movements) mid-wait -- same hazard as the DRIVE branch above, just for odom.  odom_target_start
-    // is set by every odom setter that starts a new motion (raw_pid_odom_ptp_set()/raw_pid_odom_pp_set(),
+    // is set only where a NEW motion actually starts (pid_odom_ptp_set() and raw_pid_odom_pp_set(),
     // set_odom_pid.cpp), whether the retarget lands as another plain point, boomerang, or pure pursuit path,
     // so watching it catches a retarget regardless of what it lands in -- unlike leftPID/rightPID's target,
-    // which raw_pid_odom_ptp_set() also legitimately rewrites on every ordinary pure-pursuit waypoint advance.
+    // which raw_pid_odom_ptp_set() (the SAME motion's own per-waypoint advance, called again by pp_task() each
+    // time pure pursuit steps onto a new point, pid_tasks.cpp) legitimately rewrites on every ordinary
+    // waypoint advance and so can't be used here without false-firing on a healthy path.
     pose retarget_target = odom_target_start;
 
     // Wait until pure pursuit is on the last point, then continue as normal.  xy's exit is checked every pass

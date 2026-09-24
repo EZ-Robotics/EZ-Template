@@ -33,11 +33,14 @@
 // alone while frozen (that's what STUCK_STARVED_WINDOWS below is for).
 //
 // Tests: (1) the audit's own shape -- a real, single ~1s gap partway through an otherwise-healthy,
-// continuously-progressing 2.5 in/s odom approach (position and PID error held flat through the gap, not
-// simulated as catching up -- what a starved reporting task actually produces). (2) the latency tradeoff this
-// fix trades for that: a robot pinned from the very start under a steady, moderately reduced (not dead) task
-// duty, measuring detection latency since the pin old vs new. (3) a task that stops ticking entirely and
-// never resumes -- genuinely dead, not just gapped -- which the unchanged STUCK_STARVED_WINDOWS wall-clock
+// continuously-progressing 2.5 in/s odom approach.  The PID error/odometry are held flat WHILE the gap is
+// open (no fresh reading arrives), then catch up in one jump to wherever the robot truly is by real wall-
+// clock time the instant the simulated task resumes -- real hardware keeps counting encoder ticks through a
+// gap and ez_tracking_task's absolute-encoder-delta math (tracking.cpp) catches odometry up the same way, not
+// gradually. (2) the latency tradeoff this fix trades for that: a robot pinned from the very start under a
+// steady, moderately reduced (not dead) task duty, measuring detection latency since the last real progress
+// credit old vs new. (3) a task that stops ticking entirely and never resumes -- genuinely dead, not just
+// gapped -- which the unchanged STUCK_STARVED_WINDOWS wall-clock
 // fallback still has to catch regardless of this fix.
 #include <cmath>
 #include <functional>
@@ -112,10 +115,12 @@ bool busy_70_percent(int n) { return (n % 10) >= 3; }
 // Places the fake robot's odom position a shrinking distance short of the target, closing continuously at a
 // steady 2.5 in/s of real wall-clock time -- the same "distance closes by a step every so often" progress
 // StuckWatch's own credit is built around (see test_pp_wait_stuck.cpp).  Only writes state when the
-// simulated task actually ticked this pass, and otherwise leaves it exactly where it was: "the errors only
-// change when that task runs" (see the class comment in exit_conditions.cpp) -- during a gap nothing
-// refreshes the PID error or the odometry, the same as the real system, not a simulated catch-up jump once
-// the task resumes.
+// simulated task actually ticked this pass; the value it writes is always computed from the true wall-clock
+// tick `n`, so a pass right after a gap catches the PID error/odometry up to wherever the robot truly is in
+// one jump, the same way ez_tracking_task's absolute-encoder-delta math does on real hardware (it doesn't
+// walk the gap's distance gradually pass by pass -- see the file header).  While the gap is open, nothing
+// refreshes them at all: "the errors only change when that task runs" (see the class comment in
+// exit_conditions.cpp).
 void healthy_crawl(Drive& c, int n, bool ticked) {
   if (!ticked) return;
   double remaining = std::fmax(0.0, PATH_LENGTH_IN - IN_PER_WALL_TICK * n);
@@ -174,10 +179,13 @@ TEST_CASE("pid_wait() odom: a steady, merely-busy (not dead) task's own genuinel
   Outcome o = run(chassis, pinned_after_healthy_start, busy_70_percent, 1200, [&] { chassis.pid_wait(); });
   CHECK(o.returned);
   CHECK(o.interfered);
-  // Comfortably below the dead-task fallback (STUCK_STARVED_WINDOWS * window_ = 2000ms = 200 passes past
-  // wherever last_progress_pass_ sat when the pin began) -- proof this exercises the pass-count check this
-  // fix changed, not just the unrelated wall-clock-only fallback below it.
-  CHECK(o.passes - PIN_AT_TICK < 200);
+  // A loose upper bound of "since the pin" alone isn't proof this exercises the pass-count check rather than
+  // the unrelated STUCK_STARVED_WINDOWS wall-clock fallback below it: busy_70_percent's own skipped ticks put
+  // the last REAL progress credit a little before the pin (around tick 43, not tick 60), so the fallback
+  // alone (waited > 4 * window_ = 2000ms past that) would already fire by roughly PIN_AT_TICK + 184 -- inside
+  // a merely-generous 200 bound. Tightened well under that (roughly 2x the fix's own measured ~55-pass
+  // since-pin result) so a deleted pass-count check (e.g. an always-huge expected_passes) would fail this.
+  CHECK(o.passes - PIN_AT_TICK < 100);
 }
 
 TEST_CASE("pid_wait() odom: a genuinely dead auto task is still caught by the unchanged wall-clock fallback") {
