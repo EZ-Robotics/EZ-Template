@@ -488,7 +488,7 @@ Set's constants for turn exit conditions.
 `p_big_error` big timer will start when error is within this, in units        
 `p_velocity_exit_time` velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), in units   
 `p_mA_timeout` mA timer will start when the first motor on the side(s) being driven is over its current limit, in units      
-`use_imu` true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for `p_velocity_exit_time`), false uses only the main sensor         
+`use_imu` true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for `p_velocity_exit_time`). Off by default: acceleration reads near 0 during an ordinary constant-speed cruise too, so this can't tell cruising from stalled and used to cause exits mid-motion. It's the only exit that can catch wheels spinning free (lifted or high-centered), which the main sensor and mA_timeout both miss -- turn it on if that case matters more to you than early exits on a slow cruise.         
 <Tabs
   groupId="pid_turn_Exit_set_okapi"
   defaultValue="proto"
@@ -514,7 +514,7 @@ void initialize() {
 <TabItem value="proto">
 
 ```cpp
-void pid_turn_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error, ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = true);
+void pid_turn_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error, ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = false);
 ```
 
 </TabItem>
@@ -1062,7 +1062,7 @@ Set's constants for turn exit conditions.
 `p_big_error` big timer will start when error is within this, in degrees
 `p_velocity_exit_time`  velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), in ms
 `p_mA_timeout` mA timer will start when the first motor on the side(s) being driven is over its current limit, in ms   
-`use_imu` true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for `p_velocity_exit_time`), false uses only the main sensor    
+`use_imu` true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for `p_velocity_exit_time`). Off by default: acceleration reads near 0 during an ordinary constant-speed cruise too, so this can't tell cruising from stalled and used to cause exits mid-motion. It's the only exit that can catch wheels spinning free (lifted or high-centered), which the main sensor and mA_timeout both miss -- turn it on if that case matters more to you than early exits on a slow cruise.    
 <Tabs
   groupId="pid_turn_exit_set_double"
   defaultValue="proto"
@@ -1088,7 +1088,7 @@ void initialize() {
 <TabItem value="proto">
 
 ```cpp
-void pid_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = true);
+void pid_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = false);
 ```
 
 </TabItem>
