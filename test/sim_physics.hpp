@@ -63,13 +63,17 @@ struct MotorCurve {
   // PID reversing to brake), now gets genuine negative (regenerative/braking) torque instead of
   // silently freewheeling. Found auditing a false "Turn: Stuck" that turned out to be present
   // even in a from-scratch, zero-injected-fault control run: with no braking authority once
-  // torque hit that clamp, a light, fast, low-friction archetype (archetype_light_fast) spinning
-  // up during a saturated turn had nothing to slow it back down until the PID commanded a hard
-  // full reversal, so it coasted well past where it should have started braking -- overshooting
-  // the target and swinging back, or drifting to a stop short of it, depending on exact timing --
-  // and got falsely flagged stuck either way. A genuine sim-physics gap, not evidence of anything
-  // about sensor faults or real turn/swing behavior. See side_force()'s own comment for the
-  // matching friction-sign fix this needed alongside it.
+  // torque hit that clamp, a chassis spinning up during a saturated turn had nothing to slow it
+  // back down until the PID commanded a hard full reversal, so it coasted well past where it
+  // should have started braking -- overshooting the target and swinging back, or running away
+  // and never recovering, depending on the archetype -- and got falsely flagged stuck either way.
+  // This broke all three sim archetypes at the library's shipped default turn constants (see
+  // test_turn_control_no_fault.cpp's own header comment for the measured pre-fix numbers), not
+  // just the lightest one -- a genuine sim-physics gap, not evidence of anything about sensor
+  // faults or real turn/swing behavior, and not specific to any one archetype's numbers being
+  // unrealistic. See side_force()'s own comment for a related, independently demonstrated
+  // friction-sign gap fixed alongside this one (not required for this scenario by itself, but
+  // closing the same class of "nothing opposes a coasting wheel" problem more completely).
   double torque_at(double angular_velocity_rad_s, double duty) const {
     double free_speed_rad_s = free_speed_rpm * 2.0 * M_PI / 60.0;
     if (free_speed_rad_s <= 0.0) return 0.0;
