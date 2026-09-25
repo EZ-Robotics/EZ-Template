@@ -363,39 +363,88 @@ void Drive::pid_wait() {
     // still RUNNING and not progressing; a side that already exited cleanly can't drag the wait down.
     SingleStuckWatch left_watch(leftPID, leftPID.error), right_watch(rightPID, rightPID.error);
     bool stalled = false;
-    while (left_exit == RUNNING || right_exit == RUNNING) {
-      if (mode != mode_snapshot || leftPID.target_get() != left_target || rightPID.target_get() != right_target) {
-        if (print_toggle) std::cout << "  Drive: retargeted by a concurrent motion mid-wait, ending early instead of finishing on the wrong target.\n";
-        interfered = true;
-        return;
+    // A stuck-but-settled break below is its own, already-final decision (at least one side never
+    // finished its own exit timer at all -- still RUNNING -- but the stuck watch gave up waiting on
+    // it and every side that's still RUNNING is currently inside its own big error window anyway).
+    // That is not the "both sides independently latched a window exit" case the recheck below is
+    // for, and there is nothing for it to un-latch (a side that's still RUNNING was never latched in
+    // the first place) -- falling into it here would just delay-and-loop forever, since neither the
+    // settled check nor the stuck check resets. Stop here, same as the original code did -- see the
+    // matching flag and comment in pid_wait()'s odom branch above.
+    bool settled_via_stuck = false;
+    while (true) {
+      while (!stalled && (left_exit == RUNNING || right_exit == RUNNING)) {
+        if (mode != mode_snapshot || leftPID.target_get() != left_target || rightPID.target_get() != right_target) {
+          if (print_toggle) std::cout << "  Drive: retargeted by a concurrent motion mid-wait, ending early instead of finishing on the wrong target.\n";
+          interfered = true;
+          return;
+        }
+        secondary_velocity_sensor_update(leftPID);
+        secondary_velocity_sensor_update(rightPID);
+        // A genuinely slow (not stalled) DRIVE cruise can read as "stopped" to the velocity channel --
+        // PID.cpp's velocity floor is a fixed constant, independent of gearing or wheel size, so a real,
+        // low-gearing drivetrain cruising under that floor is not stalled, just slow. Odom already filters
+        // this out (without_velocity(), above); DRIVE didn't. SingleStuckWatch (below) still catches a
+        // genuine stall independently -- it watches PID error, not velocity -- so filtering this out can't
+        // turn a real stall into a hang.
+        left_exit = left_exit != RUNNING ? left_exit : without_velocity(leftPID.exit_condition(left_motors));
+        right_exit = right_exit != RUNNING ? right_exit : without_velocity(rightPID.exit_condition(right_motors));
+        bool left_stuck = left_exit == RUNNING && left_watch.stuck(leftPID.error);
+        bool right_stuck = right_exit == RUNNING && right_watch.stuck(rightPID.error);
+        // Stuck only when at least one side is still RUNNING and every side that's still RUNNING is stuck --
+        // not when both sides just happened to exit normally on the same pass, which the (exit != RUNNING) half
+        // of each clause would otherwise also satisfy.
+        if ((left_exit == RUNNING || right_exit == RUNNING) && (left_exit != RUNNING || left_stuck) && (right_exit != RUNNING || right_stuck)) {
+          // A side that's still RUNNING and already sitting inside its own big error window is where a big
+          // exit would have left it: that's settled, not stuck. (A side hovering across its own small error
+          // window can keep both its own exit timers from ever finishing.) A side that already latched an
+          // exit is trusted here only if its OWN live error is still inside its big error window right now --
+          // a side that latched early and has since been shoved or pinned off target must not count as
+          // settled just because it once exited cleanly (see the recheck below, which applies this identical
+          // rule to a full double latch instead of this stuck-detected path).
+          bool left_settled = std::fabs(leftPID.error) < leftPID.exit.big_error;
+          bool right_settled = std::fabs(rightPID.error) < rightPID.exit.big_error;
+          bool settled = left_settled && right_settled;
+          stalled = !settled;
+          settled_via_stuck = settled;
+          if (print_toggle) std::cout << "  Drive: " << (stalled ? "Stuck" : "Stuck, but stopped inside the big error windows, counted as settled") << ", error: L," << leftPID.error << " R," << rightPID.error << "\n";
+          break;
+        }
+        pros::delay(util::DELAY_TIME);
       }
-      secondary_velocity_sensor_update(leftPID);
-      secondary_velocity_sensor_update(rightPID);
-      // A genuinely slow (not stalled) DRIVE cruise can read as "stopped" to the velocity channel --
-      // PID.cpp's velocity floor is a fixed constant, independent of gearing or wheel size, so a real,
-      // low-gearing drivetrain cruising under that floor is not stalled, just slow. Odom already filters
-      // this out (without_velocity(), above); DRIVE didn't. SingleStuckWatch (below) still catches a
-      // genuine stall independently -- it watches PID error, not velocity -- so filtering this out can't
-      // turn a real stall into a hang.
-      left_exit = left_exit != RUNNING ? left_exit : without_velocity(leftPID.exit_condition(left_motors));
-      right_exit = right_exit != RUNNING ? right_exit : without_velocity(rightPID.exit_condition(right_motors));
-      bool left_stuck = left_exit == RUNNING && left_watch.stuck(leftPID.error);
-      bool right_stuck = right_exit == RUNNING && right_watch.stuck(rightPID.error);
-      // Stuck only when at least one side is still RUNNING and every side that's still RUNNING is stuck --
-      // not when both sides just happened to exit normally on the same pass, which the (exit != RUNNING) half
-      // of each clause would otherwise also satisfy.
-      if ((left_exit == RUNNING || right_exit == RUNNING) && (left_exit != RUNNING || left_stuck) && (right_exit != RUNNING || right_stuck)) {
-        // A side that's still RUNNING and already sitting inside its own big error window is where a big
-        // exit would have left it: that's settled, not stuck. (A side hovering across its own small error
-        // window can keep both its own exit timers from ever finishing.) A side that already exited cleanly
-        // can't block settling.
-        bool left_settled = left_exit != RUNNING || std::fabs(leftPID.error) < leftPID.exit.big_error;
-        bool right_settled = right_exit != RUNNING || std::fabs(rightPID.error) < rightPID.exit.big_error;
-        stalled = !(left_settled && right_settled);
-        if (print_toggle) std::cout << "  Drive: " << (stalled ? "Stuck" : "Stuck, but stopped inside the big error windows, counted as settled") << ", error: L," << leftPID.error << " R," << rightPID.error << "\n";
-        break;
+      if (stalled || settled_via_stuck) break;
+
+      // Both sides read as exited (or this loop wouldn't have exited above). Right before trusting
+      // a clean double-exit, recheck each side that latched a window exit (SMALL_EXIT/BIG_EXIT)
+      // against the same window it exited through, using its own live error -- not exit_condition()
+      // (that would restart its internal timers) -- the same treatment pid_wait()'s odom branch
+      // already gives a clean double-exit (see the comment there). A side that has drifted back
+      // outside since latching is un-latched (back to RUNNING) so the inner loop above keeps
+      // genuinely watching it instead of trusting a stale result. Its own stuck watch is
+      // deliberately NOT reseeded: it already stopped being fed the moment this side first latched,
+      // so its own clock has effectively been running the whole time it sat unwatched, and reseeding
+      // it here would hand a pathological hover right at the exit window's edge (latch, drift out,
+      // un-latch, re-latch, ...) a fresh grace period on every cycle -- exactly the unbounded relatch
+      // the odom branch's own comment above rules out. VELOCITY_EXIT is never latched here
+      // (without_velocity() already maps it to RUNNING); mA_EXIT and ERROR_NO_CONSTANTS aren't
+      // window exits and are left alone -- the final check below still catches mA_EXIT/VELOCITY_EXIT
+      // regardless of this recheck.
+      if (left_exit == SMALL_EXIT && std::fabs(leftPID.error) >= leftPID.exit.small_error) {
+        left_exit = RUNNING;
+      } else if (left_exit == BIG_EXIT && std::fabs(leftPID.error) >= leftPID.exit.big_error) {
+        left_exit = RUNNING;
       }
-      pros::delay(util::DELAY_TIME);
+      if (right_exit == SMALL_EXIT && std::fabs(rightPID.error) >= rightPID.exit.small_error) {
+        right_exit = RUNNING;
+      } else if (right_exit == BIG_EXIT && std::fabs(rightPID.error) >= rightPID.exit.big_error) {
+        right_exit = RUNNING;
+      }
+
+      if (left_exit == RUNNING || right_exit == RUNNING) {
+        pros::delay(util::DELAY_TIME);
+        continue;
+      }
+      break;
     }
     if (print_toggle && !stalled) std::cout << "  Left: " << exit_to_string(left_exit) << " Exit, error: " << leftPID.error << "   Right: " << exit_to_string(right_exit) << " Exit, error: " << rightPID.error << "\n";
 
