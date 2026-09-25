@@ -1052,6 +1052,16 @@ void Drive::pid_wait_until_index(int index) {
 // Pid wait, but quickly :)
 void Drive::pid_wait_quick() {
   if (mode == PURE_PURSUIT) {
+    // Same concurrent-retarget guard as pid_wait()'s odom branch (see the comment there) -- unlike
+    // pid_wait(), this had no guard on its own headingPID write at all. pid_wait_until_index() above
+    // already ends the wait early with interfered=true on a retarget IT notices, but that alone
+    // doesn't stop the write below from running on whatever odom_target_start now holds -- and it
+    // can't by itself catch a retarget landing in pid_wait_until_index()'s own first settle delay,
+    // before its internal guard has taken a baseline to compare against. Snapshotted here, at this
+    // call's own entry, before any of that, so it catches a retarget landing anywhere across the
+    // whole inner call, not just within its own loop.
+    e_mode mode_snapshot = mode;
+    pose retarget_target = odom_target_start;
     int last_index;
     {
       ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
@@ -1060,15 +1070,31 @@ void Drive::pid_wait_quick() {
     pid_wait_until_index(last_index);
     {
       ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
-      // Same as pid_wait(): store the equivalent angle nearest the IMU.
-      if (odom_target_start.theta != ANGLE_NOT_SET) headingPID.target_set(new_turn_target_compute(odom_target_start.theta, drive_angle_get(), shortest));
+      // Same as pid_wait(): store the equivalent angle nearest the IMU -- but only if this call's own
+      // motion is still the current one. A stale pid_wait_quick() call must not clobber headingPID
+      // with the hijacking motion's own in-flight heading, and must report interfered rather than a
+      // clean, silent finish for a motion it was never waiting for.
+      bool retargeted_since_snapshot = mode != mode_snapshot || odom_target_start.x != retarget_target.x || odom_target_start.y != retarget_target.y || odom_target_start.theta != retarget_target.theta;
+      if (retargeted_since_snapshot) {
+        interfered = true;
+      } else if (odom_target_start.theta != ANGLE_NOT_SET) {
+        headingPID.target_set(new_turn_target_compute(odom_target_start.theta, drive_angle_get(), shortest));
+      }
     }
     return;
   } else if (mode == POINT_TO_POINT) {
+    // Same concurrent-retarget guard as the PURE_PURSUIT branch above.
+    e_mode mode_snapshot = mode;
+    pose retarget_target = odom_target_start;
     pid_wait_until_point(odom_target_start);
     {
       ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
-      if (odom_target_start.theta != ANGLE_NOT_SET) headingPID.target_set(new_turn_target_compute(odom_target_start.theta, drive_angle_get(), shortest));
+      bool retargeted_since_snapshot = mode != mode_snapshot || odom_target_start.x != retarget_target.x || odom_target_start.y != retarget_target.y || odom_target_start.theta != retarget_target.theta;
+      if (retargeted_since_snapshot) {
+        interfered = true;
+      } else if (odom_target_start.theta != ANGLE_NOT_SET) {
+        headingPID.target_set(new_turn_target_compute(odom_target_start.theta, drive_angle_get(), shortest));
+      }
     }
     return;
   } else if (mode == TURN || mode == SWING || mode == TURN_TO_POINT) {

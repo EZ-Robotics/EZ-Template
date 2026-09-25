@@ -161,3 +161,46 @@ TEST_CASE("pid_wait_until_index_started() finishes clean, not interfered, on a h
   REQUIRE(returned);
   CHECK_FALSE(chassis.interfered);
 }
+
+namespace {
+Drive* g_pass1_chassis = nullptr;
+bool g_pass1_retargeted = false;
+
+// Lands during pid_wait_until_index_started()'s OWN first settle delay -- before ANY baseline (not
+// even the "mode != PURE_PURSUIT" check) has run. A retarget to a completely different mode here
+// touches neither injected_pp_index nor pp_index, so without a pre-delay snapshot this would either
+// be missed entirely (mode is no longer PURE_PURSUIT, but the call was never told that's not a plain
+// misuse) or, if the guard only snapshotted after the delay, never caught as a retarget at all.
+void on_delay_pass1_different_mode() {
+  if (g_pass1_retargeted) return;
+  g_pass1_chassis->pid_turn_set(30, 100);
+  g_pass1_retargeted = true;
+}
+}  // namespace
+
+TEST_CASE("pid_wait_until_index_started() catches a different-mode retarget landing in its own first settle delay") {
+  Drive chassis = make_chassis();
+  start_path(chassis, path_of(40, 7.0));
+
+  g_pass1_chassis = &chassis;
+  g_pass1_retargeted = false;
+  test_stub::g_clock.on_delay = on_delay_pass1_different_mode;
+  test_stub::g_clock.delay_calls_until_stop = 30;
+
+  bool returned = true;
+  try {
+    chassis.pid_wait_until_index_started(3);
+  } catch (test_stub::StopLoop&) {
+    returned = false;
+  }
+  test_stub::g_clock.delay_calls_until_stop = -1;
+  test_stub::g_clock.on_delay = nullptr;
+  MESSAGE("returned=", returned, " retargeted=", g_pass1_retargeted, " interfered=", chassis.interfered, " mode=", (int)chassis.mode);
+
+  REQUIRE(returned);
+  REQUIRE(g_pass1_retargeted);
+  // Without the pre-delay snapshot, this would fall into the "Mode needs to be pure pursuit!" early
+  // return instead -- a plain, silent, non-interfered return that looks identical to this call having
+  // been misused from a non-PP mode to begin with, not to a motion that was retargeted out from under it.
+  CHECK(chassis.interfered);
+}
