@@ -1,11 +1,12 @@
 // Coverage gap in exit_conditions.cpp's Channel::made(), the shared progress primitive behind
 // StuckWatch/SingleStuckWatch: `if (size >= low - step) return false;` only credits progress on a
-// reading strictly smaller than the last recorded low, minus a full step. At step == 0 (only
-// reachable with small_error == 0 and velocity_exit_time == 0, so stuck_step() falls through to 0),
-// that means a reading exactly equal to the last low must still not count as progress -- only a
-// strictly smaller one may. Loosening that strict inequality (`>` instead of `>=`) would let an
-// unchanged reading credit progress at this boundary, defeating the whole backstop for a genuinely
-// pinned robot in this configuration: "no change" would read identically to "new record low".
+// reading strictly smaller than the last recorded low, minus a full step. At step == 0 (small_error
+// == 0, and the velocity-exit-noise-floor fallback zeroed out too via velocity_sensor_main_exit_set,
+// since stuck_step() otherwise falls back to that instead of 0), that means a reading exactly equal
+// to the last low must still not count as progress -- only a strictly smaller one may. Loosening
+// that strict inequality (`>` instead of `>=`) would let an unchanged reading credit progress at
+// this boundary, defeating the whole backstop for a genuinely pinned robot in this configuration:
+// "no change" would read identically to "new record low".
 //
 // No existing test exercises step == 0 specifically (small_error == 0 while a stuck backstop is
 // still active, via mA_timeout as the fallback window), so this pins the documented boundary
@@ -42,11 +43,14 @@ TEST_CASE("pid_wait() DRIVE: a perfectly static error at StuckWatch's step==0 co
   Drive chassis = make_chassis();
   DriveTestAccess::imu_calibration_complete(chassis) = true;
   chassis.pid_print_toggle(false);
-  // small_error=0, velocity_exit_time=0 -> Channel step==0 (stuck_step()). mA_timeout=500 keeps
-  // SingleStuckWatch's window active (mA_timeout is used as the fallback window when
-  // velocity_exit_time==0). big_error/big_exit_time and velocity are all off so nothing but the
-  // stuck backstop itself can end this wait.
+  // small_error=0, velocity_exit_time=0 -> Channel step==0 (stuck_step()) only once the velocity
+  // exit's own noise-floor fallback is also zeroed (otherwise stuck_step() falls back to that
+  // instead of a literal 0). mA_timeout=500 keeps SingleStuckWatch's window active (mA_timeout is
+  // used as the fallback window when velocity_exit_time==0). big_error/big_exit_time and velocity
+  // are all off so nothing but the stuck backstop itself can end this wait.
   chassis.pid_drive_exit_condition_set(0, 0.0, 0, 0.0, 0, 500);
+  chassis.leftPID.velocity_sensor_main_exit_set(0.0);
+  chassis.rightPID.velocity_sensor_main_exit_set(0.0);
   chassis.pid_drive_set(20.0, 100);
 
   g_chassis = &chassis;
