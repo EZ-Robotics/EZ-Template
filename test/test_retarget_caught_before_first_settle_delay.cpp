@@ -9,14 +9,18 @@
 // tests deliberately don't: a retarget landing during that exact first delay, which a snapshot taken
 // right after it would otherwise miss (since that snapshot would already reflect the new motion).
 //
-// Both functions now snapshot before their own leading delay instead, matching
-// wait_until_turn_swing_internal()/pid_wait_until_index_started(), which already did.
+// Both functions now snapshot mode (plus, for pid_wait()'s DRIVE branch, leftPID/rightPID's target)
+// before their own leading delay instead, matching wait_until_turn_swing_internal()/
+// pid_wait_until_index_started(), which already did -- closing the cross-mode case this file covers
+// for both functions, and the same-mode case for DRIVE specifically.
 //
-// Covered here: pid_wait() DRIVE, and wait_until_drive() by way of pid_wait_quick_chain() DRIVE. The
-// same shape also exists by direct code inspection (same delay-then-snapshot pattern) in pid_wait()'s
-// odom/TURN/SWING branches and in pid_wait_until_point(), but those are not separately covered by a
-// test in this file -- pid_wait_until_point()'s own version of this gap is tracked and fixed
-// elsewhere, not here.
+// Covered here: pid_wait() DRIVE, and wait_until_drive() by way of pid_wait_quick_chain() DRIVE.
+// NOT covered, and still open: pid_wait()'s odom/TURN/SWING branches still take their own
+// odom_target_start/turn_target/swing_target snapshot AFTER the shared leading delay (only `mode`
+// itself was hoisted ahead of it, which is what closes the cross-mode case for every branch here) --
+// a SAME-mode retarget landing in that window (e.g. a second pid_turn_set() while already turning)
+// is still invisible to those three branches specifically. pid_wait_until_point() has the identical
+// delay-then-snapshot shape in full and is tracked and fixed elsewhere, not here.
 //
 // The exposure window is small -- at most one DELAY_TIME (10ms default) per wait call, the gap
 // between the wait starting and it taking its own baseline -- so this needs no unusual configuration,
