@@ -367,8 +367,14 @@ void Drive::pid_wait() {
       // not when both sides just happened to exit normally on the same pass, which the (exit != RUNNING) half
       // of each clause would otherwise also satisfy.
       if ((left_exit == RUNNING || right_exit == RUNNING) && (left_exit != RUNNING || left_stuck) && (right_exit != RUNNING || right_stuck)) {
-        stalled = true;
-        if (print_toggle) std::cout << "  Drive: Stuck, error: L," << leftPID.error << " R," << rightPID.error << "\n";
+        // A side that's still RUNNING and already sitting inside its own big error window is where a big
+        // exit would have left it: that's settled, not stuck. (A side hovering across its own small error
+        // window can keep both its own exit timers from ever finishing.) A side that already exited cleanly
+        // can't block settling.
+        bool left_settled = left_exit != RUNNING || std::fabs(leftPID.error) < leftPID.exit.big_error;
+        bool right_settled = right_exit != RUNNING || std::fabs(rightPID.error) < rightPID.exit.big_error;
+        stalled = !(left_settled && right_settled);
+        if (print_toggle) std::cout << "  Drive: " << (stalled ? "Stuck" : "Stuck, but stopped inside the big error windows, counted as settled") << ", error: L," << leftPID.error << " R," << rightPID.error << "\n";
         break;
       }
       pros::delay(util::DELAY_TIME);
@@ -513,8 +519,10 @@ void Drive::pid_wait() {
       secondary_velocity_sensor_update(turnPID);
       turn_exit = turn_exit != RUNNING ? turn_exit : turnPID.exit_condition(both_sides(left_motors, right_motors));
       if (turn_exit == RUNNING && watch.stuck(turnPID.error)) {
-        stalled = true;
-        if (print_toggle) std::cout << "  Turn: Stuck, error: " << turnPID.error << "\n";
+        // Same settled carve-out as the DRIVE branch above.
+        bool settled = std::fabs(turnPID.error) < turnPID.exit.big_error;
+        stalled = !settled;
+        if (print_toggle) std::cout << "  Turn: " << (stalled ? "Stuck" : "Stuck, but stopped inside the big error window, counted as settled") << ", error: " << turnPID.error << "\n";
         break;
       }
       pros::delay(util::DELAY_TIME);
@@ -546,8 +554,10 @@ void Drive::pid_wait() {
       secondary_velocity_sensor_update(swingPID);
       swing_exit = swing_exit != RUNNING ? swing_exit : swingPID.exit_condition(sensor);
       if (swing_exit == RUNNING && watch.stuck(swingPID.error)) {
-        stalled = true;
-        if (print_toggle) std::cout << "  Swing: Stuck, error: " << swingPID.error << "\n";
+        // Same settled carve-out as the DRIVE branch above.
+        bool settled = std::fabs(swingPID.error) < swingPID.exit.big_error;
+        stalled = !settled;
+        if (print_toggle) std::cout << "  Swing: " << (stalled ? "Stuck" : "Stuck, but stopped inside the big error window, counted as settled") << ", error: " << swingPID.error << "\n";
         break;
       }
       pros::delay(util::DELAY_TIME);
