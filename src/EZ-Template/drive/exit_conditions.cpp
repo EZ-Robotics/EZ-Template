@@ -731,7 +731,14 @@ void Drive::wait_until_drive(double target) {
       if (on_last_point) {
         secondary_velocity_sensor_update(xyPID);
         xy_velocity_exit_hold_update();
-        exit_output xy_exit = xyPID.exit_condition(both_sides(left_motors, right_motors));
+        // A slow (not stalled) cruise must not be ended by the velocity channel alone -- same
+        // reasoning, and the same without_velocity() treatment, as every other odom xy exit check
+        // in this file (pid_wait()'s odom branch, pid_wait_until_point(),
+        // pid_wait_until_index_started()). xy_velocity_exit_hold_update() above only protects a
+        // turn-bias pivot up to its own fallback; a genuinely slow, healthy, straight cruise still
+        // needs this filter. SingleStuckWatch (via l_error/r_error below) remains the real stall
+        // backstop.
+        exit_output xy_exit = without_velocity(xyPID.exit_condition(both_sides(left_motors, right_motors)));
         if (xy_exit != RUNNING) {
           if (print_toggle) std::cout << "  XY: " << exit_to_string(xy_exit) << " Wait Until Exit Failsafe, the move ended before reaching " << target << "\n";
           if (xy_exit == mA_EXIT || xy_exit == VELOCITY_EXIT) interfered = true;
@@ -743,10 +750,15 @@ void Drive::wait_until_drive(double target) {
         secondary_velocity_sensor_update(leftPID);
         secondary_velocity_sensor_update(rightPID);
         // Non-odom (plain DRIVE): a slow (not stalled) cruise must not be ended by the velocity channel
-        // alone -- same reasoning as pid_wait()'s DRIVE branch. Odom's own on_last_point/look-ahead exit
-        // filtering above and below is untouched by this fix.
-        if (left_exit == RUNNING) left_exit = is_odom ? without_position_exits(leftPID.exit_condition(left_motors)) : without_velocity(leftPID.exit_condition(left_motors));
-        if (right_exit == RUNNING) right_exit = is_odom ? without_position_exits(rightPID.exit_condition(right_motors)) : without_velocity(rightPID.exit_condition(right_motors));
+        // alone -- same reasoning as pid_wait()'s DRIVE branch. Odom: without_position_exits() strips
+        // SMALL_EXIT/BIG_EXIT on purpose (leftPID/rightPID's target here is only a frozen look-ahead
+        // point, not the real final target) but a stalled motor's velocity reading is real regardless of
+        // which target produced the error -- except the same fixed 5in/s velocity floor that's too fast
+        // for a genuinely slow, healthy cruise everywhere else in this file is exactly as blind to gearing
+        // here, so it still needs without_velocity() on top, same as every other site; mA_EXIT is left
+        // through unfiltered, since over-current is real regardless of target.
+        if (left_exit == RUNNING) left_exit = without_velocity(is_odom ? without_position_exits(leftPID.exit_condition(left_motors)) : leftPID.exit_condition(left_motors));
+        if (right_exit == RUNNING) right_exit = without_velocity(is_odom ? without_position_exits(rightPID.exit_condition(right_motors)) : rightPID.exit_condition(right_motors));
         bool left_stuck = left_exit == RUNNING && left_watch.stuck(is_odom ? l_error : leftPID.error);
         bool right_stuck = right_exit == RUNNING && right_watch.stuck(is_odom ? r_error : rightPID.error);
         // See the matching comment in pid_wait()'s DRIVE branch -- both sides exiting normally on the same pass
