@@ -120,16 +120,19 @@ TEST_CASE("pid_wait_until() DRIVE: a realistic slow-gearing cruise (200rpm/2.75i
 // them should ever false-exit via velocity, with or without noise (the finding's own repro found
 // noise makes the false exit fire SOONER, not later -- it never rescues this case).
 namespace {
-// (cartridge_rpm, wheel_diameter_in, speed) triples where this sim -- independent of this fix,
-// confirmed by running the identical scenario against the pre-fix tree and getting the identical
-// result -- overshoots the 24in target by roughly 50-115% (measured left_in 35-51in) and never
-// cleanly settles, regardless of which exit ends the wait. This is consistent with (not traced
-// step by step through) sim_physics.hpp's MotorCurve::torque_at() returning 0 rather than a
-// negative (braking) torque once a wheel outruns its commanded duty -- a chassis commanded at a
-// high enough linear cruise speed for its own gearing/wheel can't shed momentum once the PID
-// eases off near the target. A sim limitation, not a finding about the library. These combos are
-// listed explicitly (measured, not estimated by a formula) and covered separately below, marked
-// as a known-bad sim regime, rather than silently dropped from the sweep.
+// (cartridge_rpm, wheel_diameter_in, speed) triples that, against the PRE-braking-fix sim,
+// overshot the 24in target by roughly 50-115% (measured left_in 35-51in) and never cleanly
+// settled, regardless of which exit ends the wait. That was traced to sim_physics.hpp's
+// MotorCurve::torque_at() returning 0 rather than a negative (braking) torque once a wheel
+// outran its commanded duty -- a sim limitation, not a finding about the library -- and has
+// since been fixed directly in sim_physics.hpp (signed torque_at() plus friction opposing actual
+// wheel motion; see that file's own comments). The combos below now settle cleanly like the rest
+// of the sweep -- see the now-unconditional test case right after this array, which asserts that
+// directly instead of documenting an expected failure. The array and the exclusion in the two
+// sweeps above are kept as-is, conservatively: this file hasn't separately re-verified the
+// stricter "never stops short" bound (the sweep just below) for this exact combo list now that
+// the underlying physics changed, so folding them back into those two sweeps too is left for a
+// follow-up rather than assumed here.
 struct SweepCombo {
   double rpm;
   double wheel;
@@ -235,12 +238,15 @@ TEST_CASE("pid_wait() DRIVE: sweep of gearing/wheel/speed/noise never stops shor
   MESSAGE("combos checked: ", combos);
 }
 
-// The combos listed in KNOWN_SIM_OVERSHOOT_COMBOS, run the identical way -- documented as a known,
-// pre-existing sim limitation (see that array's own comment), not silently dropped from coverage.
-// should_fail() the way test_n5_stuck_floor.cpp already does for its own sim-caveat case: this
-// marks the failure as expected/tracked rather than either hiding it or blocking the suite on a
-// sim gap that isn't this fix's to close.
-TEST_CASE("pid_wait() DRIVE: sweep -- combos in the sim's known unmodeled-braking overshoot regime" * doctest::should_fail()) {
+// The combos listed in KNOWN_SIM_OVERSHOOT_COMBOS, run the identical way. This used to be
+// should_fail()-decorated (the way test_n5_stuck_floor.cpp still is for its own sim-caveat case),
+// documenting a known, pre-existing sim limitation instead of hiding it or blocking the suite on
+// a sim gap that wasn't this fix's to close. That limitation (sim_physics.hpp's MotorCurve::
+// torque_at() returning 0 instead of a negative/braking torque once a wheel outran its commanded
+// duty) has since been fixed directly in sim_physics.hpp, at which point a should_fail() test
+// that stops failing is itself a doctest failure ("Should have failed but didn't!"). These combos
+// now settle cleanly like every other combo in the sweep above, so this asserts that directly.
+TEST_CASE("pid_wait() DRIVE: sweep -- combos in the sim's since-fixed unmodeled-braking overshoot regime") {
   int combos = 0;
   for (const auto& c : KNOWN_SIM_OVERSHOOT_COMBOS) {
     for (bool noise_on : {false, true}) {
