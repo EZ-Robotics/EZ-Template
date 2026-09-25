@@ -913,8 +913,23 @@ void Drive::pid_wait_until(united_pose target) { pid_wait_until_point(target); }
 
 // wait for pp
 void Drive::pid_wait_until_index_started(int index) {
+  // Snapshotted before the settle delay below, not after: a concurrent motion setter can retarget
+  // the drive during this call's own first pros::delay(), before anything else has taken a baseline
+  // to compare against. Checking against a pre-delay snapshot catches that as a retarget instead of
+  // either silently treating the new motion as this call's own, or (since a cross-mode retarget away
+  // from PURE_PURSUIT would otherwise reach the mode check below first) misreporting it as this call
+  // never having been started in pure pursuit to begin with.
+  e_mode mode_snapshot = mode;
+  pose retarget_target = odom_target_start;
+
   // Let the PID run at least 1 iteration
   pros::delay(util::DELAY_TIME);
+
+  if (mode != mode_snapshot || odom_target_start.x != retarget_target.x || odom_target_start.y != retarget_target.y || odom_target_start.theta != retarget_target.theta) {
+    if (print_toggle) std::cout << "  XY: retargeted by a concurrent motion mid-wait, ending early instead of continuing on the wrong path.\n";
+    interfered = true;
+    return;
+  }
 
   // injected_pp_index and pp_index are only ever built/advanced for a pure pursuit path -- in any other mode
   // this function's own while condition (pp_index < injected_pp_index[index]) can never become false, and unlike
@@ -948,7 +963,21 @@ void Drive::pid_wait_until_index_started(int index) {
     return pp_index < (int)pp_movements.size() ? util::distance_to_point(pp_movements[pp_index].target, odom_pose_get()) : 0.0;
   };
   StuckWatch watch(xyPID, current_a_odomPID, pp_index, point_distance(), util::distance_to_point(odom_start, odom_pose_get()), std::fabs(odom_theta_get() - odom_start.theta));
+
+  // Same concurrent-retarget guard as pid_wait()'s odom branch -- this function had none, unlike every
+  // other public wait in this file. A concurrent pid_odom_*_set() from another task resets pp_index to 0
+  // and replaces injected_pp_index/pp_movements/odom_target_start with the new motion's, so without this
+  // check the while condition below (pp_index < injected_pp_index_snapshot[index], a threshold taken from
+  // the OLD motion) would just keep polling whatever path is live now and report a clean, uninterfered
+  // success once the NEW path's pp_index happens to climb back past that same number -- not the motion
+  // this call was actually started for. mode is watched too, for a concurrent setter from a non-PP mode.
+  // (mode_snapshot/retarget_target were already snapshotted before this call's own settle delay above.)
   while (pp_index < injected_pp_index_snapshot[index]) {
+    if (mode != mode_snapshot || odom_target_start.x != retarget_target.x || odom_target_start.y != retarget_target.y || odom_target_start.theta != retarget_target.theta) {
+      if (print_toggle) std::cout << "  XY: retargeted by a concurrent motion mid-wait, ending early instead of continuing on the wrong path.\n";
+      interfered = true;
+      break;
+    }
     secondary_velocity_sensor_update(xyPID);
     secondary_velocity_sensor_update(current_a_odomPID);
     xy_velocity_exit_hold_update();
@@ -980,7 +1009,23 @@ void Drive::pid_wait_until_index_started(int index) {
 }
 
 void Drive::pid_wait_until_index(int index) {
+  // Same concurrent-retarget guard as pid_wait_until_index_started() above, snapshotted before that call
+  // (before even its own settle delay) so a retarget noticed during it, or one that lands in the gap
+  // between it returning and this function reading pp_movements/injected_pp_index below, is caught either
+  // way. Without this, a stale call would go on to read pp_movements/injected_pp_index for whatever motion
+  // is current now -- not the one this call was started for -- and hand back a clean, silent success for
+  // the wrong path.
+  e_mode mode_snapshot = mode;
+  pose retarget_target = odom_target_start;
+
   pid_wait_until_index_started(index);
+
+  if (mode != mode_snapshot || odom_target_start.x != retarget_target.x || odom_target_start.y != retarget_target.y || odom_target_start.theta != retarget_target.theta) {
+    if (print_toggle) std::cout << "  XY: retargeted by a concurrent motion mid-wait, ending early instead of continuing on the wrong path.\n";
+    interfered = true;
+    return;
+  }
+
   index += 1;
   std::vector<int> injected_pp_index_snapshot;
   {
@@ -990,6 +1035,18 @@ void Drive::pid_wait_until_index(int index) {
   if (index < 0 || index >= (int)injected_pp_index_snapshot.size()) return;
   pose target = pp_movements[injected_pp_index_snapshot[index]].target;
   pid_wait_until_point(target);
+
+  // Re-checked against the SAME entry snapshot, after phase 2 too: pid_wait_until_point() takes its own
+  // baseline only after its own settle delay (see the comment on its guard), so a retarget landing in
+  // that specific window is invisible to its internal guard -- it would go on to poll xyPID/
+  // current_a_odomPID's error against `target`, a plain pose copy, while the PIDs themselves are now
+  // actually being driven by whatever motion retargeted them, and could report a clean, silent success
+  // for a motion this call was never waiting for. Comparing against the snapshot taken before phase 1
+  // above catches a retarget landing anywhere across the whole call, not just within phase 2's own loop.
+  if (mode != mode_snapshot || odom_target_start.x != retarget_target.x || odom_target_start.y != retarget_target.y || odom_target_start.theta != retarget_target.theta) {
+    if (print_toggle) std::cout << "  XY: retargeted by a concurrent motion mid-wait, ending early instead of finishing on the wrong path.\n";
+    interfered = true;
+  }
 }
 
 // Pid wait, but quickly :)
