@@ -14,6 +14,18 @@ using namespace ez;
 namespace {
 static constexpr int STUCK_START_ALLOWANCE_MS = 1000;  // PID::VELOCITY_ARM_FALLBACK, which is private
 static constexpr int STUCK_STARVED_WINDOWS = 4;
+// How close a wait_until() target has to be to the motion's actual final target to count as
+// literally the same target, not just a waypoint short of it -- used only to decide whether
+// wait_until_drive()/wait_until_turn_swing_internal() get the same "settled inside big error
+// counts as done" exemption pid_wait() already has (see those two functions' own comments).
+// There's no existing float-equality tolerance elsewhere in this codebase to match (the
+// concurrent-retarget guards next to this compare with exact !=, which is checking identity of
+// an unmodified double, not equality of two independently-computed target values); this is
+// picked instead to comfortably clear ordinary double round-trip error (e.g. target computed via
+// (a - b) + b, or through a QLength/QAngle unit conversion and back) while staying many orders of
+// magnitude tighter than any real waypoint a caller would intentionally place near the final
+// target -- inches/degrees are never meaningfully specified to this precision.
+static constexpr double FINAL_TARGET_TOLERANCE = 1e-6;
 std::uint32_t stuck_passes() { return ez::detail::stats.auto_task_passes.load(std::memory_order_relaxed); }
 double stuck_step(PID& pid) {
   if (pid.exit.small_error > 0) return pid.exit.small_error;
@@ -359,8 +371,14 @@ void Drive::pid_wait() {
       }
       secondary_velocity_sensor_update(leftPID);
       secondary_velocity_sensor_update(rightPID);
-      left_exit = left_exit != RUNNING ? left_exit : leftPID.exit_condition(left_motors);
-      right_exit = right_exit != RUNNING ? right_exit : rightPID.exit_condition(right_motors);
+      // A genuinely slow (not stalled) DRIVE cruise can read as "stopped" to the velocity channel --
+      // PID.cpp's velocity floor is a fixed constant, independent of gearing or wheel size, so a real,
+      // low-gearing drivetrain cruising under that floor is not stalled, just slow. Odom already filters
+      // this out (without_velocity(), above); DRIVE didn't. SingleStuckWatch (below) still catches a
+      // genuine stall independently -- it watches PID error, not velocity -- so filtering this out can't
+      // turn a real stall into a hang.
+      left_exit = left_exit != RUNNING ? left_exit : without_velocity(leftPID.exit_condition(left_motors));
+      right_exit = right_exit != RUNNING ? right_exit : without_velocity(rightPID.exit_condition(right_motors));
       bool left_stuck = left_exit == RUNNING && left_watch.stuck(leftPID.error);
       bool right_stuck = right_exit == RUNNING && right_watch.stuck(rightPID.error);
       // Stuck only when at least one side is still RUNNING and every side that's still RUNNING is stuck --
@@ -517,7 +535,9 @@ void Drive::pid_wait() {
         return;
       }
       secondary_velocity_sensor_update(turnPID);
-      turn_exit = turn_exit != RUNNING ? turn_exit : turnPID.exit_condition(both_sides(left_motors, right_motors));
+      // See the matching comment in the DRIVE branch above -- a slow (not stalled) turn must not be
+      // ended by the velocity channel alone.
+      turn_exit = turn_exit != RUNNING ? turn_exit : without_velocity(turnPID.exit_condition(both_sides(left_motors, right_motors)));
       if (turn_exit == RUNNING && watch.stuck(turnPID.error)) {
         // Same settled carve-out as the DRIVE branch above.
         bool settled = std::fabs(turnPID.error) < turnPID.exit.big_error;
@@ -552,7 +572,9 @@ void Drive::pid_wait() {
         return;
       }
       secondary_velocity_sensor_update(swingPID);
-      swing_exit = swing_exit != RUNNING ? swing_exit : swingPID.exit_condition(sensor);
+      // See the matching comment in the DRIVE branch above -- a slow (not stalled) swing must not be
+      // ended by the velocity channel alone.
+      swing_exit = swing_exit != RUNNING ? swing_exit : without_velocity(swingPID.exit_condition(sensor));
       if (swing_exit == RUNNING && watch.stuck(swingPID.error)) {
         // Same settled carve-out as the DRIVE branch above.
         bool settled = std::fabs(swingPID.error) < swingPID.exit.big_error;
@@ -608,6 +630,18 @@ void Drive::wait_until_drive(double target) {
   // error is measured against their frozen look-ahead target, not against `target`, so a healthy drive that has
   // simply driven past that near point reads to it as permanent non-progress and would be falsely flagged stuck.
   SingleStuckWatch left_watch(leftPID, is_odom ? l_error : leftPID.error), right_watch(rightPID, is_odom ? r_error : rightPID.error);
+
+  // Whether this wait_until()'s own target IS (not just near) the motion's actual final target, not
+  // some earlier waypoint the robot is meant to drive through. pid_wait()'s DRIVE branch already
+  // treats "the no-progress watch fired, but every side that's still RUNNING is already sitting
+  // inside its own big-error window" as settled, not stuck -- correct for a real final target,
+  // where stopping an inch short really is a normal settle, but that exemption was deliberately
+  // scoped away from this function, which is right for a genuine intermediate waypoint (stopping
+  // short there really should report interfered=true) but wrong for the common case where this
+  // wait_until()'s target IS the final target. Only DRIVE's own target already tracks the real
+  // motion (see is_odom's own comment above) -- an odom move's leftPID/rightPID target is a fixed
+  // look-ahead point, never the real final target, so this is unconditionally false for odom.
+  bool at_final_target = !is_odom && std::fabs(l_tar - leftPID.target_get()) < FINAL_TARGET_TOLERANCE && std::fabs(r_tar - rightPID.target_get()) < FINAL_TARGET_TOLERANCE;
 
   // Same concurrent-retarget guard as pid_wait()'s branches.  In DRIVE mode leftPID/rightPID's target only
   // changes on a real second pid_drive_set(), same as pid_wait()'s DRIVE branch.  In odom modes (this function
@@ -666,15 +700,26 @@ void Drive::wait_until_drive(double target) {
       if (left_exit == RUNNING || right_exit == RUNNING) {
         secondary_velocity_sensor_update(leftPID);
         secondary_velocity_sensor_update(rightPID);
-        if (left_exit == RUNNING) left_exit = is_odom ? without_position_exits(leftPID.exit_condition(left_motors)) : leftPID.exit_condition(left_motors);
-        if (right_exit == RUNNING) right_exit = is_odom ? without_position_exits(rightPID.exit_condition(right_motors)) : rightPID.exit_condition(right_motors);
+        // Non-odom (plain DRIVE): a slow (not stalled) cruise must not be ended by the velocity channel
+        // alone -- same reasoning as pid_wait()'s DRIVE branch. Odom's own on_last_point/look-ahead exit
+        // filtering above and below is untouched by this fix.
+        if (left_exit == RUNNING) left_exit = is_odom ? without_position_exits(leftPID.exit_condition(left_motors)) : without_velocity(leftPID.exit_condition(left_motors));
+        if (right_exit == RUNNING) right_exit = is_odom ? without_position_exits(rightPID.exit_condition(right_motors)) : without_velocity(rightPID.exit_condition(right_motors));
         bool left_stuck = left_exit == RUNNING && left_watch.stuck(is_odom ? l_error : leftPID.error);
         bool right_stuck = right_exit == RUNNING && right_watch.stuck(is_odom ? r_error : rightPID.error);
         // See the matching comment in pid_wait()'s DRIVE branch -- both sides exiting normally on the same pass
         // must not read as stuck.
         if ((left_exit == RUNNING || right_exit == RUNNING) && (left_exit != RUNNING || left_stuck) && (right_exit != RUNNING || right_stuck)) {
-          if (print_toggle) std::cout << "  Drive: Stuck Wait Until Exit Failsafe, triggered at " << drive_sensor_left() - l_start << " instead of " << target << "\n";
-          interfered = true;
+          // Same settled carve-out as pid_wait()'s DRIVE branch, gated to only apply when this
+          // wait_until()'s target really is the motion's final target -- see at_final_target's comment.
+          bool stalled = true;
+          if (at_final_target) {
+            bool left_settled = left_exit != RUNNING || std::fabs(leftPID.error) < leftPID.exit.big_error;
+            bool right_settled = right_exit != RUNNING || std::fabs(rightPID.error) < rightPID.exit.big_error;
+            stalled = !(left_settled && right_settled);
+          }
+          if (print_toggle) std::cout << "  Drive: " << (stalled ? "Stuck" : "Stuck, but stopped inside the big error windows, counted as settled") << " Wait Until Exit Failsafe, triggered at " << drive_sensor_left() - l_start << " instead of " << target << "\n";
+          if (stalled) interfered = true;
           return;
         }
         // No delay here -- the loop's own delay at the bottom already advances one DELAY_TIME per pass.  A second
@@ -725,6 +770,21 @@ void Drive::wait_until_turn_swing_internal(double target) {
   exit_output swing_exit = RUNNING;
 
   std::vector<pros::Motor>& sensor = current_swing == ez::LEFT_SWING ? left_motors : right_motors;
+
+  // Let the PID run at least 1 iteration before seeding the progress backstop from real error --
+  // matching pid_wait() and wait_until_drive(), both of which delay before constructing their own
+  // watch. Without this, a fresh Drive's very first turn or swing seeds SingleStuckWatch from a
+  // leftover/zero error instead of a real, computed one; the jump from that artifact to the real
+  // error then consumes Channel's one-shot rebound allowance (see Channel's own comment above) on
+  // an artifact instead of a real disturbance, so the wait's first genuine disturbance can get
+  // treated as a second one and false-stuck. g_error/g_sgn above are computed from a live read
+  // BEFORE this delay, on purpose -- they're this loop's "have we crossed the target" check, and
+  // reading them only after this delay would let a very short wait_until() target already be
+  // behind the robot by the time it's read, latching the wrong starting sign (see the matching
+  // comment in wait_until_drive() on why ITS crossed-check sign is taken from target's own sign
+  // instead, which sidesteps this same hazard a different way).
+  pros::delay(util::DELAY_TIME);
+
   // Same JC-1 progress backstop as pid_wait()'s TURN/SWING branches -- see the comment there.
   SingleStuckWatch turn_watch(turnPID, turnPID.error);
   SingleStuckWatch swing_watch(swingPID, swingPID.error);
@@ -736,6 +796,14 @@ void Drive::wait_until_turn_swing_internal(double target) {
   e_mode mode_snapshot = mode;
   double turn_target = turnPID.target_get();
   double swing_target = swingPID.target_get();
+
+  // Whether this wait_until()'s own target IS (not just near) the motion's actual final target --
+  // same reasoning as wait_until_drive()'s at_final_target (see its comment). TURN_TO_POINT is
+  // excluded: it recomputes its own aim point every pass from the point being faced, so turnPID's
+  // target isn't its real aim point the way it is for a plain TURN (see the retarget-guard comment
+  // above turn_set_internal()/this function's own precedent of treating TURN_TO_POINT differently).
+  bool turn_at_final_target = mode == TURN && std::fabs(target - turnPID.target_get()) < FINAL_TARGET_TOLERANCE;
+  bool swing_at_final_target = std::fabs(target - swingPID.target_get()) < FINAL_TARGET_TOLERANCE;
 
   while (true) {
     if (mode != mode_snapshot || turnPID.target_get() != turn_target || swingPID.target_get() != swing_target) {
@@ -752,10 +820,16 @@ void Drive::wait_until_turn_swing_internal(double target) {
       if (util::sgn(g_error) == g_sgn) {
         if (turn_exit == RUNNING) {
           secondary_velocity_sensor_update(turnPID);
-          turn_exit = turn_exit != RUNNING ? turn_exit : turnPID.exit_condition(both_sides(left_motors, right_motors));
+          // See the matching comment in pid_wait()'s DRIVE branch -- a slow (not stalled) turn must not
+          // be ended by the velocity channel alone.
+          turn_exit = turn_exit != RUNNING ? turn_exit : without_velocity(turnPID.exit_condition(both_sides(left_motors, right_motors)));
           if (turn_exit == RUNNING && turn_watch.stuck(turnPID.error)) {
-            if (print_toggle) std::cout << "  Turn: Stuck Wait Until Exit Failsafe, triggered at " << drive_angle_get() << " instead of " << target << "\n";
-            interfered = true;
+            // Same settled carve-out as pid_wait()'s TURN branch, gated to only apply when this
+            // wait_until()'s target really is the motion's final target -- see turn_at_final_target's
+            // comment above.
+            bool stalled = !turn_at_final_target || !(std::fabs(turnPID.error) < turnPID.exit.big_error);
+            if (print_toggle) std::cout << "  Turn: " << (stalled ? "Stuck" : "Stuck, but stopped inside the big error window, counted as settled") << " Wait Until Exit Failsafe, triggered at " << drive_angle_get() << " instead of " << target << "\n";
+            if (stalled) interfered = true;
             return;
           }
           // No delay here -- see the matching comment in wait_until_drive().
@@ -782,10 +856,16 @@ void Drive::wait_until_turn_swing_internal(double target) {
       if (util::sgn(g_error) == g_sgn) {
         if (swing_exit == RUNNING) {
           secondary_velocity_sensor_update(swingPID);
-          swing_exit = swing_exit != RUNNING ? swing_exit : swingPID.exit_condition(sensor);
+          // See the matching comment in pid_wait()'s DRIVE branch -- a slow (not stalled) swing must not
+          // be ended by the velocity channel alone.
+          swing_exit = swing_exit != RUNNING ? swing_exit : without_velocity(swingPID.exit_condition(sensor));
           if (swing_exit == RUNNING && swing_watch.stuck(swingPID.error)) {
-            if (print_toggle) std::cout << "  Swing: Stuck Wait Until Exit Failsafe, triggered at " << drive_angle_get() << " instead of " << target << "\n";
-            interfered = true;
+            // Same settled carve-out as pid_wait()'s SWING branch, gated to only apply when this
+            // wait_until()'s target really is the motion's final target -- see swing_at_final_target's
+            // comment above.
+            bool stalled = !swing_at_final_target || !(std::fabs(swingPID.error) < swingPID.exit.big_error);
+            if (print_toggle) std::cout << "  Swing: " << (stalled ? "Stuck" : "Stuck, but stopped inside the big error window, counted as settled") << " Wait Until Exit Failsafe, triggered at " << drive_angle_get() << " instead of " << target << "\n";
+            if (stalled) interfered = true;
             return;
           }
           // No delay here -- see the matching comment in wait_until_drive().
