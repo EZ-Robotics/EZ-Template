@@ -47,14 +47,17 @@ void hover_script() {
 // scripted convergence. g_stall_error is the (constant) distance from the stall position to the
 // motion's real final target, matching what turnPID/swingPID.error would read at that position.
 double g_stall_error = 0.0;
+// A real compute_error() call every pass, not a direct `.error =` write -- the big exit timer only
+// credits `error` when a real compute has landed since it last checked (see PID.cpp), so "held at a
+// fixed stall" has to mean a real compute repeatedly landing on the same value.
 void stalled_turn_pass() {
   ez::detail::stats.auto_task_passes.fetch_add(1);
-  g_chassis->turnPID.error = g_stall_error;
+  g_chassis->turnPID.compute_error(g_stall_error, 0.0);
   g_chassis->turnPID.derivative = 0.0;
 }
 void stalled_swing_pass() {
   ez::detail::stats.auto_task_passes.fetch_add(1);
-  g_chassis->swingPID.error = g_stall_error;
+  g_chassis->swingPID.compute_error(g_stall_error, 0.0);
   g_chassis->swingPID.derivative = 0.0;
 }
 }  // namespace

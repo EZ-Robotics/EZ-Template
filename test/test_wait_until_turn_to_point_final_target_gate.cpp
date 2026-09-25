@@ -32,20 +32,23 @@ Drive* g_chassis = nullptr;
 
 // Settles just inside small_error(3deg default) and stays there -- never crosses g_error's sign
 // (drive_angle_get(), the stub IMU heading, is never moved by this script), so the only way out is
-// turnPID's own exit_condition() latching.
+// turnPID's own exit_condition() latching. A real compute_error() call every pass, not a direct
+// `.error =` write -- the small exit timer only credits `error` when a real compute has landed since
+// it last checked (see PID.cpp).
 void settled_script() {
   ez::detail::stats.auto_task_passes.fetch_add(1);
-  g_chassis->turnPID.error = 0.5;
+  g_chassis->turnPID.compute_error(0.5, 0.0);
   g_chassis->turnPID.derivative = -0.1;
 }
 
 double g_aim = 0.0;
 double g_stall_at = 0.0;
 
-// Held fixed at g_stall_at the whole time -- a genuine stall, not scripted convergence.
+// Held fixed at g_stall_at the whole time -- a genuine stall, not scripted convergence. Same real-
+// compute-every-pass requirement as settled_script() above.
 void stalled_script() {
   ez::detail::stats.auto_task_passes.fetch_add(1);
-  g_chassis->turnPID.error = g_aim - g_stall_at;
+  g_chassis->turnPID.compute_error(g_aim - g_stall_at, 0.0);
   g_chassis->turnPID.derivative = 0.0;
 }
 }  // namespace
