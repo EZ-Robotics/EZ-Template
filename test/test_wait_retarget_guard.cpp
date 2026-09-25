@@ -261,6 +261,67 @@ TEST_CASE("wait_until_turn_swing_internal() SWING: a concurrent pid_swing_set() 
   CHECK(o.passes <= RETARGET_AT + GUARD_SLACK);
 }
 
+// ---- Round-4 regression: wait_until_turn_swing_internal() now runs one pros::delay() (to seed
+// SingleStuckWatch from a real first error instead of a leftover/zero one -- see that delay's own
+// comment) BEFORE mode_snapshot/turn_target/swing_target are captured. Every sibling wait with this
+// same "snapshot after the first settle delay" shape (pid_wait(), pid_wait_until_point(),
+// wait_until_drive()) has it documented as a known, accepted gap -- but THIS function used to take
+// its snapshot immediately, with no delay ahead of it at all, so it was never in that list. A
+// retarget landing in this new first delay (pass 1, not the RETARGET_AT=10 the tests above use) is
+// captured as this call's own baseline instead of being noticed as a retarget.
+constexpr int FIRST_DELAY_RETARGET_AT = 1;
+
+void turn_wait_until_retargeted_in_first_delay(Drive& c, int n) {
+  double e = std::fmax(0.0, 60.0 - 0.5 * n);
+  c.turnPID.error = e;
+  c.turnPID.derivative = e > 0.0 ? -0.5 : 0.0;
+  if (n == FIRST_DELAY_RETARGET_AT) c.pid_turn_set(150, 100);  // lands in the delay before the snapshot
+}
+
+void swing_wait_until_retargeted_in_first_delay(Drive& c, int n) {
+  double e = std::fmax(0.0, 45.0 - 0.4 * n);
+  c.swingPID.error = e;
+  c.swingPID.derivative = e > 0.0 ? -0.4 : 0.0;
+  if (n == FIRST_DELAY_RETARGET_AT) c.pid_swing_set(ez::RIGHT_SWING, 120, 100);  // lands in the delay before the snapshot
+}
+
+// Control: TURN_TO_POINT recomputes its own aim point every pass without ever touching turnPID's
+// stored target (see the matching comment on pid_wait()'s TURN/TURN_TO_POINT branch above), so
+// moving the snapshot earlier must not make an ordinary, un-retargeted turn-to-point wait
+// false-fire interfered just because nothing ever touched turnPID.target_get() to begin with.
+void turn_to_point_never_retargeted(Drive&, int) {}
+
+TEST_CASE("wait_until_turn_swing_internal() TURN: a concurrent pid_turn_set() landing in the function's own first settle delay ends the wait instead of finishing on the new target") {
+  Drive chassis = make_chassis();
+  chassis.pid_print_toggle(false);
+  chassis.pid_turn_set(90, 100);
+  Outcome o = run(chassis, turn_wait_until_retargeted_in_first_delay, 300, [&] { chassis.pid_wait_until(45.0); });
+  CHECK(o.returned);
+  CHECK(o.interfered);
+  CHECK(o.passes <= FIRST_DELAY_RETARGET_AT + GUARD_SLACK);
+}
+
+TEST_CASE("wait_until_turn_swing_internal() SWING: a concurrent pid_swing_set() landing in the function's own first settle delay ends the wait instead of finishing on the new target") {
+  Drive chassis = make_chassis();
+  chassis.pid_print_toggle(false);
+  chassis.pid_swing_set(ez::LEFT_SWING, 60, 100);
+  Outcome o = run(chassis, swing_wait_until_retargeted_in_first_delay, 300, [&] { chassis.pid_wait_until(30.0); });
+  CHECK(o.returned);
+  CHECK(o.interfered);
+  CHECK(o.passes <= FIRST_DELAY_RETARGET_AT + GUARD_SLACK);
+}
+
+TEST_CASE("wait_until_turn_swing_internal() TURN_TO_POINT: an ordinary, un-retargeted wait never false-fires interfered") {
+  Drive chassis = make_chassis();
+  DriveTestAccess::imu_calibration_complete(chassis) = true;
+  chassis.pid_print_toggle(false);
+  chassis.pid_turn_set({10.0, 0.0, 0.0}, fwd, 110);
+  REQUIRE(chassis.mode == TURN_TO_POINT);
+  Outcome o = run(chassis, turn_to_point_never_retargeted, 300, [&] { chassis.pid_wait(); });
+  CHECK(o.returned);
+  CHECK_FALSE(o.interfered);
+}
+
 // ---- pid_wait_until_point() had the identical total gap. ----
 TEST_CASE("pid_wait_until_point(): a concurrent pid_odom_ptp_set() mid-wait ends the wait instead of finishing on the new target") {
   Drive chassis = make_chassis();

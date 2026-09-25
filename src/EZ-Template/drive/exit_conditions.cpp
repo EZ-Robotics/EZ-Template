@@ -813,6 +813,29 @@ void Drive::wait_until_turn_swing_internal(double target) {
 
   std::vector<pros::Motor>& sensor = current_swing == ez::LEFT_SWING ? left_motors : right_motors;
 
+  // Same concurrent-retarget guard as pid_wait()'s TURN/SWING branches -- this function had none, unlike
+  // every other wait.  A concurrent pid_turn_set()/pid_turn_relative_set()/pid_swing_set() (or any other
+  // motion setter) mid-wait retargets turnPID/swingPID and moves mode along with it, so both the specific
+  // PID this call cares about and mode itself are snapshotted and checked every pass. Snapshotted here,
+  // BEFORE the settle delay below (not after it): a concurrent retarget landing during that delay would
+  // otherwise be captured as this call's own baseline instead of being noticed -- the same hazard
+  // pid_wait_until_index_started() guards against for its own settle delay (see its comment).
+  e_mode mode_snapshot = mode;
+  double turn_target = turnPID.target_get();
+  double swing_target = swingPID.target_get();
+
+  // Whether this wait_until()'s own target IS (not just near) the motion's actual final target --
+  // same reasoning as wait_until_drive()'s at_final_target (see its comment). Taken from turn_target/
+  // swing_target above (the same pre-delay snapshot the retarget guard uses), not a fresh target_get()
+  // call here, so this reflects this call's own original motion even if a retarget already landed in
+  // the delay below -- though the retarget guard returns before this value is ever consulted in that
+  // case anyway. TURN_TO_POINT is excluded: it recomputes its own aim point every pass from the point
+  // being faced, so turnPID's target isn't its real aim point the way it is for a plain TURN (see the
+  // retarget-guard comment above turn_set_internal()/this function's own precedent of treating
+  // TURN_TO_POINT differently).
+  bool turn_at_final_target = mode == TURN && std::fabs(target - turn_target) < FINAL_TARGET_TOLERANCE;
+  bool swing_at_final_target = std::fabs(target - swing_target) < FINAL_TARGET_TOLERANCE;
+
   // Let the PID run at least 1 iteration before seeding the progress backstop from real error --
   // matching pid_wait() and wait_until_drive(), both of which delay before constructing their own
   // watch. Without this, a fresh Drive's very first turn or swing seeds SingleStuckWatch from a
@@ -830,22 +853,6 @@ void Drive::wait_until_turn_swing_internal(double target) {
   // Same JC-1 progress backstop as pid_wait()'s TURN/SWING branches -- see the comment there.
   SingleStuckWatch turn_watch(turnPID, turnPID.error);
   SingleStuckWatch swing_watch(swingPID, swingPID.error);
-
-  // Same concurrent-retarget guard as pid_wait()'s TURN/SWING branches -- this function had none, unlike
-  // every other wait.  A concurrent pid_turn_set()/pid_turn_relative_set()/pid_swing_set() (or any other
-  // motion setter) mid-wait retargets turnPID/swingPID and moves mode along with it, so both the specific
-  // PID this call cares about and mode itself are snapshotted and checked every pass.
-  e_mode mode_snapshot = mode;
-  double turn_target = turnPID.target_get();
-  double swing_target = swingPID.target_get();
-
-  // Whether this wait_until()'s own target IS (not just near) the motion's actual final target --
-  // same reasoning as wait_until_drive()'s at_final_target (see its comment). TURN_TO_POINT is
-  // excluded: it recomputes its own aim point every pass from the point being faced, so turnPID's
-  // target isn't its real aim point the way it is for a plain TURN (see the retarget-guard comment
-  // above turn_set_internal()/this function's own precedent of treating TURN_TO_POINT differently).
-  bool turn_at_final_target = mode == TURN && std::fabs(target - turnPID.target_get()) < FINAL_TARGET_TOLERANCE;
-  bool swing_at_final_target = std::fabs(target - swingPID.target_get()) < FINAL_TARGET_TOLERANCE;
 
   while (true) {
     if (mode != mode_snapshot || turnPID.target_get() != turn_target || swingPID.target_get() != swing_target) {
