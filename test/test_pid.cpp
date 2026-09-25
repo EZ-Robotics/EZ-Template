@@ -11,11 +11,13 @@
 // run until the main sensor's derivative has exceeded its zero threshold once
 // (the robot has actually moved), so a robot that hasn't started moving yet is
 // not exited early.  After that it exits on the 6th genuinely fresh stationary
-// pass.  A raw reading that never changes at all no longer velocity-exits on
-// its own, even past the 1000 ms fallback window -- a caller relying on this
-// exit to bound a permanently frozen sensor (whether that's a real, full stall
-// or the sensor just never refreshing) needs its own progress backstop; see
-// the DRIVE/TURN/SWING wait level's SingleStuckWatch for that.
+// pass.  A raw reading that stays bit-identical for a short while is still
+// treated as a possible stale re-read and ignored, the same as before -- but
+// once it's stayed bit-identical for longer than any real sensor could
+// plausibly take to refresh, further repeats of it count as fresh,
+// zero-velocity samples, so a genuinely, permanently stalled bare PID (a lift,
+// claw, catapult -- the mechanisms with no StuckWatch/SingleStuckWatch
+// backstop the way Drive's own waits have) still exits instead of hanging.
 // timers_reset() disarms.  The secondary sensor is gated by the same flag.
 // A non-finite secondary reading (no imu, or before the first update) never counts as stopped.
 // velocity_exit_hold freezes both velocity timers while true, but only for up to
@@ -302,22 +304,159 @@ TEST_CASE("PID velocity exit does not fire while the raw sensor is frozen mid-mo
   CHECK(result == VELOCITY_EXIT);
 }
 
-TEST_CASE("PID velocity exit does not fire on a raw reading that never changes, even past the fallback window") {
-  // A raw value that is bit-identical to itself, tick after tick, is indistinguishable from a
-  // stale re-read using the raw value alone -- there's no way to tell "the robot never moved"
-  // from "the sensor never refreshed". This exit no longer fires from that alone; the DRIVE/TURN/
-  // SWING wait level's own progress backstop (SingleStuckWatch, a wall-clock fallback that
-  // doesn't depend on any sensor reading) is what bounds this case now -- see "a raw sensor that
-  // never changes at all is still caught" in test_jc1_non_odom_stuck.cpp.
+TEST_CASE("PID velocity exit does not fire on a short run of repeated readings") {
+  // A raw value that briefly repeats itself, tick after tick, is indistinguishable from a stale
+  // re-read using the raw value alone -- there's no way to tell "the robot stopped" from "the
+  // sensor hasn't refreshed yet" this early. Short runs like this (see also the "healthy motion
+  // whose sensor only refreshes every other poll" and "frozen mid-motion" tests above, which run
+  // this same shape for up to 800ms while real motion continues underneath) must still be ignored
+  // rather than counted as a stall.
   PID pid;
   pid.exit_condition_set(0, 0, 0, 0, 50, 0);
-  // No motion, ever: the raw value never changes from its starting 0.0.
 
-  for (int pass = 1; pass <= 200; pass++) {
+  pid.compute_error(10.0, 1.0);  // one real jump: arms
+  CHECK(pid.exit_condition() == RUNNING);
+
+  // 50 consecutive repeats of the same raw value -- comfortably inside the staleness window --
+  // must not be read as a stall.
+  for (int pass = 1; pass <= 50; pass++) {
     INFO("pass ", pass);
-    pid.compute_error(10.0, 0.0);
+    pid.compute_error(10.0, 1.0);
     CHECK(pid.exit_condition() == RUNNING);
   }
+
+  // Genuine, fresh motion afterward is unaffected: a short stale run doesn't secretly advance the
+  // stall timer, so this still takes the normal 6 fresh stationary passes to exit.
+  bool toggle = false;
+  for (int pass = 1; pass < 6; pass++) {
+    dither_tick(pid, 10.0, toggle, 1.0);
+    CHECK(pid.exit_condition() == RUNNING);
+  }
+  dither_tick(pid, 10.0, toggle, 1.0);
+  CHECK(pid.exit_condition() == VELOCITY_EXIT);
+}
+
+TEST_CASE("PID velocity exit eventually fires on a raw reading that never changes, once it's stayed that way far longer than any real sensor gap") {
+  // Unlike a short run, a raw value that stays bit-identical for far longer than a real sensor
+  // could plausibly take to refresh is no longer distinguishable from a genuine, permanent stall
+  // (jammed against a hard stop) -- this is exactly the case a bare ez::PID with no other progress
+  // backstop (a lift, claw, catapult; unlike Drive's own waits, which StuckWatch/SingleStuckWatch
+  // back up independently -- see "a raw sensor that never changes at all is still caught" in
+  // test_jc1_non_odom_stuck.cpp) previously had no way to exit from. Past the staleness window,
+  // further repeats of the same reading count as fresh, zero-velocity samples, so the ordinary
+  // velocity_exit_time countdown can run and this exits instead of hanging forever.
+  PID pid;
+  pid.exit_condition_set(0, 0, 0, 0, 50, 0);
+  pid.compute_error(10.0, 1.0);  // one real jump: arms
+  CHECK(pid.exit_condition() == RUNNING);
+
+  int pass = 0;
+  exit_output result = RUNNING;
+  while (result == RUNNING) {
+    pass++;
+    REQUIRE(pass <= 200);
+    pid.compute_error(10.0, 1.0);  // the raw value never moves again from here on
+    result = pid.exit_condition();
+  }
+  // Doesn't fire before the staleness window itself has elapsed (roughly 100 passes at 10ms
+  // each), and doesn't take dramatically longer than staleness + velocity_exit_time either.
+  CHECK(pass >= 100);
+  CHECK(pass <= 115);
+  CHECK(result == VELOCITY_EXIT);
+}
+
+TEST_CASE("PID velocity exit does not fire on a genuinely slow motion whose raw reading changes just inside the staleness window") {
+  // What could go wrong with judging a stall by duration alone: a mechanism moving genuinely
+  // slowly (not stalled) could have its raw reading go unchanged for a while without actually
+  // being stopped. As long as it changes again -- by more than jitter, comfortably above
+  // velocity_zero_main -- before the staleness window elapses, it must keep reading as healthy,
+  // never as stopped, no matter how many times that repeats.
+  PID pid;
+  pid.exit_condition_set(0, 0, 0, 0, 50, 0);
+
+  double position = 0.0;
+  pid.compute_error(10.0, position);  // arms
+  CHECK(pid.exit_condition() == RUNNING);
+
+  for (int step = 0; step < 3; step++) {
+    for (int pass = 1; pass <= 90; pass++) {  // 900ms of repeats, inside the 1000ms staleness window
+      INFO("step ", step, " pass ", pass);
+      pid.compute_error(10.0, position);
+      CHECK(pid.exit_condition() == RUNNING);
+    }
+    position += 0.1;  // a genuine, if slow, step -- well above velocity_zero_main's 0.05
+    pid.compute_error(10.0, position);
+    CHECK(pid.exit_condition() == RUNNING);
+  }
+}
+
+TEST_CASE("PID raw-value staleness is frozen while velocity_exit_hold is set, not secretly advancing") {
+  PID pid;
+  pid.exit_condition_set(0, 0, 0, 0, 50, 0);
+  pid.compute_error(10.0, 1.0);  // arms
+  CHECK(pid.exit_condition() == RUNNING);
+
+  pid.velocity_exit_hold_set(true);
+  // 1500ms of a frozen raw value, well past the 1000ms staleness window, all held -- must not
+  // fire while held, the same as k/m are frozen (see velocity_exit_hold_set()'s doc).
+  for (int pass = 1; pass <= 150; pass++) {
+    INFO("held pass ", pass);
+    pid.compute_error(10.0, 1.0);
+    CHECK(pid.exit_condition() == RUNNING);
+  }
+  pid.velocity_exit_hold_set(false);
+
+  // Resuming behaves like a freshly-armed stall from here, not like the staleness window had
+  // already secretly elapsed while held -- it still takes the full staleness window plus
+  // velocity_exit_time to fire, not a handful of passes.
+  int pass = 0;
+  exit_output result = RUNNING;
+  while (result == RUNNING) {
+    pass++;
+    REQUIRE(pass <= 150);
+    pid.compute_error(10.0, 1.0);
+    result = pid.exit_condition();
+  }
+  CHECK(pass >= 100);
+  CHECK(result == VELOCITY_EXIT);
+}
+
+TEST_CASE("PID timers_reset clears the raw-value staleness streak for the next motion") {
+  // A new motion can happen to start reading the exact same raw value as where the previous one
+  // left off (e.g. a lift that always re-arms from the same physical position, or simply hasn't
+  // been touched between calls). Without clearing the staleness streak here, the leftover time
+  // from the old motion's frozen stretch would carry straight into the new motion's own repeats
+  // and cross the staleness window far earlier than a fresh motion should.
+  PID pid;
+  pid.exit_condition_set(0, 0, 0, 0, 50, 0);
+
+  pid.compute_error(10.0, 1.0);  // first motion arms
+  CHECK(pid.exit_condition() == RUNNING);
+  for (int pass = 1; pass <= 90; pass++) {  // 900ms, just inside the staleness window
+    pid.compute_error(10.0, 1.0);
+    CHECK(pid.exit_condition() == RUNNING);
+  }
+
+  pid.timers_reset();  // a new motion starts
+
+  // The next reading is the exact same 1.0 as before the reset, so its own derivative reads 0 --
+  // not a real jump -- and this motion only arms via the 1000ms "hasn't moved" fallback, same as
+  // any other motion that starts out reading a constant value. With the streak properly cleared,
+  // that fallback arming (~pass 101) plus a fresh staleness window (~1000ms) plus
+  // velocity_exit_time (50ms) takes until roughly pass 207 to exit. If the streak carried over
+  // instead, arming would still land around pass 101, but the leftover ~900ms would push the
+  // staleness window over by roughly pass 111, exiting by ~pass 116. Staying RUNNING at least to
+  // pass 150 is real proof the streak was cleared, not just that fallback arming happened at all.
+  int pass = 0;
+  exit_output result = RUNNING;
+  while (result == RUNNING) {
+    pass++;
+    REQUIRE(pass <= 230);
+    pid.compute_error(10.0, 1.0);  // the exact same raw value as before the reset
+    result = pid.exit_condition();
+  }
+  CHECK(pass >= 150);
+  CHECK(result == VELOCITY_EXIT);
 }
 
 TEST_CASE("PID velocity exit does not fire when checked slower than a sensor that refreshes every other tick") {

@@ -83,8 +83,13 @@ class PID {
    * \param p_big_error
    *        sets big_error, timer will start when error is within this
    * \param p_velocity_exit_time
-   *        sets velocity_exit_time, timer will start when velocity is 0 after the robot has moved.
-   *        If the robot never moves, it starts after 1 second.
+   *        sets velocity_exit_time, timer for the sensor to read as stopped before exiting.  Starts once
+   *        the mechanism has moved (or after 1 second, if it never does).  "Stopped" is normally judged
+   *        from the derivative between fresh sensor readings, but a raw reading that stays bit-for-bit
+   *        identical for far longer than a real sensor could plausibly take to refresh is treated as
+   *        stopped too, so a mechanism that's genuinely, permanently stalled -- jammed against a hard
+   *        stop, sensor and all -- still exits instead of hanging forever on a reading that can never
+   *        move again.
    * \param p_mA_timeout
    *        sets mA_timeout, time the motor can be over its current limit before exiting.  Only checked by the exit_condition overloads that take a motor or motors.
    */
@@ -352,13 +357,40 @@ class PID {
   // count it: a single blip read twice looks like two consecutive misses and clears k. A tick that
   // fails this check -- the sensor hasn't produced a new sample, whether its own refresh rate is
   // slower than the poll rate or the robot is genuinely, fully stopped (those two are
-  // indistinguishable from the raw value alone) -- must not count as evidence toward or against a
-  // stall: k/k_miss are left exactly where they are. Tracked against what THIS check last saw
-  // (updated only in exit_condition()), not raw_compute()'s own prev_current, which is what makes
-  // the polling-faster case above actually get caught. k_prev_checked starts NaN so the very first
+  // indistinguishable from the raw value alone) -- does not, by itself, count as evidence toward
+  // or against a stall on this check: k/k_miss are left exactly where they are here. (See
+  // k_unchanged_time below for what eventually does resolve the "slower sensor or fully stopped"
+  // ambiguity, once the raw value has gone unchanged for long enough that "slower sensor" stops
+  // being a plausible explanation.) Tracked against what THIS check last saw (updated only in
+  // exit_condition()), not raw_compute()'s own prev_current, which is what makes the
+  // polling-faster case above actually get caught. k_prev_checked starts NaN so the very first
   // check always passes the raw-value half (NaN compares unequal to everything, including itself);
   // it still needs a nonzero derivative too, same as every later check.
   double k_prev_checked = std::numeric_limits<double>::quiet_NaN();
+  // How long the main channel's raw reading has read bit-for-bit identical to itself, in a row.
+  // Resets to 0 the instant the raw value changes (regardless of what the derivative says that
+  // tick -- see k_prev_checked above); otherwise climbs by DELAY_TIME every check. Exists because
+  // "the raw value hasn't changed" is ambiguous on its own between a sensor that refreshes slower
+  // than the poll rate (not stalled -- see k_prev_checked above) and a mechanism that's genuinely,
+  // permanently stopped (jammed against a hard stop): the raw-value comparison alone can't tell
+  // those apart on any single check, but a slower-than-poll-rate sensor still refreshes eventually,
+  // while a genuine stall never does. Once this has run past VELOCITY_STALE_TIMEOUT without the
+  // raw value ever changing -- AND derivative genuinely reads exactly 0, which real compute()/
+  // compute_error() calls always produce once cur stops changing (see raw_compute()) -- "slower
+  // sensor" stops being a credible explanation and exit_condition() starts treating further repeats
+  // of that same reading as fresh, zero-velocity samples -- see its use there. Only meaningful while
+  // armed (this only updates inside that gate, same as k_prev_checked), so it freezes during a
+  // velocity_exit_hold and is cleared by timers_reset() for the next motion, same as every other
+  // exit-condition timer.
+  int k_unchanged_time = 0;
+  // How long a raw reading can stay unchanged before it stops being read as a slow sensor and
+  // starts being read as a stopped mechanism (see k_unchanged_time above). Comfortably above one
+  // V5 sensor's refresh period (10ms) plus realistic poll jitter -- a healthy sensor should never
+  // sit bit-identical this long on its own -- while still short enough that a genuinely stalled
+  // bare-PID mechanism (a lift, claw, catapult -- see exit_condition_set()'s p_velocity_exit_time
+  // doc) exits in a reasonable total time once velocity_exit_time is added on top. Internal only:
+  // deliberately not exposed as a constructor or setter parameter.
+  static constexpr int VELOCITY_STALE_TIMEOUT = 1000;
   int arm_timer = 0;
   bool velocity_armed = false;
   static constexpr int VELOCITY_ARM_FALLBACK = 1000;
