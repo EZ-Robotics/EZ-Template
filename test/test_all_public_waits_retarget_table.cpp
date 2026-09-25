@@ -22,11 +22,15 @@
 //      waiting for. A parallel set of control rows scripts no retarget at all, to prove the same
 //      guard doesn't false-fire on a motion nothing has touched.
 //
-// Known gap this table does not exercise: pid_wait(), pid_wait_until_point(), and wait_until_drive()
-// (reached through pid_wait_until(double/QLength) and pid_wait_quick() in DRIVE mode) each take
-// their own retarget-detection snapshot AFTER their first settle delay, not before it -- so a retarget
-// landing during that specific first delay is invisible to them. See the notes this file's commit
-// shipped with for the reproduction and the affected functions; it is not fixed here.
+// Known gap this table does not exercise: pid_wait_until_point() takes its own retarget-detection
+// snapshot AFTER its first settle delay, not before it -- so a retarget landing during that specific
+// first delay is invisible to it. It is not fixed here; see its own tracked gap.
+// pid_wait() and wait_until_drive() (reached through pid_wait_until(double/QLength) and
+// pid_wait_quick() in DRIVE mode) had this identical shape and are now fixed to snapshot before
+// their own leading delay -- see test_wait_retarget_before_first_delay.cpp for that repro. This
+// table's own rows below only ever retarget mid-loop (after each function's snapshot is already
+// taken), which every public wait already caught before that fix and still does -- the first-delay
+// window itself needs the timing test_wait_retarget_before_first_delay.cpp has, not a table row.
 #include <fstream>
 #include <regex>
 #include <set>

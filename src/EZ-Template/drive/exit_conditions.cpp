@@ -338,8 +338,28 @@ void Drive::pid_odom_turn_exit_condition_set(ez::QTime p_small_exit_time, ez::QA
 
 // User wrapper for exit condition
 void Drive::pid_wait() {
+  // Snapshotted BEFORE the leading settle delay below, not after: every branch this function can
+  // run (DRIVE/odom/TURN/SWING) decides which one even runs from `mode` read fresh once the delay
+  // ends, so a concurrent motion setter from a DIFFERENT mode landing during this delay is
+  // invisible to a snapshot taken afterward -- that snapshot already reflects the new mode, so this
+  // call silently runs the wrong branch entirely (with that branch's own internal retarget guard
+  // then comparing the hijacking motion against itself) instead of ending the wait it was actually
+  // started for. DRIVE's own left/right targets are snapshotted here too, for the same reason:
+  // DRIVE's own mid-loop guard below compares against these, and they need to reflect the motion
+  // this call actually started for, not whatever a same-mode retarget already landed during this
+  // same delay.
+  e_mode entry_mode_snapshot = mode;
+  double entry_left_target = leftPID.target_get();
+  double entry_right_target = rightPID.target_get();
+
   // Let the PID run at least 1 iteration
   pros::delay(util::DELAY_TIME);
+
+  if (mode != entry_mode_snapshot) {
+    if (print_toggle) std::cout << "  Drive: retargeted by a concurrent motion during the wait's own first pass, ending early instead of running the wrong branch.\n";
+    interfered = true;
+    return;
+  }
 
   if (mode == DRIVE) {
     exit_output left_exit = RUNNING;
@@ -353,9 +373,9 @@ void Drive::pid_wait() {
     // also watched: a concurrent setter from a DIFFERENT mode (e.g. pid_turn_set() while this is waiting on
     // DRIVE) doesn't touch leftPID/rightPID's target at all, so without this it would go unnoticed, freezing
     // this wait's view of the abandoned motion instead of ending it.
-    e_mode mode_snapshot = mode;
-    double left_target = leftPID.target_get();
-    double right_target = rightPID.target_get();
+    e_mode mode_snapshot = entry_mode_snapshot;
+    double left_target = entry_left_target;
+    double right_target = entry_right_target;
     // DRIVE has no odometry to fall back on, so this is the same progress backstop StuckWatch gives odom waits,
     // built around each side's own error instead: neither velocity nor mA catches a sustained disturbance that
     // never reads as "stopped" and never draws over current (a continuous spin, a defender holding the robot,
@@ -684,13 +704,36 @@ void Drive::pid_wait() {
 }
 
 void Drive::wait_until_drive(double target) {
-  pros::delay(10);
-
-  // Make sure mode is correct
+  // Make sure mode is correct -- checked, and the retarget-detection snapshot below taken, BEFORE
+  // the leading settle delay: a concurrent motion setter changing mode or retargeting during that
+  // delay must be caught by the loop's own guard on its very first pass, not read afterward as
+  // already-the-new-motion (silently adopting it) or as the wrong mode (returning with no
+  // interfered signal at all) -- the same hazard wait_until_turn_swing_internal() and
+  // pid_wait_until_index_started() are already fixed for.
   if (!(mode == DRIVE || mode == POINT_TO_POINT || mode == PURE_PURSUIT)) {
     printf("Mode needs to be drive!\n");
     return;
   }
+  // An odom move's leftPID/rightPID target is a fixed look-ahead point set once at the start of the motion (see
+  // without_position_exits()'s comment above); a plain DRIVE move's leftPID/rightPID target already is the real
+  // drive target.  Only the odom case needs the exit-condition filtering and the real-distance-keyed backstop below
+  // -- DRIVE's own target already tracks what this wait is actually waiting for.
+  bool is_odom = mode == POINT_TO_POINT || mode == PURE_PURSUIT;
+  // Same concurrent-retarget guard as pid_wait()'s branches.  In DRIVE mode leftPID/rightPID's target only
+  // changes on a real second pid_drive_set(), same as pid_wait()'s DRIVE branch.  In odom modes (this function
+  // also runs for POINT_TO_POINT/PURE_PURSUIT) leftPID/rightPID's target is the fixed look-ahead point and
+  // legitimately gets rewritten on every ordinary waypoint advance (raw_pid_odom_ptp_set(), set_odom_pid.cpp),
+  // so odom_target_start -- only touched by a top-level odom setter starting a genuinely new motion -- is used
+  // instead, the same as pid_wait()'s odom branch.  mode is watched on top of both: a concurrent setter from a
+  // mode that isn't even DRIVE/POINT_TO_POINT/PURE_PURSUIT (e.g. a real second pid_turn_set()) touches neither
+  // leftPID/rightPID's target nor odom_target_start, so without this it would go unnoticed.
+  e_mode mode_snapshot = mode;
+  bool odom_mode = is_odom;
+  double left_target = leftPID.target_get();
+  double right_target = rightPID.target_get();
+  pose retarget_target = odom_target_start;
+
+  pros::delay(10);
 
   // Calculate error between current and target (target needs to be an in between position)
   double l_tar = l_start + target;
@@ -705,12 +748,6 @@ void Drive::wait_until_drive(double target) {
   // target, so both are expected to close from the same direction.
   int l_sgn = util::sgn(target);
   int r_sgn = l_sgn;
-
-  // An odom move's leftPID/rightPID target is a fixed look-ahead point set once at the start of the motion (see
-  // without_position_exits()'s comment above); a plain DRIVE move's leftPID/rightPID target already is the real
-  // drive target.  Only the odom case needs the exit-condition filtering and the real-distance-keyed backstop below
-  // -- DRIVE's own target already tracks what this wait is actually waiting for.
-  bool is_odom = mode == POINT_TO_POINT || mode == PURE_PURSUIT;
 
   exit_output left_exit = RUNNING;
   exit_output right_exit = RUNNING;
@@ -732,21 +769,11 @@ void Drive::wait_until_drive(double target) {
   // wait_until()'s target IS the final target. Only DRIVE's own target already tracks the real
   // motion (see is_odom's own comment above) -- an odom move's leftPID/rightPID target is a fixed
   // look-ahead point, never the real final target, so this is unconditionally false for odom.
-  bool at_final_target = !is_odom && std::fabs(l_tar - leftPID.target_get()) < FINAL_TARGET_TOLERANCE && std::fabs(r_tar - rightPID.target_get()) < FINAL_TARGET_TOLERANCE;
-
-  // Same concurrent-retarget guard as pid_wait()'s branches.  In DRIVE mode leftPID/rightPID's target only
-  // changes on a real second pid_drive_set(), same as pid_wait()'s DRIVE branch.  In odom modes (this function
-  // also runs for POINT_TO_POINT/PURE_PURSUIT) leftPID/rightPID's target is the fixed look-ahead point and
-  // legitimately gets rewritten on every ordinary waypoint advance (raw_pid_odom_ptp_set(), set_odom_pid.cpp),
-  // so odom_target_start -- only touched by a top-level odom setter starting a genuinely new motion -- is used
-  // instead, the same as pid_wait()'s odom branch.  mode is watched on top of both: a concurrent setter from a
-  // mode that isn't even DRIVE/POINT_TO_POINT/PURE_PURSUIT (e.g. a real second pid_turn_set()) touches neither
-  // leftPID/rightPID's target nor odom_target_start, so without this it would go unnoticed.
-  e_mode mode_snapshot = mode;
-  bool odom_mode = mode == POINT_TO_POINT || mode == PURE_PURSUIT;
-  double left_target = leftPID.target_get();
-  double right_target = rightPID.target_get();
-  pose retarget_target = odom_target_start;
+  // Derived from left_target/right_target above (the same pre-delay snapshot the retarget guard
+  // uses), not a fresh target_get() call here, so this reflects this call's own original motion
+  // even if a retarget already landed in the delay above -- though the retarget guard's first pass
+  // returns before this value is ever consulted in that case anyway.
+  bool at_final_target = !is_odom && std::fabs(l_tar - left_target) < FINAL_TARGET_TOLERANCE && std::fabs(r_tar - right_target) < FINAL_TARGET_TOLERANCE;
 
   while (true) {
     if (mode != mode_snapshot) {
