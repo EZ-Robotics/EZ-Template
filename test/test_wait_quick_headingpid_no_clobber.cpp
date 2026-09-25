@@ -66,13 +66,13 @@ double g_pass1_heading_after_retarget = 0.0;
 // Lands during pid_wait_until_point()'s OWN first pros::delay(10) -- before it has taken any baseline
 // of its own. The new motion's errors are zeroed here too, so its exit conditions read as already
 // satisfied the moment the inner wait's post-delay snapshot and first check run.
+// A real compute_error() call, not a direct `.error =` write -- small_exit_time=0 on the new motion
+// only needs ONE real compute to fire the instant it's checked (see PID.cpp's freshness gate).
 void on_delay_pass1_retarget() {
   if (g_pass1_retargeted) return;
   g_chassis->pid_odom_ptp_set({{0.0, 90.0, 45.0}, fwd, 100});
-  g_chassis->xyPID.error = 0.0;
-  g_chassis->xyPID.derivative = 0.0;
-  g_chassis->current_a_odomPID.error = 0.0;
-  g_chassis->current_a_odomPID.derivative = 0.0;
+  g_chassis->xyPID.compute_error(0.0, 0.0);
+  g_chassis->current_a_odomPID.compute_error(0.0, 0.0);
   g_pass1_heading_after_retarget = g_chassis->headingPID.target_get();
   g_pass1_retargeted = true;
 }
@@ -193,10 +193,10 @@ TEST_CASE("pid_wait_quick() on point-to-point still sets headingPID to the final
   chassis.pid_odom_drive_exit_condition_set(0, 1.0, 250, 3.0, 500, 750);  // small_exit_time=0: fires on the first in-tolerance pass
   chassis.pid_odom_turn_exit_condition_set(0, 3.0, 250, 7.0, 500, 750);
   chassis.pid_odom_ptp_set({{0.0, 24.0, 45.0}, fwd, 100});
-  chassis.xyPID.error = 0.0;
-  chassis.xyPID.derivative = 0.0;
-  chassis.current_a_odomPID.error = 0.0;
-  chassis.current_a_odomPID.derivative = 0.0;
+  // A real compute_error() call, not a direct `.error =` write -- small_exit_time=0 only needs ONE
+  // real compute to fire on the wait's first check (see PID.cpp's freshness gate).
+  chassis.xyPID.compute_error(0.0, 0.0);
+  chassis.current_a_odomPID.compute_error(0.0, 0.0);
 
   test_stub::g_clock.on_delay = nullptr;
   test_stub::g_clock.delay_calls_until_stop = 50;

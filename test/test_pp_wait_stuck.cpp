@@ -66,15 +66,15 @@ Pass (*g_script)(int) = nullptr;
 
 void apply(const Pass& p) {
   Drive& c = *g_chassis;
-  c.xyPID.error = p.xy_error;
-  c.xyPID.derivative = p.xy_rate;
-  // Also drive the raw reading itself, not just derivative -- a rate of 0 (pinned) should leave
-  // the raw value genuinely unchanged (a real stale/stalled reading), and a nonzero rate should
-  // genuinely advance it, matching what a real sensor would report tick to tick.
-  c.xyPID.cur += p.xy_rate;
-  c.current_a_odomPID.error = p.a_error;
-  c.current_a_odomPID.derivative = p.a_rate;
-  c.current_a_odomPID.cur += p.a_rate;
+  // A real compute_error() call, not direct `.error =`/`.derivative =` writes: the small/big exit
+  // timers only credit `error` when a real compute has landed since they last checked (see
+  // PID.cpp) -- ez_auto_task's own scripted heartbeat above is the natural place for it. Feeding
+  // compute_error() the same incremented `cur` the old code wrote directly reproduces the exact
+  // same derivative (current - prev_current) as before: a rate of 0 (pinned) still leaves the raw
+  // reading genuinely unchanged, and a nonzero rate still genuinely advances it, matching what a
+  // real sensor would report tick to tick.
+  c.xyPID.compute_error(p.xy_error, c.xyPID.cur + p.xy_rate);
+  c.current_a_odomPID.compute_error(p.a_error, c.current_a_odomPID.cur + p.a_rate);
   c.left_motors[0].fake().over_current = p.over_current;
   c.right_motors[0].fake().over_current = p.over_current;
   int& idx = DriveTestAccess::pp_index(c);

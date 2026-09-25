@@ -18,8 +18,13 @@ Drive make_chassis() {
 Drive* g_chassis = nullptr;
 
 void hold_errors() {
-  g_chassis->xyPID.error = 0.5;              // inside xy's small_error(1.0) throughout
-  g_chassis->current_a_odomPID.error = 0.0;  // always inside angle's (huge) small_error
+  // A real compute_error() call every pass, not a direct `.error =` write -- the small exit timer
+  // this test is pinning only credits `error` when a real compute has landed since it last checked
+  // (see PID.cpp), so the accumulation this test relies on needs a real compute behind it, the same
+  // as a real ez_auto_task pass would provide. `current` held fixed is fine here (nothing in this
+  // test reads derivative).
+  g_chassis->xyPID.compute_error(0.5, g_chassis->xyPID.cur);              // inside xy's small_error(1.0) throughout
+  g_chassis->current_a_odomPID.compute_error(0.0, g_chassis->current_a_odomPID.cur);  // always inside angle's (huge) small_error
 }
 
 void start_single_point_path(Drive& chassis, double y) {

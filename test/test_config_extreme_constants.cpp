@@ -16,13 +16,15 @@ using namespace ez;
 TEST_CASE("PID: small_error wider than the actual motion gives a near-instant SMALL_EXIT") {
   PID pid;
   pid.exit_condition_set(10, 500.0, 0, 0);  // small_error (500) far exceeds any real motion
-  pid.error = 24.0;                         // a real, substantial remaining distance
 
+  // A real compute_error() call every pass, not a direct `.error =` write -- the small exit timer
+  // only credits `error` when a real compute has landed since it last checked (see PID.cpp).
   int pass = 0;
   exit_output result = RUNNING;
   while (result == RUNNING) {
     pass++;
     REQUIRE(pass <= 5);  // don't hang the suite if this regresses
+    pid.compute_error(24.0, 0.0);  // a real, substantial remaining distance
     result = pid.exit_condition();
   }
   CHECK(result == SMALL_EXIT);
@@ -32,13 +34,13 @@ TEST_CASE("PID: small_error wider than the actual motion gives a near-instant SM
 TEST_CASE("PID: big_error wider than the actual motion gives a near-instant BIG_EXIT") {
   PID pid;
   pid.exit_condition_set(10, 0.001, 20, 500.0);  // big_error (500) far exceeds any real motion
-  pid.error = 24.0;
 
   int pass = 0;
   exit_output result = RUNNING;
   while (result == RUNNING) {
     pass++;
     REQUIRE(pass <= 5);
+    pid.compute_error(24.0, 0.0);
     result = pid.exit_condition();
   }
   CHECK(result == BIG_EXIT);

@@ -49,24 +49,31 @@ void dither_tick(PID& pid, double error, bool& toggle, double base, double ampli
 TEST_CASE("PID BIG_EXIT after 26 passes at a held 2in error, never SMALL_EXIT") {
   PID pid;
   pid.exit_condition_set(90, 1.0, 250, 3.0);
-  pid.error = 2.0;  // within big_error (3), outside small_error (1)
 
+  // A real compute_error() call every pass, not a direct `.error =` write: the small/big exit timers
+  // only credit `error` when a real compute has landed since the last check (see PID.cpp), so a "held"
+  // error has to mean a real compute repeatedly landing on the same value, the same as a real motion
+  // sitting at a steady-state error would. `current` is irrelevant here (velocity_exit_time is 0, so
+  // the derivative it produces is never read) -- held fixed for simplicity.
   for (int pass = 1; pass < 26; pass++) {
     INFO("pass ", pass);
+    pid.compute_error(2.0, 0.0);  // within big_error (3), outside small_error (1)
     CHECK(pid.exit_condition() == RUNNING);
   }
+  pid.compute_error(2.0, 0.0);
   CHECK(pid.exit_condition() == BIG_EXIT);
 }
 
 TEST_CASE("PID SMALL_EXIT after 10 passes at a held 0.5in error") {
   PID pid;
   pid.exit_condition_set(90, 1.0, 250, 3.0);
-  pid.error = 0.5;  // within both small_error (1) and big_error (3)
 
   for (int pass = 1; pass < 10; pass++) {
     INFO("pass ", pass);
+    pid.compute_error(0.5, 0.0);  // within both small_error (1) and big_error (3)
     CHECK(pid.exit_condition() == RUNNING);
   }
+  pid.compute_error(0.5, 0.0);
   CHECK(pid.exit_condition() == SMALL_EXIT);
 }
 
@@ -78,14 +85,64 @@ TEST_CASE("PID exit_condition(MotorGroup) matches the plain overload's pass coun
   // (ignoring the mA-timeout skip) might suggest.
   PID pid;
   pid.exit_condition_set(90, 1.0, 250, 3.0);
-  pid.error = 2.0;
   pros::MotorGroup mg({1, 2});
 
   for (int pass = 1; pass < 26; pass++) {
     INFO("pass ", pass);
+    pid.compute_error(2.0, 0.0);
     CHECK(pid.exit_condition(mg) == RUNNING);
   }
+  pid.compute_error(2.0, 0.0);
   CHECK(pid.exit_condition(mg) == BIG_EXIT);
+}
+
+// ---- Small/big exit staleness -----------------------------------------------
+// exit_condition()'s small/big exit timers only advance on a poll where a real compute() call has
+// landed since the timer last checked (mirrors k_prev_checked/k_unchanged_time's freshness gate for
+// the velocity channel, PID.cpp). Two things this needs to not break: a caller polling exit_condition()
+// faster than compute() runs, and one polling slower.
+
+TEST_CASE("PID small exit still settles when the caller polls twice for every one real compute") {
+  // A stale poll (no new compute since the last check) must be held, not treated as regress: it
+  // neither advances the timer (would fire too early) nor resets it (would take far longer than the
+  // real compute cadence to ever settle).
+  PID pid;
+  pid.exit_condition_set(90, 1.0, 250, 3.0);
+
+  exit_output result = RUNNING;
+  int fresh_computes = 0;
+  while (result == RUNNING) {
+    REQUIRE(fresh_computes <= 15);  // don't hang the suite if this regresses
+    pid.compute_error(0.5, 0.0);    // one real compute: error held at 0.5in (inside small_error)
+    ++fresh_computes;
+    result = pid.exit_condition();  // the fresh poll for this compute
+    if (result != RUNNING) break;
+    result = pid.exit_condition();  // a stale poll -- no compute happened since the one just above
+  }
+  CHECK(result == SMALL_EXIT);
+  // Exactly the same 10 real computes as the 1:1 cadence case above -- a stale poll neither speeds
+  // this up nor slows it down.
+  CHECK(fresh_computes == 10);
+}
+
+TEST_CASE("PID small exit still settles when the caller polls once for every two real computes") {
+  // The caller here polls SLOWER than compute() runs. Freshness is a plain boolean (did at least one
+  // compute land since the last check), not a count, so this still credits exactly one DELAY_TIME per
+  // poll -- same poll count as the 1:1 case, just with twice as many (uncounted) computes behind it.
+  PID pid;
+  pid.exit_condition_set(90, 1.0, 250, 3.0);
+
+  exit_output result = RUNNING;
+  int polls = 0;
+  while (result == RUNNING) {
+    REQUIRE(polls <= 15);
+    pid.compute_error(0.5, 0.0);
+    pid.compute_error(0.5, 0.0);  // two real computes between polls
+    ++polls;
+    result = pid.exit_condition();
+  }
+  CHECK(result == SMALL_EXIT);
+  CHECK(polls == 10);
 }
 
 TEST_CASE("PID integral accumulates while error keeps sign, resets on sign flip") {
@@ -134,6 +191,30 @@ TEST_CASE("PID motion_reset zeroes the integral and primes the next derivative t
 
   pid.compute(3.0);  // same value motion_reset primed prev_current to
   CHECK(pid.derivative == doctest::Approx(0));
+}
+
+TEST_CASE("PID motion_reset resyncs the small/big exit staleness baseline for the next motion") {
+  // Mirrors the gap a real Drive motion setter leaves: the SAME PID keeps getting computed against
+  // the OLD, just-finished motion (ez_auto_task doesn't stop just because a wait returned) right up
+  // until a new pid_*_set() calls motion_reset(). Without motion_reset() resyncing
+  // last_checked_compute, that leftover compute would still read as "fresh" on the new motion's very
+  // first poll, crediting an old-target compute toward the new motion's own timer.
+  PID pid;
+  pid.exit_condition_set(0, 1.0, 0, 0);  // small only, small_exit_time=0: any credit at all fires
+
+  pid.compute_error(0.5, 0.0);  // the old motion settling
+  REQUIRE(pid.exit_condition() == SMALL_EXIT);
+
+  // The old motion's own PID keeps getting computed a little longer (still against the old target),
+  // the same as ez_auto_task would between the wait returning and the next setter running.
+  pid.compute_error(0.5, 0.0);
+
+  // A new motion starts: timers_reset() + motion_reset(), no compute yet for the new target.
+  pid.timers_reset();
+  pid.motion_reset(0.0);
+
+  // Without a fresh compute for the new motion, the leftover compute above must not count.
+  CHECK(pid.exit_condition() == RUNNING);
 }
 
 // ---- Velocity exit arming -------------------------------------------------

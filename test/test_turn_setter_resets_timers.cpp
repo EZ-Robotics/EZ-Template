@@ -17,8 +17,10 @@ Drive make_chassis() {
 
 Drive* g_chassis = nullptr;
 
+// A real compute_error() call, not a direct `.error =` write -- the small exit timer this test is
+// pinning only credits `error` when a real compute has landed since it last checked (see PID.cpp).
 void hold_small_error() {
-  g_chassis->turnPID.error = 0.5;  // inside small_error(2.0) throughout
+  g_chassis->turnPID.compute_error(0.5, 0.5);  // inside small_error(2.0) throughout
 }
 }  // namespace
 

@@ -60,22 +60,27 @@ int g_last = 0;
 //               with a REAL 60 degree heading mismatch, and xy starts converging immediately
 //               (small-exits by ~pass 55). Angle is held at 60 degrees (not converging) until
 //               pass 150, where it is finally driven to 0 and allowed to small-exit for real.
+// A real compute_error() call every pass, not a direct `.error =` write -- the small exit timer this
+// test relies on latching only credits `error` when a real compute has landed since it last checked
+// (see PID.cpp). `current` fed the same value as `error` reproduces a sensible derivative without
+// needing separate running state; nothing here reads derivative.
 void script() {
   ++g_pass;
   Drive& c = *g_chassis;
   int& idx = DriveTestAccess::pp_index(c);
   if (g_pass <= 20) {
     idx = 0;
-    c.current_a_odomPID.error = 0.0;
-    c.xyPID.error = 5.0;
+    c.current_a_odomPID.compute_error(0.0, 0.0);
+    c.xyPID.compute_error(5.0, 5.0);
   } else if (g_pass <= 45) {
     idx = g_last - 1;
-    c.current_a_odomPID.error = 0.0;
-    c.xyPID.error = 5.0;
+    c.current_a_odomPID.compute_error(0.0, 0.0);
+    c.xyPID.compute_error(5.0, 5.0);
   } else {
     idx = g_last;  // jumps directly from (last-1) to last -- never visits the loop body at `last`
-    c.xyPID.error = 0.0;                              // converges quickly after the jump
-    c.current_a_odomPID.error = g_pass < 150 ? 60.0 : 0.0;  // the real final-heading mismatch
+    c.xyPID.compute_error(0.0, 0.0);                        // converges quickly after the jump
+    double a = g_pass < 150 ? 60.0 : 0.0;                   // the real final-heading mismatch
+    c.current_a_odomPID.compute_error(a, a);
   }
 }
 

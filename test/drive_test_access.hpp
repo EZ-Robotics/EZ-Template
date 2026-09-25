@@ -29,6 +29,18 @@ struct DriveTestAccess {
   static int& pp_index(Drive& d) { return d.pp_index; }
   static const std::vector<odom>& pp_movements(Drive& d) { return d.pp_movements; }
 
+  // Marks p's current error fresh (what a real ez_auto_task pass provides) without changing error,
+  // cur, or derivative -- exit_condition() sees exactly what the calling test's own script set,
+  // the same shape a real compute would have produced against whatever the script already wrote.
+  // Lets a test's on_delay hook satisfy PID.cpp's freshness gate (see exit_condition()) without
+  // switching the test's actual scripted values or running the real per-mode task function (which
+  // has its own side effects -- see test_wait_until_odom.cpp's own comment on why it doesn't).
+  static void refresh(PID& p) {
+    double d = p.derivative;
+    p.compute_error(p.error, p.cur);
+    p.derivative = d;
+  }
+
   static bool& imu_calibration_complete(Drive& d) { return d.imu_calibration_complete; }
   static bool& last_was_autonomous(Drive& d) { return d.last_was_autonomous; }
   static void ez_auto_task(Drive& d) { d.ez_auto_task(); }

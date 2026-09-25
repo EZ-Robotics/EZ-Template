@@ -49,12 +49,15 @@ int g_last = 0;
 // -- both have to be set for this scenario to be internally consistent: xyPID.error so its own
 // exit_condition() reads a real, unconverged error, and the pose so target_distance() agrees.
 pose g_last_target{0, 0, 0};
+// A real compute_error() call every pass, not a direct `.error =` write -- angle's own small exit
+// timer, which this test needs to actually fire ("it genuinely small-exits for real early on"),
+// only credits `error` when a real compute has landed since it last checked (see PID.cpp).
 void script() {
   Drive& c = *g_chassis;
   ez::detail::stats.auto_task_passes.fetch_add(1);
   DriveTestAccess::pp_index(c) = g_last;
-  c.xyPID.error = 10.0;
-  c.current_a_odomPID.error = 0.0;
+  c.xyPID.compute_error(10.0, 10.0);
+  c.current_a_odomPID.compute_error(0.0, 0.0);
   DriveTestAccess::odom_current(c) = {g_last_target.x, g_last_target.y - 10.0, DriveTestAccess::odom_current(c).theta};
 }
 

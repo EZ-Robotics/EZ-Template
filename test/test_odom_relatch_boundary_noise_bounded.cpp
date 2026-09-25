@@ -45,13 +45,18 @@ int g_pass = 0;
 // on the same pass, so the recheck below never sees a legitimately clean double-exit: every meeting
 // point is a real relatch, on alternating axes, cycle after cycle. Neither axis ever settles for
 // good -- that's the point: this must not be able to hang regardless.
+// A real compute_error() call every pass, not a direct `.error =` write -- the relatch behavior
+// this test exercises depends on SMALL_EXIT genuinely firing during each in-window half, which
+// only happens when a real compute has landed since exit_condition() last checked (see PID.cpp).
 void script() {
   ++g_pass;
   ez::detail::stats.auto_task_passes.fetch_add(1);
   Drive& c = *g_chassis;
   int phase = g_pass % 24;
-  c.xyPID.error = (phase < 12) ? 0.9 : 1.1;
-  c.current_a_odomPID.error = (phase < 12) ? 3.1 : 2.9;
+  double xy_e = (phase < 12) ? 0.9 : 1.1;
+  double a_e = (phase < 12) ? 3.1 : 2.9;
+  c.xyPID.compute_error(xy_e, xy_e);
+  c.current_a_odomPID.compute_error(a_e, a_e);
 }
 
 struct Outcome {

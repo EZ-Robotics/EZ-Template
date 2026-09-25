@@ -366,6 +366,24 @@ class PID {
   // polling-faster case above actually get caught. k_prev_checked starts NaN so the very first
   // check always passes the raw-value half (NaN compares unequal to everything, including itself);
   // it still needs a nonzero derivative too, same as every later check.
+  // How many times raw_compute() has run, ever. Bumped once per real compute()/compute_error() call
+  // (both funnel through raw_compute() -- see PID.cpp), so it's a single shared freshness signal for
+  // both the small (j) and big (i) exit timers below: they both key off the same `error` member, and
+  // `error` only ever changes inside raw_compute(). Unlike k_prev_checked (which compares a raw
+  // sensor VALUE, because a repeated value there is ambiguous between "sensor hasn't refreshed yet"
+  // and "genuinely stalled"), a repeated `error` here is never ambiguous -- there's no independent
+  // sensor refresh path for it to lag behind, so "no new compute" is the only way `error` can be
+  // unchanged. A plain counter is therefore enough; no unchanged-duration fallback like
+  // k_unchanged_time is needed.
+  unsigned int compute_count = 0;
+  // The compute_count value as of the small/big exit timers' last check, in exit_condition(). Updated
+  // every call (fresh or not), so it tracks compute_count during an ordinary run of polls. Also reset
+  // explicitly in motion_reset() (see there): between one motion's last poll and the next motion's
+  // setter call, the SAME compute()-driving loop (e.g. ez_auto_task) keeps running against the OLD
+  // target, so compute_count can keep climbing for reasons that have nothing to do with the new
+  // motion. Without motion_reset() resyncing this, the new motion's very first poll would read that
+  // unrelated drift as "fresh" and credit an old-target compute toward the new motion's timers.
+  unsigned int last_checked_compute = 0;
   double k_prev_checked = std::numeric_limits<double>::quiet_NaN();
   // How long the main channel's raw reading has read bit-for-bit identical to itself, in a row.
   // Resets to 0 the instant the raw value changes (regardless of what the derivative says that

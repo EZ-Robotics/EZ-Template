@@ -54,59 +54,66 @@ Outcome run(Drive& chassis, void (*script)(Drive&, int), int max_passes, std::fu
   return o;
 }
 
+// Every script below drives its PID(s) through compute_error(), not a direct `.error =`/`.derivative =`
+// write: PID::exit_condition()'s small/big exit timers only credit `error` when a real compute() call
+// has landed since the last check (see PID.cpp), the same real signal ez_auto_task provides on real
+// hardware. compute_error(err, current)'s own derivative = current - prev_current, so each script below
+// picks a `current` sequence whose deltas reproduce the exact derivative sequence the old direct writes
+// used, keeping every pass count and assertion in this file unchanged. This file's on_delay() already
+// runs once per simulated DELAY_TIME tick (bumping auto_task_passes), exactly standing in for a real
+// ez_auto_task pass -- the right place for the real compute this now performs.
+
 // Closes steadily to 0 -- a normal, healthy settle.  Small enough steps that it does NOT clear a full step
 // (1 in default small_error) every single pass, so a real regression test for "does this false-flag a slow but
 // genuinely progressing motion" too, not just a trivially-fast one.
 void healthy_close(Drive& c, int n) {
   double e = std::fmax(0.0, 20.0 - 0.15 * n);
-  c.leftPID.error = e;
-  c.leftPID.derivative = e > 0.0 ? -0.15 : 0.0;
-  c.rightPID.error = e;
-  c.rightPID.derivative = e > 0.0 ? -0.15 : 0.0;
+  // Feeding `current` the same closing value as `error` reproduces the old derivative exactly: their
+  // deltas are identical (both -0.15/pass while e > 0, then both flat), without needing to track
+  // separate running state.
+  c.leftPID.compute_error(e, e);
+  c.rightPID.compute_error(e, e);
 }
 
 // Pinned from the start: error frozen well outside small/big windows, derivative jitters just above
 // velocity_zero_main (0.05) every other pass so the velocity exit's own accumulator can never build up --
 // exactly the noisy-contact shape Step 3 finding #15 describes, not a literal silent stall.
 void pinned_jitter(Drive& c, int n) {
-  c.leftPID.error = 24.0;
-  c.leftPID.derivative = (n % 2 == 0) ? 0.2 : -0.2;
-  c.rightPID.error = 24.0;
-  c.rightPID.derivative = (n % 2 == 0) ? 0.2 : -0.2;
+  double cur = (n % 2 == 0) ? 0.1 : -0.1;  // alternating +-0.1 -> a +-0.2 swing in derivative each tick
+  c.leftPID.compute_error(24.0, cur);
+  c.rightPID.compute_error(24.0, cur);
 }
 
 void healthy_turn(Drive& c, int n) {
   double e = std::fmax(0.0, 60.0 - 0.5 * n);
-  c.turnPID.error = e;
-  c.turnPID.derivative = e > 0.0 ? -0.5 : 0.0;
+  c.turnPID.compute_error(e, e);
 }
 
 void pinned_turn_jitter(Drive& c, int n) {
-  c.turnPID.error = 60.0;
-  c.turnPID.derivative = (n % 2 == 0) ? 0.3 : -0.3;
+  double cur = (n % 2 == 0) ? 0.15 : -0.15;  // +-0.3 swing, same reasoning as pinned_jitter above
+  c.turnPID.compute_error(60.0, cur);
 }
 
 void healthy_swing(Drive& c, int n) {
   double e = std::fmax(0.0, 45.0 - 0.4 * n);
-  c.swingPID.error = e;
-  c.swingPID.derivative = e > 0.0 ? -0.4 : 0.0;
+  c.swingPID.compute_error(e, e);
 }
 
 void pinned_swing_jitter(Drive& c, int n) {
-  c.swingPID.error = 45.0;
-  c.swingPID.derivative = (n % 2 == 0) ? 0.3 : -0.3;
+  double cur = (n % 2 == 0) ? 0.15 : -0.15;
+  c.swingPID.compute_error(45.0, cur);
 }
 
 // A raw sensor reading that's bit-identical to itself every single poll, because the robot is
 // genuinely, fully stalled -- not a refresh artifact. PID::exit_condition()'s own velocity exit
 // can no longer tell this apart from a stale re-read of an unrefreshed sensor (see test_pid.cpp),
 // so it never fires from k alone here. This backstop -- a wall-clock fallback that doesn't read
-// the sensor at all -- is what has to catch it instead.
+// the sensor at all -- is what has to catch it instead. `current` held fixed at 0 every tick gives
+// derivative 0, the same bit-identical-reading shape as before, while still being a real compute()
+// call each tick (a genuinely stalled sensor is still polled every pass -- it just never changes).
 void pinned_frozen(Drive& c, int n) {
-  c.leftPID.error = 24.0;
-  c.leftPID.derivative = 0.0;
-  c.rightPID.error = 24.0;
-  c.rightPID.derivative = 0.0;
+  c.leftPID.compute_error(24.0, 0.0);
+  c.rightPID.compute_error(24.0, 0.0);
 }
 
 // The realistic shape of the frozen-sensor case above: a robot that drives normally for a while
@@ -118,13 +125,12 @@ void pinned_frozen(Drive& c, int n) {
 void drives_then_pins(Drive& c, int n) {
   bool pinned = n > 20;
   double e = pinned ? 14.0 : std::fmax(14.0, 24.0 - 0.5 * n);
-  double rate = pinned ? 0.0 : -0.5;
-  c.leftPID.error = e;
-  c.leftPID.derivative = rate;
-  c.leftPID.cur += rate;
-  c.rightPID.error = e;
-  c.rightPID.derivative = rate;
-  c.rightPID.cur += rate;
+  // cur(n) = -0.5*min(n, 20): the exact running sum the old `cur += rate` accumulation produced,
+  // closed-formed so each pass' delta (this call's cur minus the previous call's) reproduces the old
+  // rate (-0.5 while n<=20, 0 once pinned) without needing separate persistent state.
+  double cur = -0.5 * std::fmin((double)n, 20.0);
+  c.leftPID.compute_error(e, cur);
+  c.rightPID.compute_error(e, cur);
 }
 }  // namespace
 

@@ -15,6 +15,12 @@ Drive make_chassis() {
   test_stub::reset_all();
   return Drive({1, -2}, {-3, 4}, 5, 3.25, 360, 1.0);
 }
+
+Drive* g_chassis = nullptr;
+// A real compute_error() call every pass -- exit_condition()'s small exit timer only credits `error`
+// when a real compute has landed since it last checked (see PID.cpp), so holding error steady now
+// needs an on_delay hook rather than a single pre-wait write.
+void hold_small_error() { g_chassis->turnPID.compute_error(0.5, 0.0); }
 }  // namespace
 
 TEST_CASE("pid_wait_until(angle) TURN does not double up its own per-pass delay while polling") {
@@ -26,7 +32,9 @@ TEST_CASE("pid_wait_until(angle) TURN does not double up its own per-pass delay 
   // No IMU movement scripted, so drive_angle_get() stays at 0 the whole test -- the target-minus-
   // current sign used by the crossing check never changes, so this can only end via the small
   // exit below, never the "past target" success path.
-  chassis.turnPID.error = 0.5;  // inside small_error(2.0) throughout -- no on_delay needed
+  g_chassis = &chassis;
+  hold_small_error();  // inside small_error(2.0) throughout
+  test_stub::g_clock.on_delay = hold_small_error;
 
   test_stub::g_clock.delay_calls_until_stop = 50;  // safety net well above the expected ~10 passes
   std::uint32_t start_ms = test_stub::g_clock.now_ms;
@@ -37,6 +45,7 @@ TEST_CASE("pid_wait_until(angle) TURN does not double up its own per-pass delay 
     returned = false;
   }
   test_stub::g_clock.delay_calls_until_stop = -1;
+  test_stub::g_clock.on_delay = nullptr;
   std::uint32_t elapsed = test_stub::g_clock.now_ms - start_ms;
   MESSAGE("returned=", returned, " elapsed_ms=", elapsed);
 

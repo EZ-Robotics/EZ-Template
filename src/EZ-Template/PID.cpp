@@ -93,6 +93,7 @@ double PID::raw_compute() {
 
   prev_current = cur;
   prev_error = error;
+  ++compute_count;
 
   return output;
 }
@@ -118,6 +119,14 @@ void PID::motion_reset(double current) {
   cur = current;
   derivative = 0;
   prev_error = 0;
+  // Resync the small/big exit timers' freshness baseline to right now, not whatever it was last left
+  // at. Without this, a compute that lands for the OLD, just-finished motion after its own last
+  // exit_condition() poll (the caller that owns compute() keeps running against the old target until
+  // this setter changes it) would still count as "fresh" on the NEW motion's very first poll, even
+  // though it says nothing about the new motion at all -- worth up to one DELAY_TIME of undeserved
+  // credit, enough to fire outright when small_exit_time/big_exit_time is itself below DELAY_TIME. See
+  // exit_condition()'s use of last_checked_compute for the general mechanism.
+  last_checked_compute = compute_count;
 }
 
 void PID::name_set(std::string p_name) {
@@ -157,10 +166,23 @@ exit_output PID::exit_condition(bool print) {
     return ERROR_NO_CONSTANTS;
   }
 
+  // Whether a real compute()/compute_error() call has landed since the small/big timers below last
+  // checked -- see compute_count/last_checked_compute's comments in the header. Without this, `error`
+  // being within tolerance is credited toward SMALL_EXIT/BIG_EXIT on every single call to this
+  // function, even calls where nothing about `error` has actually changed because ez_auto_task (or
+  // whatever else drives this PID's compute() calls) didn't run in between -- exactly the gap
+  // k_prev_checked/k_unchanged_time below already close for the velocity channel. A stale check is
+  // simply skipped, not reset: this function's caller and whatever calls compute() are two
+  // independent loops that both nominally run every DELAY_TIME but aren't lock-stepped, so a caller
+  // polling faster than compute() runs must not have every other poll erase progress a real compute
+  // already earned (that would take an already-fresh motion far longer than exit_time to ever settle).
+  bool error_fresh = compute_count != last_checked_compute;
+  last_checked_compute = compute_count;
+
   // If the robot gets within the target, make sure it's there for small_timeout amount of time
   if (exit.small_error != 0) {
     if (std::fabs(error) < exit.small_error) {
-      j += util::DELAY_TIME;
+      if (error_fresh) j += util::DELAY_TIME;
       i = 0;  // While this is running, don't run big thresh
       if (j > exit.small_exit_time) {
         timers_reset();
@@ -176,7 +198,7 @@ exit_output PID::exit_condition(bool print) {
   // a certain amount of time, exit and continue.  This does not run while small_timeout is running
   if (exit.big_error != 0 && exit.big_exit_time != 0) {  // Check if this condition is enabled
     if (std::fabs(error) < exit.big_error) {
-      i += util::DELAY_TIME;
+      if (error_fresh) i += util::DELAY_TIME;
       if (i > exit.big_exit_time) {
         timers_reset();
         if (print) exit_condition_print(BIG_EXIT);
