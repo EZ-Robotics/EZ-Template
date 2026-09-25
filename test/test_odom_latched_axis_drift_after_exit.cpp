@@ -64,16 +64,21 @@ int g_pass = 0;
 // (travelled()/turned() are never touched by this script, so moved_ never flips true), so pass 34
 // is squarely inside that grace window regardless of code version. That isolates this test to the
 // per-axis latch bug/fix specifically, not to whether StuckWatch would have caught it anyway.
+// A real compute_error() call every pass, not a direct `.error =` write -- the small exit timer this
+// test relies on latching only credits `error` when a real compute has landed since it last checked
+// (see PID.cpp). `current` fed the same value as `error` reproduces a sensible derivative without
+// needing separate running state; nothing here reads derivative.
 void script() {
   ++g_pass;
   ez::detail::stats.auto_task_passes.fetch_add(1);
   Drive& c = *g_chassis;
   if (g_pass <= 15) {
-    c.current_a_odomPID.error = 0.0;
-    c.xyPID.error = 5.0;
+    c.current_a_odomPID.compute_error(0.0, 0.0);
+    c.xyPID.compute_error(5.0, 5.0);
   } else {
-    c.current_a_odomPID.error = 20.0;  // the bump -- never recovers
-    c.xyPID.error = std::fmax(0.0, 5.0 - (g_pass - 15) * 0.5);
+    c.current_a_odomPID.compute_error(20.0, 20.0);  // the bump -- never recovers
+    double e = std::fmax(0.0, 5.0 - (g_pass - 15) * 0.5);
+    c.xyPID.compute_error(e, e);
   }
 }
 

@@ -121,14 +121,26 @@ bool busy_70_percent(int n) { return (n % 10) >= 3; }
 // walk the gap's distance gradually pass by pass -- see the file header).  While the gap is open, nothing
 // refreshes them at all: "the errors only change when that task runs" (see the class comment in
 // exit_conditions.cpp).
+// A real compute_error() call on every ticked pass, not a direct `.error =`/`.derivative =` write --
+// the small exit this scenario needs to reach a clean finish only credits `error` when a real
+// compute has landed since it last checked (see PID.cpp). Feeding `current` the same closing value
+// as `error` reproduces the intended derivative on an ordinary pass, and -- just as intended -- a
+// large one-time derivative right after a gap, when `remaining` jumps to catch up in one step (see
+// this function's own header comment above).
 void healthy_crawl(Drive& c, int n, bool ticked) {
   if (!ticked) return;
   double remaining = std::fmax(0.0, PATH_LENGTH_IN - IN_PER_WALL_TICK * n);
   DriveTestAccess::odom_current(c) = {0.0, PATH_LENGTH_IN - remaining, 0.0};
-  c.xyPID.error = remaining;
+  // IN_PER_WALL_TICK (0.025) is below velocity_zero_main (0.05): feeding it as compute_error()'s
+  // `current` the way the other conversions in this file do would make every ordinary pass read as
+  // a fresh, stopped sample to xyPID's own velocity channel -- unlike the old direct-write script,
+  // which never touched `cur` and so never armed that channel at all. Passing the unchanged `cur`
+  // keeps compute_error() from moving it, then restoring `derivative` after the call reproduces the
+  // old behavior exactly: a real, fresh compute for the staleness fix, but no velocity-channel
+  // side effect this scenario was never about.
+  c.xyPID.compute_error(remaining, c.xyPID.cur);
   c.xyPID.derivative = remaining > 0.0 ? -IN_PER_WALL_TICK : 0.0;
-  c.current_a_odomPID.error = 0.0;
-  c.current_a_odomPID.derivative = 0.0;
+  c.current_a_odomPID.compute_error(0.0, 0.0);
 }
 
 // A brief healthy crawl (enough to clear the start allowance and set moved_), then pinned in place with a
@@ -141,10 +153,10 @@ void pinned_after_healthy_start(Drive& c, int n, bool ticked) {
     healthy_crawl(c, n, ticked);
     return;
   }
-  c.xyPID.error = PATH_LENGTH_IN - IN_PER_WALL_TICK * PIN_AT_TICK;
-  c.xyPID.derivative = (n % 2 == 0) ? 0.2 : -0.2;
-  c.current_a_odomPID.error = 0.0;
-  c.current_a_odomPID.derivative = 0.0;
+  double e = PATH_LENGTH_IN - IN_PER_WALL_TICK * PIN_AT_TICK;
+  double jitter_cur = (n % 2 == 0) ? 0.1 : -0.1;  // alternating +-0.1 -> a +-0.2 swing in derivative
+  c.xyPID.compute_error(e, jitter_cur);
+  c.current_a_odomPID.compute_error(0.0, 0.0);
 }
 
 // Same healthy crawl, but the simulated auto task stops ticking entirely partway through and never resumes

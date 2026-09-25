@@ -31,11 +31,14 @@ int g_pass = 0;
 int g_move_at = -1;  // pass at which to physically move the robot past the first target; -1: never
 double g_move_to = 0.0;
 
+// A real compute_error() call every pass, not a direct `.error =` write -- the small exit timer
+// this test is pinning only credits `error` when a real compute has landed since it last checked
+// (see PID.cpp).
 void on_delay() {
   ++g_pass;
   Drive& c = *g_chassis;
-  c.leftPID.error = g_error_value;
-  c.rightPID.error = g_error_value;
+  c.leftPID.compute_error(g_error_value, g_error_value);
+  c.rightPID.compute_error(g_error_value, g_error_value);
   if (g_pass == g_move_at) set_sensors(c, g_move_to);
 }
 }  // namespace

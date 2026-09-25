@@ -34,12 +34,14 @@ TEST_CASE("PID timers_reset() clears hold_timer so a held velocity exit gets a f
   // Force a SMALL_EXIT, which internally calls timers_reset() -- the line under test. error comes
   // inside small_error; small_exit_time(20ms) is crossed well before hold_timer's own fallback
   // (2000 ms) could ever fire on its own, so this always ends in a SMALL_EXIT, not a VELOCITY_EXIT.
-  pid.error = 0.5;
+  // A real compute_error() call every pass, not a direct `.error =` write -- the small exit timer
+  // only credits `error` when a real compute has landed since it last checked (see PID.cpp).
   exit_output result = RUNNING;
   int small_pass = 0;
   while (result == RUNNING) {
     small_pass++;
     REQUIRE(small_pass <= 10);
+    pid.compute_error(0.5, 0.0);
     result = pid.exit_condition();
   }
   REQUIRE(result == SMALL_EXIT);

@@ -52,10 +52,11 @@ TEST_CASE("pid_wait() odom: a retarget landing in the exit-then-delay gap does n
   chassis.pid_odom_drive_exit_condition_set(0, 1.0, 250, 3.0, 500, 750);  // small_exit_time=0: SMALL_EXIT fires on the first in-tolerance pass
   chassis.pid_odom_turn_exit_condition_set(0, 3.0, 250, 7.0, 500, 750);
   chassis.pid_odom_ptp_set({{0.0, 24.0, 0.0}, fwd, 100});
-  chassis.xyPID.error = 0.0;
-  chassis.xyPID.derivative = 0.0;
-  chassis.current_a_odomPID.error = 0.0;
-  chassis.current_a_odomPID.derivative = 0.0;
+  // A real compute_error() call, not a direct `.error =` write -- small_exit_time=0 below only needs
+  // ONE real compute to fire on the wait's very first poll (see PID.cpp's freshness gate), and
+  // nothing later re-touches xyPID/current_a_odomPID, so a single compute here is enough.
+  chassis.xyPID.compute_error(0.0, 0.0);
+  chassis.current_a_odomPID.compute_error(0.0, 0.0);
 
   g_chassis = &chassis;
   g_pass = 0;

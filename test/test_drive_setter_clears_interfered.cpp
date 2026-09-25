@@ -27,12 +27,13 @@ void pinned() {
   g_chassis->rightPID.derivative = 0.0;
 }
 
-// A healthy, converging second motion -- inside small_error from the very first pass.
+// A healthy, converging second motion -- inside small_error from the very first pass. A real
+// compute_error() call every pass, not a direct `.error =` write -- the small exit this scenario
+// needs to reach a clean finish only credits `error` when a real compute has landed since it last
+// checked (see PID.cpp).
 void converged() {
-  g_chassis->leftPID.error = 0.5;
-  g_chassis->rightPID.error = 0.5;
-  g_chassis->leftPID.derivative = 0.0;
-  g_chassis->rightPID.derivative = 0.0;
+  g_chassis->leftPID.compute_error(0.5, 0.0);
+  g_chassis->rightPID.compute_error(0.5, 0.0);
 }
 }  // namespace
 

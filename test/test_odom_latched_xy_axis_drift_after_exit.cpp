@@ -50,19 +50,24 @@ pose g_last_target{0, 0, 0};
 // By pass ~34 both axes read "exited" under the OLD per-axis latch: xy from its stale pass-10
 // SMALL_EXIT, angle from its own genuine pass-34 SMALL_EXIT -- the mirror image of the angle-bump
 // test's timeline.
+// A real compute_error() call every pass, not a direct `.error =` write -- the small exit timer this
+// test relies on latching only credits `error` when a real compute has landed since it last checked
+// (see PID.cpp). `current` fed the same value as `error` reproduces a sensible derivative (0 while
+// held, a jump on the shove) without needing separate running state; nothing here reads derivative.
 void script() {
   ++g_pass;
   ez::detail::stats.auto_task_passes.fetch_add(1);
   Drive& c = *g_chassis;
   DriveTestAccess::pp_index(c) = g_last;
   if (g_pass <= 15) {
-    c.xyPID.error = 0.0;
+    c.xyPID.compute_error(0.0, 0.0);
     DriveTestAccess::odom_current(c) = {g_last_target.x, g_last_target.y, DriveTestAccess::odom_current(c).theta};
-    c.current_a_odomPID.error = 20.0;
+    c.current_a_odomPID.compute_error(20.0, 20.0);
   } else {
-    c.xyPID.error = 8.0;  // the shove -- never recovers
+    c.xyPID.compute_error(8.0, 8.0);  // the shove -- never recovers
     DriveTestAccess::odom_current(c) = {g_last_target.x, g_last_target.y - 8.0, DriveTestAccess::odom_current(c).theta};
-    c.current_a_odomPID.error = std::fmax(0.0, 20.0 - (g_pass - 15) * 2.0);
+    double a = std::fmax(0.0, 20.0 - (g_pass - 15) * 2.0);
+    c.current_a_odomPID.compute_error(a, a);
   }
 }
 
