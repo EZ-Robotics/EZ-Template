@@ -27,9 +27,21 @@ static constexpr int STUCK_STARVED_WINDOWS = 4;
 // target -- inches/degrees are never meaningfully specified to this precision.
 static constexpr double FINAL_TARGET_TOLERANCE = 1e-6;
 std::uint32_t stuck_passes() { return ez::detail::stats.auto_task_passes.load(std::memory_order_relaxed); }
+// The progress step a stuck watch's Channel uses when small_error isn't set: without it, step would be
+// 0 and a Channel this size never gets more lenient, just a strict "any decrease at all is progress"
+// check -- fine on its own, but multiplying the velocity exit's own noise floor (velocity_zero_main, the
+// per-pass reading it already treats as "not really moving") by how many passes fit in the watch's window
+// used to be here instead, turning that into a distance-per-window figure. Dividing back out by the
+// window, that figure is exactly velocity_zero_main/DELAY_TIME -- the velocity exit's own gating speed --
+// so a robot cruising steadily under that speed but still closing on its target for real read as making
+// no progress for a whole window and false-aborted, the same speed floor DRIVE/TURN/SWING's own waits are
+// no longer allowed to be gated on reappearing through the stuck watch's back door. Using
+// velocity_zero_main directly, un-scaled by the window, keeps the same per-pass noise floor without
+// reintroducing that speed gate: any single pass' worth of real forward motion above the noise floor
+// still counts as a new low, at any cruise speed.
 double stuck_step(PID& pid) {
   if (pid.exit.small_error > 0) return pid.exit.small_error;
-  return pid.velocity_sensor_main_exit_get() * pid.exit.velocity_exit_time / util::DELAY_TIME;
+  return pid.velocity_sensor_main_exit_get();
 }
 
 // A single progress channel: has `size` (always >= 0, e.g. a distance or |error|) come down to a new low, a full
@@ -66,7 +78,8 @@ struct Channel {
 
 // Tells an odom wait when the robot is stuck: no progress for the xy velocity exit's time.  Progress is pure
 // pursuit moving onto a new point, or the distance to the point being driven to or the heading error coming down
-// to a new low, a full step (that PID's small exit error) below the last one.  That holds at any heading error and
+// to a new low, a full step below the last one -- that PID's small exit error if it has one set, otherwise the
+// velocity exit's own per-pass noise floor (stuck_step(), above).  That holds at any heading error and
 // whether or not something is turning or pushing the robot, and it can't keep a wait going forever: each new low is
 // a step below the last, so a robot that isn't getting anywhere runs out of them.  Going past the point (the PID's
 // error changing sign) and coming back counts, measured from how far past it went, but only once per point: a robot
