@@ -143,13 +143,14 @@ TEST_CASE("pid_wait_quick() on pure pursuit does not clobber headingPID when ret
   CHECK(chassis.headingPID.target_get() == g_heading_after_retarget);
 }
 
-// pid_wait_until_point() (the inner wait for the POINT_TO_POINT branch) only takes its own retarget
-// baseline AFTER its own first settle delay -- a retarget landing during that specific delay is
-// invisible to its internal guard, which would then treat the NEW motion as the one it's waiting for.
-// Baited so the new motion's own exit conditions are already satisfied the instant that baseline is
-// taken, so an inner wait blind to the retarget returns "cleanly" almost immediately instead of
-// hanging -- exactly the shape that would read as an innocuous success if pid_wait_quick()'s OWN
-// outer guard (snapshotted before the inner call, before even its delay) didn't independently catch it.
+// pid_wait_until_point() (the inner wait for the POINT_TO_POINT branch) now also takes its own
+// retarget baseline before its own first settle delay (see test_wait_until_point_retarget_before_
+// first_delay.cpp), so this specific retarget is caught twice over -- by the inner wait itself, and by
+// pid_wait_quick()'s own outer guard below (snapshotted before the inner call, before even its delay).
+// This test is kept as a regression check on the outer guard specifically: baited so the new motion's
+// own exit conditions are already satisfied the instant the inner wait's baseline is taken, so even an
+// inner wait blind to the retarget would return "cleanly" almost immediately instead of hanging --
+// exactly the shape that would read as an innocuous success if the outer guard alone didn't catch it.
 TEST_CASE("pid_wait_quick() on point-to-point catches a retarget landing in the inner wait's own first settle delay") {
   Drive chassis = make_chassis();
   DriveTestAccess::imu_calibration_complete(chassis) = true;
