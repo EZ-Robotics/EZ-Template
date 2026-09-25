@@ -6,9 +6,8 @@
 // retarget_target are read, they already reflect whatever the concurrent call just changed, not the
 // motion this wait was actually started for.
 //
-// See test_wait_retarget_before_first_delay.cpp (audit/wait-exit-round5-timing) for the identical bug
-// in pid_wait()/wait_until_drive() -- not fixed here, only pid_wait_until_point() is (see that file's
-// own header for why the other two are a separate fix).
+// pid_wait() and wait_until_drive() have this identical ordering gap -- they are not fixed here,
+// only pid_wait_until_point() is; they're being handled separately.
 #include "doctest.h"
 #include "drive_test_access.hpp"
 
