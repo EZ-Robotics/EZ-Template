@@ -102,7 +102,7 @@ TEST_CASE("pid_wait_until_point does not hang when both axes oscillate across th
   // disjoint (see script()'s comment), so both axes are never inside their windows on the same pass --
   // before the recheck existed, each axis would instead latch in its own half and stay latched, and
   // the wait would return clean as soon as the second axis latched (around pass 22-34), while the
-  // first axis was already back outside its own window. That is the latch bug itself, so this test
-  // also covers Fix 1, not just the recheck's own boundary-thrash risk.
+  // first axis was already back outside its own window. That is the latched-exit bug itself, so this
+  // test also covers that recheck existing at all, not just the recheck's own boundary-thrash risk.
   CHECK(o.interfered);
 }
