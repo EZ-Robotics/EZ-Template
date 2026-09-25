@@ -37,9 +37,7 @@ sim::SimArchetype archetype_for(double cartridge_rpm, double wheel_diameter_in) 
   // register progress at the sweep's lowest commanded speeds (15), reading as stuck for an
   // unrelated reason. 2 motors/side and a lighter resistance profile than either heavy preset
   // puts the repro's own parameters genuinely under the floor while still letting speed=15
-  // register real progress. This does not avoid every sim limitation -- see
-  // KNOWN_SIM_OVERSHOOT_COMBOS below for the higher-speed combos this archetype still
-  // overshoots on, identically to every other archetype tried.
+  // register real progress.
   sim::SimArchetype base{
       "swept", /*motors_per_side=*/2, cartridge_rpm, wheel_diameter_in, /*track_width_in=*/12.0,
       /*mass_kg=*/4.0, /*moment_of_inertia_kg_m2=*/0.15,
@@ -119,39 +117,19 @@ TEST_CASE("pid_wait_until() DRIVE: a realistic slow-gearing cruise (200rpm/2.75i
 // without sensor noise. Every combination is a healthy cruise on a straight 24in leg -- none of
 // them should ever false-exit via velocity, with or without noise (the finding's own repro found
 // noise makes the false exit fire SOONER, not later -- it never rescues this case).
+//
+// This sweep used to exclude a documented list of (cartridge_rpm, wheel_diameter_in, speed)
+// combos that, against the PRE-braking-fix sim, overshot the 24in target by roughly 50-115%
+// (measured left_in 35-51in) and never cleanly settled, regardless of which exit ends the wait.
+// That was traced to sim_physics.hpp's MotorCurve::torque_at() returning 0 rather than a negative
+// (braking) torque once a wheel outran its commanded duty -- a sim limitation, not a finding
+// about the library -- and has since been fixed directly in sim_physics.hpp (signed torque_at()
+// plus friction opposing actual wheel motion; see that file's own comments). Measured against the
+// fixed sim, every one of those combos now settles cleanly on both this sweep's bound and the
+// stricter "never stops short" sweep just below, so the exclusion and its separate should_fail()
+// tracking test were removed rather than left stale; the full cartesian product below is exactly
+// the fix's real, intended coverage.
 namespace {
-// (cartridge_rpm, wheel_diameter_in, speed) triples that, against the PRE-braking-fix sim,
-// overshot the 24in target by roughly 50-115% (measured left_in 35-51in) and never cleanly
-// settled, regardless of which exit ends the wait. That was traced to sim_physics.hpp's
-// MotorCurve::torque_at() returning 0 rather than a negative (braking) torque once a wheel
-// outran its commanded duty -- a sim limitation, not a finding about the library -- and has
-// since been fixed directly in sim_physics.hpp (signed torque_at() plus friction opposing actual
-// wheel motion; see that file's own comments). The combos below now settle cleanly like the rest
-// of the sweep -- see the now-unconditional test case right after this array, which asserts that
-// directly instead of documenting an expected failure. The array and the exclusion in the two
-// sweeps above are kept as-is, conservatively: this file hasn't separately re-verified the
-// stricter "never stops short" bound (the sweep just below) for this exact combo list now that
-// the underlying physics changed, so folding them back into those two sweeps too is left for a
-// follow-up rather than assumed here.
-struct SweepCombo {
-  double rpm;
-  double wheel;
-  int speed;
-};
-const SweepCombo KNOWN_SIM_OVERSHOOT_COMBOS[] = {
-    {200.0, 2.75, 100}, {200.0, 2.75, 127}, {200.0, 4.0, 70}, {200.0, 4.0, 100}, {200.0, 4.0, 127},
-    {333.0, 2.75, 70}, {333.0, 2.75, 100}, {333.0, 2.75, 127}, {333.0, 4.0, 50}, {333.0, 4.0, 70}, {333.0, 4.0, 100}, {333.0, 4.0, 127},
-    {360.0, 2.75, 70}, {360.0, 2.75, 100}, {360.0, 2.75, 127}, {360.0, 4.0, 50}, {360.0, 4.0, 70}, {360.0, 4.0, 100}, {360.0, 4.0, 127},
-    {450.0, 2.75, 50}, {450.0, 2.75, 70}, {450.0, 2.75, 100}, {450.0, 2.75, 127}, {450.0, 4.0, 50}, {450.0, 4.0, 70}, {450.0, 4.0, 100}, {450.0, 4.0, 127},
-    {600.0, 2.75, 50}, {600.0, 2.75, 70}, {600.0, 2.75, 100}, {600.0, 4.0, 30}, {600.0, 4.0, 50}, {600.0, 4.0, 70}, {600.0, 4.0, 100},
-};
-bool is_known_sim_overshoot_combo(double rpm, double wheel, int speed) {
-  for (const auto& c : KNOWN_SIM_OVERSHOOT_COMBOS) {
-    if (c.rpm == rpm && c.wheel == wheel && c.speed == speed) return true;
-  }
-  return false;
-}
-
 struct SweepOutcome {
   bool returned;
   bool interfered;
@@ -183,7 +161,6 @@ TEST_CASE("pid_wait() DRIVE: sweep of gearing/wheel/speed/noise never false-exit
   for (double rpm : rpms) {
     for (double wheel : wheels) {
       for (int speed : speeds) {
-        if (is_known_sim_overshoot_combo(rpm, wheel, speed)) continue;  // covered separately below
         for (bool noise_on : noises) {
           combos++;
           SweepOutcome o = run_sweep_combo(rpm, wheel, speed, noise_on);
@@ -199,15 +176,10 @@ TEST_CASE("pid_wait() DRIVE: sweep of gearing/wheel/speed/noise never false-exit
   MESSAGE("combos checked: ", combos);
 }
 
-// A claim that holds for every combo NOT in the sim's known unmodeled-braking regime: this fix
-// never makes a healthy cruise stop SHORT of its target. Checked over the same non-overshoot
-// population the main sweep above uses -- the known-overshoot combos are excluded here too, not
-// because they overshoot cleanly (some of them don't: a few end up caught by StuckWatch mid-motion
-// after only partial progress, an unpredictable variant of the very same braking gap, not a clean
-// past-the-target overshoot every time), but because they're already tracked separately below by
-// the mechanism that actually explains them. This test's own value is in catching the original
-// bug's specific shape (ending at ~5-8% of the requested distance) on every combo the sim can be
-// trusted for, which the main sweep's interfered-only check doesn't directly measure.
+// This fix also never makes a healthy cruise stop SHORT of its target -- the same full sweep as
+// above, over the same population, now checking distance instead of just interfered. This test's
+// own value is in catching the original bug's specific shape (ending at ~5-8% of the requested
+// distance), which the sweep above's interfered-only check doesn't directly measure.
 TEST_CASE("pid_wait() DRIVE: sweep of gearing/wheel/speed/noise never stops short of the target") {
   const double rpms[] = {200.0, 333.0, 360.0, 450.0, 600.0};
   const double wheels[] = {2.75, 4.0};
@@ -219,7 +191,6 @@ TEST_CASE("pid_wait() DRIVE: sweep of gearing/wheel/speed/noise never stops shor
   for (double rpm : rpms) {
     for (double wheel : wheels) {
       for (int speed : speeds) {
-        if (is_known_sim_overshoot_combo(rpm, wheel, speed)) continue;  // covered separately below
         for (bool noise_on : noises) {
           combos++;
           SweepOutcome o = run_sweep_combo(rpm, wheel, speed, noise_on);
@@ -228,38 +199,13 @@ TEST_CASE("pid_wait() DRIVE: sweep of gearing/wheel/speed/noise never stops shor
                " interfered=", o.interfered);
           CHECK(o.returned);
           // 24in target: never ends more than big_error short of it -- catches the old bug's own
-          // shape (ending at ~5-8% of the requested distance) without being defeated by the sim's
-          // separate, known overshoot-at-high-speed limitation (see KNOWN_SIM_OVERSHOOT_COMBOS).
+          // shape (ending at ~5-8% of the requested distance).
           CHECK(o.left_in > 24.0 - big_error_in);
         }
       }
     }
   }
   MESSAGE("combos checked: ", combos);
-}
-
-// The combos listed in KNOWN_SIM_OVERSHOOT_COMBOS, run the identical way. This used to be
-// should_fail()-decorated (the way test_n5_stuck_floor.cpp still is for its own sim-caveat case),
-// documenting a known, pre-existing sim limitation instead of hiding it or blocking the suite on
-// a sim gap that wasn't this fix's to close. That limitation (sim_physics.hpp's MotorCurve::
-// torque_at() returning 0 instead of a negative/braking torque once a wheel outran its commanded
-// duty) has since been fixed directly in sim_physics.hpp, at which point a should_fail() test
-// that stops failing is itself a doctest failure ("Should have failed but didn't!"). These combos
-// now settle cleanly like every other combo in the sweep above, so this asserts that directly.
-TEST_CASE("pid_wait() DRIVE: sweep -- combos in the sim's since-fixed unmodeled-braking overshoot regime") {
-  int combos = 0;
-  for (const auto& c : KNOWN_SIM_OVERSHOOT_COMBOS) {
-    for (bool noise_on : {false, true}) {
-      combos++;
-      SweepOutcome o = run_sweep_combo(c.rpm, c.wheel, c.speed, noise_on);
-      INFO("rpm=", c.rpm, " wheel=", c.wheel, " speed=", c.speed, " noise=", noise_on,
-           " returned=", o.returned, " elapsed_ms=", o.elapsed_ms, " left_in=", o.left_in,
-           " interfered=", o.interfered);
-      CHECK(o.returned);
-      CHECK_FALSE(o.interfered);
-    }
-  }
-  MESSAGE("known-overshoot combos checked: ", combos);
 }
 
 // --- Pinned/jammed timing: measures how long a genuinely stalled motion takes to end the wait
