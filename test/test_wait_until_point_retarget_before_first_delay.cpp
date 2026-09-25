@@ -82,10 +82,11 @@ void retarget_same_family(Drive& c) {
   c.pid_odom_drive_exit_condition_set(0, 1.0, 250, 3.0, 500, 750);  // small_exit_time=0: fires the instant it's checked
   c.pid_odom_turn_exit_condition_set(0, 3.0, 250, 7.0, 500, 750);
   c.pid_odom_ptp_set({{0.0, 90.0, 0.0}, fwd, 100});  // a real, different point-to-point motion
-  c.xyPID.error = 0.0;
-  c.xyPID.derivative = 0.0;
-  c.current_a_odomPID.error = 0.0;
-  c.current_a_odomPID.derivative = 0.0;
+  // A real compute_error() call, not a direct `.error =` write -- small_exit_time=0 above only needs
+  // ONE real compute to fire on the new motion's very first check (see PID.cpp's freshness gate),
+  // matching test_wait_quick_headingpid_no_clobber.cpp's identical pass-1 bait.
+  c.xyPID.compute_error(0.0, 0.0);
+  c.current_a_odomPID.compute_error(0.0, 0.0);
 }
 
 // Nothing steps the drive task in the three "ordinary, un-retargeted" controls below (same reasoning
