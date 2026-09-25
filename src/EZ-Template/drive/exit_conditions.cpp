@@ -359,8 +359,14 @@ void Drive::pid_wait() {
       }
       secondary_velocity_sensor_update(leftPID);
       secondary_velocity_sensor_update(rightPID);
-      left_exit = left_exit != RUNNING ? left_exit : leftPID.exit_condition(left_motors);
-      right_exit = right_exit != RUNNING ? right_exit : rightPID.exit_condition(right_motors);
+      // A genuinely slow (not stalled) DRIVE cruise can read as "stopped" to the velocity channel --
+      // PID.cpp's velocity floor is a fixed constant, independent of gearing or wheel size, so a real,
+      // low-gearing drivetrain cruising under that floor is not stalled, just slow. Odom already filters
+      // this out (without_velocity(), above); DRIVE didn't. SingleStuckWatch (below) still catches a
+      // genuine stall independently -- it watches PID error, not velocity -- so filtering this out can't
+      // turn a real stall into a hang.
+      left_exit = left_exit != RUNNING ? left_exit : without_velocity(leftPID.exit_condition(left_motors));
+      right_exit = right_exit != RUNNING ? right_exit : without_velocity(rightPID.exit_condition(right_motors));
       bool left_stuck = left_exit == RUNNING && left_watch.stuck(leftPID.error);
       bool right_stuck = right_exit == RUNNING && right_watch.stuck(rightPID.error);
       // Stuck only when at least one side is still RUNNING and every side that's still RUNNING is stuck --
@@ -517,7 +523,9 @@ void Drive::pid_wait() {
         return;
       }
       secondary_velocity_sensor_update(turnPID);
-      turn_exit = turn_exit != RUNNING ? turn_exit : turnPID.exit_condition(both_sides(left_motors, right_motors));
+      // See the matching comment in the DRIVE branch above -- a slow (not stalled) turn must not be
+      // ended by the velocity channel alone.
+      turn_exit = turn_exit != RUNNING ? turn_exit : without_velocity(turnPID.exit_condition(both_sides(left_motors, right_motors)));
       if (turn_exit == RUNNING && watch.stuck(turnPID.error)) {
         // Same settled carve-out as the DRIVE branch above.
         bool settled = std::fabs(turnPID.error) < turnPID.exit.big_error;
@@ -552,7 +560,9 @@ void Drive::pid_wait() {
         return;
       }
       secondary_velocity_sensor_update(swingPID);
-      swing_exit = swing_exit != RUNNING ? swing_exit : swingPID.exit_condition(sensor);
+      // See the matching comment in the DRIVE branch above -- a slow (not stalled) swing must not be
+      // ended by the velocity channel alone.
+      swing_exit = swing_exit != RUNNING ? swing_exit : without_velocity(swingPID.exit_condition(sensor));
       if (swing_exit == RUNNING && watch.stuck(swingPID.error)) {
         // Same settled carve-out as the DRIVE branch above.
         bool settled = std::fabs(swingPID.error) < swingPID.exit.big_error;
@@ -666,8 +676,11 @@ void Drive::wait_until_drive(double target) {
       if (left_exit == RUNNING || right_exit == RUNNING) {
         secondary_velocity_sensor_update(leftPID);
         secondary_velocity_sensor_update(rightPID);
-        if (left_exit == RUNNING) left_exit = is_odom ? without_position_exits(leftPID.exit_condition(left_motors)) : leftPID.exit_condition(left_motors);
-        if (right_exit == RUNNING) right_exit = is_odom ? without_position_exits(rightPID.exit_condition(right_motors)) : rightPID.exit_condition(right_motors);
+        // Non-odom (plain DRIVE): a slow (not stalled) cruise must not be ended by the velocity channel
+        // alone -- same reasoning as pid_wait()'s DRIVE branch. Odom's own on_last_point/look-ahead exit
+        // filtering above and below is untouched by this fix.
+        if (left_exit == RUNNING) left_exit = is_odom ? without_position_exits(leftPID.exit_condition(left_motors)) : without_velocity(leftPID.exit_condition(left_motors));
+        if (right_exit == RUNNING) right_exit = is_odom ? without_position_exits(rightPID.exit_condition(right_motors)) : without_velocity(rightPID.exit_condition(right_motors));
         bool left_stuck = left_exit == RUNNING && left_watch.stuck(is_odom ? l_error : leftPID.error);
         bool right_stuck = right_exit == RUNNING && right_watch.stuck(is_odom ? r_error : rightPID.error);
         // See the matching comment in pid_wait()'s DRIVE branch -- both sides exiting normally on the same pass
@@ -752,7 +765,9 @@ void Drive::wait_until_turn_swing_internal(double target) {
       if (util::sgn(g_error) == g_sgn) {
         if (turn_exit == RUNNING) {
           secondary_velocity_sensor_update(turnPID);
-          turn_exit = turn_exit != RUNNING ? turn_exit : turnPID.exit_condition(both_sides(left_motors, right_motors));
+          // See the matching comment in pid_wait()'s DRIVE branch -- a slow (not stalled) turn must not
+          // be ended by the velocity channel alone.
+          turn_exit = turn_exit != RUNNING ? turn_exit : without_velocity(turnPID.exit_condition(both_sides(left_motors, right_motors)));
           if (turn_exit == RUNNING && turn_watch.stuck(turnPID.error)) {
             if (print_toggle) std::cout << "  Turn: Stuck Wait Until Exit Failsafe, triggered at " << drive_angle_get() << " instead of " << target << "\n";
             interfered = true;
@@ -782,7 +797,9 @@ void Drive::wait_until_turn_swing_internal(double target) {
       if (util::sgn(g_error) == g_sgn) {
         if (swing_exit == RUNNING) {
           secondary_velocity_sensor_update(swingPID);
-          swing_exit = swing_exit != RUNNING ? swing_exit : swingPID.exit_condition(sensor);
+          // See the matching comment in pid_wait()'s DRIVE branch -- a slow (not stalled) swing must not
+          // be ended by the velocity channel alone.
+          swing_exit = swing_exit != RUNNING ? swing_exit : without_velocity(swingPID.exit_condition(sensor));
           if (swing_exit == RUNNING && swing_watch.stuck(swingPID.error)) {
             if (print_toggle) std::cout << "  Swing: Stuck Wait Until Exit Failsafe, triggered at " << drive_angle_get() << " instead of " << target << "\n";
             interfered = true;

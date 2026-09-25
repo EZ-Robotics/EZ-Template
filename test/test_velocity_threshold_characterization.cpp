@@ -11,9 +11,15 @@
 // positives", hypothesis #1), which predates this audit. A drive-by fix here risks conflicting
 // with whatever plan already exists for #290 -- flagging for Jess rather than picking silently.
 // This test documents/locks in the current characterization so it's understood and visible.
-// (See also: the verifier's own sim repro found the false exit only manifests in a fairly
-// narrow low-speed band, and disappears under realistic sensor noise -- the mechanism below is
-// real, but its real-world frequency is narrower than "high severity" might suggest on its own.)
+// CORRECTED: an earlier pass here characterized this as disappearing under realistic sensor
+// noise, and narrower in real-world frequency as a result. A later physics-sim repro (a real
+// 200rpm/2.75in drivetrain at speed=20, well inside the documented 15-127 range) found the
+// opposite: sensor noise makes the false exit fire SOONER, not later -- 10/10 seeds still
+// false-exit. Noise does not rescue this case. This is a deliberate correction to this test's
+// prior assumption, not a new claim added on top of it. See exit_conditions.cpp's DRIVE/TURN/
+// SWING without_velocity() fix, which addresses the mechanism this test characterizes at the
+// PID level (this file is left as a PID-level characterization test, not itself fixed -- the
+// fix lives at the Drive/exit_conditions.cpp call sites, matching how odom was already filtered).
 #include "doctest.h"
 
 #include "EZ-Template/api.hpp"
