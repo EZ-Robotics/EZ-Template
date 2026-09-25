@@ -198,14 +198,15 @@ TEST_CASE("sim harness bug 2: a closed-loop TURN converges toward its target ins
   // this fix); reused as-is rather than re-deriving new parameters, since that combination is
   // already known to settle cleanly once both fixes are in place. A plain 90-degree target at the
   // library's default (looser) exit window was tried first here: light_fast, target 90, default
-  // exit constants. That case observably printed "Turn: Stuck" at elapsed_ms=1250, settling at
-  // heading=107 (17 degrees past target) instead of reaching a clean small/big exit -- a real
-  // result, not investigated further here (candidates: the one-shot rebound-latch gap the round-2
-  // findings describe, or this sim's documented inability to model wheel deceleration/overshoot
-  // recovery -- see sim_physics.hpp's own file header). Left as a note for a follow-up look, not
-  // this test's job (this test is about the IMU sign, not tuning or StuckWatch's rebound
-  // behavior) -- switched to the TEAM_CORPUS-sourced case below instead, which is known to settle
-  // cleanly.
+  // exit constants. That case observably printed "Turn: Stuck" instead of reaching a clean
+  // small/big exit -- root-caused and fixed since (see MotorCurve::torque_at() and
+  // step_physics()'s side_force() in sim_physics.hpp): the motor-curve model had no braking
+  // torque outside the forward-motoring quadrant, and friction opposed the commanded torque's
+  // sign instead of the wheel's own motion, so a light, fast, low-friction archetype coasted
+  // through the exit window with nothing to slow it down. See
+  // test_turn_control_no_fault.cpp for the now-passing 90-degree case across all three
+  // archetypes. Left here at the original target-120/tight-constants case since it's already
+  // known-good and this test's job is the IMU sign, not tuning or StuckWatch's rebound behavior.
   sim::SimArchetype a = sim::archetype_light_fast();
   Drive chassis = make_chassis(a);
   DriveTestAccess::imu_calibration_complete(chassis) = true;

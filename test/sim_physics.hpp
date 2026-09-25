@@ -68,7 +68,8 @@ struct MotorCurve {
   // full reversal, so it coasted well past where it should have started braking -- overshooting
   // the target and swinging back, or drifting to a stop short of it, depending on exact timing --
   // and got falsely flagged stuck either way. A genuine sim-physics gap, not evidence of anything
-  // about sensor faults or real turn/swing behavior.
+  // about sensor faults or real turn/swing behavior. See side_force()'s own comment for the
+  // matching friction-sign fix this needed alongside it.
   double torque_at(double angular_velocity_rad_s, double duty) const {
     double free_speed_rad_s = free_speed_rpm * 2.0 * M_PI / 60.0;
     if (free_speed_rad_s <= 0.0) return 0.0;
@@ -310,6 +311,15 @@ class SimRobot {
   // derived from those two via the standard rigid, no-slip differential-drive relation:
   // v_wheel = v_common +/- yaw_rate * track_radius. This is the standard decomposition for a
   // rigid two-wheel-driven chassis, not a novel model.
+  // side_force()'s return, incl. what its own zero-crossing guard (in step_physics(), below)
+  // needs to tell a friction-induced crossing apart from a genuine commanded-reversal one.
+  struct SideForceResult {
+    double net_force_n;
+    double current_a;
+    double duty;       // signed commanded duty, -1..1 (NOT torque_available -- see the guard's own comment)
+    bool was_kinetic;  // true if this side used the moving-wheel friction branch this tick
+  };
+
   void step_physics(double dt_s) {
     if (dt_s <= 0.0) return;
     MotorCurve curve = motor_curve_for_cartridge(archetype_.cartridge_rpm);
@@ -351,35 +361,94 @@ class SimRobot {
       double diff_in_s = (this_wheel_v_m_s - other_wheel_v_m_s) / 0.0254;
       double scrub_torque = archetype_.scrub_coefficient * (archetype_.track_width_in * 0.0254) * std::fabs(diff_in_s) * 0.1;
       double resistive = archetype_.rolling_resistance_nm + scrub_torque;
-      double net_torque = torque_available - std::copysign(std::fmin(std::fabs(torque_available), resistive), torque_available == 0 ? 1.0 : torque_available);
+      // Friction has to oppose the wheel's actual motion, not torque_available's sign -- the two
+      // are the same thing only while a motor is still accelerating toward its commanded speed.
+      // The old code subtracted resistive opposing torque_available's sign, which (now that
+      // torque_at() can itself go negative to brake/coast) meant friction dropped toward 0 right
+      // when torque_available did, instead of continuing to fight the wheel's own momentum --
+      // exactly the gap that let archetype_light_fast coast through a turn's overshoot instead of
+      // slowing down. Below kStaticVelEpsilonMS the wheel is treated as at rest: friction can
+      // only oppose whatever torque IS being applied, up to its own magnitude (the sim's original
+      // clamp), so it can never spin a resting wheel backward on its own -- needed by
+      // rolling_resistance_nm-dwarfs-everything "never moves" scenarios (see
+      // test_sim_harness_pass_counter_and_imu_sign.cpp).
+      constexpr double kStaticVelEpsilonMS = 1.0e-4;  // true (noise-free) state; exact rest stays exact
+      double net_torque;
+      if (std::fabs(this_wheel_v_m_s) > kStaticVelEpsilonMS) {
+        net_torque = torque_available - std::copysign(resistive, this_wheel_v_m_s);
+      } else {
+        net_torque = torque_available - std::copysign(std::fmin(std::fabs(torque_available), resistive), torque_available == 0.0 ? 1.0 : torque_available);
+      }
 
       double net_force_n = (net_torque * archetype_.motors_per_side) / wheel_radius_m;
       double current_a = std::fabs(torque_available) / curve.stall_torque_nm * curve.stall_current_a + curve.free_current_a;
-      return std::pair<double, double>{net_force_n, current_a};
+      bool was_kinetic = std::fabs(this_wheel_v_m_s) > kStaticVelEpsilonMS;
+      return SideForceResult{net_force_n, current_a, duty, was_kinetic};
     };
 
-    auto [left_force_n, left_current] = side_force(left_v, left_wheel_v_m_s, right_wheel_v_m_s);
-    auto [right_force_n, right_current] = side_force(right_v, right_wheel_v_m_s, left_wheel_v_m_s);
+    SideForceResult left_r = side_force(left_v, left_wheel_v_m_s, right_wheel_v_m_s);
+    SideForceResult right_r = side_force(right_v, right_wheel_v_m_s, left_wheel_v_m_s);
 
     // Translation: resisted by the whole robot's mass. Rotation: resisted by
     // moment_of_inertia_kg_m2 about the yaw axis -- the piece that was missing entirely before.
-    double common_accel_m_s2 = (left_force_n + right_force_n) / archetype_.mass_kg;
-    double yaw_torque_nm = (right_force_n - left_force_n) * track_radius_m;
+    double common_accel_m_s2 = (left_r.net_force_n + right_r.net_force_n) / archetype_.mass_kg;
+    double yaw_torque_nm = (right_r.net_force_n - left_r.net_force_n) * track_radius_m;
     double yaw_accel_rad_s2 = yaw_torque_nm / archetype_.moment_of_inertia_kg_m2;
 
     common_v_m_s += common_accel_m_s2 * dt_s;
     yaw_rate_rad_s += yaw_accel_rad_s2 * dt_s;
+
+    // Each wheel's candidate new velocity from the just-integrated common/yaw state, same
+    // no-slip relation used everywhere else in this function.
+    double left_wheel_v_new = common_v_m_s - yaw_rate_rad_s * track_radius_m;
+    double right_wheel_v_new = common_v_m_s + yaw_rate_rad_s * track_radius_m;
+
+    // Zero-crossing guard. Kinetic friction (side_force's "was_kinetic" branch, above) is a
+    // constant opposing torque applied with plain forward-Euler integration -- nothing stops one
+    // dt's worth of it from overshooting straight through zero and out the other side. Without
+    // this guard that shows up as a coasting wheel's velocity (and so yaw rate) flipping sign
+    // every single tick once it's near rest, forever, instead of settling -- real kinetic
+    // friction can bring a wheel to rest but can't reverse it on its own. Only clamp a side to
+    // exactly 0 when BOTH: it was in the kinetic branch this tick, AND the COMMANDED duty (not
+    // torque_available, which already has back-EMF braking baked in -- see torque_at()'s own
+    // comment -- so it can legitimately oppose the old velocity on pure coast/ease-off too, at
+    // duty==0, with no PID reversal involved at all) isn't itself pointing opposite the wheel's
+    // OLD velocity. duty at 0 or still matching the old direction means friction (and/or passive
+    // back-EMF) is what pushed the crossing, not an active command; a duty that already opposed
+    // the old velocity is a real commanded reversal, which this sim's motor curve can
+    // legitimately produce a large enough swing from in one 10ms tick and must be left alone.
+    // common_v_m_s/yaw_rate_rad_s are rebuilt from the (possibly one-side-clamped) pair of wheel
+    // velocities via the exact inverse of the no-slip relation above, which leaves an unclamped
+    // side's own velocity completely undisturbed.
+    auto friction_caused_crossing = [](const SideForceResult& r, double old_v, double new_v) {
+      bool crossed = old_v != 0.0 && new_v * old_v < 0.0;
+      bool duty_still_old_direction = r.duty == 0.0 || r.duty * old_v > 0.0;
+      return r.was_kinetic && duty_still_old_direction && crossed;
+    };
+    bool left_crossed = friction_caused_crossing(left_r, left_wheel_v_m_s, left_wheel_v_new);
+    bool right_crossed = friction_caused_crossing(right_r, right_wheel_v_m_s, right_wheel_v_new);
+    if (left_crossed) left_wheel_v_new = 0.0;
+    if (right_crossed) right_wheel_v_new = 0.0;
+    if (left_crossed || right_crossed) {
+      common_v_m_s = (left_wheel_v_new + right_wheel_v_new) / 2.0;
+      yaw_rate_rad_s = (right_wheel_v_new - left_wheel_v_new) / (2.0 * track_radius_m);
+    }
+
     heading_deg_ += (yaw_rate_rad_s * 180.0 / M_PI) * dt_s;
 
     common_velocity_in_s_ = common_v_m_s / 0.0254;
     yaw_rate_deg_s_ = yaw_rate_rad_s * 180.0 / M_PI;
 
-    // Recompute each wheel's velocity from the just-updated common/yaw state -- for encoder
-    // reporting and so next tick's torque calc uses post-update speed, same no-slip relation.
-    left_.velocity_in_s = (common_v_m_s - yaw_rate_rad_s * track_radius_m) / 0.0254;
-    right_.velocity_in_s = (common_v_m_s + yaw_rate_rad_s * track_radius_m) / 0.0254;
+    // For encoder reporting; next tick's torque calc re-derives from common_velocity_in_s_/
+    // yaw_rate_deg_s_ (above) rather than from these, so the zero-crossing guard above already
+    // reached the value that matters for the sim's own recurrence.
+    left_.velocity_in_s = left_wheel_v_new / 0.0254;
+    right_.velocity_in_s = right_wheel_v_new / 0.0254;
     left_.position_in += left_.velocity_in_s * dt_s;
     right_.position_in += right_.velocity_in_s * dt_s;
+
+    double left_current = left_r.current_a;
+    double right_current = right_r.current_a;
 
     left_current *= current_scale_for_temperature(left_.temp_c);
     right_current *= current_scale_for_temperature(right_.temp_c);
