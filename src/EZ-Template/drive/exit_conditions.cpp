@@ -440,7 +440,9 @@ void Drive::pid_wait() {
     // the wait later.  A current exit still ends it.  Angle's exit is kept across a pass the same way xy's isn't
     // meant to be -- but it must not carry past the point it settled at: a heading exit latched on an earlier,
     // unrelated point can't stand in for the final point's actual heading, so it's reset every time pp_index
-    // moves to a new point, including the last move into the final point below.
+    // moves to a new point, including the last move into the final point below.  Within a single point, a
+    // latched axis is also rechecked right before a clean double-exit is trusted (below, in the final loop) --
+    // see the comment there for why.
     int a_exit_index = pp_index;
     if (mode == PURE_PURSUIT) {
       while (pp_index != (int)pp_movements.size() - 1) {
@@ -470,27 +472,67 @@ void Drive::pid_wait() {
     }
     if (pp_index != a_exit_index) a_exit = RUNNING;  // the final move onto the last point never re-enters the loop above
 
-    // When we're at the last point in PP / we're just going to point
-    while (!stalled && (xy_exit == RUNNING || a_exit == RUNNING)) {
-      if (mode != mode_snapshot || odom_target_start.x != retarget_target.x || odom_target_start.y != retarget_target.y || odom_target_start.theta != retarget_target.theta) {
-        if (print_toggle) std::cout << "  XY: retargeted by a concurrent motion mid-wait, ending early instead of finishing on the wrong target.\n";
-        interfered = true;
-        return;
+    // When we're at the last point in PP / we're just going to point. The inner loop is exactly the
+    // original per-pass loop (same checks, same single trailing delay per pass) -- wrapped in an
+    // outer loop only so it can be re-entered below after a relatch, without changing its own timing
+    // for the ordinary case where nothing needs relatching.
+    bool settled_via_stuck = false;
+    while (!stalled) {
+      while (!stalled && (xy_exit == RUNNING || a_exit == RUNNING)) {
+        if (mode != mode_snapshot || odom_target_start.x != retarget_target.x || odom_target_start.y != retarget_target.y || odom_target_start.theta != retarget_target.theta) {
+          if (print_toggle) std::cout << "  XY: retargeted by a concurrent motion mid-wait, ending early instead of finishing on the wrong target.\n";
+          interfered = true;
+          return;
+        }
+        secondary_velocity_sensor_update(xyPID);
+        secondary_velocity_sensor_update(current_a_odomPID);
+        xy_velocity_exit_hold_update();
+        xy_exit = xy_exit != RUNNING ? xy_exit : without_velocity(xyPID.exit_condition(both_sides(left_motors, right_motors)));
+        a_exit = a_exit != RUNNING ? a_exit : without_velocity(current_a_odomPID.exit_condition(both_sides(left_motors, right_motors)));
+        if ((xy_exit == RUNNING || a_exit == RUNNING) && watch.stuck(pp_index, target_distance(), xyPID.error, current_a_odomPID.error, travelled(), turned())) {
+          // Stopped inside both big error windows is where a big exit would have left it: that's settled, not stuck.
+          // (A robot hovering across the small error window can keep both exit timers from ever finishing.)
+          bool settled = target_distance() < xyPID.exit.big_error && std::fabs(current_a_odomPID.error) < current_a_odomPID.exit.big_error;
+          stalled = !settled;
+          settled_via_stuck = settled;
+          if (print_toggle) std::cout << "  XY: " << exit_to_string(xy_exit) << ", error: " << xyPID.error << ".   Angle: " << exit_to_string(a_exit) << ", error: " << current_a_odomPID.error << (settled ? ".   Stopped inside the big error windows, counted as settled.\n" : ".   Stuck before settling on the target.\n");
+          break;
+        }
+        pros::delay(util::DELAY_TIME);
       }
-      secondary_velocity_sensor_update(xyPID);
-      secondary_velocity_sensor_update(current_a_odomPID);
-      xy_velocity_exit_hold_update();
-      xy_exit = xy_exit != RUNNING ? xy_exit : without_velocity(xyPID.exit_condition(both_sides(left_motors, right_motors)));
-      a_exit = a_exit != RUNNING ? a_exit : without_velocity(current_a_odomPID.exit_condition(both_sides(left_motors, right_motors)));
-      if ((xy_exit == RUNNING || a_exit == RUNNING) && watch.stuck(pp_index, target_distance(), xyPID.error, current_a_odomPID.error, travelled(), turned())) {
-        // Stopped inside both big error windows is where a big exit would have left it: that's settled, not stuck.
-        // (A robot hovering across the small error window can keep both exit timers from ever finishing.)
-        bool settled = target_distance() < xyPID.exit.big_error && std::fabs(current_a_odomPID.error) < current_a_odomPID.exit.big_error;
-        stalled = !settled;
-        if (print_toggle) std::cout << "  XY: " << exit_to_string(xy_exit) << ", error: " << xyPID.error << ".   Angle: " << exit_to_string(a_exit) << ", error: " << current_a_odomPID.error << (settled ? ".   Stopped inside the big error windows, counted as settled.\n" : ".   Stuck before settling on the target.\n");
-        break;
+      // A stuck-but-settled break above is its own, already-final decision (at least one axis never
+      // finished its own exit timer at all -- still RUNNING -- but StuckWatch gave up waiting on it and
+      // both axes are currently inside their big error windows anyway). That is not the "both axes
+      // independently latched a window exit" case the recheck below is for, and there is nothing for it
+      // to un-latch (an axis that's still RUNNING was never latched in the first place) -- falling into
+      // it here would just delay-and-loop forever, since neither the settled check nor the stuck check
+      // resets. Stop here, same as the original code did.
+      if (stalled || settled_via_stuck) break;
+
+      // Both axes read as exited. The ternaries above only ever call exit_condition() again once an axis is
+      // back to RUNNING -- once latched, an axis is never looked at again for the rest of the inner loop, so a
+      // disturbance landing after it latched (most commonly angle, which typically settles first) would
+      // otherwise go completely unnoticed: this could return a clean, uninterfered exit while the robot is
+      // measurably off target on that axis. Recheck each axis that latched a window exit (SMALL_EXIT/
+      // BIG_EXIT) against the same window it exited through, using its own live error -- not
+      // exit_condition() (that would restart its internal timers) and not target_distance() (that would
+      // change what's actually being measured for xy, including during a boomerang leg, where xy's own exit
+      // is intentionally carrot-relative to the moving carrot, not the real waypoint). If it has drifted back
+      // outside, un-latch it (back to RUNNING) and loop back into the inner loop above to keep waiting.
+      // VELOCITY_EXIT is never latched here (without_velocity() already maps it to RUNNING); mA_EXIT and
+      // ERROR_NO_CONSTANTS aren't window exits and already force interfered=true below, so they're left
+      // alone. If the disturbance never resolves, StuckWatch above is what ends this, not an infinite relatch.
+      if (xy_exit == SMALL_EXIT && std::fabs(xyPID.error) >= xyPID.exit.small_error) xy_exit = RUNNING;
+      else if (xy_exit == BIG_EXIT && std::fabs(xyPID.error) >= xyPID.exit.big_error) xy_exit = RUNNING;
+      if (a_exit == SMALL_EXIT && std::fabs(current_a_odomPID.error) >= current_a_odomPID.exit.small_error) a_exit = RUNNING;
+      else if (a_exit == BIG_EXIT && std::fabs(current_a_odomPID.error) >= current_a_odomPID.exit.big_error) a_exit = RUNNING;
+
+      if (xy_exit == RUNNING || a_exit == RUNNING) {
+        pros::delay(util::DELAY_TIME);
+        continue;
       }
-      pros::delay(util::DELAY_TIME);
+
+      break;
     }
     if (print_toggle && !stalled && xy_exit != RUNNING && a_exit != RUNNING) std::cout << "  XY: " << exit_to_string(xy_exit) << " Exit, error: " << xyPID.error << ".   Angle: " << exit_to_string(a_exit) << " Exit, error: " << current_a_odomPID.error << ".\n";
 
