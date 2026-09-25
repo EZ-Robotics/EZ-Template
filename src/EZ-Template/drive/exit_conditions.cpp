@@ -1014,6 +1014,23 @@ void Drive::pid_wait_until_point(pose target) {
     }
 
     if (xy_exit != RUNNING && a_exit != RUNNING) {
+      // Once an axis latches SMALL_EXIT/BIG_EXIT, exit_condition() above is never called on it again --
+      // so unlike pid_wait()'s odom branch (see the comment on its own recheck, added for the identical
+      // bug), a disturbance landing on an already-latched axis (most commonly angle, which typically
+      // settles first) went completely unwatched for the rest of this wait. Recheck each latched axis
+      // against the window it exited through, using its own live error -- not exit_condition() (that
+      // would restart its internal timers). VELOCITY_EXIT is never latched here (without_velocity()
+      // already maps it to RUNNING); mA_EXIT/ERROR_NO_CONSTANTS aren't window exits and are handled by
+      // the interfered check below regardless, so they're left alone. A latched axis that has drifted
+      // back outside its window is un-latched, falling through to keep waiting -- the stuck check above
+      // remains the backstop if the disturbance never resolves.
+      if (xy_exit == SMALL_EXIT && std::fabs(xyPID.error) >= xyPID.exit.small_error) xy_exit = RUNNING;
+      else if (xy_exit == BIG_EXIT && std::fabs(xyPID.error) >= xyPID.exit.big_error) xy_exit = RUNNING;
+      if (a_exit == SMALL_EXIT && std::fabs(current_a_odomPID.error) >= current_a_odomPID.exit.small_error) a_exit = RUNNING;
+      else if (a_exit == BIG_EXIT && std::fabs(current_a_odomPID.error) >= current_a_odomPID.exit.big_error) a_exit = RUNNING;
+    }
+
+    if (xy_exit != RUNNING && a_exit != RUNNING) {
       if (print_toggle) {
         std::cout << "  XY: " << exit_to_string(xy_exit) << " Wait Until Exit Failsafe, triggered at (" << odom_x_get() << ", " << odom_y_get() << ") instead of (" << target.x << ", " << target.y << ")\n";
         xyPID.timers_reset();
