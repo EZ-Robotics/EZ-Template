@@ -98,9 +98,11 @@ TEST_CASE("pid_wait_until_point does not hang when both axes oscillate across th
   // under 300 passes from construction.
   CHECK(o.passes < 300);
   // Neither axis ever holds still long enough to be a genuine, sustained convergence -- the only
-  // honest outcome is StuckWatch's backstop ending this as interfered. An axis dithering across its
-  // only enabled window boundary now ends the wait interfered after roughly 1.5s, where before this
-  // recheck existed it could have latched and returned clean the first time both axes happened to be
-  // inside their windows on the same pass.
+  // honest outcome is StuckWatch's backstop ending this as interfered. The in-window halves here are
+  // disjoint (see script()'s comment), so both axes are never inside their windows on the same pass --
+  // before the recheck existed, each axis would instead latch in its own half and stay latched, and
+  // the wait would return clean as soon as the second axis latched (around pass 22-34), while the
+  // first axis was already back outside its own window. That is the latch bug itself, so this test
+  // also covers Fix 1, not just the recheck's own boundary-thrash risk.
   CHECK(o.interfered);
 }
