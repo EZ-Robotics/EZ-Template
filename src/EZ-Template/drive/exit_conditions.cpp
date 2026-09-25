@@ -738,6 +738,21 @@ void Drive::wait_until_turn_swing_internal(double target) {
   exit_output swing_exit = RUNNING;
 
   std::vector<pros::Motor>& sensor = current_swing == ez::LEFT_SWING ? left_motors : right_motors;
+
+  // Let the PID run at least 1 iteration before seeding the progress backstop from real error --
+  // matching pid_wait() and wait_until_drive(), both of which delay before constructing their own
+  // watch. Without this, a fresh Drive's very first turn or swing seeds SingleStuckWatch from a
+  // leftover/zero error instead of a real, computed one; the jump from that artifact to the real
+  // error then consumes Channel's one-shot rebound allowance (see Channel's own comment above) on
+  // an artifact instead of a real disturbance, so the wait's first genuine disturbance can get
+  // treated as a second one and false-stuck. g_error/g_sgn above are computed from a live read
+  // BEFORE this delay, on purpose -- they're this loop's "have we crossed the target" check, and
+  // reading them only after this delay would let a very short wait_until() target already be
+  // behind the robot by the time it's read, latching the wrong starting sign (see the matching
+  // comment in wait_until_drive() on why ITS crossed-check sign is taken from target's own sign
+  // instead, which sidesteps this same hazard a different way).
+  pros::delay(util::DELAY_TIME);
+
   // Same JC-1 progress backstop as pid_wait()'s TURN/SWING branches -- see the comment there.
   SingleStuckWatch turn_watch(turnPID, turnPID.error);
   SingleStuckWatch swing_watch(swingPID, swingPID.error);
