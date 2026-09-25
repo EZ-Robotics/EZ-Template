@@ -105,6 +105,7 @@ void PID::timers_reset() {
   m = 0;
   k_miss = 0;
   m_miss = 0;
+  k_unchanged_time = 0;
   arm_timer = 0;
   velocity_armed = false;
   is_mA = false;
@@ -211,9 +212,25 @@ exit_output PID::exit_condition(bool print) {
   if (exit.velocity_exit_time != 0 && velocity_armed && !held) {  // Check if this condition is enabled
     // A stale poll -- the raw value hasn't actually advanced since the last check, or this
     // derivative is a leftover 0 from a stale re-read inside a gap this check's own polling missed
-    // -- must leave k/k_miss exactly where they are; see k_prev_checked's comment in the header for
-    // why both conditions are needed. Neither branch below runs for a stale poll.
-    bool fresh = cur != k_prev_checked && derivative != 0.0;
+    // -- does not, on its own, count as evidence toward or against a stall: k/k_miss are left
+    // exactly where they are by the "fresh" path below; see k_prev_checked's comment in the header
+    // for why both conditions are needed there. An unchanged raw value is tracked separately
+    // (k_unchanged_time) so that once it's gone unchanged for far longer than any real sensor could
+    // plausibly take to refresh AND derivative genuinely reads 0 (both hold automatically through
+    // real compute()/compute_error() calls, since an unmoving raw value always derives a 0
+    // derivative there -- see raw_compute()), repeats of it start counting as fresh, zero-velocity
+    // samples instead -- see k_unchanged_time's comment in the header for why that ambiguity is
+    // resolvable by duration alone. Requiring derivative == 0.0 here (not just an unchanged raw
+    // value) is what keeps this from misfiring on a caller that writes derivative directly without
+    // ever moving cur through compute() -- not a real sensor reading, just a state no live PID can
+    // actually be in. Without the fix, a bare ez::PID driving a mechanism with no other progress
+    // backstop (unlike Drive's own waits, which StuckWatch/SingleStuckWatch back up independently)
+    // could never velocity-exit a genuinely, permanently stalled mechanism whose sensor happens to
+    // read back bit-identical every poll.
+    bool value_changed = cur != k_prev_checked;
+    k_unchanged_time = value_changed ? 0 : (k_unchanged_time + util::DELAY_TIME);
+    bool stale_stopped = !value_changed && derivative == 0.0 && k_unchanged_time > VELOCITY_STALE_TIMEOUT;
+    bool fresh = (value_changed && derivative != 0.0) || stale_stopped;
     k_prev_checked = cur;
     if (fresh) {
       if (std::fabs(derivative) <= velocity_zero_main) {
