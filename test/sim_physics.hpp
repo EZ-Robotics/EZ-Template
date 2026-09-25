@@ -44,23 +44,37 @@ struct MotorCurve {
                             // for true stall current, not independently sourced as the same number.
   double free_current_a;   // small no-load current draw; not sourced, a conventional small value.
 
-  // Torque available at a given output-shaft angular velocity (rad/s) and commanded duty (0..1,
-  // fraction of the 12V nominal supply -- see step_physics()'s applied_v). The whole
-  // stall-torque/free-speed line scales with duty (a standard linear DC-motor approximation: at
-  // half voltage, both stall torque AND free speed are halved), not just its sign -- a motor
-  // commanded at low PID output near a target must produce low torque even at rest, or nothing
-  // in this sim would ever settle gently, which defeats the point of simulating exit conditions
-  // at all. Clamped so an over-speed request (e.g. being driven backward by an external push)
-  // doesn't go negative here -- that's handled by the caller as regenerative/braking, not by
-  // this curve.
+  // Signed torque at a given output-shaft angular velocity (rad/s, signed in the wheel's own
+  // rotation frame) and commanded duty (-1..1, fraction of the 12V nominal supply -- see
+  // step_physics()'s applied_v): the standard linear DC-motor torque-speed line, extended
+  // through the origin into all four quadrants instead of clamped to the forward-motoring one.
+  // tau = tau_stall * (duty - omega/omega_free), clamped to +/-tau_stall.
+  //
+  // For 0 <= omega <= duty*omega_free (the only region the sim's very first version -- see this
+  // struct's git history -- ever covered) this is algebraically identical to that version's
+  // duty*(1-frac) form: tau_stall*duty*(1-omega/(duty*omega_free)) reduces to exactly
+  // tau_stall*(duty-omega/omega_free). So the forward-motoring case (a motor accelerating a
+  // wheel toward its commanded speed, including "low PID output near a target must produce low
+  // torque even at rest" -- still true here at omega=0) is unchanged.
+  //
+  // What's different is everywhere that old formula clamped its "frac" ratio to 1 and returned
+  // exactly 0: a wheel spinning faster than the commanded duty's implied speed (a PID easing off
+  // while the chassis still coasts from momentum), or spinning opposite the commanded duty (a
+  // PID reversing to brake), now gets genuine negative (regenerative/braking) torque instead of
+  // silently freewheeling. Found auditing a false "Turn: Stuck" that turned out to be present
+  // even in a from-scratch, zero-injected-fault control run: with no braking authority once
+  // torque hit that clamp, a light, fast, low-friction archetype (archetype_light_fast) spinning
+  // up during a saturated turn had nothing to slow it back down until the PID commanded a hard
+  // full reversal, so it coasted well past where it should have started braking -- overshooting
+  // the target and swinging back, or drifting to a stop short of it, depending on exact timing --
+  // and got falsely flagged stuck either way. A genuine sim-physics gap, not evidence of anything
+  // about sensor faults or real turn/swing behavior.
   double torque_at(double angular_velocity_rad_s, double duty) const {
     double free_speed_rad_s = free_speed_rpm * 2.0 * M_PI / 60.0;
     if (free_speed_rad_s <= 0.0) return 0.0;
-    double duty_mag = std::fmin(std::fabs(duty), 1.0);
-    double scaled_free_speed = free_speed_rad_s * duty_mag;
-    double frac = scaled_free_speed > 0.0 ? std::fabs(angular_velocity_rad_s) / scaled_free_speed : 1.0;
-    frac = std::fmin(frac, 1.0);
-    return stall_torque_nm * duty_mag * (1.0 - frac);
+    double duty_c = ez::util::clamp(duty, 1.0, -1.0);
+    double torque = stall_torque_nm * (duty_c - angular_velocity_rad_s / free_speed_rad_s);
+    return ez::util::clamp(torque, stall_torque_nm, -stall_torque_nm);
   }
 };
 
@@ -324,13 +338,11 @@ class SimRobot {
       double duty = ez::util::clamp(commanded_mv, supply_mv, -supply_mv) / supply_mv;  // signed, -1..1
 
       double wheel_angular_v = this_wheel_v_m_s / wheel_radius_m;  // rad/s at the wheel
-      // Back-EMF is implicit in the linear torque-speed curve itself (MotorCurve::torque_at),
-      // not a separate term -- matching SIM_FIDELITY.md section 2's modeling choice. Sign: torque
-      // pushes toward the commanded direction; torque_at() returns a magnitude (scaled by |duty|)
-      // that falls to 0 at that duty's free speed, evaluated at the wheel's CURRENT speed -- so
-      // apply the sign of duty (the command), not of the current wheel speed, so a motor can
-      // still accelerate from rest correctly.
-      double torque_available = std::copysign(curve.torque_at(wheel_angular_v, duty), duty);
+      // Back-EMF (including braking/regen in all four quadrants) is implicit in torque_at()
+      // itself now, already signed -- see its own comment. No copysign(duty) here any more: that
+      // used to be needed because the old torque_at() only ever returned a magnitude; doing it
+      // again here would double up the sign torque_at() now already applies.
+      double torque_available = curve.torque_at(wheel_angular_v, duty);
 
       // Turn-scrub resistive torque (placeholder model, see file header): opposes whichever side
       // is moving faster than the other, scaled by how much the two sides disagree (a proxy for
