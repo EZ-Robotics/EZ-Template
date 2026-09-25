@@ -979,7 +979,17 @@ void Drive::wait_until_turn_swing_internal(double target) {
   // TURN_TO_POINT here the way turn_at_final_target does would report interfered=true on every
   // ordinary turn-to-point settle, chained or not -- the mode restriction only matters for the
   // stuck-detected path above, not for this direct numeric comparison.
-  bool turn_recheck_settle_ok = std::fabs(target - turn_target) < FINAL_TARGET_TOLERANCE;
+  //
+  // The numeric comparison alone still can't tell a CHAINED turn-to-point call apart, though: a plain
+  // TURN's own target really is bumped by used_motion_chain_scale when chained
+  // (pid_wait_quick_chain(), a few hundred lines below), so target(==chain_target_start, unbumped)
+  // and turn_target(bumped) numerically differ there already, correctly losing the exemption -- but
+  // turn_pid_task() adds used_motion_chain_scale to TURN_TO_POINT's live error directly instead of
+  // ever bumping turnPID's own target (see its own comment, a few hundred lines below), so
+  // chain_target_start and turn_target stay numerically equal for a chained turn-to-point too. A
+  // chained wait is supposed to get no settled exemption at all, matching every other chained wait in
+  // this codebase, so TURN_TO_POINT additionally requires nothing having chained onto this motion.
+  bool turn_recheck_settle_ok = std::fabs(target - turn_target) < FINAL_TARGET_TOLERANCE && (mode != TURN_TO_POINT || used_motion_chain_scale == 0.0);
 
   // Let the PID run at least 1 iteration before seeding the progress backstop from real error --
   // matching pid_wait() and wait_until_drive(), both of which delay before constructing their own

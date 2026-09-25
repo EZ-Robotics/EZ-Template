@@ -113,3 +113,46 @@ TEST_CASE("pid_wait_until() TURN_TO_POINT: a stall short of an explicit checkpoi
   REQUIRE(returned);
   CHECK(chassis.interfered);
 }
+
+// A CHAINED turn-to-point call is supposed to get no settled exemption at all, matching every other
+// chained wait in this codebase (see pid_wait_quick_chain()'s own DRIVE handling and
+// test_wait_until_settled_at_final_target.cpp's comment on it) -- a chained motion is explicitly
+// meant to carry momentum through its target, not stop there. pid_wait_quick_chain() bumps
+// used_motion_chain_scale to a nonzero value (the default turn chain constant, 3deg) but -- unlike a
+// plain TURN -- never bumps turnPID's own target for TURN_TO_POINT (turn_pid_task() adds the chain
+// scale to its live error directly instead), so chain_target_start and turn_target stay numerically
+// equal even though this call is genuinely chained. The gate has to notice that some other way.
+TEST_CASE("pid_wait_quick_chain() TURN_TO_POINT: a stall at the real aim still returns interfered=true when chained") {
+  Drive chassis = make_chassis();
+  chassis.pid_print_toggle(false);
+  DriveTestAccess::imu_calibration_complete(chassis) = true;
+  chassis.pid_turn_exit_condition_set(90, 3.0, 250, 7.0, 0, 0);
+
+  chassis.pid_turn_set({10.0, 0.0, 0.0}, ez::fwd, 100);
+  REQUIRE(chassis.mode == TURN_TO_POINT);
+  g_aim = chassis.turnPID.target_get();
+
+  // Stalled 5deg short of the real aim itself (not a separate checkpoint) -- inside big_error(7), so
+  // it can latch BIG_EXIT -- isolating that losing the exemption here comes from this call being
+  // chained, not from target and turn_target numerically differing the way the explicit-checkpoint
+  // case above does.
+  g_stall_at = g_aim - 5.0;
+
+  g_chassis = &chassis;
+  test_stub::g_clock.on_delay = stalled_script;
+  test_stub::g_clock.delay_calls_until_stop = 200;
+
+  bool returned = true;
+  try {
+    chassis.pid_wait_quick_chain();
+  } catch (test_stub::StopLoop&) {
+    returned = false;
+  }
+  test_stub::g_clock.delay_calls_until_stop = -1;
+  test_stub::g_clock.on_delay = nullptr;
+
+  MESSAGE("returned=", returned, " interfered=", chassis.interfered, " turnPID.error=", chassis.turnPID.error,
+          " aim=", g_aim, " stall_at=", g_stall_at);
+  REQUIRE(returned);
+  CHECK(chassis.interfered);
+}
