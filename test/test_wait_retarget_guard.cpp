@@ -263,12 +263,15 @@ TEST_CASE("wait_until_turn_swing_internal() SWING: a concurrent pid_swing_set() 
 
 // ---- Round-4 regression: wait_until_turn_swing_internal() now runs one pros::delay() (to seed
 // SingleStuckWatch from a real first error instead of a leftover/zero one -- see that delay's own
-// comment) BEFORE mode_snapshot/turn_target/swing_target are captured. Every sibling wait with this
-// same "snapshot after the first settle delay" shape (pid_wait(), pid_wait_until_point(),
-// wait_until_drive()) has it documented as a known, accepted gap -- but THIS function used to take
-// its snapshot immediately, with no delay ahead of it at all, so it was never in that list. A
-// retarget landing in this new first delay (pass 1, not the RETARGET_AT=10 the tests above use) is
-// captured as this call's own baseline instead of being noticed as a retarget.
+// comment) BEFORE mode_snapshot/turn_target/swing_target are captured -- this function used to take
+// its snapshot immediately, with no delay ahead of it at all. A retarget landing in this new first
+// delay (pass 1, not the RETARGET_AT=10 the tests above use) would have been captured as this call's
+// own baseline instead of being noticed as a retarget, the same "snapshot after the first settle
+// delay" shape pid_wait() DRIVE and wait_until_drive() also had and are now fixed for (see
+// test_retarget_caught_before_first_settle_delay.cpp) -- pid_wait()'s own odom/TURN/SWING branches
+// still take their target snapshot after their shared leading delay, so a same-mode retarget there
+// is still unfixed; pid_wait_until_point() has the shape in full and is tracked separately, not
+// fixed here.
 constexpr int FIRST_DELAY_RETARGET_AT = 1;
 
 void turn_wait_until_retargeted_in_first_delay(Drive& c, int n) {

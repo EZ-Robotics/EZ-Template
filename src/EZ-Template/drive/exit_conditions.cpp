@@ -338,8 +338,28 @@ void Drive::pid_odom_turn_exit_condition_set(ez::QTime p_small_exit_time, ez::QA
 
 // User wrapper for exit condition
 void Drive::pid_wait() {
+  // Snapshotted BEFORE the leading settle delay below, not after: every branch this function can
+  // run (DRIVE/odom/TURN/SWING) decides which one even runs from `mode` read fresh once the delay
+  // ends, so a concurrent motion setter from a DIFFERENT mode landing during this delay is
+  // invisible to a snapshot taken afterward -- that snapshot already reflects the new mode, so this
+  // call silently runs the wrong branch entirely (with that branch's own internal retarget guard
+  // then comparing the hijacking motion against itself) instead of ending the wait it was actually
+  // started for. DRIVE's own left/right targets are snapshotted here too, for the same reason:
+  // DRIVE's own mid-loop guard below compares against these, and they need to reflect the motion
+  // this call actually started for, not whatever a same-mode retarget already landed during this
+  // same delay.
+  e_mode entry_mode_snapshot = mode;
+  double entry_left_target = leftPID.target_get();
+  double entry_right_target = rightPID.target_get();
+
   // Let the PID run at least 1 iteration
   pros::delay(util::DELAY_TIME);
+
+  if (mode != entry_mode_snapshot) {
+    if (print_toggle) std::cout << "  Drive: retargeted by a concurrent motion during the wait's own first pass, ending early instead of running the wrong branch.\n";
+    interfered = true;
+    return;
+  }
 
   if (mode == DRIVE) {
     exit_output left_exit = RUNNING;
@@ -353,9 +373,9 @@ void Drive::pid_wait() {
     // also watched: a concurrent setter from a DIFFERENT mode (e.g. pid_turn_set() while this is waiting on
     // DRIVE) doesn't touch leftPID/rightPID's target at all, so without this it would go unnoticed, freezing
     // this wait's view of the abandoned motion instead of ending it.
-    e_mode mode_snapshot = mode;
-    double left_target = leftPID.target_get();
-    double right_target = rightPID.target_get();
+    e_mode mode_snapshot = entry_mode_snapshot;
+    double left_target = entry_left_target;
+    double right_target = entry_right_target;
     // DRIVE has no odometry to fall back on, so this is the same progress backstop StuckWatch gives odom waits,
     // built around each side's own error instead: neither velocity nor mA catches a sustained disturbance that
     // never reads as "stopped" and never draws over current (a continuous spin, a defender holding the robot,
@@ -363,39 +383,88 @@ void Drive::pid_wait() {
     // still RUNNING and not progressing; a side that already exited cleanly can't drag the wait down.
     SingleStuckWatch left_watch(leftPID, leftPID.error), right_watch(rightPID, rightPID.error);
     bool stalled = false;
-    while (left_exit == RUNNING || right_exit == RUNNING) {
-      if (mode != mode_snapshot || leftPID.target_get() != left_target || rightPID.target_get() != right_target) {
-        if (print_toggle) std::cout << "  Drive: retargeted by a concurrent motion mid-wait, ending early instead of finishing on the wrong target.\n";
-        interfered = true;
-        return;
+    // A stuck-but-settled break below is its own, already-final decision (at least one side never
+    // finished its own exit timer at all -- still RUNNING -- but the stuck watch gave up waiting on
+    // it and every side that's still RUNNING is currently inside its own big error window anyway).
+    // That is not the "both sides independently latched a window exit" case the recheck below is
+    // for, and there is nothing for it to un-latch (a side that's still RUNNING was never latched in
+    // the first place) -- falling into it here would just delay-and-loop forever, since neither the
+    // settled check nor the stuck check resets. Stop here, same as the original code did -- see the
+    // matching flag and comment in pid_wait()'s odom branch above.
+    bool settled_via_stuck = false;
+    while (true) {
+      while (!stalled && (left_exit == RUNNING || right_exit == RUNNING)) {
+        if (mode != mode_snapshot || leftPID.target_get() != left_target || rightPID.target_get() != right_target) {
+          if (print_toggle) std::cout << "  Drive: retargeted by a concurrent motion mid-wait, ending early instead of finishing on the wrong target.\n";
+          interfered = true;
+          return;
+        }
+        secondary_velocity_sensor_update(leftPID);
+        secondary_velocity_sensor_update(rightPID);
+        // A genuinely slow (not stalled) DRIVE cruise can read as "stopped" to the velocity channel --
+        // PID.cpp's velocity floor is a fixed constant, independent of gearing or wheel size, so a real,
+        // low-gearing drivetrain cruising under that floor is not stalled, just slow. Odom already filters
+        // this out (without_velocity(), above); DRIVE didn't. SingleStuckWatch (below) still catches a
+        // genuine stall independently -- it watches PID error, not velocity -- so filtering this out can't
+        // turn a real stall into a hang.
+        left_exit = left_exit != RUNNING ? left_exit : without_velocity(leftPID.exit_condition(left_motors));
+        right_exit = right_exit != RUNNING ? right_exit : without_velocity(rightPID.exit_condition(right_motors));
+        bool left_stuck = left_exit == RUNNING && left_watch.stuck(leftPID.error);
+        bool right_stuck = right_exit == RUNNING && right_watch.stuck(rightPID.error);
+        // Stuck only when at least one side is still RUNNING and every side that's still RUNNING is stuck --
+        // not when both sides just happened to exit normally on the same pass, which the (exit != RUNNING) half
+        // of each clause would otherwise also satisfy.
+        if ((left_exit == RUNNING || right_exit == RUNNING) && (left_exit != RUNNING || left_stuck) && (right_exit != RUNNING || right_stuck)) {
+          // A side that's still RUNNING and already sitting inside its own big error window is where a big
+          // exit would have left it: that's settled, not stuck. (A side hovering across its own small error
+          // window can keep both its own exit timers from ever finishing.) A side that already latched an
+          // exit is trusted here only if its OWN live error is still inside its big error window right now --
+          // a side that latched early and has since been shoved or pinned off target must not count as
+          // settled just because it once exited cleanly (see the recheck below, which applies this identical
+          // rule to a full double latch instead of this stuck-detected path).
+          bool left_settled = std::fabs(leftPID.error) < leftPID.exit.big_error;
+          bool right_settled = std::fabs(rightPID.error) < rightPID.exit.big_error;
+          bool settled = left_settled && right_settled;
+          stalled = !settled;
+          settled_via_stuck = settled;
+          if (print_toggle) std::cout << "  Drive: " << (stalled ? "Stuck" : "Stuck, but stopped inside the big error windows, counted as settled") << ", error: L," << leftPID.error << " R," << rightPID.error << "\n";
+          break;
+        }
+        pros::delay(util::DELAY_TIME);
       }
-      secondary_velocity_sensor_update(leftPID);
-      secondary_velocity_sensor_update(rightPID);
-      // A genuinely slow (not stalled) DRIVE cruise can read as "stopped" to the velocity channel --
-      // PID.cpp's velocity floor is a fixed constant, independent of gearing or wheel size, so a real,
-      // low-gearing drivetrain cruising under that floor is not stalled, just slow. Odom already filters
-      // this out (without_velocity(), above); DRIVE didn't. SingleStuckWatch (below) still catches a
-      // genuine stall independently -- it watches PID error, not velocity -- so filtering this out can't
-      // turn a real stall into a hang.
-      left_exit = left_exit != RUNNING ? left_exit : without_velocity(leftPID.exit_condition(left_motors));
-      right_exit = right_exit != RUNNING ? right_exit : without_velocity(rightPID.exit_condition(right_motors));
-      bool left_stuck = left_exit == RUNNING && left_watch.stuck(leftPID.error);
-      bool right_stuck = right_exit == RUNNING && right_watch.stuck(rightPID.error);
-      // Stuck only when at least one side is still RUNNING and every side that's still RUNNING is stuck --
-      // not when both sides just happened to exit normally on the same pass, which the (exit != RUNNING) half
-      // of each clause would otherwise also satisfy.
-      if ((left_exit == RUNNING || right_exit == RUNNING) && (left_exit != RUNNING || left_stuck) && (right_exit != RUNNING || right_stuck)) {
-        // A side that's still RUNNING and already sitting inside its own big error window is where a big
-        // exit would have left it: that's settled, not stuck. (A side hovering across its own small error
-        // window can keep both its own exit timers from ever finishing.) A side that already exited cleanly
-        // can't block settling.
-        bool left_settled = left_exit != RUNNING || std::fabs(leftPID.error) < leftPID.exit.big_error;
-        bool right_settled = right_exit != RUNNING || std::fabs(rightPID.error) < rightPID.exit.big_error;
-        stalled = !(left_settled && right_settled);
-        if (print_toggle) std::cout << "  Drive: " << (stalled ? "Stuck" : "Stuck, but stopped inside the big error windows, counted as settled") << ", error: L," << leftPID.error << " R," << rightPID.error << "\n";
-        break;
+      if (stalled || settled_via_stuck) break;
+
+      // Both sides read as exited (or this loop wouldn't have exited above). Right before trusting
+      // a clean double-exit, recheck each side that latched a window exit (SMALL_EXIT/BIG_EXIT)
+      // against the same window it exited through, using its own live error -- not exit_condition()
+      // (that would restart its internal timers) -- the same treatment pid_wait()'s odom branch
+      // already gives a clean double-exit (see the comment there). A side that has drifted back
+      // outside since latching is un-latched (back to RUNNING) so the inner loop above keeps
+      // genuinely watching it instead of trusting a stale result. Its own stuck watch is
+      // deliberately NOT reseeded: it already stopped being fed the moment this side first latched,
+      // so its own clock has effectively been running the whole time it sat unwatched, and reseeding
+      // it here would hand a pathological hover right at the exit window's edge (latch, drift out,
+      // un-latch, re-latch, ...) a fresh grace period on every cycle -- exactly the unbounded relatch
+      // the odom branch's own comment above rules out. VELOCITY_EXIT is never latched here
+      // (without_velocity() already maps it to RUNNING); mA_EXIT and ERROR_NO_CONSTANTS aren't
+      // window exits and are left alone -- the final check below still catches mA_EXIT/VELOCITY_EXIT
+      // regardless of this recheck.
+      if (left_exit == SMALL_EXIT && std::fabs(leftPID.error) >= leftPID.exit.small_error) {
+        left_exit = RUNNING;
+      } else if (left_exit == BIG_EXIT && std::fabs(leftPID.error) >= leftPID.exit.big_error) {
+        left_exit = RUNNING;
       }
-      pros::delay(util::DELAY_TIME);
+      if (right_exit == SMALL_EXIT && std::fabs(rightPID.error) >= rightPID.exit.small_error) {
+        right_exit = RUNNING;
+      } else if (right_exit == BIG_EXIT && std::fabs(rightPID.error) >= rightPID.exit.big_error) {
+        right_exit = RUNNING;
+      }
+
+      if (left_exit == RUNNING || right_exit == RUNNING) {
+        pros::delay(util::DELAY_TIME);
+        continue;
+      }
+      break;
     }
     if (print_toggle && !stalled) std::cout << "  Left: " << exit_to_string(left_exit) << " Exit, error: " << leftPID.error << "   Right: " << exit_to_string(right_exit) << " Exit, error: " << rightPID.error << "\n";
 
@@ -635,13 +704,36 @@ void Drive::pid_wait() {
 }
 
 void Drive::wait_until_drive(double target) {
-  pros::delay(10);
-
-  // Make sure mode is correct
+  // Make sure mode is correct -- checked, and the retarget-detection snapshot below taken, BEFORE
+  // the leading settle delay: a concurrent motion setter changing mode or retargeting during that
+  // delay must be caught by the loop's own guard on its very first pass, not read afterward as
+  // already-the-new-motion (silently adopting it) or as the wrong mode (returning with no
+  // interfered signal at all) -- the same hazard wait_until_turn_swing_internal() and
+  // pid_wait_until_index_started() are already fixed for.
   if (!(mode == DRIVE || mode == POINT_TO_POINT || mode == PURE_PURSUIT)) {
     printf("Mode needs to be drive!\n");
     return;
   }
+  // An odom move's leftPID/rightPID target is a fixed look-ahead point set once at the start of the motion (see
+  // without_position_exits()'s comment above); a plain DRIVE move's leftPID/rightPID target already is the real
+  // drive target.  Only the odom case needs the exit-condition filtering and the real-distance-keyed backstop below
+  // -- DRIVE's own target already tracks what this wait is actually waiting for.
+  bool is_odom = mode == POINT_TO_POINT || mode == PURE_PURSUIT;
+  // Same concurrent-retarget guard as pid_wait()'s branches.  In DRIVE mode leftPID/rightPID's target only
+  // changes on a real second pid_drive_set(), same as pid_wait()'s DRIVE branch.  In odom modes (this function
+  // also runs for POINT_TO_POINT/PURE_PURSUIT) leftPID/rightPID's target is the fixed look-ahead point and
+  // legitimately gets rewritten on every ordinary waypoint advance (raw_pid_odom_ptp_set(), set_odom_pid.cpp),
+  // so odom_target_start -- only touched by a top-level odom setter starting a genuinely new motion -- is used
+  // instead, the same as pid_wait()'s odom branch.  mode is watched on top of both: a concurrent setter from a
+  // mode that isn't even DRIVE/POINT_TO_POINT/PURE_PURSUIT (e.g. a real second pid_turn_set()) touches neither
+  // leftPID/rightPID's target nor odom_target_start, so without this it would go unnoticed.
+  e_mode mode_snapshot = mode;
+  bool odom_mode = is_odom;
+  double left_target = leftPID.target_get();
+  double right_target = rightPID.target_get();
+  pose retarget_target = odom_target_start;
+
+  pros::delay(10);
 
   // Calculate error between current and target (target needs to be an in between position)
   double l_tar = l_start + target;
@@ -656,12 +748,6 @@ void Drive::wait_until_drive(double target) {
   // target, so both are expected to close from the same direction.
   int l_sgn = util::sgn(target);
   int r_sgn = l_sgn;
-
-  // An odom move's leftPID/rightPID target is a fixed look-ahead point set once at the start of the motion (see
-  // without_position_exits()'s comment above); a plain DRIVE move's leftPID/rightPID target already is the real
-  // drive target.  Only the odom case needs the exit-condition filtering and the real-distance-keyed backstop below
-  // -- DRIVE's own target already tracks what this wait is actually waiting for.
-  bool is_odom = mode == POINT_TO_POINT || mode == PURE_PURSUIT;
 
   exit_output left_exit = RUNNING;
   exit_output right_exit = RUNNING;
@@ -683,21 +769,11 @@ void Drive::wait_until_drive(double target) {
   // wait_until()'s target IS the final target. Only DRIVE's own target already tracks the real
   // motion (see is_odom's own comment above) -- an odom move's leftPID/rightPID target is a fixed
   // look-ahead point, never the real final target, so this is unconditionally false for odom.
-  bool at_final_target = !is_odom && std::fabs(l_tar - leftPID.target_get()) < FINAL_TARGET_TOLERANCE && std::fabs(r_tar - rightPID.target_get()) < FINAL_TARGET_TOLERANCE;
-
-  // Same concurrent-retarget guard as pid_wait()'s branches.  In DRIVE mode leftPID/rightPID's target only
-  // changes on a real second pid_drive_set(), same as pid_wait()'s DRIVE branch.  In odom modes (this function
-  // also runs for POINT_TO_POINT/PURE_PURSUIT) leftPID/rightPID's target is the fixed look-ahead point and
-  // legitimately gets rewritten on every ordinary waypoint advance (raw_pid_odom_ptp_set(), set_odom_pid.cpp),
-  // so odom_target_start -- only touched by a top-level odom setter starting a genuinely new motion -- is used
-  // instead, the same as pid_wait()'s odom branch.  mode is watched on top of both: a concurrent setter from a
-  // mode that isn't even DRIVE/POINT_TO_POINT/PURE_PURSUIT (e.g. a real second pid_turn_set()) touches neither
-  // leftPID/rightPID's target nor odom_target_start, so without this it would go unnoticed.
-  e_mode mode_snapshot = mode;
-  bool odom_mode = mode == POINT_TO_POINT || mode == PURE_PURSUIT;
-  double left_target = leftPID.target_get();
-  double right_target = rightPID.target_get();
-  pose retarget_target = odom_target_start;
+  // Derived from left_target/right_target above (the same pre-delay snapshot the retarget guard
+  // uses), not a fresh target_get() call here, so this reflects this call's own original motion
+  // even if a retarget already landed in the delay above -- though the retarget guard's first pass
+  // returns before this value is ever consulted in that case anyway.
+  bool at_final_target = !is_odom && std::fabs(l_tar - left_target) < FINAL_TARGET_TOLERANCE && std::fabs(r_tar - right_target) < FINAL_TARGET_TOLERANCE;
 
   while (true) {
     if (mode != mode_snapshot) {
@@ -731,7 +807,14 @@ void Drive::wait_until_drive(double target) {
       if (on_last_point) {
         secondary_velocity_sensor_update(xyPID);
         xy_velocity_exit_hold_update();
-        exit_output xy_exit = xyPID.exit_condition(both_sides(left_motors, right_motors));
+        // A slow (not stalled) cruise must not be ended by the velocity channel alone -- same
+        // reasoning, and the same without_velocity() treatment, as every other odom xy exit check
+        // in this file (pid_wait()'s odom branch, pid_wait_until_point(),
+        // pid_wait_until_index_started()). xy_velocity_exit_hold_update() above only protects a
+        // turn-bias pivot up to its own fallback; a genuinely slow, healthy, straight cruise still
+        // needs this filter. SingleStuckWatch (via l_error/r_error below) remains the real stall
+        // backstop.
+        exit_output xy_exit = without_velocity(xyPID.exit_condition(both_sides(left_motors, right_motors)));
         if (xy_exit != RUNNING) {
           if (print_toggle) std::cout << "  XY: " << exit_to_string(xy_exit) << " Wait Until Exit Failsafe, the move ended before reaching " << target << "\n";
           if (xy_exit == mA_EXIT || xy_exit == VELOCITY_EXIT) interfered = true;
@@ -743,10 +826,15 @@ void Drive::wait_until_drive(double target) {
         secondary_velocity_sensor_update(leftPID);
         secondary_velocity_sensor_update(rightPID);
         // Non-odom (plain DRIVE): a slow (not stalled) cruise must not be ended by the velocity channel
-        // alone -- same reasoning as pid_wait()'s DRIVE branch. Odom's own on_last_point/look-ahead exit
-        // filtering above and below is untouched by this fix.
-        if (left_exit == RUNNING) left_exit = is_odom ? without_position_exits(leftPID.exit_condition(left_motors)) : without_velocity(leftPID.exit_condition(left_motors));
-        if (right_exit == RUNNING) right_exit = is_odom ? without_position_exits(rightPID.exit_condition(right_motors)) : without_velocity(rightPID.exit_condition(right_motors));
+        // alone -- same reasoning as pid_wait()'s DRIVE branch. Odom: without_position_exits() strips
+        // SMALL_EXIT/BIG_EXIT on purpose (leftPID/rightPID's target here is only a frozen look-ahead
+        // point, not the real final target) but a stalled motor's velocity reading is real regardless of
+        // which target produced the error -- except the same fixed 5in/s velocity floor that's too fast
+        // for a genuinely slow, healthy cruise everywhere else in this file is exactly as blind to gearing
+        // here, so it still needs without_velocity() on top, same as every other site; mA_EXIT is left
+        // through unfiltered, since over-current is real regardless of target.
+        if (left_exit == RUNNING) left_exit = without_velocity(is_odom ? without_position_exits(leftPID.exit_condition(left_motors)) : leftPID.exit_condition(left_motors));
+        if (right_exit == RUNNING) right_exit = without_velocity(is_odom ? without_position_exits(rightPID.exit_condition(right_motors)) : rightPID.exit_condition(right_motors));
         bool left_stuck = left_exit == RUNNING && left_watch.stuck(is_odom ? l_error : leftPID.error);
         bool right_stuck = right_exit == RUNNING && right_watch.stuck(is_odom ? r_error : rightPID.error);
         // See the matching comment in pid_wait()'s DRIVE branch -- both sides exiting normally on the same pass
@@ -756,8 +844,13 @@ void Drive::wait_until_drive(double target) {
           // wait_until()'s target really is the motion's final target -- see at_final_target's comment.
           bool stalled = true;
           if (at_final_target) {
-            bool left_settled = left_exit != RUNNING || std::fabs(leftPID.error) < leftPID.exit.big_error;
-            bool right_settled = right_exit != RUNNING || std::fabs(rightPID.error) < rightPID.exit.big_error;
+            // A side that already latched an exit is only trusted as settled here if its live error
+            // is still inside the window that exit means -- a side that latched early and has since
+            // been shoved or pinned off target must not count as settled just because it once exited
+            // cleanly (same rule as the recheck in the `else` branch below, applied here to the
+            // stuck-detected path instead).
+            bool left_settled = std::fabs(leftPID.error) < leftPID.exit.big_error;
+            bool right_settled = std::fabs(rightPID.error) < rightPID.exit.big_error;
             stalled = !(left_settled && right_settled);
           }
           if (print_toggle) std::cout << "  Drive: " << (stalled ? "Stuck" : "Stuck, but stopped inside the big error windows, counted as settled") << " Wait Until Exit Failsafe, triggered at " << drive_sensor_left() - l_start << " instead of " << target << "\n";
@@ -767,14 +860,50 @@ void Drive::wait_until_drive(double target) {
         // No delay here -- the loop's own delay at the bottom already advances one DELAY_TIME per pass.  A second
         // delay here made every failsafe in this function take about twice its configured time in real time.
       } else {
-        if (print_toggle) {
-          std::cout << "  Left: " << exit_to_string(left_exit) << " Wait Until Exit Failsafe, triggered at " << drive_sensor_left() - l_start << " instead of " << target << "\n";
-          std::cout << "  Right: " << exit_to_string(right_exit) << " Wait Until Exit Failsafe, triggered at " << drive_sensor_right() - r_start << " instead of " << target << "\n";
+        // Both sides have already latched a non-RUNNING exit on an earlier pass. Right before
+        // trusting that as a clean return, recheck each latched side against the window it exited
+        // through, using its own live error -- not exit_condition() (that would restart its
+        // internal timers) -- the same treatment pid_wait()'s odom branch already gives a clean
+        // double-exit. A side that has drifted back outside its own window since latching is
+        // un-latched (back to RUNNING), falling through to keep waiting instead of trusting a stale
+        // result. Its stuck watch is deliberately NOT reseeded -- see pid_wait()'s DRIVE branch's
+        // matching recheck for why: it already stopped being fed the moment this side first latched,
+        // so its own clock has effectively kept running the whole time it sat unwatched, and
+        // reseeding here would hand a pathological hover right at the window's edge a fresh grace
+        // period on every relatch. VELOCITY_EXIT is never latched here (without_velocity() already
+        // maps it to RUNNING); mA_EXIT isn't a window exit and is handled below regardless, so it's
+        // left alone.
+        if (left_exit == SMALL_EXIT && std::fabs(leftPID.error) >= leftPID.exit.small_error) {
+          left_exit = RUNNING;
+        } else if (left_exit == BIG_EXIT && std::fabs(leftPID.error) >= leftPID.exit.big_error) {
+          left_exit = RUNNING;
         }
-        if (left_exit == mA_EXIT || left_exit == VELOCITY_EXIT || right_exit == mA_EXIT || right_exit == VELOCITY_EXIT) {
-          interfered = true;
+        if (right_exit == SMALL_EXIT && std::fabs(rightPID.error) >= rightPID.exit.small_error) {
+          right_exit = RUNNING;
+        } else if (right_exit == BIG_EXIT && std::fabs(rightPID.error) >= rightPID.exit.big_error) {
+          right_exit = RUNNING;
         }
-        return;
+
+        if (left_exit == RUNNING || right_exit == RUNNING) {
+          // Un-latched -- fall through to the shared delay below and keep waiting instead of
+          // returning on a stale result.
+        } else {
+          if (print_toggle) {
+            std::cout << "  Left: " << exit_to_string(left_exit) << " Wait Until Exit Failsafe, triggered at " << drive_sensor_left() - l_start << " instead of " << target << "\n";
+            std::cout << "  Right: " << exit_to_string(right_exit) << " Wait Until Exit Failsafe, triggered at " << drive_sensor_right() - r_start << " instead of " << target << "\n";
+          }
+          // A clean double window-exit (SMALL_EXIT/BIG_EXIT) only ends this wait_until() without
+          // interfered=true when its own target really is the motion's final target -- see
+          // at_final_target's comment and WAIT_BEHAVIOR_SPEC.md's settled-exemption entry. A
+          // checkpoint short of the final target that the robot stopped short of past this point is
+          // a real early exit, not a settle.
+          bool stalled = !at_final_target;
+          if (left_exit == mA_EXIT || left_exit == VELOCITY_EXIT || right_exit == mA_EXIT || right_exit == VELOCITY_EXIT) {
+            stalled = true;
+          }
+          if (stalled) interfered = true;
+          return;
+        }
       }
     }
     // Once either side has reached or passed target, return
@@ -835,6 +964,32 @@ void Drive::wait_until_turn_swing_internal(double target) {
   // TURN_TO_POINT differently).
   bool turn_at_final_target = mode == TURN && std::fabs(target - turn_target) < FINAL_TARGET_TOLERANCE;
   bool swing_at_final_target = std::fabs(target - swing_target) < FINAL_TARGET_TOLERANCE;
+  // The recheck's own settled-exemption gate (below) needs a different rule for TURN_TO_POINT than
+  // turn_at_final_target above: turn_at_final_target requires mode==TURN because a TURN_TO_POINT
+  // window exit is measured against a live error recomputed every pass from the point actually being
+  // faced (turn_pid_task()), not against turnPID's own static target -- so comparing THIS call's
+  // target against that static snapshot can't tell "this call's target is the real aim" from "this
+  // call's target is some other angle" the way it can for a plain TURN. It doesn't need to: unlike a
+  // plain TURN, turn_set_internal() (called by both pid_turn_set() and pid_turn_set(pose), including
+  // for TURN_TO_POINT) writes the SAME value to turnPID's static target and to chain_target_start at
+  // motion start, so a wait_until() call chained onto the motion's own target (chain_target_start, as
+  // pid_wait_quick()/pid_wait_quick_chain() pass) numerically matches turn_target for TURN_TO_POINT
+  // too -- while an explicit checkpoint short of the real aim (a genuine intermediate target) still
+  // numerically differs from it, exactly the distinction this gate exists to draw. Excluding
+  // TURN_TO_POINT here the way turn_at_final_target does would report interfered=true on every
+  // ordinary turn-to-point settle, chained or not -- the mode restriction only matters for the
+  // stuck-detected path above, not for this direct numeric comparison.
+  //
+  // The numeric comparison alone still can't tell a CHAINED turn-to-point call apart, though: a plain
+  // TURN's own target really is bumped by used_motion_chain_scale when chained
+  // (pid_wait_quick_chain(), a few hundred lines below), so target(==chain_target_start, unbumped)
+  // and turn_target(bumped) numerically differ there already, correctly losing the exemption -- but
+  // turn_pid_task() adds used_motion_chain_scale to TURN_TO_POINT's live error directly instead of
+  // ever bumping turnPID's own target (see its own comment, a few hundred lines below), so
+  // chain_target_start and turn_target stay numerically equal for a chained turn-to-point too. A
+  // chained wait is supposed to get no settled exemption at all, matching every other chained wait in
+  // this codebase, so TURN_TO_POINT additionally requires nothing having chained onto this motion.
+  bool turn_recheck_settle_ok = std::fabs(target - turn_target) < FINAL_TARGET_TOLERANCE && (mode != TURN_TO_POINT || used_motion_chain_scale == 0.0);
 
   // Let the PID run at least 1 iteration before seeding the progress backstop from real error --
   // matching pid_wait() and wait_until_drive(), both of which delay before constructing their own
@@ -883,12 +1038,32 @@ void Drive::wait_until_turn_swing_internal(double target) {
           }
           // No delay here -- see the matching comment in wait_until_drive().
         } else {
-          if (print_toggle) std::cout << "  Turn: " << exit_to_string(turn_exit) << " Wait Until Exit Failsafe, triggered at " << drive_angle_get() << " instead of " << target << "\n";
-
-          if (turn_exit == mA_EXIT || turn_exit == VELOCITY_EXIT) {
-            interfered = true;
+          // turn_exit already latched a non-RUNNING exit on an earlier pass. Right before trusting
+          // that as a clean return, recheck it against the window it exited through, using its own
+          // live error -- same treatment as wait_until_drive()'s own else branch (see its comment,
+          // including why its stuck watch is deliberately NOT reseeded here either). A latch that
+          // has drifted back outside its own window since exiting is un-latched (back to RUNNING),
+          // falling through to keep waiting instead of trusting a stale result.
+          if (turn_exit == SMALL_EXIT && std::fabs(turnPID.error) >= turnPID.exit.small_error) {
+            turn_exit = RUNNING;
+          } else if (turn_exit == BIG_EXIT && std::fabs(turnPID.error) >= turnPID.exit.big_error) {
+            turn_exit = RUNNING;
           }
-          return;
+
+          if (turn_exit != RUNNING) {
+            if (print_toggle) std::cout << "  Turn: " << exit_to_string(turn_exit) << " Wait Until Exit Failsafe, triggered at " << drive_angle_get() << " instead of " << target << "\n";
+
+            // Same settled-exemption gating as wait_until_drive()'s else branch -- a clean
+            // SMALL_EXIT/BIG_EXIT latch only ends this without interfered=true when this
+            // wait_until()'s own target really is the motion's final target -- see
+            // turn_recheck_settle_ok's own comment for why TURN_TO_POINT reads that differently
+            // than turn_at_final_target does.
+            bool stalled = !turn_recheck_settle_ok;
+            if (turn_exit == mA_EXIT || turn_exit == VELOCITY_EXIT) stalled = true;
+            if (stalled) interfered = true;
+            return;
+          }
+          // Un-latched -- fall through to the shared delay below and keep waiting.
         }
       }
       // Once we've past target, return
@@ -919,12 +1094,23 @@ void Drive::wait_until_turn_swing_internal(double target) {
           }
           // No delay here -- see the matching comment in wait_until_drive().
         } else {
-          if (print_toggle) std::cout << "  Swing: " << exit_to_string(swing_exit) << " Wait Until Exit Failsafe, triggered at " << drive_angle_get() << " instead of " << target << "\n";
-
-          if (swing_exit == mA_EXIT || swing_exit == VELOCITY_EXIT) {
-            interfered = true;
+          // Same recheck as the TURN branch above -- see its comment (including why the stuck
+          // watch is deliberately not reseeded).
+          if (swing_exit == SMALL_EXIT && std::fabs(swingPID.error) >= swingPID.exit.small_error) {
+            swing_exit = RUNNING;
+          } else if (swing_exit == BIG_EXIT && std::fabs(swingPID.error) >= swingPID.exit.big_error) {
+            swing_exit = RUNNING;
           }
-          return;
+
+          if (swing_exit != RUNNING) {
+            if (print_toggle) std::cout << "  Swing: " << exit_to_string(swing_exit) << " Wait Until Exit Failsafe, triggered at " << drive_angle_get() << " instead of " << target << "\n";
+
+            bool stalled = !swing_at_final_target;
+            if (swing_exit == mA_EXIT || swing_exit == VELOCITY_EXIT) stalled = true;
+            if (stalled) interfered = true;
+            return;
+          }
+          // Un-latched -- fall through to the shared delay below and keep waiting.
         }
       }
       // Once we've past target, return
