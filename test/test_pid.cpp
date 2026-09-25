@@ -217,6 +217,25 @@ TEST_CASE("PID motion_reset resyncs the small/big exit staleness baseline for th
   CHECK(pid.exit_condition() == RUNNING);
 }
 
+TEST_CASE("PID BIG_EXIT does not accumulate on a stale error with no fresh compute since a dead ez_auto_task's last pass") {
+  // The small-exit staleness tests above all seed an error inside small_error, where `i = 0` on every
+  // pass anyway -- they never actually exercise the big timer's own `if (error_fresh) i +=` gate. This
+  // seeds an error inside big_error but OUTSIDE small_error, the only way to reach that gate at all,
+  // then never computes again -- the same dead/deadlocked ez_auto_task shape the small-exit tests cover.
+  PID pid;
+  pid.exit_condition_set(90, 1.0, 250, 3.0);
+
+  pid.compute_error(2.0, 0.0);  // outside small_error (1), inside big_error (3) -- one real compute
+  REQUIRE(pid.exit_condition() == RUNNING);  // first poll is fresh, but 1 pass is nowhere near 250ms
+
+  // No further compute lands from here on -- ez_auto_task is dead. Comfortably more than the 25
+  // passes (250ms / DELAY_TIME) a live task would need to reach BIG_EXIT.
+  for (int pass = 0; pass < 50; pass++) {
+    INFO("pass ", pass);
+    CHECK(pid.exit_condition() == RUNNING);
+  }
+}
+
 // ---- Velocity exit arming -------------------------------------------------
 // exit_condition_set(small_time, small_err, big_time, big_err, velocity_time, mA)
 // velocity_time 50 ms with DELAY_TIME 10 ms: the timer passes 50 on its 6th
