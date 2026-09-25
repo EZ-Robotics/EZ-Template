@@ -971,7 +971,27 @@ void Drive::pid_wait_until(double target) {
 }
 
 void Drive::pid_wait_until_point(pose target) {
+  // Same concurrent-retarget guard as pid_wait()'s odom branch -- this function had none, unlike every
+  // other wait_until_*.  odom_target_start is only touched by a top-level odom setter starting a genuinely
+  // new motion (see the comment on pid_wait()'s odom branch), so watching it catches a retarget regardless
+  // of what it lands in.  mode is watched too, for a concurrent setter from a non-odom mode.
+  //
+  // Snapshotted here, BEFORE the settle delay below (not after it): a concurrent motion setter can
+  // retarget the drive during this call's own first pros::delay(10), before anything else has taken a
+  // baseline to compare against -- the same hazard wait_until_turn_swing_internal() and
+  // pid_wait_until_index_started() already guard against for their own leading delays (see their
+  // comments). Checking against a pre-delay snapshot right after the delay, below, catches that as a
+  // retarget instead of silently treating the new motion as this call's own.
+  e_mode mode_snapshot = mode;
+  pose retarget_target = odom_target_start;
+
   pros::delay(10);
+
+  if (mode != mode_snapshot || odom_target_start.x != retarget_target.x || odom_target_start.y != retarget_target.y || odom_target_start.theta != retarget_target.theta) {
+    if (print_toggle) std::cout << "  XY: retargeted by a concurrent motion mid-wait, ending early instead of finishing on the wrong target.\n";
+    interfered = true;
+    return;
+  }
 
   // Make sure mode is correct.  Without this, xyPID/current_a_odomPID are whatever an earlier odom motion left
   // them at -- not RUNNING for this call -- since only ptp_task()/boomerang_task() (POINT_TO_POINT/PURE_PURSUIT)
@@ -986,13 +1006,6 @@ void Drive::pid_wait_until_point(pose target) {
   exit_output xy_exit = RUNNING;
   exit_output a_exit = RUNNING;
   StuckWatch watch(xyPID, current_a_odomPID, pp_index, util::distance_to_point(target, odom_pose_get()), util::distance_to_point(odom_start, odom_pose_get()), std::fabs(odom_theta_get() - odom_start.theta));
-
-  // Same concurrent-retarget guard as pid_wait()'s odom branch -- this function had none, unlike every
-  // other wait_until_*.  odom_target_start is only touched by a top-level odom setter starting a genuinely
-  // new motion (see the comment on pid_wait()'s odom branch), so watching it catches a retarget regardless
-  // of what it lands in.  mode is watched too, for a concurrent setter from a non-odom mode.
-  e_mode mode_snapshot = mode;
-  pose retarget_target = odom_target_start;
 
   while (true) {
     if (mode != mode_snapshot || odom_target_start.x != retarget_target.x || odom_target_start.y != retarget_target.y || odom_target_start.theta != retarget_target.theta) {
@@ -1182,12 +1195,11 @@ void Drive::pid_wait_until_index(int index) {
   pose target = pp_movements[injected_pp_index_snapshot[index]].target;
   pid_wait_until_point(target);
 
-  // Re-checked against the SAME entry snapshot, after phase 2 too: pid_wait_until_point() takes its own
-  // baseline only after its own settle delay (see the comment on its guard), so a retarget landing in
-  // that specific window is invisible to its internal guard -- it would go on to poll xyPID/
-  // current_a_odomPID's error against `target`, a plain pose copy, while the PIDs themselves are now
-  // actually being driven by whatever motion retargeted them, and could report a clean, silent success
-  // for a motion this call was never waiting for. Comparing against the snapshot taken before phase 1
+  // Re-checked against the SAME entry snapshot, after phase 2 too: pid_wait_until_point() now has its
+  // own guard against a retarget landing in ITS first settle delay (see the comment on its guard), but
+  // that guard's baseline is taken fresh at phase 2's own start -- it cannot see a retarget that lands
+  // in the gap between phase 1 returning and phase 2 starting, or during phase 1's own loop after this
+  // function's own check above already passed. Comparing against the snapshot taken before phase 1
   // above catches a retarget landing anywhere across the whole call, not just within phase 2's own loop.
   if (mode != mode_snapshot || odom_target_start.x != retarget_target.x || odom_target_start.y != retarget_target.y || odom_target_start.theta != retarget_target.theta) {
     if (print_toggle) std::cout << "  XY: retargeted by a concurrent motion mid-wait, ending early instead of finishing on the wrong path.\n";
