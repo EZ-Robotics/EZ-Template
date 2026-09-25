@@ -768,8 +768,13 @@ void Drive::wait_until_drive(double target) {
           // wait_until()'s target really is the motion's final target -- see at_final_target's comment.
           bool stalled = true;
           if (at_final_target) {
-            bool left_settled = left_exit != RUNNING || std::fabs(leftPID.error) < leftPID.exit.big_error;
-            bool right_settled = right_exit != RUNNING || std::fabs(rightPID.error) < rightPID.exit.big_error;
+            // A side that already latched an exit is only trusted as settled here if its live error
+            // is still inside the window that exit means -- a side that latched early and has since
+            // been shoved or pinned off target must not count as settled just because it once exited
+            // cleanly (same rule as the recheck in the `else` branch below, applied here to the
+            // stuck-detected path instead).
+            bool left_settled = std::fabs(leftPID.error) < leftPID.exit.big_error;
+            bool right_settled = std::fabs(rightPID.error) < rightPID.exit.big_error;
             stalled = !(left_settled && right_settled);
           }
           if (print_toggle) std::cout << "  Drive: " << (stalled ? "Stuck" : "Stuck, but stopped inside the big error windows, counted as settled") << " Wait Until Exit Failsafe, triggered at " << drive_sensor_left() - l_start << " instead of " << target << "\n";
@@ -779,14 +784,50 @@ void Drive::wait_until_drive(double target) {
         // No delay here -- the loop's own delay at the bottom already advances one DELAY_TIME per pass.  A second
         // delay here made every failsafe in this function take about twice its configured time in real time.
       } else {
-        if (print_toggle) {
-          std::cout << "  Left: " << exit_to_string(left_exit) << " Wait Until Exit Failsafe, triggered at " << drive_sensor_left() - l_start << " instead of " << target << "\n";
-          std::cout << "  Right: " << exit_to_string(right_exit) << " Wait Until Exit Failsafe, triggered at " << drive_sensor_right() - r_start << " instead of " << target << "\n";
+        // Both sides have already latched a non-RUNNING exit on an earlier pass. Right before
+        // trusting that as a clean return, recheck each latched side against the window it exited
+        // through, using its own live error -- not exit_condition() (that would restart its
+        // internal timers) -- the same treatment pid_wait()'s odom branch already gives a clean
+        // double-exit. A side that has drifted back outside its own window since latching is
+        // un-latched (back to RUNNING), falling through to keep waiting instead of trusting a stale
+        // result. Its stuck watch is deliberately NOT reseeded -- see pid_wait()'s DRIVE branch's
+        // matching recheck for why: it already stopped being fed the moment this side first latched,
+        // so its own clock has effectively kept running the whole time it sat unwatched, and
+        // reseeding here would hand a pathological hover right at the window's edge a fresh grace
+        // period on every relatch. VELOCITY_EXIT is never latched here (without_velocity() already
+        // maps it to RUNNING); mA_EXIT isn't a window exit and is handled below regardless, so it's
+        // left alone.
+        if (left_exit == SMALL_EXIT && std::fabs(leftPID.error) >= leftPID.exit.small_error) {
+          left_exit = RUNNING;
+        } else if (left_exit == BIG_EXIT && std::fabs(leftPID.error) >= leftPID.exit.big_error) {
+          left_exit = RUNNING;
         }
-        if (left_exit == mA_EXIT || left_exit == VELOCITY_EXIT || right_exit == mA_EXIT || right_exit == VELOCITY_EXIT) {
-          interfered = true;
+        if (right_exit == SMALL_EXIT && std::fabs(rightPID.error) >= rightPID.exit.small_error) {
+          right_exit = RUNNING;
+        } else if (right_exit == BIG_EXIT && std::fabs(rightPID.error) >= rightPID.exit.big_error) {
+          right_exit = RUNNING;
         }
-        return;
+
+        if (left_exit == RUNNING || right_exit == RUNNING) {
+          // Un-latched -- fall through to the shared delay below and keep waiting instead of
+          // returning on a stale result.
+        } else {
+          if (print_toggle) {
+            std::cout << "  Left: " << exit_to_string(left_exit) << " Wait Until Exit Failsafe, triggered at " << drive_sensor_left() - l_start << " instead of " << target << "\n";
+            std::cout << "  Right: " << exit_to_string(right_exit) << " Wait Until Exit Failsafe, triggered at " << drive_sensor_right() - r_start << " instead of " << target << "\n";
+          }
+          // A clean double window-exit (SMALL_EXIT/BIG_EXIT) only ends this wait_until() without
+          // interfered=true when its own target really is the motion's final target -- see
+          // at_final_target's comment and WAIT_BEHAVIOR_SPEC.md's settled-exemption entry. A
+          // checkpoint short of the final target that the robot stopped short of past this point is
+          // a real early exit, not a settle.
+          bool stalled = !at_final_target;
+          if (left_exit == mA_EXIT || left_exit == VELOCITY_EXIT || right_exit == mA_EXIT || right_exit == VELOCITY_EXIT) {
+            stalled = true;
+          }
+          if (stalled) interfered = true;
+          return;
+        }
       }
     }
     // Once either side has reached or passed target, return
@@ -847,6 +888,22 @@ void Drive::wait_until_turn_swing_internal(double target) {
   // TURN_TO_POINT differently).
   bool turn_at_final_target = mode == TURN && std::fabs(target - turn_target) < FINAL_TARGET_TOLERANCE;
   bool swing_at_final_target = std::fabs(target - swing_target) < FINAL_TARGET_TOLERANCE;
+  // The recheck's own settled-exemption gate (below) needs a different rule for TURN_TO_POINT than
+  // turn_at_final_target above: turn_at_final_target requires mode==TURN because a TURN_TO_POINT
+  // window exit is measured against a live error recomputed every pass from the point actually being
+  // faced (turn_pid_task()), not against turnPID's own static target -- so comparing THIS call's
+  // target against that static snapshot can't tell "this call's target is the real aim" from "this
+  // call's target is some other angle" the way it can for a plain TURN. It doesn't need to: unlike a
+  // plain TURN, turn_set_internal() (called by both pid_turn_set() and pid_turn_set(pose), including
+  // for TURN_TO_POINT) writes the SAME value to turnPID's static target and to chain_target_start at
+  // motion start, so a wait_until() call chained onto the motion's own target (chain_target_start, as
+  // pid_wait_quick()/pid_wait_quick_chain() pass) numerically matches turn_target for TURN_TO_POINT
+  // too -- while an explicit checkpoint short of the real aim (a genuine intermediate target) still
+  // numerically differs from it, exactly the distinction this gate exists to draw. Excluding
+  // TURN_TO_POINT here the way turn_at_final_target does would report interfered=true on every
+  // ordinary turn-to-point settle, chained or not -- the mode restriction only matters for the
+  // stuck-detected path above, not for this direct numeric comparison.
+  bool turn_recheck_settle_ok = std::fabs(target - turn_target) < FINAL_TARGET_TOLERANCE;
 
   // Let the PID run at least 1 iteration before seeding the progress backstop from real error --
   // matching pid_wait() and wait_until_drive(), both of which delay before constructing their own
@@ -895,12 +952,32 @@ void Drive::wait_until_turn_swing_internal(double target) {
           }
           // No delay here -- see the matching comment in wait_until_drive().
         } else {
-          if (print_toggle) std::cout << "  Turn: " << exit_to_string(turn_exit) << " Wait Until Exit Failsafe, triggered at " << drive_angle_get() << " instead of " << target << "\n";
-
-          if (turn_exit == mA_EXIT || turn_exit == VELOCITY_EXIT) {
-            interfered = true;
+          // turn_exit already latched a non-RUNNING exit on an earlier pass. Right before trusting
+          // that as a clean return, recheck it against the window it exited through, using its own
+          // live error -- same treatment as wait_until_drive()'s own else branch (see its comment,
+          // including why its stuck watch is deliberately NOT reseeded here either). A latch that
+          // has drifted back outside its own window since exiting is un-latched (back to RUNNING),
+          // falling through to keep waiting instead of trusting a stale result.
+          if (turn_exit == SMALL_EXIT && std::fabs(turnPID.error) >= turnPID.exit.small_error) {
+            turn_exit = RUNNING;
+          } else if (turn_exit == BIG_EXIT && std::fabs(turnPID.error) >= turnPID.exit.big_error) {
+            turn_exit = RUNNING;
           }
-          return;
+
+          if (turn_exit != RUNNING) {
+            if (print_toggle) std::cout << "  Turn: " << exit_to_string(turn_exit) << " Wait Until Exit Failsafe, triggered at " << drive_angle_get() << " instead of " << target << "\n";
+
+            // Same settled-exemption gating as wait_until_drive()'s else branch -- a clean
+            // SMALL_EXIT/BIG_EXIT latch only ends this without interfered=true when this
+            // wait_until()'s own target really is the motion's final target -- see
+            // turn_recheck_settle_ok's own comment for why TURN_TO_POINT reads that differently
+            // than turn_at_final_target does.
+            bool stalled = !turn_recheck_settle_ok;
+            if (turn_exit == mA_EXIT || turn_exit == VELOCITY_EXIT) stalled = true;
+            if (stalled) interfered = true;
+            return;
+          }
+          // Un-latched -- fall through to the shared delay below and keep waiting.
         }
       }
       // Once we've past target, return
@@ -931,12 +1008,23 @@ void Drive::wait_until_turn_swing_internal(double target) {
           }
           // No delay here -- see the matching comment in wait_until_drive().
         } else {
-          if (print_toggle) std::cout << "  Swing: " << exit_to_string(swing_exit) << " Wait Until Exit Failsafe, triggered at " << drive_angle_get() << " instead of " << target << "\n";
-
-          if (swing_exit == mA_EXIT || swing_exit == VELOCITY_EXIT) {
-            interfered = true;
+          // Same recheck as the TURN branch above -- see its comment (including why the stuck
+          // watch is deliberately not reseeded).
+          if (swing_exit == SMALL_EXIT && std::fabs(swingPID.error) >= swingPID.exit.small_error) {
+            swing_exit = RUNNING;
+          } else if (swing_exit == BIG_EXIT && std::fabs(swingPID.error) >= swingPID.exit.big_error) {
+            swing_exit = RUNNING;
           }
-          return;
+
+          if (swing_exit != RUNNING) {
+            if (print_toggle) std::cout << "  Swing: " << exit_to_string(swing_exit) << " Wait Until Exit Failsafe, triggered at " << drive_angle_get() << " instead of " << target << "\n";
+
+            bool stalled = !swing_at_final_target;
+            if (swing_exit == mA_EXIT || swing_exit == VELOCITY_EXIT) stalled = true;
+            if (stalled) interfered = true;
+            return;
+          }
+          // Un-latched -- fall through to the shared delay below and keep waiting.
         }
       }
       // Once we've past target, return
