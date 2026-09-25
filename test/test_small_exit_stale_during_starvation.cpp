@@ -247,3 +247,120 @@ TEST_CASE("pid_wait() odom: stale in-tolerance leftover xy/angle error must not 
 
   CHECK_FALSE(returned);
 }
+
+// ---- End-to-end: does a dead ez_auto_task actually get released, once the false settle above can no
+// longer end the wait by itself? -----------------------------------------------------------------------
+// Suppressing the false settle only removes exit_condition() as a way for these waits to return. Something
+// else still has to end them, or a dead task now hangs pid_wait() forever instead of returning early-but-
+// wrong. That something is StuckWatch/SingleStuckWatch's own dead-task wall-clock fallback (window_ ==
+// shipped default velocity_exit_time 500ms; STUCK_START_ALLOWANCE_MS 1000ms since this robot never moves +
+// STUCK_STARVED_WINDOWS(4)*window_ 2000ms, exit_conditions.cpp) -- ~3000ms worst case. 6000ms of simulated
+// time, with no fresh compute anywhere in the budget (the same dead task shape as every case above, just
+// watched long enough to reach that fallback), is comfortably past it.
+//
+// Each case below only asserts that the wait actually returns -- CHECK(returned) -- which is this fix's
+// own responsibility: exit_condition() must not stall it, whichever way it eventually resolves. Odom is
+// additionally asserted uninterfered=false (a true stuck result), since its own settled check
+// (target_distance(), the odom branch's `settled` local in exit_conditions.cpp) is a LIVE measurement, not
+// this stale `error`. DRIVE/TURN/SWING are not: pid_wait()'s own stuck-but-settled carve-out for these
+// modes (leftPID.error/rightPID.error, turnPID.error, swingPID.error against big_error --
+// exit_conditions.cpp's DRIVE/TURN/SWING branches) reads the exact same stale, unrefreshed `error` this
+// fix's own timers were changed to stop trusting -- so it independently reaches the same "inside
+// big_error, therefore settled" conclusion this fix exists to prevent, just ~3s later instead of ~110ms
+// later. `interfered` is logged for these three, deliberately not asserted either way: this fix's job is
+// only to keep the wait from hanging, not to correct that separate carve-out (a different root cause, in a
+// different function, outside this fix's scope) -- asserting interfered==false here would lock in a known
+// gap as if it were guaranteed correct behavior.
+
+TEST_CASE("pid_wait() DRIVE: with the false settle suppressed, a dead ez_auto_task still releases the wait instead of hanging") {
+  Drive chassis = make_chassis();
+  chassis.pid_print_toggle(false);
+  chassis.leftPID.error = 0.3;
+  chassis.rightPID.error = 0.3;
+  chassis.pid_drive_set(24, 100);
+
+  std::uint32_t start_ms = test_stub::g_clock.now_ms;
+  test_stub::g_clock.delay_calls_until_stop = 600;  // 6s -- past the ~3s dead-task fallback bound
+  bool returned = true;
+  try {
+    chassis.pid_wait();
+  } catch (test_stub::StopLoop&) {
+    returned = false;
+  }
+  std::uint32_t elapsed = test_stub::g_clock.now_ms - start_ms;
+  test_stub::g_clock.delay_calls_until_stop = -1;
+  MESSAGE("returned=", returned, " elapsed_ms=", elapsed, " interfered=", chassis.interfered);
+
+  CHECK(returned);
+}
+
+TEST_CASE("pid_wait() TURN: with the false settle suppressed, a dead ez_auto_task still releases the wait instead of hanging") {
+  Drive chassis = make_chassis();
+  chassis.pid_print_toggle(false);
+  chassis.turnPID.error = 2.5;
+  chassis.pid_turn_set(90, 100);
+
+  std::uint32_t start_ms = test_stub::g_clock.now_ms;
+  test_stub::g_clock.delay_calls_until_stop = 600;
+  bool returned = true;
+  try {
+    chassis.pid_wait();
+  } catch (test_stub::StopLoop&) {
+    returned = false;
+  }
+  std::uint32_t elapsed = test_stub::g_clock.now_ms - start_ms;
+  test_stub::g_clock.delay_calls_until_stop = -1;
+  MESSAGE("returned=", returned, " elapsed_ms=", elapsed, " interfered=", chassis.interfered);
+
+  CHECK(returned);
+}
+
+TEST_CASE("pid_wait() SWING: with the false settle suppressed, a dead ez_auto_task still releases the wait instead of hanging") {
+  Drive chassis = make_chassis();
+  chassis.pid_print_toggle(false);
+  chassis.swingPID.error = 2.5;
+  chassis.pid_swing_set(LEFT_SWING, 90, 100);
+
+  std::uint32_t start_ms = test_stub::g_clock.now_ms;
+  test_stub::g_clock.delay_calls_until_stop = 600;
+  bool returned = true;
+  try {
+    chassis.pid_wait();
+  } catch (test_stub::StopLoop&) {
+    returned = false;
+  }
+  std::uint32_t elapsed = test_stub::g_clock.now_ms - start_ms;
+  test_stub::g_clock.delay_calls_until_stop = -1;
+  MESSAGE("returned=", returned, " elapsed_ms=", elapsed, " interfered=", chassis.interfered);
+
+  CHECK(returned);
+}
+
+TEST_CASE("pid_wait() odom: with the false settle suppressed, a dead ez_auto_task still releases the wait, correctly flagged stuck") {
+  Drive chassis = make_chassis();
+  chassis.pid_print_toggle(false);
+  DriveTestAccess::imu_calibration_complete(chassis) = true;
+
+  chassis.xyPID.error = 0.5;
+  chassis.current_a_odomPID.error = 1.0;
+
+  chassis.pid_odom_pp_set({{{0.0, 24.0, ANGLE_NOT_SET}, fwd, 100}});
+  DriveTestAccess::pp_index(chassis) = (int)DriveTestAccess::pp_movements(chassis).size() - 1;
+
+  std::uint32_t start_ms = test_stub::g_clock.now_ms;
+  test_stub::g_clock.delay_calls_until_stop = 600;
+  bool returned = true;
+  try {
+    chassis.pid_wait();
+  } catch (test_stub::StopLoop&) {
+    returned = false;
+  }
+  std::uint32_t elapsed = test_stub::g_clock.now_ms - start_ms;
+  test_stub::g_clock.delay_calls_until_stop = -1;
+  MESSAGE("returned=", returned, " elapsed_ms=", elapsed, " interfered=", chassis.interfered);
+
+  // Odom's own settled check is a live measurement (target_distance()), not this stale error -- so unlike
+  // DRIVE/TURN/SWING above, this one IS asserted: a robot that never moved an inch must read as stuck.
+  CHECK(returned);
+  CHECK(chassis.interfered);
+}
