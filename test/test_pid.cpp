@@ -423,10 +423,10 @@ TEST_CASE("PID raw-value staleness is frozen while velocity_exit_hold is set, no
 
 TEST_CASE("PID timers_reset clears the raw-value staleness streak for the next motion") {
   // A new motion can happen to start reading the exact same raw value as where the previous one
-  // left off (e.g. a lift that always re-arms from the same physical position). Without clearing
-  // the staleness streak here, the leftover time from the old motion plus this motion's own
-  // repeats could cross the staleness window almost immediately, misreading a motion that hasn't
-  // even had a chance to move yet as already stopped.
+  // left off (e.g. a lift that always re-arms from the same physical position, or simply hasn't
+  // been touched between calls). Without clearing the staleness streak here, the leftover time
+  // from the old motion's frozen stretch would carry straight into the new motion's own repeats
+  // and cross the staleness window far earlier than a fresh motion should.
   PID pid;
   pid.exit_condition_set(0, 0, 0, 0, 50, 0);
 
@@ -439,13 +439,24 @@ TEST_CASE("PID timers_reset clears the raw-value staleness streak for the next m
 
   pid.timers_reset();  // a new motion starts
 
-  pid.compute_error(10.0, 1.0);  // re-arms, reading the exact same value as before
-  CHECK(pid.exit_condition() == RUNNING);
-  for (int pass = 1; pass <= 90; pass++) {
-    INFO("pass ", pass);
-    pid.compute_error(10.0, 1.0);
-    CHECK(pid.exit_condition() == RUNNING);
+  // The next reading is the exact same 1.0 as before the reset, so its own derivative reads 0 --
+  // not a real jump -- and this motion only arms via the 1000ms "hasn't moved" fallback, same as
+  // any other motion that starts out reading a constant value. With the streak properly cleared,
+  // that fallback arming (~pass 101) plus a fresh staleness window (~1000ms) plus
+  // velocity_exit_time (50ms) takes until roughly pass 207 to exit. If the streak carried over
+  // instead, arming would still land around pass 101, but the leftover ~900ms would push the
+  // staleness window over by roughly pass 111, exiting by ~pass 116. Staying RUNNING at least to
+  // pass 150 is real proof the streak was cleared, not just that fallback arming happened at all.
+  int pass = 0;
+  exit_output result = RUNNING;
+  while (result == RUNNING) {
+    pass++;
+    REQUIRE(pass <= 230);
+    pid.compute_error(10.0, 1.0);  // the exact same raw value as before the reset
+    result = pid.exit_condition();
   }
+  CHECK(pass >= 150);
+  CHECK(result == VELOCITY_EXIT);
 }
 
 TEST_CASE("PID velocity exit does not fire when checked slower than a sensor that refreshes every other tick") {
