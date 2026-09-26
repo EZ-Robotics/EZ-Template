@@ -242,6 +242,39 @@ std::vector<pros::Motor> both_sides(const std::vector<pros::Motor>& left, const 
 }
 }  // namespace
 
+// See drive.hpp's own comment on InterferedScope/motion_generation/interfered_generation for the concurrency
+// hazard this exists to fix: every retarget guard below used to end a stale wait with a bare
+// `interfered = true; return;`, landing on the single, un-scoped `interfered` bool no matter which motion a
+// caller is actually about to read it for. Tagging the scope with the generation this wait's own motion was
+// started under -- and only asserting a clean interfered=false result for that same generation on the way out
+// -- keeps a stale wait's notice about ITS OWN abandoned motion from being misread as a report on a
+// completely different, later motion that never had any problem of its own.
+Drive::InterferedScope::InterferedScope(Drive& d) : d_(d) {
+  ez::KillSafeGuard<pros::RecursiveMutex> lock(d_.drive_mutex);
+  generation_ = d_.motion_generation;
+}
+
+// Attributes an interfered=true write to this scope's own motion. Every retarget-guard / stuck / mA / velocity
+// write in this file goes through this instead of writing `interfered` directly, so the destructor below can
+// tell its own scope's writes apart from one a different motion made.
+void Drive::InterferedScope::mark() {
+  ez::KillSafeGuard<pros::RecursiveMutex> lock(d_.drive_mutex);
+  d_.interfered = true;
+  d_.interfered_generation = generation_;
+}
+
+Drive::InterferedScope::~InterferedScope() {
+  ez::KillSafeGuard<pros::RecursiveMutex> lock(d_.drive_mutex);
+  // Only assert a clean result for THIS motion if it's still the current one (a newer motion that has since
+  // started owns the flag now, not this stale wait) and nothing has already spoken for it under its own name
+  // (this scope's own mark() above, or an earlier wait on the very same motion, e.g. a chained call's own
+  // first phase reporting stuck) -- that earlier true must survive a later, clean phase of the same motion.
+  if (d_.motion_generation == generation_ && d_.interfered_generation != generation_) {
+    d_.interfered = false;
+    d_.interfered_generation = generation_;
+  }
+}
+
 // Feeds a PID's secondary velocity-exit channel from the imu's acceleration, but only when that PID's
 // secondary channel is turned on.  It's off by default: acceleration reads near 0 during an ordinary
 // constant-speed cruise too, so on its own it can't tell cruising from stalled (see PID::exit_condition
@@ -364,13 +397,18 @@ void Drive::pid_wait() {
   e_mode entry_mode_snapshot = mode;
   double entry_left_target = leftPID.target_get();
   double entry_right_target = rightPID.target_get();
+  // Scopes every `interfered` write below to the motion this call was actually started for -- see
+  // drive.hpp's comment on InterferedScope. Opened here, at the same instant as the snapshots above and
+  // before any of them can go stale, so it tags the motion this wait is really waiting on, not whatever a
+  // same-mode retarget already landed during the leading settle delay below.
+  InterferedScope interfered_scope(*this);
 
   // Let the PID run at least 1 iteration
   pros::delay(util::DELAY_TIME);
 
   if (mode != entry_mode_snapshot) {
     if (print_toggle) std::cout << "  Drive: retargeted by a concurrent motion during the wait's own first pass, ending early instead of running the wrong branch.\n";
-    interfered = true;
+    interfered_scope.mark();
     return;
   }
 
@@ -409,7 +447,7 @@ void Drive::pid_wait() {
       while (!stalled && (left_exit == RUNNING || right_exit == RUNNING)) {
         if (mode != mode_snapshot || leftPID.target_get() != left_target || rightPID.target_get() != right_target) {
           if (print_toggle) std::cout << "  Drive: retargeted by a concurrent motion mid-wait, ending early instead of finishing on the wrong target.\n";
-          interfered = true;
+          interfered_scope.mark();
           return;
         }
         secondary_velocity_sensor_update(leftPID);
@@ -482,7 +520,7 @@ void Drive::pid_wait() {
     if (print_toggle && !stalled) std::cout << "  Left: " << exit_to_string(left_exit) << " Exit, error: " << leftPID.error << "   Right: " << exit_to_string(right_exit) << " Exit, error: " << rightPID.error << "\n";
 
     if (stalled || left_exit == mA_EXIT || left_exit == VELOCITY_EXIT || right_exit == mA_EXIT || right_exit == VELOCITY_EXIT) {
-      interfered = true;
+      interfered_scope.mark();
     }
   }
 
@@ -530,7 +568,7 @@ void Drive::pid_wait() {
       while (pp_index != (int)pp_movements.size() - 1) {
         if (mode != mode_snapshot || odom_target_start.x != retarget_target.x || odom_target_start.y != retarget_target.y || odom_target_start.theta != retarget_target.theta) {
           if (print_toggle) std::cout << "  XY: retargeted by a concurrent motion mid-wait, ending early instead of continuing on the wrong path.\n";
-          interfered = true;
+          interfered_scope.mark();
           return;
         }
         if (pp_index != a_exit_index) {
@@ -563,7 +601,7 @@ void Drive::pid_wait() {
       while (!stalled && (xy_exit == RUNNING || a_exit == RUNNING)) {
         if (mode != mode_snapshot || odom_target_start.x != retarget_target.x || odom_target_start.y != retarget_target.y || odom_target_start.theta != retarget_target.theta) {
           if (print_toggle) std::cout << "  XY: retargeted by a concurrent motion mid-wait, ending early instead of finishing on the wrong target.\n";
-          interfered = true;
+          interfered_scope.mark();
           return;
         }
         secondary_velocity_sensor_update(xyPID);
@@ -619,7 +657,7 @@ void Drive::pid_wait() {
     if (print_toggle && !stalled && xy_exit != RUNNING && a_exit != RUNNING) std::cout << "  XY: " << exit_to_string(xy_exit) << " Exit, error: " << xyPID.error << ".   Angle: " << exit_to_string(a_exit) << " Exit, error: " << current_a_odomPID.error << ".\n";
 
     if (stalled || xy_exit == mA_EXIT || xy_exit == VELOCITY_EXIT || a_exit == mA_EXIT || a_exit == VELOCITY_EXIT) {
-      interfered = true;
+      interfered_scope.mark();
     }
 
     {
@@ -655,7 +693,7 @@ void Drive::pid_wait() {
     while (turn_exit == RUNNING) {
       if (mode != mode_snapshot || turnPID.target_get() != turn_target) {
         if (print_toggle) std::cout << "  Turn: retargeted by a concurrent motion mid-wait, ending early instead of finishing on the wrong target.\n";
-        interfered = true;
+        interfered_scope.mark();
         return;
       }
       secondary_velocity_sensor_update(turnPID);
@@ -674,7 +712,7 @@ void Drive::pid_wait() {
     if (print_toggle && !stalled) std::cout << "  Turn: " << exit_to_string(turn_exit) << " Exit, error: " << turnPID.error << "\n";
 
     if (stalled || turn_exit == mA_EXIT || turn_exit == VELOCITY_EXIT) {
-      interfered = true;
+      interfered_scope.mark();
     }
   }
 
@@ -692,7 +730,7 @@ void Drive::pid_wait() {
     while (swing_exit == RUNNING) {
       if (mode != mode_snapshot || swingPID.target_get() != swing_target) {
         if (print_toggle) std::cout << "  Swing: retargeted by a concurrent motion mid-wait, ending early instead of finishing on the wrong target.\n";
-        interfered = true;
+        interfered_scope.mark();
         return;
       }
       secondary_velocity_sensor_update(swingPID);
@@ -711,7 +749,7 @@ void Drive::pid_wait() {
     if (print_toggle && !stalled) std::cout << "  Swing: " << exit_to_string(swing_exit) << " Exit, error: " << swingPID.error << "\n";
 
     if (stalled || swing_exit == mA_EXIT || swing_exit == VELOCITY_EXIT) {
-      interfered = true;
+      interfered_scope.mark();
     }
   }
 }
@@ -745,6 +783,9 @@ void Drive::wait_until_drive(double target) {
   double left_target = leftPID.target_get();
   double right_target = rightPID.target_get();
   pose retarget_target = odom_target_start;
+  // See pid_wait()'s matching comment on InterferedScope -- opened here, before the leading settle delay
+  // below, for the same reason the snapshots just above are taken here too.
+  InterferedScope interfered_scope(*this);
 
   pros::delay(10);
 
@@ -791,17 +832,17 @@ void Drive::wait_until_drive(double target) {
   while (true) {
     if (mode != mode_snapshot) {
       if (print_toggle) std::cout << "  Drive: retargeted by a concurrent motion mid-wait, ending early instead of finishing on the wrong target.\n";
-      interfered = true;
+      interfered_scope.mark();
       return;
     } else if (odom_mode) {
       if (odom_target_start.x != retarget_target.x || odom_target_start.y != retarget_target.y || odom_target_start.theta != retarget_target.theta) {
         if (print_toggle) std::cout << "  XY: retargeted by a concurrent motion mid-wait, ending early instead of finishing on the wrong target.\n";
-        interfered = true;
+        interfered_scope.mark();
         return;
       }
     } else if (leftPID.target_get() != left_target || rightPID.target_get() != right_target) {
       if (print_toggle) std::cout << "  Drive: retargeted by a concurrent motion mid-wait, ending early instead of finishing on the wrong target.\n";
-      interfered = true;
+      interfered_scope.mark();
       return;
     }
 
@@ -830,7 +871,7 @@ void Drive::wait_until_drive(double target) {
         exit_output xy_exit = without_velocity(xyPID.exit_condition(both_sides(left_motors, right_motors)));
         if (xy_exit != RUNNING) {
           if (print_toggle) std::cout << "  XY: " << exit_to_string(xy_exit) << " Wait Until Exit Failsafe, the move ended before reaching " << target << "\n";
-          if (xy_exit == mA_EXIT || xy_exit == VELOCITY_EXIT) interfered = true;
+          if (xy_exit == mA_EXIT || xy_exit == VELOCITY_EXIT) interfered_scope.mark();
           return;
         }
       }
@@ -867,7 +908,7 @@ void Drive::wait_until_drive(double target) {
             stalled = !(left_settled && right_settled);
           }
           if (print_toggle) std::cout << "  Drive: " << (stalled ? "Stuck" : "Stuck, but stopped inside the big error windows, counted as settled") << " Wait Until Exit Failsafe, triggered at " << drive_sensor_left() - l_start << " instead of " << target << "\n";
-          if (stalled) interfered = true;
+          if (stalled) interfered_scope.mark();
           return;
         }
         // No delay here -- the loop's own delay at the bottom already advances one DELAY_TIME per pass.  A second
@@ -914,7 +955,7 @@ void Drive::wait_until_drive(double target) {
           if (left_exit == mA_EXIT || left_exit == VELOCITY_EXIT || right_exit == mA_EXIT || right_exit == VELOCITY_EXIT) {
             stalled = true;
           }
-          if (stalled) interfered = true;
+          if (stalled) interfered_scope.mark();
           return;
         }
       }
@@ -965,6 +1006,9 @@ void Drive::wait_until_turn_swing_internal(double target) {
   e_mode mode_snapshot = mode;
   double turn_target = turnPID.target_get();
   double swing_target = swingPID.target_get();
+  // See pid_wait()'s matching comment on InterferedScope -- opened here, alongside the snapshots above and
+  // before this function's own leading settle delay, for the same reason.
+  InterferedScope interfered_scope(*this);
 
   // Whether this wait_until()'s own target IS (not just near) the motion's actual final target --
   // same reasoning as wait_until_drive()'s at_final_target (see its comment). Taken from turn_target/
@@ -1025,7 +1069,7 @@ void Drive::wait_until_turn_swing_internal(double target) {
   while (true) {
     if (mode != mode_snapshot || turnPID.target_get() != turn_target || swingPID.target_get() != swing_target) {
       if (print_toggle) std::cout << "  Turn/Swing: retargeted by a concurrent motion mid-wait, ending early instead of finishing on the wrong target.\n";
-      interfered = true;
+      interfered_scope.mark();
       return;
     }
 
@@ -1046,7 +1090,7 @@ void Drive::wait_until_turn_swing_internal(double target) {
             // comment above.
             bool stalled = !turn_at_final_target || !(std::fabs(turnPID.error) < turnPID.exit.big_error);
             if (print_toggle) std::cout << "  Turn: " << (stalled ? "Stuck" : "Stuck, but stopped inside the big error window, counted as settled") << " Wait Until Exit Failsafe, triggered at " << drive_angle_get() << " instead of " << target << "\n";
-            if (stalled) interfered = true;
+            if (stalled) interfered_scope.mark();
             return;
           }
           // No delay here -- see the matching comment in wait_until_drive().
@@ -1073,7 +1117,7 @@ void Drive::wait_until_turn_swing_internal(double target) {
             // than turn_at_final_target does.
             bool stalled = !turn_recheck_settle_ok;
             if (turn_exit == mA_EXIT || turn_exit == VELOCITY_EXIT) stalled = true;
-            if (stalled) interfered = true;
+            if (stalled) interfered_scope.mark();
             return;
           }
           // Un-latched -- fall through to the shared delay below and keep waiting.
@@ -1102,7 +1146,7 @@ void Drive::wait_until_turn_swing_internal(double target) {
             // comment above.
             bool stalled = !swing_at_final_target || !(std::fabs(swingPID.error) < swingPID.exit.big_error);
             if (print_toggle) std::cout << "  Swing: " << (stalled ? "Stuck" : "Stuck, but stopped inside the big error window, counted as settled") << " Wait Until Exit Failsafe, triggered at " << drive_angle_get() << " instead of " << target << "\n";
-            if (stalled) interfered = true;
+            if (stalled) interfered_scope.mark();
             return;
           }
           // No delay here -- see the matching comment in wait_until_drive().
@@ -1120,7 +1164,7 @@ void Drive::wait_until_turn_swing_internal(double target) {
 
             bool stalled = !swing_at_final_target;
             if (swing_exit == mA_EXIT || swing_exit == VELOCITY_EXIT) stalled = true;
-            if (stalled) interfered = true;
+            if (stalled) interfered_scope.mark();
             return;
           }
           // Un-latched -- fall through to the shared delay below and keep waiting.
@@ -1183,12 +1227,15 @@ void Drive::pid_wait_until_point(pose target) {
   // retarget instead of silently treating the new motion as this call's own.
   e_mode mode_snapshot = mode;
   pose retarget_target = odom_target_start;
+  // See pid_wait()'s matching comment on InterferedScope -- opened here, alongside the snapshot above and
+  // before this call's own leading settle delay, for the same reason.
+  InterferedScope interfered_scope(*this);
 
   pros::delay(10);
 
   if (mode != mode_snapshot || odom_target_start.x != retarget_target.x || odom_target_start.y != retarget_target.y || odom_target_start.theta != retarget_target.theta) {
     if (print_toggle) std::cout << "  XY: retargeted by a concurrent motion mid-wait, ending early instead of finishing on the wrong target.\n";
-    interfered = true;
+    interfered_scope.mark();
     return;
   }
 
@@ -1209,7 +1256,7 @@ void Drive::pid_wait_until_point(pose target) {
   while (true) {
     if (mode != mode_snapshot || odom_target_start.x != retarget_target.x || odom_target_start.y != retarget_target.y || odom_target_start.theta != retarget_target.theta) {
       if (print_toggle) std::cout << "  XY: retargeted by a concurrent motion mid-wait, ending early instead of finishing on the wrong target.\n";
-      interfered = true;
+      interfered_scope.mark();
       return;
     }
     secondary_velocity_sensor_update(xyPID);
@@ -1221,7 +1268,7 @@ void Drive::pid_wait_until_point(pose target) {
     // Same stuck check as pid_wait(), for a robot that is stuck but moving, which the exits above miss
     if (watch.stuck(pp_index, util::distance_to_point(target, odom_pose_get()), xyPID.error, current_a_odomPID.error, util::distance_to_point(odom_start, odom_pose_get()), std::fabs(odom_theta_get() - odom_start.theta))) {
       if (print_toggle) std::cout << "  Stuck before reaching (" << target.x << ", " << target.y << "), at (" << odom_x_get() << ", " << odom_y_get() << ")\n";
-      interfered = true;
+      interfered_scope.mark();
       return;
     }
 
@@ -1249,7 +1296,7 @@ void Drive::pid_wait_until_point(pose target) {
         current_a_odomPID.timers_reset();
       }
       if (xy_exit == mA_EXIT || xy_exit == VELOCITY_EXIT || a_exit == mA_EXIT || a_exit == VELOCITY_EXIT) {
-        interfered = true;
+        interfered_scope.mark();
       }
       return;
     }
@@ -1279,13 +1326,16 @@ void Drive::pid_wait_until_index_started(int index) {
   // never having been started in pure pursuit to begin with.
   e_mode mode_snapshot = mode;
   pose retarget_target = odom_target_start;
+  // See pid_wait()'s matching comment on InterferedScope -- opened here, alongside the snapshot above and
+  // before this call's own leading settle delay, for the same reason.
+  InterferedScope interfered_scope(*this);
 
   // Let the PID run at least 1 iteration
   pros::delay(util::DELAY_TIME);
 
   if (mode != mode_snapshot || odom_target_start.x != retarget_target.x || odom_target_start.y != retarget_target.y || odom_target_start.theta != retarget_target.theta) {
     if (print_toggle) std::cout << "  XY: retargeted by a concurrent motion mid-wait, ending early instead of continuing on the wrong path.\n";
-    interfered = true;
+    interfered_scope.mark();
     return;
   }
 
@@ -1333,7 +1383,7 @@ void Drive::pid_wait_until_index_started(int index) {
   while (pp_index < injected_pp_index_snapshot[index]) {
     if (mode != mode_snapshot || odom_target_start.x != retarget_target.x || odom_target_start.y != retarget_target.y || odom_target_start.theta != retarget_target.theta) {
       if (print_toggle) std::cout << "  XY: retargeted by a concurrent motion mid-wait, ending early instead of continuing on the wrong path.\n";
-      interfered = true;
+      interfered_scope.mark();
       break;
     }
     secondary_velocity_sensor_update(xyPID);
@@ -1345,7 +1395,7 @@ void Drive::pid_wait_until_index_started(int index) {
     // Same stuck check as pid_wait(), for a robot that is stuck but moving, which the exits above miss
     if (watch.stuck(pp_index, point_distance(), xyPID.error, current_a_odomPID.error, util::distance_to_point(odom_start, odom_pose_get()), std::fabs(odom_theta_get() - odom_start.theta))) {
       if (print_toggle) std::cout << "  Stuck before reaching point " << injected_pp_index_snapshot[index] << ", at (" << odom_x_get() << ", " << odom_y_get() << ")\n";
-      interfered = true;
+      interfered_scope.mark();
       break;
     }
 
@@ -1357,7 +1407,7 @@ void Drive::pid_wait_until_index_started(int index) {
         current_a_odomPID.timers_reset();
       }
       if (xy_exit == mA_EXIT || xy_exit == VELOCITY_EXIT || a_exit == mA_EXIT || a_exit == VELOCITY_EXIT) {
-        interfered = true;
+        interfered_scope.mark();
       }
       break;
     }
@@ -1375,12 +1425,18 @@ void Drive::pid_wait_until_index(int index) {
   // the wrong path.
   e_mode mode_snapshot = mode;
   pose retarget_target = odom_target_start;
+  // See pid_wait()'s matching comment on InterferedScope -- opened here, before either phase below, so this
+  // function's own two checks against the snapshot above (not just the phases' own internal ones) mark
+  // `interfered` under the SAME motion those phases were themselves scoped to, and so a retarget this
+  // function's own check catches (in the gap between phases, or after phase 2) supersedes whatever a phase's
+  // own scope already asserted.
+  InterferedScope interfered_scope(*this);
 
   pid_wait_until_index_started(index);
 
   if (mode != mode_snapshot || odom_target_start.x != retarget_target.x || odom_target_start.y != retarget_target.y || odom_target_start.theta != retarget_target.theta) {
     if (print_toggle) std::cout << "  XY: retargeted by a concurrent motion mid-wait, ending early instead of continuing on the wrong path.\n";
-    interfered = true;
+    interfered_scope.mark();
     return;
   }
 
@@ -1402,7 +1458,7 @@ void Drive::pid_wait_until_index(int index) {
   // above catches a retarget landing anywhere across the whole call, not just within phase 2's own loop.
   if (mode != mode_snapshot || odom_target_start.x != retarget_target.x || odom_target_start.y != retarget_target.y || odom_target_start.theta != retarget_target.theta) {
     if (print_toggle) std::cout << "  XY: retargeted by a concurrent motion mid-wait, ending early instead of finishing on the wrong path.\n";
-    interfered = true;
+    interfered_scope.mark();
   }
 }
 
@@ -1419,6 +1475,11 @@ void Drive::pid_wait_quick() {
     // whole inner call, not just within its own loop.
     e_mode mode_snapshot = mode;
     pose retarget_target = odom_target_start;
+    // See pid_wait()'s matching comment on InterferedScope -- opened here, at this call's own entry, so the
+    // headingPID guard below marks `interfered` under the SAME motion this call itself started for,
+    // superseding (with the same generation, in the ordinary case) whatever pid_wait_until_index()'s own
+    // scope already did.
+    InterferedScope interfered_scope(*this);
     int last_index;
     {
       ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
@@ -1433,7 +1494,7 @@ void Drive::pid_wait_quick() {
       // clean, silent finish for a motion it was never waiting for.
       bool retargeted_since_snapshot = mode != mode_snapshot || odom_target_start.x != retarget_target.x || odom_target_start.y != retarget_target.y || odom_target_start.theta != retarget_target.theta;
       if (retargeted_since_snapshot) {
-        interfered = true;
+        interfered_scope.mark();
       } else if (odom_target_start.theta != ANGLE_NOT_SET) {
         headingPID.target_set(new_turn_target_compute(odom_target_start.theta, drive_angle_get(), shortest));
       }
@@ -1443,12 +1504,14 @@ void Drive::pid_wait_quick() {
     // Same concurrent-retarget guard as the PURE_PURSUIT branch above.
     e_mode mode_snapshot = mode;
     pose retarget_target = odom_target_start;
+    // See pid_wait()'s matching comment on InterferedScope, and the PURE_PURSUIT branch above -- same reason.
+    InterferedScope interfered_scope(*this);
     pid_wait_until_point(odom_target_start);
     {
       ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
       bool retargeted_since_snapshot = mode != mode_snapshot || odom_target_start.x != retarget_target.x || odom_target_start.y != retarget_target.y || odom_target_start.theta != retarget_target.theta;
       if (retargeted_since_snapshot) {
-        interfered = true;
+        interfered_scope.mark();
       } else if (odom_target_start.theta != ANGLE_NOT_SET) {
         headingPID.target_set(new_turn_target_compute(odom_target_start.theta, drive_angle_get(), shortest));
       }

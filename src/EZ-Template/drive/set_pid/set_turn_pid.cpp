@@ -120,6 +120,7 @@ void Drive::turn_set_internal(double target, int speed, e_angle_behavior behavio
   ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
 
   interfered = false;
+  interfered_generation = ++motion_generation;
 
   turnPID.timers_reset();
   turnPID.motion_reset(drive_angle_get());

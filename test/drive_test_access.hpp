@@ -48,6 +48,8 @@ struct DriveTestAccess {
   static void drive_pid_task(Drive& d) { d.drive_pid_task(); }
   static std::deque<pros::Imu*>& all_imus(Drive& d) { return d.all_imus; }
   static Lock<pros::RecursiveMutex>& drive_mutex(Drive& d) { return d.drive_mutex; }
+  static std::uint32_t& motion_generation(Drive& d) { return d.motion_generation; }
+  static std::uint32_t& interfered_generation(Drive& d) { return d.interfered_generation; }
   static void turn_pid_task(Drive& d) { d.turn_pid_task(); }
   static void ptp_task(Drive& d) { d.ptp_task(); }
   static void pp_task(Drive& d) { d.pp_task(); }

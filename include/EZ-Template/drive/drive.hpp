@@ -3673,6 +3673,37 @@ class Drive {
    */
   ez::Lock<pros::RecursiveMutex> drive_mutex;
 
+  // Bumped once by every top-level pid_*_set() (see set_drive_pid.cpp/set_turn_pid.cpp/set_swing_pid.cpp/
+  // set_odom_pid.cpp), never anywhere else. Lets a wait tell whether a write to `interfered` -- its own, or
+  // one already sitting there when it starts -- belongs to the motion that wait was actually started for, or
+  // to some other, unrelated one. `interfered_generation` is which motion the CURRENT value of `interfered`
+  // is attributed to. See InterferedScope below, and its uses in exit_conditions.cpp, for why a single shared
+  // bool needs this.
+  std::uint32_t motion_generation = 0;
+  std::uint32_t interfered_generation = 0;
+
+  // The RAII scope a top-level wait opens for as long as it's evaluating one motion's outcome, so `interfered`
+  // only ever ends up attributed to the motion that wait was started for. mark() records a write of
+  // interfered=true as belonging to this scope's motion. On destruction (every return path a wait can take,
+  // including a plain fall-through) -- but ONLY if that motion is still the current one AND nothing has
+  // already spoken for it under its own name -- the destructor asserts interfered=false as this wait's own
+  // clean result, overwriting whatever an unrelated, already-finished stale wait for an OLDER motion left
+  // behind. A write already attributed to THIS motion (this wait's own mark(), or an earlier wait for the same
+  // motion, e.g. a chained call's own phase 1) is never touched, so a real stuck/interfered result for this
+  // motion survives a later, clean phase of the very same wait.
+  class InterferedScope {
+   public:
+    explicit InterferedScope(Drive& d);
+    ~InterferedScope();
+    InterferedScope(const InterferedScope&) = delete;
+    InterferedScope& operator=(const InterferedScope&) = delete;
+    void mark();
+
+   private:
+    Drive& d_;
+    std::uint32_t generation_;
+  };
+
   std::function<void(void)> tracking;
   void opcontrol_drive_activebrake_targets_set();
   double odom_smooth_weight_smooth = 0.0;
