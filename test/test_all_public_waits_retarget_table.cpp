@@ -22,20 +22,20 @@
 //      waiting for. A parallel set of control rows scripts no retarget at all, to prove the same
 //      guard doesn't false-fire on a motion nothing has touched.
 //
-// Known gap this table does not exercise: pid_wait()'s odom/TURN/SWING branches still take their own
-// odom_target_start/turn_target/swing_target snapshot AFTER their shared leading delay, not before it --
-// so a SAME-mode retarget landing during that specific first delay is invisible to those three branches
-// specifically (a DIFFERENT-mode retarget there is still caught, since only `mode` itself needed
-// hoisting for that case). It is not fixed here; see test_wait_retarget_before_first_delay.cpp for the
-// repro. pid_wait() DRIVE and wait_until_drive() (reached through pid_wait_until(double/QLength) and
-// pid_wait_quick() in DRIVE mode) had this identical shape and are now fixed to snapshot mode (and, for
-// pid_wait()'s DRIVE branch, leftPID/rightPID's target) before their own leading delay -- see
-// test_wait_retarget_before_first_delay.cpp for that fix's own repro. pid_wait_until_point() had the
-// identical gap too and has since been fixed (see
-// test_wait_until_point_retarget_before_first_delay.cpp). This table's own rows below only ever
-// retarget mid-loop (after each function's snapshot is already taken), which every public wait already
-// caught before either fix and still does -- the first-delay window itself needs the timing tests
-// named above, not a table row.
+// pid_wait()'s odom/TURN/SWING branches used to take their own odom_target_start/turn_target/
+// swing_target snapshot AFTER their shared leading delay, not before it -- so a SAME-mode retarget
+// landing during that specific first delay was invisible to those three branches specifically (a
+// DIFFERENT-mode retarget there was still caught, since only `mode` itself needed hoisting for that
+// case). pid_wait() DRIVE and wait_until_drive() (reached through pid_wait_until(double/QLength) and
+// pid_wait_quick() in DRIVE mode) had this identical shape and were fixed first, to snapshot mode
+// (and, for pid_wait()'s DRIVE branch, leftPID/rightPID's target) before their own leading delay --
+// see test_wait_retarget_before_first_delay.cpp for that fix's own repro. pid_wait_until_point() had
+// the identical gap too and was fixed next (see test_wait_until_point_retarget_before_first_delay.cpp).
+// pid_wait()'s odom/TURN/SWING branches now reuse that same pre-delay entry snapshot instead of taking
+// their own after the delay -- see test_pid_wait_retarget_before_first_delay_other_branches.cpp for
+// that fix's own repro. This table's own rows below only ever retarget mid-loop (after each function's
+// snapshot is already taken), which every public wait already caught before any of those fixes and
+// still does -- the first-delay window itself needs the timing tests named above, not a table row.
 #include <fstream>
 #include <regex>
 #include <set>

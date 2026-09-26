@@ -390,13 +390,19 @@ void Drive::pid_wait() {
   // invisible to a snapshot taken afterward -- that snapshot already reflects the new mode, so this
   // call silently runs the wrong branch entirely (with that branch's own internal retarget guard
   // then comparing the hijacking motion against itself) instead of ending the wait it was actually
-  // started for. DRIVE's own left/right targets are snapshotted here too, for the same reason:
-  // DRIVE's own mid-loop guard below compares against these, and they need to reflect the motion
-  // this call actually started for, not whatever a same-mode retarget already landed during this
-  // same delay.
+  // started for. Every branch's own family target is snapshotted here too, for the same reason: each
+  // branch's own mid-loop guard below compares against these, and they need to reflect the motion
+  // this call actually started for, not whatever a SAME-mode retarget already landed during this
+  // same delay -- a concurrent pid_turn_set()/pid_swing_set()/pid_odom_*_set() of the same family
+  // doesn't change `mode` at all, so the check just above can't catch it; only a branch reading its
+  // own target from a snapshot taken before this delay (instead of re-reading the live PID/
+  // odom_target_start afterward, which would already reflect the hijacking motion) can.
   e_mode entry_mode_snapshot = mode;
   double entry_left_target = leftPID.target_get();
   double entry_right_target = rightPID.target_get();
+  double entry_turn_target = turnPID.target_get();
+  double entry_swing_target = swingPID.target_get();
+  pose entry_odom_target_start = odom_target_start;
   // Scopes every `interfered` write below to the motion this call was actually started for -- see
   // drive.hpp's comment on InterferedScope. Opened here, at the same instant as the snapshots above and
   // before any of them can go stale, so it tags the motion this wait is really waiting on, not whatever a
@@ -551,8 +557,12 @@ void Drive::pid_wait() {
     // waypoint advance and so can't be used here without false-firing on a healthy path.  mode is watched
     // too, the same reason as the DRIVE branch above: a concurrent setter from a different mode (e.g.
     // pid_turn_set() while this odom wait is still running) wouldn't touch odom_target_start at all.
-    e_mode mode_snapshot = mode;
-    pose retarget_target = odom_target_start;
+    // mode_snapshot/retarget_target reuse the entry snapshot taken before this function's own leading
+    // settle delay above -- see its comment -- not a fresh read here, so a SAME-family odom retarget
+    // landing during that delay is caught on this branch's own first pass instead of being adopted as
+    // this call's own baseline.
+    e_mode mode_snapshot = entry_mode_snapshot;
+    pose retarget_target = entry_odom_target_start;
 
     // Wait until pure pursuit is on the last point, then continue as normal.  xy's exit is checked every pass
     // and not kept: before the last point its target is only a look ahead away and keeps moving, so a small,
@@ -688,8 +698,11 @@ void Drive::pid_wait() {
     // aim point every pass through compute_error() without touching the PID's target, so this can't false-fire
     // on an ordinary turn-to-point motion, only on a real second pid_turn_set()/pid_turn_relative_set().  mode
     // is also watched -- see the DRIVE branch's comment on why a target-only check misses a cross-mode retarget.
-    e_mode mode_snapshot = mode;
-    double turn_target = turnPID.target_get();
+    // mode_snapshot/turn_target reuse the entry snapshot taken before this function's own leading
+    // settle delay above, not a fresh read here -- see that snapshot's comment -- so a SAME-family
+    // turn retarget landing during that delay is caught on this branch's own first pass too.
+    e_mode mode_snapshot = entry_mode_snapshot;
+    double turn_target = entry_turn_target;
     // A stuck-but-settled break below is its own, already-final decision (turn_exit never finished its
     // own exit timer at all -- still RUNNING -- but the stuck watch gave up waiting on it and it's
     // currently inside its own big error window anyway). That is not the "latched a window exit" case
@@ -760,8 +773,10 @@ void Drive::pid_wait() {
     // Same concurrent-retarget guard as the DRIVE branch above -- swingPID.target is only rewritten by
     // swing_set_internal() (set_swing_pid.cpp) at the start of a new swing.  mode is also watched -- see the
     // DRIVE branch's comment on why a target-only check misses a cross-mode retarget.
-    e_mode mode_snapshot = mode;
-    double swing_target = swingPID.target_get();
+    // mode_snapshot/swing_target reuse the entry snapshot taken before this function's own leading
+    // settle delay above, not a fresh read here -- same reason as the TURN branch's matching comment.
+    e_mode mode_snapshot = entry_mode_snapshot;
+    double swing_target = entry_swing_target;
     // Same stuck-but-settled carve-out as the TURN branch above -- see its comment for why this must
     // stop here rather than fall into the recheck below.
     bool settled_via_stuck = false;
