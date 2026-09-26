@@ -1087,27 +1087,20 @@ void Drive::wait_until_turn_swing_internal(double target) {
   // swing_target above (the same pre-delay snapshot the retarget guard uses), not a fresh target_get()
   // call here, so this reflects this call's own original motion even if a retarget already landed in
   // the delay below -- though the retarget guard returns before this value is ever consulted in that
-  // case anyway. TURN_TO_POINT is excluded: it recomputes its own aim point every pass from the point
-  // being faced, so turnPID's target isn't its real aim point the way it is for a plain TURN (see the
-  // retarget-guard comment above turn_set_internal()/this function's own precedent of treating
-  // TURN_TO_POINT differently).
-  bool turn_at_final_target = mode == TURN && std::fabs(target - turn_target) < FINAL_TARGET_TOLERANCE;
-  bool swing_at_final_target = std::fabs(target - swing_target) < FINAL_TARGET_TOLERANCE;
-  // The recheck's own settled-exemption gate (below) needs a different rule for TURN_TO_POINT than
-  // turn_at_final_target above: turn_at_final_target requires mode==TURN because a TURN_TO_POINT
-  // window exit is measured against a live error recomputed every pass from the point actually being
-  // faced (turn_pid_task()), not against turnPID's own static target -- so comparing THIS call's
-  // target against that static snapshot can't tell "this call's target is the real aim" from "this
-  // call's target is some other angle" the way it can for a plain TURN. It doesn't need to: unlike a
-  // plain TURN, turn_set_internal() (called by both pid_turn_set() and pid_turn_set(pose), including
-  // for TURN_TO_POINT) writes the SAME value to turnPID's static target and to chain_target_start at
+  // case anyway.
+  //
+  // TURN_TO_POINT needs its own rule rather than a plain numeric comparison against turnPID's own
+  // static target: turn_pid_task() recomputes TURN_TO_POINT's live error every pass from the point
+  // actually being faced, so turnPID's target isn't its real aim point the way it is for a plain TURN
+  // -- but turn_set_internal() (called by both pid_turn_set() and pid_turn_set(pose), including for
+  // TURN_TO_POINT) writes the SAME value to turnPID's static target and to chain_target_start at
   // motion start, so a wait_until() call chained onto the motion's own target (chain_target_start, as
   // pid_wait_quick()/pid_wait_quick_chain() pass) numerically matches turn_target for TURN_TO_POINT
   // too -- while an explicit checkpoint short of the real aim (a genuine intermediate target) still
-  // numerically differs from it, exactly the distinction this gate exists to draw. Excluding
-  // TURN_TO_POINT here the way turn_at_final_target does would report interfered=true on every
-  // ordinary turn-to-point settle, chained or not -- the mode restriction only matters for the
-  // stuck-detected path above, not for this direct numeric comparison.
+  // numerically differs from it, exactly the distinction this gate exists to draw. So TURN_TO_POINT is
+  // never excluded outright (that would report interfered=true on every ordinary turn-to-point settle,
+  // chained or not, whether detected via the no-progress watch or via a clean latch) -- both paths use
+  // this same numeric-plus-chain rule.
   //
   // The numeric comparison alone still can't tell a CHAINED turn-to-point call apart, though: a plain
   // TURN's own target really is bumped by used_motion_chain_scale when chained
@@ -1118,7 +1111,14 @@ void Drive::wait_until_turn_swing_internal(double target) {
   // chain_target_start and turn_target stay numerically equal for a chained turn-to-point too. A
   // chained wait is supposed to get no settled exemption at all, matching every other chained wait in
   // this codebase, so TURN_TO_POINT additionally requires nothing having chained onto this motion.
-  bool turn_recheck_settle_ok = std::fabs(target - turn_target) < FINAL_TARGET_TOLERANCE && (mode != TURN_TO_POINT || used_motion_chain_scale == 0.0);
+  //
+  // Used identically by both places in the TURN branch below that decide whether settling inside
+  // big_error counts as an ordinary settle: the no-progress watch firing while still RUNNING, and a
+  // clean SMALL_EXIT/BIG_EXIT latch rechecked on entry to the already-latched branch. There's no
+  // reason for those two paths to disagree on what counts as "this call's target is the motion's own
+  // final aim".
+  bool turn_at_final_target = std::fabs(target - turn_target) < FINAL_TARGET_TOLERANCE && (mode != TURN_TO_POINT || used_motion_chain_scale == 0.0);
+  bool swing_at_final_target = std::fabs(target - swing_target) < FINAL_TARGET_TOLERANCE;
 
   // Let the PID run at least 1 iteration before seeding the progress backstop from real error --
   // matching pid_wait() and wait_until_drive(), both of which delay before constructing their own
@@ -1182,12 +1182,12 @@ void Drive::wait_until_turn_swing_internal(double target) {
           if (turn_exit != RUNNING) {
             if (print_toggle) std::cout << "  Turn: " << exit_to_string(turn_exit) << " Wait Until Exit Failsafe, triggered at " << drive_angle_get() << " instead of " << target << "\n";
 
-            // Same settled-exemption gating as wait_until_drive()'s else branch -- a clean
-            // SMALL_EXIT/BIG_EXIT latch only ends this without interfered=true when this
-            // wait_until()'s own target really is the motion's final target -- see
-            // turn_recheck_settle_ok's own comment for why TURN_TO_POINT reads that differently
-            // than turn_at_final_target does.
-            bool stalled = !turn_recheck_settle_ok;
+            // Same settled-exemption gating as wait_until_drive()'s else branch, and the same
+            // turn_at_final_target used by the no-progress watch path above -- a clean SMALL_EXIT/
+            // BIG_EXIT latch only ends this without interfered=true when this wait_until()'s own
+            // target really is the motion's final target -- see turn_at_final_target's own comment
+            // for TURN_TO_POINT's rule.
+            bool stalled = !turn_at_final_target;
             if (turn_exit == mA_EXIT || turn_exit == VELOCITY_EXIT) stalled = true;
             if (stalled) interfered_scope.mark();
             return;
