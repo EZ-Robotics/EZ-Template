@@ -66,14 +66,22 @@ Outcome run_wait(Drive& chassis, void (*script)(Drive&, int), int max_passes, st
 // Same pass timeline as test_pid_wait_drive_latched_side_recheck.cpp's script(): left latches
 // SMALL_EXIT early (pass 10) then gets shoved to 5.5in (outside the default 3in big_error) and held
 // there; right keeps closing honestly and small-exits for real at pass 40.
+//
+// A DriveTestAccess::refresh() call every pass, not a bare `.error =` write -- PID.cpp's small/big
+// exit timers only credit `error` when a real compute has landed since they last checked (see
+// exit_condition()'s error_fresh comment), so without this left/right would sit at RUNNING forever
+// and this test would only ever exercise wait_until_drive()'s StuckWatch-backed stuck-detected path,
+// never the two-sided latch its own docstring is about.
 void script(Drive& c, int n) {
   double left_error = (n <= 10) ? 0.5 : 5.5;
   c.leftPID.error = left_error;
   c.leftPID.derivative = 0.1;
+  DriveTestAccess::refresh(c.leftPID);
 
   double right_error = std::fmax(0.4, 3.9 - 0.1 * n);
   c.rightPID.error = right_error;
   c.rightPID.derivative = -0.1;
+  DriveTestAccess::refresh(c.rightPID);
 }
 }  // namespace
 
@@ -126,6 +134,8 @@ int g_pass2 = 0;
 // defender from pass 20 onward: error ramps up to 4in over 20 passes and holds there. Right closes
 // slowly enough (20in -> 0in by ~pass 57) that it is still genuinely RUNNING, and genuinely
 // converging, the entire time left is pinned.
+// A DriveTestAccess::refresh() call every pass -- see script()'s own comment above for why a bare
+// `.error =` write can't reach a real SMALL_EXIT/BIG_EXIT latch under PID.cpp's freshness gate.
 void pinned_script() {
   ++g_pass2;
   ez::detail::stats.auto_task_passes.fetch_add(1);
@@ -139,10 +149,12 @@ void pinned_script() {
   else left_e = 4.0;
   c.leftPID.error = left_e;
   c.leftPID.derivative = n <= 10 ? -2.0 : (n > 19 && n <= 39 ? 0.2 : 0.0);
+  DriveTestAccess::refresh(c.leftPID);
 
   double right_e = std::fmax(0.0, 20.0 - 0.35 * n);
   c.rightPID.error = right_e;
   c.rightPID.derivative = right_e > 0.0 ? -0.35 : 0.0;
+  DriveTestAccess::refresh(c.rightPID);
 }
 }  // namespace
 
