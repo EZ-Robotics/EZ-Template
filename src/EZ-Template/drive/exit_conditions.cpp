@@ -690,24 +690,59 @@ void Drive::pid_wait() {
     // is also watched -- see the DRIVE branch's comment on why a target-only check misses a cross-mode retarget.
     e_mode mode_snapshot = mode;
     double turn_target = turnPID.target_get();
-    while (turn_exit == RUNNING) {
-      if (mode != mode_snapshot || turnPID.target_get() != turn_target) {
-        if (print_toggle) std::cout << "  Turn: retargeted by a concurrent motion mid-wait, ending early instead of finishing on the wrong target.\n";
-        interfered_scope.mark();
-        return;
+    // A stuck-but-settled break below is its own, already-final decision (turn_exit never finished its
+    // own exit timer at all -- still RUNNING -- but the stuck watch gave up waiting on it and it's
+    // currently inside its own big error window anyway). That is not the "latched a window exit" case
+    // the recheck below is for, and there is nothing for it to un-latch (still RUNNING was never
+    // latched in the first place) -- falling into it here would just delay-and-loop forever, since
+    // neither the settled check nor the stuck check resets. Stop here, same as the DRIVE branch's
+    // matching flag and comment above.
+    bool settled_via_stuck = false;
+    while (true) {
+      while (turn_exit == RUNNING) {
+        if (mode != mode_snapshot || turnPID.target_get() != turn_target) {
+          if (print_toggle) std::cout << "  Turn: retargeted by a concurrent motion mid-wait, ending early instead of finishing on the wrong target.\n";
+          interfered_scope.mark();
+          return;
+        }
+        secondary_velocity_sensor_update(turnPID);
+        // See the matching comment in the DRIVE branch above -- a slow (not stalled) turn must not be
+        // ended by the velocity channel alone.
+        turn_exit = turn_exit != RUNNING ? turn_exit : without_velocity(turnPID.exit_condition(both_sides(left_motors, right_motors)));
+        if (turn_exit == RUNNING && watch.stuck(turnPID.error)) {
+          // Same settled carve-out as the DRIVE branch above.
+          bool settled = std::fabs(turnPID.error) < turnPID.exit.big_error;
+          stalled = !settled;
+          settled_via_stuck = settled;
+          if (print_toggle) std::cout << "  Turn: " << (stalled ? "Stuck" : "Stuck, but stopped inside the big error window, counted as settled") << ", error: " << turnPID.error << "\n";
+          break;
+        }
+        pros::delay(util::DELAY_TIME);
       }
-      secondary_velocity_sensor_update(turnPID);
-      // See the matching comment in the DRIVE branch above -- a slow (not stalled) turn must not be
-      // ended by the velocity channel alone.
-      turn_exit = turn_exit != RUNNING ? turn_exit : without_velocity(turnPID.exit_condition(both_sides(left_motors, right_motors)));
-      if (turn_exit == RUNNING && watch.stuck(turnPID.error)) {
-        // Same settled carve-out as the DRIVE branch above.
-        bool settled = std::fabs(turnPID.error) < turnPID.exit.big_error;
-        stalled = !settled;
-        if (print_toggle) std::cout << "  Turn: " << (stalled ? "Stuck" : "Stuck, but stopped inside the big error window, counted as settled") << ", error: " << turnPID.error << "\n";
-        break;
+      if (stalled || settled_via_stuck) break;
+
+      // turn_exit latched a window exit (SMALL_EXIT/BIG_EXIT) on the pass that just ended the loop
+      // above -- but that loop's own trailing pros::delay() still ran once more after the pass that
+      // latched, before the loop condition was re-checked, so a disturbance landing during that one
+      // extra pass was never looked at again. Right before trusting this as a clean return, recheck it
+      // against the same window it exited through, using its own live error -- not exit_condition()
+      // (that would restart its internal timers) -- the same treatment the DRIVE and odom branches
+      // above already give a clean exit. Un-latch (back to RUNNING) if it has drifted back outside,
+      // falling through to keep genuinely watching it instead of trusting a stale result. The stuck
+      // watch is deliberately NOT reseeded -- see the DRIVE branch's matching recheck for why.
+      // VELOCITY_EXIT is never latched here (without_velocity() already maps it to RUNNING); mA_EXIT
+      // isn't a window exit and is handled below regardless, so it's left alone.
+      if (turn_exit == SMALL_EXIT && std::fabs(turnPID.error) >= turnPID.exit.small_error) {
+        turn_exit = RUNNING;
+      } else if (turn_exit == BIG_EXIT && std::fabs(turnPID.error) >= turnPID.exit.big_error) {
+        turn_exit = RUNNING;
       }
-      pros::delay(util::DELAY_TIME);
+
+      if (turn_exit == RUNNING) {
+        pros::delay(util::DELAY_TIME);
+        continue;
+      }
+      break;
     }
     if (print_toggle && !stalled) std::cout << "  Turn: " << exit_to_string(turn_exit) << " Exit, error: " << turnPID.error << "\n";
 
@@ -727,24 +762,46 @@ void Drive::pid_wait() {
     // DRIVE branch's comment on why a target-only check misses a cross-mode retarget.
     e_mode mode_snapshot = mode;
     double swing_target = swingPID.target_get();
-    while (swing_exit == RUNNING) {
-      if (mode != mode_snapshot || swingPID.target_get() != swing_target) {
-        if (print_toggle) std::cout << "  Swing: retargeted by a concurrent motion mid-wait, ending early instead of finishing on the wrong target.\n";
-        interfered_scope.mark();
-        return;
+    // Same stuck-but-settled carve-out as the TURN branch above -- see its comment for why this must
+    // stop here rather than fall into the recheck below.
+    bool settled_via_stuck = false;
+    while (true) {
+      while (swing_exit == RUNNING) {
+        if (mode != mode_snapshot || swingPID.target_get() != swing_target) {
+          if (print_toggle) std::cout << "  Swing: retargeted by a concurrent motion mid-wait, ending early instead of finishing on the wrong target.\n";
+          interfered_scope.mark();
+          return;
+        }
+        secondary_velocity_sensor_update(swingPID);
+        // See the matching comment in the DRIVE branch above -- a slow (not stalled) swing must not be
+        // ended by the velocity channel alone.
+        swing_exit = swing_exit != RUNNING ? swing_exit : without_velocity(swingPID.exit_condition(sensor));
+        if (swing_exit == RUNNING && watch.stuck(swingPID.error)) {
+          // Same settled carve-out as the DRIVE branch above.
+          bool settled = std::fabs(swingPID.error) < swingPID.exit.big_error;
+          stalled = !settled;
+          settled_via_stuck = settled;
+          if (print_toggle) std::cout << "  Swing: " << (stalled ? "Stuck" : "Stuck, but stopped inside the big error window, counted as settled") << ", error: " << swingPID.error << "\n";
+          break;
+        }
+        pros::delay(util::DELAY_TIME);
       }
-      secondary_velocity_sensor_update(swingPID);
-      // See the matching comment in the DRIVE branch above -- a slow (not stalled) swing must not be
-      // ended by the velocity channel alone.
-      swing_exit = swing_exit != RUNNING ? swing_exit : without_velocity(swingPID.exit_condition(sensor));
-      if (swing_exit == RUNNING && watch.stuck(swingPID.error)) {
-        // Same settled carve-out as the DRIVE branch above.
-        bool settled = std::fabs(swingPID.error) < swingPID.exit.big_error;
-        stalled = !settled;
-        if (print_toggle) std::cout << "  Swing: " << (stalled ? "Stuck" : "Stuck, but stopped inside the big error window, counted as settled") << ", error: " << swingPID.error << "\n";
-        break;
+      if (stalled || settled_via_stuck) break;
+
+      // Same relatch hazard, and the same recheck-and-un-latch treatment, as the TURN branch above --
+      // see its comment for why the one pass between a latch and this loop noticing it is a real,
+      // unwatched window.
+      if (swing_exit == SMALL_EXIT && std::fabs(swingPID.error) >= swingPID.exit.small_error) {
+        swing_exit = RUNNING;
+      } else if (swing_exit == BIG_EXIT && std::fabs(swingPID.error) >= swingPID.exit.big_error) {
+        swing_exit = RUNNING;
       }
-      pros::delay(util::DELAY_TIME);
+
+      if (swing_exit == RUNNING) {
+        pros::delay(util::DELAY_TIME);
+        continue;
+      }
+      break;
     }
     if (print_toggle && !stalled) std::cout << "  Swing: " << exit_to_string(swing_exit) << " Exit, error: " << swingPID.error << "\n";
 
