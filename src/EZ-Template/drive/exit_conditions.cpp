@@ -184,7 +184,7 @@ class StuckWatch {
 class SingleStuckWatch {
  public:
   SingleStuckWatch(PID& pid, double error)
-      : ch_(stuck_step(pid), std::fabs(error), error), window_(pid.exit.velocity_exit_time != 0 ? pid.exit.velocity_exit_time : pid.exit.mA_timeout), moved_(false) {
+      : ch_(stuck_step(pid), std::fabs(error), error), window_(pid.exit.velocity_exit_time != 0 ? pid.exit.velocity_exit_time : pid.exit.mA_timeout), moved_(false), last_pass_(stuck_passes()), seeded_(false) {
     last_progress_ = pros::millis() + STUCK_START_ALLOWANCE_MS;
     last_progress_pass_ = stuck_passes() + STUCK_START_ALLOWANCE_MS / util::DELAY_TIME;
   }
@@ -193,7 +193,29 @@ class SingleStuckWatch {
     if (window_ == 0) return false;
     std::uint32_t now = pros::millis();
     std::uint32_t pass = stuck_passes();
-    bool progress = ch_.made(std::fabs(error), error);
+    bool progress = false;
+    // Only ever act on `error` on a pass where the background task has actually ticked since the last
+    // time this checked (stuck_passes(), the same heartbeat the wall-clock/pass-count starvation check
+    // below already trusts) -- the caller (this wait's own loop) and that background compute loop are two
+    // independently scheduled loops that aren't lock-stepped, so `error` isn't guaranteed to be a new
+    // value just because stuck() was called again. The first confirmed-fresh read re-seeds the channel's
+    // baseline directly from it instead of running it through made(): whatever `error` this watch happened
+    // to be constructed with -- right after pid_wait()'s own leading delay, which doesn't guarantee a real
+    // tick landed during it either -- is never trusted as a real baseline on its own, so a stale-to-real
+    // jump on the first real read can't misread as a shove and spend the underlying Channel's one-shot
+    // rebound allowance on nothing. A pass with nothing new is skipped outright, not just left
+    // un-credited: last_progress_/last_progress_pass_ (seeded from real construction time regardless,
+    // below) are what still catch a task that stops ticking forever -- treating an unchanged reading as
+    // "checked and still not stuck" would reset that clock for no reason every single pass.
+    if (pass != last_pass_) {
+      last_pass_ = pass;
+      if (!seeded_) {
+        ch_ = Channel(ch_.step, std::fabs(error), error);
+        seeded_ = true;
+      } else {
+        progress = ch_.made(std::fabs(error), error);
+      }
+    }
     if (!moved_ && progress) moved_ = true;
     if (progress && (moved_ || (std::int32_t)(now - last_progress_) > 0)) {
       last_progress_ = now;
@@ -211,6 +233,8 @@ class SingleStuckWatch {
   Channel ch_;
   int window_;
   bool moved_;
+  std::uint32_t last_pass_;
+  bool seeded_;
   std::uint32_t last_progress_, last_progress_pass_;
 };
 
