@@ -44,6 +44,21 @@ double stuck_step(PID& pid) {
   return pid.velocity_sensor_main_exit_get();
 }
 
+// StuckWatch's stuck-detection window, in ms: xy's own velocity_exit_time if set, else xy's own
+// mA_timeout, else -- a team can zero both of xy's own velocity and current exits, a legitimate,
+// already-supported per-axis choice with no hard ceiling -- angle's own equivalent instead, so turning
+// off xy's own exits can't silently take heading's stuck backstop down with it too. pid_odom_drive_exit_
+// condition_set() and pid_odom_turn_exit_condition_set() are two separate public setters specifically so
+// a team can configure each axis independently; the window they feed has to stay independently backed by
+// each axis's own configuration for that independence to actually hold. Only if BOTH axes have zeroed
+// both their own velocity and current exits does this collapse to 0 and stuck() go permanently inert --
+// matching what a team who deliberately disabled every timeout on both axes is actually asking for.
+int stuck_window(PID& xy, PID& angle) {
+  int xy_window = xy.exit.velocity_exit_time != 0 ? xy.exit.velocity_exit_time : xy.exit.mA_timeout;
+  if (xy_window != 0) return xy_window;
+  return angle.exit.velocity_exit_time != 0 ? angle.exit.velocity_exit_time : angle.exit.mA_timeout;
+}
+
 // A single progress channel: has `size` (always >= 0, e.g. a distance or |error|) come down to a new low, a full
 // `step` below the last one, since progress was last credited?  Going past the point (`error`'s sign flipping) and
 // coming back counts, measured from how far past it went, and so does a straight shove that pushes `size` a full
@@ -99,7 +114,7 @@ class StuckWatch {
  public:
   // travelled and turned: how far the robot has moved and turned since the motion started
   StuckWatch(PID& xy, PID& angle, int index, double distance, double travelled, double turned)
-      : xy_(stuck_step(xy), distance, xy.error), a_(stuck_step(angle), std::fabs(angle.error), angle.error), index_(index), window_(xy.exit.velocity_exit_time != 0 ? xy.exit.velocity_exit_time : xy.exit.mA_timeout), moved_(travelled > xy_.step || turned > a_.step) {
+      : xy_(stuck_step(xy), distance, xy.error), a_(stuck_step(angle), std::fabs(angle.error), angle.error), index_(index), window_(stuck_window(xy, angle)), moved_(travelled > xy_.step || turned > a_.step) {
     int allowance = moved_ ? 0 : STUCK_START_ALLOWANCE_MS;
     last_progress_ = pros::millis() + allowance;
     last_progress_pass_ = stuck_passes() + allowance / util::DELAY_TIME;
