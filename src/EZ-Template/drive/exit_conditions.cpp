@@ -1400,6 +1400,23 @@ void Drive::pid_wait_until_index_started(int index) {
     }
 
     if (xy_exit != RUNNING && a_exit != RUNNING) {
+      // Once an axis latches SMALL_EXIT/BIG_EXIT, exit_condition() above is never called on it again --
+      // so a disturbance landing on an already-latched axis (most commonly angle, which typically settles
+      // first) went completely unwatched for the rest of this wait. Recheck each latched axis against the
+      // window it exited through, using its own live error -- not exit_condition() (that would restart its
+      // internal timers) -- the same treatment pid_wait_until_point() and pid_wait()'s odom branch already
+      // give a clean double-exit (see their own comments on this identical bug). VELOCITY_EXIT is never
+      // latched here (without_velocity() already maps it to RUNNING); mA_EXIT isn't a window exit and is
+      // handled below regardless, so it's left alone. A latched axis that has drifted back outside its
+      // window is un-latched (back to RUNNING), falling through to keep waiting -- the stuck check above
+      // remains the backstop if the disturbance never resolves.
+      if (xy_exit == SMALL_EXIT && std::fabs(xyPID.error) >= xyPID.exit.small_error) xy_exit = RUNNING;
+      else if (xy_exit == BIG_EXIT && std::fabs(xyPID.error) >= xyPID.exit.big_error) xy_exit = RUNNING;
+      if (a_exit == SMALL_EXIT && std::fabs(current_a_odomPID.error) >= current_a_odomPID.exit.small_error) a_exit = RUNNING;
+      else if (a_exit == BIG_EXIT && std::fabs(current_a_odomPID.error) >= current_a_odomPID.exit.big_error) a_exit = RUNNING;
+    }
+
+    if (xy_exit != RUNNING && a_exit != RUNNING) {
       if (print_toggle) {
         // index points into injected_pp_index_snapshot, which holds where each waypoint sits in pp_movements
         std::cout << "  XY: " << exit_to_string(xy_exit) << " Wait Until Exit Failsafe, triggered at (" << odom_x_get() << ", " << odom_y_get() << ") instead of (" << pp_movements[injected_pp_index_snapshot[index]].target.x << ", " << pp_movements[injected_pp_index_snapshot[index]].target.y << ")\n";
