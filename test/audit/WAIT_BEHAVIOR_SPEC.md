@@ -178,7 +178,7 @@ Step 3's angle H, not resolved here.
 | JC-2 / N1 | **ACCEPTED (2026-09-24, see §8.2).** Both `xyPID` and `current_a_odomPID`'s own exits are carrot-relative during boomerang, in `pid_wait()` and in `pid_wait_until_index_started()` on non-final legs — the "needs both non-`RUNNING`" condition is not a real-target backstop. Out of scope; boomerang is being replaced by issue #449. | Confirmed (Round 3), corrects this doc's earlier narrower claim. |
 | JC-6 | `pid_wait_until_point`/`pid_wait_until(pose)` has no mode guard at all. `pid_wait_until_index[_started]` in `POINT_TO_POINT` reads a stale/never-populated `injected_pp_index`. | Confirmed. |
 | §5 disable-mid-wait | Real, but scoped to persistent user tasks only — `autonomous()`/`opcontrol()` themselves get replaced on a state change per existing hardware evidence, not hung. | Confirmed via cited prior hardware testing, not re-tested this pass. |
-| N5 | Not a simple floor — the same ~2 in/s number at default constants is both the false-stuck floor and the point past which `StuckWatch` stops being a meaningful time bound. | Confirmed via formula (step/window), worked example given. |
+| N5 | Not a simple floor — the same ~2 in/s number at default constants is both the false-stuck floor and the point past which `StuckWatch` stops being a meaningful time bound. **DECIDED 2026-09-26 (see §8.8): 2 in/s accepted as the default floor, not a bug.** | Confirmed via formula (step/window), worked example given; real-cruise repro confirmed again independently in Round 6. |
 | `StuckWatch` step = 0 | Only reachable with `small_error==0` AND `velocity_exit_time==0` AND `mA_timeout!=0`. Only strictly-smaller readings count as progress (not every reading). | Confirmed. |
 | N6, slow-hairpin `velocity_zero_main` | Runtime/data claims. | Needs sim/hardware — Step 3. |
 
@@ -193,7 +193,7 @@ Step 3's angle H, not resolved here.
 5. **JC-5** (latched angle exit carrying to the final point): **Proposed: reset it on `pp_index` advance**, matching what the code comment already claims is the design intent for xy. Symmetric with how xy is explicitly handled.
 6. **JC-6** (`pid_wait_until_point`/`pid_wait_until_index[_started]` missing mode guards): **Proposed: add the same mode-check-and-refuse pattern** the other `wait_until_*` functions already have, for consistency and to fail loud instead of silently reading stale state.
 7. **BIG_EXIT as success**: today `BIG_EXIT` leaves `interfered=false`, same as `SMALL_EXIT`, and `pid_wait()`'s odom "settled" check relies on this. **Proposed: keep it** — changing this would ripple into the settled check and likely surprise existing autons; flagging only because the task's own N6 depends on this convention.
-8. **N5 floor**: **No default proposed** — this is a real tuning tradeoff (lower floor = more false "stuck" flags on genuinely slow-but-healthy motions; leaving it = the 24 s-survives-a-crawl shape). Needs sim evidence on real archetypes before picking a number, per the task's Step 1-2.
+8. **N5 floor**: **DECIDED 2026-09-26 — see §8.8.** 2 in/s is accepted as the default floor; a sub-2in/s sustained cruise on a non-odom wait tripping the stuck backstop is expected behavior, not a bug.
 9. **P8** (`interfered` auto-clear): **Proposed: leave as-is** (only the next `pid_*_set()` clears it) but document it explicitly — auto-clearing on every wait return would silently erase a signal that a prior `pid_wait_until()` in the same motion had a problem, which seems like the wrong direction.
 10. **Zeroed exit constants / hard ceiling**: **Proposed: no new hard ceiling** — "the team's choice to make" matches EZ-Template's existing philosophy of exposing raw constants rather than guarding them, but flagging since a hard ceiling would still fit the "nothing gated" constraint if you'd rather have one.
 11. **Scope inventory method** (§2): no sign-off needed, just noting the method for the next step.
@@ -343,3 +343,29 @@ consistency decision that commit left open.
 
 **Attack agents: this is decided. Do not re-report the settled-exemption asymmetry between
 `pid_wait()` and the `wait_until_*` functions.**
+
+### 8.8 N5's ~2 in/s stuck-progress floor is the accepted default, not a bug
+
+`SingleStuckWatch`'s progress floor at shipped defaults (`small_error` 1 in over
+`velocity_exit_time` 500 ms) works out to ~2 in/s. Round 6 confirmed this floor false-flags a
+real, healthy, sustained cruise slower than 2 in/s (a `sticky_high_friction` archetype at speed
+15, ~1.36-1.40 in/s) as stuck on a plain DRIVE `pid_wait()`, ending the wait ~95% short of a
+30 in leg while the drive task itself kept driving toward the target unassisted.
+
+**Decided 2026-09-26: 2 in/s is fine as the default floor.** A drivetrain that cruises slower
+than this on a DRIVE/TURN/SWING wait (the modes with no odometry backstop, `StuckWatch`'s own
+per-error-channel progress check being their only protection against a genuine stall) is
+expected to trip the stuck backstop; this is accepted behavior, not a gap. A team that needs a
+slower drivetrain to survive its own `pid_wait()` should raise `small_error` and/or
+`velocity_exit_time` via the existing public exit-condition setters — nothing new is needed for
+that, and nothing is gated behind a setter that doesn't already exist.
+
+This resolves this document's own §7 item 8 ("N5 floor: No default proposed") and Round 6's
+`test/test_drive_stuck_floor_repro.cpp`, which is being converted from a failing repro into a
+passing regression guard that locks the accepted floor in place, rather than left failing or
+deleted.
+
+**Attack agents: this is decided. Do not re-report a real, sustained, sub-2in/s cruise being
+flagged stuck on a plain (non-odom) DRIVE/TURN/SWING wait as a bug.** A momentary dip below
+2 in/s that a healthy motion quickly recovers from is a different question — `Channel`'s own
+step/rebound logic already governs that, and remains fair game to attack.
