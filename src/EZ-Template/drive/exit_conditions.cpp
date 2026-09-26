@@ -183,10 +183,19 @@ class StuckWatch {
 // where it started, since these modes have no separate odometry-derived travelled/turned to check against.
 class SingleStuckWatch {
  public:
-  SingleStuckWatch(PID& pid, double error)
-      : ch_(stuck_step(pid), std::fabs(error), error), window_(pid.exit.velocity_exit_time != 0 ? pid.exit.velocity_exit_time : pid.exit.mA_timeout), moved_(false), last_pass_(stuck_passes()), seeded_(false) {
-    last_progress_ = pros::millis() + STUCK_START_ALLOWANCE_MS;
-    last_progress_pass_ = stuck_passes() + STUCK_START_ALLOWANCE_MS / util::DELAY_TIME;
+  // `already_moved`: whether the motion this PID belongs to has already moved a real step's worth of
+  // progress since ITS OWN start -- not since this particular wait call started -- so a wait chained
+  // onto an already-moving motion doesn't pay the startup allowance again. Mirrors what StuckWatch's own
+  // comment documents as the intended contract ("a second wait on the same motion doesn't get the
+  // allowance again once the robot has moved") and already keeps for odom waits by seeding its own
+  // `moved_` from real distance/heading travelled since the motion's true start; SingleStuckWatch has no
+  // odometry of its own, so callers compute this the same way DRIVE/TURN/SWING already track a motion's
+  // real start elsewhere (l_start/r_start, chain_sensor_start).
+  SingleStuckWatch(PID& pid, double error, bool already_moved)
+      : ch_(stuck_step(pid), std::fabs(error), error), window_(pid.exit.velocity_exit_time != 0 ? pid.exit.velocity_exit_time : pid.exit.mA_timeout), moved_(already_moved), last_pass_(stuck_passes()), seeded_(false) {
+    int allowance = moved_ ? 0 : STUCK_START_ALLOWANCE_MS;
+    last_progress_ = pros::millis() + allowance;
+    last_progress_pass_ = stuck_passes() + allowance / util::DELAY_TIME;
   }
 
   bool stuck(double error) {
@@ -461,8 +470,13 @@ void Drive::pid_wait() {
     // built around each side's own error instead: neither velocity nor mA catches a sustained disturbance that
     // never reads as "stopped" and never draws over current (a continuous spin, a defender holding the robot,
     // sensor jitter under contact) -- see WAIT_BEHAVIOR_SPEC.md's JC-1.  A side only counts as "stuck" once IT is
-    // still RUNNING and not progressing; a side that already exited cleanly can't drag the wait down.
-    SingleStuckWatch left_watch(leftPID, leftPID.error), right_watch(rightPID, rightPID.error);
+    // still RUNNING and not progressing; a side that already exited cleanly can't drag the wait down.  Whether
+    // each side already moved is judged against l_start/r_start -- the motion's own real start, set once in
+    // pid_drive_set() -- not against this particular wait call, so a wait chained onto an already-moving motion
+    // (an early pid_wait_until() checkpoint followed by pid_wait() on the same still-running drive, TEAM_CORPUS.md's
+    // ordinary "until then wait" pattern) doesn't pay SingleStuckWatch's startup allowance a second time.
+    SingleStuckWatch left_watch(leftPID, leftPID.error, std::fabs(drive_sensor_left() - l_start) > stuck_step(leftPID)),
+        right_watch(rightPID, rightPID.error, std::fabs(drive_sensor_right() - r_start) > stuck_step(rightPID));
     bool stalled = false;
     // A stuck-but-settled break below is its own, already-final decision (at least one side never
     // finished its own exit timer at all -- still RUNNING -- but the stuck watch gave up waiting on
@@ -715,7 +729,9 @@ void Drive::pid_wait() {
   // Turn Exit
   else if (mode == TURN || mode == TURN_TO_POINT) {
     exit_output turn_exit = RUNNING;
-    SingleStuckWatch watch(turnPID, turnPID.error);  // see the DRIVE branch's comment on why -- same JC-1 gap.
+    // Moved-since-motion-start is judged against chain_sensor_start (set once in turn_set_internal()), not
+    // this particular wait call -- see the DRIVE branch's comment above for why, and same JC-1 gap.
+    SingleStuckWatch watch(turnPID, turnPID.error, std::fabs(drive_angle_get() - chain_sensor_start) > stuck_step(turnPID));
     bool stalled = false;
     // Same concurrent-retarget guard as the DRIVE branch above.  turnPID.target is only ever rewritten by
     // turn_set_internal() (set_turn_pid.cpp) at the start of a new turn -- TURN_TO_POINT recomputes its own
@@ -792,7 +808,9 @@ void Drive::pid_wait() {
   else if (mode == SWING) {
     exit_output swing_exit = RUNNING;
     std::vector<pros::Motor>& sensor = current_swing == ez::LEFT_SWING ? left_motors : right_motors;
-    SingleStuckWatch watch(swingPID, swingPID.error);  // see the DRIVE branch's comment on why -- same JC-1 gap.
+    // Moved-since-motion-start is judged against chain_sensor_start (set once in swing_set_internal()), not
+    // this particular wait call -- see the DRIVE branch's comment above for why, and same JC-1 gap.
+    SingleStuckWatch watch(swingPID, swingPID.error, std::fabs(drive_angle_get() - chain_sensor_start) > stuck_step(swingPID));
     bool stalled = false;
     // Same concurrent-retarget guard as the DRIVE branch above -- swingPID.target is only rewritten by
     // swing_set_internal() (set_swing_pid.cpp) at the start of a new swing.  mode is also watched -- see the
@@ -907,7 +925,10 @@ void Drive::wait_until_drive(double target) {
   // error, for the same reason without_position_exits() strips SMALL_EXIT/BIG_EXIT out below: leftPID/rightPID's
   // error is measured against their frozen look-ahead target, not against `target`, so a healthy drive that has
   // simply driven past that near point reads to it as permanent non-progress and would be falsely flagged stuck.
-  SingleStuckWatch left_watch(leftPID, is_odom ? l_error : leftPID.error), right_watch(rightPID, is_odom ? r_error : rightPID.error);
+  // Moved-since-motion-start is judged against l_start/r_start (this motion's own real start), not this
+  // particular wait_until() call -- same reasoning as pid_wait()'s DRIVE branch above.
+  SingleStuckWatch left_watch(leftPID, is_odom ? l_error : leftPID.error, std::fabs(drive_sensor_left() - l_start) > stuck_step(leftPID)),
+      right_watch(rightPID, is_odom ? r_error : rightPID.error, std::fabs(drive_sensor_right() - r_start) > stuck_step(rightPID));
 
   // Whether this wait_until()'s own target IS (not just near) the motion's actual final target, not
   // some earlier waypoint the robot is meant to drive through. pid_wait()'s DRIVE branch already
@@ -1158,9 +1179,12 @@ void Drive::wait_until_turn_swing_internal(double target) {
   // instead, which sidesteps this same hazard a different way).
   pros::delay(util::DELAY_TIME);
 
-  // Same JC-1 progress backstop as pid_wait()'s TURN/SWING branches -- see the comment there.
-  SingleStuckWatch turn_watch(turnPID, turnPID.error);
-  SingleStuckWatch swing_watch(swingPID, swingPID.error);
+  // Same JC-1 progress backstop as pid_wait()'s TURN/SWING branches -- see the comment there. Moved-since-
+  // motion-start is judged against chain_sensor_start (this motion's own real start), not this particular
+  // wait_until() call, the same as those two branches.
+  bool already_moved = std::fabs(drive_angle_get() - chain_sensor_start) > std::max(stuck_step(turnPID), stuck_step(swingPID));
+  SingleStuckWatch turn_watch(turnPID, turnPID.error, already_moved);
+  SingleStuckWatch swing_watch(swingPID, swingPID.error, already_moved);
 
   while (true) {
     if (mode != mode_snapshot || turnPID.target_get() != turn_target || swingPID.target_get() != swing_target) {

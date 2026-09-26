@@ -40,6 +40,12 @@ int g_pass = 0;
 // above velocity_zero_main (0.05) every other pass so the velocity exit's own accumulator can never
 // build up. Same shape as an existing regression test's "drives, then pins at a wall" script, just
 // long enough before the pin that SingleStuckWatch has clearly already registered real movement.
+//
+// Also advances the fake drive encoders in step with the scripted error, the same as a real robot's
+// would: on real hardware, compute_error() is always fed FROM drive_sensor_left()/right(), so the two
+// never drift apart the way they would if only PID.error were written here. This matters for a fix
+// that judges "has this motion already moved" from real sensor travel since the motion's own start
+// (l_start/r_start) rather than from this one wait call's own view of PID.error.
 void drives_then_pins(Drive& c, int n) {
   bool pinned = n > 20;
   double e = pinned ? 14.0 : std::fmax(14.0, 24.0 - 0.5 * n);
@@ -47,6 +53,9 @@ void drives_then_pins(Drive& c, int n) {
   double cur = pinned ? jitter : -0.5 * std::fmin((double)n, 20.0);
   c.leftPID.compute_error(e, cur);
   c.rightPID.compute_error(e, cur);
+  std::int32_t ticks = (std::int32_t)((24.0 - e) * c.drive_tick_per_inch());
+  c.left_motors[0].fake().position = ticks;
+  c.right_motors[0].fake().position = ticks;
 }
 
 void on_delay() {
