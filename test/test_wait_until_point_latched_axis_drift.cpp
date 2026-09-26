@@ -81,6 +81,11 @@ int g_pass = 0;
 // StuckWatch never gets a chance to weigh in either way here; only the per-axis latch matters for
 // this repro (see file header for why moved_ is already true, so there is no separate 1000ms grace
 // on top of that window).
+// A DriveTestAccess::refresh() call every pass, not a bare `.error =` write -- PID.cpp's small/big
+// exit timers only credit `error` when a real compute has landed since they last checked, so
+// without this neither axis could ever actually reach a latched SMALL_EXIT/BIG_EXIT, and this test
+// would time out or fall through to a different backstop instead of exercising the per-axis latch
+// recheck it is named for.
 void script() {
   ++g_pass;
   ez::detail::stats.auto_task_passes.fetch_add(1);
@@ -93,9 +98,11 @@ void script() {
   else if (n <= 39) a_e = 1.0 * (n - 19);  // ramps 0 -> 20deg over 20 passes
   else a_e = 20.0;
   c.current_a_odomPID.error = a_e;
+  DriveTestAccess::refresh(c.current_a_odomPID);
 
   double xy_e = std::fmax(0.0, 20.0 - 1.0 * n);
   c.xyPID.error = xy_e;
+  DriveTestAccess::refresh(c.xyPID);
 }
 
 struct Outcome {

@@ -38,6 +38,11 @@ int g_pass = 0;
 // dips back under small_error, so it never accumulates enough to BIG_EXIT either. Its own
 // exit_condition() never latches at all; the only thing that can end this wait is the no-progress
 // watch deciding right has settled.
+// A DriveTestAccess::refresh() call every pass, not a bare `.error =` write -- PID.cpp's small/big
+// exit timers only credit `error` when a real compute has landed since they last checked, so
+// without this left would never actually latch SMALL_EXIT, and this test would end up checking the
+// same live-error comparison on a side that stayed RUNNING the whole time, which passes whether or
+// not the settled-vote fix this test is about is even present.
 void script() {
   ++g_pass;
   ez::detail::stats.auto_task_passes.fetch_add(1);
@@ -47,10 +52,12 @@ void script() {
   double left_e = (n <= 20) ? 0.5 : 4.0;
   c.leftPID.error = left_e;
   c.leftPID.derivative = n <= 20 ? -0.1 : 0.0;
+  DriveTestAccess::refresh(c.leftPID);
 
   double right_e = (n % 2 == 0) ? 0.9 : 1.1;
   c.rightPID.error = right_e;
   c.rightPID.derivative = (n % 2 == 0) ? 0.3 : -0.3;
+  DriveTestAccess::refresh(c.rightPID);
 }
 }  // namespace
 

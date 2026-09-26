@@ -87,14 +87,21 @@ Outcome run_wait(Drive& chassis, void (*script)(Drive&, int), int max_passes, st
 //         rest of the wait. Right keeps closing steadily throughout (never stuck: SingleStuckWatch's
 //         window is 500ms/50 passes, and right clears a full 1in step every ~10 passes) until it
 //         small-exits for real at pass 40.
+// A DriveTestAccess::refresh() call every pass, not a bare `.error =` write -- PID.cpp's small/big
+// exit timers only credit `error` when a real compute has landed since they last checked, so
+// without this neither side could ever actually reach a latched SMALL_EXIT, and this test would
+// only ever exercise pid_wait()'s DRIVE branch through its StuckWatch fallback, never through the
+// two-sided latch this test is named for.
 void script(Drive& c, int n) {
   double left_error = (n <= 10) ? 0.5 : 5.5;
   c.leftPID.error = left_error;
   c.leftPID.derivative = 0.1;
+  DriveTestAccess::refresh(c.leftPID);
 
   double right_error = std::fmax(0.4, 3.9 - 0.1 * n);
   c.rightPID.error = right_error;
   c.rightPID.derivative = -0.1;
+  DriveTestAccess::refresh(c.rightPID);
 }
 }  // namespace
 
@@ -150,6 +157,8 @@ bool g_over_current = false;
 // Right: closes slowly enough (20in -> 0in by ~pass 57) that it is still genuinely RUNNING, and
 // genuinely converging, the entire time left is pinned -- left's disturbance is never what ends this
 // wait; right's own honest exit is.
+// A DriveTestAccess::refresh() call every pass -- see script()'s own comment above for why a bare
+// `.error =` write can't reach a real SMALL_EXIT latch under PID.cpp's freshness gate.
 void pinned_script() {
   ++g_pass2;
   ez::detail::stats.auto_task_passes.fetch_add(1);
@@ -163,10 +172,12 @@ void pinned_script() {
   else left_e = 4.0;
   c.leftPID.error = left_e;
   c.leftPID.derivative = n <= 10 ? -2.0 : (n > 19 && n <= 39 ? 0.2 : 0.0);
+  DriveTestAccess::refresh(c.leftPID);
 
   double right_e = std::fmax(0.0, 20.0 - 0.35 * n);
   c.rightPID.error = right_e;
   c.rightPID.derivative = right_e > 0.0 ? -0.35 : 0.0;
+  DriveTestAccess::refresh(c.rightPID);
 
   if (g_over_current && n >= 25) {
     for (auto& m : c.left_motors) m.fake().over_current = true;

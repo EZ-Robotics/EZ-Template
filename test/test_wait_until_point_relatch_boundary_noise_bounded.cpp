@@ -43,13 +43,20 @@ int g_pass = 0;
 // untouched (static at the motion's start), so this exercises pid_wait_until_point()'s exit-window
 // recheck the same way the pid_wait() original does, without also exercising its separate
 // crossed-target check (is_past_target's sign never flips since the pose never moves).
+// A DriveTestAccess::refresh() call every pass -- see test_wait_until_point_latched_axis_drift.cpp's
+// own comment for why a bare `.error =` write can't reach a real latch under PID.cpp's freshness
+// gate; without this the boundary noise below would never actually cross into or out of a real
+// SMALL_EXIT, and this test would only be exercising StuckWatch's own boundedness, not the relatch
+// thrash it's named for.
 void script() {
   ++g_pass;
   ez::detail::stats.auto_task_passes.fetch_add(1);
   Drive& c = *g_chassis;
   int phase = g_pass % 24;
   c.xyPID.error = (phase < 12) ? 0.9 : 1.1;
+  DriveTestAccess::refresh(c.xyPID);
   c.current_a_odomPID.error = (phase < 12) ? 3.1 : 2.9;
+  DriveTestAccess::refresh(c.current_a_odomPID);
 }
 
 struct Outcome {
