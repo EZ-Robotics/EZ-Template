@@ -935,6 +935,165 @@ void opcontrol() {
 
 
 
+### opcontrol_joystick_slowmode_toggle()
+Slow mode for driver practice that scales the drive by `opcontrol_joystick_slowmode_speed_set()` / 127, on top of `opcontrol_speed_max_set()` (the two multiply together, they don't replace each other), instead of cutting the drive off like `opcontrol_joystick_practicemode_toggle()` does.  This also scales down active brake's holding power while a joystick is released, the same way `opcontrol_speed_max_set()` does.  Meant as a training mode, not something to leave on for a competition match.
+
+`toggle`  true enables, false disables      
+<Tabs
+  groupId="opcontrol_joystick_slowmode_toggle"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+<TabItem value="proto">
+
+```cpp
+void opcontrol_joystick_slowmode_toggle(bool toggle);
+```
+</TabItem>
+<TabItem value="example">
+
+
+```cpp
+void opcontrol() {
+  while (true) {
+    chassis.opcontrol_tank();  // Tank control
+
+    // Toggle slow mode
+    if (master.get_digital_new_press(DIGITAL_L1)) {
+      chassis.opcontrol_joystick_slowmode_toggle(!chassis.opcontrol_joystick_slowmode_toggle_get());
+    }
+
+    pros::delay(ez::util::DELAY_TIME);  // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
+  }
+}
+```
+</TabItem>
+</Tabs>
+
+
+
+
+### opcontrol_joystick_slowmode_toggle_get()
+Gets current state of the toggle.   
+
+True is enabled, false is disabled.    
+<Tabs
+  groupId="opcontrol_joystick_slowmode_toggle_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+<TabItem value="proto">
+
+```cpp
+bool opcontrol_joystick_slowmode_toggle_get();
+```
+</TabItem>
+<TabItem value="example">
+
+
+```cpp
+void opcontrol() {
+  while (true) {
+    chassis.opcontrol_tank();  // Tank control
+
+    // Toggle slow mode
+    if (master.get_digital_new_press(DIGITAL_L1)) {
+      chassis.opcontrol_joystick_slowmode_toggle(!chassis.opcontrol_joystick_slowmode_toggle_get());
+    }
+
+    pros::delay(ez::util::DELAY_TIME);  // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
+  }
+}
+```
+</TabItem>
+</Tabs>
+
+
+
+
+### opcontrol_joystick_slowmode_speed_set()
+Sets the speed used while `opcontrol_joystick_slowmode_toggle()` is enabled.  This multiplies with `opcontrol_speed_max_set()` rather than overriding it, so the actual cap while slow mode is on is `opcontrol_speed_max_set()` * speed / 127.
+
+`speed`  the speed limit, out of 127      
+<Tabs
+  groupId="opcontrol_joystick_slowmode_speed_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  chassis.opcontrol_joystick_slowmode_speed_set(90);  // A gentler slow mode than the default of 64
+}
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+
+```cpp
+void opcontrol_joystick_slowmode_speed_set(int speed);
+```
+
+
+
+</TabItem>
+</Tabs>
+
+
+### opcontrol_joystick_slowmode_speed_get()
+Returns the speed used while `opcontrol_joystick_slowmode_toggle()` is enabled.
+<Tabs
+  groupId="opcontrol_joystick_slowmode_speed_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  chassis.opcontrol_joystick_slowmode_speed_set(90);
+  printf("%d\n", chassis.opcontrol_joystick_slowmode_speed_get());  // Prints 90
+}
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+
+```cpp
+int opcontrol_joystick_slowmode_speed_get();
+```
+
+
+
+</TabItem>
+</Tabs>
+
+
+
+
 
 
 ## Active Brake
