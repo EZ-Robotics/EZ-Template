@@ -303,6 +303,7 @@ void Drive::swing_set_internal(e_swing type, double target, int speed, int oppos
   ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
 
   interfered = false;
+  interfered_generation = ++motion_generation;
 
   swingPID.timers_reset();
   swingPID.motion_reset(drive_angle_get());

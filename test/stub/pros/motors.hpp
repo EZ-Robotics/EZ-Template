@@ -9,6 +9,7 @@
 // be observable through chassis.left_motors[0].
 #pragma once
 
+#include <cmath>
 #include <cstdint>
 #include <cstdlib>
 #include <map>
@@ -23,6 +24,11 @@ struct MotorFakeState {
   double current_draw = 0.0;
   double voltage = 0.0;
   bool over_current = false;
+  // A disconnected/faulted motor: real PROS's is_over_current() returns PROS_ERR (a read
+  // failure) rather than 0/1 in this case, and get_position() returns PROS_ERR_F the same
+  // way. Kept separate from over_current so a test can represent "read failed" distinctly
+  // from "genuinely over limit".
+  bool disconnected = false;
   bool reversed = false;
   motor_brake_mode_e_t brake_mode = E_MOTOR_BRAKE_COAST;
 };
@@ -48,11 +54,20 @@ class Motor {
     return true;
   }
 
-  double get_position() const { return fake().position; }
+  // Real signature: double, or PROS_ERR_F (a read failure, e.g. disconnected) -- same
+  // disconnected flag is_over_current() honors below, since a real disconnected motor fails
+  // every read, not just that one. INFINITY inline for the same include-order reason as
+  // is_over_current()'s INT32_MAX below.
+  double get_position() const { return fake().disconnected ? INFINITY : (double)fake().position; }
   double get_actual_velocity() const { return fake().actual_velocity; }
   double get_current_draw() const { return fake().current_draw; }
   double get_voltage() const { return fake().voltage; }
-  bool is_over_current() const { return fake().over_current; }
+  // Real signature: std::int32_t, 1 (over limit) / 0 (not) / PROS_ERR (read failed, e.g.
+  // disconnected). A plain bool return here would make a failed read indistinguishable from
+  // a genuine "yes" -- that ambiguity is exactly what PID::exit_condition() must not repeat.
+  // INT32_MAX inline rather than the PROS_ERR macro: api.h #defines PROS_ERR only after
+  // #including this header, so the macro isn't visible here yet in that include order.
+  std::int32_t is_over_current() const { return fake().disconnected ? INT32_MAX : (fake().over_current ? 1 : 0); }
 
   std::int32_t tare_position() {
     fake().position = 0;

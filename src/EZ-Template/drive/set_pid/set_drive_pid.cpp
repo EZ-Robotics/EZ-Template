@@ -119,6 +119,7 @@ void Drive::pid_drive_set(double target, int speed, bool slew_on, bool toggle_he
   ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
 
   interfered = false;
+  interfered_generation = ++motion_generation;
 
   leftPID.timers_reset();
   rightPID.timers_reset();

@@ -89,7 +89,12 @@ std::vector<pose> Drive::find_point_to_face(pose current, pose target, drive_dir
 
 // Inject point based on https://www.chiefdelphi.com/t/paper-implementation-of-the-adaptive-pure-pursuit-controller/166552
 std::vector<odom> Drive::inject_points(std::vector<ez::odom> imovements) {
-  injected_pp_index.clear();
+  // Built into a local vector and published under drive_mutex in one swap at the end, not
+  // written to the member in place unlocked: a concurrent pid_wait_until_index_started() read
+  // (exit_conditions.cpp) could otherwise observe a partially-rebuilt vector mid-function. See
+  // the same fix and its full rationale in set_odom_pid.cpp's pid_odom_pp_set() (finding #16,
+  // Step 3 audit).
+  std::vector<int> new_injected_pp_index;
   bool first_point_added = false;
 
   // Create new vector that includes the starting point
@@ -122,7 +127,7 @@ std::vector<odom> Drive::inject_points(std::vector<ez::odom> imovements) {
 
   std::vector<odom> output;  // Output vector
   int output_index = -1;     // Keeps track of current index
-  injected_pp_index.push_back(0);
+  new_injected_pp_index.push_back(0);
 
   bool allow_injecting = false;  // Flag to disable injecting for the first few points
 
@@ -141,7 +146,7 @@ std::vector<odom> Drive::inject_points(std::vector<ez::odom> imovements) {
 
     // don't let the injected point after boomerang in
     if (i != 0 && input[i - 1].target.theta == ANGLE_NOT_SET) {
-      injected_pp_index.push_back(output_index);
+      new_injected_pp_index.push_back(output_index);
     }
 
     // Add the injected points
@@ -180,7 +185,12 @@ std::vector<odom> Drive::inject_points(std::vector<ez::odom> imovements) {
   output.push_back(input.back());
   output_index++;
 
-  injected_pp_index.push_back(output_index);
+  new_injected_pp_index.push_back(output_index);
+
+  {
+    ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+    injected_pp_index = std::move(new_injected_pp_index);
+  }
 
   // Return final vector
   return output;
