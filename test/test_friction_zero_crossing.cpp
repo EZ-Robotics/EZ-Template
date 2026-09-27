@@ -17,7 +17,7 @@ using namespace ez;
 namespace {
 Drive make_chassis(const sim::SimArchetype& a) {
   test_stub::reset_all();
-  return Drive({1, -2}, {-3, 4}, 5, a.wheel_diameter_in, a.cartridge_rpm, 1.0);
+  return Drive({1, -2}, {-3, 4}, 5, a.wheel_diameter_in, a.cartridge_rpm);
 }
 void pump_ticks(int n) {
   for (int i = 0; i < n; ++i) {

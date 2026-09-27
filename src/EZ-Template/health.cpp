@@ -106,8 +106,9 @@ Report preflight(ez::Drive& chassis, pros::Controller& controller) {
 void preflight_register(ez::Drive& chassis) {
   ez::Drive* drive = &chassis;
 
-  // The selector's autons_add() assigns over the list instead of appending, so
-  // the page is pushed on directly to leave any autons already added alone.
+  // autons_add() appends too, but it also resets auton_page_current to 0 (and recomputes
+  // auton_count) on every call. Pushing directly here appends the health check page without
+  // resetting whatever page is already selected, e.g. one restored from the SD card.
   as::auton_selector.Autons.push_back(
       Auton("Health Check\n\nRuns preflight",
             [drive]() {

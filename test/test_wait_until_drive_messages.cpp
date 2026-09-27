@@ -16,7 +16,7 @@ namespace {
 Drive make_chassis() {
   test_stub::reset_all();
   detail::print_sink = nullptr;  // these tests read stdout
-  return Drive({1, -2}, {-3, 4}, 5, 3.25, 360, 1.0);
+  return Drive({1, -2}, {-3, 4}, 5, 3.25, 360);
 }
 
 // Sets both drive sensors to `inches`.

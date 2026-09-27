@@ -19,7 +19,7 @@ using namespace ez;
 namespace {
 Drive make_chassis() {
   test_stub::reset_all();
-  return Drive({1, -2}, {-3, 4}, 5, 3.25, 360, 1.0);
+  return Drive({1, -2}, {-3, 4}, 5, 3.25, 360);
 }
 
 // Shipped default exit constants (odom): 90ms/1in small, 250ms/3in big, 500ms velocity, 750ms mA.

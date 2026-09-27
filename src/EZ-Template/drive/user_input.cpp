@@ -284,6 +284,12 @@ void Drive::opcontrol_drive_sensors_reset() {
 void Drive::opcontrol_joystick_practicemode_toggle(bool toggle) { practice_mode_is_on = toggle; }
 bool Drive::opcontrol_joystick_practicemode_toggle_get() { return practice_mode_is_on; }
 
+void Drive::opcontrol_joystick_slowmode_toggle(bool toggle) { slow_mode_is_on = toggle; }
+bool Drive::opcontrol_joystick_slowmode_toggle_get() { return slow_mode_is_on; }
+
+void Drive::opcontrol_joystick_slowmode_speed_set(int speed) { slow_mode_speed = std::fabs(util::clamp((double)speed, 127.0)); }
+int Drive::opcontrol_joystick_slowmode_speed_get() { return (int)slow_mode_speed; }
+
 void Drive::opcontrol_drive_reverse_set(bool toggle) { is_reversed = toggle; }
 bool Drive::opcontrol_drive_reverse_get() { return is_reversed; }
 
@@ -325,6 +331,13 @@ void Drive::opcontrol_joystick_threshold_iterate(int l_stick, int r_stick) {
   // the user set max speed is defaulted to 127
   l_out *= (opcontrol_speed_max / 127.0);
   r_out *= (opcontrol_speed_max / 127.0);
+
+  // Optional training mode that scales the drive down further, on top of opcontrol_speed_max,
+  // without permanently changing what opcontrol_speed_max is set to
+  if (slow_mode_is_on) {
+    l_out *= (slow_mode_speed / 127.0);
+    r_out *= (slow_mode_speed / 127.0);
+  }
 
   // Ensure output is within speed limit
   l_out = util::clamp(l_out, opcontrol_speed_max);

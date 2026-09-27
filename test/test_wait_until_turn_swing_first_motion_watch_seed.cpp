@@ -29,7 +29,7 @@ using namespace ez;
 namespace {
 Drive make_fresh_chassis() {
   test_stub::reset_all();
-  return Drive({1, -2}, {-3, 4}, 5, 3.25, 360, 1.0);
+  return Drive({1, -2}, {-3, 4}, 5, 3.25, 360);
 }
 
 // n counts on_delay invocations, starting at 1 for the first one (which -- on the fixed code --

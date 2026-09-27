@@ -28,7 +28,7 @@ Drive make_chassis() {
   test_stub::reset_all();
   detail::scheduler_running.store(false);
   detail::print_sink = ignore_text;  // some of these setters print
-  return Drive({1, -2}, {-3, 4}, 5, 3.25, 360, 1.0);
+  return Drive({1, -2}, {-3, 4}, 5, 3.25, 360);
 }
 
 struct SinkScope {

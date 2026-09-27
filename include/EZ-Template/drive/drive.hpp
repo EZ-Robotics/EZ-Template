@@ -378,7 +378,28 @@ class Drive {
   pros::Task ez_auto;
 
   /**
+   * Creates a Drive Controller for driver control only. No IMU is configured, so
+   * PID driving, turning, swinging, and odometry will not work correctly.
+   *
+   * Intended for brand new users and short-term setups (classrooms, camps) where getting
+   * a drivetrain moving matters more than tuned autonomous routines. Switch to the
+   * constructor below once you're ready to add an IMU and autonomous movements.
+   *
+   * \param left_motor_ports
+   *        input {1, -2...}. make ports negative if reversed
+   * \param right_motor_ports
+   *        input {-3, 4...}. make ports negative if reversed
+   */
+  Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports);
+
+  /**
    * Creates a Drive Controller using internal encoders.
+   *
+   * If your drivetrain has external gearing (a transmission, or a wheel gear that
+   * differs from the motor gear), set `ticks` to your wheel's effective RPM
+   * (cartridge RPM * (motor gear / wheel gear)) so tracking still reads distances
+   * correctly. If that ratio changes at runtime (a shifting transmission), use
+   * drive_ratio_set() instead of recomputing `ticks` by hand.
    *
    * \param left_motor_ports
    *        input {1, -2...}. make ports negative if reversed
@@ -390,13 +411,17 @@ class Drive {
    *        diameter of your drive wheels
    * \param ticks
    *        motor cartridge RPM
-   * \param ratio
-   *        external gear ratio, wheel gear / motor gear
    */
-  Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks, double ratio = 1.0);
+  Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks);
 
   /**
    * Creates a Drive Controller using internal encoders with redundant IMUs.
+   *
+   * If your drivetrain has external gearing (a transmission, or a wheel gear that
+   * differs from the motor gear), set `ticks` to your wheel's effective RPM
+   * (cartridge RPM * (motor gear / wheel gear)) so tracking still reads distances
+   * correctly. If that ratio changes at runtime (a shifting transmission), use
+   * drive_ratio_set() instead of recomputing `ticks` by hand.
    *
    * \param left_motor_ports
    *        input {1, -2...}. make ports negative if reversed
@@ -408,10 +433,8 @@ class Drive {
    *        diameter of your drive wheels
    * \param ticks
    *        motor cartridge RPM
-   * \param ratio
-   *        external gear ratio, wheel gear / motor gear
    */
-  Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, std::vector<int> imu_ports, double wheel_diameter, double ticks, double ratio = 1.0);
+  Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, std::vector<int> imu_ports, double wheel_diameter, double ticks);
 
   // Deconstructor
   ~Drive();
@@ -1477,6 +1500,40 @@ class Drive {
    * True is enabled, false is disabled.
    */
   bool opcontrol_joystick_practicemode_toggle_get();
+
+  /**
+   * Slow mode for driver practice that scales the drive by opcontrol_joystick_slowmode_speed_set() / 127,
+   * on top of opcontrol_speed_max_set() (the two multiply together, they don't replace each other), instead
+   * of cutting the drive off like opcontrol_joystick_practicemode_toggle() does.  This also scales down
+   * active brake's holding power while a joystick is released, the same way opcontrol_speed_max_set() does.
+   * Meant as a training mode, not something to leave on for a competition match.
+   *
+   * \param toggle
+   *        true enables, false disables
+   */
+  void opcontrol_joystick_slowmode_toggle(bool toggle);
+
+  /**
+   * Gets current state of the toggle.
+   *
+   * True is enabled, false is disabled.
+   */
+  bool opcontrol_joystick_slowmode_toggle_get();
+
+  /**
+   * Sets the speed used while opcontrol_joystick_slowmode_toggle() is enabled.  This multiplies with
+   * opcontrol_speed_max_set() rather than overriding it, so the actual cap while slow mode is on is
+   * opcontrol_speed_max_set() * speed / 127.
+   *
+   * \param speed
+   *        the speed limit, out of 127
+   */
+  void opcontrol_joystick_slowmode_speed_set(int speed);
+
+  /**
+   * Returns the speed used while opcontrol_joystick_slowmode_toggle() is enabled.
+   */
+  int opcontrol_joystick_slowmode_speed_get();
 
   /**
    * Reversal for drivetrain in opcontrol that flips the left and right side and the direction of the drive.
@@ -3815,6 +3872,8 @@ class Drive {
   int swing_min = 0;
   int turn_min = 0;
   bool practice_mode_is_on = false;
+  bool slow_mode_is_on = false;
+  double slow_mode_speed = 64.0;
   int swing_opposite_speed = 0;
   bool slew_swing_fwd_using_angle = false;
   bool slew_swing_rev_using_angle = false;
@@ -3903,7 +3962,7 @@ class Drive {
   void drive_tick_per_inch_compute();
 
   double CARTRIDGE = 0.0;
-  double RATIO = 0.0;
+  double RATIO = 1.0;
   double WHEEL_DIAMETER = 0.0;
 
   /**

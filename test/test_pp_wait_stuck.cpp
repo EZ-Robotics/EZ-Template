@@ -20,7 +20,7 @@ using namespace ez;
 namespace {
 Drive make_chassis() {
   test_stub::reset_all();
-  return Drive({1, -2}, {-3, 4}, 5, 3.25, 360, 1.0);
+  return Drive({1, -2}, {-3, 4}, 5, 3.25, 360);
 }
 
 constexpr int POINTS = 40;  // a 40 point path up the y axis, 1 in apart, starting 8 in out (past the look ahead)

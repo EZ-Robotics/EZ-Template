@@ -17,7 +17,7 @@ namespace {
 Drive make_chassis() {
   test_stub::reset_all();
   detail::print_sink = nullptr;  // these tests read stdout
-  return Drive({1, -2}, {-3, 4}, 5, 3.25, 360, 1.0);
+  return Drive({1, -2}, {-3, 4}, 5, 3.25, 360);
 }
 
 template <typename F>
@@ -99,7 +99,7 @@ TEST_CASE("check_imu_task warns once when the only IMU looks unhealthy") {
 
 TEST_CASE("check_imu_task says when the primary IMU changes, and when an ejected one recovers") {
   test_stub::reset_all();
-  Drive chassis({1, -2}, {-3, 4}, {5, 6}, 3.25, 360, 1.0);
+  Drive chassis({1, -2}, {-3, 4}, {5, 6}, 3.25, 360);
   DriveTestAccess::imu_calibration_complete(chassis) = true;
   pros::Imu* first = chassis.good_imus[0];  // ejected below, so hold on to it
   first->fake_installed = false;
@@ -173,7 +173,7 @@ TEST_CASE("the imu message ez_auto_task's pass prints comes out after its lock i
                                 test_stub::g_clock.delay_calls_until_stop = -1; }, "EZ-Template: IMU on port 5 looks unhealthy but it is the only IMU, keeping it\n");
 
   test_stub::reset_all();
-  Drive two_imus({1, -2}, {-3, 4}, {5, 6}, 3.25, 360, 1.0);
+  Drive two_imus({1, -2}, {-3, 4}, {5, 6}, 3.25, 360);
   DriveTestAccess::imu_calibration_complete(two_imus) = true;
   two_imus.good_imus[0]->fake_installed = false;
   expect_printed_after_unlock(two_imus, [&] {

@@ -15,9 +15,16 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 using namespace ez;
 
+// Constructor for driver control only, no IMU configured
+Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports)
+    // 22 is outside the V5's 21 smart ports, so this never collides with a real device.
+    // The IMU is left permanently uncalibrated; drive_imu_calibrate() reports it missing
+    // and driver control works normally without it.
+    : Drive(left_motor_ports, right_motor_ports, 22, 4.0, 200.0) {}
+
 // Constructor for integrated encoders
 Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports,
-             int imu_port, double wheel_diameter, double ticks, double ratio)
+             int imu_port, double wheel_diameter, double ticks)
     : imu(new pros::Imu(imu_port)),
       ez_auto([this] { this->ez_auto_task(); }) {
   is_tracker = DRIVE_INTEGRATED;
@@ -42,7 +49,6 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
   imu_scale_map[imu->get_port()] = 1.0;
   // Set constants for tick_per_inch calculation
   WHEEL_DIAMETER = wheel_diameter;
-  RATIO = ratio;
   CARTRIDGE = ticks;
   drive_tick_per_inch_compute();
 
@@ -51,7 +57,7 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 
 // Constructor for integrated encoders with redundant imu support
 Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports,
-             std::vector<int> imu_ports, double wheel_diameter, double ticks, double ratio)
+             std::vector<int> imu_ports, double wheel_diameter, double ticks)
     : imu(new pros::Imu(imu_ports[0])),
       ez_auto([this] { this->ez_auto_task(); }) {
   is_tracker = DRIVE_INTEGRATED;
@@ -84,7 +90,6 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 
   // Set constants for tick_per_inch calculation
   WHEEL_DIAMETER = wheel_diameter;
-  RATIO = ratio;
   CARTRIDGE = ticks;
   drive_tick_per_inch_compute();
 
