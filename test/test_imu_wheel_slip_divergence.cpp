@@ -5,8 +5,8 @@
 // apart. If a healthy, genuinely flat IMU sits through a slip like this, it reads as "rotating but
 // unchanged" every pass, the same signal a real frozen sensor produces during a real turn -- this
 // test checks whether that combination survives IMU_STUCK_PASSES_THRESHOLD consecutive passes
-// without a healthy backup IMU being falsely ejected. Deliberately not changing the gate itself, per
-// the standing rule that a genuine judgment call here belongs to the maintainer, not this pass.
+// without a healthy backup IMU being falsely ejected. Deliberately not changing the gate itself:
+// which signal to trust here is a genuine judgment call for the maintainer, not a mechanical fix.
 //
 // It does not survive: this reproduces a real, confirmed defect (a healthy redundant IMU gets
 // ejected after a sustained one-sided wheel slip with no real rotation). Marked should_fail() so it

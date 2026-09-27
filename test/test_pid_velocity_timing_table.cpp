@@ -1,17 +1,17 @@
 // Regression table for the bare ez::PID velocity/mA-exit channel, covering stall, twitch, creep,
 // disconnected-motor and compute/poll-cadence-mismatch shapes a lift/claw/catapult (a mechanism with
-// no StuckWatch/SingleStuckWatch backstop the way Drive's own waits have) can be in. Ported from a
-// standalone repro harness used to audit this channel; every scenario here also ran clean against
-// this library's own parent commit before this pass's fixes landed (H1: the velocity channel no
-// longer needs a raw-value staleness/debounce mechanism at all -- see PID.cpp's exit_condition() and
-// its own comments; H2: the mA channel now catches a genuinely disconnected motor).
+// no StuckWatch/SingleStuckWatch backstop the way Drive's own waits have) can be in. Every scenario
+// here also ran clean against this library's own immediate parent commit, from before the velocity
+// channel's raw-value staleness/debounce mechanism was removed in favor of gating on the same
+// freshness signal the small/big timers use (see PID.cpp's exit_condition() and its own comments),
+// and before a disconnected motor's non-finite position started counting toward the mA timer.
 //
 // Each scenario drives a bare PID (no Drive, no chassis) through a virtual 1ms timeline: `pos(t)` is
 // the sensor reading the mechanism would report at time t, and a schedule decides which of those
 // milliseconds land a real compute() and/or a poll (exit_condition() call). test_stub::g_clock.now_ms
-// is advanced to match `t` every iteration so PID.cpp's own wall-clock crediting (this pass's M3 fix)
-// measures real elapsed time the same way it would against a real background task and a real wait
-// loop, not a frozen test clock.
+// is advanced to match `t` every iteration so PID.cpp's own wall-clock crediting of real elapsed time
+// (rather than a flat poll count) measures real elapsed time the same way it would against a real
+// background task and a real wait loop, not a frozen test clock.
 #include <cmath>
 #include <cstdio>
 #include <functional>
@@ -157,7 +157,7 @@ TEST_CASE("bare PID velocity/mA timing table: full sweep (diagnostic; see the CH
   report({"unsync worst case (0,2), velocity-only hard stop", stall_400, 200, unsync, 0, 0, 500, 0, 0, 0});
 }
 
-// ---- Hard-asserted cases, matching this pass's own stated guarantees for H1/H2/M3 --------------
+// ---- Hard-asserted cases, matching this channel's stated guarantees --------------
 
 TEST_CASE("bare PID: a claw at a bit-identical hard stop, velocity-only, exits within one poll of velocity_exit_time after the stop") {
   Result r = report({"claw hard stop, velocity-only (0,0,0,0,500,0)", stall_400, 200, sched_periodic(10, 10), 0, 0, 500, 0, 0, 0});
@@ -201,7 +201,8 @@ TEST_CASE("bare PID: a genuinely disconnected motor exits via mA, not by hanging
 
 TEST_CASE("bare PID: a disconnected motor with no motor-overload check still exits via the sanitized velocity channel") {
   // No MotorMode set (NONE): only PID::exit_condition() (no motor argument) runs, so the mA channel
-  // is never reached at all -- this exercises H1's derivative sanitization on its own, not H2's mA fix.
+  // is never reached at all -- this exercises the velocity channel's own derivative sanitization in
+  // isolation, not the motor-argument overloads' mA handling.
   Cfg c{"disconnected, no-motor overload, docs consts", ramp_settle, 0, sched_periodic(10, 10), 80, 300, 500, 500, 50, 150};
   c.disconnected = true;
   Result r = report(c);
@@ -228,8 +229,9 @@ TEST_CASE("bare PID: a stall with a repeating blip at or above 530ms still event
 }
 
 TEST_CASE("bare PID: mismatched compute/poll cadences no longer double the configured small-exit time") {
-  // Before M3, the small/big/velocity timers credited a flat util::DELAY_TIME per fresh poll --
-  // undercounting real elapsed time whenever the caller's own poll cadence didn't match DELAY_TIME.
+  // The small/big/velocity timers credit real elapsed wall-clock milliseconds per fresh poll, not a
+  // flat util::DELAY_TIME -- a flat credit undercounts real elapsed time whenever the caller's own
+  // poll cadence doesn't match DELAY_TIME.
   // A lift task computing at 20ms while the wait polls at 10ms used to take about 2x as long as the
   // configured 80ms small-exit time to fire. The real-world exit time also isn't simply
   // "stop_ms + small_exit_time" here: ramp_settle's error crosses into the small_error band while
