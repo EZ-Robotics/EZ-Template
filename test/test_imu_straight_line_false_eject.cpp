@@ -91,7 +91,7 @@ int passes_until_ejected(Drive& c, pros::Imu* healthy, void (*one_pass)(Drive&, 
 
 TEST_CASE("check_imu_task(): a long straight-line drive in AUTON mode does not eject a healthy redundant IMU") {
   reset_before_construction();
-  Drive chassis({1, -2}, {-3, 4}, {5, 6}, 3.25, 360, 1.0);
+  Drive chassis({1, -2}, {-3, 4}, {5, 6}, 3.25, 360);
   mark_calibrated(chassis);
   chassis.pid_print_toggle(false);
 
@@ -107,7 +107,7 @@ TEST_CASE("check_imu_task(): a long straight-line drive in AUTON mode does not e
 
 TEST_CASE("check_imu_task(): the same straight-line scenario in DRIVER CONTROL (opcontrol) mode does not eject a healthy redundant IMU") {
   reset_before_construction();
-  Drive chassis({1, -2}, {-3, 4}, {5, 6}, 3.25, 360, 1.0);
+  Drive chassis({1, -2}, {-3, 4}, {5, 6}, 3.25, 360);
   mark_calibrated(chassis);
   chassis.pid_print_toggle(false);
 
@@ -126,7 +126,7 @@ TEST_CASE("check_imu_task(): the same straight-line scenario in DRIVER CONTROL (
 
 TEST_CASE("check_imu_task(): a genuinely frozen IMU during an actual turn is still ejected, within a reasonable bound") {
   reset_before_construction();
-  Drive chassis({1, -2}, {-3, 4}, {5, 6}, 3.25, 360, 1.0);
+  Drive chassis({1, -2}, {-3, 4}, {5, 6}, 3.25, 360);
   mark_calibrated(chassis);
   chassis.pid_print_toggle(false);
   chassis.pid_turn_set(90, 100);
@@ -150,7 +150,7 @@ TEST_CASE("check_imu_task(): a genuinely frozen IMU during an actual turn is sti
 // ever moves.
 TEST_CASE("check_imu_task(): a genuinely frozen IMU during a swing turn (only one side moving) is still ejected, within a reasonable bound") {
   reset_before_construction();
-  Drive chassis({1, -2}, {-3, 4}, {5, 6}, 3.25, 360, 1.0);
+  Drive chassis({1, -2}, {-3, 4}, {5, 6}, 3.25, 360);
   mark_calibrated(chassis);
   chassis.pid_print_toggle(false);
   chassis.pid_swing_set(ez::LEFT_SWING, 45, 100);
@@ -175,7 +175,7 @@ TEST_CASE("check_imu_task(): a genuinely frozen IMU during a swing turn (only on
 // frozen from the start -- the straight leg costs no extra passes once rotation begins.
 TEST_CASE("check_imu_task(): a frozen primary IMU that survives a straight leg is still caught once a real turn starts") {
   reset_before_construction();
-  Drive chassis({1, -2}, {-3, 4}, {5, 6}, 3.25, 360, 1.0);
+  Drive chassis({1, -2}, {-3, 4}, {5, 6}, 3.25, 360);
   mark_calibrated(chassis);
   chassis.pid_print_toggle(false);
   chassis.pid_drive_set(500, 100);

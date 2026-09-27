@@ -51,7 +51,7 @@ using namespace ez;
 namespace {
 Drive make_chassis() {
   test_stub::reset_all();
-  return Drive({1, -2}, {-3, 4}, 5, 3.25, 360, 1.0);
+  return Drive({1, -2}, {-3, 4}, 5, 3.25, 360);
 }
 
 std::vector<odom> straight_path(int points, double start_y) {

@@ -10,7 +10,7 @@ using namespace ez;
 namespace {
 Drive make_chassis() {
   test_stub::reset_all();
-  return Drive({1, -2}, {-3, 4}, 5, 3.25, 360, 1.0);
+  return Drive({1, -2}, {-3, 4}, 5, 3.25, 360);
 }
 
 // Slew on for forward swings and off for backward ones, so the two directions can be told apart

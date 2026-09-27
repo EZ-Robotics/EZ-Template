@@ -24,7 +24,7 @@ using namespace ez;
 namespace {
 Drive make_chassis() {
   test_stub::reset_all();
-  return Drive({1, -2}, {-3, 4}, 5, 3.25, 360, 1.0);
+  return Drive({1, -2}, {-3, 4}, 5, 3.25, 360);
 }
 
 // 3.0 in/s -- inside WAIT_BEHAVIOR_SPEC.md section 8.6's accepted 2.9-3.4in/s band, and under the

@@ -69,7 +69,7 @@ TEST_CASE("slew with a negative distance ramps the same as a positive one") {
 
 TEST_CASE("a turn with a negative slew min speed starts toward its target") {
   test_stub::reset_all();
-  Drive chassis({1, -2}, {-3, 4}, 5, 3.25, 360, 1.0);
+  Drive chassis({1, -2}, {-3, 4}, 5, 3.25, 360);
   chassis.pid_turn_constants_set(5.0, 0.0, 0.0, 0.0);
   chassis.slew_turn_set(true);
   chassis.slew_turn_constants_set(3_deg, -70);  // the sign is a mistake, the turn should still go the right way

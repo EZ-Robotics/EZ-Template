@@ -23,7 +23,7 @@ namespace {
 
 Drive make_chassis(const sim::SimArchetype& a) {
   test_stub::reset_all();
-  return Drive({1, -2}, {-3, 4}, 5, a.wheel_diameter_in, a.cartridge_rpm, 1.0);
+  return Drive({1, -2}, {-3, 4}, 5, a.wheel_diameter_in, a.cartridge_rpm);
 }
 
 // A custom archetype for a specific (cartridge_rpm, wheel_diameter_in) combination -- see its own

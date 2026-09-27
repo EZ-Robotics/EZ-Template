@@ -28,7 +28,7 @@ using namespace ez;
 namespace {
 Drive make_chassis() {
   test_stub::reset_all();
-  return Drive({1, -2}, {-3, 4}, 5, 3.25, 360, 1.0);
+  return Drive({1, -2}, {-3, 4}, 5, 3.25, 360);
 }
 }  // namespace
 
@@ -147,7 +147,7 @@ TEST_CASE("ez_tracking_task(): a single PROS_ERR_F tick from a plain drive motor
   // right_raw(), the plain motor-encoder path guarded above. A 600-tick cartridge (rather
   // than make_chassis()'s 360) is used so the resulting jump is easy to sanity-check by hand.
   test_stub::reset_all();
-  Drive chassis({1, -2}, {-3, 4}, 5, 3.25, 600, 1.0);
+  Drive chassis({1, -2}, {-3, 4}, 5, 3.25, 600);
   chassis.odom_xyt_set(0.0, 0.0, 90.0);
   DriveTestAccess::imu_calibration_complete(chassis) = true;
   chassis.drive_sensor_reset();
