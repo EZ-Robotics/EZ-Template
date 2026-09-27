@@ -576,7 +576,11 @@ void Drive::pid_wait() {
       }
       break;
     }
-    if (print_toggle && !stalled) std::cout << "  Left: " << exit_to_string(left_exit) << " Exit, error: " << leftPID.error << "   Right: " << exit_to_string(right_exit) << " Exit, error: " << rightPID.error << "\n";
+    // Guarded the same way the odom branch below already is: a settled-via-stuck break above leaves
+    // both sides RUNNING (they never actually latched a window exit at all), so printing their
+    // exit_to_string() here would print a nonsensical "Running Exit" right after the "counted as
+    // settled" message the stuck check above already printed for this same pass.
+    if (print_toggle && !stalled && left_exit != RUNNING && right_exit != RUNNING) std::cout << "  Left: " << exit_to_string(left_exit) << " Exit, error: " << leftPID.error << "   Right: " << exit_to_string(right_exit) << " Exit, error: " << rightPID.error << "\n";
 
     if (stalled || left_exit == mA_EXIT || left_exit == VELOCITY_EXIT || right_exit == mA_EXIT || right_exit == VELOCITY_EXIT) {
       interfered_scope.mark();
@@ -812,7 +816,10 @@ void Drive::pid_wait() {
       }
       break;
     }
-    if (print_toggle && !stalled) std::cout << "  Turn: " << exit_to_string(turn_exit) << " Exit, error: " << turnPID.error << "\n";
+    // See the DRIVE branch's matching comment above -- a settled-via-stuck break leaves turn_exit
+    // RUNNING, so this must not print its exit_to_string() right after the "counted as settled"
+    // message already printed for this same pass.
+    if (print_toggle && !stalled && turn_exit != RUNNING) std::cout << "  Turn: " << exit_to_string(turn_exit) << " Exit, error: " << turnPID.error << "\n";
 
     if (stalled || turn_exit == mA_EXIT || turn_exit == VELOCITY_EXIT) {
       interfered_scope.mark();
@@ -875,7 +882,10 @@ void Drive::pid_wait() {
       }
       break;
     }
-    if (print_toggle && !stalled) std::cout << "  Swing: " << exit_to_string(swing_exit) << " Exit, error: " << swingPID.error << "\n";
+    // See the DRIVE branch's matching comment above -- a settled-via-stuck break leaves swing_exit
+    // RUNNING, so this must not print its exit_to_string() right after the "counted as settled"
+    // message already printed for this same pass.
+    if (print_toggle && !stalled && swing_exit != RUNNING) std::cout << "  Swing: " << exit_to_string(swing_exit) << " Exit, error: " << swingPID.error << "\n";
 
     if (stalled || swing_exit == mA_EXIT || swing_exit == VELOCITY_EXIT) {
       interfered_scope.mark();
