@@ -364,22 +364,34 @@ class PID {
   bool have_big_fresh_ms = false;
   std::uint32_t last_velocity_fresh_ms = 0;
   bool have_velocity_fresh_ms = false;
-  // The velocity channel's instantaneous derivative, looked at only once per poll, isn't enough to
-  // tell "genuinely stopped" from "this particular compute landed between two real sensor refreshes":
-  // a mechanism whose compute() cadence is a multiple of its sensor's own refresh cadence (e.g.
-  // computing faster than a ~10ms encoder/IMU update) produces derivative == 0 on most computes, with
-  // the real jump only showing up on whichever compute happens to land right after a refresh -- which
-  // may not be the specific compute that happened to run immediately before a given poll, even while
-  // the mechanism has been moving continuously the whole time. This is a real, deterministic pattern
-  // on actual hardware (and reachable well before any freshness gate -- error_fresh only says a NEW
-  // compute landed, not that it was the only one), not just a test-clock artifact. This tracks the
-  // largest sanitized |derivative| seen across every real compute since the last poll (raw_compute()
-  // updates it), so a real jump anywhere in that window is caught even if the very last compute before
-  // the poll happened to land on a stale-relative-to-refresh reading. Reset to 0 after each poll's
-  // check (in exit_condition()) so the next window only reflects computes after that point; also
-  // reset in timers_reset(). A genuinely resting sensor's own real dither/noise (small, every compute)
-  // still reads as stopped, since its magnitude never approaches velocity_zero_main either way.
-  double velocity_derivative_worst_since_poll = 0.0;
+  // A single poll's instantaneous `error`/derivative reading, looked at only once, isn't enough to
+  // tell "genuinely stopped/settled" from "a real excursion happened between two polls and this poll
+  // just didn't land during it" -- a caller's own wait loop and whatever drives compute() are separate
+  // tasks that don't share a schedule, so a real out-of-band excursion (small_error/big_error) or a
+  // real above-floor movement (velocity) can happen entirely between two polls and never be sampled at
+  // poll time, while still being real. These three counters, bumped once per real compute() in
+  // raw_compute(), let exit_condition() ask "did this happen at all since I last checked", not just
+  // "is it true right now": incremented whenever that specific compute's own reading crossed the
+  // relevant line, so exit_condition() can compare against its own last-seen snapshot and tell whether
+  // ANY qualifying compute landed since its last check, exactly the way compute_count/
+  // last_checked_compute already does for plain freshness above -- same pattern, one counter per
+  // condition instead of one shared freshness bit. Reset (the "last_seen" copies, not the counters
+  // themselves) in timers_reset()/motion_reset() alongside last_checked_compute, for the same reason.
+  //
+  // This is deliberately a write-only counter on the raw_compute() side and a read-only snapshot on
+  // the exit_condition() side -- unlike a shared accumulator that both sides read AND write (which
+  // would need real synchronization to avoid a lost update across the same cross-task split
+  // `error`/`derivative`/`compute_count` already cross today), a monotonically-increasing counter that
+  // only one task ever increments can't lose an update: if the reader's snapshot happens to run
+  // exactly as a new increment is in flight, the reader simply doesn't see that one yet and catches it
+  // on its very next check -- the same one-poll lag already tolerated for compute_count itself, not a
+  // new race.
+  unsigned int small_excursion_count = 0;
+  unsigned int last_seen_small_excursion = 0;
+  unsigned int big_excursion_count = 0;
+  unsigned int last_seen_big_excursion = 0;
+  unsigned int velocity_moving_count = 0;
+  unsigned int last_seen_velocity_moving = 0;
   // Same idea for the mA timer (l), but keyed on every call to exit_condition(Motor)/exit_condition
   // (const std::vector<Motor>&) -- not on error_fresh, which says nothing about how often the motor's
   // own current/position is actually being read (that happens live, every call).
@@ -395,6 +407,18 @@ class PID {
   int arm_timer = 0;
   bool velocity_armed = false;
   static constexpr int VELOCITY_ARM_FALLBACK = 1000;
+  // Whether the previous check was held (see exit_condition()'s use of this) -- lets the poll right
+  // after a hold ends resync the moving-count/wall-clock state instead of comparing against whatever
+  // it was left at before the hold, so held time truly counts neither for nor against the exit.
+  bool velocity_hold_was_active = false;
+  // velocity_moving_count's value as of this motion's start (timers_reset()), so arming can ask "has
+  // this motion ever seen a real above-floor compute" instead of only looking at the instantaneous
+  // derivative on whichever single poll happens to check -- the same cadence-aliasing gap
+  // velocity_moving_count exists to close for the STOPPED check applies equally to arming: a
+  // continuously-moving mechanism whose compute cadence aliases its sensor's refresh cadence could
+  // read derivative==0 on every single poll and never arm except via the flat-time VELOCITY_ARM_FALLBACK,
+  // taking up to 1 full second to start counting down a much shorter configured velocity_exit_time.
+  unsigned int velocity_moving_count_at_motion_start = 0;
   bool is_mA = false;
   // NaN, not 0.0: 0.0 would read as "not accelerating" and falsely satisfy the secondary velocity
   // exit before anyone has ever called velocity_sensor_secondary_set().  exit_condition() only treats

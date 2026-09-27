@@ -487,7 +487,7 @@ TEST_CASE("PID velocity exit: a mechanism moving above the stopped floor every p
   // A caller whose task calls compute() more than once between the wait's own polls sees its LATEST
   // compute's derivative masked to 0 if that specific call happens to re-read an already-seen value --
   // but the channel must still judge on whatever happened across every real compute since the last
-  // poll, not just the last one (see velocity_derivative_worst_since_poll's comment in PID.hpp). Each
+  // poll, not just the last one (see velocity_moving_count's comment in PID.hpp). Each
   // pass here moves 0.1, twice the 0.05 stopped floor -- a mechanism that has never actually stopped --
   // so this must never exit, no matter how many passes run.
   PID pid;
