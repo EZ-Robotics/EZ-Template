@@ -378,6 +378,21 @@ class Drive {
   pros::Task ez_auto;
 
   /**
+   * Creates a Drive Controller for driver control only. No IMU is configured, so
+   * PID driving, turning, swinging, and odometry will not work correctly.
+   *
+   * Intended for brand new users and short-term setups (classrooms, camps) where getting
+   * a drivetrain moving matters more than tuned autonomous routines. Switch to the
+   * constructor below once you're ready to add an IMU and autonomous movements.
+   *
+   * \param left_motor_ports
+   *        input {1, -2...}. make ports negative if reversed
+   * \param right_motor_ports
+   *        input {-3, 4...}. make ports negative if reversed
+   */
+  Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports);
+
+  /**
    * Creates a Drive Controller using internal encoders.
    *
    * If your drivetrain has external gearing (a transmission, or a wheel gear that
