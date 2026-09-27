@@ -36,6 +36,8 @@ But when the robot enters the smaller exit zone, the big timer will not continue
 
 There are two more exit timers that you can add that are intended to be **failsafes** for when the previous two don't trigger.  One timer will start to increase when the velocity of the robot is 0, so if the robot is still for too long it'll exit.  This timer waits until the robot has started moving, so a robot that hasn't gotten going yet won't exit too early.  If the robot never moves, the timer starts counting after 1 second.  Another timer will start once the robot sees it's pulling on the motors too hard (ie, you're fighting your opponent for a mobile goal), and if it's doing this for too long it'll exit.  
 
+For odometry motions, these two failsafes work together as a single check for whether the robot is making real progress toward its target, rather than two separate timers watching velocity and current in isolation.  This means a robot that's still moving but stuck (wedged against a wall, defended on a multi-point path, or fighting a stall right at a pure pursuit corner) will still exit instead of hanging forever, even though it never technically hits 0 velocity or trips the current limit.  It also means a robot that's genuinely closing in on its target, however slowly, won't get cut off early just for moving under the velocity floor.
+
 `pid_wait()` will be your safest way to exit, but with that, it's also going to be the slowest way to exit.  
 
 ```cpp
