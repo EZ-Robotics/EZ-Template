@@ -35,7 +35,7 @@ void one_side_slips(Drive& c) {
 
 TEST_CASE("check_imu_task(): one side's wheel slipping (encoders diverge, both IMUs genuinely flat) does not eject a healthy redundant IMU" * doctest::should_fail()) {
   reset_before_construction();
-  Drive chassis({1, -2}, {-3, 4}, {5, 6}, 3.25, 360, 1.0);
+  Drive chassis({1, -2}, {-3, 4}, {5, 6}, 3.25, 360);
   mark_calibrated(chassis);
   chassis.pid_print_toggle(false);
   chassis.pid_drive_set(500, 100);  // an active motion, matching how this is really invoked
