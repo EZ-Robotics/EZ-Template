@@ -1496,10 +1496,22 @@ void Drive::pid_wait_until_index_started(int index) {
   // see set_odom_pid.cpp / purepursuit_math.cpp) while this function is reading it. Reading a vector mid-reassignment
   // is undefined behavior, not just stale data, so this takes one consistent copy instead of trusting each of the
   // several unlocked reads below to happen to land before or after the swap.
+  // The failsafe print below (triggered_at instead of pp_movements[...].target) used to read
+  // pp_movements unlocked, after this snapshot but outside any lock -- a concurrent pid_odom_*_set()
+  // replacing pp_movements/injected_pp_index between the snapshot above and that print could leave it
+  // indexing into a pp_movements that's now shorter than injected_pp_index_snapshot expects. Taken
+  // in the SAME lock acquisition as injected_pp_index_snapshot below so the two are always a
+  // consistent pair -- injected_pp_index and pp_movements are only ever published together (see
+  // set_odom_pid.cpp / purepursuit_math.cpp), so a snapshot of one taken alongside the other under
+  // one lock can't straddle a publish the way two separate lock acquisitions could.
   std::vector<int> injected_pp_index_snapshot;
+  pose failsafe_target{};
   {
     ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
     injected_pp_index_snapshot = injected_pp_index;
+    if (index >= 0 && index <= (int)injected_pp_index_snapshot.size() - 2) {
+      failsafe_target = pp_movements[injected_pp_index_snapshot[index + 1]].target;
+    }
   }
 
   if (index < 0 || index > (int)injected_pp_index_snapshot.size() - 2) {
@@ -1563,8 +1575,10 @@ void Drive::pid_wait_until_index_started(int index) {
 
     if (xy_exit != RUNNING && a_exit != RUNNING) {
       if (print_toggle) {
-        // index points into injected_pp_index_snapshot, which holds where each waypoint sits in pp_movements
-        std::cout << "  XY: " << exit_to_string(xy_exit) << " Wait Until Exit Failsafe, triggered at (" << odom_x_get() << ", " << odom_y_get() << ") instead of (" << pp_movements[injected_pp_index_snapshot[index]].target.x << ", " << pp_movements[injected_pp_index_snapshot[index]].target.y << ")\n";
+        // failsafe_target was snapshotted alongside injected_pp_index_snapshot above, under the same
+        // lock -- see that snapshot's comment for why reading pp_movements directly here, unlocked,
+        // is not safe.
+        std::cout << "  XY: " << exit_to_string(xy_exit) << " Wait Until Exit Failsafe, triggered at (" << odom_x_get() << ", " << odom_y_get() << ") instead of (" << failsafe_target.x << ", " << failsafe_target.y << ")\n";
         xyPID.timers_reset();
         current_a_odomPID.timers_reset();
       }
@@ -1603,13 +1617,23 @@ void Drive::pid_wait_until_index(int index) {
   }
 
   index += 1;
+  // target is read from pp_movements in the SAME lock acquisition as injected_pp_index_snapshot below,
+  // for the same reason pid_wait_until_index_started()'s failsafe_target is -- see its comment. This
+  // one feeds pid_wait_until_point() directly (not just a print), so the race was live, not cosmetic:
+  // a concurrent pid_odom_*_set() replacing pp_movements with a shorter path between two separate,
+  // unlocked reads could index past its end.
   std::vector<int> injected_pp_index_snapshot;
+  pose target{};
+  bool have_target = false;
   {
     ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
     injected_pp_index_snapshot = injected_pp_index;
+    if (index >= 0 && index < (int)injected_pp_index_snapshot.size()) {
+      target = pp_movements[injected_pp_index_snapshot[index]].target;
+      have_target = true;
+    }
   }
-  if (index < 0 || index >= (int)injected_pp_index_snapshot.size()) return;
-  pose target = pp_movements[injected_pp_index_snapshot[index]].target;
+  if (!have_target) return;
   pid_wait_until_point(target);
 
   // Re-checked against the SAME entry snapshot, after phase 2 too: pid_wait_until_point() now has its
