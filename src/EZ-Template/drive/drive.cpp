@@ -19,8 +19,6 @@ using namespace ez;
 Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports,
              int imu_port, double wheel_diameter, double ticks, double ratio)
     : imu(new pros::Imu(imu_port)),
-      left_rotation(-1),
-      right_rotation(-1),
       ez_auto([this] { this->ez_auto_task(); }) {
   is_tracker = DRIVE_INTEGRATED;
   last_was_autonomous = pros::competition::is_autonomous();
@@ -55,8 +53,6 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports,
              std::vector<int> imu_ports, double wheel_diameter, double ticks, double ratio)
     : imu(new pros::Imu(imu_ports[0])),
-      left_rotation(-1),
-      right_rotation(-1),
       ez_auto([this] { this->ez_auto_task(); }) {
   is_tracker = DRIVE_INTEGRATED;
   last_was_autonomous = pros::competition::is_autonomous();
@@ -90,45 +86,6 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
   WHEEL_DIAMETER = wheel_diameter;
   RATIO = ratio;
   CARTRIDGE = ticks;
-  drive_tick_per_inch_compute();
-
-  drive_defaults_set();
-}
-
-// Constructor for rotation sensors
-Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports,
-             int imu_port, double wheel_diameter, double ratio,
-             int left_rotation_port, int right_rotation_port)
-    : imu(new pros::Imu(imu_port)),
-      left_rotation(std::abs(left_rotation_port)),
-      right_rotation(std::abs(right_rotation_port)),
-      ez_auto([this] { this->ez_auto_task(); }) {
-  is_tracker = DRIVE_ROTATION;
-  last_was_autonomous = pros::competition::is_autonomous();
-  left_rotation.set_reversed(util::reversed_active(left_rotation_port));
-  right_rotation.set_reversed(util::reversed_active(right_rotation_port));
-
-  // Set ports to a global vector
-  for (auto i : left_motor_ports) {
-    pros::Motor temp(std::abs(i));
-    temp.set_reversed(util::reversed_active(i));
-    temp.set_encoder_units(pros::MotorUnits::counts);  // drive_tick_per_inch() assumes counts
-    left_motors.push_back(temp);
-  }
-  for (auto i : right_motor_ports) {
-    pros::Motor temp(std::abs(i));
-    temp.set_reversed(util::reversed_active(i));
-    temp.set_encoder_units(pros::MotorUnits::counts);  // drive_tick_per_inch() assumes counts
-    right_motors.push_back(temp);
-  }
-
-  good_imus.push_back(imu);
-  all_imus.push_back(imu);
-  imu_scale_map[imu->get_port()] = 1.0;
-  // Set constants for tick_per_inch calculation
-  WHEEL_DIAMETER = wheel_diameter;
-  RATIO = ratio;
-  CARTRIDGE = 36000;
   drive_tick_per_inch_compute();
 
   drive_defaults_set();
@@ -218,8 +175,9 @@ void Drive::drive_defaults_set() {
   pid_drive_toggle(true);
   pid_print_toggle(true);
 
-  // Disables limit switch for auto selector
-  as::limit_switch_lcd_initialize(nullptr, nullptr);
+  // Disables limit switch for auto selector, unless the user has already turned it on
+  if (!as::limit_switch_right && !as::limit_switch_left)
+    as::limit_switch_lcd_initialize(nullptr, nullptr);
 }
 
 double Drive::drive_angle_get() {
@@ -236,9 +194,7 @@ double Drive::drive_tick_per_inch() {
 void Drive::drive_tick_per_inch_compute() {
   CIRCUMFERENCE = WHEEL_DIAMETER * M_PI;
 
-  if (is_tracker == DRIVE_ROTATION)
-    TICK_PER_REV = CARTRIDGE * RATIO;
-  else if (is_tracker == DRIVE_INTEGRATED)
+  if (is_tracker == DRIVE_INTEGRATED)
     TICK_PER_REV = (50.0 * (3600.0 / CARTRIDGE)) * RATIO;  // with no cart, the encoder reads 50 counts per rotation
 
   TICK_PER_INCH = (TICK_PER_REV / CIRCUMFERENCE);
@@ -311,10 +267,6 @@ void Drive::drive_sensor_reset() {
   if (odom_tracker_right_enabled) odom_tracker_right->reset();
   if (odom_tracker_front_enabled) odom_tracker_front->reset();
   if (odom_tracker_back_enabled) odom_tracker_back->reset();
-  if (is_tracker == DRIVE_ROTATION) {
-    left_rotation.reset_position();
-    right_rotation.reset_position();
-  }
 
   // Reset odom stuff to the freshly-zeroed sensor values
   tracking_prime();
@@ -327,9 +279,7 @@ int Drive::drive_sensor_right_raw() {
   // drive_imu_get()'s last_good_angle -- a failed read doesn't get fed into tracking math at
   // all, it's replaced with the last reading that was actually good.
   double raw;
-  if (is_tracker == DRIVE_ROTATION)
-    raw = right_rotation.get_position();
-  else if (is_tracker == ODOM_TRACKER)
+  if (is_tracker == ODOM_TRACKER)
     raw = odom_tracker_right->get_raw();
   else
     raw = right_motors.front().get_position();
@@ -348,9 +298,7 @@ bool Drive::drive_current_right_over() { return right_motors.front().is_over_cur
 
 int Drive::drive_sensor_left_raw() {
   double raw;
-  if (is_tracker == DRIVE_ROTATION)
-    raw = left_rotation.get_position();
-  else if (is_tracker == ODOM_TRACKER)
+  if (is_tracker == ODOM_TRACKER)
     raw = odom_tracker_left->get_raw();
   else
     raw = left_motors.front().get_position();
@@ -474,6 +422,11 @@ void Drive::drive_imu_display_loading(int iter) {
   }
   // Failsafe time
   else {
+    // loading_bar_last_x is still at the pink phase's fully-filled end
+    // position here; reset it so the red bar animates in from empty
+    // instead of drawing itself fully filled on the first red frame.
+    if (iter == 2000) loading_bar_last_x = border;
+
     pros::screen::set_pen(pros::c::COLOR_RED);
     int x1 = ((iter - 2000) * ((480 - (border * 2)) / 1000.0)) + border;
     pros::screen::fill_rect(loading_bar_last_x, border, x1, 240 - border);

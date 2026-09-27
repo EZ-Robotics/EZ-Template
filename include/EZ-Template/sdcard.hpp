@@ -60,8 +60,10 @@ extern pros::adi::DigitalIn* limit_switch_right;
  * Initialize two limit switches to change pages on the lcd.
  *
  * The library never takes ownership of the pointers passed in and will not
- * delete them, including when called with both pointers null to disable this
- * feature.  The switches must outlive this call, the library keeps polling the pointers.
+ * delete them.  The switches must outlive this call, the library keeps polling the pointers.
+ *
+ * Calling this with both pointers null disables the limit switches, this works any time it is called.
+ * The library stops polling the old pointers.
  *
  * @param right_limit
  *        limit switch that goes forward a page

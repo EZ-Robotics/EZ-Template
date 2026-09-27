@@ -30,9 +30,12 @@ void screen_lines_clear() {
 }
 
 namespace as {
-// Declared in sdcard.hpp, defined in sdcard.cpp (excluded). Called from
-// Drive::drive_defaults_set() with (nullptr, nullptr), which the real
-// implementation just turns into an early return, so a no-op is equivalent.
+// Declared in sdcard.hpp, defined in sdcard.cpp (excluded). Drive::drive_defaults_set()
+// reads the two pointers and, when neither switch is set up, calls
+// limit_switch_lcd_initialize(nullptr, nullptr). The real one disables the limit
+// switches and no test looks at that, so a no-op is equivalent.
+pros::adi::DigitalIn* limit_switch_left = nullptr;
+pros::adi::DigitalIn* limit_switch_right = nullptr;
 void limit_switch_lcd_initialize(pros::adi::DigitalIn* right_limit, pros::adi::DigitalIn* left_limit) {}
 
 // Declared in sdcard.hpp, defined in sdcard.cpp (excluded). autons_add()
