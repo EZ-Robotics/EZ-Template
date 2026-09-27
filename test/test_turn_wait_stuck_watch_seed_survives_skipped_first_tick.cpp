@@ -44,7 +44,7 @@ using namespace ez;
 namespace {
 Drive make_fresh_chassis() {
   test_stub::reset_all();
-  return Drive({1, -2}, {-3, 4}, 5, 3.25, 360, 1.0);
+  return Drive({1, -2}, {-3, 4}, 5, 3.25, 360);
 }
 
 // Closes normally from 60 down to 16 degrees, then a real bump back up to 40, then a slow recovery

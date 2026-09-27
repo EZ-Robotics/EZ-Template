@@ -38,7 +38,7 @@ using namespace ez;
 namespace {
 Drive make_chassis(const sim::SimArchetype& a) {
   test_stub::reset_all();
-  return Drive({1, -2}, {-3, 4}, 5, a.wheel_diameter_in, a.cartridge_rpm, 1.0);
+  return Drive({1, -2}, {-3, 4}, 5, a.wheel_diameter_in, a.cartridge_rpm);
 }
 
 // Runs `wait`, letting the fake clock's on_delay hook (installed by the caller's own SimRobot)

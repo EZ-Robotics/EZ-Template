@@ -41,7 +41,7 @@ void turn_one_pass(Drive& c, pros::Imu* healthy) {
 
 TEST_CASE("check_imu_task(): a frozen IMU during a turn is not yet ejected after 49 consecutive stuck passes, but is ejected on the 50th") {
   reset_before_construction();
-  Drive chassis({1, -2}, {-3, 4}, {5, 6}, 3.25, 360, 1.0);
+  Drive chassis({1, -2}, {-3, 4}, {5, 6}, 3.25, 360);
   mark_calibrated(chassis);
   chassis.pid_print_toggle(false);
   chassis.pid_turn_set(90, 100);

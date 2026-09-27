@@ -395,6 +395,12 @@ class Drive {
   /**
    * Creates a Drive Controller using internal encoders.
    *
+   * If your drivetrain has external gearing (a transmission, or a wheel gear that
+   * differs from the motor gear), set `ticks` to your wheel's effective RPM
+   * (cartridge RPM * (motor gear / wheel gear)) so tracking still reads distances
+   * correctly. If that ratio changes at runtime (a shifting transmission), use
+   * drive_ratio_set() instead of recomputing `ticks` by hand.
+   *
    * \param left_motor_ports
    *        input {1, -2...}. make ports negative if reversed
    * \param right_motor_ports
@@ -405,13 +411,17 @@ class Drive {
    *        diameter of your drive wheels
    * \param ticks
    *        motor cartridge RPM
-   * \param ratio
-   *        external gear ratio, wheel gear / motor gear
    */
-  Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks, double ratio = 1.0);
+  Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks);
 
   /**
    * Creates a Drive Controller using internal encoders with redundant IMUs.
+   *
+   * If your drivetrain has external gearing (a transmission, or a wheel gear that
+   * differs from the motor gear), set `ticks` to your wheel's effective RPM
+   * (cartridge RPM * (motor gear / wheel gear)) so tracking still reads distances
+   * correctly. If that ratio changes at runtime (a shifting transmission), use
+   * drive_ratio_set() instead of recomputing `ticks` by hand.
    *
    * \param left_motor_ports
    *        input {1, -2...}. make ports negative if reversed
@@ -423,10 +433,8 @@ class Drive {
    *        diameter of your drive wheels
    * \param ticks
    *        motor cartridge RPM
-   * \param ratio
-   *        external gear ratio, wheel gear / motor gear
    */
-  Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, std::vector<int> imu_ports, double wheel_diameter, double ticks, double ratio = 1.0);
+  Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, std::vector<int> imu_ports, double wheel_diameter, double ticks);
 
   // Deconstructor
   ~Drive();
@@ -3945,7 +3953,7 @@ class Drive {
   void drive_tick_per_inch_compute();
 
   double CARTRIDGE = 0.0;
-  double RATIO = 0.0;
+  double RATIO = 1.0;
   double WHEEL_DIAMETER = 0.0;
 
   /**

@@ -13,7 +13,7 @@ using namespace ez;
 namespace {
 Drive make_chassis() {
   test_stub::reset_all();
-  return Drive({1, -2}, {-3, 4}, 5, 3.25, 360, 1.0);
+  return Drive({1, -2}, {-3, 4}, 5, 3.25, 360);
 }
 
 // A slow, steady 2.5 in/s crawl toward (0, 100) starting from (0, 0) -- above the library's own

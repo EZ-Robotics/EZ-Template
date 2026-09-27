@@ -46,7 +46,7 @@ using namespace ez;
 namespace {
 Drive make_chassis() {
   test_stub::reset_all();
-  return Drive({1, -2}, {-3, 4}, 5, 3.25, 360, 1.0);
+  return Drive({1, -2}, {-3, 4}, 5, 3.25, 360);
 }
 
 // Library defaults (drive.cpp's Drive constructor): 90ms/1in small, 250ms/3in big, 500ms velocity,
