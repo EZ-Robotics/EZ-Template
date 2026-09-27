@@ -11,6 +11,30 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 // using namespace ez;
 namespace ez {
+// Real milliseconds elapsed since the last time this specific baseline was credited, capped, so a
+// timer's per-poll credit reflects actual wall-clock time instead of assuming every poll is exactly
+// util::DELAY_TIME apart. The first call after a reset (have == false) credits the nominal
+// DELAY_TIME instead of measuring against a stale or uninitialized baseline -- see PID.hpp's comment
+// on last_fresh_ms/last_call_ms for why. An elapsed reading of exactly 0 also credits the nominal
+// DELAY_TIME rather than 0: two genuinely distinct fresh polls reading the same millisecond can
+// happen on real hardware (integer ms resolution), and crediting 0 there would stall a timer that a
+// real compute has already legitimately advanced -- DELAY_TIME is a safe, bounded floor for that
+// tie, not an overcount, and it is what every caller that never advances the clock at all between
+// calls (a bare-PID unit test driving compute()/exit_condition() directly with no pros::delay())
+// already relies on to keep behaving exactly as it did before this fix existed.
+int PID::wall_credit(bool& have, std::uint32_t& last_ms) {
+  std::uint32_t now = pros::millis();
+  if (!have) {
+    have = true;
+    last_ms = now;
+    return util::DELAY_TIME;
+  }
+  std::uint32_t elapsed = now - last_ms;  // unsigned wraparound is correct here: monotonic millis
+  last_ms = now;
+  if (elapsed == 0) return util::DELAY_TIME;
+  return elapsed > static_cast<std::uint32_t>(WALL_CLOCK_CREDIT_CAP) ? WALL_CLOCK_CREDIT_CAP : static_cast<int>(elapsed);
+}
+
 void PID::variables_reset() {
   output = 0;
   target = 0;
@@ -104,13 +128,14 @@ void PID::timers_reset() {
   j = 0;
   l = 0;
   m = 0;
-  k_miss = 0;
-  m_miss = 0;
-  k_unchanged_time = 0;
   arm_timer = 0;
   velocity_armed = false;
   is_mA = false;
   hold_timer = 0;
+  // A new motion's first fresh poll (or mA-check call) must credit the nominal DELAY_TIME, not
+  // whatever real wall-clock gap happened to precede it -- see their comments in PID.hpp.
+  have_last_fresh_ms = false;
+  have_last_call_ms = false;
 }
 
 void PID::motion_reset(double current) {
@@ -166,23 +191,28 @@ exit_output PID::exit_condition(bool print) {
     return ERROR_NO_CONSTANTS;
   }
 
-  // Whether a real compute()/compute_error() call has landed since the small/big timers below last
-  // checked -- see compute_count/last_checked_compute's comments in the header. Without this, `error`
-  // being within tolerance is credited toward SMALL_EXIT/BIG_EXIT on every single call to this
-  // function, even calls where nothing about `error` has actually changed because ez_auto_task (or
-  // whatever else drives this PID's compute() calls) didn't run in between -- exactly the gap
-  // k_prev_checked/k_unchanged_time below already close for the velocity channel. A stale check is
-  // simply skipped, not reset: this function's caller and whatever calls compute() are two
-  // independent loops that both nominally run every DELAY_TIME but aren't lock-stepped, so a caller
-  // polling faster than compute() runs must not have every other poll erase progress a real compute
-  // already earned (that would take an already-fresh motion far longer than exit_time to ever settle).
+  // Whether a real compute()/compute_error() call has landed since the small/big/velocity timers
+  // below last checked -- see compute_count/last_checked_compute's comments in the header. Without
+  // this, `error`/`derivative` being within tolerance is credited on every single call to this
+  // function, even calls where nothing has actually changed because ez_auto_task (or whatever else
+  // drives this PID's compute() calls) didn't run in between. A stale check is simply skipped, not
+  // reset: this function's caller and whatever calls compute() are two independent loops that both
+  // nominally run every DELAY_TIME but aren't lock-stepped, so a caller polling faster than compute()
+  // runs must not have every other poll erase progress a real compute already earned (that would
+  // take an already-fresh motion far longer than exit_time to ever settle).
   bool error_fresh = compute_count != last_checked_compute;
   last_checked_compute = compute_count;
+
+  // Real elapsed wall-clock milliseconds since the last fresh poll, not a flat util::DELAY_TIME --
+  // see wall_credit()'s and last_fresh_ms's comments. Computed once per call and shared by the
+  // small/big/velocity timers below, since they all key off the same error_fresh signal and the same
+  // real gap between fresh polls; only actually credited by whichever of them is currently running.
+  int fresh_credit = error_fresh ? wall_credit(have_last_fresh_ms, last_fresh_ms) : 0;
 
   // If the robot gets within the target, make sure it's there for small_timeout amount of time
   if (exit.small_error != 0) {
     if (std::fabs(error) < exit.small_error) {
-      if (error_fresh) j += util::DELAY_TIME;
+      if (error_fresh) j += fresh_credit;
       i = 0;  // While this is running, don't run big thresh
       if (j > exit.small_exit_time) {
         timers_reset();
@@ -198,7 +228,7 @@ exit_output PID::exit_condition(bool print) {
   // a certain amount of time, exit and continue.  This does not run while small_timeout is running
   if (exit.big_error != 0 && exit.big_exit_time != 0) {  // Check if this condition is enabled
     if (std::fabs(error) < exit.big_error) {
-      if (error_fresh) i += util::DELAY_TIME;
+      if (error_fresh) i += fresh_credit;
       if (i > exit.big_exit_time) {
         timers_reset();
         if (print) exit_condition_print(BIG_EXIT);
@@ -232,46 +262,28 @@ exit_output PID::exit_condition(bool print) {
 
   // If the motor velocity is 0, the code will timeout and set interfered to true.
   if (exit.velocity_exit_time != 0 && velocity_armed && !held) {  // Check if this condition is enabled
-    // A stale poll -- the raw value hasn't actually advanced since the last check, or this
-    // derivative is a leftover 0 from a stale re-read inside a gap this check's own polling missed
-    // -- does not, on its own, count as evidence toward or against a stall: k/k_miss are left
-    // exactly where they are by the "fresh" path below; see k_prev_checked's comment in the header
-    // for why both conditions are needed there. An unchanged raw value is tracked separately
-    // (k_unchanged_time) so that once it's gone unchanged for far longer than any real sensor could
-    // plausibly take to refresh AND derivative genuinely reads 0 (both hold automatically through
-    // real compute()/compute_error() calls, since an unmoving raw value always derives a 0
-    // derivative there -- see raw_compute()), repeats of it start counting as fresh, zero-velocity
-    // samples instead -- see k_unchanged_time's comment in the header for why that ambiguity is
-    // resolvable by duration alone. Requiring derivative == 0.0 here (not just an unchanged raw
-    // value) is what keeps this from misfiring on a caller that writes derivative directly without
-    // ever moving cur through compute() -- not a real sensor reading, just a state no live PID can
-    // actually be in. Without the fix, a bare ez::PID driving a mechanism with no other progress
-    // backstop (unlike Drive's own waits, which StuckWatch/SingleStuckWatch back up independently)
-    // could never velocity-exit a genuinely, permanently stalled mechanism whose sensor happens to
-    // read back bit-identical every poll.
-    bool value_changed = cur != k_prev_checked;
-    k_unchanged_time = value_changed ? 0 : (k_unchanged_time + util::DELAY_TIME);
-    bool stale_stopped = !value_changed && derivative == 0.0 && k_unchanged_time > VELOCITY_STALE_TIMEOUT;
-    bool fresh = (value_changed && derivative != 0.0) || stale_stopped;
-    k_prev_checked = cur;
-    if (fresh) {
-      if (std::fabs(derivative) <= velocity_zero_main) {
-        k += util::DELAY_TIME;
-        k_miss = 0;
+    // Gated on the same freshness signal the small/big timers above use (error_fresh): a poll that
+    // lands between two real compute()/compute_error() calls sees the same derivative the last poll
+    // already counted (or missed), so it must neither add to k nor clear it -- k is simply left
+    // where it is. This also means a caller polling faster than compute() runs can no longer see a
+    // single real reading twice and mistake it for two independent misses.
+    //
+    // A non-finite derivative (e.g. a disconnected sensor feeding compute_error() an infinite error,
+    // or a bare PID whose caller writes derivative directly without a real compute() ever landing)
+    // reads as 0, i.e. stopped -- a dead sensor cannot be "moving", and treating it as neither
+    // moving nor stopped would let it dodge this exit forever. See exit_condition(pros::Motor) for
+    // what independently catches a genuinely disconnected motor via the mA timer instead.
+    if (error_fresh) {
+      double d = std::isfinite(derivative) ? derivative : 0.0;
+      if (std::fabs(d) <= velocity_zero_main) {
+        k += fresh_credit;
         if (k > exit.velocity_exit_time) {
           timers_reset();
           if (print) exit_condition_print(VELOCITY_EXIT);
           return VELOCITY_EXIT;
         }
       } else {
-        // A single noisy tick above the threshold doesn't erase accumulated stillness -- only
-        // VELOCITY_MISS_DEBOUNCE_PASSES consecutive ones do, so an isolated blip (contact jitter,
-        // drivetrain backlash under a sustained push) can't indefinitely defeat this exit the same
-        // way a genuine, sustained motion resets it within two ticks either way.
-        if (++k_miss >= VELOCITY_MISS_DEBOUNCE_PASSES) {
-          k = 0;
-          k_miss = 0;
-        }
+        k = 0;
       }
     }
   }
@@ -285,23 +297,17 @@ exit_output PID::exit_condition(bool print) {
   if (exit.velocity_exit_time != 0 && velocity_armed && !held) {  // Check if this condition is enabled
     if (std::isfinite(second_sensor) && std::fabs(second_sensor) <= velocity_zero_secondary) {
       m += util::DELAY_TIME;
-      m_miss = 0;
       if (m > exit.velocity_exit_time) {
         timers_reset();
         if (print) exit_condition_print(VELOCITY_EXIT);
         return VELOCITY_EXIT;
       }
     } else {
-      // Same debounce as the main channel: an isolated above-threshold tick shouldn't erase
-      // accumulated stillness on its own -- only VELOCITY_MISS_DEBOUNCE_PASSES consecutive ones
-      // do. No freshness/staleness tracking on this channel (unlike the main channel's
-      // k_prev_checked) -- second_sensor is a caller-supplied acceleration reading, not a raw
-      // position value, so a repeated reading here doesn't carry the same "sensor hasn't
-      // refreshed yet" meaning a repeated position value does.
-      if (++m_miss >= VELOCITY_MISS_DEBOUNCE_PASSES) {
-        m = 0;
-        m_miss = 0;
-      }
+      // No debounce, same as the main channel above: any above-threshold sample resets m at once.
+      // No freshness gate either -- second_sensor is a caller-supplied acceleration reading updated
+      // by its own setter, not derived from raw_compute(), so error_fresh (which tracks compute()
+      // calls) says nothing about whether this specific reading is new.
+      m = 0;
     }
   }
 
@@ -316,9 +322,21 @@ exit_output PID::exit_condition(pros::Motor sensor, bool print) {
     // is_over_current() returns 1 (over limit), 0 (not), or PROS_ERR (the read itself failed,
     // e.g. the motor is disconnected) -- PROS_ERR is a large nonzero sentinel, so treating any
     // nonzero return as "over current" mistakes a disconnected motor for a stalled one and
-    // forces an mA_EXIT at exactly mA_timeout regardless of real motion. Only a genuine 1 counts.
-    if (sensor.is_over_current() == 1) {
-      l += util::DELAY_TIME;
+    // forces an mA_EXIT at exactly mA_timeout regardless of real motion. Only a genuine 1 counts...
+    // except a motor that has genuinely gone away rather than had one bad read: a disconnected
+    // motor fails every read, so PROS_ERR paired with a non-finite get_position() (as opposed to a
+    // transient PROS_ERR with a still-finite position) is a dead motor, not a live one waiting to
+    // recover, and counts toward the mA timer the same as a real overcurrent -- otherwise a cable
+    // pulled mid-wait hangs the caller forever instead of ending on the mA exit a healthy motor's
+    // hard stall would have hit.
+    std::int32_t over = sensor.is_over_current();
+    bool dead = over == PROS_ERR && !std::isfinite(sensor.get_position());
+    // Real elapsed wall-clock milliseconds since the last graded call, not a flat util::DELAY_TIME --
+    // this reads the motor live every call, so unlike the small/big/velocity timers above it isn't
+    // gated on error_fresh; it just needs to count real time between calls to this function.
+    int call_credit = wall_credit(have_last_call_ms, last_call_ms);
+    if (over == 1 || dead) {
+      l += call_credit;
       if (l > exit.mA_timeout) {
         timers_reset();
         if (print) exit_condition_print(mA_EXIT);
@@ -336,9 +354,12 @@ exit_output PID::exit_condition(const std::vector<pros::Motor>& sensor, bool pri
   // If the motors are pulling too many mA, the code will timeout and set interfered to true.
   if (exit.mA_timeout != 0) {  // Check if this condition is enabled
     for (auto i : sensor) {
-      // Check if 1 motor is pulling too many mA. Only a genuine 1 counts -- see the single-Motor
-      // overload above for why PROS_ERR (a disconnected motor) must not be treated as overcurrent.
-      if (i.is_over_current() == 1) {
+      // Check if 1 motor is pulling too many mA, or has genuinely disconnected -- see the
+      // single-Motor overload above for why a transient PROS_ERR must not be treated as
+      // overcurrent, but a PROS_ERR paired with a non-finite position must.
+      std::int32_t over = i.is_over_current();
+      bool dead = over == PROS_ERR && !std::isfinite(i.get_position());
+      if (over == 1 || dead) {
         is_mA = true;
         break;
       }
@@ -347,8 +368,10 @@ exit_output PID::exit_condition(const std::vector<pros::Motor>& sensor, bool pri
         is_mA = false;
       }
     }
+    // Same wall-clock credit as the single-Motor overload above, and for the same reason.
+    int call_credit = wall_credit(have_last_call_ms, last_call_ms);
     if (is_mA) {
-      l += util::DELAY_TIME;
+      l += call_credit;
       if (l > exit.mA_timeout) {
         timers_reset();
         if (print) exit_condition_print(mA_EXIT);
