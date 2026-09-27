@@ -16,7 +16,8 @@ This is the standard setup that uses built in motor encoders.
 `imu_port` port the IMU is plugged into       
 `wheel_diameter` diameter of your drive wheels      
 `ticks` motor cartridge RPM   
-`ratio` external gear ratio, wheel gear / motor gear       
+
+If your drivetrain has external gearing (a transmission, or a wheel gear that differs from the motor gear), set `ticks` to your wheel's effective RPM (cartridge RPM * (motor gear / wheel gear)) so tracking still reads distances correctly. If that ratio changes at runtime (a shifting transmission), use [`drive_ratio_set()`](https://ez-robotics.github.io/EZ-Template/docs/general_autonomous#drive_ratio_set) instead of recomputing `ticks` by hand.
 <Tabs
   groupId="ex1"
   defaultValue="proto"
@@ -51,14 +52,13 @@ ez::Drive chassis(
     {1, 2, 3},     // Left Chassis Ports (negative port will reverse it!)
     {-4, -5, -6},  // Right Chassis Ports (negative port will reverse it!)
 
-    7,      // IMU Port
-    4.125,  // Wheel Diameter (Remember, 4" wheels without screw holes are actually 4.125!)
-    600,    // Cartridge RPM
+    7,       // IMU Port
+    4.125,   // Wheel Diameter (Remember, 4" wheels without screw holes are actually 4.125!)
 
-    // External Gear Ratio (MUST BE DECIMAL) This is WHEEL GEAR / MOTOR GEAR
-    // eg. if your drive is 84:36 where the 36t is powered, your RATIO would be 84/36 which is 2.333
-    // eg. if your drive is 36:60 where the 60t is powered, your RATIO would be 36/60 which is 0.6
-    2.333);
+    // Wheel RPM = cartridge RPM * (motor gear / wheel gear)
+    // eg. if your drive is 84:36 where the 36t is powered, cartridge 600 * (84/36) = 1400
+    // eg. if your drive is 36:60 where the 60t is powered, cartridge 600 * (36/60) = 360
+    1400.0);
 ```
 
 </TabItem>
@@ -68,7 +68,7 @@ ez::Drive chassis(
 
 ```cpp
 Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, 
-double wheel_diameter, double ticks, double ratio = 1.0);
+double wheel_diameter, double ticks);
 ```
 
 </TabItem>
@@ -90,7 +90,8 @@ Same as Integrated Encoders, but takes multiple IMU ports instead of one.  If th
 `imu_ports` input `{5, 6...}`. multiple IMU ports      
 `wheel_diameter` diameter of your drive wheels      
 `ticks` motor cartridge RPM   
-`ratio` external gear ratio, wheel gear / motor gear       
+
+If your drivetrain has external gearing (a transmission, or a wheel gear that differs from the motor gear), set `ticks` to your wheel's effective RPM (cartridge RPM * (motor gear / wheel gear)) so tracking still reads distances correctly. If that ratio changes at runtime (a shifting transmission), use [`drive_ratio_set()`](https://ez-robotics.github.io/EZ-Template/docs/general_autonomous#drive_ratio_set) instead of recomputing `ticks` by hand.
 <Tabs
   groupId="ex_redundant_imu"
   defaultValue="proto"
@@ -119,7 +120,46 @@ ez::Drive chassis(
 
 ```cpp
 Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, std::vector<int> imu_ports, 
-double wheel_diameter, double ticks, double ratio = 1.0);
+double wheel_diameter, double ticks);
+```
+
+</TabItem>
+</Tabs>
+
+
+
+
+ 
+
+## Driver Control Only
+A minimal constructor with no IMU port, wheel diameter, ticks, or ratio. Driver control works normally, but PID driving/turning/swinging and odometry are not usable from this constructor. Intended for brand new users and short-term setups (classrooms, summer camps) where getting a drivetrain moving matters more than tuned autonomous routines. Switch to the [Integrated Encoders](#integrated-encoders) constructor once you're ready to add an IMU and autonomous movements.
+
+`left_motor_ports` input `{1, -2...}`. make ports negative if reversed      
+`right_motor_ports` input `{-3, 4...}`. make ports negative if reversed         
+<Tabs
+  groupId="ex_driver_only"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+ez::Drive chassis(
+    // These are your drive motors, the first motor is used for sensing!
+    {-5, -6, -7, -8},  // Left Chassis Ports (negative port will reverse it!)
+    {11, 15, 16, 17});  // Right Chassis Ports (negative port will reverse it!)
+```
+
+</TabItem>
+
+<TabItem value="proto">
+
+```cpp
+Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports);
 ```
 
 </TabItem>
