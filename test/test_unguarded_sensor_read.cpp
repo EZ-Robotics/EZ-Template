@@ -9,10 +9,11 @@
 //
 // Fix mirrors drive_imu_get()'s pattern: on a PROS_ERR/PROS_ERR_F/non-finite raw read, don't
 // feed the sentinel (or cast it) into tracking math -- fall back to the last known-good raw
-// reading for that sensor, remembered across calls. These tests cover all three guarded call
-// sites directly (the tracking-wheel path, the plain-motor-encoder path, and the dedicated
-// rotation-sensor path -- the three ways odometry actually consumes a raw reading), then
-// reproduce the pose corruption end to end through ez_tracking_task(), then check that a
+// reading for that sensor, remembered across calls. These tests cover both guarded call sites
+// directly (the tracking-wheel path and the plain-motor-encoder path -- Drive's own dedicated
+// rotation-sensor constructor/path this used to also cover was removed independently on `dev`;
+// a rotation sensor now only reaches odometry through tracking_wheel, already covered above),
+// then reproduce the pose corruption end to end through ez_tracking_task(), then check that a
 // *persistent* fault still eventually surfaces through an existing exit instead of the wait
 // hanging forever or silently succeeding.
 #include <cmath>
@@ -99,25 +100,6 @@ TEST_CASE("drive_sensor_left_raw()/right_raw() resume real readings once the fau
   chassis.left_motors[0].fake().disconnected = false;
   chassis.left_motors[0].fake().position = 1400;
   CHECK(chassis.drive_sensor_left_raw() == 1400);
-}
-
-// --- Drive::drive_sensor_left_raw()/right_raw(): the dedicated rotation-sensor path -------
-// (is_tracker == DRIVE_ROTATION -- left_rotation/right_rotation stand in for the drive
-// encoders entirely, so this path's sentinel is PROS_ERR from pros::Rotation, not
-// PROS_ERR_F from a motor.)
-
-TEST_CASE("drive_sensor_left_raw()/right_raw() fall back to the last good reading on a PROS_ERR rotation-sensor read") {
-  test_stub::reset_all();
-  Drive chassis({1, -2}, {-3, 4}, 5, 3.25, 1.0, 6, 7);  // deprecated rotation-sensor constructor
-  chassis.left_rotation.fake_position = 2000;
-  chassis.right_rotation.fake_position = 2000;
-  CHECK(chassis.drive_sensor_left_raw() == 2000);
-  CHECK(chassis.drive_sensor_right_raw() == 2000);
-
-  chassis.left_rotation.fake_position = INT32_MAX;  // PROS_ERR
-  chassis.right_rotation.fake_position = INT32_MAX;
-  CHECK(chassis.drive_sensor_left_raw() == 2000);  // not INT32_MAX
-  CHECK(chassis.drive_sensor_right_raw() == 2000);
 }
 
 // --- End to end through tracking.cpp: the pose-corruption repro --------------------------
