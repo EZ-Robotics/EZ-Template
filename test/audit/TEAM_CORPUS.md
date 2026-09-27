@@ -22,8 +22,8 @@ competition, for most teams who ever adopt this library. Weight findings at ship
 defaults higher than findings that require unusual configuration, but don't ignore the
 latter — one Worlds-caliber team in this sample runs turn/swing/drive windows roughly
 5-9x tighter than default (`10_ms/3_deg/30_ms/7_deg/100_ms/100_ms`), which is exactly the
-kind of config where a real-time-doubling bug (formerly JC-4, now supposedly fixed) would
-bite hardest if it weren't actually fixed.
+kind of config where the double-delay bug in `wait_until_drive()`/`wait_until_turn_swing_internal()`
+(fixed during this work) would have bitten hardest had it shipped unfixed.
 
 ## Version-era spread
 
