@@ -349,13 +349,37 @@ class PID {
   // motion. Without motion_reset() resyncing this, the new motion's very first poll would read that
   // unrelated drift as "fresh" and credit an old-target compute toward the new motion's timers.
   unsigned int last_checked_compute = 0;
-  // The small/big/velocity timers (j/i/k) credit real elapsed wall-clock milliseconds on each fresh
-  // poll, not a flat util::DELAY_TIME -- see exit_condition()'s use of these. Reset (have_ cleared)
-  // in timers_reset() so a new motion's first fresh poll always credits the nominal DELAY_TIME
-  // instead of whatever wall-clock gap preceded it (which could be arbitrarily large -- an idle PID,
-  // a task that hadn't started this motion yet, and so on).
-  std::uint32_t last_fresh_ms = 0;
-  bool have_last_fresh_ms = false;
+  // The small/big/velocity timers (j/i/k) each credit real elapsed wall-clock milliseconds on each
+  // fresh poll, not a flat util::DELAY_TIME -- see exit_condition()'s use of these. Each timer keeps
+  // its OWN baseline, credited only while that timer's own band condition holds and reset (have_
+  // cleared) the moment it doesn't -- not one baseline shared across all three. A shared baseline
+  // would let a channel that just entered its band on this poll inherit wall-clock time from polls
+  // where it was still out of band, crediting real time the mechanism was never actually settled for.
+  // Also reset in timers_reset() so a new motion's first in-band poll always credits the nominal
+  // DELAY_TIME instead of whatever wall-clock gap preceded it (which could be arbitrarily large -- an
+  // idle PID, a task that hadn't started this motion yet, and so on).
+  std::uint32_t last_small_fresh_ms = 0;
+  bool have_small_fresh_ms = false;
+  std::uint32_t last_big_fresh_ms = 0;
+  bool have_big_fresh_ms = false;
+  std::uint32_t last_velocity_fresh_ms = 0;
+  bool have_velocity_fresh_ms = false;
+  // The velocity channel's instantaneous derivative, looked at only once per poll, isn't enough to
+  // tell "genuinely stopped" from "this particular compute landed between two real sensor refreshes":
+  // a mechanism whose compute() cadence is a multiple of its sensor's own refresh cadence (e.g.
+  // computing faster than a ~10ms encoder/IMU update) produces derivative == 0 on most computes, with
+  // the real jump only showing up on whichever compute happens to land right after a refresh -- which
+  // may not be the specific compute that happened to run immediately before a given poll, even while
+  // the mechanism has been moving continuously the whole time. This is a real, deterministic pattern
+  // on actual hardware (and reachable well before any freshness gate -- error_fresh only says a NEW
+  // compute landed, not that it was the only one), not just a test-clock artifact. This tracks the
+  // largest sanitized |derivative| seen across every real compute since the last poll (raw_compute()
+  // updates it), so a real jump anywhere in that window is caught even if the very last compute before
+  // the poll happened to land on a stale-relative-to-refresh reading. Reset to 0 after each poll's
+  // check (in exit_condition()) so the next window only reflects computes after that point; also
+  // reset in timers_reset(). A genuinely resting sensor's own real dither/noise (small, every compute)
+  // still reads as stopped, since its magnitude never approaches velocity_zero_main either way.
+  double velocity_derivative_worst_since_poll = 0.0;
   // Same idea for the mA timer (l), but keyed on every call to exit_condition(Motor)/exit_condition
   // (const std::vector<Motor>&) -- not on error_fresh, which says nothing about how often the motor's
   // own current/position is actually being read (that happens live, every call).

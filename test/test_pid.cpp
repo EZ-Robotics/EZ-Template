@@ -14,10 +14,10 @@
 // pass.  "Fresh" is judged the same way the small/big exit timers are: whether
 // a real compute()/compute_error() call has landed since the last check
 // (error_fresh, PID.cpp) -- there is no separate raw-value staleness state or
-// moving-tick debounce for this channel any more (see this pass's own history,
-// H1/H2): any single fresh sample above the threshold clears the timer at
-// once, and a repeated reading is treated as stopped from the very first
-// fresh repeat, not after some grace window. timers_reset() disarms.  The
+// moving-tick debounce for this channel any more: any single fresh sample
+// above the threshold clears the timer at once, and a repeated reading is
+// treated as stopped from the very first fresh repeat, not after some grace
+// window. timers_reset() disarms.  The
 // secondary sensor is gated by the same arming flag, but not by error_fresh --
 // see its own comment in PID.cpp for why.
 // A non-finite secondary reading (no imu, or before the first update) never counts as stopped.
@@ -294,8 +294,7 @@ TEST_CASE("PID velocity timer clears on a single fresh moving tick, no debounce"
   // wait, exit_conditions.cpp), so its only remaining effect was letting k accumulate on the zero-
   // derivative ticks of a mechanism polled faster than its sensor refreshes and fire a false exit on
   // something still moving (see the sensor-refresh tests below). Any single fresh, above-threshold
-  // sample now clears k at once, matching this PID's own pre-debounce behavior and the parent commit
-  // this pass restores parity with.
+  // sample now clears k at once, matching this PID's own pre-debounce behavior.
   PID pid;
   pid.exit_condition_set(0, 0, 0, 0, 50, 0);
 
@@ -393,8 +392,8 @@ TEST_CASE("PID velocity exit does not fire on real motion whose sensor refreshes
 TEST_CASE("PID velocity exit fires once a repeated reading has genuinely lasted longer than velocity_exit_time") {
   // The other half of the same fix: nothing distinguishes "sensor hasn't refreshed yet" from
   // "genuinely stopped" by duration alone any more -- an earlier design's 1000ms staleness grace
-  // window before treating a repeated reading as stopped is gone (see this pass's own history, H1).
-  // A repeated reading is simply treated as stopped from the very first fresh repeat. A bare PID
+  // window before treating a repeated reading as stopped is gone. A repeated reading is simply
+  // treated as stopped from the very first fresh repeat. A bare PID
   // with a realistic velocity_exit_time (500ms, comfortably above any real sensor's refresh gap)
   // still only fires after that much real stillness, same as before -- it just no longer waits an
   // extra second past that to start counting.
@@ -484,41 +483,82 @@ TEST_CASE("PID timers_reset clears the velocity timer for the next motion even i
   CHECK(result == VELOCITY_EXIT);
 }
 
-TEST_CASE("PID velocity exit: two real computes landing before one poll credits from the poll's own latest reading") {
-  // A caller whose task calls compute() more than once between the wait's own polls (a real jump,
-  // then an immediate redundant re-read of the same value before anything else checks in) is judged
-  // on the LATEST compute before each poll, same as any other fresh poll -- there is no separate
-  // raw-value state any more to tell "a real intervening jump got masked by a same-value re-check"
-  // apart from "the mechanism just stopped there". This is intentional parity with the parent commit
-  // this pass restores (H1/H2, this pass's own history); the same shape is also covered as real
-  // wall-clock timing in test_pid_velocity_timing_table.cpp ("unsync worst case, 0/2 computes per
-  // poll").
+TEST_CASE("PID velocity exit: a mechanism moving above the stopped floor every pass never exits, even when a same-value re-read lands right before the poll") {
+  // A caller whose task calls compute() more than once between the wait's own polls sees its LATEST
+  // compute's derivative masked to 0 if that specific call happens to re-read an already-seen value --
+  // but the channel must still judge on whatever happened across every real compute since the last
+  // poll, not just the last one (see velocity_derivative_worst_since_poll's comment in PID.hpp). Each
+  // pass here moves 0.1, twice the 0.05 stopped floor -- a mechanism that has never actually stopped --
+  // so this must never exit, no matter how many passes run.
   PID pid;
   pid.exit_condition_set(0, 0, 0, 0, 50, 0);
   pid.compute_error(10.0, 1.0);  // real motion: arms
   CHECK(pid.exit_condition() == RUNNING);
 
   double real_position = 1.0;
+  for (int pass = 1; pass <= 20; pass++) {
+    INFO("pass ", pass);
+    real_position += 0.1;                        // a real, fresh jump -- comfortably above the floor
+    pid.compute_error(10.0, real_position);
+    pid.compute_error(10.0, real_position);       // immediately re-read the same value before the poll
+    CHECK(pid.exit_condition() == RUNNING);
+  }
+}
+
+TEST_CASE("PID velocity exit: two real computes landing before one poll still exits promptly on a genuine stop") {
+  // Companion to the above: once the mechanism has actually stopped (both computes between polls read
+  // the same, unchanging value), the exit still fires within the configured time -- this isn't a
+  // channel that stopped crediting real stalls, just one that no longer judges solely on the very last
+  // compute before a poll.
+  PID pid;
+  pid.exit_condition_set(0, 0, 0, 0, 50, 0);
+  pid.compute_error(10.0, 1.0);  // real motion: arms, holds at the same value the loop below repeats
+  CHECK(pid.exit_condition() == RUNNING);
+
   int pass = 0;
   exit_output result = RUNNING;
   while (result == RUNNING) {
     pass++;
     REQUIRE(pass <= 10);
-    real_position += 0.1;
-    pid.compute_error(10.0, real_position);  // a real, fresh jump
-    pid.compute_error(10.0, real_position);  // immediately re-read the same value before the poll
+    pid.compute_error(10.0, 1.0);  // stopped: both computes this pass read the same, already-held value
+    pid.compute_error(10.0, 1.0);
     result = pid.exit_condition();
   }
   CHECK(pass == 6);
   CHECK(result == VELOCITY_EXIT);
 }
 
+TEST_CASE("PID velocity exit: an above-floor jitter compute mixed into an otherwise stalled cadence still resets the timer") {
+  // What could go wrong with judging on the whole window instead of just the latest compute: a single
+  // above-floor blip anywhere in a poll's window must still reset k, exactly as an above-floor LATEST
+  // compute already did before this fix -- the window is strictly more sensitive to real movement, not
+  // less. Two computes land per poll throughout; every 6th poll, the first of its two computes jitters
+  // 1.0 above the previous position (comfortably over the 0.05 floor) before the second re-settles back
+  // to the same held value -- still comfortably below the 500ms exit time, so this must never exit.
+  PID pid;
+  pid.exit_condition_set(0, 0, 0, 0, 500, 0);
+  pid.compute_error(10.0, 1.0);  // arms
+  CHECK(pid.exit_condition() == RUNNING);
+
+  double held = 1.0;
+  for (int pass = 1; pass <= 40; pass++) {
+    INFO("pass ", pass);
+    if (pass % 6 == 0) {
+      pid.compute_error(10.0, held + 1.0);  // jitter: a real, above-floor movement mid-window
+      pid.compute_error(10.0, held);        // settles back to the held value before the poll
+    } else {
+      pid.compute_error(10.0, held);
+      pid.compute_error(10.0, held);
+    }
+    CHECK(pid.exit_condition() == RUNNING);
+  }
+}
+
 TEST_CASE("PID velocity timer does not double-count one real stalled sample across two checks between one compute") {
   // What could go wrong with keying k purely off error_fresh: a caller polling FASTER than compute()
   // runs can call exit_condition() twice for the same one real sample. The second check must not
   // credit that same sample a second time -- error_fresh (compute_count vs. last_checked_compute,
-  // PID.hpp) is what catches this, unchanged by this pass's removal of the velocity channel's own
-  // separate raw-value tracking.
+  // PID.hpp) is what catches this.
   PID pid;
   pid.exit_condition_set(0, 0, 0, 0, 50, 0);
 
@@ -541,7 +581,7 @@ TEST_CASE("PID velocity timer does not double-count one real stalled sample acro
 
 TEST_CASE("PID velocity exit treats a non-finite derivative as stopped") {
   // A dead sensor feeding compute_error() a non-finite current (e.g. from a disconnected motor's
-  // PROS_ERR_F position) produces a non-finite derivative. Before this pass, that satisfied neither
+  // PROS_ERR_F position) produces a non-finite derivative. Left unsanitized, that satisfies neither
   // "moving" nor a clean "stopped" reading and could dodge this exit indefinitely on a bare PID with
   // no other backstop. It is now explicitly sanitized to 0.0 -- stopped -- so it counts toward the
   // timer like any other stall. See test_sensorfault_mA_disconnect.cpp for the matching Motor-level
