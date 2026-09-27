@@ -3703,7 +3703,16 @@ class Drive {
   bool ptf1_running = false;
   std::vector<pose> find_point_to_face(pose current, pose target, drive_directions dir, bool set_global);
   void raw_pid_odom_ptp_set(odom imovement, bool slew_on, bool is_boomerang);
-  std::vector<odom> inject_points(std::vector<odom> imovements);
+  // out_injected_pp_index null (the default): computes and publishes injected_pp_index itself, under
+  // its own lock, exactly as before -- for a caller with no other locked publish to pair it with.
+  // Non-null: skips its own publish and hands the computed index back through here instead, so a
+  // caller that also needs to publish something else of its own (pp_movements, via
+  // raw_pid_odom_pp_set()) can take ONE lock and publish both together -- see pid_odom_set() and
+  // friends in set_odom_pid.cpp. Never partially published either way: injected_pp_index and
+  // pp_movements must always change together under the same lock, or a reader that trusts them as a
+  // consistent pair (pid_wait_until_index_started(), exit_conditions.cpp) could observe one updated
+  // and the other stale.
+  std::vector<odom> inject_points(std::vector<odom> imovements, std::vector<int>* out_injected_pp_index = nullptr);
   std::vector<pose> point_to_face = {{0, 0, 0}, {0, 0, 0}};
   double turn_is_toleranced(double target, double current, double input, double longest, double shortest);
   double turn_short(double target, double current, bool print = false);

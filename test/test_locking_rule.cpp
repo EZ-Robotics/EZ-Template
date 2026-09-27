@@ -35,6 +35,9 @@ namespace fs = std::filesystem;
 const std::vector<std::string> kLockedHelpers = {
     "Drive::check_imu_task(",
     "Drive::raw_pid_odom_ptp_set(",
+    "Drive::smooth_path(",
+    "Drive::inject_points(",
+    "Drive::raw_pid_odom_pp_set(",
 };
 
 // Functions where a PlainGuard is allowed, because the task that runs them is never deleted by PROS: ez_auto_task, and
