@@ -1479,6 +1479,40 @@ class Drive {
   bool opcontrol_joystick_practicemode_toggle_get();
 
   /**
+   * Slow mode for driver practice that scales the drive by opcontrol_joystick_slowmode_speed_set() / 127,
+   * on top of opcontrol_speed_max_set() (the two multiply together, they don't replace each other), instead
+   * of cutting the drive off like opcontrol_joystick_practicemode_toggle() does.  This also scales down
+   * active brake's holding power while a joystick is released, the same way opcontrol_speed_max_set() does.
+   * Meant as a training mode, not something to leave on for a competition match.
+   *
+   * \param toggle
+   *        true enables, false disables
+   */
+  void opcontrol_joystick_slowmode_toggle(bool toggle);
+
+  /**
+   * Gets current state of the toggle.
+   *
+   * True is enabled, false is disabled.
+   */
+  bool opcontrol_joystick_slowmode_toggle_get();
+
+  /**
+   * Sets the speed used while opcontrol_joystick_slowmode_toggle() is enabled.  This multiplies with
+   * opcontrol_speed_max_set() rather than overriding it, so the actual cap while slow mode is on is
+   * opcontrol_speed_max_set() * speed / 127.
+   *
+   * \param speed
+   *        the speed limit, out of 127
+   */
+  void opcontrol_joystick_slowmode_speed_set(int speed);
+
+  /**
+   * Returns the speed used while opcontrol_joystick_slowmode_toggle() is enabled.
+   */
+  int opcontrol_joystick_slowmode_speed_get();
+
+  /**
    * Reversal for drivetrain in opcontrol that flips the left and right side and the direction of the drive.
    *
    * \param toggle
@@ -3806,6 +3840,8 @@ class Drive {
   int swing_min = 0;
   int turn_min = 0;
   bool practice_mode_is_on = false;
+  bool slow_mode_is_on = false;
+  double slow_mode_speed = 64.0;
   int swing_opposite_speed = 0;
   bool slew_swing_fwd_using_angle = false;
   bool slew_swing_rev_using_angle = false;
