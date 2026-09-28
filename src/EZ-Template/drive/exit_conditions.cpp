@@ -1145,7 +1145,21 @@ void Drive::wait_until_turn_swing_internal(double target) {
 
   // Calculate error between current and target (target needs to be an in between position)
   double g_error = target - drive_angle_get();
-  int g_sgn = util::sgn(g_error);
+  // The direction this checkpoint is expected to close from, taken from the requested target
+  // relative to the motion's own real start (chain_sensor_start, set once when the turn/swing
+  // itself was set -- see turn_set_internal()/swing_set_internal()) rather than from the live
+  // g_error above: g_error still needs a live read (it's the actual crossing check, re-read every
+  // pass below), but seeding its EXPECTED starting sign from a live read taken here, at the top of
+  // this function, means an ordinary caller-side delay between pid_turn_set()/pid_swing_set() and
+  // pid_wait_until() -- no shove or concurrent retarget needed -- can already have carried the
+  // heading past a short checkpoint by the time this reads it, latching the "already past" sign as
+  // the expected one and leaving the crossing check below waiting for a flip that may never come,
+  // since the motion only keeps moving further from the checkpoint from there. target's own sign
+  // relative to where the motion actually started can't go stale this way, exactly the same
+  // reasoning wait_until_drive() already uses for its own l_sgn/r_sgn (see its comment) -- and
+  // chain_sensor_start is this function's own equivalent of that function's l_start/r_start,
+  // already used the same way by used_motion_chain_scale and the mid-loop stuck watches below.
+  int g_sgn = util::sgn(target - chain_sensor_start);
 
   exit_output turn_exit = RUNNING;
   exit_output swing_exit = RUNNING;
@@ -1210,12 +1224,11 @@ void Drive::wait_until_turn_swing_internal(double target) {
   // leftover/zero error instead of a real, computed one; the jump from that artifact to the real
   // error then consumes Channel's one-shot rebound allowance (see Channel's own comment above) on
   // an artifact instead of a real disturbance, so the wait's first genuine disturbance can get
-  // treated as a second one and false-stuck. g_error/g_sgn above are computed from a live read
-  // BEFORE this delay, on purpose -- they're this loop's "have we crossed the target" check, and
-  // reading them only after this delay would let a very short wait_until() target already be
-  // behind the robot by the time it's read, latching the wrong starting sign (see the matching
-  // comment in wait_until_drive() on why ITS crossed-check sign is taken from target's own sign
-  // instead, which sidesteps this same hazard a different way).
+  // treated as a second one and false-stuck. g_error above is only read once here to have some
+  // value before the loop below overwrites it fresh every pass with the real "have we crossed the
+  // target" check; g_sgn (see its own comment above) no longer comes from a live read at all, so
+  // unlike before that fix, moving this delay earlier or later can't change which starting sign it
+  // latches.
   pros::delay(util::DELAY_TIME);
 
   // Same JC-1 progress backstop as pid_wait()'s TURN/SWING branches -- see the comment there. Moved-since-

@@ -101,7 +101,7 @@ jobs:
   vendored-ez-units:
     runs-on: ubuntu-latest
     env:
-      EZ_UNITS_TAG: v1.1.0
+      EZ_UNITS_TAG: v1.1.1
     steps:
       - name: Checkout
         uses: actions/checkout@v7
