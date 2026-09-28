@@ -746,35 +746,38 @@ void Drive::pid_wait() {
         // xyPID's target here is a moving look-ahead point, not the real path (see this loop's own
         // comment above): xy_pass below is only ever inspected for mA_EXIT, and SMALL_EXIT/BIG_EXIT/
         // VELOCITY_EXIT are discarded on purpose. But PID::exit_condition() calls
-        // PID::timers_reset() whenever ANY channel latches, which zeroes every channel's timer
-        // together -- including this same call's own freshly-incremented mA timer -- so a
-        // SMALL_EXIT on the (discarded) look-ahead error would silently erase real, ongoing
-        // over-current progress before it ever reaches mA_timeout (GitHub issue #527). Mirror
-        // exit_condition()'s own over-current check here first, to know what the mA timer's
-        // progress should be after this call, and restore it only when the call's actual result is
-        // one of the three discarded channels that call timers_reset() -- SMALL_EXIT, BIG_EXIT, or
-        // VELOCITY_EXIT -- the exact set of results this loop's own wipe can happen under; every
-        // other result (RUNNING, or a genuine mA_EXIT that already reset l correctly on its own and
-        // ends this loop below regardless) leaves l exactly as exit_condition() itself just left it,
-        // so a real over-current reading racing between this check and exit_condition()'s own can
-        // never be second-guessed by this restore. This is scoped to just this call site:
-        // PID::exit_condition()'s general contract (every channel resets together on any latch) is
-        // unchanged for every other caller, including xy's own final-point loop below, where every
-        // channel's result is actually used, not discarded.
+        // PID::timers_reset() whenever ANY channel latches, which wipes every channel's timer
+        // together -- including this same call's own mA progress -- so a SMALL_EXIT on the
+        // (discarded) look-ahead error would silently erase real, ongoing over-current progress
+        // before it ever reaches mA_timeout (GitHub issue #527). Snapshot the mA state before the
+        // call, using the exact same over-current predicate exit_condition(const
+        // std::vector<pros::Motor>&) itself uses (a transient PROS_ERR is not itself over-current,
+        // but a PROS_ERR paired with a non-finite position is a genuinely dead motor), and restore +
+        // re-credit it only when the call's actual result is one of the three discarded channels that
+        // call timers_reset() -- SMALL_EXIT, BIG_EXIT, or VELOCITY_EXIT -- the exact set of results
+        // this loop's own wipe can happen under; every other result (RUNNING, or a genuine mA_EXIT
+        // that already reset l correctly on its own and ends this loop below regardless) leaves the
+        // mA state exactly as exit_condition() itself just left it, so a real over-current reading
+        // racing between this check and exit_condition()'s own can never be second-guessed by this
+        // restore. This is scoped to just this call site: PID::exit_condition()'s general contract
+        // (every channel resets together on any latch) is unchanged for every other caller, including
+        // xy's own final-point loop below, where every channel's result is actually used, not discarded.
         std::vector<pros::Motor> xy_motors = both_sides(left_motors, right_motors);
         bool xy_mA_tracked = xyPID.exit.mA_timeout != 0;
         bool xy_over_current = false;
         if (xy_mA_tracked) {
           for (auto& motor : xy_motors) {
-            if (motor.is_over_current() == 1) {
+            std::int32_t xy_over = motor.is_over_current();
+            bool xy_dead = xy_over == PROS_ERR && !std::isfinite(motor.get_position());
+            if (xy_over == 1 || xy_dead) {
               xy_over_current = true;
               break;
             }
           }
         }
-        int xy_mA_expected = xy_over_current ? xyPID.mA_timer_get() + util::DELAY_TIME : 0;
+        PID::MATimerSnapshot xy_mA_snapshot = xyPID.mA_timer_snapshot();
         exit_output xy_pass = xyPID.exit_condition(xy_motors);
-        if (xy_mA_tracked && (xy_pass == SMALL_EXIT || xy_pass == BIG_EXIT || xy_pass == VELOCITY_EXIT)) xyPID.mA_timer_set(xy_mA_expected);
+        if (xy_mA_tracked && xy_over_current && (xy_pass == SMALL_EXIT || xy_pass == BIG_EXIT || xy_pass == VELOCITY_EXIT)) xyPID.mA_timer_restore_and_credit(xy_mA_snapshot);
         a_exit = a_exit != RUNNING ? a_exit : without_velocity(current_a_odomPID.exit_condition(both_sides(left_motors, right_motors)));
 
         if (xy_pass == mA_EXIT || watch.stuck(pp_index, target_distance(), xyPID.error, current_a_odomPID.error, travelled(), turned())) {

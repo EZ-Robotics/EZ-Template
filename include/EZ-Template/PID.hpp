@@ -334,16 +334,37 @@ class PID {
   // Drive::pid_wait()'s pure-pursuit intermediate-point loop calls exit_condition() every pass but
   // only ever inspects the result for mA_EXIT, discarding SMALL_EXIT/BIG_EXIT/VELOCITY_EXIT because
   // xyPID's target there is a moving look-ahead point, not the real one. exit_condition() calls
-  // timers_reset() whenever ANY channel latches, which zeroes the mA timer (l, below) right along
-  // with whichever channel actually fired -- so that discarded channel latching on an irrelevant
-  // error can silently erase real, ongoing over-current progress before it ever reaches mA_timeout
-  // (GitHub issue #527). mA_timer_get()/mA_timer_set() let that one caller compute what l's progress
-  // should have been on its own and restore it after a call whose result it's discarding -- see
-  // exit_conditions.cpp's PURE_PURSUIT intermediate loop. Kept private (not a general PID feature
-  // any other caller needs) with Drive as the only friend that can reach it.
+  // timers_reset() whenever ANY channel latches, which wipes the mA timer's progress -- both l and
+  // its wall-clock baseline (last_call_ms/have_last_call_ms) -- right along with whichever channel
+  // actually fired, so a discarded channel latching on an irrelevant error can silently erase real,
+  // ongoing over-current progress before it ever reaches mA_timeout (GitHub issue #527).
+  // mA_timer_snapshot()/mA_timer_restore_and_credit() let that one caller save the mA state before a
+  // call and, if the call's result is one it's discarding, restore it and credit the elapsed real
+  // time itself -- via the same wall_credit() exit_condition()'s own mA branch uses -- reconstructing
+  // the value that branch computed internally before timers_reset() wiped it. In practice this can't
+  // cross mA_timeout by more than a millisecond of clock-read jitter between the two wall_credit()
+  // calls (exit_condition()'s own, and this restore's): if the internal call's own credit had already
+  // crossed it, exit_condition() would have returned mA_EXIT itself instead of the discarded result;
+  // at worst, that jitter delays the next poll's mA_EXIT by one graded call, never earlier. See
+  // exit_conditions.cpp's PURE_PURSUIT intermediate loop, which also computes
+  // its own over-current predicate beforehand -- matching this exactly (a transient PROS_ERR is not
+  // itself over-current, but a PROS_ERR paired with a non-finite position is a genuinely dead motor,
+  // same as exit_condition(const std::vector<pros::Motor>&)'s own predicate) -- to decide whether a
+  // discarded result should credit anything at all. Kept private (not a general PID feature any other
+  // caller needs) with Drive as the only friend that can reach it.
   friend class Drive;
-  int mA_timer_get() { return l; }
-  void mA_timer_set(int value) { l = value; }
+  struct MATimerSnapshot {
+    int l;
+    bool have_last_call_ms;
+    std::uint32_t last_call_ms;
+  };
+  MATimerSnapshot mA_timer_snapshot() { return {l, have_last_call_ms, last_call_ms}; }
+  void mA_timer_restore_and_credit(MATimerSnapshot s) {
+    l = s.l;
+    have_last_call_ms = s.have_last_call_ms;
+    last_call_ms = s.last_call_ms;
+    l += wall_credit(have_last_call_ms, last_call_ms);
+  }
 
   double velocity_zero_main = 0.05;
   double velocity_zero_secondary = 0.075;
