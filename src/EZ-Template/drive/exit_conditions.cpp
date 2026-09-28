@@ -550,24 +550,39 @@ void Drive::pid_wait() {
       // (that would restart its internal timers) -- the same treatment pid_wait()'s odom branch
       // already gives a clean double-exit (see the comment there). A side that has drifted back
       // outside since latching is un-latched (back to RUNNING) so the inner loop above keeps
-      // genuinely watching it instead of trusting a stale result. Its own stuck watch is
-      // deliberately NOT reseeded: it already stopped being fed the moment this side first latched,
-      // so its own clock has effectively been running the whole time it sat unwatched, and reseeding
-      // it here would hand a pathological hover right at the exit window's edge (latch, drift out,
-      // un-latch, re-latch, ...) a fresh grace period on every cycle -- exactly the unbounded relatch
-      // the odom branch's own comment above rules out. VELOCITY_EXIT is never latched here
+      // genuinely watching it instead of trusting a stale result.
+      //
+      // Its own stuck watch IS reseeded here, right at the point of un-latching (accepted tradeoff,
+      // see GitHub issue #532): a side stops being fed the moment it first latches, so once the
+      // OTHER side keeps the wait going for a while, that side's watch clock is left frozen at
+      // whatever it read back when it latched -- not resynced to "now". Left as-is, the very next
+      // stuck() call on that side measures elapsed time against a clock that's been stale since
+      // before this new disturbance even started, which can already exceed the watch's own window
+      // purely from idle time spent waiting on the sibling -- an ordinary, self-resolving blip that
+      // happens to land on this recheck gets flagged stuck instantly, with zero real grace period.
+      // Reseeding here -- the same construction used when a motion's wait first starts, with
+      // `already_moved=true` since this side plainly already moved to have latched in the first
+      // place -- gives the newly-unlatched disturbance a genuinely fresh window instead. The known
+      // cost, accepted deliberately: a pathological hover right at the exit window's edge (latch,
+      // drift out, un-latch, re-latch, ...) now gets a fresh grace period on every cycle too, instead
+      // of the bound on repeated relatching this used to provide -- weighed against the more common
+      // false positive above and decided in favor of reseeding. VELOCITY_EXIT is never latched here
       // (without_velocity() already maps it to RUNNING); mA_EXIT and ERROR_NO_CONSTANTS aren't
       // window exits and are left alone -- the final check below still catches mA_EXIT/VELOCITY_EXIT
       // regardless of this recheck.
       if (left_exit == SMALL_EXIT && std::fabs(leftPID.error) >= leftPID.exit.small_error) {
         left_exit = RUNNING;
+        left_watch = SingleStuckWatch(leftPID, leftPID.error, true);
       } else if (left_exit == BIG_EXIT && std::fabs(leftPID.error) >= leftPID.exit.big_error) {
         left_exit = RUNNING;
+        left_watch = SingleStuckWatch(leftPID, leftPID.error, true);
       }
       if (right_exit == SMALL_EXIT && std::fabs(rightPID.error) >= rightPID.exit.small_error) {
         right_exit = RUNNING;
+        right_watch = SingleStuckWatch(rightPID, rightPID.error, true);
       } else if (right_exit == BIG_EXIT && std::fabs(rightPID.error) >= rightPID.exit.big_error) {
         right_exit = RUNNING;
+        right_watch = SingleStuckWatch(rightPID, rightPID.error, true);
       }
 
       if (left_exit == RUNNING || right_exit == RUNNING) {
@@ -797,7 +812,14 @@ void Drive::pid_wait() {
       // (that would restart its internal timers) -- the same treatment the DRIVE and odom branches
       // above already give a clean exit. Un-latch (back to RUNNING) if it has drifted back outside,
       // falling through to keep genuinely watching it instead of trusting a stale result. The stuck
-      // watch is deliberately NOT reseeded -- see the DRIVE branch's matching recheck for why.
+      // watch is deliberately NOT reseeded here: unlike DRIVE's two independent per-side watches
+      // (which can sit idle for a long stretch waiting on a sibling side that's still running -- see
+      // issue #532 and that recheck's own comment on why it now reseeds despite this same tradeoff),
+      // TURN has only this one axis, so this watch is only ever idle for the single extra pass since
+      // it latched before this recheck runs -- there's no analogous "idle the whole time a sibling
+      // keeps going" gap to fix here. Reseeding on every relatch anyway would just hand a pathological
+      // hover right at the window's edge (latch, drift out, un-latch, re-latch, ...) an unbounded
+      // fresh grace period for free, with nothing real gained.
       // VELOCITY_EXIT is never latched here (without_velocity() already maps it to RUNNING); mA_EXIT
       // isn't a window exit and is handled below regardless, so it's left alone.
       if (turn_exit == SMALL_EXIT && std::fabs(turnPID.error) >= turnPID.exit.small_error) {
@@ -1052,13 +1074,19 @@ void Drive::wait_until_drive(double target) {
         // internal timers) -- the same treatment pid_wait()'s odom branch already gives a clean
         // double-exit. A side that has drifted back outside its own window since latching is
         // un-latched (back to RUNNING), falling through to keep waiting instead of trusting a stale
-        // result. Its stuck watch is deliberately NOT reseeded -- see pid_wait()'s DRIVE branch's
-        // matching recheck for why: it already stopped being fed the moment this side first latched,
-        // so its own clock has effectively kept running the whole time it sat unwatched, and
-        // reseeding here would hand a pathological hover right at the window's edge a fresh grace
-        // period on every relatch. VELOCITY_EXIT is never latched here (without_velocity() already
-        // maps it to RUNNING); mA_EXIT isn't a window exit and is handled below regardless, so it's
-        // left alone.
+        // result. Its stuck watch is left un-reseeded here: it already stopped being fed the moment
+        // this side first latched, so its own clock keeps reading time elapsed since well before it
+        // ever latched, not since this un-latch.
+        //
+        // This has the identical shape as issue #532 (a side that finishes early, sits idle while
+        // its sibling keeps running, then is un-latched here by a fresh disturbance can be measured
+        // against a stale clock and read stuck instantly, with no real grace period) -- pid_wait()'s
+        // DRIVE branch above was fixed for exactly this by reseeding its watch on un-latch, accepting
+        // the tradeoff that a hover right at the window's edge can then re-arm its own grace period
+        // on every relatch. That fix was scoped to pid_wait() only; this wait_until_drive() call site
+        // has the same gap, left as-is here.
+        // VELOCITY_EXIT is never latched here (without_velocity() already maps it to RUNNING);
+        // mA_EXIT isn't a window exit and is handled below regardless, so it's left alone.
         if (left_exit == SMALL_EXIT && std::fabs(leftPID.error) >= leftPID.exit.small_error) {
           left_exit = RUNNING;
         } else if (left_exit == BIG_EXIT && std::fabs(leftPID.error) >= leftPID.exit.big_error) {
