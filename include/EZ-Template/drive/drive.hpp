@@ -2846,6 +2846,12 @@ class Drive {
   /**
    * Changes max speed during a drive motion.
    *
+   * Also applies mid-motion to a running odom motion (pid_odom_set, pid_odom_pp_set,
+   * pid_odom_injected_pp_set, pid_odom_smooth_pp_set, pid_odom_boomerang_set, pid_odom_ptp_set):
+   * the new cap replaces the stored speed on every remaining point of the path, not just the
+   * current one, and lasts only for the motion currently running -- the next pid_*_set call starts
+   * fresh with its own speed.
+   *
    * \param speed
    *        new clipped speed, between 0 and 127
    */
@@ -3750,6 +3756,10 @@ class Drive {
   std::vector<odom> pp_movements;
   std::vector<int> injected_pp_index;
   int pp_index = 0;
+  // Sets max_speed and the slew caps only, no odom path rewrite. Assumes the caller already holds
+  // drive_mutex. See its own doc comment in set_pid.cpp for why this exists separately from the
+  // public pid_speed_max_set().
+  void pid_speed_max_set_internal(int speed);
   std::vector<odom> smooth_path(std::vector<odom> ipath, double weight_smooth, double weight_data, double tolerance);
   double is_past_target(pose target, pose current);
   // Feeds a PID's secondary velocity-exit channel from the imu, but only when that channel is
