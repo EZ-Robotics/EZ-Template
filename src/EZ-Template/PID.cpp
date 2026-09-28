@@ -148,6 +148,8 @@ void PID::timers_reset() {
   have_small_fresh_ms = false;
   have_big_fresh_ms = false;
   have_velocity_fresh_ms = false;
+  have_hold_fresh_ms = false;
+  have_m_fresh_ms = false;
   // Resync every "did this happen since my last check" counter to right now, for the same reason
   // last_checked_compute gets resynced below in motion_reset() -- a stale excursion/movement recorded
   // for the just-finished motion must not block the new motion's very first poll from crediting.
@@ -303,30 +305,37 @@ exit_output PID::exit_condition(bool print) {
   // indefinitely -- for example because whatever else has it holding never resolves either -- could
   // keep this exit's caller waiting forever.
   if (velocity_exit_hold) {
-    hold_timer += util::DELAY_TIME;
+    // Real elapsed wall-clock milliseconds since the last call while held, not a flat util::DELAY_TIME
+    // -- see have_hold_fresh_ms's comment in PID.hpp. Keyed on every call while held, not on
+    // error_fresh, the same as the mA timer (l) below: this measures how long a caller has been
+    // continuously asking to hold, not how often a new compute() has landed.
+    hold_timer += wall_credit(have_hold_fresh_ms, last_hold_fresh_ms);
   } else {
     hold_timer = 0;
+    have_hold_fresh_ms = false;
   }
   bool held = velocity_exit_hold && hold_timer <= VELOCITY_EXIT_HOLD_FALLBACK;
 
   // velocity_exit_hold_set()'s own contract is that held time counts neither toward nor against the
   // exit, resuming from wherever it left off once released -- but the moving-count comparison and the
-  // wall-clock baseline below are only ever touched while NOT held (same gate as the credit itself), so
-  // without an explicit resync the first poll after a hold ends would compare against whatever they were
-  // last left at BEFORE the hold started: real movement that happened only during the hold would still
-  // count against the exit on release, and -- worse -- the wall-clock baseline would credit the ENTIRE
-  // held span (capped at WALL_CLOCK_CREDIT_CAP) as if it had been continuously settled the whole time.
-  // Refreshing both on EVERY held poll (not just once on release) resumes counting from wherever the
-  // LAST held poll left off, matching the documented contract without also swallowing real movement
-  // that lands on the release poll itself: a release poll's own compute() already ran before this
-  // exit_condition() call, so if it snapshotted last_seen_velocity_moving only on release, that
+  // wall-clock baselines below are only ever touched while NOT held (same gate as their own crediting),
+  // so without an explicit resync the first poll after a hold ends would compare against whatever they
+  // were last left at BEFORE the hold started: real movement that happened only during the hold would
+  // still count against the exit on release, and -- worse -- a wall-clock baseline would credit the
+  // ENTIRE held span (capped at WALL_CLOCK_CREDIT_CAP) as if it had been continuously settled the whole
+  // time. Refreshing all three on EVERY held poll (not just once on release) resumes counting from
+  // wherever the LAST held poll left off, matching the documented contract without also swallowing real
+  // movement that lands on the release poll itself: a release poll's own compute() already ran before
+  // this exit_condition() call, so if it snapshotted last_seen_velocity_moving only on release, that
   // snapshot would already include the release poll's own movement and hide it from the moved-since-
   // last-check comparison just below. Snapshotting on every held poll instead means the release poll
   // is always compared against the state as of the poll before it, so its own movement (if any) is
-  // never discarded.
+  // never discarded. have_m_fresh_ms gets the same treatment as have_velocity_fresh_ms, for the same
+  // wall-clock-baseline reason -- the secondary channel is gated on !held exactly the same way.
   if (held) {
     last_seen_velocity_moving = velocity_moving_count;
     have_velocity_fresh_ms = false;
+    have_m_fresh_ms = false;
   }
 
   // If the motor velocity is 0, the code will timeout and set interfered to true.
@@ -378,7 +387,10 @@ exit_output PID::exit_condition(bool print) {
   // turned on) -- never count that as "stopped".
   if (exit.velocity_exit_time != 0 && velocity_armed && !held) {  // Check if this condition is enabled
     if (std::isfinite(second_sensor) && std::fabs(second_sensor) <= velocity_zero_secondary) {
-      m += util::DELAY_TIME;
+      // Real elapsed wall-clock milliseconds since the last call in-band, not a flat util::DELAY_TIME
+      // -- same reasoning as the small/big/velocity/mA baselines above. Still keyed on every call, not
+      // on error_fresh: see have_m_fresh_ms's comment in PID.hpp.
+      m += wall_credit(have_m_fresh_ms, last_m_fresh_ms);
       if (m > exit.velocity_exit_time) {
         timers_reset();
         if (print) exit_condition_print(VELOCITY_EXIT);
@@ -390,6 +402,7 @@ exit_output PID::exit_condition(bool print) {
       // by its own setter, not derived from raw_compute(), so error_fresh (which tracks compute()
       // calls) says nothing about whether this specific reading is new.
       m = 0;
+      have_m_fresh_ms = false;
     }
   }
 

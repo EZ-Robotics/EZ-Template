@@ -397,6 +397,11 @@ class PID {
   // own current/position is actually being read (that happens live, every call).
   std::uint32_t last_call_ms = 0;
   bool have_last_call_ms = false;
+  // Same idea for the secondary-velocity-sensor timer (m): keyed on every call, not on error_fresh,
+  // since second_sensor is a caller-supplied reading set independently of raw_compute() and says
+  // nothing about compute() cadence -- see second_sensor's own comment below.
+  std::uint32_t last_m_fresh_ms = 0;
+  bool have_m_fresh_ms = false;
   // How many real milliseconds a single fresh poll (or mA-check call) may credit at once. Bounds a
   // caller that was blocked for an unusually long stretch (a dropped frame, a debugger pause, a task
   // starved far longer than any realistic poll/compute cadence) from crediting that whole gap toward
@@ -422,6 +427,14 @@ class PID {
   double second_sensor = std::numeric_limits<double>::quiet_NaN();
   bool velocity_exit_hold = false;
   int hold_timer = 0;
+  // hold_timer credits real elapsed wall-clock milliseconds per call to exit_condition() while held,
+  // not a flat util::DELAY_TIME -- same reasoning as the small/big/velocity/mA baselines above (a flat
+  // credit either wildly overcounts or undercounts real elapsed time whenever a caller's poll cadence
+  // doesn't match DELAY_TIME), except keyed on every call while velocity_exit_hold is true, not on
+  // error_fresh -- same as the mA timer (l) above, since this measures how long a caller has been
+  // continuously ASKING to hold, which has nothing to do with whether a new compute() has landed.
+  std::uint32_t last_hold_fresh_ms = 0;
+  bool have_hold_fresh_ms = false;
   static constexpr int VELOCITY_EXIT_HOLD_FALLBACK = 2000;
 
   std::string name;
