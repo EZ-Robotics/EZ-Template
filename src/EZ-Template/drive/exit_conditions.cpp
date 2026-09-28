@@ -1117,10 +1117,12 @@ void Drive::wait_until_drive(double target) {
         // This has the identical shape as issue #532 (a side that finishes early, sits idle while
         // its sibling keeps running, then is un-latched here by a fresh disturbance can be measured
         // against a stale clock and read stuck instantly, with no real grace period) -- pid_wait()'s
-        // DRIVE branch above was fixed for exactly this by reseeding its watch on un-latch, accepting
-        // the tradeoff that a hover right at the window's edge can then re-arm its own grace period
-        // on every relatch. That fix was scoped to pid_wait() only; this wait_until_drive() call site
-        // has the same gap, left as-is here.
+        // DRIVE branch above was fixed for exactly this by reseeding its watch on un-latch, up to
+        // STUCK_WATCH_REARM_CAP times per side per wait; past that, it falls back to exactly this
+        // un-reseeded behavior for the rest of the wait too (unconditional reseeding measurably hung
+        // a side oscillating right at its own window's edge -- see PR #543's own discussion for the
+        // measured repro, not just a theoretical concern). That fix (cap included) was scoped to
+        // pid_wait() only; this wait_until_drive() call site has the same gap, left as-is here.
         // VELOCITY_EXIT is never latched here (without_velocity() already maps it to RUNNING);
         // mA_EXIT isn't a window exit and is handled below regardless, so it's left alone.
         if (left_exit == SMALL_EXIT && std::fabs(leftPID.error) >= leftPID.exit.small_error) {
