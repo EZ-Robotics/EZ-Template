@@ -407,10 +407,6 @@ class PID {
   int arm_timer = 0;
   bool velocity_armed = false;
   static constexpr int VELOCITY_ARM_FALLBACK = 1000;
-  // Whether the previous check was held (see exit_condition()'s use of this) -- lets the poll right
-  // after a hold ends resync the moving-count/wall-clock state instead of comparing against whatever
-  // it was left at before the hold, so held time truly counts neither for nor against the exit.
-  bool velocity_hold_was_active = false;
   // velocity_moving_count's value as of this motion's start (timers_reset()), so arming can ask "has
   // this motion ever seen a real above-floor compute" instead of only looking at the instantaneous
   // derivative on whichever single poll happens to check -- the same cadence-aliasing gap

@@ -316,14 +316,17 @@ exit_output PID::exit_condition(bool print) {
   // last left at BEFORE the hold started: real movement that happened only during the hold would still
   // count against the exit on release, and -- worse -- the wall-clock baseline would credit the ENTIRE
   // held span (capped at WALL_CLOCK_CREDIT_CAP) as if it had been continuously settled the whole time.
-  // Resyncing both the instant a hold ends discards whatever happened during it either way and truly
-  // resumes counting from that moment, matching the documented contract.
+  // Refreshing both on EVERY held poll (not just once on release) resumes counting from wherever the
+  // LAST held poll left off, matching the documented contract without also swallowing real movement
+  // that lands on the release poll itself: a release poll's own compute() already ran before this
+  // exit_condition() call, so if it snapshotted last_seen_velocity_moving only on release, that
+  // snapshot would already include the release poll's own movement and hide it from the moved-since-
+  // last-check comparison just below. Snapshotting on every held poll instead means the release poll
+  // is always compared against the state as of the poll before it, so its own movement (if any) is
+  // never discarded.
   if (held) {
-    velocity_hold_was_active = true;
-  } else if (velocity_hold_was_active) {
     last_seen_velocity_moving = velocity_moving_count;
     have_velocity_fresh_ms = false;
-    velocity_hold_was_active = false;
   }
 
   // If the motor velocity is 0, the code will timeout and set interfered to true.
