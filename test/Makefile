@@ -18,7 +18,10 @@ EXCLUDED_SRC := display.cpp sdcard.cpp health.cpp pid_tuner.cpp
 ALL_LIB_SRC := $(wildcard ../src/EZ-Template/*.cpp ../src/EZ-Template/drive/*.cpp ../src/EZ-Template/drive/set_pid/*.cpp)
 LIB_SRC := $(filter-out $(foreach f,$(EXCLUDED_SRC),%/$(f)), $(ALL_LIB_SRC))
 
-TEST_SRC := $(wildcard test_*.cpp) link_stubs.cpp
+# doctest_main.cpp isn't itself a test (no TEST_CASE); it's kept out of the
+# test_*.cpp wildcard on purpose so windows.h (see its header comment) only
+# ever lands in that one file.
+TEST_SRC := $(wildcard test_*.cpp) link_stubs.cpp doctest_main.cpp
 
 # stub/ goes before ../include so e.g. "api.h" and "pros/motors.hpp" resolve
 # to the stubs, not (nonexistent, on a host build) real PROS headers. The
