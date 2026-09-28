@@ -88,7 +88,7 @@ std::vector<pose> Drive::find_point_to_face(pose current, pose target, drive_dir
 }
 
 // Inject point based on https://www.chiefdelphi.com/t/paper-implementation-of-the-adaptive-pure-pursuit-controller/166552
-std::vector<odom> Drive::inject_points(std::vector<ez::odom> imovements) {
+std::vector<odom> Drive::inject_points(std::vector<ez::odom> imovements, std::vector<int>* out_injected_pp_index) {
   // Built into a local vector and published under drive_mutex in one swap at the end, not
   // written to the member in place unlocked: a concurrent pid_wait_until_index_started() read
   // (exit_conditions.cpp) could otherwise observe a partially-rebuilt vector mid-function. See
@@ -187,7 +187,11 @@ std::vector<odom> Drive::inject_points(std::vector<ez::odom> imovements) {
 
   new_injected_pp_index.push_back(output_index);
 
-  {
+  // See this function's doc in drive.hpp for why out_injected_pp_index changes what gets published,
+  // and when.
+  if (out_injected_pp_index) {
+    *out_injected_pp_index = std::move(new_injected_pp_index);
+  } else {
     ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
     injected_pp_index = std::move(new_injected_pp_index);
   }
@@ -200,9 +204,13 @@ std::vector<odom> Drive::inject_points(std::vector<ez::odom> imovements) {
 std::vector<odom> Drive::smooth_path(std::vector<odom> ipath, double weight_smooth, double weight_data, double tolerance) {
   if (ipath.size() < 3) return ipath;
 
-  // Constants that don't settle would fling the points off toward infinity, so follow the path as given instead
+  // Constants that don't settle would fling the points off toward infinity, so follow the path as given instead.
+  // print_after_unlock, not printf: some callers of this function still run it while holding
+  // drive_mutex (kLockedHelpers, test_locking_rule.cpp treats it as always-potentially-locked), and
+  // printf is a blocking call locking rule 2 forbids making while a guard is held. print_after_unlock
+  // is correct either way -- it prints at once when nothing is held (see lock.hpp).
   if (!(weight_data + 2.0 * weight_smooth < 2.0)) {
-    printf("EZ-Template: path smoothing skipped, weight_smooth %.4f and weight_data %.4f don't settle (weight_data + 2 * weight_smooth must be < 2)\n", weight_smooth, weight_data);
+    drive_mutex.print_after_unlock("EZ-Template: path smoothing skipped, weight_smooth %.4f and weight_data %.4f don't settle (weight_data + 2 * weight_smooth must be < 2)\n", weight_smooth, weight_data);
     return ipath;
   }
 
@@ -276,8 +284,9 @@ std::vector<odom> Drive::smooth_path(std::vector<odom> ipath, double weight_smoo
     }
   }
 
+  // print_after_unlock, not printf -- see the matching comment above.
   if (passes >= MAX_PASSES && change >= tolerance)
-    printf("EZ-Template: path smoothing stopped at %d passes before it settled, so the path is less smooth than the constants ask for\n", MAX_PASSES);
+    drive_mutex.print_after_unlock("EZ-Template: path smoothing stopped at %d passes before it settled, so the path is less smooth than the constants ask for\n", MAX_PASSES);
 
   // Convert array to odom
   std::vector<odom> output = ipath;  // Set output to input so target angles, turn types and speed hold

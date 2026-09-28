@@ -674,7 +674,11 @@ void Drive::pid_wait() {
       }
       break;
     }
-    if (print_toggle && !stalled) std::cout << "  Left: " << exit_to_string(left_exit) << " Exit, error: " << leftPID.error << "   Right: " << exit_to_string(right_exit) << " Exit, error: " << rightPID.error << "\n";
+    // Guarded the same way the odom branch below already is: a settled-via-stuck break above leaves
+    // both sides RUNNING (they never actually latched a window exit at all), so printing their
+    // exit_to_string() here would print a nonsensical "Running Exit" right after the "counted as
+    // settled" message the stuck check above already printed for this same pass.
+    if (print_toggle && !stalled && left_exit != RUNNING && right_exit != RUNNING) std::cout << "  Left: " << exit_to_string(left_exit) << " Exit, error: " << leftPID.error << "   Right: " << exit_to_string(right_exit) << " Exit, error: " << rightPID.error << "\n";
 
     if (stalled || left_exit == mA_EXIT || left_exit == VELOCITY_EXIT || right_exit == mA_EXIT || right_exit == VELOCITY_EXIT) {
       interfered_scope.mark();
@@ -742,35 +746,38 @@ void Drive::pid_wait() {
         // xyPID's target here is a moving look-ahead point, not the real path (see this loop's own
         // comment above): xy_pass below is only ever inspected for mA_EXIT, and SMALL_EXIT/BIG_EXIT/
         // VELOCITY_EXIT are discarded on purpose. But PID::exit_condition() calls
-        // PID::timers_reset() whenever ANY channel latches, which zeroes every channel's timer
-        // together -- including this same call's own freshly-incremented mA timer -- so a
-        // SMALL_EXIT on the (discarded) look-ahead error would silently erase real, ongoing
-        // over-current progress before it ever reaches mA_timeout (GitHub issue #527). Mirror
-        // exit_condition()'s own over-current check here first, to know what the mA timer's
-        // progress should be after this call, and restore it only when the call's actual result is
-        // one of the three discarded channels that call timers_reset() -- SMALL_EXIT, BIG_EXIT, or
-        // VELOCITY_EXIT -- the exact set of results this loop's own wipe can happen under; every
-        // other result (RUNNING, or a genuine mA_EXIT that already reset l correctly on its own and
-        // ends this loop below regardless) leaves l exactly as exit_condition() itself just left it,
-        // so a real over-current reading racing between this check and exit_condition()'s own can
-        // never be second-guessed by this restore. This is scoped to just this call site:
-        // PID::exit_condition()'s general contract (every channel resets together on any latch) is
-        // unchanged for every other caller, including xy's own final-point loop below, where every
-        // channel's result is actually used, not discarded.
+        // PID::timers_reset() whenever ANY channel latches, which wipes every channel's timer
+        // together -- including this same call's own mA progress -- so a SMALL_EXIT on the
+        // (discarded) look-ahead error would silently erase real, ongoing over-current progress
+        // before it ever reaches mA_timeout (GitHub issue #527). Snapshot the mA state before the
+        // call, using the exact same over-current predicate exit_condition(const
+        // std::vector<pros::Motor>&) itself uses (a transient PROS_ERR is not itself over-current,
+        // but a PROS_ERR paired with a non-finite position is a genuinely dead motor), and restore +
+        // re-credit it only when the call's actual result is one of the three discarded channels that
+        // call timers_reset() -- SMALL_EXIT, BIG_EXIT, or VELOCITY_EXIT -- the exact set of results
+        // this loop's own wipe can happen under; every other result (RUNNING, or a genuine mA_EXIT
+        // that already reset l correctly on its own and ends this loop below regardless) leaves the
+        // mA state exactly as exit_condition() itself just left it, so a real over-current reading
+        // racing between this check and exit_condition()'s own can never be second-guessed by this
+        // restore. This is scoped to just this call site: PID::exit_condition()'s general contract
+        // (every channel resets together on any latch) is unchanged for every other caller, including
+        // xy's own final-point loop below, where every channel's result is actually used, not discarded.
         std::vector<pros::Motor> xy_motors = both_sides(left_motors, right_motors);
         bool xy_mA_tracked = xyPID.exit.mA_timeout != 0;
         bool xy_over_current = false;
         if (xy_mA_tracked) {
           for (auto& motor : xy_motors) {
-            if (motor.is_over_current() == 1) {
+            std::int32_t xy_over = motor.is_over_current();
+            bool xy_dead = xy_over == PROS_ERR && !std::isfinite(motor.get_position());
+            if (xy_over == 1 || xy_dead) {
               xy_over_current = true;
               break;
             }
           }
         }
-        int xy_mA_expected = xy_over_current ? xyPID.mA_timer_get() + util::DELAY_TIME : 0;
+        PID::MATimerSnapshot xy_mA_snapshot = xyPID.mA_timer_snapshot();
         exit_output xy_pass = xyPID.exit_condition(xy_motors);
-        if (xy_mA_tracked && (xy_pass == SMALL_EXIT || xy_pass == BIG_EXIT || xy_pass == VELOCITY_EXIT)) xyPID.mA_timer_set(xy_mA_expected);
+        if (xy_mA_tracked && xy_over_current && (xy_pass == SMALL_EXIT || xy_pass == BIG_EXIT || xy_pass == VELOCITY_EXIT)) xyPID.mA_timer_restore_and_credit(xy_mA_snapshot);
         a_exit = a_exit != RUNNING ? a_exit : without_velocity(current_a_odomPID.exit_condition(both_sides(left_motors, right_motors)));
 
         if (xy_pass == mA_EXIT || watch.stuck(pp_index, target_distance(), xyPID.error, current_a_odomPID.error, travelled(), turned())) {
@@ -948,7 +955,10 @@ void Drive::pid_wait() {
       }
       break;
     }
-    if (print_toggle && !stalled) std::cout << "  Turn: " << exit_to_string(turn_exit) << " Exit, error: " << turnPID.error << "\n";
+    // See the DRIVE branch's matching comment above -- a settled-via-stuck break leaves turn_exit
+    // RUNNING, so this must not print its exit_to_string() right after the "counted as settled"
+    // message already printed for this same pass.
+    if (print_toggle && !stalled && turn_exit != RUNNING) std::cout << "  Turn: " << exit_to_string(turn_exit) << " Exit, error: " << turnPID.error << "\n";
 
     if (stalled || turn_exit == mA_EXIT || turn_exit == VELOCITY_EXIT) {
       interfered_scope.mark();
@@ -1014,7 +1024,10 @@ void Drive::pid_wait() {
       }
       break;
     }
-    if (print_toggle && !stalled) std::cout << "  Swing: " << exit_to_string(swing_exit) << " Exit, error: " << swingPID.error << "\n";
+    // See the DRIVE branch's matching comment above -- a settled-via-stuck break leaves swing_exit
+    // RUNNING, so this must not print its exit_to_string() right after the "counted as settled"
+    // message already printed for this same pass.
+    if (print_toggle && !stalled && swing_exit != RUNNING) std::cout << "  Swing: " << exit_to_string(swing_exit) << " Exit, error: " << swingPID.error << "\n";
 
     if (stalled || swing_exit == mA_EXIT || swing_exit == VELOCITY_EXIT) {
       interfered_scope.mark();
@@ -1645,10 +1658,22 @@ void Drive::pid_wait_until_index_started(int index) {
   // see set_odom_pid.cpp / purepursuit_math.cpp) while this function is reading it. Reading a vector mid-reassignment
   // is undefined behavior, not just stale data, so this takes one consistent copy instead of trusting each of the
   // several unlocked reads below to happen to land before or after the swap.
+  // The failsafe print below (triggered_at instead of pp_movements[...].target) used to read
+  // pp_movements unlocked, after this snapshot but outside any lock -- a concurrent pid_odom_*_set()
+  // replacing pp_movements/injected_pp_index between the snapshot above and that print could leave it
+  // indexing into a pp_movements that's now shorter than injected_pp_index_snapshot expects. Taken
+  // in the SAME lock acquisition as injected_pp_index_snapshot below so the two are always a
+  // consistent pair -- injected_pp_index and pp_movements are only ever published together (see
+  // set_odom_pid.cpp / purepursuit_math.cpp), so a snapshot of one taken alongside the other under
+  // one lock can't straddle a publish the way two separate lock acquisitions could.
   std::vector<int> injected_pp_index_snapshot;
+  pose failsafe_target{};
   {
     ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
     injected_pp_index_snapshot = injected_pp_index;
+    if (index >= 0 && index <= (int)injected_pp_index_snapshot.size() - 2) {
+      failsafe_target = pp_movements[injected_pp_index_snapshot[index + 1]].target;
+    }
   }
 
   if (index < 0 || index > (int)injected_pp_index_snapshot.size() - 2) {
@@ -1712,8 +1737,10 @@ void Drive::pid_wait_until_index_started(int index) {
 
     if (xy_exit != RUNNING && a_exit != RUNNING) {
       if (print_toggle) {
-        // index points into injected_pp_index_snapshot, which holds where each waypoint sits in pp_movements
-        std::cout << "  XY: " << exit_to_string(xy_exit) << " Wait Until Exit Failsafe, triggered at (" << odom_x_get() << ", " << odom_y_get() << ") instead of (" << pp_movements[injected_pp_index_snapshot[index]].target.x << ", " << pp_movements[injected_pp_index_snapshot[index]].target.y << ")\n";
+        // failsafe_target was snapshotted alongside injected_pp_index_snapshot above, under the same
+        // lock -- see that snapshot's comment for why reading pp_movements directly here, unlocked,
+        // is not safe.
+        std::cout << "  XY: " << exit_to_string(xy_exit) << " Wait Until Exit Failsafe, triggered at (" << odom_x_get() << ", " << odom_y_get() << ") instead of (" << failsafe_target.x << ", " << failsafe_target.y << ")\n";
         xyPID.timers_reset();
         current_a_odomPID.timers_reset();
       }
@@ -1767,13 +1794,23 @@ void Drive::pid_wait_until_index(int index) {
   }
 
   index += 1;
+  // target is read from pp_movements in the SAME lock acquisition as injected_pp_index_snapshot below,
+  // for the same reason pid_wait_until_index_started()'s failsafe_target is -- see its comment. This
+  // one feeds pid_wait_until_point() directly (not just a print), so the race was live, not cosmetic:
+  // a concurrent pid_odom_*_set() replacing pp_movements with a shorter path between two separate,
+  // unlocked reads could index past its end.
   std::vector<int> injected_pp_index_snapshot;
+  pose target{};
+  bool have_target = false;
   {
     ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
     injected_pp_index_snapshot = injected_pp_index;
+    if (index >= 0 && index < (int)injected_pp_index_snapshot.size()) {
+      target = pp_movements[injected_pp_index_snapshot[index]].target;
+      have_target = true;
+    }
   }
-  if (index < 0 || index >= (int)injected_pp_index_snapshot.size()) return;
-  pose target = pp_movements[injected_pp_index_snapshot[index]].target;
+  if (!have_target) return;
   pid_wait_until_point(target);
 
   // Re-checked against the SAME entry snapshot, after phase 2 too: pid_wait_until_point() now has its
