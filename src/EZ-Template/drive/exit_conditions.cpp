@@ -114,7 +114,7 @@ class StuckWatch {
  public:
   // travelled and turned: how far the robot has moved and turned since the motion started
   StuckWatch(PID& xy, PID& angle, int index, double distance, double travelled, double turned)
-      : xy_(stuck_step(xy), distance, xy.error), a_(stuck_step(angle), std::fabs(angle.error), angle.error), index_(index), window_(stuck_window(xy, angle)), moved_(travelled > xy_.step || turned > a_.step) {
+      : xy_(stuck_step(xy), distance, xy.error), a_(stuck_step(angle), std::fabs(angle.error), angle.error), index_(index), window_(stuck_window(xy, angle)), moved_(travelled > xy_.step || turned > a_.step), a_seed_pass_(stuck_passes()), a_seeded_(false) {
     int allowance = moved_ ? 0 : STUCK_START_ALLOWANCE_MS;
     last_progress_ = pros::millis() + allowance;
     last_progress_pass_ = stuck_passes() + allowance / util::DELAY_TIME;
@@ -133,7 +133,27 @@ class StuckWatch {
       progress = true;
     }
     if (xy_.made(distance, xy_error)) progress = true;
-    if (a_.made(std::fabs(a_error), a_error)) progress = true;
+    // The angle channel's own construction-time seed (angle.error at that moment) can be a leftover
+    // reading from the PREVIOUS motion: motion_reset()/timers_reset() never touch `error`, only a real
+    // compute_error() does, so if this wait's own first tick lands before the background task has
+    // ticked even once since construction, a_error here is still that stale value, not a real one.
+    // Unlike xy_ (seeded from `distance`, a value this call's own caller recomputes fresh every time
+    // from actual position, never from a stored PID field), the angle channel has nothing else to seed
+    // from, so it needs the same freshness guard SingleStuckWatch's own `seeded_` already gives its
+    // single channel: running a stale-to-real jump through made() would read the eventual real, fresh
+    // reading as a shove away from a baseline that was never real, spending Channel's one-shot rebound
+    // leniency on nothing before any genuine disturbance happens. Deferring trust until
+    // stuck_passes() shows the background task has actually ticked since construction, and re-seeding
+    // directly from that first confirmed-fresh reading instead of running it through made(), keeps this
+    // channel's baseline -- and its rebound leniency -- meant for a real disturbance.
+    if (!a_seeded_) {
+      if (pass != a_seed_pass_) {
+        a_ = Channel(a_.step, std::fabs(a_error), a_error);
+        a_seeded_ = true;
+      }
+    } else if (a_.made(std::fabs(a_error), a_error)) {
+      progress = true;
+    }
     if (!moved_ && (travelled > xy_.step || turned > a_.step)) moved_ = progress = true;
     // Before the robot has moved, progress can't cut the start allowance short
     if (progress && (moved_ || (std::int32_t)(now - last_progress_) > 0)) {
@@ -188,6 +208,10 @@ class StuckWatch {
   int index_;
   int window_;
   bool moved_;
+  // stuck_passes() at construction, and whether the angle channel has re-seeded itself from the first
+  // confirmed-fresh reading since -- see the matching comment in stuck() above.
+  std::uint32_t a_seed_pass_;
+  bool a_seeded_;
   std::uint32_t last_progress_, last_progress_pass_;
 };
 
