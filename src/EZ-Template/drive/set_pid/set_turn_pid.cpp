@@ -140,7 +140,7 @@ void Drive::turn_set_internal(double target, int speed, e_angle_behavior behavio
   // Set PID targets
   turnPID.target_set(target);
   headingPID.target_set(target);  // Update heading target for next drive motion
-  pid_speed_max_set(speed);
+  pid_speed_max_set_internal(speed);
 
   // Initialize slew
   slew_turn.initialize(slew_on, max_speed, target, chain_sensor_start);
