@@ -2846,6 +2846,12 @@ class Drive {
   /**
    * Changes max speed during a drive motion.
    *
+   * Also applies mid-motion to a running odom motion (pid_odom_set, pid_odom_pp_set,
+   * pid_odom_injected_pp_set, pid_odom_smooth_pp_set, pid_odom_boomerang_set, pid_odom_ptp_set):
+   * the new cap replaces the stored speed on every remaining point of the path, not just the
+   * current one, and lasts only for the motion currently running -- the next pid_*_set call starts
+   * fresh with its own speed.
+   *
    * \param speed
    *        new clipped speed, between 0 and 127
    */

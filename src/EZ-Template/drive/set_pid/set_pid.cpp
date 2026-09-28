@@ -25,11 +25,28 @@ void Drive::pid_speed_max_set_internal(int speed) {
   slew_swing.speed_max_set(max_speed);
 }
 
-// Updates max speed
+// Updates max speed. On an odom pure-pursuit/boomerang motion currently running, also rewrites
+// the stored speed on every remaining path point (from the one the robot is currently tracking to
+// the end), so raw_pid_odom_ptp_set()'s own re-apply on the next point advance (or, for boomerang,
+// on next tick's carrot recompute) can't silently restore the pre-call speed a few points later --
+// see GitHub issue #536. Unconditional, not "lower only": a later point's own deliberately higher
+// (or lower) stored speed is replaced too, matching how this call already behaves mid-pid_drive_set/
+// pid_turn_set/pid_swing_set. Rewriting max_xy_speed to exactly what max_speed was just set to also
+// means the next point advance's own "did a point ask for a higher speed than what's active" check
+// (raw_pid_odom_ptp_set()'s slew_will_enable_later branch) never sees a mismatch here, so a runtime
+// call can't be mistaken for the path's own point-to-point speed step and wrongly re-arm that ramp.
+// A plain POINT_TO_POINT motion (pid_odom_ptp_set()) never re-applies a stored speed after motion
+// start, so it needs no rewrite -- the internal setter's own slew-cap update already covers it.
 void Drive::pid_speed_max_set(int speed) {
   ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
 
   pid_speed_max_set_internal(speed);
+
+  if (mode == PURE_PURSUIT) {
+    for (std::size_t i = pp_index; i < pp_movements.size(); i++) {
+      pp_movements[i].max_xy_speed = max_speed;
+    }
+  }
 }
 int Drive::pid_speed_max_get() { return max_speed; }
 
