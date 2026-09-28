@@ -3,7 +3,6 @@
 // absolute_angle_to_point in all four quadrants; united_pose_to_pose
 // preserving ANGLE_NOT_SET; curve_scale_clamp holding the joystick curve
 // scale to 0 - MAX_CURVE_SCALE, including infinity and NaN.
-#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
 
 #include "EZ-Template/api.hpp"
