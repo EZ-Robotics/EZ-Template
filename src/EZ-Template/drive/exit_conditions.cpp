@@ -1566,6 +1566,21 @@ void Drive::pid_wait_until_index_started(int index) {
 
     pros::delay(util::DELAY_TIME);
   }
+
+  // The loop's own condition above (pp_index < injected_pp_index_snapshot[index]) is read fresh --
+  // live, unsnapshotted pp_index -- every time control returns from that loop's own trailing
+  // pros::delay(), including the pass right after a concurrent retarget lands during that exact
+  // delay. If the new motion's own path-following task has already advanced pp_index up to or past
+  // the OLD motion's threshold by the time this wait is rescheduled, the condition goes false and
+  // the loop exits without its own retarget guard above ever running again for that pass -- falling
+  // straight through to here instead of noticing the retarget. Re-running the exact same check right
+  // after the loop, regardless of why it exited, catches that case too: harmless (already true) on a
+  // path where the guard above already caught the retarget and broke out, a no-op on a genuinely
+  // clean, un-retargeted finish, and the fix for the case this comment describes.
+  if (mode != mode_snapshot || odom_target_start.x != retarget_target.x || odom_target_start.y != retarget_target.y || odom_target_start.theta != retarget_target.theta) {
+    if (print_toggle) std::cout << "  XY: retargeted by a concurrent motion mid-wait, ending early instead of continuing on the wrong path.\n";
+    interfered_scope.mark();
+  }
 }
 
 void Drive::pid_wait_until_index(int index) {
