@@ -990,9 +990,22 @@ class QPressure : public RQuantity<std::ratio<1>, std::ratio<-1>, std::ratio<-2>
 #endif
 };
 
+// Windows SDK headers (minwindef.h, pulled in transitively by <windows.h>)
+// #define pascal to __stdcall for legacy Pascal-calling-convention code. Any
+// translation unit that includes both <windows.h> and this header on Windows
+// would otherwise fail to parse `pascal` as an identifier here.
+#ifdef pascal
+#pragma push_macro("pascal")
+#undef pascal
+#define EZ_UNITS_RESTORE_PASCAL_MACRO
+#endif
 constexpr QPressure pascal(1.0);
 constexpr QPressure bar = 100000 * pascal;
 constexpr QPressure psi = pound * G / inch2;
+#ifdef EZ_UNITS_RESTORE_PASCAL_MACRO
+#undef EZ_UNITS_RESTORE_PASCAL_MACRO
+#pragma pop_macro("pascal")
+#endif
 
 inline namespace literals {
 constexpr QPressure operator"" _Pa(long double x) {
