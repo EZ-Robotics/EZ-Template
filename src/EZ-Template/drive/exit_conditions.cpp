@@ -72,12 +72,26 @@ int stuck_window(PID& xy, PID& angle) {
 // A single progress channel: has `size` (always >= 0, e.g. a distance or |error|) come down to a new low, a full
 // `step` below the last one, since progress was last credited?  Going past the point (`error`'s sign flipping) and
 // coming back counts, measured from how far past it went, and so does a straight shove that pushes `size` a full
-// step worse without ever crossing the point -- either way only once per channel: a robot being spun or shoved
-// back and forth crosses (or is pushed away from) its target over and over, and only the first excursion gets
-// credited toward a full recovery being required.
+// step worse without ever crossing the point -- either way only once per DISTURBANCE: a robot being spun or shoved
+// back and forth crosses (or is pushed away from) its target over and over, and only the first excursion of a
+// given disturbance gets credited toward a full recovery being required. A later, genuinely separate disturbance
+// gets its own credit again, but only once this one has been recovered from for real -- see `anchor` below for
+// exactly what that requires.
 struct Channel {
   double step, low;
   bool side, rebound = false, rebounded = false;
+  // The `low` this channel stood at right before its current disturbance began -- captured the moment `rebounded`
+  // latches, before the disturbance is allowed to raise `low` at all. Recovering merely past the disturbance's OWN
+  // peak (the `size >= low - step` check just below) is enough to stop counting it as still-ongoing and credit a
+  // step of progress, but that alone isn't enough to consider the disturbance over and done: it's also exactly the
+  // bar a channel oscillating right at the edge clears on every single cycle, by construction, so re-arming there
+  // would re-arm on every poll and defeat the "only once per disturbance" guarantee the class comment above
+  // promises. Instead, re-arming (below) requires `low` to fall a full extra step past THIS `anchor` -- real,
+  // additional headway beyond where the channel already stood before the disturbance hit, not just recovery from
+  // the disturbance itself. A fixed-amplitude oscillation never manufactures that (each cycle's trough lands
+  // above, not below, its own cycle's anchor), while a genuinely separate later disturbance -- one preceded by
+  // real further progress, per the issue's own repro -- clears it before that later disturbance ever begins.
+  double anchor = 0;
   Channel(double p_step, double size, double error) : step(p_step), low(size), side(error > 0) {}
   bool made(double size, double error) {
     // A NaN size/error -- e.g. a caller-supplied NaN target, making every pass' distance/error compute to
@@ -91,12 +105,21 @@ struct Channel {
     if (!std::isfinite(size) || !std::isfinite(error)) return false;
     bool overshot = (error > 0) != side;
     bool shoved = size > low + step;
-    if ((overshot || shoved) && !rebounded) rebound = rebounded = true;
+    if ((overshot || shoved) && !rebounded) {
+      rebound = rebounded = true;
+      anchor = low;
+    }
     side = error > 0;
     if (rebound) low = std::fmax(low, size);
     if (size >= low - step) return false;
     low = size;
     rebound = false;
+    // The current disturbance is only now considered fully closed out -- eligible to let a LATER, separate
+    // disturbance re-latch and get its own leniency -- once recovery has carried `low` a full step past where
+    // this one started, not merely past its own peak. See `anchor`'s comment above for why that margin, not just
+    // "recovered at all", is what keeps a channel oscillating at a fixed amplitude from re-arming itself every
+    // poll.
+    if (rebounded && low < anchor - step) rebounded = false;
     return true;
   }
 };
