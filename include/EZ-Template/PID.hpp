@@ -331,6 +331,20 @@ class PID {
   double derivative = 0.0;
 
  private:
+  // Drive::pid_wait()'s pure-pursuit intermediate-point loop calls exit_condition() every pass but
+  // only ever inspects the result for mA_EXIT, discarding SMALL_EXIT/BIG_EXIT/VELOCITY_EXIT because
+  // xyPID's target there is a moving look-ahead point, not the real one. exit_condition() calls
+  // timers_reset() whenever ANY channel latches, which zeroes the mA timer (l, below) right along
+  // with whichever channel actually fired -- so that discarded channel latching on an irrelevant
+  // error can silently erase real, ongoing over-current progress before it ever reaches mA_timeout
+  // (GitHub issue #527). mA_timer_get()/mA_timer_set() let that one caller compute what l's progress
+  // should have been on its own and restore it after a call whose result it's discarding -- see
+  // exit_conditions.cpp's PURE_PURSUIT intermediate loop. Kept private (not a general PID feature
+  // any other caller needs) with Drive as the only friend that can reach it.
+  friend class Drive;
+  int mA_timer_get() { return l; }
+  void mA_timer_set(int value) { l = value; }
+
   double velocity_zero_main = 0.05;
   double velocity_zero_secondary = 0.075;
   int i = 0, j = 0, k = 0, l = 0, m = 0;

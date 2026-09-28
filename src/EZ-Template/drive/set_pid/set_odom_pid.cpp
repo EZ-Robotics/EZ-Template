@@ -577,7 +577,7 @@ void Drive::raw_pid_odom_ptp_set(odom imovement, bool slew_on, bool is_boomerang
   xyPID.constants_set(pid_drive_consts.kp, pid_drive_consts.ki, pid_drive_consts.kd, pid_drive_consts.start_i);
 
   // Set max speed
-  pid_speed_max_set(imovement.max_xy_speed);
+  pid_speed_max_set_internal(imovement.max_xy_speed);
 
   int slew_min = slew_consts.min_speed;
   if (current_slew_on && slew_will_enable_later && !slew_on && slew_odom_reenabled()) {
