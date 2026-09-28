@@ -114,7 +114,7 @@ class StuckWatch {
  public:
   // travelled and turned: how far the robot has moved and turned since the motion started
   StuckWatch(PID& xy, PID& angle, int index, double distance, double travelled, double turned)
-      : xy_(stuck_step(xy), distance, xy.error), a_(stuck_step(angle), std::fabs(angle.error), angle.error), index_(index), window_(stuck_window(xy, angle)), moved_(travelled > xy_.step || turned > a_.step) {
+      : xy_(stuck_step(xy), distance, xy.error), a_(stuck_step(angle), std::fabs(angle.error), angle.error), index_(index), window_(stuck_window(xy, angle)), moved_(travelled > xy_.step || turned > a_.step), a_seed_pass_(stuck_passes()), a_seeded_(false) {
     int allowance = moved_ ? 0 : STUCK_START_ALLOWANCE_MS;
     last_progress_ = pros::millis() + allowance;
     last_progress_pass_ = stuck_passes() + allowance / util::DELAY_TIME;
@@ -133,7 +133,27 @@ class StuckWatch {
       progress = true;
     }
     if (xy_.made(distance, xy_error)) progress = true;
-    if (a_.made(std::fabs(a_error), a_error)) progress = true;
+    // The angle channel's own construction-time seed (angle.error at that moment) can be a leftover
+    // reading from the PREVIOUS motion: motion_reset()/timers_reset() never touch `error`, only a real
+    // compute_error() does, so if this wait's own first tick lands before the background task has
+    // ticked even once since construction, a_error here is still that stale value, not a real one.
+    // Unlike xy_ (seeded from `distance`, a value this call's own caller recomputes fresh every time
+    // from actual position, never from a stored PID field), the angle channel has nothing else to seed
+    // from, so it needs the same freshness guard SingleStuckWatch's own `seeded_` already gives its
+    // single channel: running a stale-to-real jump through made() would read the eventual real, fresh
+    // reading as a shove away from a baseline that was never real, spending Channel's one-shot rebound
+    // leniency on nothing before any genuine disturbance happens. Deferring trust until
+    // stuck_passes() shows the background task has actually ticked since construction, and re-seeding
+    // directly from that first confirmed-fresh reading instead of running it through made(), keeps this
+    // channel's baseline -- and its rebound leniency -- meant for a real disturbance.
+    if (!a_seeded_) {
+      if (pass != a_seed_pass_) {
+        a_ = Channel(a_.step, std::fabs(a_error), a_error);
+        a_seeded_ = true;
+      }
+    } else if (a_.made(std::fabs(a_error), a_error)) {
+      progress = true;
+    }
     if (!moved_ && (travelled > xy_.step || turned > a_.step)) moved_ = progress = true;
     // Before the robot has moved, progress can't cut the start allowance short
     if (progress && (moved_ || (std::int32_t)(now - last_progress_) > 0)) {
@@ -188,6 +208,10 @@ class StuckWatch {
   int index_;
   int window_;
   bool moved_;
+  // stuck_passes() at construction, and whether the angle channel has re-seeded itself from the first
+  // confirmed-fresh reading since -- see the matching comment in stuck() above.
+  std::uint32_t a_seed_pass_;
+  bool a_seeded_;
   std::uint32_t last_progress_, last_progress_pass_;
 };
 
@@ -822,7 +846,6 @@ void Drive::pid_wait() {
   // Swing Exit
   else if (mode == SWING) {
     exit_output swing_exit = RUNNING;
-    std::vector<pros::Motor>& sensor = current_swing == ez::LEFT_SWING ? left_motors : right_motors;
     // Moved-since-motion-start is judged against chain_sensor_start (set once in swing_set_internal()), not
     // this particular wait call -- see the DRIVE branch's comment above for why, and same JC-1 gap.
     SingleStuckWatch watch(swingPID, swingPID.error, std::fabs(drive_angle_get() - chain_sensor_start) > stuck_step(swingPID));
@@ -846,8 +869,12 @@ void Drive::pid_wait() {
         }
         secondary_velocity_sensor_update(swingPID);
         // See the matching comment in the DRIVE branch above -- a slow (not stalled) swing must not be
-        // ended by the velocity channel alone.
-        swing_exit = swing_exit != RUNNING ? swing_exit : without_velocity(swingPID.exit_condition(sensor));
+        // ended by the velocity channel alone. Polls both sides' motors, not just the actively-swinging
+        // side's, the same as the TURN branch above -- swing_pid_task() (pid_tasks.cpp) actively drives
+        // the held (non-swinging) side with its own PID output whenever swing_opposite_speed is 0 (the
+        // default), so it can genuinely stall/over-current too (e.g. a defender pinning it while the
+        // swinging side is unobstructed); checking only the swinging side's motors missed that entirely.
+        swing_exit = swing_exit != RUNNING ? swing_exit : without_velocity(swingPID.exit_condition(both_sides(left_motors, right_motors)));
         if (swing_exit == RUNNING && watch.stuck(swingPID.error)) {
           // Same settled carve-out as the DRIVE branch above.
           bool settled = std::fabs(swingPID.error) < swingPID.exit.big_error;
@@ -1121,12 +1148,24 @@ void Drive::wait_until_turn_swing_internal(double target) {
 
   // Calculate error between current and target (target needs to be an in between position)
   double g_error = target - drive_angle_get();
-  int g_sgn = util::sgn(g_error);
+  // The direction this checkpoint is expected to close from, taken from the requested target
+  // relative to the motion's own real start (chain_sensor_start, set once when the turn/swing
+  // itself was set -- see turn_set_internal()/swing_set_internal()) rather than from the live
+  // g_error above: g_error still needs a live read (it's the actual crossing check, re-read every
+  // pass below), but seeding its EXPECTED starting sign from a live read taken here, at the top of
+  // this function, means an ordinary caller-side delay between pid_turn_set()/pid_swing_set() and
+  // pid_wait_until() -- no shove or concurrent retarget needed -- can already have carried the
+  // heading past a short checkpoint by the time this reads it, latching the "already past" sign as
+  // the expected one and leaving the crossing check below waiting for a flip that may never come,
+  // since the motion only keeps moving further from the checkpoint from there. target's own sign
+  // relative to where the motion actually started can't go stale this way, exactly the same
+  // reasoning wait_until_drive() already uses for its own l_sgn/r_sgn (see its comment) -- and
+  // chain_sensor_start is this function's own equivalent of that function's l_start/r_start,
+  // already used the same way by used_motion_chain_scale and the mid-loop stuck watches below.
+  int g_sgn = util::sgn(target - chain_sensor_start);
 
   exit_output turn_exit = RUNNING;
   exit_output swing_exit = RUNNING;
-
-  std::vector<pros::Motor>& sensor = current_swing == ez::LEFT_SWING ? left_motors : right_motors;
 
   // Same concurrent-retarget guard as pid_wait()'s TURN/SWING branches -- this function had none, unlike
   // every other wait.  A concurrent pid_turn_set()/pid_turn_relative_set()/pid_swing_set() (or any other
@@ -1186,12 +1225,11 @@ void Drive::wait_until_turn_swing_internal(double target) {
   // leftover/zero error instead of a real, computed one; the jump from that artifact to the real
   // error then consumes Channel's one-shot rebound allowance (see Channel's own comment above) on
   // an artifact instead of a real disturbance, so the wait's first genuine disturbance can get
-  // treated as a second one and false-stuck. g_error/g_sgn above are computed from a live read
-  // BEFORE this delay, on purpose -- they're this loop's "have we crossed the target" check, and
-  // reading them only after this delay would let a very short wait_until() target already be
-  // behind the robot by the time it's read, latching the wrong starting sign (see the matching
-  // comment in wait_until_drive() on why ITS crossed-check sign is taken from target's own sign
-  // instead, which sidesteps this same hazard a different way).
+  // treated as a second one and false-stuck. g_error above is only read once here to have some
+  // value before the loop below overwrites it fresh every pass with the real "have we crossed the
+  // target" check; g_sgn (see its own comment above) no longer comes from a live read at all, so
+  // unlike before that fix, moving this delay earlier or later can't change which starting sign it
+  // latches.
   pros::delay(util::DELAY_TIME);
 
   // Same JC-1 progress backstop as pid_wait()'s TURN/SWING branches -- see the comment there. Moved-since-
@@ -1273,8 +1311,9 @@ void Drive::wait_until_turn_swing_internal(double target) {
         if (swing_exit == RUNNING) {
           secondary_velocity_sensor_update(swingPID);
           // See the matching comment in pid_wait()'s DRIVE branch -- a slow (not stalled) swing must not
-          // be ended by the velocity channel alone.
-          swing_exit = swing_exit != RUNNING ? swing_exit : without_velocity(swingPID.exit_condition(sensor));
+          // be ended by the velocity channel alone. Polls both sides' motors, not just the actively-swinging
+          // side's -- see pid_wait()'s SWING branch for why the held side needs checking too.
+          swing_exit = swing_exit != RUNNING ? swing_exit : without_velocity(swingPID.exit_condition(both_sides(left_motors, right_motors)));
           if (swing_exit == RUNNING && swing_watch.stuck(swingPID.error)) {
             // Same settled carve-out as pid_wait()'s SWING branch, gated to only apply when this
             // wait_until()'s target really is the motion's final target -- see swing_at_final_target's

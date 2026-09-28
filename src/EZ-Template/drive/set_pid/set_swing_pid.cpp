@@ -369,7 +369,7 @@ void Drive::swing_set_internal(e_swing type, double target, int speed, int oppos
   // Set PID targets
   swingPID.target_set(target);
   headingPID.target_set(target);  // Update heading target for next drive motion
-  pid_speed_max_set(speed);
+  pid_speed_max_set_internal(speed);
   swing_opposite_speed = opposite_speed;
 
   // Initialize slew
