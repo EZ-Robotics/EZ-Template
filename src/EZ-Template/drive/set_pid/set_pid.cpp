@@ -10,15 +10,26 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include "EZ-Units/units.hpp"
 
 namespace ez {
-// Updates max speed
-void Drive::pid_speed_max_set(int speed) {
-  ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
-
+// The part of pid_speed_max_set() every internal caller needs: just the clamp and the slew caps,
+// no odom path rewrite. Callers already hold drive_mutex (raw_pid_odom_ptp_set(), and the drive/
+// turn/swing setters' own re-apply of the motion's own speed at motion start) -- routing them
+// through the public pid_speed_max_set() would make its odom-path rewrite (added for mid-motion
+// speed changes) run on every point advance using that point's own already-correct speed, and,
+// worse, run inside pid_drive_set()/pid_turn_set()/pid_swing_set() while mode still reads
+// PURE_PURSUIT from the previous motion, rewriting a path that motion no longer owns.
+void Drive::pid_speed_max_set_internal(int speed) {
   max_speed = std::fabs(util::clamp(speed, 127, -127));
   slew_left.speed_max_set(max_speed);
   slew_right.speed_max_set(max_speed);
   slew_turn.speed_max_set(max_speed);
   slew_swing.speed_max_set(max_speed);
+}
+
+// Updates max speed
+void Drive::pid_speed_max_set(int speed) {
+  ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+
+  pid_speed_max_set_internal(speed);
 }
 int Drive::pid_speed_max_get() { return max_speed; }
 
