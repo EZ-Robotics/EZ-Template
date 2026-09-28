@@ -822,7 +822,6 @@ void Drive::pid_wait() {
   // Swing Exit
   else if (mode == SWING) {
     exit_output swing_exit = RUNNING;
-    std::vector<pros::Motor>& sensor = current_swing == ez::LEFT_SWING ? left_motors : right_motors;
     // Moved-since-motion-start is judged against chain_sensor_start (set once in swing_set_internal()), not
     // this particular wait call -- see the DRIVE branch's comment above for why, and same JC-1 gap.
     SingleStuckWatch watch(swingPID, swingPID.error, std::fabs(drive_angle_get() - chain_sensor_start) > stuck_step(swingPID));
@@ -846,8 +845,12 @@ void Drive::pid_wait() {
         }
         secondary_velocity_sensor_update(swingPID);
         // See the matching comment in the DRIVE branch above -- a slow (not stalled) swing must not be
-        // ended by the velocity channel alone.
-        swing_exit = swing_exit != RUNNING ? swing_exit : without_velocity(swingPID.exit_condition(sensor));
+        // ended by the velocity channel alone. Polls both sides' motors, not just the actively-swinging
+        // side's, the same as the TURN branch above -- swing_pid_task() (pid_tasks.cpp) actively drives
+        // the held (non-swinging) side with its own PID output whenever swing_opposite_speed is 0 (the
+        // default), so it can genuinely stall/over-current too (e.g. a defender pinning it while the
+        // swinging side is unobstructed); checking only the swinging side's motors missed that entirely.
+        swing_exit = swing_exit != RUNNING ? swing_exit : without_velocity(swingPID.exit_condition(both_sides(left_motors, right_motors)));
         if (swing_exit == RUNNING && watch.stuck(swingPID.error)) {
           // Same settled carve-out as the DRIVE branch above.
           bool settled = std::fabs(swingPID.error) < swingPID.exit.big_error;
@@ -1126,8 +1129,6 @@ void Drive::wait_until_turn_swing_internal(double target) {
   exit_output turn_exit = RUNNING;
   exit_output swing_exit = RUNNING;
 
-  std::vector<pros::Motor>& sensor = current_swing == ez::LEFT_SWING ? left_motors : right_motors;
-
   // Same concurrent-retarget guard as pid_wait()'s TURN/SWING branches -- this function had none, unlike
   // every other wait.  A concurrent pid_turn_set()/pid_turn_relative_set()/pid_swing_set() (or any other
   // motion setter) mid-wait retargets turnPID/swingPID and moves mode along with it, so both the specific
@@ -1273,8 +1274,9 @@ void Drive::wait_until_turn_swing_internal(double target) {
         if (swing_exit == RUNNING) {
           secondary_velocity_sensor_update(swingPID);
           // See the matching comment in pid_wait()'s DRIVE branch -- a slow (not stalled) swing must not
-          // be ended by the velocity channel alone.
-          swing_exit = swing_exit != RUNNING ? swing_exit : without_velocity(swingPID.exit_condition(sensor));
+          // be ended by the velocity channel alone. Polls both sides' motors, not just the actively-swinging
+          // side's -- see pid_wait()'s SWING branch for why the held side needs checking too.
+          swing_exit = swing_exit != RUNNING ? swing_exit : without_velocity(swingPID.exit_condition(both_sides(left_motors, right_motors)));
           if (swing_exit == RUNNING && swing_watch.stuck(swingPID.error)) {
             // Same settled carve-out as pid_wait()'s SWING branch, gated to only apply when this
             // wait_until()'s target really is the motion's final target -- see swing_at_final_target's
