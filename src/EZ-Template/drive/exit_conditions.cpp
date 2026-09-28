@@ -14,6 +14,16 @@ using namespace ez;
 namespace {
 static constexpr int STUCK_START_ALLOWANCE_MS = 1000;  // PID::VELOCITY_ARM_FALLBACK, which is private
 static constexpr int STUCK_STARVED_WINDOWS = 4;
+// How many times pid_wait()'s DRIVE branch will reseed one side's SingleStuckWatch when its
+// latched-side recheck un-latches it (see that recheck's own comment on the tradeoff this bounds).
+// A realistic disturbance -- the issue #532 repro, or even a couple of genuinely distinct
+// disturbances landing on the same side across one wait -- needs at most a handful of these. Past
+// this many, that side falls back to the old, un-reseeded (frozen-clock) behavior for the rest of
+// THIS wait: bounded, at the cost of losing the fresh-window benefit for any further relatches on
+// that side. This only matters for a side that keeps relatching this many times over in a single
+// wait, which a real, resolving disturbance doesn't do -- see
+// test_drive_boundary_hover_resolves_via_rearm_cap.cpp for the pathological case this exists for.
+static constexpr int STUCK_WATCH_REARM_CAP = 4;
 // How close a wait_until() target has to be to the motion's actual final target to count as
 // literally the same target, not just a waypoint short of it -- used only to decide whether
 // wait_until_drive()/wait_until_turn_swing_internal() get the same "settled inside big error
@@ -492,6 +502,12 @@ void Drive::pid_wait() {
     // ordinary "until then wait" pattern) doesn't pay SingleStuckWatch's startup allowance a second time.
     SingleStuckWatch left_watch(leftPID, leftPID.error, std::fabs(drive_sensor_left() - l_start) > stuck_step(leftPID)),
         right_watch(rightPID, rightPID.error, std::fabs(drive_sensor_right() - r_start) > stuck_step(rightPID));
+    // How many times the recheck below has reseeded each side's watch on an un-latch -- see
+    // STUCK_WATCH_REARM_CAP's own comment. Local to this one pid_wait() call, same as the watches
+    // themselves, so every new wait starts a fresh count regardless of how many times a previous
+    // wait on this same motion used up its own cap.
+    int left_stuck_watch_rearm_count = 0;
+    int right_stuck_watch_rearm_count = 0;
     bool stalled = false;
     // A stuck-but-settled break below is its own, already-final decision (at least one side never
     // finished its own exit timer at all -- still RUNNING -- but the stuck watch gave up waiting on
@@ -562,27 +578,47 @@ void Drive::pid_wait() {
       // happens to land on this recheck gets flagged stuck instantly, with zero real grace period.
       // Reseeding here -- the same construction used when a motion's wait first starts, with
       // `already_moved=true` since this side plainly already moved to have latched in the first
-      // place -- gives the newly-unlatched disturbance a genuinely fresh window instead. The known
-      // cost, accepted deliberately: a pathological hover right at the exit window's edge (latch,
-      // drift out, un-latch, re-latch, ...) now gets a fresh grace period on every cycle too, instead
-      // of the bound on repeated relatching this used to provide -- weighed against the more common
-      // false positive above and decided in favor of reseeding. VELOCITY_EXIT is never latched here
+      // place -- gives the newly-unlatched disturbance a genuinely fresh window instead.
+      //
+      // Bounded by STUCK_WATCH_REARM_CAP, not unconditional: reseeding every single relatch forever
+      // measurably hangs pid_wait() outright for a side that keeps oscillating right at its own
+      // small_error boundary (each un-latch here resets this watch's clock at the same moment PID's
+      // OWN small/big-exit timers also reset on their own boundary crossing, so a relatch cadence
+      // faster than this watch's window starves BOTH backstops indefinitely -- confirmed, not just
+      // theorized: see the PR discussion on issue #532 for the measured repro). Past the cap, this
+      // side stops being reseeded for the rest of THIS wait and falls back to the pre-fix un-reseeded
+      // behavior -- its own frozen clock is what eventually ends a relatch loop like that, same as it
+      // did before this fix existed, bounding the pathological case while a realistic, resolving
+      // disturbance (which relatches at most a handful of times, not dozens) never comes close to the
+      // cap and keeps getting the fresh-window fix in full. VELOCITY_EXIT is never latched here
       // (without_velocity() already maps it to RUNNING); mA_EXIT and ERROR_NO_CONSTANTS aren't
       // window exits and are left alone -- the final check below still catches mA_EXIT/VELOCITY_EXIT
       // regardless of this recheck.
       if (left_exit == SMALL_EXIT && std::fabs(leftPID.error) >= leftPID.exit.small_error) {
         left_exit = RUNNING;
-        left_watch = SingleStuckWatch(leftPID, leftPID.error, true);
+        if (left_stuck_watch_rearm_count < STUCK_WATCH_REARM_CAP) {
+          left_watch = SingleStuckWatch(leftPID, leftPID.error, true);
+          ++left_stuck_watch_rearm_count;
+        }
       } else if (left_exit == BIG_EXIT && std::fabs(leftPID.error) >= leftPID.exit.big_error) {
         left_exit = RUNNING;
-        left_watch = SingleStuckWatch(leftPID, leftPID.error, true);
+        if (left_stuck_watch_rearm_count < STUCK_WATCH_REARM_CAP) {
+          left_watch = SingleStuckWatch(leftPID, leftPID.error, true);
+          ++left_stuck_watch_rearm_count;
+        }
       }
       if (right_exit == SMALL_EXIT && std::fabs(rightPID.error) >= rightPID.exit.small_error) {
         right_exit = RUNNING;
-        right_watch = SingleStuckWatch(rightPID, rightPID.error, true);
+        if (right_stuck_watch_rearm_count < STUCK_WATCH_REARM_CAP) {
+          right_watch = SingleStuckWatch(rightPID, rightPID.error, true);
+          ++right_stuck_watch_rearm_count;
+        }
       } else if (right_exit == BIG_EXIT && std::fabs(rightPID.error) >= rightPID.exit.big_error) {
         right_exit = RUNNING;
-        right_watch = SingleStuckWatch(rightPID, rightPID.error, true);
+        if (right_stuck_watch_rearm_count < STUCK_WATCH_REARM_CAP) {
+          right_watch = SingleStuckWatch(rightPID, rightPID.error, true);
+          ++right_stuck_watch_rearm_count;
+        }
       }
 
       if (left_exit == RUNNING || right_exit == RUNNING) {
