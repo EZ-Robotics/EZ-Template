@@ -1285,8 +1285,33 @@ void Drive::wait_until_drive(double target) {
 
 // Function to wait until a certain position is reached.  Wrapper for exit condition.
 void Drive::wait_until_turn_swing(double target) {
-  // Resolve using the motion's own behavior
-  target = new_turn_target_compute(target, drive_angle_get(), current_angle_behavior);
+  // Resolve the checkpoint once, against the motion's own path (chain_sensor_start to
+  // chain_target_start, both set once by the turn/swing setter), not against the live heading.
+  // Re-resolving against the live heading under cw/ccw/longest pushes a checkpoint the robot already
+  // passed, or one on a longest motion's long way round, a whole revolution away from where the
+  // motion actually goes, so the crossing check never fires. Of the headings equivalent to the
+  // requested one (+/- whole revolutions), take the one closest to the motion's path: a checkpoint
+  // on the path resolves to its point on the path, whatever the behavior. raw is absolute and left
+  // as given, the same as the setters leave it.
+  if (current_angle_behavior != raw) {
+    double lo = std::fmin(chain_sensor_start, chain_target_start);
+    double hi = std::fmax(chain_sensor_start, chain_target_start);
+    double k0 = std::round(((lo + hi) / 2.0 - target) / 360.0);
+    double best = target + 360.0 * k0;
+    double best_dist = std::fmax(0.0, std::fmax(lo - best, best - hi));
+    for (double k = k0 - 1.0; k <= k0 + 1.0; k += 1.0) {
+      double candidate = target + 360.0 * k;
+      double dist = std::fmax(0.0, std::fmax(lo - candidate, candidate - hi));
+      // On a tie (a motion longer than a revolution), take the earlier crossing
+      bool closer = dist < best_dist - 1e-9;
+      bool tied_earlier = std::fabs(dist - best_dist) <= 1e-9 && std::fabs(candidate - chain_sensor_start) < std::fabs(best - chain_sensor_start);
+      if (closer || tied_earlier) {
+        best = candidate;
+        best_dist = dist;
+      }
+    }
+    target = best;
+  }
   wait_until_turn_swing_internal(target);
 }
 
