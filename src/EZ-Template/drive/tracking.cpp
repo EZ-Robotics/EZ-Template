@@ -130,7 +130,8 @@ ez::pose Drive::solve_xy_horiz(float p_track_width, float current_t, float delta
   if (delta_t != 0) {
     half_delta_t = delta_t / 2.0;
     float i = std::sin(half_delta_t) * 2.0;
-    local_y = (delta_horiz / delta_t + p_track_width) * i;
+    // Positive delta_horiz is the robot moving left, same sign convention as solve_xy_vert's forward
+    local_y = (delta_horiz / delta_t - p_track_width) * i;
   }
 
   float alpha = current_t - half_delta_t;
