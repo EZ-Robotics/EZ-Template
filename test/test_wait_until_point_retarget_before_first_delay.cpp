@@ -99,6 +99,16 @@ void refresh_odom_pids() {
   DriveTestAccess::refresh(g_chassis->xyPID);
   DriveTestAccess::refresh(g_chassis->current_a_odomPID);
 }
+
+// Same refresh, plus a real step of pure pursuit's own index -- neither pid_wait_until_index_started()
+// nor pid_wait_until_point() (before pure pursuit's last point) ever trusts xy's position exit as a
+// clean finish on its own (see exit_conditions.cpp); a control that wants pid_wait_until_index() to
+// finish on the same schedule it did before that fix needs pp_index to genuinely get where it's going.
+void advance_pp_index_and_refresh_odom_pids() {
+  refresh_odom_pids();
+  int& idx = DriveTestAccess::pp_index(*g_chassis);
+  idx = std::min(idx + 1, (int)DriveTestAccess::pp_movements(*g_chassis).size() - 1);
+}
 }  // namespace
 
 TEST_CASE("pid_wait_until_point(): a cross-mode retarget landing during the leading settle delay is caught, not silently absorbed") {
@@ -222,12 +232,12 @@ TEST_CASE("pid_wait_until_index(): an ordinary, un-retargeted call still returns
   for (int i = 1; i <= 10; i++) path.push_back({{0.0, 7.0 + i, ANGLE_NOT_SET}, fwd, 100});
   chassis.pid_odom_pp_set(path);
 
-  // Nothing else advances pp_index in this control (see refresh_odom_pids()'s own comment) -- phase 1
-  // (pid_wait_until_index_started()) only ever falls out of its own loop here via its xy/a exit
-  // latching, same as phase 2 below, so both need a real compute landing every pass to stay on the
-  // same schedule this test had before PID.cpp's freshness gate existed.
+  // Neither phase 1 (pid_wait_until_index_started()) nor phase 2 (pid_wait_until_point(), before pure
+  // pursuit's last point) trusts xy's position exit as a clean finish on its own -- see
+  // advance_pp_index_and_refresh_odom_pids()'s own comment -- so this control needs pp_index to
+  // genuinely advance to stay on the same schedule this test had before that fix.
   g_chassis = &chassis;
-  test_stub::g_clock.on_delay = refresh_odom_pids;
+  test_stub::g_clock.on_delay = advance_pp_index_and_refresh_odom_pids;
   test_stub::g_clock.delay_calls_until_stop = 400;
   bool returned = true;
   try {
