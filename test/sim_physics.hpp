@@ -194,6 +194,14 @@ class SimRobot {
  public:
   SimRobot(ez::Drive& drive, SimArchetype archetype, NoiseConfig noise = {})
       : drive_(drive), archetype_(archetype), noise_(noise), rng_(noise.seed) {
+    // Whatever the fake IMU holds right now is the sim's own baseline, replaced by the physical heading on
+    // the first tick as it always was. Only a write made after this point is adopted as an offset (see
+    // write_back()'s IMU comment).
+    auto& imus = ez::DriveTestAccess::all_imus(drive_);
+    if (imus.size() > 0) {
+      imu_last_written_ = imus[0]->fake_rotation;
+      imu_written_ = true;
+    }
     install(this);
   }
   ~SimRobot() {
@@ -203,6 +211,9 @@ class SimRobot {
   SimRobot(const SimRobot&) = delete;
   SimRobot& operator=(const SimRobot&) = delete;
 
+  // Off by default: the sim runs the per-mode task bodies itself (run_auto_task_pass()). On: it runs the real
+  // ez_auto_task() once per tick instead.
+  void use_real_auto_task(bool on) { use_real_auto_task_ = on; }
   double heading_deg() const { return heading_deg_; }
   const SideState& left() const { return left_; }
   const SideState& right() const { return right_; }
@@ -248,8 +259,28 @@ class SimRobot {
   // never calls ez_auto_task() itself, which is the one function that both contains this logic
   // AND ends with its own pros::delay(), which would re-enter on_delay from inside on_delay.
   void tick() {
-    run_auto_task_pass();
+    if (use_real_auto_task_) run_real_auto_task_pass();
+    else run_auto_task_pass();
     step_physics(ez::util::DELAY_TIME / 1000.0);
+  }
+
+  // One pass of the real ez_auto_task(), for tests that need what run_auto_task_pass() leaves out: the
+  // competition-status handling and everything else that function does around the per-mode task bodies.
+  // ez_auto_task() ends in its own pros::delay(), which would re-enter this hook and advance the fake clock a
+  // second time, so the hook is parked and the loop is unwound with StopLoop, and the extra DELAY_TIME the
+  // inner delay added is taken back out.
+  void run_real_auto_task_pass() {
+    auto saved_hook = test_stub::g_clock.on_delay;
+    int saved_stop = test_stub::g_clock.delay_calls_until_stop;
+    test_stub::g_clock.on_delay = nullptr;
+    test_stub::g_clock.delay_calls_until_stop = 0;
+    try {
+      ez::DriveTestAccess::ez_auto_task(drive_);
+    } catch (test_stub::StopLoop&) {
+    }
+    test_stub::g_clock.now_ms -= ez::util::DELAY_TIME;
+    test_stub::g_clock.on_delay = saved_hook;
+    test_stub::g_clock.delay_calls_until_stop = saved_stop;
   }
 
   void run_auto_task_pass() {
@@ -513,8 +544,22 @@ class SimRobot {
       // are unaffected: heading stays near 0 there regardless of sign convention. Negating here, not
       // the yaw formula itself, keeps step_physics()'s internal force/torque bookkeeping consistent
       // and only fixes what's handed to the one consumer that has an external sign convention to match.
-      double reported_heading = -heading_deg_ + gaussian(archetype_.imu_noise_stddev_deg);
+      //
+      // The sim owns this register, but the library (drive_angle_set(), odom_xyt_set(), odom_pose_set()) and
+      // tests also write it between ticks to say "the heading is now X". Overwriting it from the physical
+      // heading every tick silently undid those, so a robot set to 180 read 0 again one tick later. A write
+      // the sim did not make is instead adopted as an offset the sim adds to its own physical heading, the
+      // way a real IMU's set_rotation() shifts its reading without moving the robot. The constructor
+      // records the register's starting value, so one a test left there before the sim existed is still
+      // replaced by the first tick, as it always was.
+      if (imu_written_ && imus[0]->fake_rotation != imu_last_written_) {
+        imu_offset_deg_ = imus[0]->fake_rotation + imu_heading_at_write_deg_;
+      }
+      double reported_heading = -heading_deg_ + imu_offset_deg_ + gaussian(archetype_.imu_noise_stddev_deg);
       imus[0]->fake_rotation = reported_heading;
+      imu_last_written_ = reported_heading;
+      imu_heading_at_write_deg_ = heading_deg_;
+      imu_written_ = true;
     }
   }
 
@@ -524,6 +569,13 @@ class SimRobot {
   std::mt19937 rng_;
   SideState left_, right_;
   double heading_deg_ = 0.0;
+  // See write_back()'s IMU comment: what the sim last wrote to the fake IMU, the physical heading at that
+  // moment, and the offset a foreign write to the register (set_rotation) has added since.
+  bool use_real_auto_task_ = false;
+  bool imu_written_ = false;
+  double imu_last_written_ = 0.0;
+  double imu_heading_at_write_deg_ = 0.0;
+  double imu_offset_deg_ = 0.0;
   // Robot-level translational/rotational state -- see step_physics()'s header comment for why
   // these exist instead of deriving everything from left_/right_.velocity_in_s directly.
   double common_velocity_in_s_ = 0.0;
