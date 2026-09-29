@@ -214,6 +214,19 @@ class SimRobot {
   // Off by default: the sim runs the per-mode task bodies itself (run_auto_task_pass()). On: it runs the real
   // ez_auto_task() once per tick instead.
   void use_real_auto_task(bool on) { use_real_auto_task_ = on; }
+  // Moves both wheels `inches` along the robot's heading at once, without giving the robot any velocity: what being
+  // pushed a short way and let go looks like to the sensors. The motors read the new position right away, not only
+  // after the next tick.
+  void displace(double inches) {
+    left_.position_in += inches;
+    right_.position_in += inches;
+    double tick_per_inch = drive_.drive_tick_per_inch();
+    for (auto* side : {&drive_.left_motors, &drive_.right_motors}) {
+      double pos = (side == &drive_.left_motors ? left_.position_in : right_.position_in) * tick_per_inch;
+      for (auto& m : *side)
+        if (!drive_.pto_check(m)) m.fake().position = pos;
+    }
+  }
   double heading_deg() const { return heading_deg_; }
   const SideState& left() const { return left_; }
   const SideState& right() const { return right_; }
