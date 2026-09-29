@@ -175,5 +175,9 @@ class tracking_wheel {
   // fresh reading or fell back to this one. See get_raw()/last_read_ok().
   double last_good_raw = 0.0;
   bool last_read_ok_ = true;
+
+  // -1 for a Rotation sensor built with a negative port, applied to its reading in get_raw().  The sensor itself is
+  // never told it is reversed, so smart_encoder always reports its own, unreversed value.
+  double rotation_sign_ = 1.0;
 };
 };  // namespace ez

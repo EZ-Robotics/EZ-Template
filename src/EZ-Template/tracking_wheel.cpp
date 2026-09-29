@@ -59,7 +59,11 @@ tracking_wheel::tracking_wheel(int port, double wheel_diameter, double distance_
     : adi_encoder(-1, -1, false),
       smart_encoder(std::abs(port)) {
   IS_TRACKER = DRIVE_ROTATION;
-  smart_encoder.set_reversed(util::reversed_active(port));
+  // Reversed in software, never on the sensor: teams build tracking wheels at global scope, so this constructor runs
+  // before the sensor is up, and a reverse flag set on a V5 Rotation sensor that early can be lost, or leave the
+  // starting position reading as x or 36000 - x. No device configuration call happens at global scope. (The
+  // ADI encoder's reversal below is passed to its constructor and PROS applies it in software.)
+  rotation_sign_ = util::reversed_active(port) ? -1.0 : 1.0;
 
   distance_to_center_set(distance_to_center);
   wheel_diameter_set(wheel_diameter);
@@ -98,7 +102,9 @@ double tracking_wheel::get_raw() {
   double raw = (IS_TRACKER == DRIVE_ROTATION) ? (double)smart_encoder.get_position() : (double)adi_encoder.get_value();
 
   last_read_ok_ = std::isfinite(raw) && raw != PROS_ERR && raw != PROS_ERR_F;
-  if (last_read_ok_) last_good_raw = raw;
+  // The sign is applied after the failed-read check (PROS_ERR must never be negated into a plausible value), and
+  // last_good_raw keeps the signed reading so a fallback, and reset()'s zero, stay consistent with it.
+  if (last_read_ok_) last_good_raw = raw * (IS_TRACKER == DRIVE_ROTATION ? rotation_sign_ : 1.0);
   return last_good_raw;
 }
 bool tracking_wheel::last_read_ok() { return last_read_ok_; }
