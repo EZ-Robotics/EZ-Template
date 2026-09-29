@@ -55,6 +55,10 @@ void Drive::drive_angle_set(double angle) {
 
   headingPID.target_set(angle);
   drive_imu_reset(angle);
+  // Also the pose odom_theta_get() reports: odom_current.theta is otherwise only refreshed on the next tracking
+  // pass, and an odom motion started right after this call seeds its angle PID from odom_theta_get(). x and y do the
+  // same in odom_x_set()/odom_y_set().
+  odom_current.theta = angle;
   central_pose.theta = angle;
   l_pose.theta = angle;
   r_pose.theta = angle;
