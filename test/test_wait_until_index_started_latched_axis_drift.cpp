@@ -150,7 +150,8 @@ TEST_CASE("pid_wait_until_index_started rechecks a latched angle exit, so a post
 // Control: the identical closing shape, but angle is never bumped after latching -- stays at 0 for
 // the rest of the run -- AND pp_index genuinely advances to its checkpoint, instead of sitting frozen
 // like every other script in this file. This function no longer trusts xy's own position exit as a
-// clean finish before its checkpoint at all (this fix's own change, exit_conditions.cpp) -- so a wait
+// clean finish before its checkpoint at all (xy's window exits are now discarded there entirely, see
+// exit_conditions.cpp's pid_wait_until_index_started()) -- so a wait
 // that settles but never actually gets anywhere has no legitimate "clean success" left to have; the
 // only thing this control can still prove is that a wait which BOTH settles AND genuinely arrives gets
 // a clean, uninterfered finish, not a false late exit from the recheck this file is about.

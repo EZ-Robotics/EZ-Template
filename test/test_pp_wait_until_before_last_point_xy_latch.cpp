@@ -7,9 +7,9 @@
 // window for an entire leg, latching a "clean" exit hundreds of times short of the actual checkpoint.
 //
 // These tests script what the odom waits read, pass by pass, through the fake clock's on_delay hook -- the
-// same technique test_pp_wait_stuck.cpp uses, and for the same reason: nothing in this host build actually runs
-// ez_auto_task or pp_task as a background task, so a test that wants pp_index (or the robot's real position) to
-// move across many passes has to move it itself.
+// same technique test_pp_wait_stuck.cpp uses, to isolate the exact mechanism with a controlled, exact error
+// band and an exact pp_index schedule. SimRobot (sim_physics.hpp) can run a real pp_task() pass every tick
+// instead; test_pp_wait_until_tight_look_ahead_sim.cpp does that for the same shapes against real physics.
 #include <cmath>
 #include <functional>
 

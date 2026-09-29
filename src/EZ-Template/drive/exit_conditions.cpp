@@ -30,7 +30,7 @@ static constexpr int STUCK_WATCH_REARM_CAP = 4;
 // floor -- unaffected by this cap either way), so an uncapped small_error lets a team's own tuning raise the
 // speed a robot has to beat to not be called stuck. Loosening small_error to go faster is exactly what a team
 // tuning for speed does; it must not also raise this floor. Shortening a wait's own velocity_exit_time (the
-// window, not the step) still raises the floor -- deliberately left alone, see the PR this cap shipped in.
+// window, not the step) still raises the floor -- deliberately left alone, a separate design call.
 static constexpr double STUCK_STEP_DISTANCE_CAP = 1.0;
 static constexpr double STUCK_STEP_ANGLE_CAP = 3.0;
 // How close a wait_until() target has to be to the motion's actual final target to count as
