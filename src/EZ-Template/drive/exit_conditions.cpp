@@ -1785,12 +1785,31 @@ void Drive::pid_wait_until_index(int index) {
   // own scope already asserted.
   InterferedScope interfered_scope(*this);
 
+  // Whether this motion was already reported blocked before phase 1 ran (an earlier wait on the same motion),
+  // and which motion that is, so phase 1's own result can be told apart below.
+  bool interfered_before;
+  std::uint32_t generation_before;
+  {
+    ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+    generation_before = motion_generation;
+    interfered_before = interfered && interfered_generation == generation_before;
+  }
+
   pid_wait_until_index_started(index);
 
   if (mode != mode_snapshot || odom_target_start.x != retarget_target.x || odom_target_start.y != retarget_target.y || odom_target_start.theta != retarget_target.theta) {
     if (print_toggle) std::cout << "  XY: retargeted by a concurrent motion mid-wait, ending early instead of continuing on the wrong path.\n";
     interfered_scope.mark();
     return;
+  }
+
+  // Phase 1 ended because the robot is blocked (stuck, over current, or velocity exit): that is this call's
+  // answer. Running phase 2 anyway would restart its over-current and stuck timers and take up to twice as
+  // long as pid_wait() to report the same stall. Phase 1 already marked interfered under this motion, and
+  // this scope's destructor leaves that alone.
+  {
+    ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+    if (!interfered_before && interfered && interfered_generation == generation_before && motion_generation == generation_before) return;
   }
 
   index += 1;
