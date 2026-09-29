@@ -24,6 +24,15 @@ static constexpr int STUCK_STARVED_WINDOWS = 4;
 // wait, which a real, resolving disturbance doesn't do -- see
 // test_drive_boundary_hover_resolves_via_rearm_cap.cpp for the pathological case this exists for.
 static constexpr int STUCK_WATCH_REARM_CAP = 4;
+// The ceiling stuck_step() ever hands a stuck watch, regardless of how loose a team's own small_error is --
+// the shipped defaults (drive_defaults_set(), drive.cpp): 1 in for xy/DRIVE, 3 deg for TURN/SWING/angle. A
+// stuck watch's floor speed is small_error/window (or, with small_error unset, the velocity exit's own noise
+// floor -- unaffected by this cap either way), so an uncapped small_error lets a team's own tuning raise the
+// speed a robot has to beat to not be called stuck. Loosening small_error to go faster is exactly what a team
+// tuning for speed does; it must not also raise this floor. Shortening a wait's own velocity_exit_time (the
+// window, not the step) still raises the floor -- deliberately left alone, a separate design call.
+static constexpr double STUCK_STEP_DISTANCE_CAP = 1.0;
+static constexpr double STUCK_STEP_ANGLE_CAP = 3.0;
 // How close a wait_until() target has to be to the motion's actual final target to count as
 // literally the same target, not just a waypoint short of it -- used only to decide whether
 // wait_until_drive()/wait_until_turn_swing_internal() get the same "settled inside big error
@@ -49,8 +58,8 @@ std::uint32_t stuck_passes() { return ez::detail::stats.auto_task_passes.load(st
 // velocity_zero_main directly, un-scaled by the window, keeps the same per-pass noise floor without
 // reintroducing that speed gate: any single pass' worth of real forward motion above the noise floor
 // still counts as a new low, at any cruise speed.
-double stuck_step(PID& pid) {
-  if (pid.exit.small_error > 0) return pid.exit.small_error;
+double stuck_step(PID& pid, double cap) {
+  if (pid.exit.small_error > 0) return std::fmin(pid.exit.small_error, cap);
   return pid.velocity_sensor_main_exit_get();
 }
 
@@ -147,7 +156,7 @@ class StuckWatch {
  public:
   // travelled and turned: how far the robot has moved and turned since the motion started
   StuckWatch(PID& xy, PID& angle, int index, double distance, double travelled, double turned)
-      : xy_(stuck_step(xy), distance, xy.error), a_(stuck_step(angle), std::fabs(angle.error), angle.error), index_(index), window_(stuck_window(xy, angle)), moved_(travelled > xy_.step || turned > a_.step), a_seed_pass_(stuck_passes()), a_seeded_(false) {
+      : xy_(stuck_step(xy, STUCK_STEP_DISTANCE_CAP), distance, xy.error), a_(stuck_step(angle, STUCK_STEP_ANGLE_CAP), std::fabs(angle.error), angle.error), index_(index), window_(stuck_window(xy, angle)), moved_(travelled > xy_.step || turned > a_.step), a_seed_pass_(stuck_passes()), a_seeded_(false) {
     int allowance = moved_ ? 0 : STUCK_START_ALLOWANCE_MS;
     last_progress_ = pros::millis() + allowance;
     last_progress_pass_ = stuck_passes() + allowance / util::DELAY_TIME;
@@ -263,8 +272,11 @@ class SingleStuckWatch {
   // `moved_` from real distance/heading travelled since the motion's true start; SingleStuckWatch has no
   // odometry of its own, so callers compute this the same way DRIVE/TURN/SWING already track a motion's
   // real start elsewhere (l_start/r_start, chain_sensor_start).
-  SingleStuckWatch(PID& pid, double error, bool already_moved)
-      : ch_(stuck_step(pid), std::fabs(error), error), window_(pid.exit.velocity_exit_time != 0 ? pid.exit.velocity_exit_time : pid.exit.mA_timeout), moved_(already_moved), last_pass_(stuck_passes()), seeded_(false) {
+  // `cap`: STUCK_STEP_DISTANCE_CAP for a distance-type PID (DRIVE), STUCK_STEP_ANGLE_CAP for an angle-type
+  // one (TURN/SWING) -- this PID's own small_error alone doesn't say which, so the caller (which already
+  // knows) passes it in, same as StuckWatch's constructor already picks the right one for xy_ vs a_.
+  SingleStuckWatch(PID& pid, double error, bool already_moved, double cap)
+      : ch_(stuck_step(pid, cap), std::fabs(error), error), window_(pid.exit.velocity_exit_time != 0 ? pid.exit.velocity_exit_time : pid.exit.mA_timeout), moved_(already_moved), last_pass_(stuck_passes()), seeded_(false) {
     int allowance = moved_ ? 0 : STUCK_START_ALLOWANCE_MS;
     last_progress_ = pros::millis() + allowance;
     last_progress_pass_ = stuck_passes() + allowance / util::DELAY_TIME;
@@ -508,6 +520,11 @@ void Drive::pid_wait() {
   double entry_turn_target = turnPID.target_get();
   double entry_swing_target = swingPID.target_get();
   pose entry_odom_target_start = odom_target_start;
+  // ez_auto_task's pass count as of this call. The stuck backstop's "settled" carve-out below reads a PID's
+  // `error`, which only a real compute changes -- motion_reset() leaves the previous motion's last error in
+  // place -- so if the task has not run at all since this wait began (starved or dead), that error is still
+  // the previous motion's, and it must not read as settled at this motion's target.
+  const std::uint32_t entry_task_passes = stuck_passes();
   // Scopes every `interfered` write below to the motion this call was actually started for -- see
   // drive.hpp's comment on InterferedScope. Opened here, at the same instant as the snapshots above and
   // before any of them can go stale, so it tags the motion this wait is really waiting on, not whatever a
@@ -547,8 +564,8 @@ void Drive::pid_wait() {
     // pid_drive_set() -- not against this particular wait call, so a wait chained onto an already-moving motion
     // (an early pid_wait_until() checkpoint followed by pid_wait() on the same still-running drive, TEAM_CORPUS.md's
     // ordinary "until then wait" pattern) doesn't pay SingleStuckWatch's startup allowance a second time.
-    SingleStuckWatch left_watch(leftPID, leftPID.error, std::fabs(drive_sensor_left() - l_start) > stuck_step(leftPID)),
-        right_watch(rightPID, rightPID.error, std::fabs(drive_sensor_right() - r_start) > stuck_step(rightPID));
+    SingleStuckWatch left_watch(leftPID, leftPID.error, std::fabs(drive_sensor_left() - l_start) > stuck_step(leftPID, STUCK_STEP_DISTANCE_CAP), STUCK_STEP_DISTANCE_CAP),
+        right_watch(rightPID, rightPID.error, std::fabs(drive_sensor_right() - r_start) > stuck_step(rightPID, STUCK_STEP_DISTANCE_CAP), STUCK_STEP_DISTANCE_CAP);
     // How many times the recheck below has reseeded each side's watch on an un-latch -- see
     // STUCK_WATCH_REARM_CAP's own comment. Local to this one pid_wait() call, same as the watches
     // themselves, so every new wait starts a fresh count regardless of how many times a previous
@@ -597,7 +614,9 @@ void Drive::pid_wait() {
           // rule to a full double latch instead of this stuck-detected path).
           bool left_settled = std::fabs(leftPID.error) < leftPID.exit.big_error;
           bool right_settled = std::fabs(rightPID.error) < rightPID.exit.big_error;
-          bool settled = left_settled && right_settled;
+          // ...and only if ez_auto_task has run since this wait began (see entry_task_passes above); if it
+          // has not, both errors are the previous motion's leftovers, not a reading of this one.
+          bool settled = left_settled && right_settled && stuck_passes() != entry_task_passes;
           stalled = !settled;
           settled_via_stuck = settled;
           if (print_toggle) std::cout << "  Drive: " << (stalled ? "Stuck" : "Stuck, but stopped inside the big error windows, counted as settled") << ", error: L," << leftPID.error << " R," << rightPID.error << "\n";
@@ -644,26 +663,26 @@ void Drive::pid_wait() {
       if (left_exit == SMALL_EXIT && std::fabs(leftPID.error) >= leftPID.exit.small_error) {
         left_exit = RUNNING;
         if (left_stuck_watch_rearm_count < STUCK_WATCH_REARM_CAP) {
-          left_watch = SingleStuckWatch(leftPID, leftPID.error, true);
+          left_watch = SingleStuckWatch(leftPID, leftPID.error, true, STUCK_STEP_DISTANCE_CAP);
           ++left_stuck_watch_rearm_count;
         }
       } else if (left_exit == BIG_EXIT && std::fabs(leftPID.error) >= leftPID.exit.big_error) {
         left_exit = RUNNING;
         if (left_stuck_watch_rearm_count < STUCK_WATCH_REARM_CAP) {
-          left_watch = SingleStuckWatch(leftPID, leftPID.error, true);
+          left_watch = SingleStuckWatch(leftPID, leftPID.error, true, STUCK_STEP_DISTANCE_CAP);
           ++left_stuck_watch_rearm_count;
         }
       }
       if (right_exit == SMALL_EXIT && std::fabs(rightPID.error) >= rightPID.exit.small_error) {
         right_exit = RUNNING;
         if (right_stuck_watch_rearm_count < STUCK_WATCH_REARM_CAP) {
-          right_watch = SingleStuckWatch(rightPID, rightPID.error, true);
+          right_watch = SingleStuckWatch(rightPID, rightPID.error, true, STUCK_STEP_DISTANCE_CAP);
           ++right_stuck_watch_rearm_count;
         }
       } else if (right_exit == BIG_EXIT && std::fabs(rightPID.error) >= rightPID.exit.big_error) {
         right_exit = RUNNING;
         if (right_stuck_watch_rearm_count < STUCK_WATCH_REARM_CAP) {
-          right_watch = SingleStuckWatch(rightPID, rightPID.error, true);
+          right_watch = SingleStuckWatch(rightPID, rightPID.error, true, STUCK_STEP_DISTANCE_CAP);
           ++right_stuck_watch_rearm_count;
         }
       }
@@ -882,7 +901,7 @@ void Drive::pid_wait() {
     exit_output turn_exit = RUNNING;
     // Moved-since-motion-start is judged against chain_sensor_start (set once in turn_set_internal()), not
     // this particular wait call -- see the DRIVE branch's comment above for why, and same JC-1 gap.
-    SingleStuckWatch watch(turnPID, turnPID.error, std::fabs(drive_angle_get() - chain_sensor_start) > stuck_step(turnPID));
+    SingleStuckWatch watch(turnPID, turnPID.error, std::fabs(drive_angle_get() - chain_sensor_start) > stuck_step(turnPID, STUCK_STEP_ANGLE_CAP), STUCK_STEP_ANGLE_CAP);
     bool stalled = false;
     // Same concurrent-retarget guard as the DRIVE branch above.  turnPID.target is only ever rewritten by
     // turn_set_internal() (set_turn_pid.cpp) at the start of a new turn -- TURN_TO_POINT recomputes its own
@@ -915,7 +934,7 @@ void Drive::pid_wait() {
         turn_exit = turn_exit != RUNNING ? turn_exit : without_velocity(turnPID.exit_condition(both_sides(left_motors, right_motors)));
         if (turn_exit == RUNNING && watch.stuck(turnPID.error)) {
           // Same settled carve-out as the DRIVE branch above.
-          bool settled = std::fabs(turnPID.error) < turnPID.exit.big_error;
+          bool settled = std::fabs(turnPID.error) < turnPID.exit.big_error && stuck_passes() != entry_task_passes;
           stalled = !settled;
           settled_via_stuck = settled;
           if (print_toggle) std::cout << "  Turn: " << (stalled ? "Stuck" : "Stuck, but stopped inside the big error window, counted as settled") << ", error: " << turnPID.error << "\n";
@@ -970,7 +989,7 @@ void Drive::pid_wait() {
     exit_output swing_exit = RUNNING;
     // Moved-since-motion-start is judged against chain_sensor_start (set once in swing_set_internal()), not
     // this particular wait call -- see the DRIVE branch's comment above for why, and same JC-1 gap.
-    SingleStuckWatch watch(swingPID, swingPID.error, std::fabs(drive_angle_get() - chain_sensor_start) > stuck_step(swingPID));
+    SingleStuckWatch watch(swingPID, swingPID.error, std::fabs(drive_angle_get() - chain_sensor_start) > stuck_step(swingPID, STUCK_STEP_ANGLE_CAP), STUCK_STEP_ANGLE_CAP);
     bool stalled = false;
     // Same concurrent-retarget guard as the DRIVE branch above -- swingPID.target is only rewritten by
     // swing_set_internal() (set_swing_pid.cpp) at the start of a new swing.  mode is also watched -- see the
@@ -999,7 +1018,7 @@ void Drive::pid_wait() {
         swing_exit = swing_exit != RUNNING ? swing_exit : without_velocity(swingPID.exit_condition(both_sides(left_motors, right_motors)));
         if (swing_exit == RUNNING && watch.stuck(swingPID.error)) {
           // Same settled carve-out as the DRIVE branch above.
-          bool settled = std::fabs(swingPID.error) < swingPID.exit.big_error;
+          bool settled = std::fabs(swingPID.error) < swingPID.exit.big_error && stuck_passes() != entry_task_passes;
           stalled = !settled;
           settled_via_stuck = settled;
           if (print_toggle) std::cout << "  Swing: " << (stalled ? "Stuck" : "Stuck, but stopped inside the big error window, counted as settled") << ", error: " << swingPID.error << "\n";
@@ -1094,8 +1113,8 @@ void Drive::wait_until_drive(double target) {
   // simply driven past that near point reads to it as permanent non-progress and would be falsely flagged stuck.
   // Moved-since-motion-start is judged against l_start/r_start (this motion's own real start), not this
   // particular wait_until() call -- same reasoning as pid_wait()'s DRIVE branch above.
-  SingleStuckWatch left_watch(leftPID, is_odom ? l_error : leftPID.error, std::fabs(drive_sensor_left() - l_start) > stuck_step(leftPID)),
-      right_watch(rightPID, is_odom ? r_error : rightPID.error, std::fabs(drive_sensor_right() - r_start) > stuck_step(rightPID));
+  SingleStuckWatch left_watch(leftPID, is_odom ? l_error : leftPID.error, std::fabs(drive_sensor_left() - l_start) > stuck_step(leftPID, STUCK_STEP_DISTANCE_CAP), STUCK_STEP_DISTANCE_CAP),
+      right_watch(rightPID, is_odom ? r_error : rightPID.error, std::fabs(drive_sensor_right() - r_start) > stuck_step(rightPID, STUCK_STEP_DISTANCE_CAP), STUCK_STEP_DISTANCE_CAP);
 
   // Whether this wait_until()'s own target IS (not just near) the motion's actual final target, not
   // some earlier waypoint the robot is meant to drive through. pid_wait()'s DRIVE branch already
@@ -1266,8 +1285,33 @@ void Drive::wait_until_drive(double target) {
 
 // Function to wait until a certain position is reached.  Wrapper for exit condition.
 void Drive::wait_until_turn_swing(double target) {
-  // Resolve using the motion's own behavior
-  target = new_turn_target_compute(target, drive_angle_get(), current_angle_behavior);
+  // Resolve the checkpoint once, against the motion's own path (chain_sensor_start to
+  // chain_target_start, both set once by the turn/swing setter), not against the live heading.
+  // Re-resolving against the live heading under cw/ccw/longest pushes a checkpoint the robot already
+  // passed, or one on a longest motion's long way round, a whole revolution away from where the
+  // motion actually goes, so the crossing check never fires. Of the headings equivalent to the
+  // requested one (+/- whole revolutions), take the one closest to the motion's path: a checkpoint
+  // on the path resolves to its point on the path, whatever the behavior. raw is absolute and left
+  // as given, the same as the setters leave it.
+  if (current_angle_behavior != raw) {
+    double lo = std::fmin(chain_sensor_start, chain_target_start);
+    double hi = std::fmax(chain_sensor_start, chain_target_start);
+    double k0 = std::round(((lo + hi) / 2.0 - target) / 360.0);
+    double best = target + 360.0 * k0;
+    double best_dist = std::fmax(0.0, std::fmax(lo - best, best - hi));
+    for (double k = k0 - 1.0; k <= k0 + 1.0; k += 1.0) {
+      double candidate = target + 360.0 * k;
+      double dist = std::fmax(0.0, std::fmax(lo - candidate, candidate - hi));
+      // On a tie (a motion longer than a revolution), take the earlier crossing
+      bool closer = dist < best_dist - 1e-9;
+      bool tied_earlier = std::fabs(dist - best_dist) <= 1e-9 && std::fabs(candidate - chain_sensor_start) < std::fabs(best - chain_sensor_start);
+      if (closer || tied_earlier) {
+        best = candidate;
+        best_dist = dist;
+      }
+    }
+    target = best;
+  }
   wait_until_turn_swing_internal(target);
 }
 
@@ -1368,9 +1412,9 @@ void Drive::wait_until_turn_swing_internal(double target) {
   // Same JC-1 progress backstop as pid_wait()'s TURN/SWING branches -- see the comment there. Moved-since-
   // motion-start is judged against chain_sensor_start (this motion's own real start), not this particular
   // wait_until() call, the same as those two branches.
-  bool already_moved = std::fabs(drive_angle_get() - chain_sensor_start) > std::max(stuck_step(turnPID), stuck_step(swingPID));
-  SingleStuckWatch turn_watch(turnPID, turnPID.error, already_moved);
-  SingleStuckWatch swing_watch(swingPID, swingPID.error, already_moved);
+  bool already_moved = std::fabs(drive_angle_get() - chain_sensor_start) > std::max(stuck_step(turnPID, STUCK_STEP_ANGLE_CAP), stuck_step(swingPID, STUCK_STEP_ANGLE_CAP));
+  SingleStuckWatch turn_watch(turnPID, turnPID.error, already_moved, STUCK_STEP_ANGLE_CAP);
+  SingleStuckWatch swing_watch(swingPID, swingPID.error, already_moved, STUCK_STEP_ANGLE_CAP);
 
   while (true) {
     if (mode != mode_snapshot || turnPID.target_get() != turn_target || swingPID.target_get() != swing_target) {
@@ -1560,6 +1604,18 @@ void Drive::pid_wait_until_point(pose target) {
   exit_output a_exit = RUNNING;
   StuckWatch watch(xyPID, current_a_odomPID, pp_index, util::distance_to_point(target, odom_pose_get()), util::distance_to_point(odom_start, odom_pose_get()), std::fabs(odom_theta_get() - odom_start.theta));
 
+  // Whether pure pursuit is still before its last point right now -- see pid_wait()'s own matching comment
+  // (on the pre-last-point loop in its odom branch) for why xy's window exits mean nothing there: before the
+  // last point, xyPID's target is only ever the moving look-ahead point, not `target` (this call's own,
+  // real, non-moving target). On the last point, or in POINT_TO_POINT, xyPID's target IS the real target, so
+  // today's clean-latch failsafe below is a real one and stays. Locked, matching how pid_wait()'s own
+  // target_distance lambda reads pp_movements -- a motion started from another task can replace it while
+  // this reads it.
+  auto before_last_point = [&]() {
+    ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+    return mode == PURE_PURSUIT && pp_index != (int)pp_movements.size() - 1;
+  };
+
   while (true) {
     if (mode != mode_snapshot || odom_target_start.x != retarget_target.x || odom_target_start.y != retarget_target.y || odom_target_start.theta != retarget_target.theta) {
       if (print_toggle) std::cout << "  XY: retargeted by a concurrent motion mid-wait, ending early instead of finishing on the wrong target.\n";
@@ -1569,7 +1625,37 @@ void Drive::pid_wait_until_point(pose target) {
     secondary_velocity_sensor_update(xyPID);
     secondary_velocity_sensor_update(current_a_odomPID);
     xy_velocity_exit_hold_update();
-    xy_exit = xy_exit != RUNNING ? xy_exit : without_velocity(xyPID.exit_condition(both_sides(left_motors, right_motors)));
+    // Before the last point, xyPID's target is a moving look-ahead point (see before_last_point()'s own
+    // comment): SMALL_EXIT/BIG_EXIT/VELOCITY_EXIT on it are discarded on purpose, only mA_EXIT (a stalled
+    // motor's current is real regardless of target) can end the wait through this axis. The mA snapshot/
+    // restore mirrors pid_wait()'s own pre-last-point loop exactly, for the identical reason (GitHub issue
+    // #527): PID::exit_condition() calls PID::timers_reset() whenever ANY channel latches, wiping every
+    // channel's timer together -- including this same call's own mA progress -- so a discarded SMALL_EXIT/
+    // BIG_EXIT would silently erase real, ongoing over-current progress before it ever reaches mA_timeout.
+    if (xy_exit == RUNNING) {
+      bool xy_before_last_point = before_last_point();
+      std::vector<pros::Motor> xy_motors = both_sides(left_motors, right_motors);
+      bool xy_mA_tracked = xyPID.exit.mA_timeout != 0;
+      bool xy_over_current = false;
+      if (xy_before_last_point && xy_mA_tracked) {
+        for (auto& motor : xy_motors) {
+          std::int32_t xy_over = motor.is_over_current();
+          bool xy_dead = xy_over == PROS_ERR && !std::isfinite(motor.get_position());
+          if (xy_over == 1 || xy_dead) {
+            xy_over_current = true;
+            break;
+          }
+        }
+      }
+      PID::MATimerSnapshot xy_mA_snapshot = xyPID.mA_timer_snapshot();
+      exit_output xy_pass = xyPID.exit_condition(xy_motors);
+      if (xy_before_last_point) {
+        if (xy_mA_tracked && xy_over_current && (xy_pass == SMALL_EXIT || xy_pass == BIG_EXIT || xy_pass == VELOCITY_EXIT)) xyPID.mA_timer_restore_and_credit(xy_mA_snapshot);
+        if (xy_pass == mA_EXIT) xy_exit = mA_EXIT;
+      } else {
+        xy_exit = without_velocity(xy_pass);
+      }
+    }
     a_exit = a_exit != RUNNING ? a_exit : without_velocity(current_a_odomPID.exit_condition(both_sides(left_motors, right_motors)));
 
     // Same stuck check as pid_wait(), for a robot that is stuck but moving, which the exits above miss
@@ -1708,7 +1794,34 @@ void Drive::pid_wait_until_index_started(int index) {
     secondary_velocity_sensor_update(xyPID);
     secondary_velocity_sensor_update(current_a_odomPID);
     xy_velocity_exit_hold_update();
-    xy_exit = xy_exit != RUNNING ? xy_exit : without_velocity(xyPID.exit_condition(both_sides(left_motors, right_motors)));
+    // This whole loop runs only before its own checkpoint (the while condition above), so xyPID's target is
+    // always the moving look-ahead point here, never the real path -- the same reasoning as pid_wait()'s own
+    // pre-last-point loop (see its comment). SMALL_EXIT/BIG_EXIT/VELOCITY_EXIT on it are discarded on
+    // purpose; only mA_EXIT (a stalled motor's current is real regardless of target) can end the wait
+    // through this axis. The mA snapshot/restore mirrors pid_wait()'s own pre-last-point loop exactly, for
+    // the identical reason (GitHub issue #527): PID::exit_condition() calls PID::timers_reset() whenever ANY
+    // channel latches, wiping every channel's timer together -- including this same call's own mA progress --
+    // so a discarded SMALL_EXIT/BIG_EXIT would silently erase real, ongoing over-current progress before it
+    // ever reaches mA_timeout.
+    if (xy_exit == RUNNING) {
+      std::vector<pros::Motor> xy_motors = both_sides(left_motors, right_motors);
+      bool xy_mA_tracked = xyPID.exit.mA_timeout != 0;
+      bool xy_over_current = false;
+      if (xy_mA_tracked) {
+        for (auto& motor : xy_motors) {
+          std::int32_t xy_over = motor.is_over_current();
+          bool xy_dead = xy_over == PROS_ERR && !std::isfinite(motor.get_position());
+          if (xy_over == 1 || xy_dead) {
+            xy_over_current = true;
+            break;
+          }
+        }
+      }
+      PID::MATimerSnapshot xy_mA_snapshot = xyPID.mA_timer_snapshot();
+      exit_output xy_pass = xyPID.exit_condition(xy_motors);
+      if (xy_mA_tracked && xy_over_current && (xy_pass == SMALL_EXIT || xy_pass == BIG_EXIT || xy_pass == VELOCITY_EXIT)) xyPID.mA_timer_restore_and_credit(xy_mA_snapshot);
+      if (xy_pass == mA_EXIT) xy_exit = mA_EXIT;
+    }
     a_exit = a_exit != RUNNING ? a_exit : without_velocity(current_a_odomPID.exit_condition(both_sides(left_motors, right_motors)));
 
     // Same stuck check as pid_wait(), for a robot that is stuck but moving, which the exits above miss
@@ -1719,18 +1832,14 @@ void Drive::pid_wait_until_index_started(int index) {
     }
 
     if (xy_exit != RUNNING && a_exit != RUNNING) {
-      // Once an axis latches SMALL_EXIT/BIG_EXIT, exit_condition() above is never called on it again --
-      // so a disturbance landing on an already-latched axis (most commonly angle, which typically settles
-      // first) went completely unwatched for the rest of this wait. Recheck each latched axis against the
-      // window it exited through, using its own live error -- not exit_condition() (that would restart its
-      // internal timers) -- the same treatment pid_wait_until_point() and pid_wait()'s odom branch already
-      // give a clean double-exit (see their own comments on this identical bug). VELOCITY_EXIT is never
-      // latched here (without_velocity() already maps it to RUNNING); mA_EXIT isn't a window exit and is
-      // handled below regardless, so it's left alone. A latched axis that has drifted back outside its
-      // window is un-latched (back to RUNNING), falling through to keep waiting -- the stuck check above
-      // remains the backstop if the disturbance never resolves.
-      if (xy_exit == SMALL_EXIT && std::fabs(xyPID.error) >= xyPID.exit.small_error) xy_exit = RUNNING;
-      else if (xy_exit == BIG_EXIT && std::fabs(xyPID.error) >= xyPID.exit.big_error) xy_exit = RUNNING;
+      // xy_exit can only be RUNNING or mA_EXIT here (see above) -- there's nothing to recheck on that axis
+      // in this loop. Angle can still latch SMALL_EXIT/BIG_EXIT on its own moving-look-ahead-independent
+      // target, so it keeps the same recheck pid_wait_until_point() and pid_wait()'s odom branch give a
+      // clean double-exit (see their own comments on this identical bug): against the window it exited
+      // through, using its own live error -- not exit_condition() (that would restart its internal timers).
+      // VELOCITY_EXIT is never latched here (without_velocity() already maps it to RUNNING). A latched axis
+      // that has drifted back outside its window is un-latched (back to RUNNING), falling through to keep
+      // waiting -- the stuck check above remains the backstop if the disturbance never resolves.
       if (a_exit == SMALL_EXIT && std::fabs(current_a_odomPID.error) >= current_a_odomPID.exit.small_error) a_exit = RUNNING;
       else if (a_exit == BIG_EXIT && std::fabs(current_a_odomPID.error) >= current_a_odomPID.exit.big_error) a_exit = RUNNING;
     }
