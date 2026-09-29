@@ -65,8 +65,11 @@ void Drive::ez_auto_task() {
           break;
       }
 
-      // This is used to reset sensors for active braking
-      util::AUTON_RAN = drive_mode_get() != DISABLE ? true : false;
+      // This is used to reset sensors for active braking. Only ever set here: the disabled gap between autonomous and
+      // driver control puts the mode back to DISABLE, and recomputing the flag from it every pass cleared it before
+      // opcontrol_drive_sensors_reset() (the only thing that clears it) could re-aim the brake target, so the first
+      // driver pass drove the robot back toward where autonomous started.
+      if (drive_mode_get() != DISABLE) util::AUTON_RAN = true;
     }
 
     pros::delay(ez::util::DELAY_TIME);
