@@ -14,6 +14,15 @@ using namespace ez;
 namespace {
 static constexpr int STUCK_START_ALLOWANCE_MS = 1000;  // PID::VELOCITY_ARM_FALLBACK, which is private
 static constexpr int STUCK_STARVED_WINDOWS = 4;
+// The shortest window a stuck watch ever uses, in ms. The window is a stuck detector, not a speed knob. Teams shorten
+// velocity_exit_time to make motions end faster, but the velocity exit no longer ends any drive wait (the stuck watches do), so
+// a very short window only ever made the stuck check jumpy: a robot has to cover a whole step (1 in / 3 degrees at the defaults)
+// inside it, so a 100 ms window called anything slower than 10 in/s stuck, and a shove plus the recovery of a full step below its
+// peak had to fit inside it. 350 ms (35 auto task passes) is the shortest window at which every 300 ms shove up to 120 N in the
+// host sim's shove sweep is still recovered from on top of the restart below (250 and 300 lose the 90 N cases), and it keeps the
+// floor speed under 3 in/s. The mA exit keeps the team's own mA_timeout. A window of 0 keeps its meaning ("off"), see
+// stuck_window().
+static constexpr int STUCK_WINDOW_FLOOR_MS = 350;
 // How many times pid_wait()'s DRIVE branch will reseed one side's SingleStuckWatch when its
 // latched-side recheck un-latches it (see that recheck's own comment on the tradeoff this bounds).
 // A realistic disturbance -- the issue #532 repro, or even a couple of genuinely distinct
@@ -72,10 +81,12 @@ double stuck_step(PID& pid, double cap) {
 // each axis's own configuration for that independence to actually hold. Only if BOTH axes have zeroed
 // both their own velocity and current exits does this collapse to 0 and stuck() go permanently inert --
 // matching what a team who deliberately disabled every timeout on both axes is actually asking for.
+int floored_window(int window) { return window == 0 ? 0 : std::max(window, STUCK_WINDOW_FLOOR_MS); }
+
 int stuck_window(PID& xy, PID& angle) {
   int xy_window = xy.exit.velocity_exit_time != 0 ? xy.exit.velocity_exit_time : xy.exit.mA_timeout;
-  if (xy_window != 0) return xy_window;
-  return angle.exit.velocity_exit_time != 0 ? angle.exit.velocity_exit_time : angle.exit.mA_timeout;
+  if (xy_window != 0) return floored_window(xy_window);
+  return floored_window(angle.exit.velocity_exit_time != 0 ? angle.exit.velocity_exit_time : angle.exit.mA_timeout);
 }
 
 // A single progress channel: has `size` (always >= 0, e.g. a distance or |error|) come down to a new low, a full
@@ -101,8 +112,23 @@ struct Channel {
   // above, not below, its own cycle's anchor), while a genuinely separate later disturbance -- one preceded by
   // real further progress, per the issue's own repro -- clears it before that later disturbance ever begins.
   double anchor = 0;
+  // Set by made() for the pass it just ran, and only for that pass: a new disturbance latched (`latched`), or the first
+  // pass after that on which the disturbance stopped getting worse (`peaked`, size no longer rising above the worst it
+  // had reached). The watch that owns this channel restarts its no-progress clock on each, so a shove gets the time to
+  // land and the time to recover a full step below its peak from the moment it happened, not from the last progress
+  // before it. Never set for a pin: a pinned robot holds `size` constant, which neither latches (it takes a full step
+  // worse, or the error changing sign) nor rises.
+  //
+  // Bound: `latched` needs !rebounded, and `rebounded` only clears once `low` has fallen a full step below the
+  // pre-disturbance `anchor`, so a channel is restarted at most twice per genuine full step of new progress (once on the
+  // latch, once at the peak, `peak_credited`), and there are at most initial size / step of those -- the same bound the
+  // credits for new lows already have. A continuous push keeps `size` rising, so it gets the latch restart only and the
+  // window then runs out on it; oscillating shoves on a robot pinned between them never re-arm the latch at all.
+  bool latched = false, peaked = false;
+  bool peak_credited = false;
   Channel(double p_step, double size, double error) : step(p_step), low(size), side(error > 0) {}
   bool made(double size, double error) {
+    latched = peaked = false;
     // A NaN size/error -- e.g. a caller-supplied NaN target, making every pass' distance/error compute to
     // NaN -- must not read as progress.  Every comparison against NaN is false, so unguarded this fell
     // through the "still above the last low?" check below no matter how many times it ran, crediting a new
@@ -117,9 +143,14 @@ struct Channel {
     if ((overshot || shoved) && !rebounded) {
       rebound = rebounded = true;
       anchor = low;
+      latched = true;
+      peak_credited = false;
     }
     side = error > 0;
+    double worst_before = low;
     if (rebound) low = std::fmax(low, size);
+    // The first pass after the latch that did not make it worse.
+    if (rebound && !latched && !peak_credited && size <= worst_before) peaked = peak_credited = true;
     if (size >= low - step) return false;
     low = size;
     rebound = false;
@@ -167,7 +198,8 @@ class StuckWatch {
     if (window_ == 0) return false;
     std::uint32_t now = pros::millis();
     std::uint32_t pass = stuck_passes();
-    bool progress = false;
+    bool progress = false;     // genuinely getting somewhere: this is what makes the robot "moved"
+    bool disturbance = false;  // a shove landing or peaking: restarts the clock, but is not progress
     if (index != index_) {
       index_ = index;
       xy_ = Channel(xy_.step, distance, xy_error);
@@ -175,6 +207,7 @@ class StuckWatch {
       progress = true;
     }
     if (xy_.made(distance, xy_error)) progress = true;
+    disturbance = xy_.latched || xy_.peaked;
     // The angle channel's own construction-time seed (angle.error at that moment) can be a leftover
     // reading from the PREVIOUS motion: motion_reset()/timers_reset() never touch `error`, only a real
     // compute_error() does, so if this wait's own first tick lands before the background task has
@@ -193,12 +226,13 @@ class StuckWatch {
         a_ = Channel(a_.step, std::fabs(a_error), a_error);
         a_seeded_ = true;
       }
-    } else if (a_.made(std::fabs(a_error), a_error)) {
-      progress = true;
+    } else {
+      if (a_.made(std::fabs(a_error), a_error)) progress = true;
+      disturbance = disturbance || a_.latched || a_.peaked;
     }
     if (!moved_ && (travelled > xy_.step || turned > a_.step)) moved_ = progress = true;
     // Before the robot has moved, progress can't cut the start allowance short
-    if (progress && (moved_ || (std::int32_t)(now - last_progress_) > 0)) {
+    if ((progress || disturbance) && (moved_ || (std::int32_t)(now - last_progress_) > 0)) {
       last_progress_ = now;
       last_progress_pass_ = pass;
     }
@@ -276,7 +310,7 @@ class SingleStuckWatch {
   // one (TURN/SWING) -- this PID's own small_error alone doesn't say which, so the caller (which already
   // knows) passes it in, same as StuckWatch's constructor already picks the right one for xy_ vs a_.
   SingleStuckWatch(PID& pid, double error, bool already_moved, double cap)
-      : ch_(stuck_step(pid, cap), std::fabs(error), error), window_(pid.exit.velocity_exit_time != 0 ? pid.exit.velocity_exit_time : pid.exit.mA_timeout), moved_(already_moved), last_pass_(stuck_passes()), seeded_(false) {
+      : ch_(stuck_step(pid, cap), std::fabs(error), error), window_(floored_window(pid.exit.velocity_exit_time != 0 ? pid.exit.velocity_exit_time : pid.exit.mA_timeout)), moved_(already_moved), last_pass_(stuck_passes()), seeded_(false) {
     int allowance = moved_ ? 0 : STUCK_START_ALLOWANCE_MS;
     last_progress_ = pros::millis() + allowance;
     last_progress_pass_ = stuck_passes() + allowance / util::DELAY_TIME;
@@ -287,6 +321,7 @@ class SingleStuckWatch {
     std::uint32_t now = pros::millis();
     std::uint32_t pass = stuck_passes();
     bool progress = false;
+    bool disturbance = false;  // a shove landing or peaking: restarts the clock, but is not progress
     // Only ever act on `error` on a pass where the background task has actually ticked since the last
     // time this checked (stuck_passes(), the same heartbeat the wall-clock/pass-count starvation check
     // below already trusts) -- the caller (this wait's own loop) and that background compute loop are two
@@ -307,10 +342,11 @@ class SingleStuckWatch {
         seeded_ = true;
       } else {
         progress = ch_.made(std::fabs(error), error);
+        disturbance = ch_.latched || ch_.peaked;
       }
     }
     if (!moved_ && progress) moved_ = true;
-    if (progress && (moved_ || (std::int32_t)(now - last_progress_) > 0)) {
+    if ((progress || disturbance) && (moved_ || (std::int32_t)(now - last_progress_) > 0)) {
       last_progress_ = now;
       last_progress_pass_ = pass;
     }

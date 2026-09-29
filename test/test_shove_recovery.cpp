@@ -8,8 +8,8 @@
 // from the wrong place. v3.2.2 recovered and arrived in every one of these.
 //
 // Decided fix: a shove restarts the clock, once when it latches and once when it peaks (never for a pin, which is not a
-// shove); the stuck window is floored at 500 ms; and pure pursuit progress also counts distance travelled along the robot's
-// own odom track, so a slow but still-moving corner is not stuck.
+// shove), and the stuck window is floored at 350 ms. The pure pursuit path-travel credit that was also asked for is NOT
+// done; see the 29295D case below for why.
 //
 // light_fast and sticky_high_friction only: heavy_slow is numerically unstable when the auto task runs exactly once per poll.
 #include <cmath>
@@ -90,11 +90,10 @@ Outcome shoved_drive(const sim::SimArchetype& a, double newtons, double duration
 
 // Forces are the ones the drive can be shoved with and still recover from. Past them the shove leaves the motors over
 // current for longer than the team's own mA_timeout (100 ms here), and the mA exit ends the wait, which is what it is
-// for; that is a different exit and is unchanged.
+// for; that is a different exit and is unchanged. That is 120 N and up on the classroom robot, and 150 N on light_fast.
 TEST_CASE("2550R pin2 (pid_drive_set(27, 80, true); pid_wait_quick(); on 90/1/200/3/100/100 exits): a 300 ms shove is recovered from") {
-  const sim::SimArchetype archetypes[] = {sim::archetype_light_fast(), sim::archetype_sticky_high_friction(), classroom_1_motor()};
-  for (const auto& a : archetypes) {
-    for (double newtons : {40.0, 60.0, 90.0}) {
+  for (const auto& a : kArchetypes) {
+    for (double newtons : {40.0, 60.0, 90.0, 120.0}) {
       Outcome o = shoved_drive(a, newtons, 300, /*pin2=*/true, 27.0, 80, /*quick=*/true);
       CAPTURE(a.name);
       CAPTURE(newtons);
@@ -104,6 +103,16 @@ TEST_CASE("2550R pin2 (pid_drive_set(27, 80, true); pid_wait_quick(); on 90/1/20
       CHECK_FALSE(o.interfered);
       CHECK(std::fabs(o.pos - 27.0) < 3.0);  // within the team's own big_error
     }
+  }
+  const sim::SimArchetype classroom = classroom_1_motor();
+  for (double newtons : {40.0, 60.0, 90.0}) {
+    Outcome o = shoved_drive(classroom, newtons, 300, /*pin2=*/true, 27.0, 80, /*quick=*/true);
+    CAPTURE(newtons);
+    CAPTURE(o.pos);
+    CAPTURE(o.ms);
+    REQUIRE(o.returned);
+    CHECK_FALSE(o.interfered);
+    CHECK(std::fabs(o.pos - 27.0) < 3.0);
   }
 }
 
@@ -127,6 +136,12 @@ TEST_CASE("pid_drive_set(24_in, 30) at default exits: a 300 ms shove is recovere
 // 29295D's slow pure pursuit corner, 20 seeds. Their constants, on a 450 rpm, 3.25 in drive: the robot crawls through the
 // first boomerang corner and used to be called stuck there and abandon the path about 23 in from the end. The corner
 // reproduces on sticky_high_friction with a 450 rpm cartridge; light_fast never crawls, and is the control.
+//
+// OPEN, and marked may_fail on purpose: the fix that was asked for, crediting pure pursuit progress by the distance the robot's
+// own odom track has moved since the last credit, does not pass this corner, and was left out by decision. The corner crawls at
+// about 1.2 in/s and a window covers 0.4 to 0.6 in against a 1 in step, so no rule that credits a whole step per window can
+// pass it; accumulating the pose delta only helps through simulated encoder noise (3 to 17 of 20 seeds at a faster crawl with
+// noise on, no change with noise off). The shove restart and the window floor do not touch it either.
 // ---------------------------------------------------------------------------------------------------------------------
 
 namespace {
@@ -181,8 +196,9 @@ TEST_CASE("control: 29295D's path on light_fast at 450 rpm completes on all 20 s
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Controls that must not move: a robot that is genuinely held still, or held back, is still reported stuck, promptly and
-// never forever. Times are sim milliseconds from the motion starting. The stuck window floor is 500 ms and a drive that has
-// not moved yet also gets the 1000 ms start allowance, so a drive pinned from the very start ends by 1000 + 500 (+ a pass).
+// never forever. Times are sim milliseconds from the motion starting. The default drive window is 400 ms (velocity_exit_time; the
+// floor is 350) and a drive that has not moved yet also gets the 1000 ms start allowance, so a drive pinned from the very start
+// ends by 1000 + 400 (+ a pass).
 // ---------------------------------------------------------------------------------------------------------------------
 
 namespace {
@@ -256,7 +272,7 @@ TEST_CASE("control: a drive pinned by a sim wall still ends interfered within a 
     CAPTURE(pros::millis() - contact);
     REQUIRE(returned);
     CHECK(r.chassis.interfered);
-    CHECK(pros::millis() - contact <= 500 + 1000);
+    CHECK(pros::millis() - contact <= 400 + 1000 + 100);  // the default 400 ms window, and a pass or two
   }
 }
 
@@ -284,22 +300,23 @@ TEST_CASE("control: a 3 s continuous push ends the wait, interfered, no later th
     CAPTURE(o.ms);
     REQUIRE(o.returned);
     CHECK(o.interfered);
-    CHECK(o.ms <= 400 + 3000 + 500 + 100);
+    CHECK(o.ms <= 400 + 3000 + 400 + 100);
   }
 }
 
-// A robot shoved back and forth 20 times at 2 Hz (100 ms each, alternating direction) while pinned between the shoves. Only the
+// A robot shoved back and forth 20 times at 2 Hz (100 ms, 40 N, alternating direction: about 2 in each way, so it ends where it
+// started) while pinned between the shoves. Only the
 // first disturbance of a point is credited (accepted): the shove restarts the clock when it latches and once more when it peaks,
 // then the window runs. Bound: the first shove at 400 ms, its 100 ms, the 1000 ms start allowance a drive that has barely
-// moved still has, one 500 ms window, and a few passes -- and nothing scales with the number of shoves.
+// moved still has, one 400 ms window, and a few passes -- and nothing scales with the number of shoves.
 TEST_CASE("control: 20 shoves at 2 Hz while pinned between them end the wait, interfered, within a bounded time") {
   for (const auto& a : kArchetypes) {
     Outcome o = run_held(a, [](Rig& r) {
-      r.chassis.pid_drive_set(36_in, 60);
+      r.chassis.pid_drive_set(36_in, 5);  // speed 5: the drive's own thrust is small next to a 40 N shove, so the robot ends each pair of shoves where it began
       double base = r.sim.now_ms();
       for (int i = 0; i < 20; i++) {
         double s = base + 400 + i * 500;
-        r.sim.push(i % 2 == 0 ? -150.0 : 150.0, s, 100);
+        r.sim.push(i % 2 == 0 ? -40.0 : 40.0, s, 100);
         r.sim.pin(s + 100, 400);
       }
     });
@@ -307,27 +324,62 @@ TEST_CASE("control: 20 shoves at 2 Hz while pinned between them end the wait, in
     CAPTURE(o.ms);
     REQUIRE(o.returned);
     CHECK(o.interfered);
-    CHECK(o.ms <= 400 + 100 + 1000 + 500 + 100);
+    CHECK(o.ms <= 400 + 100 + 1000 + 400 + 100);
   }
 }
 
-// 2550R's own pin2 pushed into a wall at 25 in with their 100 ms exits. On a107ac8 it ends at 590 ms (light_fast) and 1310 ms
-// (sticky_high_friction), inside the team's big_error of 27 so clean. The mA exit is unchanged, so it must not end later
-// than that by more than 100 ms.
-TEST_CASE("control: 2550R's pin2 pushed into a wall at 25 in ends no later than before, plus 100 ms") {
-  const int before_ms[] = {590, 1310};
-  int i = 0;
+// 2550R's own pin2 (their 100 ms exits) pushed into a wall. It does NOT end on the mA exit in the sim: at speed 80 a stalled
+// drive draws about 63% of stall current, under the over-current flag (the sim sets it at 100% duty), so it is the stuck
+// watch that ends it, on the team's own 100 ms window on a107ac8 and on the 350 ms floor now. That is the floor's cost: a robot in
+// a wall ends 250 ms later than it did for a team that shortened velocity_exit_time to 100 ms (a wall at 20 in: light_fast 500 ->
+// 750 ms, sticky_high_friction 980 -> 1230 ms; at 12 in 360 -> 610 and 630 -> 880; a wall at 25 in, inside the 3 in big_error,
+// ends on the big exit and moves 590 -> 840 on light_fast, not at all on sticky). Bounded, and never later than the floor's
+// extra 250 ms (+ a few passes) over what it was. A full power drive into a wall does end on mA, see below.
+TEST_CASE("2550R's pin2 pushed into a wall ends no later than before plus the window floor's extra 250 ms (+ a few passes)") {
+  struct Case {
+    double wall_in;
+    int before_ms[2];
+    bool interfered;
+  };
+  // {light_fast, sticky_high_friction} on a107ac8
+  const Case cases[] = {{20.0, {500, 980}, true}, {12.0, {360, 630}, true}, {25.0, {590, 1310}, false}};
+  for (const auto& c : cases) {
+    int i = 0;
+    for (const auto& a : kArchetypes) {
+      Rig r(a);
+      r.sim.wall(c.wall_in);
+      pin2_exits(r.chassis);
+      r.chassis.pid_drive_set(27_in, 80, true);
+      std::uint32_t t0 = pros::millis();
+      bool returned = run_capped([&] { r.chassis.pid_wait_quick(); }, 3000);
+      CAPTURE(a.name);
+      CAPTURE(c.wall_in);
+      CAPTURE(pros::millis() - t0);
+      REQUIRE(returned);
+      CHECK(r.chassis.interfered == c.interfered);
+      CHECK(pros::millis() - t0 <= (std::uint32_t)(c.before_ms[i] + 250 + 30));
+      i++;
+    }
+  }
+}
+
+// The mA exit is unchanged and still ends a wall push as fast as the team tuned it. Needs full power: a stalled drive draws
+// its duty's share of the 2.5 A stall current, and the over-current flag sets at 2.5 A, so at speed 80 (63%) the sim never
+// reports over-current and it is the stuck watch that ends a wall push (see the pin2 wall test above).
+TEST_CASE("control: a full power drive into a wall ends on the mA exit within the team's mA_timeout of contact") {
   for (const auto& a : kArchetypes) {
     Rig r(a);
-    r.sim.wall(25.0);
-    pin2_exits(r.chassis);
-    r.chassis.pid_drive_set(27_in, 80, true);
-    std::uint32_t t0 = pros::millis();
-    bool returned = run_capped([&] { r.chassis.pid_wait_quick(); }, 3000);
+    r.sim.wall(20.0);
+    pin2_exits(r.chassis);  // mA_timeout 100 ms
+    r.chassis.pid_drive_set(36_in, 127);
+    while (r.sim.left().position_in < 19.9 && r.sim.now_ms() < 20000) pros::delay(util::DELAY_TIME);
+    REQUIRE(r.sim.left().position_in >= 19.9);
+    std::uint32_t contact = pros::millis();
+    bool returned = run_capped([&] { r.chassis.pid_wait(); }, 3000);
     CAPTURE(a.name);
-    CAPTURE(pros::millis() - t0);
+    CAPTURE(pros::millis() - contact);
     REQUIRE(returned);
-    CHECK(pros::millis() - t0 <= (std::uint32_t)before_ms[i] + 100);
-    i++;
+    CHECK(r.chassis.interfered);
+    CHECK(pros::millis() - contact <= 100 + 150);
   }
 }

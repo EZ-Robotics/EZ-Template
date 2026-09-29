@@ -50,7 +50,11 @@ TEST_CASE("pid_drive_set() clears interfered so a clean motion isn't blamed for 
   g_chassis = &chassis;
   pinned();
   test_stub::g_clock.on_delay = pinned;
-  test_stub::g_clock.delay_calls_until_stop = 200;
+  // 400 passes (4 s), not the 200 this used to have: this drive's stuck window is floored at 350 ms (it is 50 ms here)
+  // and the scripted task never runs, so the stuck watch ends it on its wall-clock fallback, 4 windows (1.4 s) plus the
+  // 1 s start allowance. It stopped locking a 50 ms stuck window (fallback at 200 ms + 1 s); what it is for, that a
+  // stalled first motion does not blame the second, is unchanged.
+  test_stub::g_clock.delay_calls_until_stop = 400;
   bool first_returned = true;
   try {
     chassis.pid_wait();
