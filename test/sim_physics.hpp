@@ -511,6 +511,9 @@ class SimRobot {
       double reported_pos_in = side.position_in + gaussian(archetype_.encoder_noise_stddev_in);
       double reported_vel_in_s = side.velocity_in_s + gaussian(archetype_.velocity_noise_stddev_in_s);
       for (auto& m : motors) {
+        // A motor handed to the PTO isn't the drive's: whatever a test scripts on it (say, an intake that
+        // stalls) must survive the tick instead of being overwritten with the drive's own reading.
+        if (drive_.pto_check(m)) continue;
         auto& fake = m.fake();
         fake.position = reported_pos_in * tick_per_inch;
         fake.actual_velocity = reported_vel_in_s * tick_per_inch;
