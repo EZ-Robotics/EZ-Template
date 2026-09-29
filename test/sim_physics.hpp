@@ -17,6 +17,7 @@
 #include <array>
 #include <cmath>
 #include <random>
+#include <vector>
 
 #include "EZ-Template/api.hpp"
 #include "drive_test_access.hpp"
@@ -226,6 +227,21 @@ class SimRobot {
       for (auto& m : *side)
         if (!drive_.pto_check(m)) m.fake().position = pos;
     }
+  }
+
+  // --- Physical interference, all off by default. Times are sim milliseconds (now_ms(), one DELAY_TIME per tick). ---
+
+  double now_ms() const { return sim_ms_; }
+  // An external force along the robot's heading, in newtons (positive pushes it forward), from `start_ms` for
+  // `duration_ms`. Windows add up; a robot being shoved by another robot is a window of 40 to 150 N for 100 to 600 ms.
+  void push(double newtons, double start_ms, double duration_ms) { forces_.push_back({newtons, start_ms, start_ms + duration_ms}); }
+  // The robot is held still, in every direction, from `start_ms` for `duration_ms` (a robot pinned against a defender).
+  void pin(double start_ms, double duration_ms) { pins_.push_back({0.0, start_ms, start_ms + duration_ms}); }
+  // A wall `position_in` inches ahead of where the wheels are zero: the average wheel travel cannot pass it, and
+  // whatever velocity it hits it at is lost. The motors keep pushing, so they stall against it.
+  void wall(double position_in) {
+    wall_in_ = position_in;
+    wall_set_ = true;
   }
   double heading_deg() const { return heading_deg_; }
   const SideState& left() const { return left_; }
@@ -439,7 +455,10 @@ class SimRobot {
 
     // Translation: resisted by the whole robot's mass. Rotation: resisted by
     // moment_of_inertia_kg_m2 about the yaw axis -- the piece that was missing entirely before.
-    double common_accel_m_s2 = (left_r.net_force_n + right_r.net_force_n) / archetype_.mass_kg;
+    double external_n = 0.0;
+    for (const auto& f : forces_)
+      if (sim_ms_ >= f.start_ms && sim_ms_ < f.end_ms) external_n += f.value;
+    double common_accel_m_s2 = (left_r.net_force_n + right_r.net_force_n + external_n) / archetype_.mass_kg;
     double yaw_torque_nm = (right_r.net_force_n - left_r.net_force_n) * track_radius_m;
     double yaw_accel_rad_s2 = yaw_torque_nm / archetype_.moment_of_inertia_kg_m2;
 
@@ -487,13 +506,53 @@ class SimRobot {
     common_velocity_in_s_ = common_v_m_s / 0.0254;
     yaw_rate_deg_s_ = yaw_rate_rad_s * 180.0 / M_PI;
 
+    // Interference that holds the robot rather than pushing it (a push is external_n above). A pin freezes it
+    // where it stands for as long as its window lasts; a wall stops forward travel below.
+    bool pinned = false;
+    for (const auto& p : pins_)
+      if (sim_ms_ >= p.start_ms && sim_ms_ < p.end_ms) pinned = true;
+    if (pinned) {
+      if (!was_pinned_) {
+        pin_left_in_ = left_.position_in;
+        pin_right_in_ = right_.position_in;
+        pin_heading_deg_ = heading_deg_;
+      }
+      common_velocity_in_s_ = 0.0;
+      yaw_rate_deg_s_ = 0.0;
+      left_wheel_v_new = 0.0;
+      right_wheel_v_new = 0.0;
+      heading_deg_ = pin_heading_deg_;
+    }
+    was_pinned_ = pinned;
+
     // For encoder reporting; next tick's torque calc re-derives from common_velocity_in_s_/
     // yaw_rate_deg_s_ (above) rather than from these, so the zero-crossing guard above already
     // reached the value that matters for the sim's own recurrence.
     left_.velocity_in_s = left_wheel_v_new / 0.0254;
     right_.velocity_in_s = right_wheel_v_new / 0.0254;
-    left_.position_in += left_.velocity_in_s * dt_s;
-    right_.position_in += right_.velocity_in_s * dt_s;
+    if (pinned) {
+      left_.position_in = pin_left_in_;
+      right_.position_in = pin_right_in_;
+    } else {
+      left_.position_in += left_.velocity_in_s * dt_s;
+      right_.position_in += right_.velocity_in_s * dt_s;
+    }
+
+    // A wall: average wheel travel cannot pass it, and the forward velocity it hits it at is lost.
+    if (wall_set_) {
+      double avg = (left_.position_in + right_.position_in) / 2.0;
+      if (avg > wall_in_) {
+        left_.position_in -= avg - wall_in_;
+        right_.position_in -= avg - wall_in_;
+        double v_common = (left_.velocity_in_s + right_.velocity_in_s) / 2.0;
+        if (v_common > 0.0) {
+          left_.velocity_in_s -= v_common;
+          right_.velocity_in_s -= v_common;
+        }
+        if (common_velocity_in_s_ > 0.0) common_velocity_in_s_ = 0.0;
+      }
+    }
+    sim_ms_ += dt_s * 1000.0;
 
     double left_current = left_r.current_a;
     double right_current = right_r.current_a;
@@ -587,6 +646,14 @@ class SimRobot {
   double heading_deg_ = 0.0;
   // See write_back()'s IMU comment: what the sim last wrote to the fake IMU, the physical heading at that
   // moment, and the offset a foreign write to the register (set_rotation) has added since.
+  // Interference (push / pin / wall), see the public block.
+  struct Window {
+    double value, start_ms, end_ms;
+  };
+  std::vector<Window> forces_, pins_;
+  double sim_ms_ = 0.0;
+  bool wall_set_ = false, was_pinned_ = false;
+  double wall_in_ = 0.0, pin_left_in_ = 0.0, pin_right_in_ = 0.0, pin_heading_deg_ = 0.0;
   bool use_real_auto_task_ = false;
   bool imu_written_ = false;
   double imu_last_written_ = 0.0;
