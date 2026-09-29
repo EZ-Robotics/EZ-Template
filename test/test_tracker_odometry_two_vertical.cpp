@@ -156,8 +156,7 @@ void check_control(Cfg c, double x, double y) {
 
 TEST_CASE("everything but two vertical trackers keeps the pose it had before the two vertical tracker change") {
   // Final poses recorded from dev (before the change), to 1e-6 in.  Only the both-verticals branch changed, so
-  // one vertical tracker and drive encoders only must not move.  (Horizontal tracker rows lived here too until its
-  // sign was fixed; test_tracker_odometry_horizontal.cpp checks those against the true pose instead.)
+  // one vertical tracker, drive encoders only, and a horizontal tracker with either of those must not move.
   Cfg c;
 
   c = Cfg();
@@ -174,4 +173,18 @@ TEST_CASE("everything but two vertical trackers keeps the pose it had before the
   c = Cfg();
   c.tell_drive_width = true;  // drive encoders with a known drive width
   check_control(c, -0.336501675, 31.481806935);
+
+  c = Cfg();
+  c.horiz = 2.0;
+  check_control(c, 3.991865741, 35.251397225);
+
+  c = Cfg();
+  c.horiz = 2.0;
+  c.horiz_front = true;
+  check_control(c, -1.665004682, 32.908235219);
+
+  c = Cfg();
+  c.left = 3.5;
+  c.horiz = 2.0;
+  check_control(c, 3.991039925, 35.248281792);
 }

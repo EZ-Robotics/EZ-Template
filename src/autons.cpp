@@ -382,8 +382,8 @@ void measure_offsets() {
   f_offset /= turns_measured;
 
   // Turning clockwise, a vertical tracker on the left counts up and one on the right counts down.
-  // A horizontal tracker counts up when the robot moves left, so it counts up at the back and down at the front.
-  // A tracker with the other sign is wired backwards.
+  // A vertical tracker with the other sign is wired backwards.  A horizontal tracker can be wired either way,
+  // so it only gets its offset reported (expected_sign of 0.0).
   int line = 0;
   auto report = [&](const char* name, ez::tracking_wheel* tracker, double offset, double expected_sign) {
     if (tracker == nullptr) return;
@@ -393,7 +393,7 @@ void measure_offsets() {
     printf("%s\n", text);
     ez::screen_print(text, line++);
 
-    if (offset * expected_sign < 0.0) {
+    if (expected_sign != 0.0 && offset * expected_sign < 0.0) {
       snprintf(text, sizeof(text), "%s tracker looks reversed, flip its port sign", name);
       printf("%s\n", text);
       ez::screen_print(text, line++);
@@ -404,8 +404,8 @@ void measure_offsets() {
   };
   report("left", chassis.odom_tracker_left, l_offset, 1.0);
   report("right", chassis.odom_tracker_right, r_offset, -1.0);
-  report("back", chassis.odom_tracker_back, b_offset, 1.0);
-  report("front", chassis.odom_tracker_front, f_offset, -1.0);
+  report("back", chassis.odom_tracker_back, b_offset, 0.0);
+  report("front", chassis.odom_tracker_front, f_offset, 0.0);
 }
 
 // . . .

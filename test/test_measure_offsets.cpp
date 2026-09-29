@@ -83,8 +83,8 @@ void measure_offsets_copy(Rig& rig) {
   f_offset /= turns_measured;
 
   // Turning clockwise, a vertical tracker on the left counts up and one on the right counts down.
-  // A horizontal tracker counts up when the robot moves left, so it counts up at the back and down at the front.
-  // A tracker with the other sign is wired backwards.
+  // A vertical tracker with the other sign is wired backwards.  A horizontal tracker can be wired either way,
+  // so it only gets its offset reported (expected_sign of 0.0).
   int line = 0;
   auto report = [&](const char* name, ez::tracking_wheel* tracker, double offset, double expected_sign) {
     if (tracker == nullptr) return;
@@ -94,7 +94,7 @@ void measure_offsets_copy(Rig& rig) {
     printf("%s\n", text);
     ez::screen_print(text, line++);
 
-    if (offset * expected_sign < 0.0) {
+    if (expected_sign != 0.0 && offset * expected_sign < 0.0) {
       snprintf(text, sizeof(text), "%s tracker looks reversed, flip its port sign", name);
       printf("%s\n", text);
       ez::screen_print(text, line++);
@@ -105,8 +105,8 @@ void measure_offsets_copy(Rig& rig) {
   };
   report("left", chassis.odom_tracker_left, l_offset, 1.0);
   report("right", chassis.odom_tracker_right, r_offset, -1.0);
-  report("back", chassis.odom_tracker_back, b_offset, 1.0);
-  report("front", chassis.odom_tracker_front, f_offset, -1.0);
+  report("back", chassis.odom_tracker_back, b_offset, 0.0);
+  report("front", chassis.odom_tracker_front, f_offset, 0.0);
   // ---- copy of measure_offsets() from src/autons.cpp ends here ----
 }
 
@@ -143,6 +143,22 @@ TEST_CASE("measure_offsets: left, right and back trackers are measured within 2 
   CHECK(out.find("reversed") == std::string::npos);
 }
 
+TEST_CASE("measure_offsets: a horizontal tracker wired either way is measured and never called reversed") {
+  for (bool front : {false, true}) {
+    for (bool wired_left : {false, true}) {
+      Cfg c;
+      c.horiz = 2.0;
+      c.horiz_front = front;
+      c.horiz_wired_left = wired_left;
+      Rig rig(c);
+      const std::string out = run(rig);
+      INFO("front " << front << " wired left " << wired_left);
+      CHECK(within_2_percent(offset_of(rig.th.get()), 2.0));
+      CHECK(out.find("reversed") == std::string::npos);
+    }
+  }
+}
+
 TEST_CASE("measure_offsets: a front tracker is measured within 2 percent of its true offset") {
   Cfg c;
   c.horiz = 2.0;
@@ -169,25 +185,7 @@ TEST_CASE("measure_offsets: the offset to type into the constructor is printed f
   CHECK(out.find("front tracker") == std::string::npos);
 }
 
-TEST_CASE("measure_offsets: a reversed tracker is named, and its offset is still measured") {
-  {
-    Cfg c;
-    c.horiz = 2.0;
-    c.horiz_wired_left = false;  // counts up when the robot moves right, backwards
-    Rig rig(c);
-    const std::string out = run(rig);
-    CHECK(out.find("back tracker looks reversed, flip its port sign") != std::string::npos);
-    CHECK(within_2_percent(offset_of(rig.th.get()), 2.0));
-  }
-  {
-    Cfg c;
-    c.horiz = 2.0;
-    c.horiz_front = true;
-    c.horiz_wired_left = false;
-    Rig rig(c);
-    const std::string out = run(rig);
-    CHECK(out.find("front tracker looks reversed, flip its port sign") != std::string::npos);
-  }
+TEST_CASE("measure_offsets: a reversed vertical tracker is named, and its offset is still measured") {
   {
     Cfg c;
     c.left = 3.5;
