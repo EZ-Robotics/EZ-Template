@@ -3734,6 +3734,10 @@ class Drive {
    */
   ez::Lock<pros::RecursiveMutex> drive_mutex;
 
+  // The drive motors an mA exit should watch: every motor on the wanted sides that is not handed to the PTO.
+  // Rebuilt on every call; see its definition in exit_conditions.cpp.
+  std::vector<pros::Motor> mA_exit_motors(bool include_left = true, bool include_right = true);
+
   // Bumped once by every top-level pid_*_set() (see set_drive_pid.cpp/set_turn_pid.cpp/set_swing_pid.cpp/
   // set_odom_pid.cpp), never anywhere else. Lets a wait tell whether a write to `interfered` -- its own, or
   // one already sitting there when it starts -- belongs to the motion that wait was actually started for, or
