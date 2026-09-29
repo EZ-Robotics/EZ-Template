@@ -36,6 +36,17 @@
 // real pp_task running in this host harness -- see test_all_public_waits_retarget_table.cpp's own
 // pin_pp() comment), so this call can only end via the per-axis exit/latch path this test is about, or
 // via StuckWatch, never by genuinely reaching the requested index.
+//
+// Superseded in part by a later fix: this whole loop runs only before its own checkpoint, so xyPID's
+// target is always the moving look-ahead point, never the real path -- the same reasoning pid_wait()'s
+// own pre-last-point loop already used xy's window exits for. xy_exit in the snippet above can no
+// longer become SMALL_EXIT/BIG_EXIT at all here (only mA_EXIT), so its half of the recheck this file
+// documents is now unreachable dead code that was removed, and the "both non-RUNNING" gate below it can
+// only ever fire from a real mA_EXIT paired with angle's own latch. The first test case below still
+// passes, but no longer through that gate: with no over-current scripted, it now needs StuckWatch's own
+// backstop to end the wait (see its own comment, updated). The control -- second test case below -- had
+// to be rewritten outright: it relied on xy's own position exit to give a stationary fake PID a fast
+// clean finish, which no longer exists before a checkpoint that's never actually reached.
 #include <cmath>
 
 #include "doctest.h"
@@ -137,15 +148,19 @@ TEST_CASE("pid_wait_until_index_started rechecks a latched angle exit, so a post
 }
 
 // Control: the identical closing shape, but angle is never bumped after latching -- stays at 0 for
-// the rest of the run. Proves the recheck this test wants doesn't cost a genuinely settled wait a
-// false late exit.
-TEST_CASE("pid_wait_until_index_started control: both axes settling and staying settled is a clean success") {
+// the rest of the run -- AND pp_index genuinely advances to its checkpoint, instead of sitting frozen
+// like every other script in this file. This function no longer trusts xy's own position exit as a
+// clean finish before its checkpoint at all (this fix's own change, exit_conditions.cpp) -- so a wait
+// that settles but never actually gets anywhere has no legitimate "clean success" left to have; the
+// only thing this control can still prove is that a wait which BOTH settles AND genuinely arrives gets
+// a clean, uninterfered finish, not a false late exit from the recheck this file is about.
+TEST_CASE("pid_wait_until_index_started control: both axes settling and genuinely reaching the checkpoint is a clean success") {
   Drive chassis = make_chassis();
   setup_pp(chassis);
 
   g_chassis = &chassis;
   g_pass = 0;
-  auto settle_script = []() {
+  auto settle_and_advance_script = []() {
     ++g_pass;
     ez::detail::stats.auto_task_passes.fetch_add(1);
     Drive& c = *g_chassis;
@@ -156,9 +171,11 @@ TEST_CASE("pid_wait_until_index_started control: both axes settling and staying 
     double xy_e = std::fmax(0.0, 20.0 - 1.0 * n);
     c.xyPID.error = xy_e;
     DriveTestAccess::refresh(c.xyPID);
+    int& idx = DriveTestAccess::pp_index(c);
+    idx = std::min(idx + 1, (int)DriveTestAccess::pp_movements(c).size() - 1);
   };
-  settle_script();
-  test_stub::g_clock.on_delay = settle_script;
+  settle_and_advance_script();
+  test_stub::g_clock.on_delay = settle_and_advance_script;
   test_stub::g_clock.delay_calls_until_stop = 100;
 
   bool returned = true;
@@ -170,7 +187,7 @@ TEST_CASE("pid_wait_until_index_started control: both axes settling and staying 
   test_stub::g_clock.delay_calls_until_stop = -1;
   test_stub::g_clock.on_delay = nullptr;
 
-  MESSAGE("returned=", returned, " interfered=", chassis.interfered);
+  MESSAGE("returned=", returned, " interfered=", chassis.interfered, " pp_index=", DriveTestAccess::pp_index(chassis));
   CHECK(returned);
   CHECK_FALSE(chassis.interfered);
 }

@@ -1560,6 +1560,18 @@ void Drive::pid_wait_until_point(pose target) {
   exit_output a_exit = RUNNING;
   StuckWatch watch(xyPID, current_a_odomPID, pp_index, util::distance_to_point(target, odom_pose_get()), util::distance_to_point(odom_start, odom_pose_get()), std::fabs(odom_theta_get() - odom_start.theta));
 
+  // Whether pure pursuit is still before its last point right now -- see pid_wait()'s own matching comment
+  // (on the pre-last-point loop in its odom branch) for why xy's window exits mean nothing there: before the
+  // last point, xyPID's target is only ever the moving look-ahead point, not `target` (this call's own,
+  // real, non-moving target). On the last point, or in POINT_TO_POINT, xyPID's target IS the real target, so
+  // today's clean-latch failsafe below is a real one and stays. Locked, matching how pid_wait()'s own
+  // target_distance lambda reads pp_movements -- a motion started from another task can replace it while
+  // this reads it.
+  auto before_last_point = [&]() {
+    ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+    return mode == PURE_PURSUIT && pp_index != (int)pp_movements.size() - 1;
+  };
+
   while (true) {
     if (mode != mode_snapshot || odom_target_start.x != retarget_target.x || odom_target_start.y != retarget_target.y || odom_target_start.theta != retarget_target.theta) {
       if (print_toggle) std::cout << "  XY: retargeted by a concurrent motion mid-wait, ending early instead of finishing on the wrong target.\n";
@@ -1569,7 +1581,37 @@ void Drive::pid_wait_until_point(pose target) {
     secondary_velocity_sensor_update(xyPID);
     secondary_velocity_sensor_update(current_a_odomPID);
     xy_velocity_exit_hold_update();
-    xy_exit = xy_exit != RUNNING ? xy_exit : without_velocity(xyPID.exit_condition(both_sides(left_motors, right_motors)));
+    // Before the last point, xyPID's target is a moving look-ahead point (see before_last_point()'s own
+    // comment): SMALL_EXIT/BIG_EXIT/VELOCITY_EXIT on it are discarded on purpose, only mA_EXIT (a stalled
+    // motor's current is real regardless of target) can end the wait through this axis. The mA snapshot/
+    // restore mirrors pid_wait()'s own pre-last-point loop exactly, for the identical reason (GitHub issue
+    // #527): PID::exit_condition() calls PID::timers_reset() whenever ANY channel latches, wiping every
+    // channel's timer together -- including this same call's own mA progress -- so a discarded SMALL_EXIT/
+    // BIG_EXIT would silently erase real, ongoing over-current progress before it ever reaches mA_timeout.
+    if (xy_exit == RUNNING) {
+      bool xy_before_last_point = before_last_point();
+      std::vector<pros::Motor> xy_motors = both_sides(left_motors, right_motors);
+      bool xy_mA_tracked = xyPID.exit.mA_timeout != 0;
+      bool xy_over_current = false;
+      if (xy_before_last_point && xy_mA_tracked) {
+        for (auto& motor : xy_motors) {
+          std::int32_t xy_over = motor.is_over_current();
+          bool xy_dead = xy_over == PROS_ERR && !std::isfinite(motor.get_position());
+          if (xy_over == 1 || xy_dead) {
+            xy_over_current = true;
+            break;
+          }
+        }
+      }
+      PID::MATimerSnapshot xy_mA_snapshot = xyPID.mA_timer_snapshot();
+      exit_output xy_pass = xyPID.exit_condition(xy_motors);
+      if (xy_before_last_point) {
+        if (xy_mA_tracked && xy_over_current && (xy_pass == SMALL_EXIT || xy_pass == BIG_EXIT || xy_pass == VELOCITY_EXIT)) xyPID.mA_timer_restore_and_credit(xy_mA_snapshot);
+        if (xy_pass == mA_EXIT) xy_exit = mA_EXIT;
+      } else {
+        xy_exit = without_velocity(xy_pass);
+      }
+    }
     a_exit = a_exit != RUNNING ? a_exit : without_velocity(current_a_odomPID.exit_condition(both_sides(left_motors, right_motors)));
 
     // Same stuck check as pid_wait(), for a robot that is stuck but moving, which the exits above miss
@@ -1708,7 +1750,34 @@ void Drive::pid_wait_until_index_started(int index) {
     secondary_velocity_sensor_update(xyPID);
     secondary_velocity_sensor_update(current_a_odomPID);
     xy_velocity_exit_hold_update();
-    xy_exit = xy_exit != RUNNING ? xy_exit : without_velocity(xyPID.exit_condition(both_sides(left_motors, right_motors)));
+    // This whole loop runs only before its own checkpoint (the while condition above), so xyPID's target is
+    // always the moving look-ahead point here, never the real path -- the same reasoning as pid_wait()'s own
+    // pre-last-point loop (see its comment). SMALL_EXIT/BIG_EXIT/VELOCITY_EXIT on it are discarded on
+    // purpose; only mA_EXIT (a stalled motor's current is real regardless of target) can end the wait
+    // through this axis. The mA snapshot/restore mirrors pid_wait()'s own pre-last-point loop exactly, for
+    // the identical reason (GitHub issue #527): PID::exit_condition() calls PID::timers_reset() whenever ANY
+    // channel latches, wiping every channel's timer together -- including this same call's own mA progress --
+    // so a discarded SMALL_EXIT/BIG_EXIT would silently erase real, ongoing over-current progress before it
+    // ever reaches mA_timeout.
+    if (xy_exit == RUNNING) {
+      std::vector<pros::Motor> xy_motors = both_sides(left_motors, right_motors);
+      bool xy_mA_tracked = xyPID.exit.mA_timeout != 0;
+      bool xy_over_current = false;
+      if (xy_mA_tracked) {
+        for (auto& motor : xy_motors) {
+          std::int32_t xy_over = motor.is_over_current();
+          bool xy_dead = xy_over == PROS_ERR && !std::isfinite(motor.get_position());
+          if (xy_over == 1 || xy_dead) {
+            xy_over_current = true;
+            break;
+          }
+        }
+      }
+      PID::MATimerSnapshot xy_mA_snapshot = xyPID.mA_timer_snapshot();
+      exit_output xy_pass = xyPID.exit_condition(xy_motors);
+      if (xy_mA_tracked && xy_over_current && (xy_pass == SMALL_EXIT || xy_pass == BIG_EXIT || xy_pass == VELOCITY_EXIT)) xyPID.mA_timer_restore_and_credit(xy_mA_snapshot);
+      if (xy_pass == mA_EXIT) xy_exit = mA_EXIT;
+    }
     a_exit = a_exit != RUNNING ? a_exit : without_velocity(current_a_odomPID.exit_condition(both_sides(left_motors, right_motors)));
 
     // Same stuck check as pid_wait(), for a robot that is stuck but moving, which the exits above miss
@@ -1719,18 +1788,14 @@ void Drive::pid_wait_until_index_started(int index) {
     }
 
     if (xy_exit != RUNNING && a_exit != RUNNING) {
-      // Once an axis latches SMALL_EXIT/BIG_EXIT, exit_condition() above is never called on it again --
-      // so a disturbance landing on an already-latched axis (most commonly angle, which typically settles
-      // first) went completely unwatched for the rest of this wait. Recheck each latched axis against the
-      // window it exited through, using its own live error -- not exit_condition() (that would restart its
-      // internal timers) -- the same treatment pid_wait_until_point() and pid_wait()'s odom branch already
-      // give a clean double-exit (see their own comments on this identical bug). VELOCITY_EXIT is never
-      // latched here (without_velocity() already maps it to RUNNING); mA_EXIT isn't a window exit and is
-      // handled below regardless, so it's left alone. A latched axis that has drifted back outside its
-      // window is un-latched (back to RUNNING), falling through to keep waiting -- the stuck check above
-      // remains the backstop if the disturbance never resolves.
-      if (xy_exit == SMALL_EXIT && std::fabs(xyPID.error) >= xyPID.exit.small_error) xy_exit = RUNNING;
-      else if (xy_exit == BIG_EXIT && std::fabs(xyPID.error) >= xyPID.exit.big_error) xy_exit = RUNNING;
+      // xy_exit can only be RUNNING or mA_EXIT here (see above) -- there's nothing to recheck on that axis
+      // in this loop. Angle can still latch SMALL_EXIT/BIG_EXIT on its own moving-look-ahead-independent
+      // target, so it keeps the same recheck pid_wait_until_point() and pid_wait()'s odom branch give a
+      // clean double-exit (see their own comments on this identical bug): against the window it exited
+      // through, using its own live error -- not exit_condition() (that would restart its internal timers).
+      // VELOCITY_EXIT is never latched here (without_velocity() already maps it to RUNNING). A latched axis
+      // that has drifted back outside its window is un-latched (back to RUNNING), falling through to keep
+      // waiting -- the stuck check above remains the backstop if the disturbance never resolves.
       if (a_exit == SMALL_EXIT && std::fabs(current_a_odomPID.error) >= current_a_odomPID.exit.small_error) a_exit = RUNNING;
       else if (a_exit == BIG_EXIT && std::fabs(current_a_odomPID.error) >= current_a_odomPID.exit.big_error) a_exit = RUNNING;
     }
