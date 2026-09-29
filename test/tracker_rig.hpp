@@ -33,6 +33,8 @@ struct Cfg {
   std::optional<double> set_left, set_right, set_horiz;
   bool horiz_front = false;       // false: back tracker, true: front tracker
   bool horiz_wired_left = true;   // true: reads positive when the robot moves left
+  bool left_reversed = false;     // a vertical tracker wired to count up going backward
+  bool right_reversed = false;
   double drive_width = 12.0;      // physical distance between the drive wheels
   bool tell_drive_width = false;  // call drive_width_set(drive_width) like a team with IMEs would
   double start_x = 0.0, start_y = 0.0, start_heading = 0.0;
@@ -105,8 +107,8 @@ struct Rig {
 
   void push() {
     (*DriveTestAccess::all_imus(chassis).begin())->fake_rotation = tth;
-    if (tl) tl->smart_encoder.fake_position = (std::int32_t)std::llround(acc_l * tl->ticks_per_inch());
-    if (tr) tr->smart_encoder.fake_position = (std::int32_t)std::llround(acc_r * tr->ticks_per_inch());
+    if (tl) tl->smart_encoder.fake_position = (std::int32_t)std::llround((cfg.left_reversed ? -acc_l : acc_l) * tl->ticks_per_inch());
+    if (tr) tr->smart_encoder.fake_position = (std::int32_t)std::llround((cfg.right_reversed ? -acc_r : acc_r) * tr->ticks_per_inch());
     if (th) {
       const double reading = cfg.horiz_wired_left ? acc_h : -acc_h;
       th->smart_encoder.fake_position = (std::int32_t)std::llround(reading * th->ticks_per_inch());
@@ -114,6 +116,14 @@ struct Rig {
     const double tpi = chassis.drive_tick_per_inch();
     chassis.left_motors[0].fake().position = (std::int32_t)std::llround(acc_iml * tpi);
     chassis.right_motors[0].fake().position = (std::int32_t)std::llround(acc_imr * tpi);
+  }
+
+  // Puts the robot back at the origin facing 0 with every sensor reading 0, as the library's own resets do.
+  // Call it after a drive_imu_reset / drive_sensor_reset / odom_xyt_set(0, 0, 0) done by the code under test.
+  void rezero() {
+    acc_l = acc_r = acc_h = acc_iml = acc_imr = 0.0;
+    tx = ty = tth = 0.0;
+    push();
   }
 
   static int steps_for(double amount, double per_step) { return std::max(1, (int)std::ceil(std::fabs(amount) / per_step)); }
