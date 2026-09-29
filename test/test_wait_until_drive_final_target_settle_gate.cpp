@@ -56,7 +56,13 @@ TEST_CASE("wait_until_drive() DRIVE: a stall between the checkpoint and the real
   // Position exits only (velocity/mA off) -- isolates this to the small/big latch path the bug
   // is about; a stall this close to the real target would also eventually trip other backstops,
   // which would only mask the gap this test is isolating.
-  chassis.pid_drive_exit_condition_set(90, 1.0, 250, 3.0, 0, 0);
+  //
+  // small_error is 0.25 in, not the 1.0 this test used to use: a robot within small_error of a wait_until()
+  // checkpoint now counts as having arrived (the team's own definition of "there", and what a chained motion
+  // needs), so with 1.0 the 0.5 in stop below is clean. This test stopped locking "a stop 0.5 in short of the
+  // checkpoint is interfered whatever small_error is"; what it still locks, with a small_error the stop is
+  // genuinely outside of, is that a stall short of the checkpoint is not a settle.
+  chassis.pid_drive_exit_condition_set(90, 0.25, 250, 3.0, 0, 0);
   chassis.drive_sensor_reset();
 
   const double final_target = 24.0;

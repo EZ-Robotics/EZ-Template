@@ -345,6 +345,56 @@ exit_output without_velocity(exit_output e) { return e == VELOCITY_EXIT ? RUNNIN
 // DRIVE (a plain, non-odom move) is unaffected: leftPID/rightPID's target there already is the real drive target.
 exit_output without_position_exits(exit_output e) { return (e == SMALL_EXIT || e == BIG_EXIT) ? RUNNING : e; }
 
+// What a pid_wait_until() checkpoint means for `interfered` when the wait ends without the robot crossing it. One rule
+// for drive, turn and swing, so they cannot disagree. (Not used for the odom waits: pid_wait_until_point()'s window-exit
+// failsafe already returns clean, only its stuck check and mA/velocity exits mark interfered, and wait_until_drive() on
+// an odom move measures encoder distance against a path whose length is not the straight line from start to target, so it
+// has no clean "past the target" test.)
+//
+// A checkpoint is UNREACHABLE when it does not lie between where the motion started and its final target, inclusive --
+// past the target, or on the wrong side of the start -- so no amount of driving crosses it: a programming mistake
+// (pid_drive_set(-34_in); pid_wait_until(30_in), a sign error), not an interference. `start` and `final_target` are in
+// whatever frame `checkpoint` is in (distance from the motion's start for a drive, absolute heading for a turn or swing).
+bool checkpoint_unreachable(double start, double final_target, double checkpoint) {
+  double lo = std::fmin(start, final_target) - FINAL_TARGET_TOLERANCE;
+  double hi = std::fmax(start, final_target) + FINAL_TARGET_TOLERANCE;
+  return checkpoint < lo || checkpoint > hi;
+}
+
+enum class CheckpointEnd {
+  Interfered,               // something stopped the robot short of a checkpoint it could reach
+  Clean,                    // the checkpoint is the motion's own final target and the motion settled
+  Unreachable,              // the motion settled and the checkpoint could never be reached: not an interference
+  ReachedWithinSmallError   // the live distance to the checkpoint is inside the motion PID's own small_error
+};
+
+// The motion's own window exit (SMALL_EXIT/BIG_EXIT) latched before the checkpoint was crossed. Never used for mA_EXIT,
+// VELOCITY_EXIT or a stuck watch: those keep marking interfered exactly as before. A robot inside its own small_error of
+// the checkpoint has, by the team's own definition, arrived -- this is what a chained motion needs, whose target is
+// pushed past the checkpoint so it is never the final target, and it also covers a checkpoint just short of the target
+// that the robot settles within small_error of without quite crossing. A small_error of 0 means it is not configured, and
+// never counts.
+CheckpointEnd checkpoint_end_on_window_exit(bool at_final_target, bool unreachable, double distance_to_checkpoint, double small_error) {
+  if (at_final_target) return CheckpointEnd::Clean;
+  if (unreachable) return CheckpointEnd::Unreachable;
+  if (small_error > 0.0 && distance_to_checkpoint <= small_error) return CheckpointEnd::ReachedWithinSmallError;
+  return CheckpointEnd::Interfered;
+}
+
+// The stuck watch fired. Only "stopped inside big_error" at the motion's own final target, or of a motion whose checkpoint
+// could never have been reached, counts as the motion settling; anything else is a real stall and stays interfered.
+CheckpointEnd checkpoint_end_on_stuck(bool at_final_target, bool unreachable, bool settled) {
+  if (!settled) return CheckpointEnd::Interfered;
+  if (at_final_target) return CheckpointEnd::Clean;
+  if (unreachable) return CheckpointEnd::Unreachable;
+  return CheckpointEnd::Interfered;
+}
+
+// Always printed, not gated on print_toggle: the team wrote something that can never do what they meant.
+void print_unreachable_checkpoint(double checkpoint, double final_target) {
+  printf("pid_wait_until(%.2f) can't be reached: this motion goes to %.2f. Check the sign, or that the checkpoint is before the target.\n", checkpoint, final_target);
+}
+
 }  // namespace
 
 // See drive.hpp's own comment on InterferedScope/motion_generation/interfered_generation for the concurrency
@@ -1146,6 +1196,10 @@ void Drive::wait_until_drive(double target) {
   // even if a retarget already landed in the delay above -- though the retarget guard's first pass
   // returns before this value is ever consulted in that case anyway.
   bool at_final_target = !is_odom && std::fabs(l_tar - left_target) < FINAL_TARGET_TOLERANCE && std::fabs(r_tar - right_target) < FINAL_TARGET_TOLERANCE;
+  // The motion's own final target, as a distance from where it started (pushed past the checkpoint by the chain constant
+  // for pid_wait_quick_chain(), which is why a chained checkpoint is inside it and reachable). See checkpoint_unreachable().
+  double final_distance = left_target - l_start;
+  bool unreachable = !is_odom && checkpoint_unreachable(0.0, final_distance, target);
 
   while (true) {
     if (mode != mode_snapshot) {
@@ -1214,8 +1268,8 @@ void Drive::wait_until_drive(double target) {
         if ((left_exit == RUNNING || right_exit == RUNNING) && (left_exit != RUNNING || left_stuck) && (right_exit != RUNNING || right_stuck)) {
           // Same settled carve-out as pid_wait()'s DRIVE branch, gated to only apply when this
           // wait_until()'s target really is the motion's final target -- see at_final_target's comment.
-          bool stalled = true;
-          if (at_final_target) {
+          bool settled = false;
+          if (at_final_target || unreachable) {
             // A side that already latched an exit is only trusted as settled here if its live error
             // is still inside the window that exit means -- a side that latched early and has since
             // been shoved or pinned off target must not count as settled just because it once exited
@@ -1223,9 +1277,12 @@ void Drive::wait_until_drive(double target) {
             // stuck-detected path instead).
             bool left_settled = std::fabs(leftPID.error) < leftPID.exit.big_error;
             bool right_settled = std::fabs(rightPID.error) < rightPID.exit.big_error;
-            stalled = !(left_settled && right_settled);
+            settled = left_settled && right_settled;
           }
+          CheckpointEnd end = checkpoint_end_on_stuck(at_final_target, unreachable, settled);
+          bool stalled = end == CheckpointEnd::Interfered;
           if (print_toggle) std::cout << "  Drive: " << (stalled ? "Stuck" : "Stuck, but stopped inside the big error windows, counted as settled") << " Wait Until Exit Failsafe, triggered at " << drive_sensor_left() - l_start << " instead of " << target << "\n";
+          if (end == CheckpointEnd::Unreachable) print_unreachable_checkpoint(target, final_distance);
           if (stalled) interfered_scope.mark();
           return;
         }
@@ -1277,9 +1334,14 @@ void Drive::wait_until_drive(double target) {
           // at_final_target's comment and WAIT_BEHAVIOR_SPEC.md's settled-exemption entry. A
           // checkpoint short of the final target that the robot stopped short of past this point is
           // a real early exit, not a settle.
-          bool stalled = !at_final_target;
+          CheckpointEnd end = checkpoint_end_on_window_exit(at_final_target, unreachable, is_odom ? INFINITY : std::fmax(std::fabs(l_error), std::fabs(r_error)), leftPID.exit.small_error);
+          bool stalled = end == CheckpointEnd::Interfered;
           if (left_exit == mA_EXIT || left_exit == VELOCITY_EXIT || right_exit == mA_EXIT || right_exit == VELOCITY_EXIT) {
             stalled = true;
+          } else if (end == CheckpointEnd::Unreachable) {
+            print_unreachable_checkpoint(target, final_distance);
+          } else if (end == CheckpointEnd::ReachedWithinSmallError && print_toggle) {
+            printf("  Drive Wait Until Exit Success, within small_error of the checkpoint. Triggered at: L,R(%.2f, %.2f)  Target: L,R(%.2f, %.2f)\n", drive_sensor_left() - l_start, drive_sensor_right() - r_start, target, target);
           }
           if (stalled) interfered_scope.mark();
           return;
@@ -1410,6 +1472,12 @@ void Drive::wait_until_turn_swing_internal(double target) {
   // final aim".
   bool turn_at_final_target = std::fabs(target - turn_target) < FINAL_TARGET_TOLERANCE && (mode != TURN_TO_POINT || used_motion_chain_scale == 0.0);
   bool swing_at_final_target = std::fabs(target - swing_target) < FINAL_TARGET_TOLERANCE;
+  // See checkpoint_unreachable(). Only a plain TURN and a SWING: a turn to a point recomputes its aim every pass, so
+  // where it ends is not known at the start and no checkpoint can be called unreachable for it. `turn_target`/
+  // `swing_target` include the chain constant pid_wait_quick_chain() pushes past the checkpoint, so a chained
+  // checkpoint is inside the motion and reachable.
+  bool turn_unreachable = mode_snapshot == TURN && checkpoint_unreachable(chain_sensor_start, turn_target, target);
+  bool swing_unreachable = mode_snapshot == SWING && checkpoint_unreachable(chain_sensor_start, swing_target, target);
 
   // Let the PID run at least 1 iteration before seeding the progress backstop from real error --
   // matching pid_wait() and wait_until_drive(), both of which delay before constructing their own
@@ -1453,8 +1521,10 @@ void Drive::wait_until_turn_swing_internal(double target) {
             // Same settled carve-out as pid_wait()'s TURN branch, gated to only apply when this
             // wait_until()'s target really is the motion's final target -- see turn_at_final_target's
             // comment above.
-            bool stalled = !turn_at_final_target || !(std::fabs(turnPID.error) < turnPID.exit.big_error);
+            CheckpointEnd end = checkpoint_end_on_stuck(turn_at_final_target, turn_unreachable, std::fabs(turnPID.error) < turnPID.exit.big_error);
+            bool stalled = end == CheckpointEnd::Interfered;
             if (print_toggle) std::cout << "  Turn: " << (stalled ? "Stuck" : "Stuck, but stopped inside the big error window, counted as settled") << " Wait Until Exit Failsafe, triggered at " << drive_angle_get() << " instead of " << target << "\n";
+            if (end == CheckpointEnd::Unreachable) print_unreachable_checkpoint(target, turn_target);
             if (stalled) interfered_scope.mark();
             return;
           }
@@ -1480,8 +1550,15 @@ void Drive::wait_until_turn_swing_internal(double target) {
             // BIG_EXIT latch only ends this without interfered=true when this wait_until()'s own
             // target really is the motion's final target -- see turn_at_final_target's own comment
             // for TURN_TO_POINT's rule.
-            bool stalled = !turn_at_final_target;
-            if (turn_exit == mA_EXIT || turn_exit == VELOCITY_EXIT) stalled = true;
+            CheckpointEnd end = checkpoint_end_on_window_exit(turn_at_final_target, turn_unreachable, std::fabs(g_error), turnPID.exit.small_error);
+            bool stalled = end == CheckpointEnd::Interfered;
+            if (turn_exit == mA_EXIT || turn_exit == VELOCITY_EXIT) {
+              stalled = true;
+            } else if (end == CheckpointEnd::Unreachable) {
+              print_unreachable_checkpoint(target, turn_target);
+            } else if (end == CheckpointEnd::ReachedWithinSmallError && print_toggle) {
+              printf("  Turn Wait Until Exit Success, within small_error of the checkpoint. Triggered at %.2f.  Target: %.2f\n", drive_angle_get(), target);
+            }
             if (stalled) interfered_scope.mark();
             return;
           }
@@ -1510,8 +1587,10 @@ void Drive::wait_until_turn_swing_internal(double target) {
             // Same settled carve-out as pid_wait()'s SWING branch, gated to only apply when this
             // wait_until()'s target really is the motion's final target -- see swing_at_final_target's
             // comment above.
-            bool stalled = !swing_at_final_target || !(std::fabs(swingPID.error) < swingPID.exit.big_error);
+            CheckpointEnd end = checkpoint_end_on_stuck(swing_at_final_target, swing_unreachable, std::fabs(swingPID.error) < swingPID.exit.big_error);
+            bool stalled = end == CheckpointEnd::Interfered;
             if (print_toggle) std::cout << "  Swing: " << (stalled ? "Stuck" : "Stuck, but stopped inside the big error window, counted as settled") << " Wait Until Exit Failsafe, triggered at " << drive_angle_get() << " instead of " << target << "\n";
+            if (end == CheckpointEnd::Unreachable) print_unreachable_checkpoint(target, swing_target);
             if (stalled) interfered_scope.mark();
             return;
           }
@@ -1528,8 +1607,15 @@ void Drive::wait_until_turn_swing_internal(double target) {
           if (swing_exit != RUNNING) {
             if (print_toggle) std::cout << "  Swing: " << exit_to_string(swing_exit) << " Wait Until Exit Failsafe, triggered at " << drive_angle_get() << " instead of " << target << "\n";
 
-            bool stalled = !swing_at_final_target;
-            if (swing_exit == mA_EXIT || swing_exit == VELOCITY_EXIT) stalled = true;
+            CheckpointEnd end = checkpoint_end_on_window_exit(swing_at_final_target, swing_unreachable, std::fabs(g_error), swingPID.exit.small_error);
+            bool stalled = end == CheckpointEnd::Interfered;
+            if (swing_exit == mA_EXIT || swing_exit == VELOCITY_EXIT) {
+              stalled = true;
+            } else if (end == CheckpointEnd::Unreachable) {
+              print_unreachable_checkpoint(target, swing_target);
+            } else if (end == CheckpointEnd::ReachedWithinSmallError && print_toggle) {
+              printf("  Swing Wait Until Exit Success, within small_error of the checkpoint. Triggered at %.2f. Target: %.2f\n", drive_angle_get(), target);
+            }
             if (stalled) interfered_scope.mark();
             return;
           }
