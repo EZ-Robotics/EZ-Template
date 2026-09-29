@@ -111,6 +111,9 @@ TEST_CASE("two vertical trackers, set offsets wrong: never worse than the old pl
       if (sl - sr >= 0.0 && sl - sr <= 2.0 * (tl - tr)) {
         inside++;
         CHECK(rig.drift_from_start() <= old_drift + 1e-3);
+      } else {
+        // the other side of the boundary: a left set smaller than the right by more than the real difference is worse
+        CHECK(rig.drift_from_start() >= old_drift - 1e-3);
       }
     }
   }
@@ -131,4 +134,57 @@ TEST_CASE("two vertical trackers: odom_xyt_set mid run holds the set pose on the
   // and it keeps tracking from there
   rig.turn(90.0);
   CHECK(rig.err() < 0.05);
+}
+
+namespace {
+// The same script for every control below: an arc, a point turn, a straight, a slide, a swing, another arc.
+void control_script(Rig& r) {
+  r.arc(24, 60);
+  r.turn(-120);
+  r.drive(10);
+  r.slide(3);
+  r.swing(45, true);
+  r.arc(12, -30);
+}
+void check_control(Cfg c, double x, double y) {
+  Rig r(c);
+  control_script(r);
+  CHECK(std::fabs(r.chassis.odom_x_get() - x) < 1e-6);
+  CHECK(std::fabs(r.chassis.odom_y_get() - y) < 1e-6);
+}
+}  // namespace
+
+TEST_CASE("everything but two vertical trackers keeps the pose it had before the two vertical tracker change") {
+  // Final poses recorded from dev (before the change), to 1e-6 in.  Only the both-verticals branch changed, so
+  // one vertical tracker, drive encoders only, and a horizontal tracker with either of those must not move.
+  Cfg c;
+
+  c = Cfg();
+  c.left = 3.5;
+  check_control(c, -0.337327492, 31.478691503);
+
+  c = Cfg();
+  c.right = 2.0;
+  check_control(c, -0.337327964, 31.478692357);
+
+  c = Cfg();
+  check_control(c, -0.336501675, 31.481806935);
+
+  c = Cfg();
+  c.tell_drive_width = true;  // drive encoders with a known drive width
+  check_control(c, -0.336501675, 31.481806935);
+
+  c = Cfg();
+  c.horiz = 2.0;
+  check_control(c, 3.991865741, 35.251397225);
+
+  c = Cfg();
+  c.horiz = 2.0;
+  c.horiz_front = true;
+  check_control(c, -1.665004682, 32.908235219);
+
+  c = Cfg();
+  c.left = 3.5;
+  c.horiz = 2.0;
+  check_control(c, 3.991039925, 35.248281792);
 }

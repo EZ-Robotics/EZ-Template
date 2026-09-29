@@ -225,20 +225,23 @@ void Drive::tracking_wheels_tracking() {
   central_pose.x += h_pose_.x;
   central_pose.y += h_pose_.y;
 
-  odom_current.x = central_pose.x;
-  odom_current.y = central_pose.y;
-
   // If there is a single vert tracker, use it
   if (odom_tracker_left_enabled != odom_tracker_right_enabled) {
     if (odom_tracker_left_enabled) {
       odom_current.x = l_pose.x;
       odom_current.y = l_pose.y;
-    } else if (odom_tracker_right_enabled) {
+    } else {
       odom_current.x = r_pose.x;
       odom_current.y = r_pose.y;
     }
   }
-  // If both sides of a sensor, use central xy
+  // Two vert trackers, average their poses.  Each one is already corrected with its own distance to center,
+  // averaging the raw wheel deltas instead is only right when both trackers sit the same distance from it.
+  else if (odom_tracker_left_enabled && odom_tracker_right_enabled) {
+    odom_current.x = (l_pose.x + r_pose.x) / 2.0;
+    odom_current.y = (l_pose.y + r_pose.y) / 2.0;
+  }
+  // No vert trackers, the drive sides are symmetric so use central xy
   else {
     odom_current.x = central_pose.x;
     odom_current.y = central_pose.y;
