@@ -508,6 +508,11 @@ void Drive::pid_wait() {
   double entry_turn_target = turnPID.target_get();
   double entry_swing_target = swingPID.target_get();
   pose entry_odom_target_start = odom_target_start;
+  // ez_auto_task's pass count as of this call. The stuck backstop's "settled" carve-out below reads a PID's
+  // `error`, which only a real compute changes -- motion_reset() leaves the previous motion's last error in
+  // place -- so if the task has not run at all since this wait began (starved or dead), that error is still
+  // the previous motion's, and it must not read as settled at this motion's target.
+  const std::uint32_t entry_task_passes = stuck_passes();
   // Scopes every `interfered` write below to the motion this call was actually started for -- see
   // drive.hpp's comment on InterferedScope. Opened here, at the same instant as the snapshots above and
   // before any of them can go stale, so it tags the motion this wait is really waiting on, not whatever a
@@ -597,7 +602,9 @@ void Drive::pid_wait() {
           // rule to a full double latch instead of this stuck-detected path).
           bool left_settled = std::fabs(leftPID.error) < leftPID.exit.big_error;
           bool right_settled = std::fabs(rightPID.error) < rightPID.exit.big_error;
-          bool settled = left_settled && right_settled;
+          // ...and only if ez_auto_task has run since this wait began (see entry_task_passes above); if it
+          // has not, both errors are the previous motion's leftovers, not a reading of this one.
+          bool settled = left_settled && right_settled && stuck_passes() != entry_task_passes;
           stalled = !settled;
           settled_via_stuck = settled;
           if (print_toggle) std::cout << "  Drive: " << (stalled ? "Stuck" : "Stuck, but stopped inside the big error windows, counted as settled") << ", error: L," << leftPID.error << " R," << rightPID.error << "\n";
@@ -915,7 +922,7 @@ void Drive::pid_wait() {
         turn_exit = turn_exit != RUNNING ? turn_exit : without_velocity(turnPID.exit_condition(both_sides(left_motors, right_motors)));
         if (turn_exit == RUNNING && watch.stuck(turnPID.error)) {
           // Same settled carve-out as the DRIVE branch above.
-          bool settled = std::fabs(turnPID.error) < turnPID.exit.big_error;
+          bool settled = std::fabs(turnPID.error) < turnPID.exit.big_error && stuck_passes() != entry_task_passes;
           stalled = !settled;
           settled_via_stuck = settled;
           if (print_toggle) std::cout << "  Turn: " << (stalled ? "Stuck" : "Stuck, but stopped inside the big error window, counted as settled") << ", error: " << turnPID.error << "\n";
@@ -999,7 +1006,7 @@ void Drive::pid_wait() {
         swing_exit = swing_exit != RUNNING ? swing_exit : without_velocity(swingPID.exit_condition(both_sides(left_motors, right_motors)));
         if (swing_exit == RUNNING && watch.stuck(swingPID.error)) {
           // Same settled carve-out as the DRIVE branch above.
-          bool settled = std::fabs(swingPID.error) < swingPID.exit.big_error;
+          bool settled = std::fabs(swingPID.error) < swingPID.exit.big_error && stuck_passes() != entry_task_passes;
           stalled = !settled;
           settled_via_stuck = settled;
           if (print_toggle) std::cout << "  Swing: " << (stalled ? "Stuck" : "Stuck, but stopped inside the big error window, counted as settled") << ", error: " << swingPID.error << "\n";
