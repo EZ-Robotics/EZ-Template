@@ -378,7 +378,28 @@ class Drive {
   pros::Task ez_auto;
 
   /**
+   * Creates a Drive Controller for driver control only. No IMU is configured, so
+   * PID driving, turning, swinging, and odometry will not work correctly.
+   *
+   * Intended for brand new users and short-term setups (classrooms, camps) where getting
+   * a drivetrain moving matters more than tuned autonomous routines. Switch to the
+   * constructor below once you're ready to add an IMU and autonomous movements.
+   *
+   * \param left_motor_ports
+   *        input {1, -2...}. make ports negative if reversed
+   * \param right_motor_ports
+   *        input {-3, 4...}. make ports negative if reversed
+   */
+  Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports);
+
+  /**
    * Creates a Drive Controller using internal encoders.
+   *
+   * If your drivetrain has external gearing (a transmission, or a wheel gear that
+   * differs from the motor gear), set `ticks` to your wheel's effective RPM
+   * (cartridge RPM * (motor gear / wheel gear)) so tracking still reads distances
+   * correctly. If that ratio changes at runtime (a shifting transmission), use
+   * drive_ratio_set() instead of recomputing `ticks` by hand.
    *
    * \param left_motor_ports
    *        input {1, -2...}. make ports negative if reversed
@@ -390,13 +411,17 @@ class Drive {
    *        diameter of your drive wheels
    * \param ticks
    *        motor cartridge RPM
-   * \param ratio
-   *        external gear ratio, wheel gear / motor gear
    */
-  Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks, double ratio = 1.0);
+  Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks);
 
   /**
    * Creates a Drive Controller using internal encoders with redundant IMUs.
+   *
+   * If your drivetrain has external gearing (a transmission, or a wheel gear that
+   * differs from the motor gear), set `ticks` to your wheel's effective RPM
+   * (cartridge RPM * (motor gear / wheel gear)) so tracking still reads distances
+   * correctly. If that ratio changes at runtime (a shifting transmission), use
+   * drive_ratio_set() instead of recomputing `ticks` by hand.
    *
    * \param left_motor_ports
    *        input {1, -2...}. make ports negative if reversed
@@ -408,10 +433,8 @@ class Drive {
    *        diameter of your drive wheels
    * \param ticks
    *        motor cartridge RPM
-   * \param ratio
-   *        external gear ratio, wheel gear / motor gear
    */
-  Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, std::vector<int> imu_ports, double wheel_diameter, double ticks, double ratio = 1.0);
+  Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, std::vector<int> imu_ports, double wheel_diameter, double ticks);
 
   // Deconstructor
   ~Drive();
@@ -1315,6 +1338,9 @@ class Drive {
    * The position of the right sensor.
    *
    * If you have two parallel tracking wheels, this will return tracking wheel position.  Otherwise this returns motor position.
+   *
+   * On a failed sensor read, returns the last successfully-read raw value instead of the
+   * PROS_ERR/PROS_ERR_F sentinel the underlying read failed with.
    */
   int drive_sensor_right_raw();
 
@@ -1344,6 +1370,9 @@ class Drive {
    * The position of the left sensor.
    *
    * If you have two parallel tracking wheels, this will return tracking wheel position.  Otherwise this returns motor position.
+   *
+   * On a failed sensor read, returns the last successfully-read raw value instead of the
+   * PROS_ERR/PROS_ERR_F sentinel the underlying read failed with.
    */
   int drive_sensor_left_raw();
 
@@ -1499,6 +1528,40 @@ class Drive {
    * True is enabled, false is disabled.
    */
   bool opcontrol_joystick_practicemode_toggle_get();
+
+  /**
+   * Slow mode for driver practice that scales the drive by opcontrol_joystick_slowmode_speed_set() / 127,
+   * on top of opcontrol_speed_max_set() (the two multiply together, they don't replace each other), instead
+   * of cutting the drive off like opcontrol_joystick_practicemode_toggle() does.  This also scales down
+   * active brake's holding power while a joystick is released, the same way opcontrol_speed_max_set() does.
+   * Meant as a training mode, not something to leave on for a competition match.
+   *
+   * \param toggle
+   *        true enables, false disables
+   */
+  void opcontrol_joystick_slowmode_toggle(bool toggle);
+
+  /**
+   * Gets current state of the toggle.
+   *
+   * True is enabled, false is disabled.
+   */
+  bool opcontrol_joystick_slowmode_toggle_get();
+
+  /**
+   * Sets the speed used while opcontrol_joystick_slowmode_toggle() is enabled.  This multiplies with
+   * opcontrol_speed_max_set() rather than overriding it, so the actual cap while slow mode is on is
+   * opcontrol_speed_max_set() * speed / 127.
+   *
+   * \param speed
+   *        the speed limit, out of 127
+   */
+  void opcontrol_joystick_slowmode_speed_set(int speed);
+
+  /**
+   * Returns the speed used while opcontrol_joystick_slowmode_toggle() is enabled.
+   */
+  int opcontrol_joystick_slowmode_speed_get();
 
   /**
    * Reversal for drivetrain in opcontrol that flips the left and right side and the direction of the drive.
@@ -2811,6 +2874,12 @@ class Drive {
   /**
    * Changes max speed during a drive motion.
    *
+   * Also applies mid-motion to a running odom motion (pid_odom_set, pid_odom_pp_set,
+   * pid_odom_injected_pp_set, pid_odom_smooth_pp_set, pid_odom_boomerang_set, pid_odom_ptp_set):
+   * the new cap replaces the stored speed on every remaining point of the path, not just the
+   * current one, and lasts only for the motion currently running -- the next pid_*_set call starts
+   * fresh with its own speed.
+   *
    * \param speed
    *        new clipped speed, between 0 and 127
    */
@@ -3665,6 +3734,37 @@ class Drive {
    */
   ez::Lock<pros::RecursiveMutex> drive_mutex;
 
+  // Bumped once by every top-level pid_*_set() (see set_drive_pid.cpp/set_turn_pid.cpp/set_swing_pid.cpp/
+  // set_odom_pid.cpp), never anywhere else. Lets a wait tell whether a write to `interfered` -- its own, or
+  // one already sitting there when it starts -- belongs to the motion that wait was actually started for, or
+  // to some other, unrelated one. `interfered_generation` is which motion the CURRENT value of `interfered`
+  // is attributed to. See InterferedScope below, and its uses in exit_conditions.cpp, for why a single shared
+  // bool needs this.
+  std::uint32_t motion_generation = 0;
+  std::uint32_t interfered_generation = 0;
+
+  // The RAII scope a top-level wait opens for as long as it's evaluating one motion's outcome, so `interfered`
+  // only ever ends up attributed to the motion that wait was started for. mark() records a write of
+  // interfered=true as belonging to this scope's motion. On destruction (every return path a wait can take,
+  // including a plain fall-through) -- but ONLY if that motion is still the current one AND nothing has
+  // already spoken for it under its own name -- the destructor asserts interfered=false as this wait's own
+  // clean result, overwriting whatever an unrelated, already-finished stale wait for an OLDER motion left
+  // behind. A write already attributed to THIS motion (this wait's own mark(), or an earlier wait for the same
+  // motion, e.g. a chained call's own phase 1) is never touched, so a real stuck/interfered result for this
+  // motion survives a later, clean phase of the very same wait.
+  class InterferedScope {
+   public:
+    explicit InterferedScope(Drive& d);
+    ~InterferedScope();
+    InterferedScope(const InterferedScope&) = delete;
+    InterferedScope& operator=(const InterferedScope&) = delete;
+    void mark();
+
+   private:
+    Drive& d_;
+    std::uint32_t generation_;
+  };
+
   std::function<void(void)> tracking;
   void opcontrol_drive_activebrake_targets_set();
   double odom_smooth_weight_smooth = 0.0;
@@ -3684,6 +3784,10 @@ class Drive {
   std::vector<odom> pp_movements;
   std::vector<int> injected_pp_index;
   int pp_index = 0;
+  // Sets max_speed and the slew caps only, no odom path rewrite. Assumes the caller already holds
+  // drive_mutex. See its own doc comment in set_pid.cpp for why this exists separately from the
+  // public pid_speed_max_set().
+  void pid_speed_max_set_internal(int speed);
   std::vector<odom> smooth_path(std::vector<odom> ipath, double weight_smooth, double weight_data, double tolerance);
   double is_past_target(pose target, pose current);
   // Feeds a PID's secondary velocity-exit channel from the imu, but only when that channel is
@@ -3694,7 +3798,16 @@ class Drive {
   bool ptf1_running = false;
   std::vector<pose> find_point_to_face(pose current, pose target, drive_directions dir, bool set_global);
   void raw_pid_odom_ptp_set(odom imovement, bool slew_on, bool is_boomerang);
-  std::vector<odom> inject_points(std::vector<odom> imovements);
+  // out_injected_pp_index null (the default): computes and publishes injected_pp_index itself, under
+  // its own lock, exactly as before -- for a caller with no other locked publish to pair it with.
+  // Non-null: skips its own publish and hands the computed index back through here instead, so a
+  // caller that also needs to publish something else of its own (pp_movements, via
+  // raw_pid_odom_pp_set()) can take ONE lock and publish both together -- see pid_odom_set() and
+  // friends in set_odom_pid.cpp. Never partially published either way: injected_pp_index and
+  // pp_movements must always change together under the same lock, or a reader that trusts them as a
+  // consistent pair (pid_wait_until_index_started(), exit_conditions.cpp) could observe one updated
+  // and the other stale.
+  std::vector<odom> inject_points(std::vector<odom> imovements, std::vector<int>* out_injected_pp_index = nullptr);
   std::vector<pose> point_to_face = {{0, 0, 0}, {0, 0, 0}};
   double turn_is_toleranced(double target, double current, double input, double longest, double shortest);
   double turn_short(double target, double current, bool print = false);
@@ -3713,6 +3826,11 @@ class Drive {
   std::map<int, int> imu_healthy_passes;
   double last_good_angle = 0.0;
   double watchdog_l_last = 0.0, watchdog_r_last = 0.0;
+
+  // Same fallback pattern as last_good_angle, for drive_sensor_left_raw()/right_raw(): the
+  // last raw reading that wasn't a PROS_ERR/PROS_ERR_F/non-finite sensor-read failure.
+  int last_good_raw_left = 0;
+  int last_good_raw_right = 0;
   bool imu_only_imu_warning_shown = false;
 
   // Cross-check state for imu_drift_deg, kept separate from the stuck/eject
@@ -3798,6 +3916,8 @@ class Drive {
   int swing_min = 0;
   int turn_min = 0;
   bool practice_mode_is_on = false;
+  bool slow_mode_is_on = false;
+  double slow_mode_speed = 64.0;
   int swing_opposite_speed = 0;
   bool slew_swing_fwd_using_angle = false;
   bool slew_swing_rev_using_angle = false;
@@ -3886,7 +4006,7 @@ class Drive {
   void drive_tick_per_inch_compute();
 
   double CARTRIDGE = 0.0;
-  double RATIO = 0.0;
+  double RATIO = 1.0;
   double WHEEL_DIAMETER = 0.0;
 
   /**

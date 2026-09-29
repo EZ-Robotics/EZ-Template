@@ -14,7 +14,7 @@ namespace {
 // caller needs it (returning a prvalue copies nothing) and then set up in place by configure().
 Drive make_chassis() {
   test_stub::reset_all();
-  return Drive({1, -2}, {-3, 4}, 5, 3.25, 360, 1.0);
+  return Drive({1, -2}, {-3, 4}, 5, 3.25, 360);
 }
 
 void configure(Drive& chassis) {
@@ -38,10 +38,34 @@ void motors_pull_too_much_current(Drive& chassis, bool over_current) {
   chassis.right_motors[0].fake().over_current = over_current;
 }
 
+Drive* g_chassis = nullptr;
+// A real compute() every simulated pass -- exit_condition()'s small/big timers this file's "leaves
+// interfered alone when the wait ends normally" cases need to reach a clean settle only credit
+// `error` when a real compute has landed since they last checked (see PID.cpp). DriveTestAccess::
+// refresh() re-feeds exit_condition() exactly whatever error each setter already left (the fake
+// PIDs' own starting error, per configure()'s comment, for these tests), with no other side effect --
+// harmless for the mA-only cases too, since a genuine over-current still ends those independently of
+// xyPID/current_a_odomPID's own position exits.
+void refresh_odom_pids() {
+  DriveTestAccess::refresh(g_chassis->xyPID);
+  DriveTestAccess::refresh(g_chassis->current_a_odomPID);
+}
+
+// Same refresh, plus a real step of pure pursuit's own index -- pid_wait_until_index_started() never
+// trusts xy's position exit before its own checkpoint (see exit_conditions.cpp), so a control case that
+// wants a clean, uninterfered finish needs pp_index to genuinely get there, not a stationary fake PID's
+// exit_condition() to end things on its own.
+void advance_pp_index_and_refresh_odom_pids() {
+  refresh_odom_pids();
+  int& idx = DriveTestAccess::pp_index(*g_chassis);
+  idx = std::min(idx + 1, (int)DriveTestAccess::pp_movements(*g_chassis).size() - 1);
+}
+
 // Runs `wait` with the fake pros::delay() set to throw after `max_delays` calls, so a wait that never returns
 // fails the test instead of hanging it.
 template <typename F>
 bool returns(int max_delays, F&& wait) {
+  test_stub::g_clock.on_delay = refresh_odom_pids;
   test_stub::g_clock.delay_calls_until_stop = max_delays;
   bool done = true;
   try {
@@ -50,6 +74,7 @@ bool returns(int max_delays, F&& wait) {
     done = false;
   }
   test_stub::g_clock.delay_calls_until_stop = -1;
+  test_stub::g_clock.on_delay = nullptr;
   return done;
 }
 
@@ -62,6 +87,7 @@ void start_path(Drive& chassis) {
 
 TEST_CASE("pid_wait_until_point sets interfered when the motors pull too much current") {
   Drive chassis = make_chassis();
+  g_chassis = &chassis;
   configure(chassis);
   start_point_move(chassis);
   only_the_current_exit_ends_waits(chassis);
@@ -74,6 +100,7 @@ TEST_CASE("pid_wait_until_point sets interfered when the motors pull too much cu
 
 TEST_CASE("pid_wait_until_point leaves interfered alone when the wait ends normally") {
   Drive chassis = make_chassis();
+  g_chassis = &chassis;
   configure(chassis);
   start_point_move(chassis);
   motors_pull_too_much_current(chassis, false);
@@ -84,6 +111,7 @@ TEST_CASE("pid_wait_until_point leaves interfered alone when the wait ends norma
 
 TEST_CASE("pid_wait_until with a pose sets interfered the same way") {
   Drive chassis = make_chassis();
+  g_chassis = &chassis;
   configure(chassis);
   start_point_move(chassis);
   only_the_current_exit_ends_waits(chassis);
@@ -95,6 +123,7 @@ TEST_CASE("pid_wait_until with a pose sets interfered the same way") {
 
 TEST_CASE("pid_wait_until_index_started sets interfered when the motors pull too much current") {
   Drive chassis = make_chassis();
+  g_chassis = &chassis;
   configure(chassis);
   start_path(chassis);
   REQUIRE(DriveTestAccess::injected_pp_index(chassis).size() >= 2);
@@ -108,16 +137,33 @@ TEST_CASE("pid_wait_until_index_started sets interfered when the motors pull too
 
 TEST_CASE("pid_wait_until_index_started leaves interfered alone when the wait ends normally") {
   Drive chassis = make_chassis();
+  g_chassis = &chassis;
   configure(chassis);
   start_path(chassis);
   motors_pull_too_much_current(chassis, false);
 
-  CHECK(returns(500, [&] { chassis.pid_wait_until_index_started(0); }));
+  // Unlike every other case in this file, configure() leaves velocity and current exits both off, so
+  // xy's position exit -- never trusted before pure pursuit's own checkpoint -- and StuckWatch (whose
+  // window is 0 with velocity and mA both off, see stuck_window()'s own comment) are both out of the
+  // picture; only genuinely reaching the checkpoint can end this cleanly.
+  test_stub::g_clock.on_delay = advance_pp_index_and_refresh_odom_pids;
+  test_stub::g_clock.delay_calls_until_stop = 500;
+  bool returned = true;
+  try {
+    chassis.pid_wait_until_index_started(0);
+  } catch (test_stub::StopLoop&) {
+    returned = false;
+  }
+  test_stub::g_clock.delay_calls_until_stop = -1;
+  test_stub::g_clock.on_delay = nullptr;
+
+  CHECK(returned);
   CHECK_FALSE(chassis.interfered);
 }
 
 TEST_CASE("pid_wait_until_index sets interfered when the motors pull too much current") {
   Drive chassis = make_chassis();
+  g_chassis = &chassis;
   configure(chassis);
   start_path(chassis);
   only_the_current_exit_ends_waits(chassis);
@@ -129,6 +175,7 @@ TEST_CASE("pid_wait_until_index sets interfered when the motors pull too much cu
 
 TEST_CASE("starting a new motion clears interfered") {
   Drive chassis = make_chassis();
+  g_chassis = &chassis;
   configure(chassis);
   start_point_move(chassis);
   only_the_current_exit_ends_waits(chassis);
@@ -143,6 +190,7 @@ TEST_CASE("starting a new motion clears interfered") {
 
 TEST_CASE("pid_wait_until_index_started names the waypoint it was waiting for when it gives up") {
   Drive chassis = make_chassis();
+  g_chassis = &chassis;
   configure(chassis);
   // The path the robot follows has an injected point every half inch, so the injected points are nowhere near
   // the waypoints.  Waiting on waypoint 1 has to name (0, 36), not a point next to the start of the path.

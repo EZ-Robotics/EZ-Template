@@ -28,7 +28,7 @@ Drive make_chassis() {
   test_stub::reset_all();
   detail::scheduler_running.store(false);
   detail::print_sink = ignore_text;  // some of these setters print
-  return Drive({1, -2}, {-3, 4}, 5, 3.25, 360, 1.0);
+  return Drive({1, -2}, {-3, 4}, 5, 3.25, 360);
 }
 
 struct SinkScope {
@@ -57,6 +57,7 @@ TEST_CASE("every public setter holds the chassis lock at a raised priority, once
       {"pid_drive_set", [](Drive& c) { c.pid_drive_set(12, 110); }},
       {"pid_odom_ptp_set", [](Drive& c) { c.pid_odom_ptp_set({{0.0, 24.0, 0.0}, fwd, 110}); }},
       {"pid_odom_pp_set", [](Drive& c) { c.pid_odom_pp_set({{{0.0, 12.0, 0.0}, fwd, 110}, {{0.0, 24.0, 0.0}, fwd, 110}}); }},
+      {"pid_odom_set (double, int)", [](Drive& c) { c.pid_odom_set(24.0, 110); }},
       {"pid_speed_max_set", [](Drive& c) { c.pid_speed_max_set(100); }},
       {"pid_targets_reset", [](Drive& c) { c.pid_targets_reset(); }},
       {"pid_swing_set", [](Drive& c) { c.pid_swing_set(LEFT_SWING, 45.0, 110); }},

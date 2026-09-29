@@ -22,7 +22,7 @@ namespace {
 Drive& construct_into_dirty_memory(unsigned char* storage) {
   test_stub::reset_all();
   std::memset(storage, 0xAA, sizeof(Drive));
-  return *(new (storage) Drive({1, -2}, {-3, 4}, 5, 3.25, 360, 1.0));
+  return *(new (storage) Drive({1, -2}, {-3, 4}, 5, 3.25, 360));
 }
 }  // namespace
 

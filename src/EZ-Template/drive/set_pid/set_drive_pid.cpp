@@ -119,6 +119,7 @@ void Drive::pid_drive_set(double target, int speed, bool slew_on, bool toggle_he
   ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
 
   interfered = false;
+  interfered_generation = ++motion_generation;
 
   leftPID.timers_reset();
   rightPID.timers_reset();
@@ -133,7 +134,7 @@ void Drive::pid_drive_set(double target, int speed, bool slew_on, bool toggle_he
   used_motion_chain_scale = 0.0;
 
   // Global setup
-  pid_speed_max_set(speed);
+  pid_speed_max_set_internal(speed);
   heading_on = toggle_heading;
   l_start = drive_sensor_left();
   r_start = drive_sensor_right();

@@ -14,12 +14,13 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 using namespace ez;
 
-// Consecutive passes (at util::DELAY_TIME per pass) a moving drive's IMU
+// Consecutive passes (at util::DELAY_TIME per pass) a rotating drive's IMU
 // reading can stay unchanged before it's considered stuck.
 constexpr int IMU_STUCK_PASSES_THRESHOLD = 50;  // 500 ms
 // Consecutive healthy passes an ejected IMU needs before it's trusted again.
 constexpr int IMU_REACTIVATE_PASSES_THRESHOLD = 100;  // 1000 ms
-// Minimum drive sensor movement (in) between passes to consider the robot moving.
+// Minimum drive sensor movement (in), or minimum left-vs-right divergence (in),
+// between passes to consider the robot moving/rotating.
 constexpr double IMU_DRIVE_MOTION_THRESHOLD_IN = 0.05;
 // Consecutive passes the good IMUs' spread must stay over the (tunable) drift
 // threshold before it's reported, same debounce window as the stuck check.
@@ -29,13 +30,19 @@ void Drive::check_imu_task() {
   // Don't let this function run if IMU calibration is incomplete
   if (!imu_calibration_complete) return;
 
-  // Figure out if the drive has physically moved since the last pass.  A
-  // stationary, deadbanded IMU reading the same value pass after pass is
-  // normal and must never be mistaken for a stuck sensor.
+  // Figure out if the drive is actually ROTATING since the last pass, using
+  // the same left/right drive sensors everything else here already reads.
+  // A straight leg moves both sides together with no rotation at all -- a
+  // healthy IMU correctly reports a flat heading the whole time, which is
+  // indistinguishable from a stuck sensor if this only looked at whether the
+  // drive moved. Gating on the sides *diverging* (left delta vs. right delta)
+  // instead means a plain straight leg, however long, never looks suspect,
+  // while an in-place turn or an arc still shows up as rotation.
   double l_now = drive_sensor_left();
   double r_now = drive_sensor_right();
-  bool moved = std::fabs(l_now - watchdog_l_last) > IMU_DRIVE_MOTION_THRESHOLD_IN ||
-               std::fabs(r_now - watchdog_r_last) > IMU_DRIVE_MOTION_THRESHOLD_IN;
+  double l_delta = l_now - watchdog_l_last;
+  double r_delta = r_now - watchdog_r_last;
+  bool rotating = std::fabs(l_delta - r_delta) > IMU_DRIVE_MOTION_THRESHOLD_IN;
   watchdog_l_last = l_now;
   watchdog_r_last = r_now;
 
@@ -47,7 +54,7 @@ void Drive::check_imu_task() {
 
     if (n->is_installed() && std::isfinite(reading)) {
       bool unchanged = reading == prev_imu_values[port].first;
-      if (moved && unchanged)
+      if (rotating && unchanged)
         imu_stuck_passes[port] += 1;
       else
         imu_stuck_passes[port] = 0;
@@ -57,7 +64,7 @@ void Drive::check_imu_task() {
   }
 
   // An IMU is bad if it's unplugged, its reading isn't finite, or it's been
-  // stuck (unchanged while the drive moved) for too many passes in a row.
+  // stuck (unchanged while the drive was rotating) for too many passes in a row.
   auto is_bad = [this](pros::Imu* n) {
     int port = n->get_port();
     return !n->is_installed() || !std::isfinite(prev_imu_values[port].first) ||

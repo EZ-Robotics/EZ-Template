@@ -105,11 +105,24 @@ void Drive::pid_odom_set(double target, int speed) {
   pid_odom_set(target, speed, slew_on);
 }
 void Drive::pid_odom_set(double target, int speed, bool slew_on) {
-  interfered = false;
-
   drive_directions fwd_or_rev = util::sgn(target) >= 0 ? fwd : rev;
   pose target_pose = util::vector_off_point(target, {odom_x_get(), odom_y_get(), headingPID.target_get()});
   odom path = {{target_pose.x, target_pose.y}, fwd_or_rev, speed};
+
+  // Built on local vectors, unlocked -- see pid_odom_smooth_pp_set()'s matching comment for why this
+  // is safe and why injected_pp_index's own publish is deferred to the single lock below instead of
+  // happening inside inject_points() itself.
+  std::vector<int> new_injected_pp_index;
+  std::vector<odom> input_path = inject_points({path}, &new_injected_pp_index);
+
+  // Locked only for the publish and the resets below, not for the work above -- see pid_odom_pp_set()'s
+  // matching comment: this still raises and restores the task's priority exactly once, including
+  // raw_pid_odom_pp_set()'s own guard, which nests inside this one for free.
+  ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+
+  interfered = false;
+  interfered_generation = ++motion_generation;
+  injected_pp_index = std::move(new_injected_pp_index);
 
   xyPID.timers_reset();
   current_a_odomPID.timers_reset();
@@ -118,8 +131,8 @@ void Drive::pid_odom_set(double target, int speed, bool slew_on) {
   leftPID.motion_reset(drive_sensor_left());
   rightPID.motion_reset(drive_sensor_right());
 
-  if (print_toggle) printf("Injected ");
-  std::vector<odom> input_path = inject_points({path});
+  // print_after_unlock, not printf: see the matching comment in pid_odom_injected_pp_set().
+  if (print_toggle) drive_mutex.print_after_unlock("Injected ");
   odom_turn_bias_enable(false);
   current_slew_on = slew_on;
   slew_min_when_it_enabled = 0;
@@ -232,7 +245,18 @@ void Drive::pid_odom_injected_pp_set(std::vector<ez::odom> imovements, bool slew
     return;
   }
 
+  // Built on local vectors, unlocked -- see pid_odom_smooth_pp_set()'s matching comment.
+  std::vector<int> new_injected_pp_index;
+  std::vector<odom> input_path = inject_points(imovements, &new_injected_pp_index);
+
+  // See pid_odom_pp_set()'s matching comment: locked only for the publish and the resets below, not
+  // for the work above, so this setter still raises and restores its task's priority exactly once,
+  // including raw_pid_odom_pp_set()'s own guard, which nests inside this for free.
+  ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+
   interfered = false;
+  interfered_generation = ++motion_generation;
+  injected_pp_index = std::move(new_injected_pp_index);
 
   xyPID.timers_reset();
   current_a_odomPID.timers_reset();
@@ -241,8 +265,11 @@ void Drive::pid_odom_injected_pp_set(std::vector<ez::odom> imovements, bool slew
   leftPID.motion_reset(drive_sensor_left());
   rightPID.motion_reset(drive_sensor_right());
 
-  if (print_toggle) printf("Injected ");
-  std::vector<odom> input_path = inject_points(imovements);
+  // print_after_unlock, not printf: this function holds drive_mutex across the publish and resets
+  // above, and printf is a blocking call locking rule 2 forbids making while a guard is held
+  // (test_locking_rule.cpp) -- print_after_unlock queues the text and emits it once the outermost
+  // guard's destructor runs.
+  if (print_toggle) drive_mutex.print_after_unlock("Injected ");
   odom_turn_bias_enable(true);
   current_slew_on = slew_on;
   slew_min_when_it_enabled = 0;
@@ -277,7 +304,27 @@ void Drive::pid_odom_smooth_pp_set(std::vector<odom> imovements, bool slew_on) {
     return;
   }
 
+  // Built on local vectors, unlocked. inject_points() (2-10ms typically) and smooth_path() (up to
+  // roughly 200ms with smoothing constants near the limit smooth_path() itself accepts -- it can
+  // run up to MAX_PASSES, purepursuit_math.cpp) used to run inside this setter's own lock, keeping
+  // the chassis lock -- and so ez_auto_task, and so the previous motion's last motor command ever
+  // being updated -- held the whole time. Neither function touches shared Drive state while
+  // computing (inject_points() itself defers its own injected_pp_index publish here instead, via
+  // out_injected_pp_index, for exactly this reason): the only shared state either one produces is
+  // published below, in the same single lock as raw_pid_odom_pp_set()'s own publish, so a reader
+  // that trusts injected_pp_index and pp_movements as a consistent pair (pid_wait_until_index_started(),
+  // exit_conditions.cpp) never sees one updated without the other.
+  std::vector<int> new_injected_pp_index;
+  std::vector<odom> input_path = smooth_path(inject_points(imovements, &new_injected_pp_index), odom_smooth_weight_smooth, odom_smooth_weight_data, odom_smooth_tolerance);
+
+  // See pid_odom_pp_set()'s matching comment: locked only for the publish and the resets below, not
+  // for the work above, so this setter still raises and restores its task's priority exactly once,
+  // including raw_pid_odom_pp_set()'s own guard, which nests inside this for free.
+  ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+
   interfered = false;
+  interfered_generation = ++motion_generation;
+  injected_pp_index = std::move(new_injected_pp_index);
 
   xyPID.timers_reset();
   current_a_odomPID.timers_reset();
@@ -286,8 +333,8 @@ void Drive::pid_odom_smooth_pp_set(std::vector<odom> imovements, bool slew_on) {
   leftPID.motion_reset(drive_sensor_left());
   rightPID.motion_reset(drive_sensor_right());
 
-  if (print_toggle) printf("Smooth Injected ");
-  std::vector<odom> input_path = smooth_path(inject_points(imovements), odom_smooth_weight_smooth, odom_smooth_weight_data, odom_smooth_tolerance);
+  // print_after_unlock, not printf: see the matching comment in pid_odom_injected_pp_set().
+  if (print_toggle) drive_mutex.print_after_unlock("Smooth Injected ");
   odom_turn_bias_enable(true);
   current_slew_on = slew_on;
   slew_min_when_it_enabled = 0;
@@ -335,7 +382,15 @@ void Drive::pid_odom_pp_set(std::vector<odom> imovements, bool slew_on) {
     return;
   }
 
+  // Locked for the whole body, like pid_odom_ptp_set() already is -- not just around the
+  // injected_pp_index publish below -- so this setter raises and restores its task's priority
+  // exactly once (test_kill_safe_setters.cpp), the same as every other public setter. raw_pid_
+  // odom_pp_set()'s own KillSafeGuard nests inside this one for free (Guard doesn't raise again
+  // for a guard nested inside another on the same lock).
+  ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+
   interfered = false;
+  interfered_generation = ++motion_generation;
 
   xyPID.timers_reset();
   current_a_odomPID.timers_reset();
@@ -371,20 +426,27 @@ void Drive::pid_odom_pp_set(std::vector<odom> imovements, bool slew_on) {
   }
   input.back().turn_behavior = raw;
 
-  // This is used for pid_wait_until_pp()
-  injected_pp_index.clear();
-  injected_pp_index.push_back(0);
+  // This is used for pid_wait_until_pp(). Built into a local vector and published in one move
+  // assignment, not rebuilt member-in-place: this whole function now holds drive_mutex (see
+  // above), but a reader that doesn't itself take the lock (pid_wait_until_index_started() in
+  // exit_conditions.cpp doesn't) could otherwise still observe a partially-rebuilt vector
+  // straddling a clear()-then-push_back() sequence even under our own lock. See finding #16,
+  // Step 3 audit.
+  std::vector<int> new_injected_pp_index;
+  new_injected_pp_index.push_back(0);
   for (std::size_t i = 0; i < input.size(); i++) {
     if (i != 0 && input[i - 1].target.theta == ANGLE_NOT_SET)
-      injected_pp_index.push_back(i);
+      new_injected_pp_index.push_back(i);
   }
+  injected_pp_index = std::move(new_injected_pp_index);
 
   odom_turn_bias_enable(true);
   current_slew_on = slew_on;
   slew_min_when_it_enabled = 0;
   slew_will_enable_later = false;
 
-  if (print_toggle) printf("Pure Pursuit ");
+  // print_after_unlock, not printf: see the matching comment in pid_odom_injected_pp_set().
+  if (print_toggle) drive_mutex.print_after_unlock("Pure Pursuit ");
   raw_pid_odom_pp_set(input, slew_on);
 }
 
@@ -395,6 +457,7 @@ void Drive::pid_odom_ptp_set(odom imovement, bool slew_on) {
   ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
 
   interfered = false;
+  interfered_generation = ++motion_generation;
 
   odom_second_to_last = odom_pose_get();
   odom_target_start = imovement.target;
@@ -431,7 +494,10 @@ void Drive::pid_odom_ptp_set(odom imovement, bool slew_on) {
 /////
 void Drive::raw_pid_odom_pp_set(std::vector<odom> imovements, bool slew_on) {
   if (imovements.empty()) {
-    printf("EZ-Template: pid_odom_set was given an empty path\n");
+    // print_after_unlock, not printf: this function is on kLockedHelpers (test_locking_rule.cpp),
+    // which treats its whole body as running under drive_mutex regardless of where the real guard
+    // below is declared -- print_after_unlock is correct either way (see lock.hpp).
+    drive_mutex.print_after_unlock("EZ-Template: pid_odom_set was given an empty path\n");
     return;
   }
 
@@ -511,7 +577,7 @@ void Drive::raw_pid_odom_ptp_set(odom imovement, bool slew_on, bool is_boomerang
   xyPID.constants_set(pid_drive_consts.kp, pid_drive_consts.ki, pid_drive_consts.kd, pid_drive_consts.start_i);
 
   // Set max speed
-  pid_speed_max_set(imovement.max_xy_speed);
+  pid_speed_max_set_internal(imovement.max_xy_speed);
 
   int slew_min = slew_consts.min_speed;
   if (current_slew_on && slew_will_enable_later && !slew_on && slew_odom_reenabled()) {

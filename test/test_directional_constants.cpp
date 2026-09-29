@@ -10,7 +10,7 @@ using namespace ez;
 namespace {
 Drive make_chassis() {
   test_stub::reset_all();
-  return Drive({1, -2}, {-3, 4}, 5, 3.25, 360, 1.0);
+  return Drive({1, -2}, {-3, 4}, 5, 3.25, 360);
 }
 
 void check(PID::Constants got, double p, double i, double d, double start_i) {

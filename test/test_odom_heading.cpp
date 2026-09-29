@@ -13,7 +13,7 @@ using namespace ez;
 namespace {
 Drive make_chassis() {
   test_stub::reset_all();
-  return Drive({1, -2}, {-3, 4}, 5, 3.25, 360, 1.0);
+  return Drive({1, -2}, {-3, 4}, 5, 3.25, 360);
 }
 
 struct HeadingCase {
@@ -21,6 +21,21 @@ struct HeadingCase {
   double theta;     // Heading the user asked for at the end of the motion
   double expected;  // Same physical heading, as the angle nearest the IMU
 };
+
+Drive* g_chassis = nullptr;
+// A real compute_error() call every simulated pass, standing in for ez_auto_task (nothing else runs
+// it on the host) -- exit_condition()'s small/big timers only credit `error` when a real compute has
+// landed since they last checked (see PID.cpp), so even at these deliberately huge thresholds, a
+// wait still needs a fresh compute each pass to ever return. Computes every PID a wait in this test
+// might poll (xy/angle for the odom path itself, left/right for pid_wait_until_point()'s own
+// DRIVE-shaped internals) -- the exact value doesn't matter at these thresholds.
+void on_delay() {
+  Drive& c = *g_chassis;
+  c.xyPID.compute_error(0.0, 0.0);
+  c.current_a_odomPID.compute_error(0.0, 0.0);
+  c.leftPID.compute_error(0.0, 0.0);
+  c.rightPID.compute_error(0.0, 0.0);
+}
 }  // namespace
 
 TEST_CASE("odom motion leaves the heading target at the equivalent angle nearest the IMU") {
@@ -42,10 +57,14 @@ TEST_CASE("odom motion leaves the heading target at the equivalent angle nearest
         CAPTURE(c.theta);
 
         Drive chassis = make_chassis();
-        // No drive task runs on the host, so the position and angle errors never update. Thresholds
-        // this wide let both small exits fire on the first passes so the waits return.
+        // No drive task runs on the host, so the position and angle errors never move. Thresholds
+        // this wide mean any value at all is inside both small exits, so they fire on the first
+        // passes once a real compute lands (see on_delay() above).
         chassis.pid_odom_drive_exit_condition_set(90, 1.0e6, 250, 1.0e6, 0, 0);
         chassis.pid_odom_turn_exit_condition_set(90, 1.0e6, 250, 1.0e6, 0, 0);
+        g_chassis = &chassis;
+        test_stub::g_clock.on_delay = on_delay;
+        test_stub::g_clock.delay_calls_until_stop = 50;  // generous; real fire is a handful of passes
 
         chassis.odom_xyt_set(0.0, 0.0, 0.0);
         chassis.imu->fake_rotation = c.imu;
@@ -60,11 +79,19 @@ TEST_CASE("odom motion leaves the heading target at the equivalent angle nearest
         // A pure pursuit motion's waits first look for the drive task to reach the last path point.
         // Nothing advances it on the host, so put it there directly.
         DriveTestAccess::pp_index(chassis) = static_cast<int>(DriveTestAccess::pp_movements(chassis).size()) - 1;
-        if (quick)
-          chassis.pid_wait_quick();
-        else
-          chassis.pid_wait();
+        bool returned = true;
+        try {
+          if (quick)
+            chassis.pid_wait_quick();
+          else
+            chassis.pid_wait();
+        } catch (test_stub::StopLoop&) {
+          returned = false;
+        }
+        test_stub::g_clock.delay_calls_until_stop = -1;
+        test_stub::g_clock.on_delay = nullptr;
 
+        REQUIRE(returned);
         CHECK(chassis.headingPID.target_get() == doctest::Approx(c.expected));
       }
     }

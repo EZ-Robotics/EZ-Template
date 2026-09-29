@@ -27,7 +27,7 @@ Drive make_chassis() {
   detail::stats.auto_task_priority_starts.store(0);
   detail::stats.auto_task_passes.store(0);
   detail::print_sink = nullptr;
-  return Drive({1, -2}, {-3, 4}, 5, 3.25, 360, 1.0);
+  return Drive({1, -2}, {-3, 4}, 5, 3.25, 360);
 }
 
 // Runs ez_auto_task for `passes` passes. pros::Task never runs its callable in the host build, so the fake

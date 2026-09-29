@@ -19,7 +19,7 @@ namespace {
 // caller needs it (returning a prvalue copies nothing) and then set up in place by configure_chassis().
 Drive make_chassis() {
   test_stub::reset_all();
-  return Drive({1, -2}, {-3, 4}, 5, 3.25, 360, 1.0);
+  return Drive({1, -2}, {-3, 4}, 5, 3.25, 360);
 }
 
 void configure_chassis(Drive& chassis) {
@@ -76,10 +76,29 @@ void start_move(Drive& chassis, bool point_to_point, drive_directions direction 
     chassis.pid_odom_set(movement);
 }
 
+// Nothing advances the drive task while these wait -- the comment on wait_until_returns()/
+// pid_wait_returns() below is still literally true. But exit_condition()'s small/big timers only
+// credit `error` when a real compute() call has landed since they last checked (see PID.cpp), so a
+// clean settle still needs a real, repeated compute even though nothing else about the scripted
+// state should change. Calling the real per-mode task function (ptp_task()/pp_task()) would provide
+// that, but it does more than compute: it can advance pp_index and retarget leftPID/rightPID via
+// raw_pid_odom_ptp_set(), which risks a spurious "past target" success this test isn't about.
+// DriveTestAccess::refresh() re-feeds exit_condition() exactly the error/cur/derivative this test's
+// own setup already established -- a real compute, with no other side effect.
+Drive* g_chassis = nullptr;
+void run_odom_task_pass() {
+  DriveTestAccess::refresh(g_chassis->xyPID);
+  DriveTestAccess::refresh(g_chassis->current_a_odomPID);
+  DriveTestAccess::refresh(g_chassis->leftPID);
+  DriveTestAccess::refresh(g_chassis->rightPID);
+}
+
 // pid_wait_until(inches) with the fake pros::delay() set to throw after `max_delays`
-// calls, so a wait that never returns fails the test instead of hanging it. Nothing
-// steps the drive task while this waits, so the robot stays where it was placed.
+// calls, so a wait that never returns fails the test instead of hanging it. Nothing steps the
+// drive task while this waits; the hook only refreshes the PIDs (see run_odom_task_pass() above).
 bool wait_until_returns(Drive& chassis, double inches, int max_delays) {
+  g_chassis = &chassis;
+  test_stub::g_clock.on_delay = run_odom_task_pass;
   test_stub::g_clock.delay_calls_until_stop = max_delays;
   bool returned = true;
   try {
@@ -88,11 +107,14 @@ bool wait_until_returns(Drive& chassis, double inches, int max_delays) {
     returned = false;
   }
   test_stub::g_clock.delay_calls_until_stop = -1;
+  test_stub::g_clock.on_delay = nullptr;
   return returned;
 }
 
 // pid_wait() bounded the same way.
 bool pid_wait_returns(Drive& chassis, int max_delays) {
+  g_chassis = &chassis;
+  test_stub::g_clock.on_delay = run_odom_task_pass;
   test_stub::g_clock.delay_calls_until_stop = max_delays;
   bool returned = true;
   try {
@@ -101,6 +123,7 @@ bool pid_wait_returns(Drive& chassis, int max_delays) {
     returned = false;
   }
   test_stub::g_clock.delay_calls_until_stop = -1;
+  test_stub::g_clock.on_delay = nullptr;
   return returned;
 }
 }  // namespace

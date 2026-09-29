@@ -15,9 +15,16 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 using namespace ez;
 
+// Constructor for driver control only, no IMU configured
+Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports)
+    // 22 is outside the V5's 21 smart ports, so this never collides with a real device.
+    // The IMU is left permanently uncalibrated; drive_imu_calibrate() reports it missing
+    // and driver control works normally without it.
+    : Drive(left_motor_ports, right_motor_ports, 22, 4.0, 200.0) {}
+
 // Constructor for integrated encoders
 Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports,
-             int imu_port, double wheel_diameter, double ticks, double ratio)
+             int imu_port, double wheel_diameter, double ticks)
     : imu(new pros::Imu(imu_port)),
       ez_auto([this] { this->ez_auto_task(); }) {
   is_tracker = DRIVE_INTEGRATED;
@@ -42,7 +49,6 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
   imu_scale_map[imu->get_port()] = 1.0;
   // Set constants for tick_per_inch calculation
   WHEEL_DIAMETER = wheel_diameter;
-  RATIO = ratio;
   CARTRIDGE = ticks;
   drive_tick_per_inch_compute();
 
@@ -51,7 +57,7 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 
 // Constructor for integrated encoders with redundant imu support
 Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports,
-             std::vector<int> imu_ports, double wheel_diameter, double ticks, double ratio)
+             std::vector<int> imu_ports, double wheel_diameter, double ticks)
     : imu(new pros::Imu(imu_ports[0])),
       ez_auto([this] { this->ez_auto_task(); }) {
   is_tracker = DRIVE_INTEGRATED;
@@ -84,7 +90,6 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 
   // Set constants for tick_per_inch calculation
   WHEEL_DIAMETER = wheel_diameter;
-  RATIO = ratio;
   CARTRIDGE = ticks;
   drive_tick_per_inch_compute();
 
@@ -259,6 +264,8 @@ void Drive::drive_sensor_reset() {
   right_activebrakePID.target_set(0.0);
 
   // Reset sensors
+  last_good_raw_left = 0;
+  last_good_raw_right = 0;
   left_motors.front().tare_position();
   right_motors.front().tare_position();
   if (odom_tracker_left_enabled) odom_tracker_left->reset();
@@ -271,9 +278,19 @@ void Drive::drive_sensor_reset() {
 }
 
 int Drive::drive_sensor_right_raw() {
+  // Read as a double and check it before ever converting to int: right_motors' get_position()
+  // returns PROS_ERR_F (infinity) on a failed read, and converting a non-finite double to int
+  // is undefined behavior, not just a wrong number.  Same fallback pattern as
+  // drive_imu_get()'s last_good_angle -- a failed read doesn't get fed into tracking math at
+  // all, it's replaced with the last reading that was actually good.
+  double raw;
   if (is_tracker == ODOM_TRACKER)
-    return odom_tracker_right->get_raw();
-  return right_motors.front().get_position();
+    raw = odom_tracker_right->get_raw();
+  else
+    raw = right_motors.front().get_position();
+
+  if (std::isfinite(raw) && raw != PROS_ERR && raw != PROS_ERR_F) last_good_raw_right = (int)raw;
+  return last_good_raw_right;
 }
 double Drive::drive_sensor_right() {
   if (is_tracker == ODOM_TRACKER)
@@ -285,9 +302,14 @@ double Drive::drive_mA_right() { return right_motors.front().get_current_draw();
 bool Drive::drive_current_right_over() { return right_motors.front().is_over_current(); }
 
 int Drive::drive_sensor_left_raw() {
+  double raw;
   if (is_tracker == ODOM_TRACKER)
-    return odom_tracker_left->get_raw();
-  return left_motors.front().get_position();
+    raw = odom_tracker_left->get_raw();
+  else
+    raw = left_motors.front().get_position();
+
+  if (std::isfinite(raw) && raw != PROS_ERR && raw != PROS_ERR_F) last_good_raw_left = (int)raw;
+  return last_good_raw_left;
 }
 double Drive::drive_sensor_left() {
   if (is_tracker == ODOM_TRACKER)
