@@ -14,18 +14,25 @@ struct Report {
   int motors_warm = 0;   ///< drive motors warm but still at full power
   int trackers_bad = 0;  ///< configured odom trackers not responding
   int devices_bad = 0;   ///< registered devices not responding
-  /// Temperature is a warning rather than a failure, so motors_hot and
-  /// motors_warm deliberately do not count against this.
+  /// Degrees between the most and least agreeing good IMU, once that spread
+  /// has been sustained long enough to be real (see
+  /// ez::Drive::imu_drift_threshold_set()). 0 when they agree or there are
+  /// fewer than 2 good IMUs.
+  double imu_max_drift_deg = 0.0;
+  /// Temperature and IMU disagreement are warnings rather than failures, so
+  /// motors_hot, motors_warm, and imu_max_drift_deg deliberately do not
+  /// count against this.
   bool all_ok() const {
     return imu_ok && motors_bad == 0 && trackers_bad == 0 && devices_bad == 0;
   }
 };
 
 /// Checks that the IMU, every drive motor, every configured odom tracker, and
-/// every device registered with device_add() responds. Prints each failure, with
-/// its port where the device has one, and rumbles the controller when anything
-/// is wrong. Safe to call from initialize() and again at the start of
-/// autonomous.
+/// every device registered with device_add() responds, and whether any
+/// currently-good redundant IMUs disagree with each other. Prints each
+/// failure, with its port where the device has one, and rumbles the
+/// controller when anything is wrong. Safe to call from initialize() and
+/// again at the start of autonomous.
 Report preflight(ez::Drive& chassis, pros::Controller& controller);
 
 /// Registers a smart device (a motor that isn't on the drive, a distance,
