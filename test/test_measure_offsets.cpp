@@ -26,8 +26,9 @@ void measure_offsets_copy(Rig& rig) {
   // Number of times to test
   int iterations = 10;
 
-  // Our final offsets
+  // Our final offsets.  These keep their sign, which says if a tracker is wired the right way.
   double l_offset = 0.0, r_offset = 0.0, b_offset = 0.0, f_offset = 0.0;
+  int turns_measured = 0;
 
   // Reset all trackers if they exist
   if (chassis.odom_tracker_left != nullptr) chassis.odom_tracker_left->reset();
@@ -42,15 +43,18 @@ void measure_offsets_copy(Rig& rig) {
     chassis.drive_sensor_reset();
     rig.rezero();
     chassis.drive_brake_set(MOTOR_BRAKE_HOLD);
-    chassis.odom_xyt_set(0.0, 0.0, 0.0);
-    double imu_start = chassis.odom_theta_get();
-    double target = i % 2 == 0 ? 90 : 270;  // Switch the turn target every run from 270 to 90
+    chassis.odom_xyt_set(0_in, 0_in, 0_deg);
+    double imu_start = chassis.drive_angle_get();
+    double target = i % 2 == 0 ? 90 : -90;  // Switch the turn direction every run
 
     // Turn to target at half power
     rig.turn(target);
 
-    // Calculate delta in angle
-    double t_delta = ez::util::to_rad(fabs(ez::util::wrap_angle(chassis.odom_theta_get() - imu_start)));
+    // Calculate delta in angle.  This is signed (clockwise is positive) and is not wrapped, because the
+    // trackers saw the whole turn, not the angle it wraps to.  It is read from the imu, odom_theta_get() only
+    // catches up with a reset when the tracking task next runs.
+    double t_delta = ez::util::to_rad(chassis.drive_angle_get() - imu_start);
+    if (fabs(t_delta) < ez::util::to_rad(10.0)) continue;  // The robot did not turn, nothing to measure
 
     // Calculate delta in sensor values that exist
     double l_delta = chassis.odom_tracker_left != nullptr ? chassis.odom_tracker_left->get() : 0.0;
@@ -63,19 +67,46 @@ void measure_offsets_copy(Rig& rig) {
     r_offset += r_delta / t_delta;
     b_offset += b_delta / t_delta;
     f_offset += f_delta / t_delta;
+    turns_measured++;
+  }
+
+  if (turns_measured == 0) {
+    printf("measure_offsets: the robot never turned, nothing was measured\n");
+    ez::screen_print("The robot never turned", 0);
+    return;
   }
 
   // Average all offsets
-  l_offset /= iterations;
-  r_offset /= iterations;
-  b_offset /= iterations;
-  f_offset /= iterations;
+  l_offset /= turns_measured;
+  r_offset /= turns_measured;
+  b_offset /= turns_measured;
+  f_offset /= turns_measured;
 
-  // Set new offsets to trackers that exist
-  if (chassis.odom_tracker_left != nullptr) chassis.odom_tracker_left->distance_to_center_set(l_offset);
-  if (chassis.odom_tracker_right != nullptr) chassis.odom_tracker_right->distance_to_center_set(r_offset);
-  if (chassis.odom_tracker_back != nullptr) chassis.odom_tracker_back->distance_to_center_set(b_offset);
-  if (chassis.odom_tracker_front != nullptr) chassis.odom_tracker_front->distance_to_center_set(f_offset);
+  // Turning clockwise, a vertical tracker on the left counts up and one on the right counts down.
+  // A horizontal tracker counts up when the robot moves left, so it counts up at the back and down at the front.
+  // A tracker with the other sign is wired backwards.
+  int line = 0;
+  auto report = [&](const char* name, ez::tracking_wheel* tracker, double offset, double expected_sign) {
+    if (tracker == nullptr) return;
+
+    char text[64];
+    snprintf(text, sizeof(text), "%s tracker offset: %.2f in", name, fabs(offset));
+    printf("%s\n", text);
+    ez::screen_print(text, line++);
+
+    if (offset * expected_sign < 0.0) {
+      snprintf(text, sizeof(text), "%s tracker looks reversed, flip its port sign", name);
+      printf("%s\n", text);
+      ez::screen_print(text, line++);
+    }
+
+    // Set the new offset
+    tracker->distance_to_center_set(fabs(offset));
+  };
+  report("left", chassis.odom_tracker_left, l_offset, 1.0);
+  report("right", chassis.odom_tracker_right, r_offset, -1.0);
+  report("back", chassis.odom_tracker_back, b_offset, 1.0);
+  report("front", chassis.odom_tracker_front, f_offset, -1.0);
   // ---- copy of measure_offsets() from src/autons.cpp ends here ----
 }
 
