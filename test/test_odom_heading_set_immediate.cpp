@@ -61,6 +61,18 @@ TEST_CASE("odom_xyt_set: odom_theta_get() reads the heading that was just set, b
   CHECK(chassis.odom_theta_get() == doctest::Approx(-90.0));
 }
 
+TEST_CASE("drive_angle_set: odom_theta_get() reads the heading that was just set, called directly") {
+  test_stub::reset_all();
+  auto a = sim::archetype_light_fast();
+  Drive chassis({1, -2}, {-3, 4}, 5, a.wheel_diameter_in, a.cartridge_rpm);
+  DriveTestAccess::imu_calibration_complete(chassis) = true;
+  sim::SimRobot sim(chassis, a, sim::NoiseConfig{false, 1});
+  chassis.drive_angle_set(90.0);
+  CHECK(chassis.odom_theta_get() == doctest::Approx(90.0));
+  chassis.drive_angle_set(-170.0);
+  CHECK(chassis.odom_theta_get() == doctest::Approx(-170.0));
+}
+
 TEST_CASE("odom_xyt_set then an odom motion at once: the first pass is no bigger than an ordinary pass") {
   Passes p = run(false);
   MESSAGE("first pass |L-R|=", p.first_diff, " ordinary pass max=", p.mid_max);

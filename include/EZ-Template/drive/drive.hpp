@@ -2792,7 +2792,8 @@ class Drive {
    * `pid_turn_set(90_deg, 90); pid_wait_until(45);` returns when the robot faces 45 degrees.
    *
    * If the checkpoint can't be reached (past the target, or the wrong sign), the wait returns when the motion finishes and prints
-   * why.  `interfered` is only set when something actually stopped the robot.
+   * why.  `interfered` is only set when something actually stopped the robot.  This check is for drives, turns and swings; an odom
+   * motion returns when it finishes without a message.
    *
    * \param target
    *        for driving, inches driven since this motion started (same sign as the drive).  for turns/swings, an absolute heading in degrees

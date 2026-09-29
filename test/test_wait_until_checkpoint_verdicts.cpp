@@ -123,6 +123,49 @@ TEST_CASE("sim: pid_wait_until(30_in) beyond a 24 in drive's target is not inter
   CHECK(count_of(out, kUnreachable) == 1);
 }
 
+TEST_CASE("sim: pid_wait_until(-6_in) on a forward 24 in drive (the wrong side of the start) is not interfered, and says why once") {
+  auto a = sim::archetype_light_fast();
+  Drive chassis = make_sim_chassis(a);
+  DriveTestAccess::imu_calibration_complete(chassis) = true;
+  chassis.pid_print_toggle(false);
+  sim::SimRobot sim(chassis, a, sim::NoiseConfig{false, 1});
+
+  bool first = false, second = false;
+  std::string out = test_stub::capture_stdout([&] {
+    chassis.pid_drive_set(24_in, 110);
+    first = run_capped([&] { chassis.pid_wait_until(-6_in); }, 3000);
+    second = run_capped([&] { chassis.pid_wait(); }, 3000);
+  });
+  CAPTURE(out);
+  REQUIRE(first);
+  REQUIRE(second);
+  CHECK_FALSE(chassis.interfered);
+  CHECK(std::fabs(sim.left().position_in - 24.0) < 1.0);
+  CHECK(count_of(out, kUnreachable) == 1);
+}
+
+TEST_CASE("sim: a swing to 0 from -30 with pid_wait_until(2_deg) is not interfered, and says why once") {
+  auto a = sim::archetype_light_fast();
+  Drive chassis = make_sim_chassis(a);
+  DriveTestAccess::imu_calibration_complete(chassis) = true;
+  chassis.pid_print_toggle(false);
+  sim::SimRobot sim(chassis, a, sim::NoiseConfig{false, 1});
+  chassis.drive_angle_set(-30.0);
+
+  bool first = false, second = false;
+  std::string out = test_stub::capture_stdout([&] {
+    chassis.pid_swing_set(ez::LEFT_SWING, 0_deg, 90);
+    first = run_capped([&] { chassis.pid_wait_until(2_deg); }, 3000);
+    second = run_capped([&] { chassis.pid_wait(); }, 3000);
+  });
+  CAPTURE(out);
+  REQUIRE(first);
+  REQUIRE(second);
+  CHECK_FALSE(chassis.interfered);
+  CHECK(std::fabs(chassis.drive_angle_get()) < 3.0);
+  CHECK(count_of(out, kUnreachable) == 1);
+}
+
 TEST_CASE("control: a reachable checkpoint the robot is blocked short of by a sim wall is still interfered") {
   auto a = sim::archetype_light_fast();
   Drive chassis = make_sim_chassis(a);
