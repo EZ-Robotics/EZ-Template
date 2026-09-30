@@ -215,6 +215,9 @@ class SimRobot {
   // Off by default: the sim runs the per-mode task bodies itself (run_auto_task_pass()). On: it runs the real
   // ez_auto_task() once per tick instead.
   void use_real_auto_task(bool on) { use_real_auto_task_ = on; }
+  // How many auto task passes run per tick (default 1). Two or three is a task that catches up after being late, and a
+  // heavy robot is only stable in the sim with more than one.
+  void passes_per_tick(int n) { passes_per_tick_ = n; }
   // Moves both wheels `inches` along the robot's heading at once, without giving the robot any velocity: what being
   // pushed a short way and let go looks like to the sensors. The motors read the new position right away, not only
   // after the next tick.
@@ -288,8 +291,10 @@ class SimRobot {
   // never calls ez_auto_task() itself, which is the one function that both contains this logic
   // AND ends with its own pros::delay(), which would re-enter on_delay from inside on_delay.
   void tick() {
-    if (use_real_auto_task_) run_real_auto_task_pass();
-    else run_auto_task_pass();
+    for (int i = 0; i < passes_per_tick_; i++) {
+      if (use_real_auto_task_) run_real_auto_task_pass();
+      else run_auto_task_pass();
+    }
     step_physics(ez::util::DELAY_TIME / 1000.0);
   }
 
@@ -655,6 +660,7 @@ class SimRobot {
   bool wall_set_ = false, was_pinned_ = false;
   double wall_in_ = 0.0, pin_left_in_ = 0.0, pin_right_in_ = 0.0, pin_heading_deg_ = 0.0;
   bool use_real_auto_task_ = false;
+  int passes_per_tick_ = 1;
   bool imu_written_ = false;
   double imu_last_written_ = 0.0;
   double imu_heading_at_write_deg_ = 0.0;
