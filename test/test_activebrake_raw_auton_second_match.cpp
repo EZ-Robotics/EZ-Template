@@ -190,3 +190,37 @@ TEST_CASE("control: driver code run while the status is autonomous still pulls a
     CHECK(before - r.sim.left().position_in > 0.3);  // pulled back toward where it was, as on dev
   }
 }
+
+// A practice run whose autonomous never calls drive_sensor_reset() and only uses raw drive_set: nothing but drive_set itself
+// says the robot was moved by something other than the brake. (Motors written directly, bypassing drive_set and every PID
+// mode, are not covered: a practice run blocks the driver loop exactly like a macro does, and re-aiming after every pause
+// would let a steady push walk a robot downhill.)
+TEST_CASE("a raw-drive_set-only practice run that never resets the sensors does not lurch after driver control") {
+  for (double kp : {2.0, 4.0}) {
+    Rig r(kp);
+    driver_second(r.chassis, r.sim);  // driver control runs once first, which clears the flag
+    raw_auton(r.chassis, /*sensor_reset=*/false);
+    Outcome o = driver_second(r.chassis, r.sim);
+    CAPTURE(kp);
+    CAPTURE(o.moved_in);
+    CHECK(o.moved_in < 0.5);
+    CHECK(o.turned_deg < 1.0);
+  }
+}
+
+// Driver control's own motor output goes through drive_set, so whatever marks a raw drive_set must not mark that one: a
+// robot shoved 3 in in plain driver control, with no autonomous anywhere, is still pulled back.
+TEST_CASE("control: plain driver control still pulls a shoved robot back") {
+  for (double kp : {2.0, 4.0}) {
+    Rig r(kp);
+    driver_second(r.chassis, r.sim);
+    r.sim.displace(3.0);
+    double before = r.sim.left().position_in;
+    for (int i = 0; i < 100; i++) {
+      r.chassis.opcontrol_arcade_standard(ez::SPLIT);
+      pros::delay(util::DELAY_TIME);
+    }
+    CAPTURE(kp);
+    CHECK(before - r.sim.left().position_in > 0.3);
+  }
+}
