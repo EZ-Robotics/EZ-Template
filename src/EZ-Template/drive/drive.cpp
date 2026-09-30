@@ -230,6 +230,10 @@ void Drive::private_drive_set(int left, int right) {
 void Drive::drive_set(int left, int right) {
   drive_mode_set(DISABLE, false);
   private_drive_set(left, right);
+  // Something other than the brake and the sticks is moving the robot, so the brake's target is about to go stale: have the
+  // next driver control re-aim it once. Driver control's own output does not come through here (see user_input.cpp), or
+  // every loop would re-aim it and the brake would never pull a shoved robot back.
+  util::AUTON_RAN = true;
 }
 
 std::vector<int> Drive::drive_get() {
