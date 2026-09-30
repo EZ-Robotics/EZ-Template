@@ -32,9 +32,10 @@ void ticks(int n) {
   for (int i = 0; i < n; i++) pros::delay(util::DELAY_TIME);
 }
 
-// An autonomous that never enters a PID mode: sensor reset, then raw motor output for a second, then stop.
-void raw_auton(Drive& chassis) {
-  chassis.drive_sensor_reset();
+// An autonomous that never enters a PID mode: sensor reset (unless told not to), then raw motor output for a second,
+// then stop.
+void raw_auton(Drive& chassis, bool sensor_reset = true) {
+  if (sensor_reset) chassis.drive_sensor_reset();
   chassis.drive_brake_set(pros::E_MOTOR_BRAKE_HOLD);
   chassis.drive_set(80, 80);
   ticks(100);
@@ -139,4 +140,31 @@ TEST_CASE("control: active brake off never lurches after a raw-only autonomous")
   Outcome o = driver_second(r.chassis, r.sim);
   CHECK(o.moved_in < 0.5);
   CHECK(o.turned_deg < 1.0);
+}
+
+// The field status alone has to be enough: an autonomous that does not even call drive_sensor_reset() leaves the brake
+// target wherever the last driver control re-aimed it, and the robot has moved since.
+TEST_CASE("a raw-drive_set-only autonomous that never resets the sensors does not lurch in a second match") {
+  for (double kp : {2.0, 4.0}) {
+    Rig r(kp);
+    field(true, false);
+    ticks(50);
+    field(false, true);
+    raw_auton(r.chassis, /*sensor_reset=*/false);
+    field(true, false);
+    ticks(300);
+    field(false, false);
+    driver_second(r.chassis, r.sim);
+    field(true, false);
+    ticks(50);
+    field(false, true);
+    raw_auton(r.chassis, /*sensor_reset=*/false);
+    field(true, false);
+    ticks(300);
+    field(false, false);
+    Outcome o = driver_second(r.chassis, r.sim);
+    CAPTURE(kp);
+    CHECK(o.moved_in < 0.5);
+    CHECK(o.turned_deg < 1.0);
+  }
 }

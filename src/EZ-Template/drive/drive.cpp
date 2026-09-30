@@ -262,6 +262,10 @@ void Drive::drive_sensor_reset() {
   // Update active brake constants
   left_activebrakePID.target_set(0.0);
   right_activebrakePID.target_set(0.0);
+  // The brake target is 0 against freshly zeroed sensors, and goes stale the moment the robot moves. Have the next
+  // driver control re-aim it; this is also what covers a practice run, where autonomous() is called from opcontrol and
+  // the field status never says autonomous.
+  util::AUTON_RAN = true;
 
   // Reset sensors
   last_good_raw_left = 0;

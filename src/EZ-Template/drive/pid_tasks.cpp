@@ -69,7 +69,10 @@ void Drive::ez_auto_task() {
       // driver control puts the mode back to DISABLE, and recomputing the flag from it every pass cleared it before
       // opcontrol_drive_sensors_reset() (the only thing that clears it) could re-aim the brake target, so the first
       // driver pass drove the robot back toward where autonomous started.
-      if (drive_mode_get() != DISABLE) util::AUTON_RAN = true;
+      // Autonomous itself counts, not only a PID mode inside it: an autonomous that only uses raw drive_set never leaves
+      // DISABLE, and the flag is false again after the first driver control of the night, so a second match drove the
+      // robot back toward the target drive_sensor_reset() left at 0.
+      if (autonomous_now || drive_mode_get() != DISABLE) util::AUTON_RAN = true;
     }
 
     pros::delay(ez::util::DELAY_TIME);
