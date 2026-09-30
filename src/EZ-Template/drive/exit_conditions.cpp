@@ -83,11 +83,14 @@ double stuck_step(PID& pid, double cap) {
 // matching what a team who deliberately disabled every timeout on both axes is actually asking for.
 int floored_window(int window) { return window == 0 ? 0 : std::max(window, STUCK_WINDOW_FLOOR_MS); }
 
-int stuck_window(PID& xy, PID& angle) {
+// The team's own window, before the floor.
+int team_stuck_window(PID& xy, PID& angle) {
   int xy_window = xy.exit.velocity_exit_time != 0 ? xy.exit.velocity_exit_time : xy.exit.mA_timeout;
-  if (xy_window != 0) return floored_window(xy_window);
-  return floored_window(angle.exit.velocity_exit_time != 0 ? angle.exit.velocity_exit_time : angle.exit.mA_timeout);
+  if (xy_window != 0) return xy_window;
+  return angle.exit.velocity_exit_time != 0 ? angle.exit.velocity_exit_time : angle.exit.mA_timeout;
 }
+
+int stuck_window(PID& xy, PID& angle) { return floored_window(team_stuck_window(xy, angle)); }
 
 // A single progress channel: has `size` (always >= 0, e.g. a distance or |error|) come down to a new low, a full
 // `step` below the last one, since progress was last credited?  Going past the point (`error`'s sign flipping) and
@@ -190,7 +193,7 @@ class StuckWatch {
  public:
   // travelled and turned: how far the robot has moved and turned since the motion started
   StuckWatch(PID& xy, PID& angle, int index, double distance, double travelled, double turned)
-      : xy_(stuck_step(xy, STUCK_STEP_DISTANCE_CAP), distance, xy.error), a_(stuck_step(angle, STUCK_STEP_ANGLE_CAP), std::fabs(angle.error), angle.error), index_(index), window_(stuck_window(xy, angle)), moved_(travelled > xy_.step || turned > a_.step), a_seed_pass_(stuck_passes()), a_seeded_(false) {
+      : xy_(stuck_step(xy, STUCK_STEP_DISTANCE_CAP), distance, xy.error), a_(stuck_step(angle, STUCK_STEP_ANGLE_CAP), std::fabs(angle.error), angle.error), index_(index), window_(stuck_window(xy, angle)), settled_window_(team_stuck_window(xy, angle)), xy_big_(xy.exit.big_error), a_big_(angle.exit.big_error), moved_(travelled > xy_.step || turned > a_.step), a_seed_pass_(stuck_passes()), a_seeded_(false) {
     int allowance = moved_ ? 0 : STUCK_START_ALLOWANCE_MS;
     last_progress_ = pros::millis() + allowance;
     last_progress_pass_ = stuck_passes() + allowance / util::DELAY_TIME;
@@ -239,8 +242,11 @@ class StuckWatch {
       last_progress_ = now;
       last_progress_pass_ = pass;
     }
+    // Inside both big errors a stuck verdict is a clean "settled" return, so the floor has nothing to protect there; see
+    // SingleStuckWatch::stuck(). Flooring it only let the mA exit fire first on a robot resting in the friction deadband.
+    int window = (xy_big_ > 0 && distance < xy_big_ && a_big_ > 0 && std::fabs(a_error) < a_big_) ? settled_window_ : window_;
     std::int32_t waited = now - last_progress_;
-    if (waited <= window_) return false;
+    if (waited <= window) return false;
     // Confirming ez_auto_task really kept running (not just wall-clock time passing while it's starved or dead)
     // needs an expected pass count for window_.  This used to derive that count from this watch's own observed
     // passes-per-ms since it was constructed (elapsed real ms since construction / elapsed real passes since
@@ -278,14 +284,16 @@ class StuckWatch {
     // at all and is
     // still caught by the STARVED_WINDOWS wall-clock fallback below, unchanged.  Flagging the latency tradeoff
     // for a design call, the same as the Channel rebound latch above.
-    int expected_passes = (int)(window_ / (double)util::DELAY_TIME);
-    return (std::int32_t)(pass - last_progress_pass_) > expected_passes || waited > STUCK_STARVED_WINDOWS * window_;
+    int expected_passes = (int)(window / (double)util::DELAY_TIME);
+    return (std::int32_t)(pass - last_progress_pass_) > expected_passes || waited > STUCK_STARVED_WINDOWS * window;
   }
 
  private:
   Channel xy_, a_;
   int index_;
-  int window_;
+  int window_;          // the team's window, floored: what a stuck verdict outside the big errors waits for
+  int settled_window_;  // the team's own window, unfloored: what it waits for inside both big errors
+  double xy_big_, a_big_;
   bool moved_;
   // stuck_passes() at construction, and whether the angle channel has re-seeded itself from the first
   // confirmed-fresh reading since -- see the matching comment in stuck() above.
@@ -357,7 +365,7 @@ class SingleStuckWatch {
     // protect there (it exists so a shove is not called stuck). Flooring it would only delay that clean return long
     // enough for the mA exit to fire first on a robot resting in the friction deadband, and report interfered on a
     // motion that finished. So inside big_error the watch keeps the team's own window, as it always has.
-    int window = (big_error_ > 0 && std::fabs(error) <= big_error_) ? settled_window_ : window_;
+    int window = (big_error_ > 0 && std::fabs(error) < big_error_) ? settled_window_ : window_;
     std::int32_t waited = now - last_progress_;
     if (waited <= window) return false;
     // See the matching comment in StuckWatch::stuck() -- a fixed, nominal-DELAY_TIME pass count, not one
