@@ -36,7 +36,7 @@ struct Rig {
   sim::SimArchetype a;
   Drive chassis;
   sim::SimRobot sim;
-  Rig(const sim::SimArchetype& arch, int passes) : a(arch), chassis(make_drive(arch)), sim(chassis, arch, sim::NoiseConfig{false, 1}) {
+  Rig(const sim::SimArchetype& arch, int passes, bool noise = false, std::uint32_t seed = 1) : a(arch), chassis(make_drive(arch)), sim(chassis, arch, sim::NoiseConfig{noise, seed}) {
     DriveTestAccess::imu_calibration_complete(chassis) = true;
     chassis.pid_print_toggle(false);
     sim.passes_per_tick(passes);
@@ -77,4 +77,23 @@ TEST_CASE("control: a turn pinned outside big_error still waits out the floored 
   REQUIRE(returned);
   CHECK(r.chassis.interfered);
   CHECK(pros::millis() - t0 <= 1600);
+}
+
+// The same for an odom move. A sticky robot resting in the friction deadband at the point draws over current, and with
+// 100 ms exits the odom stuck watch's floored window (350 ms) let the mA exit fire first on 24 of 60 seeded runs; a plain
+// 350 ms window ended 8 of 60, and the shipped window before the floor ended 6 of 60 on mA. Inside big_error on both axes
+// the watch keeps the team's own window, so a finished move is no more often reported interfered than it was.
+TEST_CASE("a sticky robot's finished odom point move is no more often interfered with 100 ms exits than before the floor (60 seeds)") {
+  int interfered = 0;
+  for (std::uint32_t seed = 1; seed <= 60; seed++) {
+    Rig r(sim::archetype_sticky_high_friction(), 1, /*noise=*/true, seed);
+    r.chassis.pid_odom_drive_exit_condition_set(150_ms, 0.5_in, 250_ms, 1.5_in, 100_ms, 100_ms);
+    r.chassis.pid_odom_turn_exit_condition_set(150_ms, 1.5_deg, 250_ms, 3_deg, 100_ms, 100_ms);
+    r.chassis.pid_odom_set({{0_in, 24_in}, fwd, 100});
+    bool returned = run_capped([&] { r.chassis.pid_wait(); }, 3000);
+    REQUIRE(returned);
+    interfered += r.chassis.interfered ? 1 : 0;
+  }
+  CAPTURE(interfered);
+  CHECK(interfered <= 6);
 }
