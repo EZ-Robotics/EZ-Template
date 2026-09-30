@@ -224,3 +224,21 @@ TEST_CASE("control: plain driver control still pulls a shoved robot back") {
     CHECK(before - r.sim.left().position_in > 0.3);
   }
 }
+
+// A defensive drive_set(0, 0) in the driver loop (or from a background task) does not move the robot, so it must not mark the
+// brake's target as stale: a loop that runs it before opcontrol_* on every iteration still has to pull a shoved robot back.
+TEST_CASE("control: drive_set(0, 0) every driver loop before opcontrol_* does not stop the brake pulling a shoved robot back") {
+  for (double kp : {2.0, 4.0}) {
+    Rig r(kp);
+    driver_second(r.chassis, r.sim);
+    r.sim.displace(3.0);
+    double before = r.sim.left().position_in;
+    for (int i = 0; i < 100; i++) {
+      r.chassis.drive_set(0, 0);
+      r.chassis.opcontrol_arcade_standard(ez::SPLIT);
+      pros::delay(util::DELAY_TIME);
+    }
+    CAPTURE(kp);
+    CHECK(before - r.sim.left().position_in > 0.3);
+  }
+}
