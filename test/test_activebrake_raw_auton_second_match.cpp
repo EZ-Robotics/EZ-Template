@@ -168,3 +168,25 @@ TEST_CASE("a raw-drive_set-only autonomous that never resets the sensors does no
     CHECK(o.turned_deg < 1.0);
   }
 }
+
+// Driver code that runs while the field status says autonomous (a hybrid or skills routine, or a switch left in
+// autonomous) must keep its brake. The flag is set once when autonomous begins, and the first opcontrol_* call consumes
+// it; setting it on every pass of the period would make every opcontrol_* call re-aim the brake to wherever the robot
+// is, so a robot shoved 3 in would never be pulled back.
+TEST_CASE("control: driver code run while the status is autonomous still pulls a shoved robot back") {
+  for (double kp : {2.0, 4.0}) {
+    Rig r(kp);
+    field(false, true);
+    ticks(20);
+    r.chassis.opcontrol_arcade_standard(ez::SPLIT);  // consumes the flag set when autonomous began
+    ticks(20);
+    r.sim.displace(3.0);
+    double before = r.sim.left().position_in;
+    for (int i = 0; i < 100; i++) {
+      r.chassis.opcontrol_arcade_standard(ez::SPLIT);
+      pros::delay(util::DELAY_TIME);
+    }
+    CAPTURE(kp);
+    CHECK(before - r.sim.left().position_in > 0.3);  // pulled back toward where it was, as on dev
+  }
+}
