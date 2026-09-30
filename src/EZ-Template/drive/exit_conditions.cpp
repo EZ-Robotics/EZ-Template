@@ -112,7 +112,8 @@ struct Channel {
   // above, not below, its own cycle's anchor), while a genuinely separate later disturbance -- one preceded by
   // real further progress, per the issue's own repro -- clears it before that later disturbance ever begins.
   double anchor = 0;
-  // Set by made() for the pass it just ran, and only for that pass: a new disturbance latched (`latched`), or the first
+  // Set by made() for the pass it just ran, and only for that pass: a new shove latched (`latched`; the robot crossing its own
+  // target is not a shove and never sets these), or the first
   // pass after that on which the disturbance stopped getting worse (`peaked`, size no longer rising above the worst it
   // had reached). The watch that owns this channel restarts its no-progress clock on each, so a shove gets the time to
   // land and the time to recover a full step below its peak from the moment it happened, not from the last progress
@@ -143,8 +144,10 @@ struct Channel {
     if ((overshot || shoved) && !rebounded) {
       rebound = rebounded = true;
       anchor = low;
-      latched = true;
-      peak_credited = false;
+      // Only a shove restarts the clock. Crossing the target is the robot's own overshoot, not something to wait out,
+      // and restarting on it delayed a heavy robot's clean "settled" verdict until the mA exit fired first.
+      latched = !overshot;
+      peak_credited = overshot;
     }
     side = error > 0;
     double worst_before = low;
@@ -310,7 +313,7 @@ class SingleStuckWatch {
   // one (TURN/SWING) -- this PID's own small_error alone doesn't say which, so the caller (which already
   // knows) passes it in, same as StuckWatch's constructor already picks the right one for xy_ vs a_.
   SingleStuckWatch(PID& pid, double error, bool already_moved, double cap)
-      : ch_(stuck_step(pid, cap), std::fabs(error), error), window_(floored_window(pid.exit.velocity_exit_time != 0 ? pid.exit.velocity_exit_time : pid.exit.mA_timeout)), moved_(already_moved), last_pass_(stuck_passes()), seeded_(false) {
+      : ch_(stuck_step(pid, cap), std::fabs(error), error), window_(floored_window(pid.exit.velocity_exit_time != 0 ? pid.exit.velocity_exit_time : pid.exit.mA_timeout)), settled_window_(pid.exit.velocity_exit_time != 0 ? pid.exit.velocity_exit_time : pid.exit.mA_timeout), big_error_(pid.exit.big_error), moved_(already_moved), last_pass_(stuck_passes()), seeded_(false) {
     int allowance = moved_ ? 0 : STUCK_START_ALLOWANCE_MS;
     last_progress_ = pros::millis() + allowance;
     last_progress_pass_ = stuck_passes() + allowance / util::DELAY_TIME;
@@ -350,17 +353,24 @@ class SingleStuckWatch {
       last_progress_ = now;
       last_progress_pass_ = pass;
     }
+    // Inside big_error a stuck verdict is a clean "settled" return, not an interfered one, so the floor has nothing to
+    // protect there (it exists so a shove is not called stuck). Flooring it would only delay that clean return long
+    // enough for the mA exit to fire first on a robot resting in the friction deadband, and report interfered on a
+    // motion that finished. So inside big_error the watch keeps the team's own window, as it always has.
+    int window = (big_error_ > 0 && std::fabs(error) <= big_error_) ? settled_window_ : window_;
     std::int32_t waited = now - last_progress_;
-    if (waited <= window_) return false;
+    if (waited <= window) return false;
     // See the matching comment in StuckWatch::stuck() -- a fixed, nominal-DELAY_TIME pass count, not one
     // derived from this watch's own observed (and self-referential) cadence.
-    int expected_passes = (int)(window_ / (double)util::DELAY_TIME);
-    return (std::int32_t)(pass - last_progress_pass_) > expected_passes || waited > STUCK_STARVED_WINDOWS * window_;
+    int expected_passes = (int)(window / (double)util::DELAY_TIME);
+    return (std::int32_t)(pass - last_progress_pass_) > expected_passes || waited > STUCK_STARVED_WINDOWS * window;
   }
 
  private:
   Channel ch_;
-  int window_;
+  int window_;          // the team's window, floored: what a stuck verdict outside big_error waits for
+  int settled_window_;  // the team's own window, unfloored: what it waits for inside big_error
+  double big_error_;
   bool moved_;
   std::uint32_t last_pass_;
   bool seeded_;
