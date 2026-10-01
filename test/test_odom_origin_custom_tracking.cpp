@@ -184,3 +184,38 @@ TEST_CASE("drive_defaults_set() after a custom tracker asks for one resync, whic
   CHECK_FALSE(DriveTestAccess::tracking_resync_pending(r.chassis));
   CHECK(r.chassis.odom_x_get() == doctest::Approx(12.5).epsilon(1e-6));  // the robot did not move
 }
+
+// A tracker installed while a motion is running, in a frame that differs from the pose odom had: the jump on its first pass is not
+// the robot moving.  (The robot really moves about 0.5 in per pass here, so a jump of 10 in or more would stand out.)
+TEST_CASE("installing a tracker in another frame while a motion runs does not read the jump as movement") {
+  for (double off : {10.0, 30.0}) {
+    Rig r;
+    TruePose tp(r);
+    tp.reset(0, off);  // the tracker's frame is `off` ahead of the pose odom has
+    r.start_at(0, 0, 0);
+    r.hook = [&](int) { tp.step(); };
+    r.chassis.pid_odom_ptp_set(O(0, 60, fwd, 110));
+    r.run([&] { r.chassis.pid_wait(); }, 25);  // get the robot moving
+    REQUIRE(r.rows.size() >= 5);
+    size_t installed_at = r.rows.size();
+    install_gps(r, tp);
+    r.run([&] { r.chassis.pid_wait(); }, 6);
+    REQUIRE(r.rows.size() > installed_at + 3);
+    CAPTURE(off);
+    for (size_t i = installed_at; i < r.rows.size(); i++) CHECK(std::fabs(r.rows[i].deriv) < 2.0);
+    CHECK(r.min_mv() >= 0);
+  }
+}
+
+// drive_defaults_set() twice before the next pass must not lose the resync the first one asked for.
+TEST_CASE("drive_defaults_set() twice before the next pass still asks for the resync") {
+  Rig r;
+  r.start_at(0, 0, 0);
+  r.chassis.odom_tracking_set([] {});
+  r.chassis.odom_current.x = 25.0;
+  r.chassis.drive_defaults_set();
+  r.chassis.drive_defaults_set();
+  CHECK(DriveTestAccess::tracking_resync_pending(r.chassis));
+  r.idle(1);
+  CHECK(DriveTestAccess::central_pose(r.chassis).x == doctest::Approx(25.0).epsilon(1e-6));
+}

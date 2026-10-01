@@ -177,3 +177,25 @@ TEST_CASE("paused tracking and a sensor reset mid motion do not spike the deriva
       if (p.n == reset_pass || p.n == reset_pass + 1) CHECK(std::fabs(p.deriv) < 1.0);
   }
 }
+
+// Tracking paused for 100 ms: the robot keeps moving, odom does not, and the pass that resumes it measures the movement from the
+// pose odom stood at, so xyPID's derivative reads the real movement on that pass instead of dropping to 0.
+TEST_CASE("the pass that resumes paused tracking reads the real movement") {
+  Rig r;
+  r.start_at(0, 0, 0);
+  r.chassis.pid_odom_ptp_set(O(0, 80, fwd, 110));
+  r.hook = [&](int n) {
+    if (n == 20) r.chassis.odom_enable(false);
+    if (n == 25) r.chassis.odom_enable(true);
+  };
+  r.run([&] { r.chassis.pid_wait(); }, 60);
+  int checked = 0;
+  for (const auto& p : r.rows) {
+    if (p.n < 20 || p.n > 30 || p.mode != POINT_TO_POINT) continue;
+    if (p.n > 20 && p.n < 25) continue;  // paused: odom does not move, nothing to compare
+    CAPTURE(p.n);
+    CHECK(std::fabs(p.deriv - p.dref) < 0.05);
+    checked++;
+  }
+  CHECK(checked >= 6);
+}
