@@ -50,7 +50,14 @@ void ma_only(Drive& chassis) {
   chassis.pid_odom_turn_exit_condition_set(0, 0.0, 0, 0.0, 0, 100);
 }
 
-enum class Wait { Drive, DriveUntil, Turn, TurnUntil, Swing, Odom };
+enum class Wait {
+  Drive,
+  DriveUntil,
+  Turn,
+  TurnUntil,
+  Swing,
+  Odom
+};
 
 void start_and_wait(Drive& chassis, Wait w) {
   switch (w) {
@@ -83,12 +90,18 @@ void start_and_wait(Drive& chassis, Wait w) {
 
 const char* name(Wait w) {
   switch (w) {
-    case Wait::Drive: return "pid_wait DRIVE";
-    case Wait::DriveUntil: return "pid_wait_until DRIVE";
-    case Wait::Turn: return "pid_wait TURN";
-    case Wait::TurnUntil: return "pid_wait_until TURN";
-    case Wait::Swing: return "pid_wait SWING";
-    case Wait::Odom: return "pid_wait ODOM";
+    case Wait::Drive:
+      return "pid_wait DRIVE";
+    case Wait::DriveUntil:
+      return "pid_wait_until DRIVE";
+    case Wait::Turn:
+      return "pid_wait TURN";
+    case Wait::TurnUntil:
+      return "pid_wait_until TURN";
+    case Wait::Swing:
+      return "pid_wait SWING";
+    case Wait::Odom:
+      return "pid_wait ODOM";
   }
   return "";
 }

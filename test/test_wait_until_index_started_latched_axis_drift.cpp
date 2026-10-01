@@ -89,10 +89,14 @@ void script() {
   int n = g_pass;
 
   double a_e;
-  if (n <= 10) a_e = std::fmax(0.0, 20.0 - 2.0 * n);
-  else if (n <= 19) a_e = 0.0;
-  else if (n <= 39) a_e = 1.0 * (n - 19);  // ramps 0 -> 20deg over 20 passes
-  else a_e = 20.0;
+  if (n <= 10)
+    a_e = std::fmax(0.0, 20.0 - 2.0 * n);
+  else if (n <= 19)
+    a_e = 0.0;
+  else if (n <= 39)
+    a_e = 1.0 * (n - 19);  // ramps 0 -> 20deg over 20 passes
+  else
+    a_e = 20.0;
   c.current_a_odomPID.error = a_e;
   DriveTestAccess::refresh(c.current_a_odomPID);
 

@@ -108,8 +108,7 @@ void screen_print(std::string text, int line) {
       // Too many wrapped lines to fit on screen. Mark the last line that did
       // fit with an ellipsis instead of wiping every line already printed.
       std::string truncated = last_line;
-      if (truncated.length() + 3 > 38)
-        truncated = truncated.substr(0, 35);
+      if (truncated.length() + 3 > 38) truncated = truncated.substr(0, 35);
       truncated += "...";
       screen_line_clear(7);
       screen_line_set(7, truncated);
@@ -149,8 +148,7 @@ int places_after_decimal(double input, int min) {
   std::string in = std::to_string(input);
   int places_after_decimal = 6;
   for (int i = in.length() - 1; i > 0; i--) {
-    if (in[i] == '.')
-      break;
+    if (in[i] == '.') break;
 
     if (in[i] == '0')
       places_after_decimal--;
@@ -315,9 +313,7 @@ std::vector<odom> united_odoms_to_odoms(std::vector<united_odom> inputs) {
   return output;
 }
 
-odom united_odom_to_odom(united_odom input) {
-  return united_odoms_to_odoms({input})[0];
-}
+odom united_odom_to_odom(united_odom input) { return united_odoms_to_odoms({input})[0]; }
 
 }  // namespace util
 }  // namespace ez

@@ -41,8 +41,8 @@ struct MotorCurve {
   double free_speed_rpm;   // cartridge output shaft, unloaded
   double stall_torque_nm;  // cartridge output shaft, current at stall_current_a
   double stall_current_a;  // approximated as the 2.5A default current limit (sourced, Purdue
-                            // SIGBots wiki, per SIM_FIDELITY.md) -- treating the limit as a stand-in
-                            // for true stall current, not independently sourced as the same number.
+                           // SIGBots wiki, per SIM_FIDELITY.md) -- treating the limit as a stand-in
+                           // for true stall current, not independently sourced as the same number.
   double free_current_a;   // small no-load current draw; not sourced, a conventional small value.
 
   // Signed torque at a given output-shaft angular velocity (rad/s, signed in the wheel's own
@@ -113,9 +113,9 @@ inline double current_scale_for_temperature(double temp_c) {
 struct SimArchetype {
   const char* name;
   int motors_per_side;
-  double cartridge_rpm;       // 100 (red), 200 (green), or 600 (blue)
+  double cartridge_rpm;  // 100 (red), 200 (green), or 600 (blue)
   double wheel_diameter_in;
-  double track_width_in;      // center-to-center distance between left and right wheel contact
+  double track_width_in;  // center-to-center distance between left and right wheel contact
   double mass_kg;
   double moment_of_inertia_kg_m2;  // about the vertical (yaw) axis
   double rolling_resistance_nm;    // constant opposing torque per side, referred to the wheel
@@ -124,11 +124,11 @@ struct SimArchetype {
   // harder to pivot, more current drawn while turning, models traction wheels / high-friction
   // tile better than a plain omni-like drive. Not measured against a real robot.
   double scrub_coefficient;
-  bool has_tracking_wheels;   // if true, drive_sensor_left/right read a tracking wheel (never
-                               // slips with the drive base) rather than the drive motors directly
-  double encoder_noise_stddev_in;      // Gaussian, applied to reported position (inches)
-  double velocity_noise_stddev_in_s;   // Gaussian, applied to reported actual_velocity
-  double imu_noise_stddev_deg;         // Gaussian, applied to reported IMU heading
+  bool has_tracking_wheels;           // if true, drive_sensor_left/right read a tracking wheel (never
+                                      // slips with the drive base) rather than the drive motors directly
+  double encoder_noise_stddev_in;     // Gaussian, applied to reported position (inches)
+  double velocity_noise_stddev_in_s;  // Gaussian, applied to reported actual_velocity
+  double imu_noise_stddev_deg;        // Gaussian, applied to reported IMU heading
 };
 
 // moment_of_inertia_kg_m2 for all three: modeled as a uniform 18in x 18in square plate (VEX's
@@ -139,25 +139,49 @@ struct SimArchetype {
 // still a simplification, not sourced hardware data -- a real chassis with mechanisms extending
 // away from center would have a higher figure than this plate estimate.
 inline SimArchetype archetype_light_fast() {
-  return SimArchetype{
-      "light_fast", 4, 600.0 /*blue*/, 3.25, 12.0, 3.5, 0.122,
-      /*rolling_resistance_nm=*/0.02, /*scrub_coefficient=*/0.15,
-      /*has_tracking_wheels=*/false,
-      /*encoder_noise_stddev_in=*/0.01, /*velocity_noise_stddev_in_s=*/0.05, /*imu_noise_stddev_deg=*/0.05};
+  return SimArchetype{"light_fast",
+                      4,
+                      600.0 /*blue*/,
+                      3.25,
+                      12.0,
+                      3.5,
+                      0.122,
+                      /*rolling_resistance_nm=*/0.02,
+                      /*scrub_coefficient=*/0.15,
+                      /*has_tracking_wheels=*/false,
+                      /*encoder_noise_stddev_in=*/0.01,
+                      /*velocity_noise_stddev_in_s=*/0.05,
+                      /*imu_noise_stddev_deg=*/0.05};
 }
 inline SimArchetype archetype_heavy_slow() {
-  return SimArchetype{
-      "heavy_slow", 6, 100.0 /*red*/, 4.125, 15.0, 9.0, 0.314,
-      /*rolling_resistance_nm=*/0.08, /*scrub_coefficient=*/0.35,
-      /*has_tracking_wheels=*/true,
-      /*encoder_noise_stddev_in=*/0.015, /*velocity_noise_stddev_in_s=*/0.08, /*imu_noise_stddev_deg=*/0.08};
+  return SimArchetype{"heavy_slow",
+                      6,
+                      100.0 /*red*/,
+                      4.125,
+                      15.0,
+                      9.0,
+                      0.314,
+                      /*rolling_resistance_nm=*/0.08,
+                      /*scrub_coefficient=*/0.35,
+                      /*has_tracking_wheels=*/true,
+                      /*encoder_noise_stddev_in=*/0.015,
+                      /*velocity_noise_stddev_in_s=*/0.08,
+                      /*imu_noise_stddev_deg=*/0.08};
 }
 inline SimArchetype archetype_sticky_high_friction() {
-  return SimArchetype{
-      "sticky_high_friction", 6, 200.0 /*green*/, 4.0, 13.5, 6.0, 0.209,
-      /*rolling_resistance_nm=*/0.18, /*scrub_coefficient=*/0.65,
-      /*has_tracking_wheels=*/false,
-      /*encoder_noise_stddev_in=*/0.01, /*velocity_noise_stddev_in_s=*/0.06, /*imu_noise_stddev_deg=*/0.06};
+  return SimArchetype{"sticky_high_friction",
+                      6,
+                      200.0 /*green*/,
+                      4.0,
+                      13.5,
+                      6.0,
+                      0.209,
+                      /*rolling_resistance_nm=*/0.18,
+                      /*scrub_coefficient=*/0.65,
+                      /*has_tracking_wheels=*/false,
+                      /*encoder_noise_stddev_in=*/0.01,
+                      /*velocity_noise_stddev_in_s=*/0.06,
+                      /*imu_noise_stddev_deg=*/0.06};
 }
 
 struct NoiseConfig {
@@ -182,8 +206,8 @@ struct SideState {
 // not a calibrated one.
 inline void step_temperature(double& temp_c, double current_a, double dt_s) {
   constexpr double kAmbient = 25.0;
-  constexpr double kHeatGain = 6.0;    // deg C per (A^2 * s), unvalidated
-  constexpr double kCoolRate = 0.05;   // 1/s toward ambient, unvalidated
+  constexpr double kHeatGain = 6.0;   // deg C per (A^2 * s), unvalidated
+  constexpr double kCoolRate = 0.05;  // 1/s toward ambient, unvalidated
   temp_c += current_a * current_a * kHeatGain * dt_s;
   temp_c += (kAmbient - temp_c) * kCoolRate * dt_s;
 }
@@ -192,9 +216,8 @@ inline void step_temperature(double& temp_c, double current_a, double dt_s) {
 // One instance is installed as the active sim via install(); ~SimRobot() uninstalls it. Owns the
 // ordering decision documented at length below.
 class SimRobot {
- public:
-  SimRobot(ez::Drive& drive, SimArchetype archetype, NoiseConfig noise = {})
-      : drive_(drive), archetype_(archetype), noise_(noise), rng_(noise.seed) {
+public:
+  SimRobot(ez::Drive& drive, SimArchetype archetype, NoiseConfig noise = {}) : drive_(drive), archetype_(archetype), noise_(noise), rng_(noise.seed) {
     // Whatever the fake IMU holds right now is the sim's own baseline, replaced by the physical heading on
     // the first tick as it always was. Only a write made after this point is adopted as an offset (see
     // write_back()'s IMU comment).
@@ -250,7 +273,7 @@ class SimRobot {
   const SideState& left() const { return left_; }
   const SideState& right() const { return right_; }
 
- private:
+private:
   static void install(SimRobot* r) {
     active_ = r;
     test_stub::g_clock.on_delay = &SimRobot::on_delay_trampoline;
@@ -292,8 +315,10 @@ class SimRobot {
   // AND ends with its own pros::delay(), which would re-enter on_delay from inside on_delay.
   void tick() {
     for (int i = 0; i < passes_per_tick_; i++) {
-      if (use_real_auto_task_) run_real_auto_task_pass();
-      else run_auto_task_pass();
+      if (use_real_auto_task_)
+        run_real_auto_task_pass();
+      else
+        run_auto_task_pass();
     }
     step_physics(ez::util::DELAY_TIME / 1000.0);
   }
@@ -310,8 +335,7 @@ class SimRobot {
     test_stub::g_clock.delay_calls_until_stop = 0;
     try {
       ez::DriveTestAccess::ez_auto_task(drive_);
-    } catch (test_stub::StopLoop&) {
-    }
+    } catch (test_stub::StopLoop&) {}
     test_stub::g_clock.now_ms -= ez::util::DELAY_TIME;
     test_stub::g_clock.on_delay = saved_hook;
     test_stub::g_clock.delay_calls_until_stop = saved_stop;
@@ -413,7 +437,7 @@ class SimRobot {
     // rolling-resistance + scrub-placeholder model as before, but now returns a ground-contact
     // force instead of directly integrating that side's own motion.
     auto side_force = [&](double commanded_mv, double this_wheel_v_m_s, double other_wheel_v_m_s) {
-      double supply_mv = 12000.0;  // no battery sag model, per SIM_FIDELITY.md's recommendation
+      double supply_mv = 12000.0;                                                      // no battery sag model, per SIM_FIDELITY.md's recommendation
       double duty = ez::util::clamp(commanded_mv, supply_mv, -supply_mv) / supply_mv;  // signed, -1..1
 
       double wheel_angular_v = this_wheel_v_m_s / wheel_radius_m;  // rad/s at the wheel

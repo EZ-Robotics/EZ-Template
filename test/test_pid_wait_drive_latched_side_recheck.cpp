@@ -111,8 +111,7 @@ TEST_CASE("pid_wait() DRIVE: a side that already latched an exit is rechecked, s
   chassis.pid_drive_set(48, 100);  // shipped defaults: 90ms/1in/250ms/3in/500ms/500ms
 
   Outcome o = run_wait(chassis, script, 500, [&] { chassis.pid_wait(); });
-  MESSAGE("returned=" << o.returned << " passes=" << o.passes << " interfered=" << o.interfered
-                       << " left_error_at_return=" << o.left_error_at_return);
+  MESSAGE("returned=" << o.returned << " passes=" << o.passes << " interfered=" << o.interfered << " left_error_at_return=" << o.left_error_at_return);
 
   REQUIRE(o.returned);  // the wait must actually end, not hang past max_passes
   // Sanity on the scripted shape itself: left really is outside its own big_error at return time.
@@ -130,13 +129,16 @@ TEST_CASE("pid_wait() DRIVE control: both sides exiting close together at a genu
   chassis.pid_print_toggle(false);
   chassis.pid_drive_set(48, 100);
 
-  Outcome o = run_wait(chassis, [](Drive& c, int n) {
-    double e = std::fmax(0.4, 3.9 - 0.1 * n);
-    c.leftPID.error = e;
-    c.leftPID.derivative = -0.1;
-    c.rightPID.error = e;
-    c.rightPID.derivative = -0.1;
-  }, 500, [&] { chassis.pid_wait(); });
+  Outcome o = run_wait(
+      chassis,
+      [](Drive& c, int n) {
+        double e = std::fmax(0.4, 3.9 - 0.1 * n);
+        c.leftPID.error = e;
+        c.leftPID.derivative = -0.1;
+        c.rightPID.error = e;
+        c.rightPID.derivative = -0.1;
+      },
+      500, [&] { chassis.pid_wait(); });
 
   MESSAGE("returned=" << o.returned << " passes=" << o.passes << " interfered=" << o.interfered);
   CHECK(o.returned);
@@ -166,10 +168,14 @@ void pinned_script() {
   int n = g_pass2;
 
   double left_e;
-  if (n <= 10) left_e = std::fmax(0.0, 20.0 - 2.0 * n);
-  else if (n <= 19) left_e = 0.0;
-  else if (n <= 39) left_e = 0.2 * (n - 19);  // ramps 0 -> 4in over 20 passes
-  else left_e = 4.0;
+  if (n <= 10)
+    left_e = std::fmax(0.0, 20.0 - 2.0 * n);
+  else if (n <= 19)
+    left_e = 0.0;
+  else if (n <= 39)
+    left_e = 0.2 * (n - 19);  // ramps 0 -> 4in over 20 passes
+  else
+    left_e = 4.0;
   c.leftPID.error = left_e;
   c.leftPID.derivative = n <= 10 ? -2.0 : (n > 19 && n <= 39 ? 0.2 : 0.0);
   DriveTestAccess::refresh(c.leftPID);

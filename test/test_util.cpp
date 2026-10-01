@@ -72,9 +72,7 @@ TEST_CASE("curve_scale_clamp: a held button or a bad SD file cannot push the cur
 TEST_CASE("curve_scale_clamp: the clamped curve keeps the stick usable") {
   // Same curve as Drive::opcontrol_curve_left, evaluated at the ceiling.  A full stick still
   // reaches full output, and a stick at three quarters still moves the robot.
-  auto curve = [](double scale, double x) {
-    return (powf(2.718, -(scale / 10)) + powf(2.718, (fabs(x) - 127) / 10) * (1 - powf(2.718, -(scale / 10)))) * x;
-  };
+  auto curve = [](double scale, double x) { return (powf(2.718, -(scale / 10)) + powf(2.718, (fabs(x) - 127) / 10) * (1 - powf(2.718, -(scale / 10)))) * x; };
   double scale = util::curve_scale_clamp(50);
   CHECK(curve(scale, 127) == doctest::Approx(127).epsilon(0.01));
   CHECK(curve(scale, 95) > 10);
@@ -83,10 +81,10 @@ TEST_CASE("curve_scale_clamp: the clamped curve keeps the stick usable") {
 
 TEST_CASE("absolute_angle_to_point: all four quadrants") {
   pose current{0, 0, 0};
-  CHECK(util::absolute_angle_to_point({0, 10}, current) == doctest::Approx(0));    // north
-  CHECK(util::absolute_angle_to_point({10, 0}, current) == doctest::Approx(90));   // east
-  CHECK(util::absolute_angle_to_point({0, -10}, current) == doctest::Approx(180)); // south
-  CHECK(util::absolute_angle_to_point({-10, 0}, current) == doctest::Approx(-90)); // west
+  CHECK(util::absolute_angle_to_point({0, 10}, current) == doctest::Approx(0));     // north
+  CHECK(util::absolute_angle_to_point({10, 0}, current) == doctest::Approx(90));    // east
+  CHECK(util::absolute_angle_to_point({0, -10}, current) == doctest::Approx(180));  // south
+  CHECK(util::absolute_angle_to_point({-10, 0}, current) == doctest::Approx(-90));  // west
 }
 
 TEST_CASE("united_pose_to_pose preserves ANGLE_NOT_SET") {

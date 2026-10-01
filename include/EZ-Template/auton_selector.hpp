@@ -11,7 +11,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 namespace ez {
 class AutonSelector {
- public:
+public:
   /**
    * The list of registered autons, in page order.
    */

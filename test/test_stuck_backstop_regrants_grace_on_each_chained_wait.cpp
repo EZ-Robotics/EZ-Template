@@ -109,8 +109,7 @@ TEST_CASE("chained wait calls on a drive that already moved before pinning each 
   int passes_in_second_call = g_pass - passes_after_first;
 
   MESSAGE("passes_after_first=" << passes_after_first << " passes_in_second_call=" << passes_in_second_call
-                                 << " interfered_after_first=" << interfered_after_first
-                                 << " interfered_after_second=" << chassis.interfered);
+                                << " interfered_after_first=" << interfered_after_first << " interfered_after_second=" << chassis.interfered);
 
   CHECK(returned_1);
   CHECK(returned_2);

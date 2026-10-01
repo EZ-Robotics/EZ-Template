@@ -52,7 +52,8 @@ void cruise() {
 }
 }  // namespace
 
-TEST_CASE("pid_wait() DRIVE: small_error=0 lets SingleStuckWatch's fallback step false-abort the same slow, healthy cruise section 8.6 already accepts as real") {
+TEST_CASE(
+    "pid_wait() DRIVE: small_error=0 lets SingleStuckWatch's fallback step false-abort the same slow, healthy cruise section 8.6 already accepts as real") {
   Drive chassis = make_chassis();
   chassis.pid_print_toggle(true);
   DriveTestAccess::imu_calibration_complete(chassis) = true;

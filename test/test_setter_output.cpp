@@ -51,15 +51,13 @@ TEST_CASE("pid_turn_set to a point prints the point, then the turn it becomes") 
 
 TEST_CASE("pid_odom_ptp_set prints its target coordinates") {
   Drive chassis = make_chassis();
-  CHECK(printed_by([&] { chassis.pid_odom_ptp_set({{0.0, 24.0, 0.0}, fwd, 110}); }) ==
-        "Odom Motion Started... Target Coordinates: (0.00, 24.00, 0.00) \n");
+  CHECK(printed_by([&] { chassis.pid_odom_ptp_set({{0.0, 24.0, 0.0}, fwd, 110}); }) == "Odom Motion Started... Target Coordinates: (0.00, 24.00, 0.00) \n");
 }
 
 TEST_CASE("pid_odom_ptp_set while pure pursuit is running starts its line with a space") {
   Drive chassis = make_chassis();
   chassis.pid_odom_pp_set({{{0.0, 12.0, 0.0}, fwd, 110}, {{0.0, 24.0, 0.0}, fwd, 110}});  // leaves the mode at pure pursuit
-  CHECK(printed_by([&] { chassis.pid_odom_ptp_set({{0.0, 24.0, 0.0}, fwd, 110}); }) ==
-        " Odom Motion Started... Target Coordinates: (0.00, 24.00, 0.00) \n");
+  CHECK(printed_by([&] { chassis.pid_odom_ptp_set({{0.0, 24.0, 0.0}, fwd, 110}); }) == " Odom Motion Started... Target Coordinates: (0.00, 24.00, 0.00) \n");
 }
 
 TEST_CASE("pid_wait_quick_chain says so when there is no motion to chain") {
@@ -83,8 +81,7 @@ TEST_CASE("nothing is printed when print_toggle is off") {
           chassis.pid_swing_set(LEFT_SWING, 45.0, 110);
           chassis.pid_turn_set({0.0, 24.0, 0.0}, fwd, 110);
           chassis.pid_odom_ptp_set({{0.0, 24.0, 0.0}, fwd, 110});
-        })
-            .empty());
+        }).empty());
 }
 
 // check_imu_task runs inside ez_auto_task's lock every 10 ms. It prints only when an IMU's health changes.
@@ -92,8 +89,7 @@ TEST_CASE("check_imu_task warns once when the only IMU looks unhealthy") {
   Drive chassis = make_chassis();
   DriveTestAccess::imu_calibration_complete(chassis) = true;
   chassis.good_imus[0]->fake_installed = false;
-  CHECK(printed_by([&] { DriveTestAccess::check_imu_task(chassis); }) ==
-        "EZ-Template: IMU on port 5 looks unhealthy but it is the only IMU, keeping it\n");
+  CHECK(printed_by([&] { DriveTestAccess::check_imu_task(chassis); }) == "EZ-Template: IMU on port 5 looks unhealthy but it is the only IMU, keeping it\n");
   CHECK(printed_by([&] { DriveTestAccess::check_imu_task(chassis); }).empty());
 }
 
@@ -147,40 +143,49 @@ TEST_CASE("the setters print only after the chassis lock is released") {
   expect_printed_after_unlock(chassis, [&] { chassis.pid_turn_set(90.0, 110); }, "Turn Started... Target Value: 90.00\n");
   expect_printed_after_unlock(chassis, [&] { chassis.pid_swing_set(LEFT_SWING, 45.0, 110); }, "Swing Started... Target Value: 45.00\n");
   // Two nested setters, each with its own text, come out together and in order once the outer one lets go.
-  expect_printed_after_unlock(chassis, [&] { chassis.pid_turn_set({0.0, 24.0, 0.0}, fwd, 110); },
-                              "Turn to Point PID Started... Target Point: (0.00, 24.00) \n"
-                              "Turn Started... Target Value: 0.00\n");
+  expect_printed_after_unlock(
+      chassis, [&] { chassis.pid_turn_set({0.0, 24.0, 0.0}, fwd, 110); },
+      "Turn to Point PID Started... Target Point: (0.00, 24.00) \n"
+      "Turn Started... Target Value: 0.00\n");
   // The line comes from a helper that both a setter and ez_auto_task call while they hold the lock.
-  expect_printed_after_unlock(chassis, [&] { chassis.pid_odom_ptp_set({{0.0, 24.0, 0.0}, fwd, 110}); }, "Odom Motion Started... Target Coordinates: (0.00, 24.00, 0.00) \n");
+  expect_printed_after_unlock(
+      chassis, [&] { chassis.pid_odom_ptp_set({{0.0, 24.0, 0.0}, fwd, 110}); }, "Odom Motion Started... Target Coordinates: (0.00, 24.00, 0.00) \n");
   // A setter that returns early still prints once its guard unwinds.
   Drive idle = make_chassis();
   expect_printed_after_unlock(idle, [&] { idle.pid_wait_quick_chain(); }, "Not in a supported drive mode!\n");
-  expect_printed_after_unlock(idle, [&] { idle.drive_imus_scalers_3600_set({50.0}); },
-                              "EZ-Template: drive_imus_scalers_3600_set rejected 50 for imu on port 5, value must be the imu's reading after "
-                              "physically turning the robot 3600 degrees (about 3600)\n");
+  expect_printed_after_unlock(
+      idle, [&] { idle.drive_imus_scalers_3600_set({50.0}); },
+      "EZ-Template: drive_imus_scalers_3600_set rejected 50 for imu on port 5, value must be the imu's reading after "
+      "physically turning the robot 3600 degrees (about 3600)\n");
 }
 
 TEST_CASE("the imu message ez_auto_task's pass prints comes out after its lock is released") {
   Drive chassis = make_chassis();
   DriveTestAccess::imu_calibration_complete(chassis) = true;
   chassis.good_imus[0]->fake_installed = false;
-  expect_printed_after_unlock(chassis, [&] {
-                                test_stub::g_clock.delay_calls_until_stop = 0;
-                                try {
-                                  DriveTestAccess::ez_auto_task(chassis);
-                                } catch (test_stub::StopLoop&) {
-                                }
-                                test_stub::g_clock.delay_calls_until_stop = -1; }, "EZ-Template: IMU on port 5 looks unhealthy but it is the only IMU, keeping it\n");
+  expect_printed_after_unlock(
+      chassis,
+      [&] {
+        test_stub::g_clock.delay_calls_until_stop = 0;
+        try {
+          DriveTestAccess::ez_auto_task(chassis);
+        } catch (test_stub::StopLoop&) {}
+        test_stub::g_clock.delay_calls_until_stop = -1;
+      },
+      "EZ-Template: IMU on port 5 looks unhealthy but it is the only IMU, keeping it\n");
 
   test_stub::reset_all();
   Drive two_imus({1, -2}, {-3, 4}, {5, 6}, 3.25, 360);
   DriveTestAccess::imu_calibration_complete(two_imus) = true;
   two_imus.good_imus[0]->fake_installed = false;
-  expect_printed_after_unlock(two_imus, [&] {
-                                test_stub::g_clock.delay_calls_until_stop = 0;
-                                try {
-                                  DriveTestAccess::ez_auto_task(two_imus);
-                                } catch (test_stub::StopLoop&) {
-                                }
-                                test_stub::g_clock.delay_calls_until_stop = -1; }, "EZ-Template: switching primary IMU to port 6\n");
+  expect_printed_after_unlock(
+      two_imus,
+      [&] {
+        test_stub::g_clock.delay_calls_until_stop = 0;
+        try {
+          DriveTestAccess::ez_auto_task(two_imus);
+        } catch (test_stub::StopLoop&) {}
+        test_stub::g_clock.delay_calls_until_stop = -1;
+      },
+      "EZ-Template: switching primary IMU to port 6\n");
 }

@@ -109,8 +109,7 @@ TEST_CASE("pid_wait() DRIVE: a latched side's stuck watch is resynced on unlatch
 
   g_resolve = true;
   Outcome o = run_wait(chassis, 600);
-  MESSAGE("returned=" << o.returned << " passes=" << o.passes << " interfered=" << o.interfered
-                       << " left_error_at_return=" << o.left_error_at_return);
+  MESSAGE("returned=" << o.returned << " passes=" << o.passes << " interfered=" << o.interfered << " left_error_at_return=" << o.left_error_at_return);
 
   REQUIRE(o.returned);  // the wait must actually end, not hang past max_passes
   // The blip resolved well within a fresh grace window -- must not be reported as interfered.
@@ -124,8 +123,7 @@ TEST_CASE("pid_wait() DRIVE: a disturbance that outlasts even a resynced side's 
 
   g_resolve = false;
   Outcome o = run_wait(chassis, 600);
-  MESSAGE("returned=" << o.returned << " passes=" << o.passes << " interfered=" << o.interfered
-                       << " left_error_at_return=" << o.left_error_at_return);
+  MESSAGE("returned=" << o.returned << " passes=" << o.passes << " interfered=" << o.interfered << " left_error_at_return=" << o.left_error_at_return);
 
   REQUIRE(o.returned);
   // Sanity on the scripted shape itself: left really never recovers, and is outside big_error.

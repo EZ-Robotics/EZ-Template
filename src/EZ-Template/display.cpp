@@ -173,8 +173,7 @@ void portrait_load() {
     g_portrait_on = true;
   }
 
-  for (int i = 0; i < LINE_COUNT; i++)
-    lv_label_set_text(g_portrait_lines[i], g_line_text[i].c_str());
+  for (int i = 0; i < LINE_COUNT; i++) lv_label_set_text(g_portrait_lines[i], g_line_text[i].c_str());
 
   lv_screen_load(g_portrait_screen);
   repaint_schedule();
@@ -298,10 +297,18 @@ void screen_line_publish(int line, std::string text) {
 void screen_rotation_set(int degrees) {
   lv_display_rotation_t rot;
   switch (degrees) {
-    case 0:   rot = LV_DISPLAY_ROTATION_0; break;
-    case 90:  rot = LV_DISPLAY_ROTATION_90; break;
-    case 180: rot = LV_DISPLAY_ROTATION_180; break;
-    case 270: rot = LV_DISPLAY_ROTATION_270; break;
+    case 0:
+      rot = LV_DISPLAY_ROTATION_0;
+      break;
+    case 90:
+      rot = LV_DISPLAY_ROTATION_90;
+      break;
+    case 180:
+      rot = LV_DISPLAY_ROTATION_180;
+      break;
+    case 270:
+      rot = LV_DISPLAY_ROTATION_270;
+      break;
     default:
       printf("[display] Invalid rotation %d; use 0, 90, 180, or 270.\n", degrees);
       return;
@@ -352,10 +359,18 @@ void screen_line_publish(int line, std::string text) {
 void screen_rotation_set(int degrees) {
   lv_disp_rot_t rot;
   switch (degrees) {
-    case 0:   rot = LV_DISP_ROT_NONE; break;
-    case 90:  rot = LV_DISP_ROT_90; break;
-    case 180: rot = LV_DISP_ROT_180; break;
-    case 270: rot = LV_DISP_ROT_270; break;
+    case 0:
+      rot = LV_DISP_ROT_NONE;
+      break;
+    case 90:
+      rot = LV_DISP_ROT_90;
+      break;
+    case 180:
+      rot = LV_DISP_ROT_180;
+      break;
+    case 270:
+      rot = LV_DISP_ROT_270;
+      break;
     default:
       printf("[display] Invalid rotation %d; use 0, 90, 180, or 270.\n", degrees);
       return;

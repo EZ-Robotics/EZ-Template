@@ -118,8 +118,7 @@ TEST_CASE("pid_wait() DRIVE: a stale in-tolerance leftover error must not fire a
   }
   int passes_used = 50 - test_stub::g_clock.delay_calls_until_stop;
   test_stub::g_clock.delay_calls_until_stop = -1;
-  MESSAGE("returned=", returned, " passes_used=", passes_used, " interfered=", chassis.interfered,
-          " drive_sensor_left=", chassis.drive_sensor_left());
+  MESSAGE("returned=", returned, " passes_used=", passes_used, " interfered=", chassis.interfered, " drive_sensor_left=", chassis.drive_sensor_left());
 
   // Fixed: without a fresh compute() to back it up, `error` staying inside small_error forever must
   // not be credited toward SMALL_EXIT at all -- the wait is still RUNNING at the end of the budget,
@@ -178,8 +177,7 @@ TEST_CASE("pid_wait() TURN: the same stale in-tolerance leftover error must not 
   }
   int passes_used = 50 - test_stub::g_clock.delay_calls_until_stop;
   test_stub::g_clock.delay_calls_until_stop = -1;
-  MESSAGE("returned=", returned, " passes_used=", passes_used, " interfered=", chassis.interfered,
-          " drive_angle_get=", chassis.drive_angle_get());
+  MESSAGE("returned=", returned, " passes_used=", passes_used, " interfered=", chassis.interfered, " drive_angle_get=", chassis.drive_angle_get());
 
   // Fixed: still RUNNING at the end of the budget, not a false settle at ~9 passes.
   CHECK_FALSE(returned);
@@ -206,8 +204,7 @@ TEST_CASE("pid_wait() SWING: the same stale in-tolerance leftover error must not
   }
   int passes_used = 50 - test_stub::g_clock.delay_calls_until_stop;
   test_stub::g_clock.delay_calls_until_stop = -1;
-  MESSAGE("returned=", returned, " passes_used=", passes_used, " interfered=", chassis.interfered,
-          " drive_angle_get=", chassis.drive_angle_get());
+  MESSAGE("returned=", returned, " passes_used=", passes_used, " interfered=", chassis.interfered, " drive_angle_get=", chassis.drive_angle_get());
 
   CHECK_FALSE(returned);
   CHECK(chassis.drive_angle_get() == doctest::Approx(0.0));

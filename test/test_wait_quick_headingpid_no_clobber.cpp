@@ -102,8 +102,8 @@ TEST_CASE("pid_wait_quick() on point-to-point does not clobber headingPID when r
   }
   test_stub::g_clock.delay_calls_until_stop = -1;
   test_stub::g_clock.on_delay = nullptr;
-  MESSAGE("returned=", returned, " passes=", g_pass, " interfered=", chassis.interfered,
-          " final_heading=", chassis.headingPID.target_get(), " heading_after_retarget=", g_heading_after_retarget);
+  MESSAGE("returned=", returned, " passes=", g_pass, " interfered=", chassis.interfered, " final_heading=", chassis.headingPID.target_get(),
+          " heading_after_retarget=", g_heading_after_retarget);
 
   REQUIRE(returned);
   REQUIRE(g_retargeted);
@@ -175,8 +175,8 @@ TEST_CASE("pid_wait_quick() on point-to-point catches a retarget landing in the 
   }
   test_stub::g_clock.delay_calls_until_stop = -1;
   test_stub::g_clock.on_delay = nullptr;
-  MESSAGE("returned=", returned, " retargeted=", g_pass1_retargeted, " interfered=", chassis.interfered,
-          " final_heading=", chassis.headingPID.target_get(), " heading_after_retarget=", g_pass1_heading_after_retarget);
+  MESSAGE("returned=", returned, " retargeted=", g_pass1_retargeted, " interfered=", chassis.interfered, " final_heading=", chassis.headingPID.target_get(),
+          " heading_after_retarget=", g_pass1_heading_after_retarget);
 
   REQUIRE(returned);
   REQUIRE(g_pass1_retargeted);

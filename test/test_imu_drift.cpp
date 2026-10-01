@@ -64,8 +64,7 @@ TEST_CASE("imu drift: a sustained spread over threshold is reported only once de
   CHECK(chassis.imu_drift_deg == doctest::Approx(0.0));
 
   // The 50th consecutive pass crosses the debounce window.
-  CHECK(printed_by([&] { run_passes(chassis, 1); }) ==
-        "EZ-Template: good IMUs disagree by 20 deg (threshold 15)\n");
+  CHECK(printed_by([&] { run_passes(chassis, 1); }) == "EZ-Template: good IMUs disagree by 20 deg (threshold 15)\n");
   CHECK(chassis.imu_drift_deg == doctest::Approx(20.0));
 
   // Already reported: staying diverged does not print again.
@@ -107,8 +106,7 @@ TEST_CASE("imu drift: recovering back into agreement clears it, and a new episod
   CHECK(chassis.imu_drift_deg == doctest::Approx(0.0));
 
   chassis.good_imus[1]->fake_rotation = 110.0;  // diverges again: a new episode
-  CHECK(printed_by([&] { run_passes(chassis, 50); }) ==
-        "EZ-Template: good IMUs disagree by 20 deg (threshold 15)\n");
+  CHECK(printed_by([&] { run_passes(chassis, 50); }) == "EZ-Template: good IMUs disagree by 20 deg (threshold 15)\n");
 }
 
 TEST_CASE("imu drift: never ejects an IMU or changes the primary on its own") {

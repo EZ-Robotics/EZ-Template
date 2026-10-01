@@ -171,8 +171,8 @@ TEST_CASE("pid_wait_until() DRIVE: a target equal to the final target within flo
   chassis.pid_drive_set(48, 100);
 
   double perturbed_target = std::nextafter(std::nextafter(48.0, 100.0), 100.0);  // 48.0 + ~2 ULP
-  REQUIRE(perturbed_target != 48.0);  // otherwise this test proves nothing about tolerance
-  REQUIRE(std::fabs(perturbed_target - 48.0) < 1e-9);  // still comfortably inside FINAL_TARGET_TOLERANCE
+  REQUIRE(perturbed_target != 48.0);                                             // otherwise this test proves nothing about tolerance
+  REQUIRE(std::fabs(perturbed_target - 48.0) < 1e-9);                            // still comfortably inside FINAL_TARGET_TOLERANCE
 
   Outcome o = run_wait_until(chassis, hovering_settled_drive, 400, perturbed_target);
   MESSAGE("perturbed_target=" << perturbed_target << " returned=" << o.returned << " interfered=" << o.interfered);

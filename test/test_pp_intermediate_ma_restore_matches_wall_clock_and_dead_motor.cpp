@@ -66,7 +66,8 @@ bool returns(int max_delays, F&& wait) {
 }
 }  // namespace
 
-TEST_CASE("pure pursuit's restored mA progress credits real elapsed wall-clock time, not a flat per-poll guess, so scheduler jitter reaches mA_timeout sooner, not at the same pass count as the fixed-cadence case") {
+TEST_CASE(
+    "pure pursuit's restored mA progress credits real elapsed wall-clock time, not a flat per-poll guess, so scheduler jitter reaches mA_timeout sooner, not at the same pass count as the fixed-cadence case") {
   Drive chassis = make_chassis();
   configure(chassis);
   start_path(chassis);
@@ -96,7 +97,8 @@ TEST_CASE("pure pursuit's restored mA progress credits real elapsed wall-clock t
   CHECK(g_passes < 20);
 }
 
-TEST_CASE("pure pursuit's mA restore recognizes a disconnected (PROS_ERR + non-finite position) motor as over-current, the same way exit_condition() itself does") {
+TEST_CASE(
+    "pure pursuit's mA restore recognizes a disconnected (PROS_ERR + non-finite position) motor as over-current, the same way exit_condition() itself does") {
   Drive chassis = make_chassis();
   configure(chassis);
   start_path(chassis);

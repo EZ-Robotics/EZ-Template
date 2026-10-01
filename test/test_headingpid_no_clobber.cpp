@@ -75,6 +75,7 @@ TEST_CASE("pid_wait() odom: a retarget landing in the exit-then-delay gap does n
 
   REQUIRE(returned);
   REQUIRE(g_retargeted);
-  CHECK_FALSE(chassis.interfered);  // this wait's own motion genuinely finished cleanly, not via the retarget guard
-  CHECK(chassis.headingPID.target_get() == g_heading_after_retarget);  // the stale wait must not touch shared PID state on its way out once it's been retargeted out from under it
+  CHECK_FALSE(chassis.interfered);                                     // this wait's own motion genuinely finished cleanly, not via the retarget guard
+  CHECK(chassis.headingPID.target_get() == g_heading_after_retarget);  // the stale wait must not touch shared PID state on its way out once it's been
+                                                                       // retargeted out from under it
 }

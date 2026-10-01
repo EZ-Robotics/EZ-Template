@@ -34,19 +34,22 @@ struct Sched {
   std::function<bool(int)> poll_at;
 };
 Sched sched_periodic(int cp, int pp, int cphase = 0, int pphase = 0) {
-  return {[=](int t) { return (t - cphase) >= 0 && (t - cphase) % cp == 0 ? 1 : 0; },
-          [=](int t) { return (t - pphase) >= 0 && (t - pphase) % pp == 0; }};
+  return {[=](int t) { return (t - cphase) >= 0 && (t - cphase) % cp == 0 ? 1 : 0; }, [=](int t) { return (t - pphase) >= 0 && (t - pphase) % pp == 0; }};
 }
 // Per-poll compute-count pattern: poll every 10ms, and just before poll n, pattern[n % len] computes
 // land (all landing on the same virtual millisecond, so a pattern value of 2 feeds the SAME sensor
 // reading into compute() twice in a row -- the "one real compute, checked/computed redundantly"
 // shape test_pid.cpp's own unit tests cover in isolation).
 Sched sched_pattern(std::vector<int> pat) {
-  return {[=](int t) { return t % 10 == 0 ? pat[(t / 10) % pat.size()] : 0; },
-          [](int t) { return t % 10 == 0; }};
+  return {[=](int t) { return t % 10 == 0 ? pat[(t / 10) % pat.size()] : 0; }, [](int t) { return t % 10 == 0; }};
 }
 
-enum class MotorMode { NONE, SINGLE, VEC, GROUP };
+enum class MotorMode {
+  NONE,
+  SINGLE,
+  VEC,
+  GROUP
+};
 
 struct Result {
   exit_output e = RUNNING;
@@ -65,7 +68,7 @@ struct Cfg {
   MotorMode motor = MotorMode::NONE;
   bool over_current = false, disconnected = false;
   int max_ms = 8000;
-  int over_current_from = -1;  // when >= 0, motor reads over current from this time on
+  int over_current_from = -1;           // when >= 0, motor reads over current from this time on
   std::function<void(PID&, int)> hook;  // optional per-ms hook (velocity_exit_hold etc.)
 };
 
@@ -96,12 +99,24 @@ Result run(const Cfg& c) {
     if (c.sched.poll_at(t)) {
       exit_output e;
       switch (c.motor) {
-        case MotorMode::NONE: e = pid.exit_condition(); break;
-        case MotorMode::SINGLE: e = pid.exit_condition(m1); break;
-        case MotorMode::VEC: e = pid.exit_condition(vec); break;
-        case MotorMode::GROUP: e = pid.exit_condition(grp); break;
+        case MotorMode::NONE:
+          e = pid.exit_condition();
+          break;
+        case MotorMode::SINGLE:
+          e = pid.exit_condition(m1);
+          break;
+        case MotorMode::VEC:
+          e = pid.exit_condition(vec);
+          break;
+        case MotorMode::GROUP:
+          e = pid.exit_condition(grp);
+          break;
       }
-      if (e != RUNNING) { r.e = e; r.t_exit = t; return r; }
+      if (e != RUNNING) {
+        r.e = e;
+        r.t_exit = t;
+        return r;
+      }
     }
   }
   return r;
@@ -109,12 +124,18 @@ Result run(const Cfg& c) {
 
 std::string ename(exit_output e) {
   switch (e) {
-    case RUNNING: return "HANG(none)";
-    case SMALL_EXIT: return "SMALL";
-    case BIG_EXIT: return "BIG";
-    case VELOCITY_EXIT: return "VELOCITY";
-    case mA_EXIT: return "mA";
-    case ERROR_NO_CONSTANTS: return "ERR_NO_CONST";
+    case RUNNING:
+      return "HANG(none)";
+    case SMALL_EXIT:
+      return "SMALL";
+    case BIG_EXIT:
+      return "BIG";
+    case VELOCITY_EXIT:
+      return "VELOCITY";
+    case mA_EXIT:
+      return "mA";
+    case ERROR_NO_CONSTANTS:
+      return "ERR_NO_CONST";
   }
   return "?";
 }
@@ -167,7 +188,8 @@ TEST_CASE("bare PID: a claw at a bit-identical hard stop, velocity-only, exits w
 }
 
 TEST_CASE("bare PID: a lift stalled mid-travel, docs constants, single motor overload, still exits (not a hang)") {
-  Result r = report({"lift stalls at 400, docs consts, single motor overload", stall_400, 200, sched_periodic(10, 10), 80, 300, 500, 500, 50, 150, 1000, 0.05, MotorMode::SINGLE});
+  Result r = report({"lift stalls at 400, docs consts, single motor overload", stall_400, 200, sched_periodic(10, 10), 80, 300, 500, 500, 50, 150, 1000, 0.05,
+                     MotorMode::SINGLE});
   CHECK(r.e != RUNNING);
   CHECK(r.t_exit >= 0);
 }

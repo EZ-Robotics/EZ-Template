@@ -56,9 +56,9 @@ TEST_CASE("wait_until_drive() resets leftPID/rightPID's timers on its own succes
   g_pass = 0;
   g_error_value = 0.5;  // inside small_error(1.0) throughout both waits
   g_move_at = 9;        // move past the first target on pass 9: j accumulates to 80ms, under the
-                         // 100ms threshold, then the move ends the wait via the SUCCESS branch,
-                         // not the small-exit failsafe.
-  g_move_to = 24.5;      // past the first wait_until_drive(24) target
+                        // 100ms threshold, then the move ends the wait via the SUCCESS branch,
+                        // not the small-exit failsafe.
+  g_move_to = 24.5;     // past the first wait_until_drive(24) target
   test_stub::g_clock.on_delay = on_delay;
   test_stub::g_clock.delay_calls_until_stop = 50;
 

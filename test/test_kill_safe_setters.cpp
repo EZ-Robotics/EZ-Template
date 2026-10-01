@@ -104,8 +104,7 @@ TEST_CASE("ez_auto_task takes the chassis lock without changing its priority") {
   test_stub::g_clock.delay_calls_until_stop = 0;
   try {
     DriveTestAccess::ez_auto_task(chassis);
-  } catch (test_stub::StopLoop&) {
-  }
+  } catch (test_stub::StopLoop&) {}
   test_stub::g_clock.delay_calls_until_stop = -1;
 
   for (const std::string& call : g_sched.calls) CHECK(call == "get");  // its own two priority checks, and no set

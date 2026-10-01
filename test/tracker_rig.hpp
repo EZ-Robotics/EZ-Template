@@ -31,9 +31,9 @@ struct Cfg {
   std::optional<double> left, right, horiz;
   // The offset passed to each tracker's constructor.  Empty means "the true one".
   std::optional<double> set_left, set_right, set_horiz;
-  bool horiz_front = false;       // false: back tracker, true: front tracker
-  bool horiz_wired_left = true;   // true: reads positive when the robot moves left
-  bool left_reversed = false;     // a vertical tracker wired to count up going backward
+  bool horiz_front = false;      // false: back tracker, true: front tracker
+  bool horiz_wired_left = true;  // true: reads positive when the robot moves left
+  bool left_reversed = false;    // a vertical tracker wired to count up going backward
   bool right_reversed = false;
   double drive_width = 12.0;      // physical distance between the drive wheels
   bool tell_drive_width = false;  // call drive_width_set(drive_width) like a team with IMEs would
@@ -44,9 +44,9 @@ struct Rig {
   Drive chassis;
   std::unique_ptr<tracking_wheel> tl, tr, th;
   Cfg cfg;
-  double acc_l = 0, acc_r = 0, acc_h = 0;    // inches each tracker has travelled
-  double acc_iml = 0, acc_imr = 0;           // inches each drive side has travelled
-  double tx, ty, tth;                        // true pose
+  double acc_l = 0, acc_r = 0, acc_h = 0;  // inches each tracker has travelled
+  double acc_iml = 0, acc_imr = 0;         // inches each drive side has travelled
+  double tx, ty, tth;                      // true pose
 
   static Drive make_chassis() {
     test_stub::reset_all();

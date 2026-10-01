@@ -174,7 +174,8 @@ void jittered_pin() {
 }
 }  // namespace
 
-TEST_CASE("DRIVE pid_wait() pinned 5 in short under loosened exits still reports interfered within one window plus the start allowance, despite encoder noise") {
+TEST_CASE(
+    "DRIVE pid_wait() pinned 5 in short under loosened exits still reports interfered within one window plus the start allowance, despite encoder noise") {
   test_stub::reset_all();
   Drive chassis({1, -2}, {-3, 4}, 5, 3.25, 360);
   DriveTestAccess::imu_calibration_complete(chassis) = true;
