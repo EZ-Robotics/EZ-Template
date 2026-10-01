@@ -280,8 +280,12 @@ void Drive::ez_tracking_task() {
   // and last sensor readings are from before the custom tracker ran: everything the robot drove since would be counted
   // twice or lost.  Pick up from where the custom tracker left the pose instead.  One pass of movement is lost doing this.
   if (tracking_resync_pending && !tracking_is_custom) {
-    l_pose.x = r_pose.x = central_pose.x = odom_current.x;
-    l_pose.y = r_pose.y = central_pose.y = odom_current.y;
+    // A custom tracker that lost its signal may have left a non-finite pose: copying that would leave odom non-finite for good,
+    // so keep the poses EZ-Template had (wrong, but finite, and the next pose set puts them right).
+    if (std::isfinite(odom_current.x) && std::isfinite(odom_current.y)) {
+      l_pose.x = r_pose.x = central_pose.x = odom_current.x;
+      l_pose.y = r_pose.y = central_pose.y = odom_current.y;
+    }
     tracking_prime();
     tracking_resync_pending = false;
   }
