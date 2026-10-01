@@ -18,12 +18,8 @@ void Drive::odom_path_print() {
 }
 void Drive::pid_odom_behavior_set(ez::e_angle_behavior behavior) { default_odom_type = behavior; }
 ez::e_angle_behavior Drive::pid_odom_behavior_get() { return default_odom_type; }
-void Drive::pid_odom_angular_constants_set(double p, double i, double d, double p_start_i) {
-  odom_angularPID.constants_set(p, i, d, p_start_i);
-}
-void Drive::pid_odom_boomerang_constants_set(double p, double i, double d, double p_start_i) {
-  boomerangPID.constants_set(p, i, d, p_start_i);
-}
+void Drive::pid_odom_angular_constants_set(double p, double i, double d, double p_start_i) { odom_angularPID.constants_set(p, i, d, p_start_i); }
+void Drive::pid_odom_boomerang_constants_set(double p, double i, double d, double p_start_i) { boomerangPID.constants_set(p, i, d, p_start_i); }
 
 void Drive::odom_path_smooth_constants_set(double weight_smooth, double weight_data, double tolerance) {
   if (weight_smooth < 0 || weight_smooth >= 1) {
@@ -42,16 +38,15 @@ void Drive::odom_path_smooth_constants_set(double weight_smooth, double weight_d
   // only settles while weight_data + 2 * weight_smooth stays under 2.  Passing the checks above one weight at a time
   // is not enough, (0.99, 0.03) is in range for each and still blows the path up.
   if (!(weight_data + 2.0 * weight_smooth < 2.0)) {
-    printf("EZ-Template: odom_path_smooth_constants_set rejected weight_smooth %.4f and weight_data %.4f, weight_data + 2 * weight_smooth must be < 2\n", weight_smooth, weight_data);
+    printf("EZ-Template: odom_path_smooth_constants_set rejected weight_smooth %.4f and weight_data %.4f, weight_data + 2 * weight_smooth must be < 2\n",
+           weight_smooth, weight_data);
     return;
   }
   odom_smooth_weight_smooth = weight_smooth;
   odom_smooth_weight_data = weight_data;
   odom_smooth_tolerance = tolerance;
 }
-std::vector<double> Drive::odom_path_smooth_constants_get() {
-  return {odom_smooth_weight_smooth, odom_smooth_weight_data, odom_smooth_tolerance};
-}
+std::vector<double> Drive::odom_path_smooth_constants_get() { return {odom_smooth_weight_smooth, odom_smooth_weight_data, odom_smooth_tolerance}; }
 
 void Drive::odom_boomerang_dlead_set(double input) { dlead = input; }
 double Drive::odom_boomerang_dlead_get() { return dlead; }
@@ -315,7 +310,8 @@ void Drive::pid_odom_smooth_pp_set(std::vector<odom> imovements, bool slew_on) {
   // that trusts injected_pp_index and pp_movements as a consistent pair (pid_wait_until_index_started(),
   // exit_conditions.cpp) never sees one updated without the other.
   std::vector<int> new_injected_pp_index;
-  std::vector<odom> input_path = smooth_path(inject_points(imovements, &new_injected_pp_index), odom_smooth_weight_smooth, odom_smooth_weight_data, odom_smooth_tolerance);
+  std::vector<odom> input_path =
+      smooth_path(inject_points(imovements, &new_injected_pp_index), odom_smooth_weight_smooth, odom_smooth_weight_data, odom_smooth_tolerance);
 
   // See pid_odom_pp_set()'s matching comment: locked only for the publish and the resets below, not
   // for the work above, so this setter still raises and restores its task's priority exactly once,
@@ -435,8 +431,7 @@ void Drive::pid_odom_pp_set(std::vector<odom> imovements, bool slew_on) {
   std::vector<int> new_injected_pp_index;
   new_injected_pp_index.push_back(0);
   for (std::size_t i = 0; i < input.size(); i++) {
-    if (i != 0 && input[i - 1].target.theta == ANGLE_NOT_SET)
-      new_injected_pp_index.push_back(i);
+    if (i != 0 && input[i - 1].target.theta == ANGLE_NOT_SET) new_injected_pp_index.push_back(i);
   }
   injected_pp_index = std::move(new_injected_pp_index);
 
@@ -557,7 +552,7 @@ void Drive::raw_pid_odom_ptp_set(odom imovement, bool slew_on, bool is_boomerang
   odom_target.y = imovement.target.y;
 
   // Change constants if we're going fwd or rev
-  PID *new_drive_pid;
+  PID* new_drive_pid;
   slew::Constants slew_consts;
   if (current_drive_direction == REV) {
     new_drive_pid = &backward_drivePID;
@@ -569,8 +564,7 @@ void Drive::raw_pid_odom_ptp_set(odom imovement, bool slew_on, bool is_boomerang
   }
 
   // Prioritize custom fwd/rev constants.  Otherwise, use the same for fwd and rev
-  if (fwd_rev_drivePID.constants_set_check() && !new_drive_pid->constants_set_check())
-    new_drive_pid = &fwd_rev_drivePID;
+  if (fwd_rev_drivePID.constants_set_check() && !new_drive_pid->constants_set_check()) new_drive_pid = &fwd_rev_drivePID;
 
   // Set constants
   PID::Constants pid_drive_consts = new_drive_pid->constants_get();
@@ -583,8 +577,7 @@ void Drive::raw_pid_odom_ptp_set(odom imovement, bool slew_on, bool is_boomerang
   if (current_slew_on && slew_will_enable_later && !slew_on && slew_odom_reenabled()) {
     slew_on = true;
     slew_will_enable_later = false;
-    if (slew_min_when_it_enabled > slew_consts.min_speed)
-      slew_min = slew_min_when_it_enabled;
+    if (slew_min_when_it_enabled > slew_consts.min_speed) slew_min = slew_min_when_it_enabled;
 
     slew_left.constants_set(slew_consts.distance_to_travel, slew_min);
     slew_right.constants_set(slew_consts.distance_to_travel, slew_min);
@@ -603,10 +596,10 @@ void Drive::raw_pid_odom_ptp_set(odom imovement, bool slew_on, bool is_boomerang
 
   bool is_current_boomerang = is_boomerang;
   if (print_toggle && !was_last_pp_mode_boomerang) {
-    drive_mutex.print_after_unlock("%sOdom Motion Started... Target Coordinates: (%.2f, %.2f, %.2f) \n", mode == PURE_PURSUIT ? " " : "", imovement.target.x, imovement.target.y, imovement.target.theta);
+    drive_mutex.print_after_unlock("%sOdom Motion Started... Target Coordinates: (%.2f, %.2f, %.2f) \n", mode == PURE_PURSUIT ? " " : "", imovement.target.x,
+                                   imovement.target.y, imovement.target.theta);
   }
-  if (mode == PURE_PURSUIT)
-    was_last_pp_mode_boomerang = is_current_boomerang;
+  if (mode == PURE_PURSUIT) was_last_pp_mode_boomerang = is_current_boomerang;
 
   // Change angle constants if it's boomerang vs normal odom move
   PID::Constants angle_const;

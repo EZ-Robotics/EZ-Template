@@ -84,8 +84,8 @@ TEST_CASE("pid_wait() DRIVE: a latched-but-pinned side is not counted as settled
   test_stub::g_clock.delay_calls_until_stop = -1;
   test_stub::g_clock.on_delay = nullptr;
 
-  MESSAGE("returned=", returned, " interfered=", chassis.interfered, " passes=", g_pass,
-          " leftPID.error=", chassis.leftPID.error, " rightPID.error=", chassis.rightPID.error);
+  MESSAGE("returned=", returned, " interfered=", chassis.interfered, " passes=", g_pass, " leftPID.error=", chassis.leftPID.error,
+          " rightPID.error=", chassis.rightPID.error);
 
   REQUIRE(returned);
   // Sanity: left really is outside its own big_error, and right really is inside its own -- this

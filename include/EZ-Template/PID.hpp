@@ -14,7 +14,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 namespace ez {
 class PID {
- public:
+public:
   /**
    * Default constructor.
    */
@@ -90,9 +90,11 @@ class PID {
    *        call that never lands (a dead background task) simply isn't counted either way, so this can
    *        never fire on a stale, unrefreshed reading.
    * \param p_mA_timeout
-   *        sets mA_timeout, time the motor can be over its current limit before exiting.  Only checked by the exit_condition overloads that take a motor or motors.
+   *        sets mA_timeout, time the motor can be over its current limit before exiting.  Only checked by the exit_condition overloads that take a motor or
+   *        motors.
    */
-  void exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time = 0, double p_big_error = 0, int p_velocity_exit_time = 0, int p_mA_timeout = 0);
+  void exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time = 0, double p_big_error = 0, int p_velocity_exit_time = 0,
+                          int p_mA_timeout = 0);
 
   /**
    * Sets PID target.
@@ -330,7 +332,7 @@ class PID {
   double integral = 0.0;
   double derivative = 0.0;
 
- private:
+private:
   // Drive::pid_wait()'s pure-pursuit intermediate-point loop calls exit_condition() every pass but
   // only ever inspects the result for mA_EXIT, discarding SMALL_EXIT/BIG_EXIT/VELOCITY_EXIT because
   // xyPID's target there is a moving look-ahead point, not the real one. exit_condition() calls

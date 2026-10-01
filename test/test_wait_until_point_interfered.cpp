@@ -80,9 +80,7 @@ bool returns(int max_delays, F&& wait) {
 
 void start_point_move(Drive& chassis) { chassis.pid_odom_ptp_set({{0.0, 24.0, 0.0}, fwd, 60}); }
 
-void start_path(Drive& chassis) {
-  chassis.pid_odom_pp_set({{{0.0, 12.0, 0.0}, fwd, 110}, {{0.0, 24.0, 0.0}, fwd, 110}, {{0.0, 36.0, 0.0}, fwd, 110}});
-}
+void start_path(Drive& chassis) { chassis.pid_odom_pp_set({{{0.0, 12.0, 0.0}, fwd, 110}, {{0.0, 24.0, 0.0}, fwd, 110}, {{0.0, 36.0, 0.0}, fwd, 110}}); }
 }  // namespace
 
 TEST_CASE("pid_wait_until_point sets interfered when the motors pull too much current") {

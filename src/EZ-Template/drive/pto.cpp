@@ -12,9 +12,8 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 namespace ez {
 bool Drive::pto_check(pros::Motor check_if_pto) {
   auto does_exist = std::find(pto_active.begin(), pto_active.end(), check_if_pto.get_port());
-  if (does_exist != pto_active.end())
-    return true;  // Motor is in the list
-  return false;   // Motor isn't in the list
+  if (does_exist != pto_active.end()) return true;  // Motor is in the list
+  return false;                                     // Motor isn't in the list
 }
 
 void Drive::pto_add(std::vector<pros::Motor> pto_list) {

@@ -57,12 +57,23 @@ What this cannot do:
   it runs. A setter that blocks there during the same 2 ms as a mode change is still exposed.
 - PROS's own `printf` and `pros::screen` mutexes can be orphaned by a mode change. No library can fix that.
 
+## Formatting
+
+- Formatting is checked by CI. Turn on Format On Save in VS Code (clangd or the Microsoft C/C++ extension both read `.clang-format`), or run `sh tools/format.sh` before pushing (Git Bash on Windows).
+- If CI's `format` job fails, run `sh tools/format.sh` and push again.
+- Lines are capped at 160 columns.
+- Put long comments on the line above the code, not after it.
+- To keep a list one item per line (like a list of odom points), put a comma after the last item. Without it, a list that fits in 160 columns goes on one line.
+- `// clang-format off` / `// clang-format on` is a last resort.
+- Don't format files in `include/pros`, `include/liblvgl` or `include/EZ-Units`. They're vendored, and their folders disable formatting.
+- `git blame` skips pure formatting commits listed in `.git-blame-ignore-revs`. Run `git config blame.ignoreRevsFile .git-blame-ignore-revs` once so your local blame does too. If a future PR is only a reformat, add its squash commit hash to that file after it merges.
+
 ## Before opening a PR
 
 - `pros make` builds the full project.
 - `make -C test` runs the host-only unit tests (no PROS toolchain needed).
-- Match `.clang-format`.
-- CI runs `Build`, `warnings-clean` (`-Werror`), and `host-tests` on every PR.
+- `sh tools/format.sh --check` passes (see Formatting above).
+- CI runs `Build`, `warnings-clean` (`-Werror`), `host-tests`, and `format` on every PR.
 
 ## Merging
 

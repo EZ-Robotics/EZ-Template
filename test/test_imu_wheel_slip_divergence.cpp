@@ -33,7 +33,8 @@ void one_side_slips(Drive& c) {
 }
 }  // namespace
 
-TEST_CASE("check_imu_task(): one side's wheel slipping (encoders diverge, both IMUs genuinely flat) does not eject a healthy redundant IMU" * doctest::should_fail()) {
+TEST_CASE("check_imu_task(): one side's wheel slipping (encoders diverge, both IMUs genuinely flat) does not eject a healthy redundant IMU" *
+          doctest::should_fail()) {
   reset_before_construction();
   Drive chassis({1, -2}, {-3, 4}, {5, 6}, 3.25, 360);
   mark_calibrated(chassis);

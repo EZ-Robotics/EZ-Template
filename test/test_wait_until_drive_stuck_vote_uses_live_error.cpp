@@ -78,8 +78,8 @@ TEST_CASE("pid_wait_until() DRIVE at final target: a latched-but-pinned side is 
   test_stub::g_clock.delay_calls_until_stop = -1;
   test_stub::g_clock.on_delay = nullptr;
 
-  MESSAGE("returned=", returned, " interfered=", chassis.interfered, " passes=", g_pass,
-          " leftPID.error=", chassis.leftPID.error, " rightPID.error=", chassis.rightPID.error);
+  MESSAGE("returned=", returned, " interfered=", chassis.interfered, " passes=", g_pass, " leftPID.error=", chassis.leftPID.error,
+          " rightPID.error=", chassis.rightPID.error);
 
   REQUIRE(returned);
   REQUIRE(std::fabs(chassis.leftPID.error) > chassis.leftPID.exit.big_error);

@@ -94,13 +94,7 @@ std::set<std::string> public_wait_function_names() {
 // this is the part that would have caught pid_wait_until_index()/pid_wait_until_index_started()
 // shipping with no retarget guard at all, the way they did before this file existed.
 const std::set<std::string> COVERED = {
-    "pid_wait",
-    "pid_wait_until",
-    "pid_wait_quick",
-    "pid_wait_quick_chain",
-    "pid_wait_until_index",
-    "pid_wait_until_index_started",
-    "pid_wait_until_point",
+    "pid_wait", "pid_wait_until", "pid_wait_quick", "pid_wait_quick_chain", "pid_wait_until_index", "pid_wait_until_index_started", "pid_wait_until_point",
 };
 
 // ---- the table ----

@@ -111,8 +111,8 @@ TEST_CASE("pid_wait_until() TURN_TO_POINT: a stall short of an explicit checkpoi
   test_stub::g_clock.delay_calls_until_stop = -1;
   test_stub::g_clock.on_delay = nullptr;
 
-  MESSAGE("returned=", returned, " interfered=", chassis.interfered, " turnPID.error=", chassis.turnPID.error,
-          " aim=", g_aim, " checkpoint=", checkpoint, " stall_at=", g_stall_at);
+  MESSAGE("returned=", returned, " interfered=", chassis.interfered, " turnPID.error=", chassis.turnPID.error, " aim=", g_aim, " checkpoint=", checkpoint,
+          " stall_at=", g_stall_at);
   REQUIRE(returned);
   CHECK(chassis.interfered);
 }
@@ -154,8 +154,7 @@ TEST_CASE("pid_wait_quick_chain() TURN_TO_POINT: a stall at the real aim still r
   test_stub::g_clock.delay_calls_until_stop = -1;
   test_stub::g_clock.on_delay = nullptr;
 
-  MESSAGE("returned=", returned, " interfered=", chassis.interfered, " turnPID.error=", chassis.turnPID.error,
-          " aim=", g_aim, " stall_at=", g_stall_at);
+  MESSAGE("returned=", returned, " interfered=", chassis.interfered, " turnPID.error=", chassis.turnPID.error, " aim=", g_aim, " stall_at=", g_stall_at);
   REQUIRE(returned);
   CHECK(chassis.interfered);
 }

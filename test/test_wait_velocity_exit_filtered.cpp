@@ -38,12 +38,19 @@ sim::SimArchetype archetype_for(double cartridge_rpm, double wheel_diameter_in) 
   // unrelated reason. 2 motors/side and a lighter resistance profile than either heavy preset
   // puts the repro's own parameters genuinely under the floor while still letting speed=15
   // register real progress.
-  sim::SimArchetype base{
-      "swept", /*motors_per_side=*/2, cartridge_rpm, wheel_diameter_in, /*track_width_in=*/12.0,
-      /*mass_kg=*/4.0, /*moment_of_inertia_kg_m2=*/0.15,
-      /*rolling_resistance_nm=*/0.03, /*scrub_coefficient=*/0.2,
-      /*has_tracking_wheels=*/false,
-      /*encoder_noise_stddev_in=*/0.01, /*velocity_noise_stddev_in_s=*/0.05, /*imu_noise_stddev_deg=*/0.05};
+  sim::SimArchetype base{"swept",
+                         /*motors_per_side=*/2,
+                         cartridge_rpm,
+                         wheel_diameter_in,
+                         /*track_width_in=*/12.0,
+                         /*mass_kg=*/4.0,
+                         /*moment_of_inertia_kg_m2=*/0.15,
+                         /*rolling_resistance_nm=*/0.03,
+                         /*scrub_coefficient=*/0.2,
+                         /*has_tracking_wheels=*/false,
+                         /*encoder_noise_stddev_in=*/0.01,
+                         /*velocity_noise_stddev_in_s=*/0.05,
+                         /*imu_noise_stddev_deg=*/0.05};
   return base;
 }
 
@@ -81,8 +88,8 @@ TEST_CASE("pid_wait() DRIVE: a realistic slow-gearing cruise (200rpm/2.75in, spe
   double left_in = chassis.left_motors[0].fake().position / chassis.drive_tick_per_inch();
   double pct_of_leg = left_in / target_in * 100.0;
 
-  MESSAGE("returned=" << returned << " elapsed_ms=" << elapsed_ms << " left_in=" << left_in
-                       << " pct_of_leg=" << pct_of_leg << " interfered=" << chassis.interfered);
+  MESSAGE("returned=" << returned << " elapsed_ms=" << elapsed_ms << " left_in=" << left_in << " pct_of_leg=" << pct_of_leg
+                      << " interfered=" << chassis.interfered);
 
   CHECK(returned);
   CHECK_FALSE(chassis.interfered);
@@ -164,9 +171,8 @@ TEST_CASE("pid_wait() DRIVE: sweep of gearing/wheel/speed/noise never false-exit
         for (bool noise_on : noises) {
           combos++;
           SweepOutcome o = run_sweep_combo(rpm, wheel, speed, noise_on);
-          INFO("rpm=", rpm, " wheel=", wheel, " speed=", speed, " noise=", noise_on,
-               " returned=", o.returned, " elapsed_ms=", o.elapsed_ms, " left_in=", o.left_in,
-               " interfered=", o.interfered);
+          INFO("rpm=", rpm, " wheel=", wheel, " speed=", speed, " noise=", noise_on, " returned=", o.returned, " elapsed_ms=", o.elapsed_ms,
+               " left_in=", o.left_in, " interfered=", o.interfered);
           CHECK(o.returned);
           CHECK_FALSE(o.interfered);
         }
@@ -194,9 +200,8 @@ TEST_CASE("pid_wait() DRIVE: sweep of gearing/wheel/speed/noise never stops shor
         for (bool noise_on : noises) {
           combos++;
           SweepOutcome o = run_sweep_combo(rpm, wheel, speed, noise_on);
-          INFO("rpm=", rpm, " wheel=", wheel, " speed=", speed, " noise=", noise_on,
-               " returned=", o.returned, " elapsed_ms=", o.elapsed_ms, " left_in=", o.left_in,
-               " interfered=", o.interfered);
+          INFO("rpm=", rpm, " wheel=", wheel, " speed=", speed, " noise=", noise_on, " returned=", o.returned, " elapsed_ms=", o.elapsed_ms,
+               " left_in=", o.left_in, " interfered=", o.interfered);
           CHECK(o.returned);
           // 24in target: never ends more than big_error short of it -- catches the old bug's own
           // shape (ending at ~5-8% of the requested distance).

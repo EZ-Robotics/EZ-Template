@@ -19,11 +19,14 @@
 using namespace ez;
 
 namespace {
-enum class Style { Arcade, Tank };
+enum class Style {
+  Arcade,
+  Tank
+};
 
 struct Outcome {
-  double moved_in;   // largest wheel travel from where driver control began, over the first second
-  double turned_deg; // largest heading change over the same second
+  double moved_in;       // largest wheel travel from where driver control began, over the first second
+  double turned_deg;     // largest heading change over the same second
   double first_pass_mv;  // largest |voltage| commanded on the first driver pass
 };
 
@@ -42,8 +45,10 @@ struct Sticks {
 };
 
 void drive_one(Drive& chassis, Style style) {
-  if (style == Style::Arcade) chassis.opcontrol_arcade_standard(ez::SPLIT);
-  else chassis.opcontrol_tank();
+  if (style == Style::Arcade)
+    chassis.opcontrol_arcade_standard(ez::SPLIT);
+  else
+    chassis.opcontrol_tank();
 }
 
 // full_match: false runs autonomous from opcontrol (B+DOWN practice run): no field status change at all.
@@ -171,9 +176,12 @@ std::uint64_t hash_script(double kp, Style style) {
   };
   for (int t = 0; t < 700; t++) {
     int fwd = 0, turn = 0;
-    if (t >= 100 && t < 200) fwd = 127;
-    else if (t >= 300 && t < 400) fwd = -127;
-    else if (t >= 500 && t < 600) turn = 100;
+    if (t >= 100 && t < 200)
+      fwd = 127;
+    else if (t >= 300 && t < 400)
+      fwd = -127;
+    else if (t >= 500 && t < 600)
+      turn = 100;
     set_sticks(fwd, turn);
     drive_one(chassis, style);
     for (auto& m : chassis.left_motors) mix(m.fake().voltage);

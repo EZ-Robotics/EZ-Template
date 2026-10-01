@@ -41,15 +41,9 @@ void Drive::pid_drive_constants_set(double p, double i, double d, double p_start
   pid_drive_constants_backward_set(0.0, 0.0, 0.0, 0.0);
   fwd_rev_drivePID.constants_set(p, i, d, p_start_i);
 }
-void Drive::pid_drive_constants_forward_set(double p, double i, double d, double p_start_i) {
-  forward_drivePID.constants_set(p, i, d, p_start_i);
-}
-void Drive::pid_drive_constants_backward_set(double p, double i, double d, double p_start_i) {
-  backward_drivePID.constants_set(p, i, d, p_start_i);
-}
-void Drive::pid_heading_constants_set(double p, double i, double d, double p_start_i) {
-  headingPID.constants_set(p, i, d, p_start_i);
-}
+void Drive::pid_drive_constants_forward_set(double p, double i, double d, double p_start_i) { forward_drivePID.constants_set(p, i, d, p_start_i); }
+void Drive::pid_drive_constants_backward_set(double p, double i, double d, double p_start_i) { backward_drivePID.constants_set(p, i, d, p_start_i); }
+void Drive::pid_heading_constants_set(double p, double i, double d, double p_start_i) { headingPID.constants_set(p, i, d, p_start_i); }
 void Drive::drive_angle_set(double angle) {
   ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
 
@@ -71,20 +65,17 @@ PID::Constants Drive::pid_heading_constants_get() { return headingPID.constants_
 // The directional getters return what pid_drive_set() will use for that direction: the directional constants
 // if they were set, otherwise the ones from the plain setter
 PID::Constants Drive::pid_drive_constants_backward_get() {
-  if (!backward_drivePID.constants_set_check() && fwd_rev_drivePID.constants_set_check())
-    return fwd_rev_drivePID.constants_get();
+  if (!backward_drivePID.constants_set_check() && fwd_rev_drivePID.constants_set_check()) return fwd_rev_drivePID.constants_get();
   return backward_drivePID.constants_get();
 }
 PID::Constants Drive::pid_drive_constants_forward_get() {
-  if (!forward_drivePID.constants_set_check() && fwd_rev_drivePID.constants_set_check())
-    return fwd_rev_drivePID.constants_get();
+  if (!forward_drivePID.constants_set_check() && fwd_rev_drivePID.constants_set_check()) return fwd_rev_drivePID.constants_get();
   return forward_drivePID.constants_get();
 }
 PID::Constants Drive::pid_drive_constants_get() {
   // The plain setter zeroes forward/backward and stores the constants in fwd_rev,
   // so return those rather than the zeros they were replaced with
-  if (!forward_drivePID.constants_set_check() && !backward_drivePID.constants_set_check())
-    return fwd_rev_drivePID.constants_get();
+  if (!forward_drivePID.constants_set_check() && !backward_drivePID.constants_set_check()) return fwd_rev_drivePID.constants_get();
 
   auto fwd_const = pid_drive_constants_forward_get();
   auto rev_const = pid_drive_constants_backward_get();
@@ -148,7 +139,7 @@ void Drive::pid_drive_set(double target, int speed, bool slew_on, bool toggle_he
   l_target_encoder = l_start + target;
   r_target_encoder = r_start + target;
 
-  PID *new_drive_pid;
+  PID* new_drive_pid;
   slew::Constants slew_consts;
 
   // Figure out if going forward or backward and set constants accordingly
@@ -163,8 +154,7 @@ void Drive::pid_drive_set(double target, int speed, bool slew_on, bool toggle_he
   }
 
   // Prioritize custom fwd/rev constants.  Otherwise, use the same for fwd and rev
-  if (fwd_rev_drivePID.constants_set_check() && !new_drive_pid->constants_set_check())
-    new_drive_pid = &fwd_rev_drivePID;
+  if (fwd_rev_drivePID.constants_set_check() && !new_drive_pid->constants_set_check()) new_drive_pid = &fwd_rev_drivePID;
 
   PID::Constants pid_drive_consts = new_drive_pid->constants_get();
   leftPID.constants_set(pid_drive_consts.kp, pid_drive_consts.ki, pid_drive_consts.kd, pid_drive_consts.start_i);

@@ -26,11 +26,11 @@ TEST_CASE("PID secondary velocity timer clears on a single above-threshold readi
   // 4 more stationary passes: m = 50 (1 from the arm call + 4 here), 1 pass short of exiting.
   for (int pass = 1; pass <= 4; pass++) CHECK(pid.exit_condition() == RUNNING);
 
-  pid.velocity_sensor_secondary_set(1.0);        // a single above-threshold reading
-  CHECK(pid.exit_condition() == RUNNING);        // clears m at once -- no debounce to survive
-  pid.velocity_sensor_secondary_set(0.0);         // resume stationary
+  pid.velocity_sensor_secondary_set(1.0);                                        // a single above-threshold reading
+  CHECK(pid.exit_condition() == RUNNING);                                        // clears m at once -- no debounce to survive
+  pid.velocity_sensor_secondary_set(0.0);                                        // resume stationary
   for (int pass = 1; pass <= 5; pass++) CHECK(pid.exit_condition() == RUNNING);  // fresh 5-pass countdown, m up to 50
-  CHECK(pid.exit_condition() == VELOCITY_EXIT);   // m=60, exceeds 50
+  CHECK(pid.exit_condition() == VELOCITY_EXIT);                                  // m=60, exceeds 50
 }
 
 TEST_CASE("PID secondary velocity timer: a sensor jittering every other pass never accumulates a stall") {

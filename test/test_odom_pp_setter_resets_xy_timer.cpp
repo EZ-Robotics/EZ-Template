@@ -23,7 +23,7 @@ void hold_errors() {
   // (see PID.cpp), so the accumulation this test relies on needs a real compute behind it, the same
   // as a real ez_auto_task pass would provide. `current` held fixed is fine here (nothing in this
   // test reads derivative).
-  g_chassis->xyPID.compute_error(0.5, g_chassis->xyPID.cur);              // inside xy's small_error(1.0) throughout
+  g_chassis->xyPID.compute_error(0.5, g_chassis->xyPID.cur);                          // inside xy's small_error(1.0) throughout
   g_chassis->current_a_odomPID.compute_error(0.0, g_chassis->current_a_odomPID.cur);  // always inside angle's (huge) small_error
 }
 

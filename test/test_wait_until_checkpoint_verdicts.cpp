@@ -254,21 +254,13 @@ bool chained_drive_interfered(double short_by) {
 }
 }  // namespace
 
-TEST_CASE("a chained turn that latches BIG_EXIT 0.04 degrees short of its checkpoint is not interfered") {
-  CHECK_FALSE(chained_turn_interfered(0.04, 12.0));
-}
+TEST_CASE("a chained turn that latches BIG_EXIT 0.04 degrees short of its checkpoint is not interfered") { CHECK_FALSE(chained_turn_interfered(0.04, 12.0)); }
 
-TEST_CASE("a chained drive that latches BIG_EXIT 0.3 in short of its checkpoint is not interfered") {
-  CHECK_FALSE(chained_drive_interfered(0.3));
-}
+TEST_CASE("a chained drive that latches BIG_EXIT 0.3 in short of its checkpoint is not interfered") { CHECK_FALSE(chained_drive_interfered(0.3)); }
 
-TEST_CASE("control: a chained turn 4 degrees short of its checkpoint with small_error 3 is still interfered") {
-  CHECK(chained_turn_interfered(4.0, 12.0));
-}
+TEST_CASE("control: a chained turn 4 degrees short of its checkpoint with small_error 3 is still interfered") { CHECK(chained_turn_interfered(4.0, 12.0)); }
 
-TEST_CASE("control: a chained drive 1.5 in short of its checkpoint with small_error 1 is still interfered") {
-  CHECK(chained_drive_interfered(1.5));
-}
+TEST_CASE("control: a chained drive 1.5 in short of its checkpoint with small_error 1 is still interfered") { CHECK(chained_drive_interfered(1.5)); }
 
 TEST_CASE("a checkpoint just short of the final target that the robot settles within small_error of counts as reached") {
   test_stub::reset_all();

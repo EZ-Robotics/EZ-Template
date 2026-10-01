@@ -89,13 +89,14 @@ Outcome run_scripted(Drive& chassis, void (*fn)()) {
 
 TEST_CASE("pid_wait_quick_chain() DRIVE: a retarget landing during the inner wait's own first settle delay is caught") {
   Drive chassis = make_chassis();
-  chassis.pid_print_toggle(true);  // the guard message is gated on this; captured and checked below
+  chassis.pid_print_toggle(true);                               // the guard message is gated on this; captured and checked below
   chassis.pid_drive_exit_condition_set(50, 1.0, 0, 0.0, 0, 0);  // small exit only: 50 ms/1 in
   chassis.pid_drive_set(48, 100);
   double original_left_target = chassis.leftPID.target_get();
 
   Outcome o = run_scripted(chassis, retarget_on_first_pass_drive);
-  MESSAGE("returned=" << o.returned << " interfered=" << o.interfered << " leftPID.target=" << o.left_target_after << " original target=" << original_left_target);
+  MESSAGE("returned=" << o.returned << " interfered=" << o.interfered << " leftPID.target=" << o.left_target_after
+                      << " original target=" << original_left_target);
 
   REQUIRE(o.returned);
   // Correct behavior: this is the same shape of concurrent retarget test_drive_retarget_guard.cpp
@@ -130,7 +131,8 @@ TEST_CASE("pid_wait() DRIVE: a retarget landing during the wait's own first sett
     test_stub::g_clock.delay_calls_until_stop = -1;
     test_stub::g_clock.on_delay = nullptr;
   });
-  MESSAGE("returned=" << returned << " interfered=" << chassis.interfered << " leftPID.target=" << chassis.leftPID.target_get() << " original target=" << original_left_target);
+  MESSAGE("returned=" << returned << " interfered=" << chassis.interfered << " leftPID.target=" << chassis.leftPID.target_get()
+                      << " original target=" << original_left_target);
 
   REQUIRE(returned);
   CHECK(printed.find("retargeted by a concurrent motion") != std::string::npos);

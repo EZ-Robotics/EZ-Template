@@ -41,7 +41,7 @@ TEST_CASE("sim interference: a push moves a free robot only while its window las
   double during = sim.left().position_in;
   CHECK(during < -0.05);  // pushed back
   ticks(100);
-  CHECK(sim.left().position_in <= during);  // never pushed the other way
+  CHECK(sim.left().position_in <= during);           // never pushed the other way
   CHECK(std::fabs(sim.left().velocity_in_s) < 1.0);  // at rest again
 }
 

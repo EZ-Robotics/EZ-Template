@@ -57,8 +57,10 @@ struct Outcome {
 // One shove of `newtons` against the motion for `duration_ms`, starting 400 ms in. as_path: the same move as a two point path.
 Outcome shoved(double newtons, double duration_ms, bool as_path) {
   Rig r(sim::archetype_light_fast());
-  if (as_path) r.chassis.pid_odom_set({{{0_in, 12_in}, fwd, 80}, {{0_in, 27_in}, fwd, 80}}, true);
-  else r.chassis.pid_odom_set({{0_in, 27_in}, fwd, 80});
+  if (as_path)
+    r.chassis.pid_odom_set({{{0_in, 12_in}, fwd, 80}, {{0_in, 27_in}, fwd, 80}}, true);
+  else
+    r.chassis.pid_odom_set({{0_in, 27_in}, fwd, 80});
   std::uint32_t t0 = pros::millis();
   r.sim.push(-newtons, r.sim.now_ms() + 400, duration_ms);
   bool returned = run_capped([&] { r.chassis.pid_wait(); }, 3000);

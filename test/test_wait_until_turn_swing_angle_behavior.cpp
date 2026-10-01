@@ -22,16 +22,25 @@
 using namespace ez;
 
 namespace {
-enum class Kind { turn, swing_left, swing_right };
+enum class Kind {
+  turn,
+  swing_left,
+  swing_right
+};
 
 const char* kind_name(Kind k) { return k == Kind::turn ? "turn" : (k == Kind::swing_left ? "swing_left" : "swing_right"); }
 const char* behavior_name(e_angle_behavior b) {
   switch (b) {
-    case shortest: return "shortest";
-    case cw: return "cw";
-    case ccw: return "ccw";
-    case longest: return "longest";
-    default: return "other";
+    case shortest:
+      return "shortest";
+    case cw:
+      return "cw";
+    case ccw:
+      return "ccw";
+    case longest:
+      return "longest";
+    default:
+      return "other";
   }
 }
 

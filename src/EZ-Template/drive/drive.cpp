@@ -23,10 +23,8 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
     : Drive(left_motor_ports, right_motor_ports, 22, 4.0, 200.0) {}
 
 // Constructor for integrated encoders
-Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports,
-             int imu_port, double wheel_diameter, double ticks)
-    : imu(new pros::Imu(imu_port)),
-      ez_auto([this] { this->ez_auto_task(); }) {
+Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks)
+    : imu(new pros::Imu(imu_port)), ez_auto([this] { this->ez_auto_task(); }) {
   is_tracker = DRIVE_INTEGRATED;
   last_was_autonomous = pros::competition::is_autonomous();
 
@@ -56,10 +54,8 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 }
 
 // Constructor for integrated encoders with redundant imu support
-Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports,
-             std::vector<int> imu_ports, double wheel_diameter, double ticks)
-    : imu(new pros::Imu(imu_ports[0])),
-      ez_auto([this] { this->ez_auto_task(); }) {
+Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, std::vector<int> imu_ports, double wheel_diameter, double ticks)
+    : imu(new pros::Imu(imu_ports[0])), ez_auto([this] { this->ez_auto_task(); }) {
   is_tracker = DRIVE_INTEGRATED;
   last_was_autonomous = pros::competition::is_autonomous();
 
@@ -181,7 +177,7 @@ void Drive::drive_defaults_set() {
   opcontrol_curve_buttons_left_set(pros::E_CONTROLLER_DIGITAL_LEFT, pros::E_CONTROLLER_DIGITAL_RIGHT);
   opcontrol_curve_buttons_right_set(pros::E_CONTROLLER_DIGITAL_Y, pros::E_CONTROLLER_DIGITAL_A);
 
-  //Default PID Tuner buttons
+  // Default PID Tuner buttons
   pid_tuner_button_increment_set(pros::E_CONTROLLER_DIGITAL_A);
   pid_tuner_button_decrement_set(pros::E_CONTROLLER_DIGITAL_Y);
   pid_tuner_button_up_set(pros::E_CONTROLLER_DIGITAL_UP);
@@ -194,17 +190,13 @@ void Drive::drive_defaults_set() {
   pid_print_toggle(true);
 
   // Disables limit switch for auto selector, unless the user has already turned it on
-  if (!as::limit_switch_right && !as::limit_switch_left)
-    as::limit_switch_lcd_initialize(nullptr, nullptr);
+  if (!as::limit_switch_right && !as::limit_switch_left) as::limit_switch_lcd_initialize(nullptr, nullptr);
 }
 
-double Drive::drive_angle_get() {
-  return drive_imu_get();
-}
+double Drive::drive_angle_get() { return drive_imu_get(); }
 
 double Drive::drive_tick_per_inch() {
-  if (is_tracker == ODOM_TRACKER)
-    return odom_tracker_right->ticks_per_inch();
+  if (is_tracker == ODOM_TRACKER) return odom_tracker_right->ticks_per_inch();
 
   return TICK_PER_INCH;
 }
@@ -212,8 +204,7 @@ double Drive::drive_tick_per_inch() {
 void Drive::drive_tick_per_inch_compute() {
   CIRCUMFERENCE = WHEEL_DIAMETER * M_PI;
 
-  if (is_tracker == DRIVE_INTEGRATED)
-    TICK_PER_REV = (50.0 * (3600.0 / CARTRIDGE)) * RATIO;  // with no cart, the encoder reads 50 counts per rotation
+  if (is_tracker == DRIVE_INTEGRATED) TICK_PER_REV = (50.0 * (3600.0 / CARTRIDGE)) * RATIO;  // with no cart, the encoder reads 50 counts per rotation
 
   TICK_PER_INCH = (TICK_PER_REV / CIRCUMFERENCE);
 }
@@ -269,9 +260,7 @@ void Drive::drive_current_limit_set(int mA) {
   }
 }
 
-int Drive::drive_current_limit_get() {
-  return CURRENT_MA;
-}
+int Drive::drive_current_limit_get() { return CURRENT_MA; }
 
 // Motor telemetry
 void Drive::drive_sensor_reset() {
@@ -315,8 +304,7 @@ int Drive::drive_sensor_right_raw() {
   return last_good_raw_right;
 }
 double Drive::drive_sensor_right() {
-  if (is_tracker == ODOM_TRACKER)
-    return odom_tracker_right->get();
+  if (is_tracker == ODOM_TRACKER) return odom_tracker_right->get();
   return drive_sensor_right_raw() / drive_tick_per_inch();
 }
 int Drive::drive_velocity_right() { return right_motors.front().get_actual_velocity(); }
@@ -334,8 +322,7 @@ int Drive::drive_sensor_left_raw() {
   return last_good_raw_left;
 }
 double Drive::drive_sensor_left() {
-  if (is_tracker == ODOM_TRACKER)
-    return odom_tracker_left->get();
+  if (is_tracker == ODOM_TRACKER) return odom_tracker_left->get();
   return drive_sensor_left_raw() / drive_tick_per_inch();
 }
 int Drive::drive_velocity_left() { return left_motors.front().get_actual_velocity(); }
@@ -385,7 +372,8 @@ static bool imu_3600_reading_valid(double imu_value_after_3600) { return imu_val
 
 void Drive::drive_imu_scaler_3600_set(double imu_value_after_3600) {
   if (!imu_3600_reading_valid(imu_value_after_3600)) {
-    printf("EZ-Template: drive_imu_scaler_3600_set rejected %g, value must be the imu's reading after physically turning the robot 3600 degrees (about 3600)\n", imu_value_after_3600);
+    printf("EZ-Template: drive_imu_scaler_3600_set rejected %g, value must be the imu's reading after physically turning the robot 3600 degrees (about 3600)\n",
+           imu_value_after_3600);
     return;
   }
   double multiplier = 3600.0 / imu_value_after_3600;
@@ -413,7 +401,9 @@ void Drive::drive_imus_scalers_3600_set(std::vector<double> imu_values_after_360
 
   for (std::size_t i = 0; i < std::min(all_imus.size(), imu_values_after_3600.size()); i++) {
     if (!imu_3600_reading_valid(imu_values_after_3600[i])) {
-      drive_mutex.print_after_unlock("EZ-Template: drive_imus_scalers_3600_set rejected %g for imu on port %i, value must be the imu's reading after physically turning the robot 3600 degrees (about 3600)\n", imu_values_after_3600[i], all_imus[i]->get_port());
+      drive_mutex.print_after_unlock(
+          "EZ-Template: drive_imus_scalers_3600_set rejected %g for imu on port %i, value must be the imu's reading after physically turning the robot 3600 degrees (about 3600)\n",
+          imu_values_after_3600[i], all_imus[i]->get_port());
       continue;
     }
     imu_scale_map[all_imus[i]->get_port()] = 3600.0 / imu_values_after_3600[i];
@@ -497,8 +487,7 @@ bool Drive::drive_imu_calibrate(bool run_loading_animation) {
         int port = good_imus[i]->get_port();
         imus_last_status[port] = imus_status[port];
         imus_status[port] = good_imus[i]->is_calibrating();
-        if (!imus_done[port])
-          imus_done[port] = !imus_status[port] && imus_last_status[port] ? true : false;
+        if (!imus_done[port]) imus_done[port] = !imus_status[port] && imus_last_status[port] ? true : false;
       }
     }
 
@@ -524,8 +513,7 @@ bool Drive::drive_imu_calibrate(bool run_loading_animation) {
           printf("Only IMUs in ports {");
           for (std::size_t i = 0; i < good_imus.size(); i++) {
             int port = good_imus[i]->get_port();
-            if (imus_done[port])
-              printf(" %i", port);
+            if (imus_done[port]) printf(" %i", port);
           }
           printf(" } calibrated");
         }
@@ -544,22 +532,18 @@ bool Drive::drive_imu_calibrate(bool run_loading_animation) {
   {
     ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
 
-    good_imus.erase(std::remove_if(good_imus.begin(), good_imus.end(),
-                                    [&](pros::Imu* n) { return !imus_done[n->get_port()]; }),
-                     good_imus.end());
+    good_imus.erase(std::remove_if(good_imus.begin(), good_imus.end(), [&](pros::Imu* n) { return !imus_done[n->get_port()]; }), good_imus.end());
 
     imu = good_imus.empty() ? nullptr : good_imus.front();
 
-    if (one_calibrated && !good_imus.empty())
-      imu_calibration_complete = true;
+    if (one_calibrated && !good_imus.empty()) imu_calibration_complete = true;
   }
 
   return imu_calibration_complete;
 }
 
 bool Drive::drive_imu_calibrated() {
-  if (imu_calibration_complete && !imu_calibrate_took_too_long)
-    return true;
+  if (imu_calibration_complete && !imu_calibrate_took_too_long) return true;
   return false;
 }
 
@@ -575,9 +559,7 @@ void Drive::drive_brake_set(pros::motor_brake_mode_e_t brake_type) {
 }
 
 // Get brake
-pros::motor_brake_mode_e_t Drive::drive_brake_get() {
-  return CURRENT_BRAKE;
-}
+pros::motor_brake_mode_e_t Drive::drive_brake_get() { return CURRENT_BRAKE; }
 
 void Drive::initialize(bool run_loading_animation) {
   opcontrol_curve_sd_initialize();
@@ -598,8 +580,7 @@ void Drive::odom_tracker_left_set(tracking_wheel* input) {
 
   // If the user has input a left and right tracking wheel,
   // the tracking wheels become the new sensors always
-  if (odom_tracker_right_enabled)
-    is_tracker = ODOM_TRACKER;
+  if (odom_tracker_right_enabled) is_tracker = ODOM_TRACKER;
 }
 void Drive::odom_tracker_right_set(tracking_wheel* input) {
   ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
@@ -611,8 +592,7 @@ void Drive::odom_tracker_right_set(tracking_wheel* input) {
 
   // If the user has input a left and right tracking wheel,
   // the tracking wheels become the new sensors always
-  if (odom_tracker_left_enabled)
-    is_tracker = ODOM_TRACKER;
+  if (odom_tracker_left_enabled) is_tracker = ODOM_TRACKER;
 }
 void Drive::odom_tracker_front_set(tracking_wheel* input) {
   ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);

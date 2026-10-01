@@ -46,10 +46,12 @@ std::uint64_t run_script(const Script& script, double kp, bool zero_threshold) {
 }
 
 // Full stick, small corrections at 3 to 10, release, reversals, turn in place: every value is 0 or magnitude 3+.
-const Script kAtOrAboveThree = {{0, 0}, {127, 127}, {5, 5}, {3, 3}, {0, 0}, {-127, -127}, {-10, -10}, {0, 0}, {127, -127}, {10, -10}, {-3, 3}, {0, 0}, {100, 60}, {0, 0}};
+const Script kAtOrAboveThree = {{0, 0}, {127, 127},  {5, 5},    {3, 3},  {0, 0}, {-127, -127}, {-10, -10},
+                                {0, 0}, {127, -127}, {10, -10}, {-3, 3}, {0, 0}, {100, 60},    {0, 0}};
 
 // The same idea with a resting stick's 1s and 2s mixed in.
-const Script kWithOnesAndTwos = {{0, 0}, {1, 1}, {127, 127}, {2, -2}, {5, 5}, {1, 0}, {0, 2}, {-1, -1}, {-127, -127}, {2, 2}, {0, 0}, {127, -127}, {-2, 1}, {0, 0}};
+const Script kWithOnesAndTwos = {{0, 0},   {1, 1},       {127, 127}, {2, -2}, {5, 5},      {1, 0},  {0, 2},
+                                 {-1, -1}, {-127, -127}, {2, 2},     {0, 0},  {127, -127}, {-2, 1}, {0, 0}};
 
 // kWithOnesAndTwos with every 1 and 2 replaced by 0: what the default deadzone should turn it into.
 Script zeroed(Script s) {

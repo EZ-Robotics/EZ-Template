@@ -47,7 +47,8 @@ struct Rig {
   sim::SimArchetype a;
   Drive chassis;
   sim::SimRobot sim;
-  explicit Rig(const sim::SimArchetype& arch, std::uint32_t seed = 1, bool noise = false) : a(arch), chassis(make_drive(arch)), sim(chassis, arch, sim::NoiseConfig{noise, seed}) {
+  explicit Rig(const sim::SimArchetype& arch, std::uint32_t seed = 1, bool noise = false)
+      : a(arch), chassis(make_drive(arch)), sim(chassis, arch, sim::NoiseConfig{noise, seed}) {
     DriveTestAccess::imu_calibration_complete(chassis) = true;
     chassis.pid_print_toggle(false);
   }

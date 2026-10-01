@@ -82,7 +82,8 @@ std::vector<pose> Drive::find_point_to_face(pose current, pose target, drive_dir
   // printf("\n");
   point_to_face = {ptf1, ptf2};
 
-  // printf("pft1(%.2f, %.2f, %.2f)   ptf2(%.2f, %.2f, %.2f)      angle: %.2f   y2-y1: %.2f   x2-x1: %.2f\n", point_to_face[0].x, point_to_face[0].y, point_to_face[0].theta, point_to_face[1].x, point_to_face[1].y, point_to_face[1].theta, angle, (target.y - current.y), tx_cx);
+  // printf("pft1(%.2f, %.2f, %.2f)   ptf2(%.2f, %.2f, %.2f)      angle: %.2f   y2-y1: %.2f   x2-x1: %.2f\n", point_to_face[0].x, point_to_face[0].y,
+  // point_to_face[0].theta, point_to_face[1].x, point_to_face[1].y, point_to_face[1].theta, angle, (target.y - current.y), tx_cx);
 
   return {ptf1, ptf2};
 }
@@ -138,10 +139,7 @@ std::vector<odom> Drive::inject_points(std::vector<ez::odom> imovements, std::ve
 
     // Add parent point
     // Make sure the robot is looking at next point
-    output.push_back({{input[i].target.x, input[i].target.y, input[i].target.theta},
-                      input[i].drive_direction,
-                      input[i].max_xy_speed,
-                      input[i].turn_behavior});
+    output.push_back({{input[i].target.x, input[i].target.y, input[i].target.theta}, input[i].drive_direction, input[i].max_xy_speed, input[i].turn_behavior});
     output_index++;
 
     // don't let the injected point after boomerang in
@@ -158,8 +156,7 @@ std::vector<odom> Drive::inject_points(std::vector<ez::odom> imovements, std::ve
 
         // A one time flag to stop points from being injected for LOOK_AHEAD from current
         // https://github.com/EZ-Robotics/EZ-Template/issues/152
-        if (util::distance_to_point(new_point, input[0].target) >= odom_look_ahead_get())
-          allow_injecting = true;
+        if (util::distance_to_point(new_point, input[0].target) >= odom_look_ahead_get()) allow_injecting = true;
 
         // If the new point is basically the same as the parent point, remove it to save 10ms delay
         if (util::distance_to_point(new_point, input[i + 1].target) >= SPACING && allow_injecting) {
@@ -171,10 +168,11 @@ std::vector<odom> Drive::inject_points(std::vector<ez::odom> imovements, std::ve
           }
 
           // Push new point to vector
-          output.push_back({{new_point.x, new_point.y, ANGLE_NOT_SET},
-                            input[i + 1].drive_direction,
-                            input[i + 1].max_xy_speed,
-                            new_turn_behavior});  // Setting this to raw will maintain the parent points turn behavior
+          output.push_back(
+              {{new_point.x, new_point.y, ANGLE_NOT_SET}, input[i + 1].drive_direction, input[i + 1].max_xy_speed, new_turn_behavior});  // Setting this to raw
+                                                                                                                                         // will maintain the
+                                                                                                                                         // parent points turn
+                                                                                                                                         // behavior
           output_index++;
         }
       } else {
@@ -210,7 +208,9 @@ std::vector<odom> Drive::smooth_path(std::vector<odom> ipath, double weight_smoo
   // printf is a blocking call locking rule 2 forbids making while a guard is held. print_after_unlock
   // is correct either way -- it prints at once when nothing is held (see lock.hpp).
   if (!(weight_data + 2.0 * weight_smooth < 2.0)) {
-    drive_mutex.print_after_unlock("EZ-Template: path smoothing skipped, weight_smooth %.4f and weight_data %.4f don't settle (weight_data + 2 * weight_smooth must be < 2)\n", weight_smooth, weight_data);
+    drive_mutex.print_after_unlock(
+        "EZ-Template: path smoothing skipped, weight_smooth %.4f and weight_data %.4f don't settle (weight_data + 2 * weight_smooth must be < 2)\n",
+        weight_smooth, weight_data);
     return ipath;
   }
 
@@ -231,8 +231,7 @@ std::vector<odom> Drive::smooth_path(std::vector<odom> ipath, double weight_smoo
 
     // A one time flag to stop points from being smoothed for LOOK_AHEAD from current
     // https://github.com/EZ-Robotics/EZ-Template/issues/152
-    if (util::distance_to_point(ipath[i].target, ipath[0].target) > odom_look_ahead_get() && !allow_injecting)
-      allow_injecting = true;
+    if (util::distance_to_point(ipath[i].target, ipath[0].target) > odom_look_ahead_get() && !allow_injecting) allow_injecting = true;
 
     // if (t <= odom_look_ahead_get() / SPACING && (prev_point_angle_not_set || t != 0)))
     if (boomerang_after_not_done) {
@@ -286,7 +285,8 @@ std::vector<odom> Drive::smooth_path(std::vector<odom> ipath, double weight_smoo
 
   // print_after_unlock, not printf -- see the matching comment above.
   if (passes >= MAX_PASSES && change >= tolerance)
-    drive_mutex.print_after_unlock("EZ-Template: path smoothing stopped at %d passes before it settled, so the path is less smooth than the constants ask for\n", MAX_PASSES);
+    drive_mutex.print_after_unlock(
+        "EZ-Template: path smoothing stopped at %d passes before it settled, so the path is less smooth than the constants ask for\n", MAX_PASSES);
 
   // Convert array to odom
   std::vector<odom> output = ipath;  // Set output to input so target angles, turn types and speed hold
@@ -328,8 +328,7 @@ double Drive::turn_is_toleranced(double target, double current, double input, do
   double long_error = longest - current;
   double short_error = shortest - current;
 
-  if (fabs(long_error) - fabs(short_error) >= turn_tolerance * 2.0)
-    return output;
+  if (fabs(long_error) - fabs(short_error) >= turn_tolerance * 2.0) return output;
 
   int long_error_sgn = util::sgn(long_error);
 

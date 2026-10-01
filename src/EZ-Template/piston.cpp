@@ -12,14 +12,10 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 namespace ez {
 // Constructor for one piston
-Piston::Piston(int input_port, bool default_state)
-    : piston(input_port, default_state) {
-  reversed = default_state;
-}
+Piston::Piston(int input_port, bool default_state) : piston(input_port, default_state) { reversed = default_state; }
 
 // Constructor for one piston plugged into expander
-Piston::Piston(int input_port, int expander_smart_port, bool default_state)
-    : piston({expander_smart_port, input_port}, default_state) {
+Piston::Piston(int input_port, int expander_smart_port, bool default_state) : piston({expander_smart_port, input_port}, default_state) {
   reversed = default_state;
 }
 
@@ -41,9 +37,7 @@ void Piston::button_toggle(int toggle) {
 }
 
 // Toggle for user control, takes in a pros button
-void Piston::button_toggle(pros::controller_digital_e_t toggle) {
-  button_toggle(master.get_digital(toggle));
-}
+void Piston::button_toggle(pros::controller_digital_e_t toggle) { button_toggle(master.get_digital(toggle)); }
 
 // Two button control for piston
 void Piston::buttons(int active, int deactive) {
@@ -58,4 +52,4 @@ void Piston::buttons(pros::controller_digital_e_t active, pros::controller_digit
   buttons(master.get_digital(active), master.get_digital(deactive));
 }
 
-} // namespace ez
+}  // namespace ez

@@ -71,7 +71,7 @@ struct PeakOvershootTracker {
   double target;
   double peak_past_target = 0.0;
   int samples = 0;  // proves the trampoline actually fired -- a tracker that never ran would
-                     // also report peak_past_target==0, silently passing for the wrong reason
+                    // also report peak_past_target==0, silently passing for the wrong reason
   void (*orig)() = nullptr;
   static PeakOvershootTracker* active;
 
@@ -133,15 +133,13 @@ TEST_CASE("control run: all archetypes at shipped default turn PID/exit constant
   sim::SimArchetype archetypes[] = {sim::archetype_light_fast(), sim::archetype_heavy_slow(), sim::archetype_sticky_high_friction()};
   for (const auto& a : archetypes) {
     Result r = run_turn_control(a, /*target=*/90, /*speed=*/100);
-    INFO("archetype=", std::string(a.name), " returned=", r.returned, " elapsed_ms=", r.elapsed_ms,
-         " interfered=", r.interfered, " stuck_msg=", r.stuck_msg,
-         " final_error=", r.final_error, " peak_overshoot=", r.peak_overshoot,
-         " peak_samples=", r.peak_samples);
+    INFO("archetype=", std::string(a.name), " returned=", r.returned, " elapsed_ms=", r.elapsed_ms, " interfered=", r.interfered, " stuck_msg=", r.stuck_msg,
+         " final_error=", r.final_error, " peak_overshoot=", r.peak_overshoot, " peak_samples=", r.peak_samples);
     CHECK(r.returned);
     CHECK_FALSE(r.interfered);
     CHECK_FALSE(r.stuck_msg);
-    CHECK(r.final_error <= 7.0);       // inside big_error -- a clean settle, not just "close"
-    CHECK(r.peak_samples > 50);        // the tracker actually ran every tick, not a vacuous pass
+    CHECK(r.final_error <= 7.0);  // inside big_error -- a clean settle, not just "close"
+    CHECK(r.peak_samples > 50);   // the tracker actually ran every tick, not a vacuous pass
     // Pre-fix, this exact scenario ran away on all three archetypes: light_fast parked 13deg
     // short after peaking ~59deg past target; heavy_slow and sticky_high_friction never
     // recovered at all, peaking ~131deg and ~83deg past target respectively (see this file's own
@@ -177,8 +175,8 @@ TEST_CASE("control run: all archetypes at TEAM_CORPUS's tight Worlds turn consta
 
     bool mA_exit_msg = out.find("Turn: mA") != std::string::npos;
     double final_error = std::fabs(90.0 - chassis.drive_angle_get());
-    INFO("archetype=", std::string(a.name), " returned=", returned, " elapsed_ms=", elapsed_ms,
-         " interfered=", chassis.interfered, " final_error=", final_error, " out=[", out, "]");
+    INFO("archetype=", std::string(a.name), " returned=", returned, " elapsed_ms=", elapsed_ms, " interfered=", chassis.interfered,
+         " final_error=", final_error, " out=[", out, "]");
     REQUIRE(returned);
     CHECK_FALSE(chassis.interfered);
     CHECK_FALSE(mA_exit_msg);

@@ -18,7 +18,7 @@ std::vector<std::pair<pros::Device*, const char*>> g_devices;
 // early warning: still at full power, but on its way there.
 constexpr double MOTOR_TEMP_HOT_C = 55.0;
 constexpr double MOTOR_TEMP_WARM_C = 45.0;
-}
+}  // namespace
 
 void device_add(pros::Device* device, const char* name) {
   if (device == nullptr) return;
@@ -37,8 +37,8 @@ Report preflight(ez::Drive& chassis, pros::Controller& controller) {
   // just reading a snapshot of it, not measuring anything itself.
   r.imu_max_drift_deg = chassis.imu_drift_deg;
   if (r.imu_max_drift_deg > 0.0) {
-    printf("[health] good IMUs disagree by %.0f deg (threshold %.0f) - one of them has likely drifted\n",
-           r.imu_max_drift_deg, chassis.imu_drift_threshold_get());
+    printf("[health] good IMUs disagree by %.0f deg (threshold %.0f) - one of them has likely drifted\n", r.imu_max_drift_deg,
+           chassis.imu_drift_threshold_get());
   }
 
   auto check_motors = [&](std::vector<pros::Motor>& motors) {
@@ -96,8 +96,8 @@ Report preflight(ez::Drive& chassis, pros::Controller& controller) {
 
   if (!r.all_ok()) {
     controller.rumble("---");
-    printf("[health] PREFLIGHT FAILED: imu %s, %d motor(s), %d tracker(s), %d device(s)\n",
-           r.imu_ok ? "ok" : "BAD", r.motors_bad, r.trackers_bad, r.devices_bad);
+    printf("[health] PREFLIGHT FAILED: imu %s, %d motor(s), %d tracker(s), %d device(s)\n", r.imu_ok ? "ok" : "BAD", r.motors_bad, r.trackers_bad,
+           r.devices_bad);
   } else {
     printf("[health] Preflight OK.\n");
   }
@@ -120,16 +120,13 @@ void preflight_register(ez::Drive& chassis) {
   // autons_add() appends too, but it also resets auton_page_current to 0 (and recomputes
   // auton_count) on every call. Pushing directly here appends the health check page without
   // resetting whatever page is already selected, e.g. one restored from the SD card.
-  as::auton_selector.Autons.push_back(
-      Auton("Health Check\n\nRuns preflight",
-            [drive]() {
-              pros::Controller controller(pros::E_CONTROLLER_MASTER);
-              preflight(*drive, controller);
-            }));
+  as::auton_selector.Autons.push_back(Auton("Health Check\n\nRuns preflight", [drive]() {
+    pros::Controller controller(pros::E_CONTROLLER_MASTER);
+    preflight(*drive, controller);
+  }));
   as::auton_selector.auton_count++;
 
-  printf("[health] Health Check registered on selector page %d.\n",
-         (int)as::auton_selector.Autons.size());
+  printf("[health] Health Check registered on selector page %d.\n", (int)as::auton_selector.Autons.size());
 }
 
 }  // namespace health

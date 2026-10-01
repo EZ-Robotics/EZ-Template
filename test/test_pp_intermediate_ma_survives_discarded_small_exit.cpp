@@ -77,7 +77,8 @@ bool returns(int max_delays, F&& wait) {
 }
 }  // namespace
 
-TEST_CASE("pid_wait ends a pure pursuit leg through mA_EXIT, not just StuckWatch's much later fallback, when a discarded SMALL_EXIT keeps re-firing on xy's look-ahead point while a motor stays continuously over current") {
+TEST_CASE(
+    "pid_wait ends a pure pursuit leg through mA_EXIT, not just StuckWatch's much later fallback, when a discarded SMALL_EXIT keeps re-firing on xy's look-ahead point while a motor stays continuously over current") {
   Drive chassis = make_chassis();
   configure(chassis);
   start_path(chassis);

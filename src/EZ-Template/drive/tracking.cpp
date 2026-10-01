@@ -59,7 +59,9 @@ void Drive::odom_xyt_set(double x, double y, double t) {
   odom_y_set(y);
   odom_theta_set(t);
 }
-void Drive::odom_xyt_set(ez::QLength p_x, ez::QLength p_y, ez::QAngle p_t) { odom_xyt_set(p_x.convert(ez::inch), p_y.convert(ez::inch), p_t.convert(ez::degree)); }
+void Drive::odom_xyt_set(ez::QLength p_x, ez::QLength p_y, ez::QAngle p_t) {
+  odom_xyt_set(p_x.convert(ez::inch), p_y.convert(ez::inch), p_t.convert(ez::degree));
+}
 void Drive::odom_pose_set(pose itarget) {
   odom_x_set(itarget.x);
   odom_y_set(itarget.y);
@@ -166,7 +168,8 @@ void Drive::tracking_prime() {
   l_last = l_cur_and_track.first;
 
   // Decide on right ime vs right tracker
-  std::pair<float, float> r_cur_and_track = decide_vert_sensor(odom_tracker_right, odom_tracker_right_enabled, drive_sensor_right(), odom_ime_track_width_right);
+  std::pair<float, float> r_cur_and_track =
+      decide_vert_sensor(odom_tracker_right, odom_tracker_right_enabled, drive_sensor_right(), odom_ime_track_width_right);
   r_last = r_cur_and_track.first;
 
   // Angle, matching the sign convention used in tracking_wheels_tracking()
@@ -200,7 +203,8 @@ void Drive::tracking_wheels_tracking() {
   l_last = l_current;
 
   // Decide on right ime vs right tracker
-  std::pair<float, float> r_cur_and_track = decide_vert_sensor(odom_tracker_right, odom_tracker_right_enabled, drive_sensor_right(), odom_ime_track_width_right);
+  std::pair<float, float> r_cur_and_track =
+      decide_vert_sensor(odom_tracker_right, odom_tracker_right_enabled, drive_sensor_right(), odom_ime_track_width_right);
   float r_current = r_cur_and_track.first;
   float r_track_width = r_cur_and_track.second;
   // Calculate velocity based on left value
@@ -228,8 +232,7 @@ void Drive::tracking_wheels_tracking() {
 
   // Track width of 0, but the delta is avg of l+r
   double avg = l_ + r_;
-  if (avg != 0.0)
-    avg /= 2.0;
+  if (avg != 0.0) avg /= 2.0;
   pose central_pose_ = solve_xy_vert(0.0, t_current, avg, t_);
   central_pose.x += central_pose_.x;
   central_pose.y += central_pose_.y;

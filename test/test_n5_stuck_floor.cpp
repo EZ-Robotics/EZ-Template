@@ -74,7 +74,7 @@ TEST_CASE("N5: a genuinely slow-but-healthy final approach at default StuckWatch
   // A deliberately gentle final leg: low commanded speed on the highest-resistance archetype,
   // straight ahead (no turn needed) -- the shape N5 is about, and one this sim can currently be
   // trusted for (see file header).
-  double leg_length_in = 48.0;  // the spec's own worked example length
+  double leg_length_in = 48.0;                             // the spec's own worked example length
   odom movement{{0.0, leg_length_in}, fwd, /*speed=*/15};  // low speed -- the crawl this test needs
   chassis.pid_odom_ptp_set(movement);
 
@@ -83,9 +83,8 @@ TEST_CASE("N5: a genuinely slow-but-healthy final approach at default StuckWatch
   double dist_from_target = std::fabs(final_pose.y - leg_length_in);
   double achieved_avg_speed_in_s = elapsed_ms > 0 ? (final_pose.y / (elapsed_ms / 1000.0)) : 0.0;
 
-  MESSAGE("N5: returned=" << returned << " elapsed_ms=" << elapsed_ms << " final_y=" << final_pose.y
-                           << " dist_from_target=" << dist_from_target << " interfered=" << chassis.interfered
-                           << " achieved_avg_speed_in_s=" << achieved_avg_speed_in_s);
+  MESSAGE("N5: returned=" << returned << " elapsed_ms=" << elapsed_ms << " final_y=" << final_pose.y << " dist_from_target=" << dist_from_target
+                          << " interfered=" << chassis.interfered << " achieved_avg_speed_in_s=" << achieved_avg_speed_in_s);
 
   // Result at speed=15 (chosen after bracketing: speed=8 stalls outright against this archetype's
   // own resistive torque and never moves at all -- final_y=0, immediately read as stuck, a real
@@ -102,6 +101,6 @@ TEST_CASE("N5: a genuinely slow-but-healthy final approach at default StuckWatch
   // a UNIFORMLY slow motion (constant sub-floor speed from start to finish, not just a naturally
   // decaying approach) behaving differently -- not attempted here.
   CHECK(returned);
-  CHECK_FALSE(chassis.interfered);  // the actual N5 result: not falsely flagged stuck
+  CHECK_FALSE(chassis.interfered);       // the actual N5 result: not falsely flagged stuck
   CHECK(achieved_avg_speed_in_s < 2.0);  // confirms this genuinely was below the spec's naive floor
 }

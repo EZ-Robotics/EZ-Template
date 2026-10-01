@@ -122,8 +122,7 @@ void Drive::drive_pid_task() {
   }
 
   // Set motors
-  if (drive_toggle)
-    private_drive_set(l_out, r_out);
+  if (drive_toggle) private_drive_set(l_out, r_out);
 }
 
 // Turn PID task
@@ -150,14 +149,13 @@ void Drive::turn_pid_task() {
   double gyro_out = util::clamp(turnPID.output, slew_turn.output(), -slew_turn.output());
 
   // Clip the speed of the turn when the robot is within StartI, only do this when the turn is larger then StartI
-  if (turnPID.constants.ki != 0 && (fabs(chain_target_start - chain_sensor_start) > turnPID.constants.start_i && fabs(turnPID.error) < turnPID.constants.start_i)) {
-    if (pid_turn_min_get() != 0)
-      gyro_out = util::clamp(gyro_out, pid_turn_min_get(), -pid_turn_min_get());
+  if (turnPID.constants.ki != 0 &&
+      (fabs(chain_target_start - chain_sensor_start) > turnPID.constants.start_i && fabs(turnPID.error) < turnPID.constants.start_i)) {
+    if (pid_turn_min_get() != 0) gyro_out = util::clamp(gyro_out, pid_turn_min_get(), -pid_turn_min_get());
   }
 
   // Set motors
-  if (drive_toggle)
-    private_drive_set(gyro_out, -gyro_out);
+  if (drive_toggle) private_drive_set(gyro_out, -gyro_out);
 }
 
 // Swing PID task
@@ -175,9 +173,9 @@ void Drive::swing_pid_task() {
   double swing_out = util::clamp(swingPID.output, slew_swing.output(), -slew_swing.output());
 
   // Clip the speed of the swing when the robot is within StartI, only do this when the swing is larger then StartI
-  if (swingPID.constants.ki != 0 && (fabs(chain_target_start - chain_sensor_start) > swingPID.constants.start_i && fabs(swingPID.error) < swingPID.constants.start_i)) {
-    if (pid_swing_min_get() != 0)
-      swing_out = util::clamp(swing_out, pid_swing_min_get(), -pid_swing_min_get());
+  if (swingPID.constants.ki != 0 &&
+      (fabs(chain_target_start - chain_sensor_start) > swingPID.constants.start_i && fabs(swingPID.error) < swingPID.constants.start_i)) {
+    if (pid_swing_min_get() != 0) swing_out = util::clamp(swing_out, pid_swing_min_get(), -pid_swing_min_get());
   }
 
   // Set the motors powers, and decide what to do with the "still" side of the drive
@@ -265,8 +263,7 @@ void Drive::ptp_task() {
   // to exactly 0, xy_out (and so real translation) is fully zeroed to prioritize turning, and xyPID's
   // velocity exit can't tell that apart from a stall on its own.
   xy_translation_bias_gated = odom_turn_bias_enabled() && scale <= 0.0;
-  if (odom_turn_bias_enabled())
-    xy_out *= scale;
+  if (odom_turn_bias_enabled()) xy_out *= scale;
   double a_out = current_a_odomPID.output;
   // a_out = util::clamp(a_out, max_slew_out);
 
@@ -292,13 +289,15 @@ void Drive::ptp_task() {
 
   // printf("lr out (%.2f, %.2f)   xy/a(%.2f, %.2f)   lr slew (%.2f, %.2f)\n", l_out, r_out, xy_out, a_out, slew_left.output(), slew_right.output());
   // printf("max_slew_out %.2f      headingerr: %.2f\n", max_slew_out, aPID.error);
-  // printf("lr(%.2f, %.2f)   xy_raw: %.2f   xy_out: %.2f   heading_out: %.2f      max_slew_out: %.2f\n", l_out, r_out, xyPID.output, xy_out, current_a_odomPID.output, max_slew_out);
-  // printf("xy(%.2f, %.2f, %.2f)   xyPID: %.2f   aPID: %.2f     dir: %i   sgn: %i   past_target: %i    is_past_target: %i   is_past_using_xy: %i      fake_xy(%.2f, %.2f, %.2f)\n", odom_x_get(), odom_y_get(), odom_theta_get(), xyPID.target_get(), current_a_odomPID.target_get(), dir, flipped, past_target, (int)is_past_target(odom_target, odom_pose_get()), is_past_target_using_xy, fake_x, fake_y, util::to_deg(fake_angle));
-  // printf("xy(%.2f, %.2f, %.2f)   xyPID: %.2f   aPID: %.2f   ptf:(%.2f, %.2f)   xy/a(%.2f, %.2f)   lr(%.2f, %.2f)   fake xy: %.2f\n", odom_x_get(), odom_y_get(), odom_theta_get(), xyPID.error, current_a_odomPID.error, ptf.x, ptf.y, xy_out, a_out, l_out, r_out, new_current_fake);
+  // printf("lr(%.2f, %.2f)   xy_raw: %.2f   xy_out: %.2f   heading_out: %.2f      max_slew_out: %.2f\n", l_out, r_out, xyPID.output, xy_out,
+  // current_a_odomPID.output, max_slew_out); printf("xy(%.2f, %.2f, %.2f)   xyPID: %.2f   aPID: %.2f     dir: %i   sgn: %i   past_target: %i    is_past_target:
+  // %i   is_past_using_xy: %i      fake_xy(%.2f, %.2f, %.2f)\n", odom_x_get(), odom_y_get(), odom_theta_get(), xyPID.target_get(),
+  // current_a_odomPID.target_get(), dir, flipped, past_target, (int)is_past_target(odom_target, odom_pose_get()), is_past_target_using_xy, fake_x, fake_y,
+  // util::to_deg(fake_angle)); printf("xy(%.2f, %.2f, %.2f)   xyPID: %.2f   aPID: %.2f   ptf:(%.2f, %.2f)   xy/a(%.2f, %.2f)   lr(%.2f, %.2f)   fake xy:
+  // %.2f\n", odom_x_get(), odom_y_get(), odom_theta_get(), xyPID.error, current_a_odomPID.error, ptf.x, ptf.y, xy_out, a_out, l_out, r_out, new_current_fake);
 
   // Set motors
-  if (drive_toggle)
-    private_drive_set(l_out, r_out);
+  if (drive_toggle) private_drive_set(l_out, r_out);
 
   // This is for wait_until
   leftPID.compute(drive_sensor_left());

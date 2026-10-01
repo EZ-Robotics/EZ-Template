@@ -26,7 +26,7 @@ TEST_CASE("PID exit_condition automatically re-arms after a BIG_EXIT with no exp
   exit_output result = RUNNING;
   while (result == RUNNING) {
     pass++;
-    REQUIRE(pass <= 40);  // don't hang the suite if this regresses; real fire is pass 26
+    REQUIRE(pass <= 40);          // don't hang the suite if this regresses; real fire is pass 26
     pid.compute_error(2.0, 0.0);  // inside big_error, outside small (small is off anyway)
     result = pid.exit_condition();
   }

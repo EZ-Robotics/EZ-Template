@@ -92,9 +92,9 @@ void pin_xy_running(Drive& chassis) {
 }
 
 Drive* g_chassis = nullptr;
-double g_speed = 0.0;         // left side's inches driven per pass (10ms)
-double g_right_speed = 0.0;   // right side's inches driven per pass -- equal to g_speed unless a test sets otherwise
-int g_pin_after_pass = -1;    // -1: cruises the whole time.  >=0: position freezes once g_pass exceeds this
+double g_speed = 0.0;        // left side's inches driven per pass (10ms)
+double g_right_speed = 0.0;  // right side's inches driven per pass -- equal to g_speed unless a test sets otherwise
+int g_pin_after_pass = -1;   // -1: cruises the whole time.  >=0: position freezes once g_pass exceeds this
 double g_l_start = 0.0, g_r_start = 0.0;
 int g_pass = 0;
 
