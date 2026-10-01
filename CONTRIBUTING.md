@@ -66,6 +66,7 @@ What this cannot do:
 - To keep a list one item per line (like a list of odom points), put a comma after the last item. Without it, a list that fits in 160 columns goes on one line.
 - `// clang-format off` / `// clang-format on` is a last resort.
 - Don't format files in `include/pros`, `include/liblvgl` or `include/EZ-Units`. They're vendored, and their folders disable formatting.
+- `git blame` skips pure formatting commits listed in `.git-blame-ignore-revs`. Run `git config blame.ignoreRevsFile .git-blame-ignore-revs` once so your local blame does too. If a future PR is only a reformat, add its squash commit hash to that file after it merges.
 
 ## Before opening a PR
 
