@@ -3747,12 +3747,23 @@ class Drive {
   /**
    * Sets a new task to use for tracking.
    *
-   * In this function, you must:
+   * In this function, you must write the pose directly:
    *  - odom_current.x =
    *  - odom_current.y =
    *  - odom_current.theta =
    *
+   * Do not call odom_xyt_set(), odom_xy_set(), odom_x_set(), odom_y_set() or odom_pose_set() inside this
+   * function, those are for setting the pose from your own code.  A tracking function that calls them gets no xy D term (kD)
+   * in odom motions, because a pose that was set is not counted as the robot moving.
+   *
+   * When your own code sets the pose while a custom tracking function is running, the pass right after the set counts as no
+   * movement for the xy D term.  The library cannot tell if your tracking function kept the pose that was set or wrote its own
+   * over it, like a GPS does.  Setting the pose on every pass leaves the xy D term at 0.
+   *
    * This function does not need to loop, that is done for you in EZ-Template.
+   *
+   * To go back to EZ-Template's own tracking, call drive_defaults_set() (it sets every other default again too).  Odom picks up
+   * from the last pose your function wrote.
    *
    * \param tracking_task
    *        new function for tracking
