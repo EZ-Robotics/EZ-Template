@@ -31,9 +31,11 @@ class Drive {
   /**
    * Joysticks will return 0 when they are within this number.
    *
+   * Defaults to 3: a stick at rest often reads 1 or 2, which would otherwise keep active brake off.
+   *
    * Set with opcontrol_joystick_threshold_set()
    */
-  int JOYSTICK_THRESHOLD = 0;
+  int JOYSTICK_THRESHOLD = 3;
 
   /**
    * Global current brake mode.
@@ -1084,6 +1086,10 @@ class Drive {
    * Sets a new threshold for the joystick.
    *
    * The joysticks will not return a value if they are within this.
+   *
+   * The default is 3.  A controller's stick at rest often reads 1 or 2 instead of 0, and active brake only runs while
+   * both sticks read exactly 0, so with a threshold of 0 those sticks keep active brake off.  Set this to 0 to
+   * pass every stick value through, including 1 and 2.
    *
    * \param threshold
    *        new threshold
@@ -2747,26 +2753,50 @@ class Drive {
   void pid_wait();
 
   /**
-   * Lock the code in a while loop until this position has passed for turning or swinging with units.
+   * Lock the code in a while loop until the robot has turned or swung past this heading, with units.
+   *
+   * The target is an absolute heading, the same as the heading you gave the turn or swing.
+   * `pid_turn_set(90_deg, 90); pid_wait_until(45_deg);` returns when the robot faces 45 degrees, with 45 degrees still to go.
+   *
+   * If the checkpoint can't be reached (past the heading the motion goes to, or on the other side of where it started), the wait
+   * returns when the motion finishes and prints why.  `interfered` is only set when something actually stopped the robot.
    *
    * \param target
-   *        for turning, using units
+   *        absolute heading for a turn or swing, using units
    */
   void pid_wait_until(ez::QAngle target);
 
   /**
-   * Lock the code in a while loop until this position has passed for driving with units.
+   * Lock the code in a while loop until the robot has driven this far, with units.
+   *
+   * The target is how far the robot has driven since THIS motion started, with the same sign as the drive.  It is not measured from
+   * the end of the drive.  `pid_drive_set(24_in, 110); pid_wait_until(6_in);` returns after 6 inches, with 18 inches still to go.
+   * Backward drives use negative numbers: `pid_drive_set(-24_in, 110); pid_wait_until(-6_in);`.
+   *
+   * If the checkpoint can't be reached (past the distance the drive goes, or the wrong sign), the wait returns when the motion
+   * finishes and prints why.  `interfered` is only set when something actually stopped the robot.
    *
    * \param target
-   *        for driving, using units
+   *        distance driven since this motion started, using units, the same sign as the drive
    */
   void pid_wait_until(ez::QLength target);
 
   /**
-   * Lock the code in a while loop until this position has passed for driving without units.
+   * Lock the code in a while loop until the robot has driven this far, or turned or swung past this heading, without units.
+   *
+   * For drives the target is how far the robot has driven since THIS motion started, in inches, with the same sign as the drive.
+   * `pid_drive_set(24_in, 110); pid_wait_until(6);` returns after 6 inches, with 18 inches still to go.  Backward drives use negative
+   * numbers: `pid_drive_set(-24_in, 110); pid_wait_until(-6);`.
+   *
+   * For turns and swings the target is an absolute heading in degrees, the same as the turn target.
+   * `pid_turn_set(90_deg, 90); pid_wait_until(45);` returns when the robot faces 45 degrees.
+   *
+   * If the checkpoint can't be reached (past the target, or the wrong sign), the wait returns when the motion finishes and prints
+   * why.  `interfered` is only set when something actually stopped the robot.  This check is for drives, turns and swings; an odom
+   * motion returns when it finishes without a message.
    *
    * \param target
-   *        for driving or turning, using a double.  degrees for turns/swings, inches for driving
+   *        for driving, inches driven since this motion started (same sign as the drive).  for turns/swings, an absolute heading in degrees
    */
   void pid_wait_until(double target);
 
@@ -2787,7 +2817,10 @@ class Drive {
   void pid_wait_quick_chain();
 
   /**
-   * Lock the code in a while loop until this point has been passed.
+   * Lock the code in a while loop until the robot has passed this point of your path.
+   *
+   * `pid_odom_set({{{0_in, 24_in}, fwd, 110}, {{24_in, 24_in}, fwd, 110}}); pid_wait_until_index(0);` returns once the robot has
+   * passed the first point, (0, 24).
    *
    * \param index
    *        index of your input points, 0 is the first point in the index
@@ -2803,7 +2836,9 @@ class Drive {
   void pid_wait_until_index_started(int index);
 
   /**
-   * Lock the code in a while loop until this point has been passed.
+   * Lock the code in a while loop until the robot has passed this point on the field.
+   *
+   * The target is a field position, not a distance: `pid_wait_until_point({24, 24});` returns when the robot passes (24, 24).
    *
    * \param target
    *        {x, y} pose for the robot to pass through before the while loop is released
@@ -2811,7 +2846,9 @@ class Drive {
   void pid_wait_until_point(pose target);
 
   /**
-   * Lock the code in a while loop until this point has been passed, with units.
+   * Lock the code in a while loop until the robot has passed this point on the field, with units.
+   *
+   * The target is a field position, not a distance: `pid_wait_until_point({24_in, 24_in});` returns when the robot passes (24, 24).
    *
    * \param target
    *        {x, y} pose with units for the robot to pass through before the while loop is released
@@ -2819,9 +2856,9 @@ class Drive {
   void pid_wait_until_point(united_pose target);
 
   /**
-   * Lock the code in a while loop until this point has been passed.
+   * Lock the code in a while loop until the robot has passed this point on the field.
    *
-   * Wrapper for pid_wait_until_point.
+   * Wrapper for pid_wait_until_point.  `pid_wait_until({24, 24});` returns when the robot passes (24, 24).
    *
    * \param target
    *        {x, y}  a pose for the robot to pass through before the while loop is released
@@ -2829,9 +2866,9 @@ class Drive {
   void pid_wait_until(pose target);
 
   /**
-   * Lock the code in a while loop until this point has been passed, with units.
+   * Lock the code in a while loop until the robot has passed this point on the field, with units.
    *
-   * Wrapper for pid_wait_until_point.
+   * Wrapper for pid_wait_until_point.  `pid_wait_until({24_in, 24_in});` returns when the robot passes (24, 24).
    *
    * \param target
    *        {x, y}  a pose with units for the robot to pass through before the while loop is released
@@ -3733,6 +3770,10 @@ class Drive {
    * Recursive so nested public calls and user callbacks that call setters are safe.
    */
   ez::Lock<pros::RecursiveMutex> drive_mutex;
+
+  // The drive motors an mA exit should watch: every motor on the wanted sides that is not handed to the PTO.
+  // Rebuilt on every call; see its definition in exit_conditions.cpp.
+  std::vector<pros::Motor> mA_exit_motors(bool include_left = true, bool include_right = true);
 
   // Bumped once by every top-level pid_*_set() (see set_drive_pid.cpp/set_turn_pid.cpp/set_swing_pid.cpp/
   // set_odom_pid.cpp), never anywhere else. Lets a wait tell whether a write to `interfered` -- its own, or

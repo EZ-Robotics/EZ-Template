@@ -343,7 +343,9 @@ void Drive::opcontrol_joystick_threshold_iterate(int l_stick, int r_stick) {
   l_out = util::clamp(l_out, opcontrol_speed_max);
   r_out = util::clamp(r_out, opcontrol_speed_max);
 
-  drive_set(l_out, r_out);
+  // What drive_set() does, without marking the brake's target as stale: this is the driver's own output, and the brake's.
+  drive_mode_set(DISABLE, false);
+  private_drive_set(l_out, r_out);
 }
 
 // This is used as a multiplier, so a negative value would reverse the whole drive and a value over 127 would

@@ -18,13 +18,14 @@ bool Drive::pto_check(pros::Motor check_if_pto) {
 }
 
 void Drive::pto_add(std::vector<pros::Motor> pto_list) {
+  ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
   for (auto i : pto_list) {
     // Skip the motor if it's already in the list
     if (pto_check(i)) continue;
 
     // Skip the motor if it's the first index (this motor is used for velocity)
     if (i.get_port() == left_motors[0].get_port() || i.get_port() == right_motors[0].get_port()) {
-      printf("You cannot PTO the first index!\n");
+      drive_mutex.print_after_unlock("You cannot PTO the first index!\n");
       continue;
     }
 
@@ -33,6 +34,7 @@ void Drive::pto_add(std::vector<pros::Motor> pto_list) {
 }
 
 void Drive::pto_remove(std::vector<pros::Motor> pto_list) {
+  ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
   for (auto i : pto_list) {
     auto does_exist = std::find(pto_active.begin(), pto_active.end(), i.get_port());
     // Skip the motor if it isn't in the list
