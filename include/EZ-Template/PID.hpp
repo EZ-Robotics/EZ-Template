@@ -90,7 +90,8 @@ class PID {
    *        call that never lands (a dead background task) simply isn't counted either way, so this can
    *        never fire on a stale, unrefreshed reading.
    * \param p_mA_timeout
-   *        sets mA_timeout, time the motor can be over its current limit before exiting.  Only checked by the exit_condition overloads that take a motor or motors.
+   *        sets mA_timeout, time the motor can be over its current limit before exiting.  Only checked by the exit_condition overloads that take a motor or
+   *        motors.
    */
   void exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time = 0, double p_big_error = 0, int p_velocity_exit_time = 0, int p_mA_timeout = 0);
 

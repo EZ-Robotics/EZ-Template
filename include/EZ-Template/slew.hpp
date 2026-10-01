@@ -27,7 +27,8 @@ class slew {
    * Sets constants for slew.  Slew ramps up the speed of the robot until the set distance is traveled.
    *
    * \param distance
-   *        the distance the robot travels to ramp from minimum_speed up to full speed (127).  A movement with a lower maximum speed is capped at that speed, so it reaches that speed before this distance has been traveled
+   *        the distance the robot travels to ramp from minimum_speed up to full speed (127).  A movement with a lower maximum speed is capped at that speed, so
+   *        it reaches that speed before this distance has been traveled
    * \param minimum_speed
    *        the starting speed for the movement
    */
@@ -37,7 +38,8 @@ class slew {
    * Sets constants for slew.  Slew ramps up the speed of the robot until the set distance is traveled.
    *
    * \param distance
-   *        the distance the robot travels to ramp from minimum_speed up to full speed (127).  A movement with a lower maximum speed is capped at that speed, so it reaches that speed before this distance has been traveled
+   *        the distance the robot travels to ramp from minimum_speed up to full speed (127).  A movement with a lower maximum speed is capped at that speed, so
+   *        it reaches that speed before this distance has been traveled
    * \param minimum_speed
    *        the starting speed for the movement
    */
