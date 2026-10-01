@@ -121,14 +121,14 @@ void Drive::drive_defaults_set() {
   std::cout << std::setprecision(2);
 
   // Set tracking task, user can override this if they want
-  bool custom_tracking_was_in_use = tracking_is_custom;
+  bool resync = tracking_is_custom || tracking_resync_pending;  // a second call before the next pass must not lose the first
   odom_tracking_set(std::bind(&ez::Drive::tracking_wheels_tracking, this));
   tracking_is_custom = false;
 
   // EZ-Template's own poses and last sensor readings are from before the custom tracker ran, so the next tracking pass
   // has to pick up from where that tracker left odom_current (see ez_tracking_task()).  Only flagged here: this function
   // also runs from the constructors, at global scope, where no device can be read yet, and there is nothing to pick up from.
-  if (custom_tracking_was_in_use) tracking_resync_pending = true;
+  if (resync) tracking_resync_pending = true;
 
   // PID Constants
   pid_drive_constants_set(20.0, 0.0, 100.0);

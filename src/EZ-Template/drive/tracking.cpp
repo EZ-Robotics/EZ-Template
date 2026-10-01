@@ -88,6 +88,7 @@ void Drive::odom_tracking_set(std::function<void(void)> tracking_task) {
   tracking = tracking_task;
   tracking_is_custom = true;  // drive_defaults_set() sets this back to false for EZ-Template's own tracking
   tracking_resync_pending = false;
+  xy_last_pose_valid = false;  // the new function's first pose may be in a different frame, so that pass measures no movement
 }
 
 std::pair<float, float> Drive::decide_vert_sensor(ez::tracking_wheel* tracker, bool is_tracker_enabled, float ime, float ime_track) {
@@ -171,8 +172,10 @@ void Drive::tracking_prime() {
   // Angle, matching the sign convention used in tracking_wheels_tracking()
   t_last = -ez::util::to_rad(drive_angle_get());
 
-  // Nothing counts as movement across a pause in tracking or a sensor reset
-  xy_last_pose_valid = false;
+  // A pause in tracking or a sensor reset moves nothing: the pose stays where it is, so the next pass measures from it
+  // and counts only what the robot moves from here on.
+  xy_last_pose = odom_current;
+  xy_last_pose_valid = std::isfinite(odom_current.x) && std::isfinite(odom_current.y) && std::isfinite(odom_current.theta);
   xy_pose_delta = {0.0, 0.0, 0.0};
 }
 
