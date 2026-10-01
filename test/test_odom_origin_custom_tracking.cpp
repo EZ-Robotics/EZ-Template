@@ -242,3 +242,37 @@ TEST_CASE("putting EZ-Template's tracking back after a tracker left a non finite
     CHECK(std::fabs(o.end.y - 12.0) < 1.5);
   }
 }
+
+// The tracker loses its signal (NaN) and a team falls back to EZ-Template's own tracking: odom has to pick up from the last pose the
+// tracker wrote, not from where EZ-Template's own poses stood before the tracker took over, and the next motion has to arrive.
+TEST_CASE("falling back to EZ-Template's tracking after the tracker lost its signal resumes from its last good pose") {
+  for (double bad : {NAN, INFINITY}) {
+    Rig r;
+    TruePose tp(r);
+    bool lost = false;
+    r.chassis.odom_tracking_set([&] {
+      tp.step();
+      r.chassis.odom_current.x = lost ? bad : tp.x;
+      r.chassis.odom_current.y = lost ? bad : tp.y;
+      r.chassis.odom_current.theta = r.chassis.drive_angle_get();
+    });
+    tp.reset(30, -20);
+    r.start_at(0, 0, 0);
+    r.hook = [&](int) { tp.step(); };
+    r.chassis.pid_odom_ptp_set(O(30, 16, fwd, 90));
+    REQUIRE(r.run([&] { r.chassis.pid_wait(); }, 1500).returned);
+    lost = true;
+    r.idle(4);
+    r.chassis.drive_defaults_set();
+    r.chassis.pid_odom_drive_exit_condition_set(90_ms, 1_in, 200_ms, 3_in, 100_ms, 100_ms);
+    r.chassis.pid_odom_turn_exit_condition_set(90_ms, 1_deg, 200_ms, 3_deg, 100_ms, 100_ms);
+    r.idle(3);
+    // The robot is still coasting while the tracker is blind, and nothing can know that travel, so odom is off by about that much
+    // (1.2 in here).  Picking up from EZ-Template's own stale poses instead would be off by the whole 34 in the robot drove.
+    CHECK(std::hypot(r.chassis.odom_x_get() - tp.x, r.chassis.odom_y_get() - tp.y) < 2.5);
+    r.chassis.pid_odom_ptp_set(O(30, 40, fwd, 90));
+    Outcome o = r.run([&] { r.chassis.pid_wait(); }, 1500);
+    REQUIRE(o.returned);
+    CHECK(std::hypot(tp.x - 30.0, tp.y - 40.0) < 2.5);
+  }
+}
