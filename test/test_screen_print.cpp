@@ -83,8 +83,7 @@ TEST_CASE("screen_print does not add an ellipsis when the text fits exactly") {
   clear_screen();
   screen_print("a\nb\nc\nd\ne\nf\ng\nh");
 
-  for (int i = 0; i < 8; i++)
-    CHECK(test::screen_lines[i] == std::string(1, (char)('a' + i)));
+  for (int i = 0; i < 8; i++) CHECK(test::screen_lines[i] == std::string(1, (char)('a' + i)));
 }
 
 TEST_CASE("screen_print cuts one line too many down to the ellipsis") {

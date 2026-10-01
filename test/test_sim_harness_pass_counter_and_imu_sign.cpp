@@ -85,8 +85,8 @@ TEST_CASE("sim harness bug 1: SimRobot ticks advance the real ez::detail::stats.
 
   std::uint32_t after = ez::detail::stats.auto_task_passes.load(std::memory_order_relaxed);
   std::uint32_t delta = after - baseline;
-  MESSAGE("sim harness bug1 (counter): baseline=" << baseline << " after=" << after << " delta=" << delta
-                                                    << " n_ticks=" << n_ticks << " returned=" << returned);
+  MESSAGE("sim harness bug1 (counter): baseline=" << baseline << " after=" << after << " delta=" << delta << " n_ticks=" << n_ticks
+                                                  << " returned=" << returned);
 
   CHECK_FALSE(returned);  // capped by the tick limit, not a real exit -- confirms ticks actually ran
   CHECK(delta == (std::uint32_t)(n_ticks + 1));
@@ -151,16 +151,15 @@ TEST_CASE("sim harness bug 1: a TURN that never progresses trips SingleStuckWatc
   // ~1.5s (real window governed) trip from an unfixed ~3s (4x fallback) one either way. Kept as a
   // secondary, informational check once the counter itself is confirmed live (bug 1's other test
   // above already covers that directly).
-  MESSAGE("sim harness bug1 (stuck timing): returned=" << returned << " elapsed_ms=" << elapsed_ms
-                                                         << " trip_passes=" << trip_passes << " interfered=" << chassis.interfered
-                                                         << " stdout=[" << out << "]");
+  MESSAGE("sim harness bug1 (stuck timing): returned=" << returned << " elapsed_ms=" << elapsed_ms << " trip_passes=" << trip_passes
+                                                       << " interfered=" << chassis.interfered << " stdout=[" << out << "]");
 
-  REQUIRE(returned);                                     // a real exit_condition fired, not the tick cap
-  CHECK(chassis.interfered);                             // the stuck failsafe, not a normal exit
-  CHECK(out.find("Turn: Stuck") != std::string::npos);   // specifically SingleStuckWatch's TURN path, not velocity/mA
-  CHECK(elapsed_ms > 1000);                              // at least the start allowance elapsed
-  CHECK(elapsed_ms < 2200);                              // well short of the 4x-fallback's ~3000ms -- the real window governed
-  CHECK(trip_passes > 100);                              // secondary: the pass counter is live and moving with elapsed_ms
+  REQUIRE(returned);                                    // a real exit_condition fired, not the tick cap
+  CHECK(chassis.interfered);                            // the stuck failsafe, not a normal exit
+  CHECK(out.find("Turn: Stuck") != std::string::npos);  // specifically SingleStuckWatch's TURN path, not velocity/mA
+  CHECK(elapsed_ms > 1000);                             // at least the start allowance elapsed
+  CHECK(elapsed_ms < 2200);                             // well short of the 4x-fallback's ~3000ms -- the real window governed
+  CHECK(trip_passes > 100);                             // secondary: the pass counter is live and moving with elapsed_ms
 }
 
 TEST_CASE("sim harness bug 2: an open-loop left-forward/right-reverse command increases the reported IMU heading (real V5 clockwise-positive)") {
@@ -186,7 +185,7 @@ TEST_CASE("sim harness bug 2: an open-loop left-forward/right-reverse command in
   double heading_after = chassis.drive_imu_get();
 
   MESSAGE("sim harness bug2 (open-loop sign): heading_before=" << heading_before << " heading_after=" << heading_after
-                                                                 << " raw_sim_heading_deg=" << sim.heading_deg());
+                                                               << " raw_sim_heading_deg=" << sim.heading_deg());
 
   CHECK(heading_after > heading_before + 5.0);  // moved in the commanded clockwise-positive direction
 }
@@ -228,11 +227,9 @@ TEST_CASE("sim harness bug 2: a closed-loop TURN converges toward its target ins
   double heading_at_return = DriveTestAccess::odom_current(chassis).theta;
   double error_at_return = 120.0 - heading_at_return;
 
-  MESSAGE("sim harness bug2 (closed-loop convergence): returned=" << returned << " elapsed_ms=" << elapsed_ms
-                                                                    << " heading_at_return=" << heading_at_return
-                                                                    << " error_at_return=" << error_at_return
-                                                                    << " stuck_failsafe=" << stuck_failsafe
-                                                                    << " raw_sim_heading_deg=" << sim.heading_deg());
+  MESSAGE("sim harness bug2 (closed-loop convergence): returned=" << returned << " elapsed_ms=" << elapsed_ms << " heading_at_return=" << heading_at_return
+                                                                  << " error_at_return=" << error_at_return << " stuck_failsafe=" << stuck_failsafe
+                                                                  << " raw_sim_heading_deg=" << sim.heading_deg());
 
   REQUIRE(returned);
   CHECK_FALSE(stuck_failsafe);

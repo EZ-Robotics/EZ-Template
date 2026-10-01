@@ -24,7 +24,8 @@ std::vector<odom> injected_path(Drive& chassis) {
   return DriveTestAccess::inject_points(chassis, {{{24, 24}, fwd, 127}, {{48, 0}, fwd, 127}, {{72, 24}, fwd, 127}, {{96, 48}, fwd, 127}});
 }
 
-const char* const pass_limit_message = "EZ-Template: path smoothing stopped at 5000 passes before it settled, so the path is less smooth than the constants ask for\n";
+const char* const pass_limit_message =
+    "EZ-Template: path smoothing stopped at 5000 passes before it settled, so the path is less smooth than the constants ask for\n";
 
 template <typename F>
 std::string printed_by(F&& action) {

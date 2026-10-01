@@ -80,7 +80,11 @@ TEST_CASE("DRIVE pid_wait() reports interfered on a sustained cruise below the a
   // further, without calling pid_wait() again, shows whether the robot genuinely stopped making
   // progress (a real stall, where this loop's own cap would fail it) or was simply still closing in
   // when the wait gave up on it.
-  run_capped([&] { for (int i = 0; i < 3000; i++) pros::delay(10); }, /*max_ticks=*/6000);
+  run_capped(
+      [&] {
+        for (int i = 0; i < 3000; i++) pros::delay(10);
+      },
+      /*max_ticks=*/6000);
   double pos_after_more_time = chassis.drive_sensor_left();
 
   CAPTURE(wait_returned);

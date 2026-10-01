@@ -11,7 +11,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 namespace ez {
 class slew {
- public:
+public:
   slew();
 
   /**
@@ -91,7 +91,7 @@ class slew {
    */
   double speed_max_get();
 
- private:
+private:
   int sign = 0;
   double error = 0;
   double x_intercept = 0;

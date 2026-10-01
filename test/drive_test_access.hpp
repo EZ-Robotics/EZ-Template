@@ -16,9 +16,7 @@
 namespace ez {
 
 struct DriveTestAccess {
-  static std::vector<odom> inject_points(Drive& d, std::vector<odom> movements) {
-    return d.inject_points(std::move(movements));
-  }
+  static std::vector<odom> inject_points(Drive& d, std::vector<odom> movements) { return d.inject_points(std::move(movements)); }
   static std::vector<odom> smooth_path(Drive& d, std::vector<odom> ipath, double weight_smooth, double weight_data, double tolerance) {
     return d.smooth_path(std::move(ipath), weight_smooth, weight_data, tolerance);
   }

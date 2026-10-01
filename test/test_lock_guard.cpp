@@ -288,9 +288,7 @@ TEST_CASE("a task already at 15 is left alone") {
   reset();
   scheduler_is_running();
   g_sched.tasks[0] = {8, 15};  // inherited 15: raising would store 15 as its base and strand it there
-  {
-    KillSafeGuard<FakeMutex> guard(lock);
-  }
+  { KillSafeGuard<FakeMutex> guard(lock); }
   CHECK(g_sched.calls == Calls{"get"});
   CHECK(g_sched.tasks[0].base == 8);
 }
@@ -328,9 +326,7 @@ TEST_CASE("a kill safe guard whose take fails still puts its priority back") {
   scheduler_is_running();
   TestLock lock;
   Access::mutex(lock).take_result = false;
-  {
-    KillSafeGuard<FakeMutex> guard(lock);
-  }
+  { KillSafeGuard<FakeMutex> guard(lock); }
   CHECK(g_sched.tasks[0].effective == 8);
   CHECK(Access::mutex(lock).gives == 0);
 }

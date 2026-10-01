@@ -67,8 +67,7 @@ void PID::constants_set(double p, double i, double d, double p_start_i) {
 }
 
 bool PID::constants_set_check() {
-  if (constants.kp == 0.0 && constants.ki == 0.0 && constants.kd == 0.0 && constants.start_i == 0.0)
-    return false;
+  if (constants.kp == 0.0 && constants.ki == 0.0 && constants.kd == 0.0 && constants.start_i == 0.0) return false;
   return true;
 }
 
@@ -88,9 +87,7 @@ double PID::target_get() { return target; }
 void PID::i_reset_toggle(bool toggle) { reset_i_sgn = toggle; }
 bool PID::i_reset_get() { return reset_i_sgn; };
 
-double PID::compute(double current) {
-  return compute_error(target - current, current);
-}
+double PID::compute(double current) { return compute_error(target - current, current); }
 
 double PID::compute_error(double err, double current) {
   error = err;
@@ -115,12 +112,10 @@ double PID::raw_compute() {
 
   if (constants.ki != 0) {
     // Only compute i when within a threshold of target
-    if (fabs(error) < constants.start_i)
-      integral += error;
+    if (fabs(error) < constants.start_i) integral += error;
 
     // Reset i when the sign of error flips
-    if (util::sgn(error) != util::sgn(prev_error) && reset_i_sgn)
-      integral = 0;
+    if (util::sgn(error) != util::sgn(prev_error) && reset_i_sgn) integral = 0;
   }
 
   output = (error * constants.kp) + (integral * constants.ki) - (derivative * constants.kd);
@@ -211,7 +206,8 @@ bool PID::velocity_exit_hold_get() { return velocity_exit_hold; }
 
 exit_output PID::exit_condition(bool print) {
   // If this function is called while all exit constants are 0, print an error
-  if (exit.small_error == 0 && exit.small_exit_time == 0 && exit.big_error == 0 && exit.big_exit_time == 0 && exit.velocity_exit_time == 0 && exit.mA_timeout == 0) {
+  if (exit.small_error == 0 && exit.small_exit_time == 0 && exit.big_error == 0 && exit.big_exit_time == 0 && exit.velocity_exit_time == 0 &&
+      exit.mA_timeout == 0) {
     exit_condition_print(ERROR_NO_CONSTANTS);
     return ERROR_NO_CONSTANTS;
   }
@@ -379,8 +375,7 @@ exit_output PID::exit_condition(bool print) {
     }
   }
 
-  if (!use_second_sensor)
-    return RUNNING;
+  if (!use_second_sensor) return RUNNING;
 
   // If the secondary sensors velocity is 0, the code will timeout and set interfered to true.
   // A non-finite second_sensor means no reading was ever taken (no imu, or the channel was just

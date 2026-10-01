@@ -93,8 +93,7 @@ TEST_CASE("pid_wait_until() TURN: a stall between the checkpoint and the real ta
   test_stub::g_clock.delay_calls_until_stop = -1;
   test_stub::g_clock.on_delay = nullptr;
 
-  MESSAGE("returned=", returned, " interfered=", chassis.interfered,
-          " checkpoint=", checkpoint, " turnPID.error=", chassis.turnPID.error);
+  MESSAGE("returned=", returned, " interfered=", chassis.interfered, " checkpoint=", checkpoint, " turnPID.error=", chassis.turnPID.error);
   REQUIRE(returned);
   CHECK(chassis.interfered);
 }
@@ -124,8 +123,7 @@ TEST_CASE("pid_wait_until() SWING: a stall between the checkpoint and the real t
   test_stub::g_clock.delay_calls_until_stop = -1;
   test_stub::g_clock.on_delay = nullptr;
 
-  MESSAGE("returned=", returned, " interfered=", chassis.interfered,
-          " checkpoint=", checkpoint, " swingPID.error=", chassis.swingPID.error);
+  MESSAGE("returned=", returned, " interfered=", chassis.interfered, " checkpoint=", checkpoint, " swingPID.error=", chassis.swingPID.error);
   REQUIRE(returned);
   CHECK(chassis.interfered);
 }

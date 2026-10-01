@@ -30,8 +30,7 @@ void run_one_auto_task_pass(Drive& chassis) {
   test_stub::g_clock.delay_calls_until_stop = 0;
   try {
     DriveTestAccess::ez_auto_task(chassis);
-  } catch (test_stub::StopLoop&) {
-  }
+  } catch (test_stub::StopLoop&) {}
   test_stub::g_clock.delay_calls_until_stop = -1;
 }
 
@@ -64,9 +63,7 @@ bool pid_wait_returns(Drive& chassis, int max_delays) {
 }
 
 // Signed difference from `from` to `to`, wrapped to [-180, 180].
-double angle_diff(double to, double from) {
-  return std::remainder(to - from, 360.0);
-}
+double angle_diff(double to, double from) { return std::remainder(to - from, 360.0); }
 }  // namespace
 
 TEST_CASE("pid_odom_set to the robot's own pose does not turn the robot around") {

@@ -23,7 +23,7 @@ TEST_CASE("PID: small_error wider than the actual motion gives a near-instant SM
   exit_output result = RUNNING;
   while (result == RUNNING) {
     pass++;
-    REQUIRE(pass <= 5);  // don't hang the suite if this regresses
+    REQUIRE(pass <= 5);            // don't hang the suite if this regresses
     pid.compute_error(24.0, 0.0);  // a real, substantial remaining distance
     result = pid.exit_condition();
   }

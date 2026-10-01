@@ -22,9 +22,7 @@ struct Report {
   /// Temperature and IMU disagreement are warnings rather than failures, so
   /// motors_hot, motors_warm, and imu_max_drift_deg deliberately do not
   /// count against this.
-  bool all_ok() const {
-    return imu_ok && motors_bad == 0 && trackers_bad == 0 && devices_bad == 0;
-  }
+  bool all_ok() const { return imu_ok && motors_bad == 0 && trackers_bad == 0 && devices_bad == 0; }
 };
 
 /// Checks that the IMU, every drive motor, every configured odom tracker, and

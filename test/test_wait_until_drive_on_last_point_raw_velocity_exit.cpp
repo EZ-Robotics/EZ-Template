@@ -90,7 +90,7 @@ void crawl() {
   // look-ahead target) -- error shrinks every pass, in step with the real distance driven, and
   // never gets anywhere near small_error/big_error during this test's window.
   c.xyPID.error = g_xy_error_start - g_driven;
-  c.xyPID.cur += CRUISE_IN_PER_PASS;   // a real, fresh sensor sample every pass -- not a stale re-read
+  c.xyPID.cur += CRUISE_IN_PER_PASS;        // a real, fresh sensor sample every pass -- not a stale re-read
   c.xyPID.derivative = CRUISE_IN_PER_PASS;  // 0.03 < velocity_zero_main's default 0.05 -- reads "stopped"
 
   // Angle stays fully converged and inert -- current_a_odomPID must not be what ends this wait;

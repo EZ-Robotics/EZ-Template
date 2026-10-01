@@ -67,8 +67,7 @@ void Drive::check_imu_task() {
   // stuck (unchanged while the drive was rotating) for too many passes in a row.
   auto is_bad = [this](pros::Imu* n) {
     int port = n->get_port();
-    return !n->is_installed() || !std::isfinite(prev_imu_values[port].first) ||
-           imu_stuck_passes[port] >= IMU_STUCK_PASSES_THRESHOLD;
+    return !n->is_installed() || !std::isfinite(prev_imu_values[port].first) || imu_stuck_passes[port] >= IMU_STUCK_PASSES_THRESHOLD;
   };
 
   // Never eject the last remaining good IMU, even if it looks unhealthy.
@@ -84,15 +83,15 @@ void Drive::check_imu_task() {
 
   bool skipped_front = false;
   good_imus.erase(std::remove_if(good_imus.begin(), good_imus.end(),
-                                  [&](pros::Imu* n) {
-                                    if (!is_bad(n)) return false;
-                                    if (keep_front && !skipped_front) {
-                                      skipped_front = true;
-                                      return false;
-                                    }
-                                    return true;
-                                  }),
-                   good_imus.end());
+                                 [&](pros::Imu* n) {
+                                   if (!is_bad(n)) return false;
+                                   if (keep_front && !skipped_front) {
+                                     skipped_front = true;
+                                     return false;
+                                   }
+                                   return true;
+                                 }),
+                  good_imus.end());
 
   // Give ejected IMUs a chance to prove they've recovered before trusting
   // them again.  They're re-added at the back so the primary doesn't flip

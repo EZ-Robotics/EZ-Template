@@ -39,9 +39,7 @@ bool run_capped(F&& wait, int max_ticks) {
   return returned;
 }
 
-std::vector<odom> path_at(int speed) {
-  return {{{0.0, 24.0, ANGLE_NOT_SET}, fwd, speed}, {{0.0, 48.0, ANGLE_NOT_SET}, fwd, speed}};
-}
+std::vector<odom> path_at(int speed) { return {{{0.0, 24.0, ANGLE_NOT_SET}, fwd, speed}, {{0.0, 48.0, ANGLE_NOT_SET}, fwd, speed}}; }
 
 struct Result {
   bool returned;
@@ -49,7 +47,11 @@ struct Result {
   bool interfered;
 };
 
-enum class Wait { Index0, Point24, Quick };
+enum class Wait {
+  Index0,
+  Point24,
+  Quick
+};
 
 Result run(const sim::SimArchetype& a, double look_ahead_in, double xy_big_error, Wait w, int speed = 40) {
   Drive chassis = make_chassis(a);
@@ -64,9 +66,12 @@ Result run(const sim::SimArchetype& a, double look_ahead_in, double xy_big_error
 
   bool returned = run_capped(
       [&] {
-        if (w == Wait::Index0) chassis.pid_wait_until_index(0);
-        else if (w == Wait::Point24) chassis.pid_wait_until_point({0.0, 24.0, 0.0});
-        else chassis.pid_wait_quick();
+        if (w == Wait::Index0)
+          chassis.pid_wait_until_index(0);
+        else if (w == Wait::Point24)
+          chassis.pid_wait_until_point({0.0, 24.0, 0.0});
+        else
+          chassis.pid_wait_quick();
       },
       /*max_ticks=*/6000);
   return {returned, chassis.odom_y_get(), chassis.interfered};

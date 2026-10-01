@@ -45,8 +45,8 @@ TEST_CASE("pid_wait_until_point() does not end a slow, healthy approach on a raw
   Drive chassis = make_chassis();
   chassis.pid_print_toggle(false);
   DriveTestAccess::imu_calibration_complete(chassis) = true;
-  chassis.pid_odom_drive_exit_condition_set(90, 1.0, 250, 3.0, 500, 0);   // shipped-default-shaped xy
-  chassis.pid_odom_turn_exit_condition_set(90, 3.0, 250, 7.0, 500, 0);    // angle stays converged
+  chassis.pid_odom_drive_exit_condition_set(90, 1.0, 250, 3.0, 500, 0);  // shipped-default-shaped xy
+  chassis.pid_odom_turn_exit_condition_set(90, 3.0, 250, 7.0, 500, 0);   // angle stays converged
   chassis.pid_odom_ptp_set({{0.0, TARGET_Y, 0.0}, fwd, 100});
 
   g_chassis = &chassis;

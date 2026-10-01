@@ -295,7 +295,8 @@ void swing_wait_until_retargeted_in_first_delay(Drive& c, int n) {
 // false-fire interfered just because nothing ever touched turnPID.target_get() to begin with.
 void turn_to_point_never_retargeted(Drive&, int) {}
 
-TEST_CASE("wait_until_turn_swing_internal() TURN: a concurrent pid_turn_set() landing in the function's own first settle delay ends the wait instead of finishing on the new target") {
+TEST_CASE(
+    "wait_until_turn_swing_internal() TURN: a concurrent pid_turn_set() landing in the function's own first settle delay ends the wait instead of finishing on the new target") {
   Drive chassis = make_chassis();
   chassis.pid_print_toggle(false);
   chassis.pid_turn_set(90, 100);
@@ -305,7 +306,8 @@ TEST_CASE("wait_until_turn_swing_internal() TURN: a concurrent pid_turn_set() la
   CHECK(o.passes <= FIRST_DELAY_RETARGET_AT + GUARD_SLACK);
 }
 
-TEST_CASE("wait_until_turn_swing_internal() SWING: a concurrent pid_swing_set() landing in the function's own first settle delay ends the wait instead of finishing on the new target") {
+TEST_CASE(
+    "wait_until_turn_swing_internal() SWING: a concurrent pid_swing_set() landing in the function's own first settle delay ends the wait instead of finishing on the new target") {
   Drive chassis = make_chassis();
   chassis.pid_print_toggle(false);
   chassis.pid_swing_set(ez::LEFT_SWING, 60, 100);

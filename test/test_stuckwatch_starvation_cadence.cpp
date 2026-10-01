@@ -99,13 +99,13 @@ Outcome run(Drive& chassis, void (*script)(Drive&, int, bool), bool (*should_tic
 }
 
 constexpr double IN_PER_WALL_TICK = 0.025;  // 2.5 in/s at a 10ms tick -- the audit's own figure; matches the
-                                             // small_error exit constant (1in) set below as the Channel step
+                                            // small_error exit constant (1in) set below as the Channel step
 constexpr double PATH_LENGTH_IN = 24.0;     // long enough to still be under way well past the gap
 
 // A single, real gap in the simulated auto task: ticks normally, freezes for GAP_TICKS starting at
 // GAP_START_TICK, then resumes -- not a steady reduced duty, the shape the audit itself used.
-constexpr int GAP_START_TICK = 75;    // matches the audit's own repro phase
-constexpr int GAP_TICKS = 100;        // a 1000ms gap -- the audit's own primary repro length
+constexpr int GAP_START_TICK = 75;  // matches the audit's own repro phase
+constexpr int GAP_TICKS = 100;      // a 1000ms gap -- the audit's own primary repro length
 bool one_gap(int n) { return !(n >= GAP_START_TICK && n < GAP_START_TICK + GAP_TICKS); }
 
 // 70% duty, steady: skips ticks 0, 1 and 2 of every block of 10 -- a moderate, never-fully-stopping slowdown,

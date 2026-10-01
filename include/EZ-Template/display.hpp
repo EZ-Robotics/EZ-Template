@@ -65,10 +65,14 @@ struct screen_point {
 ///   leaving the driver's own hor_res/ver_res physical.
 inline screen_point screen_touch_rotate(int degrees, int panel_w, int panel_h, int raw_x, int raw_y) {
   switch (degrees) {
-    case 90: return {panel_h - 1 - raw_y, raw_x};
-    case 180: return {panel_w - 1 - raw_x, panel_h - 1 - raw_y};
-    case 270: return {raw_y, panel_w - 1 - raw_x};
-    default: return {raw_x, raw_y};
+    case 90:
+      return {panel_h - 1 - raw_y, raw_x};
+    case 180:
+      return {panel_w - 1 - raw_x, panel_h - 1 - raw_y};
+    case 270:
+      return {raw_y, panel_w - 1 - raw_x};
+    default:
+      return {raw_x, raw_y};
   }
 }
 

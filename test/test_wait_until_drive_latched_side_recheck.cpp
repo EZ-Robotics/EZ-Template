@@ -98,8 +98,7 @@ TEST_CASE("pid_wait_until() DRIVE at final target: a latched side is rechecked, 
   chassis.pid_drive_set(48, 100);
 
   Outcome o = run_wait(chassis, script, 500, [&] { chassis.pid_wait_until(48.0); });
-  MESSAGE("returned=" << o.returned << " passes=" << o.passes << " interfered=" << o.interfered
-                       << " left_error_at_return=" << o.left_error_at_return);
+  MESSAGE("returned=" << o.returned << " passes=" << o.passes << " interfered=" << o.interfered << " left_error_at_return=" << o.left_error_at_return);
 
   REQUIRE(o.returned);
   REQUIRE(o.left_error_at_return > chassis.leftPID.exit.big_error);
@@ -117,8 +116,7 @@ TEST_CASE("pid_wait_quick() DRIVE: a latched side is rechecked, so a later shove
   chassis.pid_drive_set(48, 100);
 
   Outcome o = run_wait(chassis, script, 500, [&] { chassis.pid_wait_quick(); });
-  MESSAGE("returned=" << o.returned << " passes=" << o.passes << " interfered=" << o.interfered
-                       << " left_error_at_return=" << o.left_error_at_return);
+  MESSAGE("returned=" << o.returned << " passes=" << o.passes << " interfered=" << o.interfered << " left_error_at_return=" << o.left_error_at_return);
 
   REQUIRE(o.returned);
   REQUIRE(o.left_error_at_return > chassis.leftPID.exit.big_error);
@@ -143,10 +141,14 @@ void pinned_script() {
   int n = g_pass2;
 
   double left_e;
-  if (n <= 10) left_e = std::fmax(0.0, 20.0 - 2.0 * n);
-  else if (n <= 19) left_e = 0.0;
-  else if (n <= 39) left_e = 0.2 * (n - 19);
-  else left_e = 4.0;
+  if (n <= 10)
+    left_e = std::fmax(0.0, 20.0 - 2.0 * n);
+  else if (n <= 19)
+    left_e = 0.0;
+  else if (n <= 39)
+    left_e = 0.2 * (n - 19);
+  else
+    left_e = 4.0;
   c.leftPID.error = left_e;
   c.leftPID.derivative = n <= 10 ? -2.0 : (n > 19 && n <= 39 ? 0.2 : 0.0);
   DriveTestAccess::refresh(c.leftPID);

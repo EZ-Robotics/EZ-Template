@@ -40,7 +40,7 @@ TEST_CASE("tracking_wheel get_raw() falls back to the last good reading on a PRO
   CHECK(tracker.get_raw() == doctest::Approx(500.0));
   CHECK(tracker.last_read_ok());
 
-  tracker.smart_encoder.fake_position = INT32_MAX;  // PROS_ERR: the read itself failed
+  tracker.smart_encoder.fake_position = INT32_MAX;     // PROS_ERR: the read itself failed
   CHECK(tracker.get_raw() == doctest::Approx(500.0));  // not INT32_MAX
   CHECK_FALSE(tracker.last_read_ok());
 }
@@ -69,8 +69,8 @@ TEST_CASE("tracking_wheel reset() clears the remembered last-good reading along 
   tracker.smart_encoder.fake_position = 500;
   tracker.get_raw();
 
-  tracker.reset();  // zeroes the physical sensor
-  tracker.smart_encoder.fake_position = INT32_MAX;  // then a fault hits before any post-reset read
+  tracker.reset();                                   // zeroes the physical sensor
+  tracker.smart_encoder.fake_position = INT32_MAX;   // then a fault hits before any post-reset read
   CHECK(tracker.get_raw() == doctest::Approx(0.0));  // falls back to the fresh zero, not the stale 500
 }
 

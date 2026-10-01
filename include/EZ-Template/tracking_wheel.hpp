@@ -11,7 +11,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 namespace ez {
 class tracking_wheel {
- public:
+public:
   pros::adi::Encoder adi_encoder;
   pros::Rotation smart_encoder;
 
@@ -118,8 +118,8 @@ class tracking_wheel {
   double ticks_per_inch();
 
   /**
-   * Sets the amount of ticks per revolution of your sensor. 
-   * 
+   * Sets the amount of ticks per revolution of your sensor.
+   *
    * This is useful for custom encoders.
    *
    * \param input
@@ -158,7 +158,7 @@ class tracking_wheel {
    */
   double wheel_diameter_get();
 
- private:
+private:
 #define DRIVE_ADI_ENCODER 2
 #define DRIVE_ROTATION 3
   int IS_TRACKER = 0;

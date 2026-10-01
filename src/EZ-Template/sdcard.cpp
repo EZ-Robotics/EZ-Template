@@ -65,12 +65,10 @@ void print_page() {
     auto_sd_update();
     auton_selector.selected_auton_print();
   } else {
-    for (int i = 0; i < 8; i++)
-      ez::screen_line_clear(i);
+    for (int i = 0; i < 8; i++) ez::screen_line_clear(i);
     screen_print("Page " + std::to_string(auton_selector.auton_page_current + 1) + " - Blank page " + std::to_string(page_blank_current() + 1));
   }
-  if (page_blank_current() < 0)
-    auton_selector.last_auton_page_current = auton_selector.auton_page_current;
+  if (page_blank_current() < 0) auton_selector.last_auton_page_current = auton_selector.auton_page_current;
 }
 
 void page_up() {
@@ -89,9 +87,7 @@ void page_down() {
   print_page();
 }
 
-int page_blank_current() {
-  return (auton_selector.auton_count - amount_of_blank_pages - auton_selector.auton_page_current) * -1;
-}
+int page_blank_current() { return (auton_selector.auton_count - amount_of_blank_pages - auton_selector.auton_page_current) * -1; }
 
 int amount_of_blank_pages = 0;
 bool page_blank_is_on(int page) {
@@ -100,8 +96,7 @@ bool page_blank_is_on(int page) {
     amount_of_blank_pages = page + 1;
     auton_selector.auton_count += amount_of_blank_pages;
   }
-  if (page_blank_current() == page)
-    return true;
+  if (page_blank_current() == page) return true;
   return false;
 }
 
@@ -115,13 +110,9 @@ void page_blank_remove(int page) {
   print_page();
 }
 
-void page_blank_remove_all() {
-  page_blank_remove(amount_of_blank_pages - 1);
-}
+void page_blank_remove_all() { page_blank_remove(amount_of_blank_pages - 1); }
 
-int page_blank_amount() {
-  return amount_of_blank_pages;
-}
+int page_blank_amount() { return amount_of_blank_pages; }
 
 void initialize() {
   // Initialize auto selector and LLEMU
@@ -177,8 +168,7 @@ void limitSwitchTask() {
     else if (left && left->get_new_press())
       ez::as::page_down();
 
-    if (pros::millis() >= 500 && turn_off)
-      limit_switch_task.suspend();
+    if (pros::millis() >= 500 && turn_off) limit_switch_task.suspend();
 
     pros::delay(50);
   }

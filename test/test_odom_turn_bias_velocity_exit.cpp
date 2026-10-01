@@ -43,8 +43,7 @@ void run_one_auto_task_pass(Drive& chassis) {
   test_stub::g_clock.delay_calls_until_stop = 0;
   try {
     DriveTestAccess::ez_auto_task(chassis);
-  } catch (test_stub::StopLoop&) {
-  }
+  } catch (test_stub::StopLoop&) {}
   test_stub::g_clock.delay_calls_until_stop = -1;
 }
 }  // namespace

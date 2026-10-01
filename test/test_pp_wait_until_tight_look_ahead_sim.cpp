@@ -42,9 +42,7 @@ bool run_capped(F&& wait, int max_ticks) {
   return returned;
 }
 
-std::vector<odom> two_leg_path() {
-  return {{{0.0, 24.0, ANGLE_NOT_SET}, fwd, 110}, {{0.0, 48.0, ANGLE_NOT_SET}, fwd, 110}};
-}
+std::vector<odom> two_leg_path() { return {{{0.0, 24.0, ANGLE_NOT_SET}, fwd, 110}, {{0.0, 48.0, ANGLE_NOT_SET}, fwd, 110}}; }
 }  // namespace
 
 TEST_CASE("pid_wait_until_index does not return short of its checkpoint with a tight look ahead") {

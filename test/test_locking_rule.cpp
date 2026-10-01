@@ -33,11 +33,7 @@ namespace fs = std::filesystem;
 
 // Functions that are only ever called with the chassis lock held, and are not themselves inside a guard's scope.
 const std::vector<std::string> kLockedHelpers = {
-    "Drive::check_imu_task(",
-    "Drive::raw_pid_odom_ptp_set(",
-    "Drive::smooth_path(",
-    "Drive::inject_points(",
-    "Drive::raw_pid_odom_pp_set(",
+    "Drive::check_imu_task(", "Drive::raw_pid_odom_ptp_set(", "Drive::smooth_path(", "Drive::inject_points(", "Drive::raw_pid_odom_pp_set(",
 };
 
 // Functions where a PlainGuard is allowed, because the task that runs them is never deleted by PROS: ez_auto_task, and
@@ -167,7 +163,8 @@ std::vector<int> stray_plain_guard_lines(const std::string& text) {
     for (std::size_t j = i + 1; j-- > 0;) {
       const std::string& line = lines[j];
       std::size_t last = line.find_last_not_of(" \t\r");
-      if (!line.empty() && !std::isspace(static_cast<unsigned char>(line[0])) && line[0] != '}' && line[0] != '#' && last != std::string::npos && line[last] == '{') {
+      if (!line.empty() && !std::isspace(static_cast<unsigned char>(line[0])) && line[0] != '}' && line[0] != '#' && last != std::string::npos &&
+          line[last] == '{') {
         header = line;
         break;
       }
@@ -235,12 +232,15 @@ TEST_CASE("rule 2 scanner flags blocking calls made while a guard is held") {
   CHECK(slow_call_lines_under_lock("void f() {\n  KillSafeGuard<pros::Mutex> lock(m);\n  pros::screen::print(pros::E_TEXT_MEDIUM, 1, \"x\");\n}").size() == 1);
   CHECK(slow_call_lines_under_lock("void f() {\n  KillSafeGuard<pros::Mutex> lock(m);\n  pros::lcd::set_text(0, \"x\");\n}").size() == 1);
   CHECK(slow_call_lines_under_lock("void f() {\n  KillSafeGuard<pros::Mutex> lock(m);\n  if (a) {\n    printf(\"x\");\n  }\n}").at(0) == 4);     // nested block
-  CHECK(slow_call_lines_under_lock("void f() {\n  KillSafeGuard<pros::Mutex> lock(m);\n  a = 1;\n}\nvoid g() {\n  printf(\"x\");\n}").empty());  // next function
+  CHECK(slow_call_lines_under_lock("void f() {\n  KillSafeGuard<pros::Mutex> lock(m);\n  a = 1;\n}\nvoid g() {\n  printf(\"x\");\n}").empty());  // next
+                                                                                                                                                 // function
 }
 
 TEST_CASE("rule 2 scanner treats the whole body of a function that runs with the lock held as locked") {
   CHECK(slow_call_lines_under_lock("void Drive::check_imu_task() {\n  printf(\"x\");\n}").at(0) == 2);
-  CHECK(slow_call_lines_under_lock("void Drive::raw_pid_odom_ptp_set(odom imovement, bool slew_on, bool is_boomerang) {\n  a = 1;\n  if (a) {\n    printf(\"x\");\n  }\n}").at(0) == 4);
+  CHECK(slow_call_lines_under_lock(
+            "void Drive::raw_pid_odom_ptp_set(odom imovement, bool slew_on, bool is_boomerang) {\n  a = 1;\n  if (a) {\n    printf(\"x\");\n  }\n}")
+            .at(0) == 4);
   CHECK(slow_call_lines_under_lock("void Drive::check_imu_task() {\n  drive_mutex.print_after_unlock(\"x\");\n}").empty());
   CHECK(slow_call_lines_under_lock("void Drive::check_imu_task() {\n  a = 1;\n}\nvoid g() {\n  printf(\"x\");\n}").empty());  // next function
   CHECK(slow_call_lines_under_lock("void check_imu_task();\nvoid g() {\n  printf(\"x\");\n}").empty());                       // a declaration has no body
@@ -249,19 +249,27 @@ TEST_CASE("rule 2 scanner treats the whole body of a function that runs with the
 
 TEST_CASE("rule 2 scanner accepts print_after_unlock, and blocking calls after the guard's block ends") {
   CHECK(slow_call_lines_under_lock("void f() {\n  KillSafeGuard<pros::Mutex> lock(m);\n  drive_mutex.print_after_unlock(\"x\");\n}").empty());
-  CHECK(slow_call_lines_under_lock("void f() {\n  {\n    KillSafeGuard<pros::Mutex> lock(m);\n    a = 1;\n  }\n  printf(\"done\");\n  pros::delay(10);\n}").empty());
+  CHECK(slow_call_lines_under_lock("void f() {\n  {\n    KillSafeGuard<pros::Mutex> lock(m);\n    a = 1;\n  }\n  printf(\"done\");\n  pros::delay(10);\n}")
+            .empty());
   CHECK(slow_call_lines_under_lock("void f() {\n  printf(\"before\");\n  KillSafeGuard<pros::Mutex> lock(m);\n  a = 1;\n}").empty());
   CHECK(slow_call_lines_under_lock("void f() {\n  KillSafeGuard<pros::Mutex> lock(m);\n  // printf(\"a comment\");\n  a = \"printf(\";\n}").empty());
-  CHECK(slow_call_lines_under_lock("void f() {\n  KillSafeGuard<pros::Mutex> lock(m);\n  a = \"{ unbalanced\";\n  b = 2;\n}\nvoid g() { printf(\"x\"); }").empty());  // braces in strings ignored
-  CHECK(slow_call_lines_under_lock("void f() {\n  KillSafeGuard<pros::Mutex> lock(m);\n  snprintf(buffer, 8, \"x\");\n}").empty());                                   // snprintf formats, it does not print
+  CHECK(slow_call_lines_under_lock("void f() {\n  KillSafeGuard<pros::Mutex> lock(m);\n  a = \"{ unbalanced\";\n  b = 2;\n}\nvoid g() { printf(\"x\"); }")
+            .empty());  // braces in strings ignored
+  CHECK(slow_call_lines_under_lock("void f() {\n  KillSafeGuard<pros::Mutex> lock(m);\n  snprintf(buffer, 8, \"x\");\n}").empty());  // snprintf formats, it
+                                                                                                                                     // does not print
 }
 
 TEST_CASE("rule 3 scanner allows a PlainGuard only in the functions whose task PROS never deletes") {
   CHECK(stray_plain_guard_lines("void f() {\n  PlainGuard<pros::Mutex> guard(m);\n}").at(0) == 2);
   CHECK(stray_plain_guard_lines("void Drive::odom_x_set(double x) {\n  ez::PlainGuard<pros::RecursiveMutex> lock(drive_mutex);\n}").size() == 1);
   CHECK(stray_plain_guard_lines("void screen_line_publish(int line, std::string text) {\n  PlainGuard<pros::Mutex> guard(line_mutex());\n}").size() == 1);
-  CHECK(stray_plain_guard_lines("void Drive::ez_auto_task() {\n  while (true) {\n    {\n      ez::PlainGuard<pros::RecursiveMutex> lock(drive_mutex);\n    }\n  }\n}").empty());
-  CHECK(stray_plain_guard_lines("void lines_replay(lv_indev_t* indev, lv_indev_data_t* data) {\n  for (;;) {\n    {\n      PlainGuard<pros::Mutex> guard(line_mutex());\n    }\n  }\n}").empty());
+  CHECK(stray_plain_guard_lines(
+            "void Drive::ez_auto_task() {\n  while (true) {\n    {\n      ez::PlainGuard<pros::RecursiveMutex> lock(drive_mutex);\n    }\n  }\n}")
+            .empty());
+  CHECK(
+      stray_plain_guard_lines(
+          "void lines_replay(lv_indev_t* indev, lv_indev_data_t* data) {\n  for (;;) {\n    {\n      PlainGuard<pros::Mutex> guard(line_mutex());\n    }\n  }\n}")
+          .empty());
   // A PlainGuard in the next function does not borrow the allowance.
   CHECK(stray_plain_guard_lines("void Drive::ez_auto_task() {\n}\nvoid other() {\n  PlainGuard<pros::Mutex> guard(m);\n}").at(0) == 4);
   CHECK(stray_plain_guard_lines("void f() {\n  KillSafeGuard<pros::Mutex> guard(m);\n}").empty());

@@ -21,29 +21,22 @@ void Drive::pid_swing_constants_set(double p, double i, double d, double p_start
   pid_swing_constants_backward_set(0.0, 0.0, 0.0, 0.0);
   fwd_rev_swingPID.constants_set(p, i, d, p_start_i);
 }
-void Drive::pid_swing_constants_forward_set(double p, double i, double d, double p_start_i) {
-  forward_swingPID.constants_set(p, i, d, p_start_i);
-}
-void Drive::pid_swing_constants_backward_set(double p, double i, double d, double p_start_i) {
-  backward_swingPID.constants_set(p, i, d, p_start_i);
-}
+void Drive::pid_swing_constants_forward_set(double p, double i, double d, double p_start_i) { forward_swingPID.constants_set(p, i, d, p_start_i); }
+void Drive::pid_swing_constants_backward_set(double p, double i, double d, double p_start_i) { backward_swingPID.constants_set(p, i, d, p_start_i); }
 // The directional getters return what pid_swing_set() will use for that direction: the directional constants
 // if they were set, otherwise the ones from the plain setter
 PID::Constants Drive::pid_swing_constants_forward_get() {
-  if (!forward_swingPID.constants_set_check() && fwd_rev_swingPID.constants_set_check())
-    return fwd_rev_swingPID.constants_get();
+  if (!forward_swingPID.constants_set_check() && fwd_rev_swingPID.constants_set_check()) return fwd_rev_swingPID.constants_get();
   return forward_swingPID.constants_get();
 }
 PID::Constants Drive::pid_swing_constants_backward_get() {
-  if (!backward_swingPID.constants_set_check() && fwd_rev_swingPID.constants_set_check())
-    return fwd_rev_swingPID.constants_get();
+  if (!backward_swingPID.constants_set_check() && fwd_rev_swingPID.constants_set_check()) return fwd_rev_swingPID.constants_get();
   return backward_swingPID.constants_get();
 }
 PID::Constants Drive::pid_swing_constants_get() {
   // The plain setter zeroes forward/backward and stores the constants in fwd_rev,
   // so return those rather than the zeros they were replaced with
-  if (!forward_swingPID.constants_set_check() && !backward_swingPID.constants_set_check())
-    return fwd_rev_swingPID.constants_get();
+  if (!forward_swingPID.constants_set_check() && !backward_swingPID.constants_set_check()) return fwd_rev_swingPID.constants_get();
 
   auto fwd_const = pid_swing_constants_forward_get();
   auto rev_const = pid_swing_constants_backward_get();
@@ -184,9 +177,7 @@ void Drive::pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed,
 // Set turn PID with only slew
 /////
 // Absolute
-void Drive::pid_swing_set(e_swing type, double target, int speed, bool slew_on) {
-  pid_swing_set(type, target, speed, 0, pid_swing_behavior_get(), slew_on);
-}
+void Drive::pid_swing_set(e_swing type, double target, int speed, bool slew_on) { pid_swing_set(type, target, speed, 0, pid_swing_behavior_get(), slew_on); }
 void Drive::pid_swing_set(e_swing type, ez::QAngle p_target, int speed, bool slew_on) {
   double target = p_target.convert(ez::degree);  // Convert unit to degree
   pid_swing_set(type, target, speed, slew_on);
@@ -331,8 +322,8 @@ void Drive::swing_set_internal(e_swing type, double target, int speed, int oppos
 
   // Set constants according to the robots direction
 
-  PID *new_drive_pid;
-  PID *new_swing_pid;
+  PID* new_drive_pid;
+  PID* new_swing_pid;
   slew::Constants slew_consts;
 
   if (direction == -1) {
@@ -350,10 +341,8 @@ void Drive::swing_set_internal(e_swing type, double target, int speed, int oppos
   }
 
   // Prioritize custom fwd/rev constants.  Otherwise, use the same for fwd and rev
-  if (fwd_rev_drivePID.constants_set_check() && (!new_drive_pid->constants_set_check()))
-    new_drive_pid = &fwd_rev_drivePID;
-  if (fwd_rev_swingPID.constants_set_check() && !new_swing_pid->constants_set_check())
-    new_swing_pid = &fwd_rev_swingPID;
+  if (fwd_rev_drivePID.constants_set_check() && (!new_drive_pid->constants_set_check())) new_drive_pid = &fwd_rev_drivePID;
+  if (fwd_rev_swingPID.constants_set_check() && !new_swing_pid->constants_set_check()) new_swing_pid = &fwd_rev_swingPID;
 
   PID::Constants pid_drive_consts = new_drive_pid->constants_get();
   PID::Constants pid_swing_consts = new_swing_pid->constants_get();

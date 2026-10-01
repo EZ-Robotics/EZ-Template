@@ -23,11 +23,11 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include "pros/motors.h"
 #include "pros/rtos.hpp"
 
-//using namespace ez;
+// using namespace ez;
 
 namespace ez {
 class Drive {
- public:
+public:
   /**
    * Joysticks will return 0 when they are within this number.
    *
@@ -3409,7 +3409,8 @@ class Drive {
    *        exit that can catch wheels spinning free (lifted or
    *        high-centered), which the main sensor and mA_timeout both miss -- turn it on if that case matters more to you than early exits on a slow cruise.
    */
-  void pid_odom_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = false);
+  void pid_odom_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time,
+                                         int p_mA_timeout, bool use_imu = false);
 
   /**
    * Set's constants for odom turning exit conditions.
@@ -3433,7 +3434,8 @@ class Drive {
    *        exit that can catch wheels spinning free (lifted or
    *        high-centered), which the main sensor and mA_timeout both miss -- turn it on if that case matters more to you than early exits on a slow cruise.
    */
-  void pid_odom_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = false);
+  void pid_odom_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time,
+                                        int p_mA_timeout, bool use_imu = false);
 
   /**
    * Set's constants for odom turning exit conditions.
@@ -3457,7 +3459,8 @@ class Drive {
    *        exit that can catch wheels spinning free (lifted or
    *        high-centered), which the main sensor and mA_timeout both miss -- turn it on if that case matters more to you than early exits on a slow cruise.
    */
-  void pid_odom_turn_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error, ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = false);
+  void pid_odom_turn_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error,
+                                        ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = false);
 
   /**
    * Set's constants for odom driving exit conditions.
@@ -3481,7 +3484,8 @@ class Drive {
    *        exit that can catch wheels spinning free (lifted or
    *        high-centered), which the main sensor and mA_timeout both miss -- turn it on if that case matters more to you than early exits on a slow cruise.
    */
-  void pid_odom_drive_exit_condition_set(ez::QTime p_small_exit_time, ez::QLength p_small_error, ez::QTime p_big_exit_time, ez::QLength p_big_error, ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = false);
+  void pid_odom_drive_exit_condition_set(ez::QTime p_small_exit_time, ez::QLength p_small_error, ez::QTime p_big_exit_time, ez::QLength p_big_error,
+                                         ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = false);
 
   /**
    * Set's constants for drive exit conditions.
@@ -3505,7 +3509,8 @@ class Drive {
    *        exit that can catch wheels spinning free (lifted or
    *        high-centered), which the main sensor and mA_timeout both miss -- turn it on if that case matters more to you than early exits on a slow cruise.
    */
-  void pid_drive_exit_condition_set(ez::QTime p_small_exit_time, ez::QLength p_small_error, ez::QTime p_big_exit_time, ez::QLength p_big_error, ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = false);
+  void pid_drive_exit_condition_set(ez::QTime p_small_exit_time, ez::QLength p_small_error, ez::QTime p_big_exit_time, ez::QLength p_big_error,
+                                    ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = false);
 
   /**
    * Set's constants for turn exit conditions.
@@ -3529,7 +3534,8 @@ class Drive {
    *        exit that can catch wheels spinning free (lifted or
    *        high-centered), which the main sensor and mA_timeout both miss -- turn it on if that case matters more to you than early exits on a slow cruise.
    */
-  void pid_turn_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error, ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = false);
+  void pid_turn_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error,
+                                   ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = false);
 
   /**
    * Set's constants for swing exit conditions.
@@ -3553,7 +3559,8 @@ class Drive {
    *        exit that can catch wheels spinning free (lifted or
    *        high-centered), which the main sensor and mA_timeout both miss -- turn it on if that case matters more to you than early exits on a slow cruise.
    */
-  void pid_swing_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error, ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = false);
+  void pid_swing_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error,
+                                    ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = false);
 
   /**
    * Set's constants for drive exit conditions.
@@ -3577,7 +3584,8 @@ class Drive {
    *        exit that can catch wheels spinning free (lifted or
    *        high-centered), which the main sensor and mA_timeout both miss -- turn it on if that case matters more to you than early exits on a slow cruise.
    */
-  void pid_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = false);
+  void pid_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time,
+                                    int p_mA_timeout, bool use_imu = false);
 
   /**
    * Set's constants for turn exit conditions.
@@ -3601,7 +3609,8 @@ class Drive {
    *        exit that can catch wheels spinning free (lifted or
    *        high-centered), which the main sensor and mA_timeout both miss -- turn it on if that case matters more to you than early exits on a slow cruise.
    */
-  void pid_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = false);
+  void pid_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time,
+                                   int p_mA_timeout, bool use_imu = false);
 
   /**
    * Set's constants for swing exit conditions.
@@ -3625,7 +3634,8 @@ class Drive {
    *        exit that can catch wheels spinning free (lifted or
    *        high-centered), which the main sensor and mA_timeout both miss -- turn it on if that case matters more to you than early exits on a slow cruise.
    */
-  void pid_swing_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = false);
+  void pid_swing_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time,
+                                    int p_mA_timeout, bool use_imu = false);
 
   /**
    * Returns current TICK_PER_INCH.
@@ -3776,26 +3786,24 @@ class Drive {
   /**
    * Vector used for a simplified PID Tuner
    */
-  std::vector<const_and_name> pid_tuner_pids = {
-      {"Drive PID Constants", &fwd_rev_drivePID.constants},
-      {"Odom Angular PID Constants", &odom_angularPID.constants},
-      {"Boomerang Angular PID Constants", &boomerangPID.constants},
-      {"Heading PID Constants", &headingPID.constants},
-      {"Turn PID Constants", &turnPID.constants},
-      {"Swing PID Constants", &fwd_rev_swingPID.constants}};
+  std::vector<const_and_name> pid_tuner_pids = {{"Drive PID Constants", &fwd_rev_drivePID.constants},
+                                                {"Odom Angular PID Constants", &odom_angularPID.constants},
+                                                {"Boomerang Angular PID Constants", &boomerangPID.constants},
+                                                {"Heading PID Constants", &headingPID.constants},
+                                                {"Turn PID Constants", &turnPID.constants},
+                                                {"Swing PID Constants", &fwd_rev_swingPID.constants}};
 
   /**
    * Vector used for the full PID Tuner
    */
-  std::vector<const_and_name> pid_tuner_full_pids = {
-      {"Drive Forward PID Constants", &forward_drivePID.constants},
-      {"Drive Backward PID Constants", &backward_drivePID.constants},
-      {"Odom Angular PID Constants", &odom_angularPID.constants},
-      {"Boomerang Angular PID Constants", &boomerangPID.constants},
-      {"Heading PID Constants", &headingPID.constants},
-      {"Turn PID Constants", &turnPID.constants},
-      {"Swing Forward PID Constants", &forward_swingPID.constants},
-      {"Swing Backward PID Constants", &backward_swingPID.constants}};
+  std::vector<const_and_name> pid_tuner_full_pids = {{"Drive Forward PID Constants", &forward_drivePID.constants},
+                                                     {"Drive Backward PID Constants", &backward_drivePID.constants},
+                                                     {"Odom Angular PID Constants", &odom_angularPID.constants},
+                                                     {"Boomerang Angular PID Constants", &boomerangPID.constants},
+                                                     {"Heading PID Constants", &headingPID.constants},
+                                                     {"Turn PID Constants", &turnPID.constants},
+                                                     {"Swing Forward PID Constants", &forward_swingPID.constants},
+                                                     {"Swing Backward PID Constants", &backward_swingPID.constants}};
 
   /**
    * Sets the max speed for user control.
@@ -3848,7 +3856,7 @@ class Drive {
    */
   void odom_tracking_set(std::function<void(void)> tracking_task);
 
- private:
+private:
   // Grants the host test suite (test/) access to private state and task
   // bodies (e.g. ez_auto_task(), pp_task()) so motions can be driven and
   // asserted on directly, since pros::Task never actually runs them here.
@@ -3883,14 +3891,14 @@ class Drive {
   // motion, e.g. a chained call's own phase 1) is never touched, so a real stuck/interfered result for this
   // motion survives a later, clean phase of the very same wait.
   class InterferedScope {
-   public:
+  public:
     explicit InterferedScope(Drive& d);
     ~InterferedScope();
     InterferedScope(const InterferedScope&) = delete;
     InterferedScope& operator=(const InterferedScope&) = delete;
     void mark();
 
-   private:
+  private:
     Drive& d_;
     std::uint32_t generation_;
   };

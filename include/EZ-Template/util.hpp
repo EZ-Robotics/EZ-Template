@@ -53,62 +53,74 @@ void screen_print(std::string text, int line = 0);
 /**
  * Enum for split and single stick arcade.
  */
-enum e_type { SINGLE = 0,
-              SPLIT = 1 };
+enum e_type {
+  SINGLE = 0,
+  SPLIT = 1
+};
 
 /**
  * Enum for which side of the drive a swing is run on (LEFT_SWING or RIGHT_SWING).
  */
-enum e_swing { LEFT_SWING = 0,
-               RIGHT_SWING = 1 };
+enum e_swing {
+  LEFT_SWING = 0,
+  RIGHT_SWING = 1
+};
 
 /**
  * Enum for PID::exit_condition outputs.
  */
-enum exit_output { RUNNING = 1,
-                   SMALL_EXIT = 2,
-                   BIG_EXIT = 3,
-                   VELOCITY_EXIT = 4,
-                   mA_EXIT = 5,
-                   ERROR_NO_CONSTANTS = 6 };
+enum exit_output {
+  RUNNING = 1,
+  SMALL_EXIT = 2,
+  BIG_EXIT = 3,
+  VELOCITY_EXIT = 4,
+  mA_EXIT = 5,
+  ERROR_NO_CONSTANTS = 6
+};
 
 /**
  * Enum for the drive's current mode: which movement, if any, is running.
  */
-enum e_mode { DISABLE = 0,
-              SWING = 1,
-              TURN = 2,
-              TURN_TO_POINT = 3,
-              DRIVE = 4,
-              POINT_TO_POINT = 5,
-              PURE_PURSUIT = 6 };
+enum e_mode {
+  DISABLE = 0,
+  SWING = 1,
+  TURN = 2,
+  TURN_TO_POINT = 3,
+  DRIVE = 4,
+  POINT_TO_POINT = 5,
+  PURE_PURSUIT = 6
+};
 
 /**
  * Enum for drive directions.
  */
-enum drive_directions { FWD = 0,
-                        FORWARD = FWD,
-                        fwd = FWD,
-                        forward = FWD,
-                        REV = 1,
-                        REVERSE = REV,
-                        rev = REV,
-                        reverse = REV };
+enum drive_directions {
+  FWD = 0,
+  FORWARD = FWD,
+  fwd = FWD,
+  forward = FWD,
+  REV = 1,
+  REVERSE = REV,
+  rev = REV,
+  reverse = REV
+};
 
 /**
  * Enum for turn types.
  */
-enum e_angle_behavior { raw = 0,
-                        left_turn = 1,
-                        LEFT_TURN = 1,
-                        counterclockwise = 1,
-                        ccw = 1,
-                        right_turn = 2,
-                        RIGHT_TURN = 2,
-                        clockwise = 2,
-                        cw = 2,
-                        shortest = 3,
-                        longest = 4 };
+enum e_angle_behavior {
+  raw = 0,
+  left_turn = 1,
+  LEFT_TURN = 1,
+  counterclockwise = 1,
+  ccw = 1,
+  right_turn = 2,
+  RIGHT_TURN = 2,
+  clockwise = 2,
+  cw = 2,
+  shortest = 3,
+  longest = 4
+};
 
 const double ANGLE_NOT_SET = 0.0000000000000000000001;
 const ez::QAngle p_ANGLE_NOT_SET = 0.0000000000000000000001_deg;

@@ -20,7 +20,11 @@
 using namespace ez;
 
 namespace {
-enum Kind { DRIVE_K, TURN_K, SWING_K };
+enum Kind {
+  DRIVE_K,
+  TURN_K,
+  SWING_K
+};
 
 Drive make_chassis() {
   test_stub::reset_all();
@@ -54,17 +58,29 @@ void set_exits(Drive& c) {
   // Small exit needs to hold 100 ms inside 0.5; big exit disabled; velocity window 500 ms. A hover at
   // ~1.0 is outside small, inside big (3.0), and never stops moving, so it can only end via stuck.
   switch (g_kind) {
-    case DRIVE_K: c.pid_drive_exit_condition_set(100, 0.5, 0, 3.0, 500, 0); break;
-    case TURN_K: c.pid_turn_exit_condition_set(100, 0.5, 0, 3.0, 500, 0); break;
-    case SWING_K: c.pid_swing_exit_condition_set(100, 0.5, 0, 3.0, 500, 0); break;
+    case DRIVE_K:
+      c.pid_drive_exit_condition_set(100, 0.5, 0, 3.0, 500, 0);
+      break;
+    case TURN_K:
+      c.pid_turn_exit_condition_set(100, 0.5, 0, 3.0, 500, 0);
+      break;
+    case SWING_K:
+      c.pid_swing_exit_condition_set(100, 0.5, 0, 3.0, 500, 0);
+      break;
   }
 }
 
 void start_motion(Drive& c) {
   switch (g_kind) {
-    case DRIVE_K: c.pid_drive_set(100, 100); break;
-    case TURN_K: c.pid_turn_set(170, 100); break;
-    case SWING_K: c.pid_swing_set(ez::LEFT_SWING, 170, 100); break;
+    case DRIVE_K:
+      c.pid_drive_set(100, 100);
+      break;
+    case TURN_K:
+      c.pid_turn_set(170, 100);
+      break;
+    case SWING_K:
+      c.pid_swing_set(ez::LEFT_SWING, 170, 100);
+      break;
   }
 }
 

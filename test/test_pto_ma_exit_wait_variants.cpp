@@ -35,7 +35,11 @@ Drive make_drive(const sim::SimArchetype& a) {
 
 // Which sides have their last motor handed to the PTO. One side only matters: with both, the left and right lists agree and
 // a wait that unfilters just one of them is covered for by the other.
-enum class Pto { Both, LeftOnly, RightOnly };
+enum class Pto {
+  Both,
+  LeftOnly,
+  RightOnly
+};
 const Pto kPtos[] = {Pto::Both, Pto::LeftOnly, Pto::RightOnly};
 
 struct Rig {
@@ -112,8 +116,10 @@ TEST_CASE("a stalled PTO'd intake does not end an odom pid_wait_until(distance) 
   for (bool as_path : {false, true}) {
     for (Pto pto : kPtos) {
       Rig r(sim::archetype_light_fast(), pto);
-      if (as_path) path(r.chassis);
-      else point(r.chassis);
+      if (as_path)
+        path(r.chassis);
+      else
+        point(r.chassis);
       bool returned = run_capped([&] { r.chassis.pid_wait_until(20_in); }, kBudget);
       CAPTURE(as_path);
       CAPTURE((int)pto);
@@ -131,8 +137,10 @@ TEST_CASE("a stalled PTO'd intake does not end an odom pid_wait_until_point earl
   for (bool as_path : {false, true}) {
     for (Pto pto : kPtos) {
       Rig r(sim::archetype_light_fast(), pto);
-      if (as_path) path(r.chassis);
-      else point(r.chassis);
+      if (as_path)
+        path(r.chassis);
+      else
+        point(r.chassis);
       bool returned = run_capped([&] { r.chassis.pid_wait_until_point({20.0, 20.0}); }, kBudget);
       CAPTURE(as_path);
       CAPTURE((int)pto);
@@ -153,8 +161,10 @@ TEST_CASE("a stalled PTO'd intake does not mark a pid_wait_until_point on the mo
   for (bool as_path : {false, true}) {
     for (Pto pto : kPtos) {
       Rig r(sim::archetype_light_fast(), pto);
-      if (as_path) path(r.chassis);
-      else point(r.chassis);
+      if (as_path)
+        path(r.chassis);
+      else
+        point(r.chassis);
       bool returned = run_capped([&] { r.chassis.pid_wait_until_point({36.0, 36.0}); }, kBudget);
       CAPTURE(as_path);
       CAPTURE((int)pto);
@@ -184,8 +194,10 @@ TEST_CASE("a stalled PTO'd intake does not end a swing's or a turn's pid_wait_un
   for (bool swing : {false, true}) {
     for (Pto pto : kPtos) {
       Rig r(sim::archetype_light_fast(), pto);
-      if (swing) r.chassis.pid_swing_set(ez::LEFT_SWING, 90_deg, 90);
-      else r.chassis.pid_turn_set(90_deg, 90);
+      if (swing)
+        r.chassis.pid_swing_set(ez::LEFT_SWING, 90_deg, 90);
+      else
+        r.chassis.pid_turn_set(90_deg, 90);
       bool returned = run_capped([&] { r.chassis.pid_wait_until(45_deg); }, kBudget);
       CAPTURE(swing);
       CAPTURE((int)pto);

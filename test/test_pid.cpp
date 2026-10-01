@@ -226,7 +226,7 @@ TEST_CASE("PID BIG_EXIT does not accumulate on a stale error with no fresh compu
   PID pid;
   pid.exit_condition_set(90, 1.0, 250, 3.0);
 
-  pid.compute_error(2.0, 0.0);  // outside small_error (1), inside big_error (3) -- one real compute
+  pid.compute_error(2.0, 0.0);               // outside small_error (1), inside big_error (3) -- one real compute
   REQUIRE(pid.exit_condition() == RUNNING);  // first poll is fresh, but 1 pass is nowhere near 250ms
 
   // No further compute lands from here on -- ez_auto_task is dead. Comfortably more than the 25
@@ -307,8 +307,8 @@ TEST_CASE("PID velocity timer clears on a single fresh moving tick, no debounce"
     CHECK(pid.exit_condition() == RUNNING);  // k=40
   }
 
-  pid.compute_error(10.0, 2.0);             // a single fresh moving tick
-  CHECK(pid.exit_condition() == RUNNING);   // cleared at once: k=0, not "not yet cleared"
+  pid.compute_error(10.0, 2.0);            // a single fresh moving tick
+  CHECK(pid.exit_condition() == RUNNING);  // cleared at once: k=0, not "not yet cleared"
 
   // Proof it was actually cleared, not just still under threshold by coincidence: a fresh countdown
   // from here takes the full 5 stationary passes again, not just 1 more.
@@ -498,9 +498,9 @@ TEST_CASE("PID velocity exit: a mechanism moving above the stopped floor every p
   double real_position = 1.0;
   for (int pass = 1; pass <= 20; pass++) {
     INFO("pass ", pass);
-    real_position += 0.1;                        // a real, fresh jump -- comfortably above the floor
+    real_position += 0.1;  // a real, fresh jump -- comfortably above the floor
     pid.compute_error(10.0, real_position);
-    pid.compute_error(10.0, real_position);       // immediately re-read the same value before the poll
+    pid.compute_error(10.0, real_position);  // immediately re-read the same value before the poll
     CHECK(pid.exit_condition() == RUNNING);
   }
 }
@@ -571,9 +571,9 @@ TEST_CASE("PID velocity timer does not double-count one real stalled sample acro
     CHECK(pid.exit_condition() == RUNNING);  // k=40
   }
 
-  dither_tick(pid, 10.0, toggle, 1.0);       // one more real, fresh, stalled sample: k reaches 50
-  CHECK(pid.exit_condition() == RUNNING);    // 1st check of it: credited once, k=50, not yet >50
-  CHECK(pid.exit_condition() == RUNNING);    // 2nd check, no new compute since: must not credit again
+  dither_tick(pid, 10.0, toggle, 1.0);     // one more real, fresh, stalled sample: k reaches 50
+  CHECK(pid.exit_condition() == RUNNING);  // 1st check of it: credited once, k=50, not yet >50
+  CHECK(pid.exit_condition() == RUNNING);  // 2nd check, no new compute since: must not credit again
 
   dither_tick(pid, 10.0, toggle, 1.0);
   CHECK(pid.exit_condition() == VELOCITY_EXIT);  // one more fresh credit: k=60, now fires
