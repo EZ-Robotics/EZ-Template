@@ -238,6 +238,17 @@ class SimRobot {
     }
   }
 
+  // Zeroes both wheels' encoder readings without moving the robot: what drive_sensor_reset()'s tare_position() does on a real
+  // motor. The sim keeps its own wheel positions and writes them to the motors every tick, so a tare made only on the motor
+  // is undone one tick later; a test that resets sensors mid motion calls this right after.
+  void tare_encoders() {
+    left_.position_in = 0.0;
+    right_.position_in = 0.0;
+    for (auto* side : {&drive_.left_motors, &drive_.right_motors})
+      for (auto& m : *side)
+        if (!drive_.pto_check(m)) m.fake().position = 0.0;
+  }
+
   // --- Physical interference, all off by default. Times are sim milliseconds (now_ms(), one DELAY_TIME per tick). ---
 
   double now_ms() const { return sim_ms_; }
