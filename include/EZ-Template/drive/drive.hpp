@@ -3905,7 +3905,6 @@ class Drive {
   pose turn_to_point_target = {0.0, 0.0, 0.0};
   void turn_set_internal(double target, int speed, e_angle_behavior behavior, bool slew_on);
   double odom_imu_start = 0.0;
-  int past_target = 0;
   double SPACING = 0.5;
   double LOOK_AHEAD = 7.0;
   double dlead = 0.5;

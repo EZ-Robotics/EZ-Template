@@ -76,7 +76,7 @@ TEST_CASE("pushed 6 in back mid motion, the derivative is negative while it move
 // when the target was behind the robot the old sign read as "already past", and drifting away grew the power until the robot
 // ran off (8 to 27 in away on 44 of 576 starts here). Where the robot ends is measured after the wait and 1.5 s more of the
 // motion holding it, since a wait can return while the robot is still inside its exit band and on its way out.
-TEST_CASE("a motion set with the target 0.01 to 0.099 in from a drifting robot does not run away" * doctest::should_fail()) {
+TEST_CASE("a motion set with the target 0.01 to 0.099 in from a drifting robot does not run away") {
   for (double theta : {0.0, 37.0}) {
     for (double drift : {2.0, 5.0}) {
       for (double gap : {0.01, 0.099}) {

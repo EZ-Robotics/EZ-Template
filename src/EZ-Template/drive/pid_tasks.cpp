@@ -206,14 +206,15 @@ void Drive::ptp_task() {
   double temp_target = is_past_target(odom_target, odom_pose_get());        // Use this instead of distance formula to fix impossible movements
   int dir = (current_drive_direction == REV ? -1 : 1);                      // If we're going backwards, add a -1
 
-  // xyPID's sensor moves by how much the robot's own movement this pass changed the error below: the error is
-  // measured at this pass's pose and at last pass's pose, both against this pass's target.  A target that moved
-  // (the next pure pursuit point, a boomerang carrot, a new motion) is not movement and never shows up here, and
-  // neither does where the robot is on the field.  So xyPID's derivative is the robot's real speed toward the target.
-  auto xy_error_at = [&](double past) {
-    int flipped = util::sgn(past) != util::sgn(past_target) ? -1 : 1;  // Check if we've flipped directions to what we started
-    return fabs(past) * dir * flipped;
-  };
+  // xyPID's error is the distance left to the target, negative once the robot is past it.  is_past_target() is that
+  // distance with the sign flipped, forwards or backwards: a motion always starts short of its target, so what it
+  // returns starts negative and only goes positive once the robot has passed the target.
+  //
+  // xyPID's sensor moves by how much the robot's own movement this pass changed that error: it is measured at this
+  // pass's pose and at last pass's pose, both against this pass's target.  A target that moved (the next pure
+  // pursuit point, a boomerang carrot, a new motion) is not movement and never shows up here, and neither does where
+  // the robot is on the field.  So xyPID's derivative is the robot's real speed toward the target.
+  auto xy_error_at = [&](double past) { return -dir * past; };
   pose last_pose = {odom_x_get() - xy_pose_delta.x, odom_y_get() - xy_pose_delta.y, odom_theta_get()};
   xy_delta_fake = -(xy_error_at(temp_target) - xy_error_at(is_past_target(odom_target, last_pose)));
   if (!std::isfinite(xy_delta_fake)) xy_delta_fake = 0.0;  // a non-finite pose must not poison the sensor for good
