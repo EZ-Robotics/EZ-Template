@@ -760,6 +760,8 @@ Sets a new threshold for the joystick.
 
 The joysticks will not return a value if they are within this.   
 
+The default is 3.  A controller's stick at rest often reads 1 or 2 instead of 0, and active brake only runs while both sticks read exactly 0, so with a threshold of 0 those sticks keep active brake off.  Set this to 0 to pass every stick value through, including 1 and 2.   
+
 `threshold` new threshold  
 <Tabs
   groupId="opcontrol_joystick_threshold_set"

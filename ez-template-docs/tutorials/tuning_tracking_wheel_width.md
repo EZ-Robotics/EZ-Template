@@ -17,7 +17,7 @@ Track width is calculated at your tracking wheel by default.  Modifying tracking
 
 Modifying width on left/right trackers will move your tracking center to the left/right.  
  - If this isn't accurate, the robot may behave differently when moving to the right vs moving to the left
- - This only applies when you have just one of the two.  If you have both a left and a right tracker, EZ-Template averages them and ignores their widths, so there's nothing to tune on that axis
+ - With both a left and a right tracker, EZ-Template uses each tracker's own width and averages the two resulting positions.  Set both widths to what they really are and they stay accurate even when the two trackers sit different distances from the center
 
 Modifying width on front/back trackers will move your tracking center forwards and backwards.  
 - If this isn't accurate, the robot's XY position will change during turns and will make where the robot currently is unintuitive
@@ -29,24 +29,29 @@ If you aren't using tracking wheels, you don't need any offsets!
 :::
 
 ## measure_offsets()
-As of 3.2.0, the example project ships with an autonomous routine called `measure_offsets()` that will turn the robot 10 times and calculate out what your offsets should be.    
+As of 3.2.0, the example project ships with an autonomous routine called `measure_offsets()` that will turn the robot 10 times (alternating directions) and calculate out what your offsets should be.  It prints each offset to the brain screen and the terminal, and tells you when a vertical tracker looks reversed, in which case flip the sign of that tracker's port and run it again.    
 ```cpp
 ///
 // Calculate the offsets of your tracking wheels
+//
+// Turns the robot both ways and works out how far each tracking wheel is from the center of the robot.
+// Type the offsets it prints into your tracking wheel constructors.  If it says a tracker looks reversed,
+// make that tracker's port negative (or positive if it already is negative) and run this again.
 ///
 void measure_offsets() {
   // Number of times to test
   int iterations = 10;
 
-  // Our final offsets
+  // Our final offsets.  These keep their sign, which says if a tracker is wired the right way.
   double l_offset = 0.0, r_offset = 0.0, b_offset = 0.0, f_offset = 0.0;
+  int turns_measured = 0;
 
   // Reset all trackers if they exist
   if (chassis.odom_tracker_left != nullptr) chassis.odom_tracker_left->reset();
   if (chassis.odom_tracker_right != nullptr) chassis.odom_tracker_right->reset();
   if (chassis.odom_tracker_back != nullptr) chassis.odom_tracker_back->reset();
   if (chassis.odom_tracker_front != nullptr) chassis.odom_tracker_front->reset();
-  
+
   for (int i = 0; i < iterations; i++) {
     // Reset pid targets and get ready for running an auton
     chassis.pid_targets_reset();
@@ -54,16 +59,19 @@ void measure_offsets() {
     chassis.drive_sensor_reset();
     chassis.drive_brake_set(MOTOR_BRAKE_HOLD);
     chassis.odom_xyt_set(0_in, 0_in, 0_deg);
-    double imu_start = chassis.odom_theta_get();
-    double target = i % 2 == 0 ? 90 : 270;  // Switch the turn target every run from 270 to 90
+    double imu_start = chassis.drive_angle_get();
+    double target = i % 2 == 0 ? 90 : -90;  // Switch the turn direction every run
 
     // Turn to target at half power
     chassis.pid_turn_set(target, 63, ez::raw);
     chassis.pid_wait();
     pros::delay(250);
 
-    // Calculate delta in angle
-    double t_delta = ez::util::to_rad(fabs(ez::util::wrap_angle(chassis.odom_theta_get() - imu_start)));
+    // Calculate delta in angle.  This is signed (clockwise is positive) and is not wrapped, because the
+    // trackers saw the whole turn, not the angle it wraps to.  It is read from the imu, odom_theta_get() only
+    // catches up with a reset when the tracking task next runs.
+    double t_delta = ez::util::to_rad(chassis.drive_angle_get() - imu_start);
+    if (fabs(t_delta) < ez::util::to_rad(10.0)) continue;  // The robot did not turn, nothing to measure
 
     // Calculate delta in sensor values that exist
     double l_delta = chassis.odom_tracker_left != nullptr ? chassis.odom_tracker_left->get() : 0.0;
@@ -76,19 +84,46 @@ void measure_offsets() {
     r_offset += r_delta / t_delta;
     b_offset += b_delta / t_delta;
     f_offset += f_delta / t_delta;
+    turns_measured++;
+  }
+
+  if (turns_measured == 0) {
+    printf("measure_offsets: the robot never turned, nothing was measured\n");
+    ez::screen_print("The robot never turned", 0);
+    return;
   }
 
   // Average all offsets
-  l_offset /= iterations;
-  r_offset /= iterations;
-  b_offset /= iterations;
-  f_offset /= iterations;
+  l_offset /= turns_measured;
+  r_offset /= turns_measured;
+  b_offset /= turns_measured;
+  f_offset /= turns_measured;
 
-  // Set new offsets to trackers that exist
-  if (chassis.odom_tracker_left != nullptr) chassis.odom_tracker_left->distance_to_center_set(l_offset);
-  if (chassis.odom_tracker_right != nullptr) chassis.odom_tracker_right->distance_to_center_set(r_offset);
-  if (chassis.odom_tracker_back != nullptr) chassis.odom_tracker_back->distance_to_center_set(b_offset);
-  if (chassis.odom_tracker_front != nullptr) chassis.odom_tracker_front->distance_to_center_set(f_offset);
+  // Turning clockwise, a vertical tracker on the left counts up and one on the right counts down.
+  // A vertical tracker with the other sign is wired backwards.  A horizontal tracker can be wired either way,
+  // so it only gets its offset reported (expected_sign of 0.0).
+  int line = 0;
+  auto report = [&](const char* name, ez::tracking_wheel* tracker, double offset, double expected_sign) {
+    if (tracker == nullptr) return;
+
+    char text[64];
+    snprintf(text, sizeof(text), "%s tracker offset: %.2f in", name, fabs(offset));
+    printf("%s\n", text);
+    ez::screen_print(text, line++);
+
+    if (expected_sign != 0.0 && offset * expected_sign < 0.0) {
+      snprintf(text, sizeof(text), "%s tracker looks reversed, flip its port sign", name);
+      printf("%s\n", text);
+      ez::screen_print(text, line++);
+    }
+
+    // Set the new offset
+    tracker->distance_to_center_set(fabs(offset));
+  };
+  report("left", chassis.odom_tracker_left, l_offset, 1.0);
+  report("right", chassis.odom_tracker_right, r_offset, -1.0);
+  report("back", chassis.odom_tracker_back, b_offset, 0.0);
+  report("front", chassis.odom_tracker_front, f_offset, 0.0);
 }
 ```
 

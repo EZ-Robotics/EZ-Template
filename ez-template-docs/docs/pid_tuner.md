@@ -227,7 +227,7 @@ void pid_tuner_iterate();
 
 
 ### pid_tuner_print_brain_set()
-Toggle for printing the display of the PID Tuner to the brain.  It prints to the brain by default, and this only does something while the PID Tuner is enabled.    
+Toggle for printing the display of the PID Tuner to the brain.  It prints to the brain by default.  This can be set before the PID Tuner is enabled.  With this off the PID Tuner leaves the brain screen alone, including the auton selector.    
 
 `input` true prints to brain, false doesn't  
 <Tabs
@@ -246,7 +246,7 @@ void opcontrol() {
   // This is preference to what you like to drive on
   chassis.drive_brake_set(MOTOR_BRAKE_COAST);
 
-  chassis.pid_tuner_print_brain_set(true);  // Does nothing until the PID Tuner is enabled
+  chassis.pid_tuner_print_brain_set(true);  // Can be set before the PID Tuner is enabled
   
   while (true) {
     
