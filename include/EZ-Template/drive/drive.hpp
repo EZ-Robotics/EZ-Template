@@ -3936,6 +3936,7 @@ class Drive {
   bool xy_last_pose_valid = false;    // false until a tracking pass has run, after tracking was paused or reset, and after a non-finite pose
   bool was_odom_just_set = false;     // a pose set happened since the last tracking pass
   bool tracking_is_custom = false;    // odom_tracking_set() was called by the user (drive_defaults_set() clears it)
+  pose xy_last_finite_pose{0.0, 0.0, 0.0};  // the last odom pose that was finite (a custom tracker may stop writing one)
   bool tracking_resync_pending = false;  // EZ-Template's own tracking was put back after a custom one, pick up from odom_current on the next tracking pass
   std::pair<float, float> decide_vert_sensor(ez::tracking_wheel* tracker, bool is_tracker_enabled, float ime = 0.0, float ime_track = 0.0);
   pose solve_xy_vert(float p_track_width, float current_t, float delta_vert, float delta_t);
