@@ -63,6 +63,9 @@ struct DriveTestAccess {
   static int drive_dir_sign(Drive& d) { return d.current_drive_direction == REV ? -1 : 1; }
   static double& xy_delta_fake(Drive& d) { return d.xy_delta_fake; }
   static double& new_current_fake(Drive& d) { return d.new_current_fake; }
+  static bool& tracking_is_custom(Drive& d) { return d.tracking_is_custom; }
+  static bool& tracking_resync_pending(Drive& d) { return d.tracking_resync_pending; }
+  static pose& central_pose(Drive& d) { return d.central_pose; }
   static void xy_velocity_exit_hold_update(Drive& d) { d.xy_velocity_exit_hold_update(); }
 
   static bool is_swing_slew_enabled(Drive& d, e_swing type, double target, double current, e_angle_behavior behavior) {

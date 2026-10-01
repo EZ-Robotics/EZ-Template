@@ -118,7 +118,7 @@ TEST_CASE("an incremental tracker: derivative is the real movement, and 0 on the
 // frame is not the one EZ-Template's own l_pose / r_pose / central_pose were last in (a GPS reads field coordinates, the pose was
 // set to (0, 0) at the start), and its last encoder readings are from before the custom tracker ran, so odom came back
 // 14 to 18 in wrong, or more.
-TEST_CASE("putting EZ-Template's tracking back after a custom tracker keeps odom on the true pose" * doctest::should_fail()) {
+TEST_CASE("putting EZ-Template's tracking back after a custom tracker keeps odom on the true pose") {
   Rig r;
   TruePose tp(r);
   install_gps(r, tp);
@@ -138,4 +138,49 @@ TEST_CASE("putting EZ-Template's tracking back after a custom tracker keeps odom
   REQUIRE(second.returned);
   CHECK(std::hypot(tp.x - 30.0, tp.y - 40.0) < 1.0);
   CHECK(std::hypot(r.chassis.odom_x_get() - tp.x, r.chassis.odom_y_get() - tp.y) < 1.0);
+}
+
+// The constructor installs EZ-Template's own tracking through drive_defaults_set() as well, at global scope in a team's
+// project, where no device can be read yet, and with no custom tracker there is nothing to pick up from. Nothing may change
+// for a team that never calls odom_tracking_set(): no resync is ever asked for, before or during a motion.
+TEST_CASE("a Drive that never had a custom tracker never asks for a tracking resync") {
+  Rig r;
+  CHECK_FALSE(DriveTestAccess::tracking_is_custom(r.chassis));
+  CHECK_FALSE(DriveTestAccess::tracking_resync_pending(r.chassis));
+  r.chassis.drive_defaults_set();
+  CHECK_FALSE(DriveTestAccess::tracking_resync_pending(r.chassis));
+  r.start_at(10, -5, 0);
+  r.chassis.pid_odom_ptp_set(O(10, 19, fwd, 90));
+  bool ever_pending = false;
+  r.hook = [&](int) { ever_pending = ever_pending || DriveTestAccess::tracking_resync_pending(r.chassis); };
+  Outcome o = r.run([&] { r.chassis.pid_wait(); }, 1500);
+  REQUIRE(o.returned);
+  CHECK_FALSE(ever_pending);
+  CHECK(std::hypot(o.end.x - 10.0, o.end.y - 19.0) < 1.5);
+}
+
+TEST_CASE("drive_defaults_set() after a custom tracker asks for one resync, which the next tracking pass does") {
+  Rig r;
+  r.start_at(0, 0, 0);
+  r.chassis.odom_tracking_set([] {});  // a tracker that leaves odom_current alone
+  CHECK(DriveTestAccess::tracking_is_custom(r.chassis));
+  CHECK_FALSE(DriveTestAccess::tracking_resync_pending(r.chassis));
+  r.chassis.odom_current.x = 12.5;
+  r.chassis.odom_current.y = -7.25;
+  r.idle(3);
+
+  r.chassis.drive_defaults_set();
+  CHECK_FALSE(DriveTestAccess::tracking_is_custom(r.chassis));
+  CHECK(DriveTestAccess::tracking_resync_pending(r.chassis));  // only flagged, nothing was read
+  CHECK(DriveTestAccess::central_pose(r.chassis).x == doctest::Approx(0.0));
+
+  r.idle(1);
+  CHECK_FALSE(DriveTestAccess::tracking_resync_pending(r.chassis));
+  CHECK(DriveTestAccess::central_pose(r.chassis).x == doctest::Approx(12.5).epsilon(1e-6));
+  CHECK(DriveTestAccess::central_pose(r.chassis).y == doctest::Approx(-7.25).epsilon(1e-6));
+  CHECK(r.chassis.odom_x_get() == doctest::Approx(12.5).epsilon(1e-6));
+  CHECK(r.chassis.odom_y_get() == doctest::Approx(-7.25).epsilon(1e-6));
+  r.idle(5);
+  CHECK_FALSE(DriveTestAccess::tracking_resync_pending(r.chassis));
+  CHECK(r.chassis.odom_x_get() == doctest::Approx(12.5).epsilon(1e-6));  // the robot did not move
 }

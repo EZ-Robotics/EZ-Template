@@ -87,6 +87,7 @@ void Drive::odom_tracking_set(std::function<void(void)> tracking_task) {
   ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
   tracking = tracking_task;
   tracking_is_custom = true;  // drive_defaults_set() sets this back to false for EZ-Template's own tracking
+  tracking_resync_pending = false;
 }
 
 std::pair<float, float> Drive::decide_vert_sensor(ez::tracking_wheel* tracker, bool is_tracker_enabled, float ime, float ime_track) {
@@ -270,6 +271,16 @@ void Drive::ez_tracking_task() {
   if (!imu_calibration_complete || !odometry_enabled) {
     tracking_prime();
     return;
+  }
+
+  // EZ-Template's own tracking was just put back after a custom tracking function (drive_defaults_set()).  Its own poses
+  // and last sensor readings are from before the custom tracker ran: everything the robot drove since would be counted
+  // twice or lost.  Pick up from where the custom tracker left the pose instead.  One pass of movement is lost doing this.
+  if (tracking_resync_pending && !tracking_is_custom) {
+    l_pose.x = r_pose.x = central_pose.x = odom_current.x;
+    l_pose.y = r_pose.y = central_pose.y = odom_current.y;
+    tracking_prime();
+    tracking_resync_pending = false;
   }
 
   // Use ez's tracking or a custom tracking function made by the user
