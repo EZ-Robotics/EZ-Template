@@ -3916,11 +3916,15 @@ class Drive {
   pose l_pose{0.0, 0.0, 0.0};
   pose r_pose{0.0, 0.0, 0.0};
   pose central_pose{0.0, 0.0, 0.0};
-  double xy_current_fake = 0.0;
-  double xy_last_fake = 0.0;
+  // xyPID's "sensor" (new_current_fake) and how much it moved on the last pass (xy_delta_fake).  It moves by how much
+  // the robot's own movement changed xyPID's error on that pass (ptp_task()), so xyPID's derivative is the robot's real
+  // speed toward its target, wherever on the field the robot is.
   double xy_delta_fake = 0.0;
   double new_current_fake = 0.0;
-  bool was_odom_just_set = false;
+  pose xy_last_pose{0.0, 0.0, 0.0};   // odom pose at the end of the last tracking pass
+  pose xy_pose_delta{0.0, 0.0, 0.0};  // how far odom moved over the last tracking pass (0 on the pass after a pose set)
+  bool xy_last_pose_valid = false;    // false until a tracking pass has run, after tracking was paused or reset, and after a non-finite pose
+  bool was_odom_just_set = false;     // a pose set happened since the last tracking pass
   std::pair<float, float> decide_vert_sensor(ez::tracking_wheel* tracker, bool is_tracker_enabled, float ime = 0.0, float ime_track = 0.0);
   pose solve_xy_vert(float p_track_width, float current_t, float delta_vert, float delta_t);
   pose solve_xy_horiz(float p_track_width, float current_t, float delta_horiz, float delta_t);

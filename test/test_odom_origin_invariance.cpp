@@ -108,14 +108,14 @@ void expect_same(Kind kind, const Frame& f, const char* label) {
 
 }  // namespace
 
-TEST_CASE("odom motions take the same time and end in the same place when moved around the field" * doctest::should_fail()) {
+TEST_CASE("odom motions take the same time and end in the same place when moved around the field") {
   for (Kind k : {Kind::ptp, Kind::boomerang, Kind::corner}) {
     expect_same(k, Frame{60, -60, 0, false}, "(60, -60)");
     expect_same(k, Frame{-120, 120, 0, false}, "(-120, 120)");
   }
 }
 
-TEST_CASE("odom motions take the same time and end in the same place when rotated and mirrored" * doctest::should_fail()) {
+TEST_CASE("odom motions take the same time and end in the same place when rotated and mirrored") {
   for (Kind k : {Kind::ptp, Kind::boomerang, Kind::corner}) {
     expect_same(k, Frame{0, 0, 90, false}, "rotated 90");
     expect_same(k, Frame{0, 0, 0, true}, "mirrored");

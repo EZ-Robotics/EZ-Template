@@ -166,6 +166,10 @@ void Drive::tracking_prime() {
 
   // Angle, matching the sign convention used in tracking_wheels_tracking()
   t_last = -ez::util::to_rad(drive_angle_get());
+
+  // Nothing counts as movement across a pause in tracking or a sensor reset
+  xy_last_pose_valid = false;
+  xy_pose_delta = {0.0, 0.0, 0.0};
 }
 
 // Tracking based on https://wiki.purduesigbots.com/software/odometry
@@ -268,13 +272,17 @@ void Drive::ez_tracking_task() {
   // Use ez's tracking or a custom tracking function made by the user
   tracking();
 
-  // This is used for PID as a "current" sensor value
-  // what this value actually is doesn't matter, it just needs to move with the correct sign
-  xy_current_fake = fabs(is_past_target({0.0, 0.0}, odom_pose_get()));
-  if (!was_odom_just_set)
-    xy_delta_fake = fabs(xy_current_fake - xy_last_fake);
+  // How far the robot moved this pass, from its own pose.  ptp_task() turns this into xyPID's sensor.  The pass after a
+  // pose set counts as no movement: the jump from the old pose to the set one is not the robot moving.
+  pose now = odom_pose_get();
+  bool finite = std::isfinite(now.x) && std::isfinite(now.y) && std::isfinite(now.theta);
+  if (!xy_last_pose_valid || !finite || was_odom_just_set)
+    xy_pose_delta = {0.0, 0.0, 0.0};
   else
-    was_odom_just_set = false;
-  xy_last_fake = xy_current_fake;
+    xy_pose_delta = {now.x - xy_last_pose.x, now.y - xy_last_pose.y, 0.0};
+  if (!std::isfinite(xy_pose_delta.x) || !std::isfinite(xy_pose_delta.y)) xy_pose_delta = {0.0, 0.0, 0.0};
+  was_odom_just_set = false;
+  xy_last_pose = now;
+  xy_last_pose_valid = finite;
 }
 }  // namespace ez

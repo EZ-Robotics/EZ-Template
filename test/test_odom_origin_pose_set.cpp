@@ -97,7 +97,7 @@ TEST_CASE("relocalizing to the current pose on every pass changes nothing about 
 
 // Relocalizing every pass while a wall holds the robot 8 in short of the target. The set pose is the robot's real pose, so
 // nothing moves: xyPID's derivative has to read 0 once the robot has stopped, and the wait has to see that the robot is stuck.
-TEST_CASE("relocalizing every pass against a wall reads no movement and the wait ends interfered" * doctest::should_fail()) {
+TEST_CASE("relocalizing every pass against a wall reads no movement and the wait ends interfered") {
   Rig r;
   r.start_at(0, 0, 0);
   r.sim.wall(16.0);
@@ -127,7 +127,7 @@ TEST_CASE("relocalizing every pass against a wall reads no movement and the wait
 }
 
 // A pose that is not a number mid motion, then put back. The sensor must not be poisoned for good.
-TEST_CASE("a non finite pose mid motion does not poison the sensor and the robot arrives after it is put back" * doctest::should_fail()) {
+TEST_CASE("a non finite pose mid motion does not poison the sensor and the robot arrives after it is put back") {
   Rig r;
   r.start_at(0, 0, 0);
   r.chassis.pid_odom_ptp_set(O(0, 36, fwd, 90));

@@ -48,7 +48,7 @@ struct Incremental {
 }  // namespace
 
 // The tracker writes the true pose every pass and a team also calls odom_xy_set() with a pose 1.5 in off every pass.
-TEST_CASE("a GPS style tracker relocalized every pass arrives within 1 in and is not marked interfered" * doctest::should_fail()) {
+TEST_CASE("a GPS style tracker relocalized every pass arrives within 1 in and is not marked interfered") {
   for (int jitter : {0, 1, 2}) {
     for (pose s : {pose{0, 0, 0}, pose{60, -60, 0}}) {
       Rig r(sim::archetype_light_fast(), jitter);
@@ -88,7 +88,7 @@ TEST_CASE("a pose set far from a GPS style tracker's pose right before a motion 
 }
 
 // An incremental tracker: xyPID's derivative is the movement it adds on every ordinary pass, and 0 on the pass after a pose set.
-TEST_CASE("an incremental tracker: derivative is the real movement, and 0 on the pass after a pose set" * doctest::should_fail()) {
+TEST_CASE("an incremental tracker: derivative is the real movement, and 0 on the pass after a pose set") {
   Rig r;
   Incremental inc(r);
   inc.install();

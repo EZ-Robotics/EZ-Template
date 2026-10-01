@@ -48,7 +48,7 @@ void expect_tracks_real_movement(const Rig& r, const char* what) {
 
 // A robot at rest at (24, 24) starting a corner path. Nothing has moved, so nothing may read as movement and neither
 // side may be driven backwards.
-TEST_CASE("first pass: a robot at rest at (24, 24) reads no derivative and is not driven backwards" * doctest::should_fail()) {
+TEST_CASE("first pass: a robot at rest at (24, 24) reads no derivative and is not driven backwards") {
   Rig r;
   r.start_at(24, 24, 0);
   r.chassis.pid_odom_set(corner());
@@ -59,7 +59,7 @@ TEST_CASE("first pass: a robot at rest at (24, 24) reads no derivative and is no
   CHECK(r.rows[0].r_mv >= 0);
 }
 
-TEST_CASE("first pass of a motion from rest: derivative is 0 and no side is driven backwards, anywhere on the field" * doctest::should_fail()) {
+TEST_CASE("first pass of a motion from rest: derivative is 0 and no side is driven backwards, anywhere on the field") {
   for (pose s : {pose{0, 0, 0}, pose{24, 24, 0}, pose{60, -60, 0}, pose{-120, 120, 0}, pose{-24, -72, 0}}) {
     Rig r;
     r.start_at(s.x, s.y, s.theta);
@@ -76,7 +76,7 @@ TEST_CASE("first pass of a motion from rest: derivative is 0 and no side is driv
 
 // On a straight drive nothing but the robot's travel can move the sensor, so the derivative is the distance the wheels
 // went on that pass (what the robot actually did), not just something self consistent with the library's own formula.
-TEST_CASE("derivative is the distance the robot really travelled on that pass, on a straight ptp" * doctest::should_fail()) {
+TEST_CASE("derivative is the distance the robot really travelled on that pass, on a straight ptp") {
   for (pose s : {pose{0, 0, 0}, pose{60, -60, 0}}) {
     Rig r;
     r.start_at(s.x, s.y, s.theta);
@@ -91,7 +91,7 @@ TEST_CASE("derivative is the distance the robot really travelled on that pass, o
   }
 }
 
-TEST_CASE("derivative matches real movement on every pass of a ptp, a corner path, a zigzag path and a boomerang" * doctest::should_fail()) {
+TEST_CASE("derivative matches real movement on every pass of a ptp, a corner path, a zigzag path and a boomerang") {
   {
     Rig r;
     r.start_at(24, 24, 0);
@@ -124,7 +124,7 @@ TEST_CASE("derivative matches real movement on every pass of a ptp, a corner pat
 
 // Chained at speed: the new motion's first pass has to read the robot's real speed toward the new target, not a jump
 // from the old target to the new one.
-TEST_CASE("first pass of a motion chained at speed reads real movement: odom to odom, drive to odom, fwd to rev" * doctest::should_fail()) {
+TEST_CASE("first pass of a motion chained at speed reads real movement: odom to odom, drive to odom, fwd to rev") {
   {
     Rig r;
     r.start_at(60, -60, 0);
@@ -157,7 +157,7 @@ TEST_CASE("first pass of a motion chained at speed reads real movement: odom to 
   }
 }
 
-TEST_CASE("a retarget in the middle of a wait reads real movement on every pass" * doctest::should_fail()) {
+TEST_CASE("a retarget in the middle of a wait reads real movement on every pass") {
   Rig r;
   r.start_at(60, -60, 0);
   r.chassis.pid_odom_set(O(60, 0));

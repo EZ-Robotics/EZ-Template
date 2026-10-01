@@ -20,7 +20,7 @@ using namespace origin;
 // it really came back, instead of the default 3 in big error exit calling a robot 3 in past its target done. 80 N for 300 ms
 // and 100 N for 200 ms carry it 8 to 10 in past on the old sensor, where it spins around; the fix has it fighting the push
 // from the start (about 4 in past) and back on target in well under a second after the push ends.
-TEST_CASE("shoved past a 24 in target the robot comes back to it without spinning" * doctest::should_fail()) {
+TEST_CASE("shoved past a 24 in target the robot comes back to it without spinning") {
   for (auto [newtons, ms] : {std::pair{80.0, 300.0}, std::pair{100.0, 200.0}}) {
     Rig r;
     r.chassis.pid_odom_drive_exit_condition_set(90_ms, 0.5_in, 200_ms, 1_in, 100_ms, 100_ms);
@@ -47,7 +47,7 @@ TEST_CASE("shoved past a 24 in target the robot comes back to it without spinnin
   }
 }
 
-TEST_CASE("pushed 6 in back mid motion, the derivative is negative while it moves away and the robot arrives clean" * doctest::should_fail()) {
+TEST_CASE("pushed 6 in back mid motion, the derivative is negative while it moves away and the robot arrives clean") {
   Rig r;
   r.start_at(0, 0, 0);
   r.chassis.pid_odom_ptp_set(O(0, 36, fwd, 80, ANGLE_NOT_SET));
