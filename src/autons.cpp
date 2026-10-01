@@ -264,7 +264,7 @@ void odom_pure_pursuit_example() {
   // Drive to 0, 30 and pass through 6, 10 and 0, 20 on the way, with slew
   chassis.pid_odom_set({{{6_in, 10_in}, ez::fwd, DRIVE_SPEED},
                         {{0_in, 20_in}, ez::fwd, DRIVE_SPEED},
-                        {{0_in, 30_in}, ez::fwd, DRIVE_SPEED}},
+                        {{0_in, 30_in}, ez::fwd, DRIVE_SPEED},},
                        true);
   chassis.pid_wait();
 
@@ -280,7 +280,7 @@ void odom_pure_pursuit_example() {
 void odom_pure_pursuit_wait_until_example() {
   chassis.pid_odom_set({{{0_in, 24_in}, ez::fwd, DRIVE_SPEED},
                         {{12_in, 24_in}, ez::fwd, DRIVE_SPEED},
-                        {{24_in, 24_in}, ez::fwd, DRIVE_SPEED}},
+                        {{24_in, 24_in}, ez::fwd, DRIVE_SPEED},},
                        true);
   chassis.pid_wait_until_index(1);  // Waits until the robot passes 12, 24
   // Intake.move(127);  // Set your intake to start moving once it passes through the second point in the index
@@ -307,7 +307,7 @@ void odom_boomerang_example() {
 void odom_boomerang_injected_pure_pursuit_example() {
   chassis.pid_odom_set({{{0_in, 24_in, 45_deg}, ez::fwd, DRIVE_SPEED},
                         {{12_in, 24_in}, ez::fwd, DRIVE_SPEED},
-                        {{24_in, 24_in}, ez::fwd, DRIVE_SPEED}},
+                        {{24_in, 24_in}, ez::fwd, DRIVE_SPEED},},
                        true);
   chassis.pid_wait();
 
