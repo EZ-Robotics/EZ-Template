@@ -201,8 +201,8 @@ void Drive::ptp_task() {
   double max_slew_out = fmax(slew_left.output(), slew_right.output());
 
   // Decide if we've past the target or not
-  double temp_target = is_past_target(odom_target, odom_pose_get());        // Use this instead of distance formula to fix impossible movements
-  int dir = (current_drive_direction == REV ? -1 : 1);                      // If we're going backwards, add a -1
+  double temp_target = is_past_target(odom_target, odom_pose_get());  // Use this instead of distance formula to fix impossible movements
+  int dir = (current_drive_direction == REV ? -1 : 1);                // If we're going backwards, add a -1
 
   // xyPID's error is the distance left to the target, negative once the robot is past it.  is_past_target() is that
   // distance with the sign flipped, forwards or backwards: a motion always starts short of its target, so what it

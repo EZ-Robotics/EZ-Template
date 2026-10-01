@@ -128,8 +128,10 @@ void Drive::drive_defaults_set() {
     // EZ-Template's own poses and last sensor readings are from before the custom tracker ran, so the next tracking pass
     // has to pick up from where that tracker left odom_current (see ez_tracking_task()).  Only flagged here: this function
     // also runs from the constructors, at global scope, where no device can be read yet, and there is nothing to pick up from.
-    if (resync) tracking_resync_pending = true;
-    else xy_last_pose_valid = xy_was_measurable;  // EZ-Template's own tracking was already running: nothing about the pose changed
+    if (resync)
+      tracking_resync_pending = true;
+    else
+      xy_last_pose_valid = xy_was_measurable;  // EZ-Template's own tracking was already running: nothing about the pose changed
   }
 
   // PID Constants

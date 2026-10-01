@@ -59,7 +59,11 @@ pose unplace(const Frame& f, pose p) {
   return {x, y, wrap(t)};
 }
 
-enum class Kind { ptp, boomerang, corner };
+enum class Kind {
+  ptp,
+  boomerang,
+  corner
+};
 
 struct Result {
   bool returned;

@@ -17,11 +17,16 @@ using namespace origin;
 
 namespace {
 
-enum class Motion { ptp, pure_pursuit };
+enum class Motion {
+  ptp,
+  pure_pursuit
+};
 
 void start_motion(Rig& r, Motion m) {
-  if (m == Motion::ptp) r.chassis.pid_odom_set(O(0, 48, fwd, 110));
-  else r.chassis.pid_odom_set(std::vector<odom>{O(0, 24, fwd, 110), O(0, 48, fwd, 110)});
+  if (m == Motion::ptp)
+    r.chassis.pid_odom_set(O(0, 48, fwd, 110));
+  else
+    r.chassis.pid_odom_set(std::vector<odom>{O(0, 24, fwd, 110), O(0, 48, fwd, 110)});
 }
 
 struct Set {

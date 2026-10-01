@@ -333,8 +333,10 @@ private:
   void tick() {
     for (int i = 0; i < passes_per_tick_; i++) {
       if (before_pass) before_pass(pass_count_);
-      if (use_real_auto_task_) run_real_auto_task_pass();
-      else run_auto_task_pass();
+      if (use_real_auto_task_)
+        run_real_auto_task_pass();
+      else
+        run_auto_task_pass();
       if (after_pass) after_pass(pass_count_);
       pass_count_++;
     }

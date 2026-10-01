@@ -34,9 +34,9 @@ struct PassRow {
 struct Outcome {
   bool returned = false;
   bool interfered = false;
-  int ms = 0;          // pros::millis() from the first wait to the return
+  int ms = 0;  // pros::millis() from the first wait to the return
   pose end{0, 0, 0};
-  double turned = 0;   // total heading change, degrees, summed over the passes
+  double turned = 0;  // total heading change, degrees, summed over the passes
 };
 
 // An odom movement to (x, y), in inches and degrees; theta left unset is a plain point, set is a boomerang.
@@ -117,7 +117,7 @@ struct Rig {
     return m;
   }
 
- private:
+private:
   pose snap_{0, 0, 0};
 
   void record(int n) {
@@ -131,7 +131,8 @@ struct Rig {
     r.deriv = chassis.xyPID.derivative;
     if (r.mode == POINT_TO_POINT || r.mode == PURE_PURSUIT) {
       pose t = DriveTestAccess::odom_target(chassis);
-      r.dref = DriveTestAccess::drive_dir_sign(chassis) * (DriveTestAccess::is_past_target(chassis, t, r.end) - DriveTestAccess::is_past_target(chassis, t, r.start));
+      r.dref = DriveTestAccess::drive_dir_sign(chassis) *
+               (DriveTestAccess::is_past_target(chassis, t, r.end) - DriveTestAccess::is_past_target(chassis, t, r.start));
     }
     r.l_mv = chassis.left_motors.front().fake().voltage;
     r.r_mv = chassis.right_motors.front().fake().voltage;
@@ -158,7 +159,7 @@ struct TruePose {
     last_ = now;
   }
 
- private:
+private:
   double last_ = 0;
   double wheels() const { return (r.sim.left().position_in + r.sim.right().position_in) / 2.0; }
 };
