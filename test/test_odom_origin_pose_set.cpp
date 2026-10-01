@@ -199,3 +199,22 @@ TEST_CASE("the pass that resumes paused tracking reads the real movement") {
   }
   CHECK(checked >= 6);
 }
+
+// drive_defaults_set() mid motion on a Drive that never had a custom tracker changes nothing about odom, so the pass after it
+// still reads the real movement.
+TEST_CASE("drive_defaults_set() mid motion without a custom tracker leaves the derivative real") {
+  Rig r;
+  r.start_at(0, 0, 0);
+  r.chassis.pid_odom_ptp_set(O(0, 48, fwd, 110));
+  r.hook = [&](int n) {
+    if (n == 30) r.chassis.drive_defaults_set();
+  };
+  r.run([&] { r.chassis.pid_wait(); }, 40);
+  bool seen = false;
+  for (const auto& p : r.rows)
+    if (p.n == 30) {
+      seen = true;
+      CHECK(std::fabs(p.deriv - p.dref) < 0.05);
+    }
+  CHECK(seen);
+}

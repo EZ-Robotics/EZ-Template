@@ -219,3 +219,26 @@ TEST_CASE("drive_defaults_set() twice before the next pass still asks for the re
   r.idle(1);
   CHECK(DriveTestAccess::central_pose(r.chassis).x == doctest::Approx(25.0).epsilon(1e-6));
 }
+
+// A custom tracker that lost its signal and left a non finite pose, then EZ-Template's own tracking put back: odom must not
+// stay non finite.
+TEST_CASE("putting EZ-Template's tracking back after a tracker left a non finite pose keeps odom finite") {
+  for (double bad : {NAN, INFINITY}) {
+    Rig r;
+    r.start_at(0, 0, 0);
+    r.chassis.odom_tracking_set([] {});
+    r.chassis.odom_current.x = bad;
+    r.chassis.odom_current.y = bad;
+    r.idle(3);
+    r.chassis.drive_defaults_set();
+    r.idle(3);
+    CHECK(std::isfinite(r.chassis.odom_x_get()));
+    CHECK(std::isfinite(r.chassis.odom_y_get()));
+    r.chassis.odom_xyt_set(0, 0, 0);
+    r.idle(2);
+    r.chassis.pid_odom_ptp_set(O(0, 12, fwd, 90));
+    Outcome o = r.run([&] { r.chassis.pid_wait(); }, 800);
+    CHECK(o.returned);
+    CHECK(std::fabs(o.end.y - 12.0) < 1.5);
+  }
+}
