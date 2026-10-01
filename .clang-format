@@ -1,4 +1,47 @@
+# EZ-Template clang-format
+# Starts from Google style and overrides only what matters for VEX code.
 BasedOnStyle: Google
-ColumnLimit: 0
-TabWidth: 2
+Language: Cpp
+Standard: c++20
+
+# Width and indentation
+ColumnLimit: 160
 IndentWidth: 2
+ContinuationIndentWidth: 4
+UseTab: Never
+AccessModifierOffset: -2           # public: lines up with class, not 1 space in
+
+# Pointers and references always written int* x
+DerivePointerAlignment: false
+PointerAlignment: Left
+
+# One-liners. Enums always get one value per line.
+AllowShortEnumsOnASingleLine: false
+AllowShortIfStatementsOnASingleLine: WithoutElse
+AllowShortLoopsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: All
+AllowShortLambdasOnASingleLine: All
+AllowShortBlocksOnASingleLine: Empty
+
+# Lists: end a { } list with a comma after the last item and it stays one item per line.
+# Without that comma, clang-format puts a list that fits in 160 columns on one line.
+
+# Comments and namespaces
+SpacesBeforeTrailingComments: 2
+FixNamespaceComments: true         # adds // namespace ez after closing braces
+ReflowComments: true               # wrap long comments
+
+# Wrap a long comment instead of breaking the code in front of it
+PenaltyBreakComment: 1
+PenaltyExcessCharacter: 1000000
+
+# Never split a string literal, so printed messages stay one greppable string
+BreakStringLiterals: false
+
+# Includes, never reorder (PROS headers can be order sensitive)
+SortIncludes: Never
+
+# Blank lines and file endings
+MaxEmptyLinesToKeep: 1
+KeepEmptyLinesAtTheStartOfBlocks: false
+InsertNewlineAtEOF: true
