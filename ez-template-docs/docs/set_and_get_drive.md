@@ -256,6 +256,45 @@ void drive_imus_scalers_3600_set(std::vector<double> imu_values_after_3600);
  
 
 
+### imu_drift_threshold_set()
+Sets how many degrees apart the most and least agreeing good IMUs' scaled readings may spread before it's reported as disagreement, for drives built with the redundant IMU constructor.   
+
+The spread has to hold for about half a second to rule out a single noisy sample.  This only reports, in `imu_drift_deg` and in `ez::health::preflight()`.  It never ejects an IMU or changes which one drives the heading, because with only two IMUs there is no way to tell which one drifted.  The default is 15 degrees.  A non-positive value is rejected and the previous threshold is kept.     
+
+`degrees` disagreement threshold in degrees
+<Tabs
+  groupId="imu_drift_threshold_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  chassis.initialize();
+  chassis.imu_drift_threshold_set(10.0);
+}
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+void imu_drift_threshold_set(double degrees);
+```
+
+</TabItem>
+</Tabs>
+
+ 
+
 ## Telemetry
 
 ### drive_sensor_right()
@@ -876,6 +915,67 @@ std::map<int, double> drive_imus_scalers_3600_get();
 </TabItem>
 </Tabs>
 
+
+### imu_drift_threshold_get()
+Returns the current IMU disagreement threshold in degrees, see `imu_drift_threshold_set()`.
+<Tabs
+  groupId="imu_drift_threshold_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+printf("drift threshold: %.0f deg\n", chassis.imu_drift_threshold_get());
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+double imu_drift_threshold_get();
+```
+
+</TabItem>
+</Tabs>
+
+
+### imu_drift_deg
+Degrees between the most and least agreeing good IMU's scaled reading, once that spread has held above `imu_drift_threshold_get()` for enough consecutive passes to rule out a single noisy sample.  0 while the good IMUs agree, or while there are fewer than 2 of them.  It is a public member, not a function, and is updated about every 10 ms.
+<Tabs
+  groupId="imu_drift_deg"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+if (chassis.imu_drift_deg > 0.0) printf("IMUs disagree by %.1f deg\n", chassis.imu_drift_deg);
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+double imu_drift_deg = 0.0;
+```
+
+</TabItem>
+</Tabs>
 
 ### drive_angle_get()
 Returns the angle of the robot, from whichever IMU is currently focused.  On a redundant IMU drive, this is the one to read instead of talking to an individual `pros::Imu` directly, since it stays correct across a failover.
