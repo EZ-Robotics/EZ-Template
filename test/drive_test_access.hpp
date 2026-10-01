@@ -56,6 +56,13 @@ struct DriveTestAccess {
   static pose& odom_current(Drive& d) { return d.odom_current; }
   static void swing_pid_task(Drive& d) { d.swing_pid_task(); }
   static bool& xy_translation_bias_gated(Drive& d) { return d.xy_translation_bias_gated; }
+
+  // xyPID's sensor and the geometry behind it (ptp_task()), for the odom origin tests
+  static double is_past_target(Drive& d, pose target, pose current) { return d.is_past_target(target, current); }
+  static pose& odom_target(Drive& d) { return d.odom_target; }
+  static int drive_dir_sign(Drive& d) { return d.current_drive_direction == REV ? -1 : 1; }
+  static double& xy_delta_fake(Drive& d) { return d.xy_delta_fake; }
+  static double& new_current_fake(Drive& d) { return d.new_current_fake; }
   static void xy_velocity_exit_hold_update(Drive& d) { d.xy_velocity_exit_hold_update(); }
 
   static bool is_swing_slew_enabled(Drive& d, e_swing type, double target, double current, e_angle_behavior behavior) {
