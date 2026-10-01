@@ -95,6 +95,19 @@ jobs:
             exit 1
           fi
 
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      # Pinned so every PR is judged by the same formatter. 18 through 23 agree on this config
+      # today; if a bump ever changes output, bump this and reformat in one commit.
+      - name: clang-format matches .clang-format
+        run: |
+          pipx install clang-format==18.1.8
+          sh tools/format.sh --check
+
   # include/EZ-Units/units.hpp is a vendored copy of EZ-Units and must stay
   # byte-identical to the tagged release. To upgrade it, copy the file from the new
   # tag and bump EZ_UNITS_TAG below in the same commit.
