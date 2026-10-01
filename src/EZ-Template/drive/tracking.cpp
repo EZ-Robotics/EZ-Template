@@ -19,6 +19,7 @@ void Drive::odom_x_set(double x) {
   l_pose.x = x;
   r_pose.x = x;
   central_pose.x = x;
+  xy_last_pose.x = x;  // a pose set is not movement, see ez_tracking_task()
   was_odom_just_set = true;
 }
 void Drive::odom_x_set(ez::QLength p_x) { odom_x_set(p_x.convert(ez::inch)); }
@@ -29,6 +30,7 @@ void Drive::odom_y_set(double y) {
   l_pose.y = y;
   r_pose.y = y;
   central_pose.y = y;
+  xy_last_pose.y = y;  // a pose set is not movement, see ez_tracking_task()
   was_odom_just_set = true;
 }
 void Drive::odom_y_set(ez::QLength p_y) { odom_y_set(p_y.convert(ez::inch)); }
@@ -84,6 +86,7 @@ double Drive::drive_width_get() { return global_track_width; }
 void Drive::odom_tracking_set(std::function<void(void)> tracking_task) {
   ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
   tracking = tracking_task;
+  tracking_is_custom = true;  // drive_defaults_set() sets this back to false for EZ-Template's own tracking
 }
 
 std::pair<float, float> Drive::decide_vert_sensor(ez::tracking_wheel* tracker, bool is_tracker_enabled, float ime, float ime_track) {
@@ -272,11 +275,16 @@ void Drive::ez_tracking_task() {
   // Use ez's tracking or a custom tracking function made by the user
   tracking();
 
-  // How far the robot moved this pass, from its own pose.  ptp_task() turns this into xyPID's sensor.  The pass after a
-  // pose set counts as no movement: the jump from the old pose to the set one is not the robot moving.
+  // How far the robot moved this pass, from its own pose.  ptp_task() turns this into xyPID's sensor.
+  // odom_x_set() and odom_y_set() move xy_last_pose along with the pose, so a pose set (odom_xyt_set(), a
+  // relocalization every pass, ...) never counts as movement, while what the robot really moved since then still does.
+  // A heading set changes no x or y, so the same holds for drive_angle_set().
+  // A custom tracking function may write its own pose over a pose set (a GPS, for example), and then the jump back
+  // would look like movement.  So with custom tracking, the pass after a pose set counts as no movement instead.
+  // (A custom tracking function that sets the pose with odom_x_set() / odom_y_set() itself reads no movement at all.)
   pose now = odom_pose_get();
   bool finite = std::isfinite(now.x) && std::isfinite(now.y) && std::isfinite(now.theta);
-  if (!xy_last_pose_valid || !finite || was_odom_just_set)
+  if (!xy_last_pose_valid || !finite || (was_odom_just_set && tracking_is_custom))
     xy_pose_delta = {0.0, 0.0, 0.0};
   else
     xy_pose_delta = {now.x - xy_last_pose.x, now.y - xy_last_pose.y, 0.0};

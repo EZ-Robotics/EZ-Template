@@ -43,7 +43,7 @@ std::vector<Set> sets() {
 
 // About 300 ms into the motion, 30 passes, one pose set. On the pass after it xyPID's derivative is the movement measured from
 // the set pose.
-TEST_CASE("the pass after a pose set mid motion reads the real movement from the set pose" * doctest::should_fail()) {
+TEST_CASE("the pass after a pose set mid motion reads the real movement from the set pose") {
   for (Motion m : {Motion::ptp, Motion::pure_pursuit}) {
     for (const Set& s : sets()) {
       Rig r;
@@ -65,7 +65,7 @@ TEST_CASE("the pass after a pose set mid motion reads the real movement from the
 }
 
 // A team relocalizing on every pass with the pose the robot is already at. Nothing about the motion may change.
-TEST_CASE("relocalizing to the current pose on every pass changes nothing about a 24 in ptp" * doctest::should_fail()) {
+TEST_CASE("relocalizing to the current pose on every pass changes nothing about a 24 in ptp") {
   for (int jitter : {0, 1, 2}) {
     Outcome plain;
     {
