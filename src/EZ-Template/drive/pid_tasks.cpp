@@ -38,10 +38,13 @@ void Drive::ez_auto_task() {
       // before this pass sees the status change, and disabling here would cancel that motion.
       bool autonomous_now = pros::competition::is_autonomous();
       bool autonomous_started = autonomous_now && !last_was_autonomous;
-      if (pros::competition::is_disabled() || (last_was_autonomous && !autonomous_now)) {
+      bool disabled_now = pros::competition::is_disabled();
+      bool enabled_again = last_was_disabled && !disabled_now;
+      if (disabled_now || (last_was_autonomous && !autonomous_now)) {
         if (drive_mode_get() != DISABLE) drive_mode_set(DISABLE, true);
       }
       last_was_autonomous = autonomous_now;
+      last_was_disabled = disabled_now;
 
       // Autonomous PID
       switch (drive_mode_get()) {
@@ -66,7 +69,8 @@ void Drive::ez_auto_task() {
           break;
       }
 
-      // This is used to reset sensors for active braking. Only ever set here: the disabled gap between autonomous and
+      // This is used to reset sensors for active braking. It is set by a nonzero drive_set(), by drive_sensor_reset() and
+      // here, and cleared only by opcontrol_drive_sensors_reset(). Here it is only ever set: the disabled gap between autonomous and
       // driver control puts the mode back to DISABLE, and recomputing the flag from it every pass cleared it before
       // opcontrol_drive_sensors_reset() (the only thing that clears it) could re-aim the brake target, so the first
       // driver pass drove the robot back toward where autonomous started.
@@ -75,7 +79,11 @@ void Drive::ez_auto_task() {
       // robot back toward the target drive_sensor_reset() left at 0. Only the moment autonomous starts, not every pass of
       // it: opcontrol_* clears the flag and re-aims the brake once, and setting it on every pass would make driver code
       // run while the status says autonomous (a hybrid or skills routine) re-aim the brake on every call.
-      if (autonomous_started || drive_mode_get() != DISABLE) util::AUTON_RAN = true;
+      // The moment the robot is enabled after being disabled counts too. The motors are limp while disabled, so a robot
+      // carried or slid by hand rolls its wheels, and the brake target would still be wherever the sticks were last
+      // released before the disable. Driver control that starts with the sticks released would then drive the robot back
+      // there. Again only the edge: a robot pushed while enabled is still pulled back to its target.
+      if (autonomous_started || enabled_again || drive_mode_get() != DISABLE) util::AUTON_RAN = true;
     }
 
     pros::delay(ez::util::DELAY_TIME);

@@ -27,6 +27,7 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
     : imu(new pros::Imu(imu_port)), ez_auto([this] { this->ez_auto_task(); }) {
   is_tracker = DRIVE_INTEGRATED;
   last_was_autonomous = pros::competition::is_autonomous();
+  last_was_disabled = pros::competition::is_disabled();
 
   // Set ports to a global vector
   for (auto i : left_motor_ports) {
@@ -58,6 +59,7 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
     : imu(new pros::Imu(imu_ports[0])), ez_auto([this] { this->ez_auto_task(); }) {
   is_tracker = DRIVE_INTEGRATED;
   last_was_autonomous = pros::competition::is_autonomous();
+  last_was_disabled = pros::competition::is_disabled();
 
   // Set ports to a global vector
   for (auto i : left_motor_ports) {

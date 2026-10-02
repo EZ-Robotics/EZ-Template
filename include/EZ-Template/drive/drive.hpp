@@ -3966,6 +3966,7 @@ private:
   double turn_right(double target, double current, bool print = false);
   bool imu_calibration_complete = false;
   bool last_was_autonomous = false;
+  bool last_was_disabled = false;
   int loading_bar_last_x = 0;
 
   // IMU watchdog state: every IMU ever constructed (never shrinks), and
