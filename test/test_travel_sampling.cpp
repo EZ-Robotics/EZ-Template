@@ -50,7 +50,8 @@ TEST_CASE("travel: every new motion starts a fresh history, so its first window 
   // A chained motion: the next setter, with the robot still moving
   r.chassis.pid_drive_set(24_in, 110);
   // Not one pass has run for it: nothing is sampled for it yet, and nothing of the old motion answers for it
-  CHECK(DriveTestAccess::travel_stopped(r.chassis, LEFT, 50));  // nothing to veto with: ungated, not "moving"
+  CHECK_FALSE(DriveTestAccess::travel_tracked(r.chassis, LEFT));
+  CHECK_FALSE(DriveTestAccess::travel_stopped(r.chassis, LEFT, 50));  // unknown is not stopped
   pros::delay(10);
   CHECK(DriveTestAccess::travel(r.chassis, LEFT).active());
   CHECK_FALSE(DriveTestAccess::travel(r.chassis, LEFT).travel_over(100, pros::millis(), travel, span));  // not 100 ms of it yet

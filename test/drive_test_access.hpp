@@ -58,6 +58,7 @@ struct DriveTestAccess {
   // What the waits mean by "stopped" (travel.hpp). Channels are Drive::Travel: 0 left, 1 right, 2 heading, 3 odom heading, 4 odom xy
   static ez::detail::PathTracker& travel(Drive& d, int channel) { return d.travel_[channel]; }
   static bool travel_stopped(Drive& d, int channel, int window_ms) { return d.travel_stopped(static_cast<Drive::Travel>(channel), window_ms); }
+  static bool travel_tracked(Drive& d, int channel) { return d.travel_tracked(static_cast<Drive::Travel>(channel)); }
   static std::uint32_t& travel_generation(Drive& d) { return d.travel_generation_; }
 
   // xyPID's sensor and the geometry behind it (ptp_task()), for the odom origin tests

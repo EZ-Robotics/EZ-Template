@@ -3894,10 +3894,12 @@ private:
   double travel_xy_x_ = 0.0, travel_xy_y_ = 0.0;  // odom xy as the sum of what odom moved, so a pose set is not travel
   void travel_sample(bool odom_tracked);
   bool tracking_pass();
-  // False when the thing moved more than the floor allows over the last window_ms, or when that cannot be told. True when it
-  // was stopped, and also when nothing has been sampled for this motion at all (nothing is running the auto task, so there
-  // is nothing to veto an exit with).
+  // True only when the thing is known to have travelled less than the stop speed allows over the last window_ms. Not knowing (no
+  // sample covers the window, the auto task has gone quiet) is false: nothing settles a robot on a guess.
   bool travel_stopped(Travel channel, int window_ms);
+  // Whether anything has been sampled for the current motion at all. When nothing has, the auto task has not run since the motion
+  // started, so no exit can have fired on it either and there is no movement to veto one with.
+  bool travel_tracked(Travel channel);
 
   // The drive motors an mA exit should watch: every motor on the wanted sides that is not handed to the PTO.
   // Rebuilt on every call; see its definition in exit_conditions.cpp.
