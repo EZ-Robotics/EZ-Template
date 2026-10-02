@@ -410,8 +410,9 @@ public:
    * If your drivetrain has external gearing (a transmission, or a wheel gear that
    * differs from the motor gear), set `ticks` to your wheel's effective RPM
    * (cartridge RPM * (motor gear / wheel gear)) so tracking still reads distances
-   * correctly. If that ratio changes at runtime (a shifting transmission), use
-   * drive_ratio_set() instead of recomputing `ticks` by hand.
+   * correctly. If your gearing changes at runtime (a shifting transmission), call
+   * drive_rpm_set() with the new gear's wheel RPM whenever you shift. You can do that at any
+   * time, even in the middle of a motion: odom and the motion carry on from where the robot is.
    *
    * \param left_motor_ports
    *        input {1, -2...}. make ports negative if reversed
@@ -422,7 +423,9 @@ public:
    * \param wheel_diameter
    *        diameter of your drive wheels
    * \param ticks
-   *        motor cartridge RPM
+   *        the wheel's RPM: cartridge RPM * (motor gear / wheel gear). A 600 RPM cartridge with a 36 tooth motor
+   *        gear driving a 48 tooth wheel gear is 600 * (36 / 48) = 450. With no external gearing it is just the
+   *        cartridge RPM (100, 200 or 600).
    */
   Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks);
 
@@ -432,8 +435,9 @@ public:
    * If your drivetrain has external gearing (a transmission, or a wheel gear that
    * differs from the motor gear), set `ticks` to your wheel's effective RPM
    * (cartridge RPM * (motor gear / wheel gear)) so tracking still reads distances
-   * correctly. If that ratio changes at runtime (a shifting transmission), use
-   * drive_ratio_set() instead of recomputing `ticks` by hand.
+   * correctly. If your gearing changes at runtime (a shifting transmission), call
+   * drive_rpm_set() with the new gear's wheel RPM whenever you shift. You can do that at any
+   * time, even in the middle of a motion: odom and the motion carry on from where the robot is.
    *
    * \param left_motor_ports
    *        input {1, -2...}. make ports negative if reversed
@@ -444,7 +448,9 @@ public:
    * \param wheel_diameter
    *        diameter of your drive wheels
    * \param ticks
-   *        motor cartridge RPM
+   *        the wheel's RPM: cartridge RPM * (motor gear / wheel gear). A 600 RPM cartridge with a 36 tooth motor
+   *        gear driving a 48 tooth wheel gear is 600 * (36 / 48) = 450. With no external gearing it is just the
+   *        cartridge RPM (100, 200 or 600).
    */
   Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, std::vector<int> imu_ports, double wheel_diameter, double ticks);
 
@@ -3007,28 +3013,48 @@ public:
   bool interfered = false;
 
   /**
-   * Set the ratio of the robot.
+   * Sets the gear ratio on top of the constructor's `ticks`: motor turns per wheel turn, which is
+   * wheel gear / motor gear. It multiplies how many encoder ticks a wheel turn is worth. A 36 tooth
+   * motor gear driving a 48 tooth wheel gear is `48.0 / 36.0`. That is the inverse of the formula
+   * that gives `ticks` (motor gear / wheel gear), so do not use one number for both: if you put your
+   * gearing in `ticks`, leave this at 1.
+   *
+   * Most teams never call this and put their gearing in `ticks`. To tell EZ-Template about a shift,
+   * drive_rpm_set() is simpler. You can call either at any time, even in the middle of a motion: odom, the
+   * running motion, the active brake and the waits carry on from where the robot is, and only the distance
+   * traveled after the change uses the new ratio.
+   *
+   * Has no effect if you have two tracking wheels.
    *
    * \param ratio
-   *        ratio of the gears
+   *        motor turns per wheel turn (wheel gear / motor gear), default 1.0
    */
   void drive_ratio_set(double ratio);
 
   /**
-   * Set the cartridge/wheel rpm of the robot.
+   * Sets the wheel's RPM, the same number as the constructor's `ticks`: cartridge RPM * (motor gear /
+   * wheel gear). This is the simplest way to tell EZ-Template about a shift: call it with the new gear's
+   * wheel RPM when you shift.
+   *
+   * You can call it at any time, even in the middle of a motion: odom, the running motion, the active
+   * brake and the waits carry on from where the robot is, and only the distance traveled after the change
+   * uses the new RPM.
+   *
+   * Has no effect if you have two tracking wheels.
    *
    * \param rpm
-   *        rpm of the cartridge or wheel
+   *        the wheel's RPM, as in the constructor's `ticks`
    */
   void drive_rpm_set(double rpm);
 
   /**
-   * Returns the ratio of the drive.
+   * Returns the ratio set by drive_ratio_set(): motor turns per wheel turn (wheel gear / motor gear). It
+   * is 1 unless you set it.
    */
   double drive_ratio_get();
 
   /**
-   * Returns the current cartridge / wheel rpm.
+   * Returns the wheel's RPM: the constructor's `ticks`, or the last value given to drive_rpm_set().
    */
   double drive_rpm_get();
 
