@@ -223,6 +223,12 @@ Sets a new task to use for tracking.
 
 In the function you pass in, you must set `odom_current.x`, `odom_current.y`, and `odom_current.theta`.  `x` and `y` are in inches and `theta` is in degrees.  The function does not need to loop, that is done for you by EZ-Template.
 
+Write the pose directly.  Don't call `odom_xyt_set()`, `odom_xy_set()`, `odom_x_set()`, `odom_y_set()` or `odom_pose_set()` inside your function, those are for setting the pose from your own code.  A tracking function that calls them gets no xy D term (`kD`) in odom motions, because a pose that was set is not counted as the robot moving.
+
+When your own code sets the pose while a custom tracking function is running, the pass right after the set counts as no movement for the xy D term.  EZ-Template can't tell if your function kept the pose that was set or wrote its own over it, like a GPS does.  Setting the pose on every pass leaves the xy D term at 0.
+
+To go back to EZ-Template's own tracking, call `drive_defaults_set()` (it sets every other default again too).  Odom picks up from the last pose your function wrote.
+
 EZ-Template calls your function about every 10 ms from its background task, while that task holds the drive lock.  Setters like `pid_drive_set()` wait for that lock, so don't call `pros::delay()` or anything else that blocks in your function, or every setter will wait on it.
 
 `tracking_task` new function for tracking
