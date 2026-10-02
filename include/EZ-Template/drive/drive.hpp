@@ -3028,7 +3028,8 @@ public:
    */
   template <bool Called = true>
   void drive_ratio_set(double) {
-    static_assert(!Called, "drive_ratio_set() was removed in 4.0. To shift, call drive_rpm_set(wheel_rpm) with the wheel RPM of the new gear (cartridge_rpm / ratio).");
+    static_assert(!Called,
+                  "drive_ratio_set() was removed in 4.0. To shift, call drive_rpm_set(wheel_rpm) with the wheel RPM of the new gear (cartridge_rpm / ratio).");
   }
 
   /**
