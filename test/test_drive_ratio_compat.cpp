@@ -51,15 +51,31 @@ TEST_CASE("a ratio of 1 changes nothing from the five-argument constructor") {
   CHECK(six.drive_tick_per_inch() == doctest::Approx(five.drive_tick_per_inch()).epsilon(1e-12));
 }
 
-TEST_CASE("a project that passed a ratio and shifts with drive_rpm_set gets the same distances as the migrated one") {
+TEST_CASE("a legacy chassis and the migrated one read the same inches off the same encoder counts, before and after a shift") {
   test_stub::reset_all();
   Drive old_style({1, -2}, {-3, 4}, 5, kWheel, kCart, kRatio);
   Drive migrated({1, -2}, {-3, 4}, 5, kWheel, kCart / kRatio);
-  for (double wheel_rpm : {200.0, 300.0, 450.0}) {
+  auto set_counts = [](Drive& d, double left, double right) {
+    d.left_motors.front().fake().position = left;
+    d.right_motors.front().fake().position = right;
+  };
+  auto same_readings = [&] {
+    CHECK(old_style.drive_sensor_left() == doctest::Approx(migrated.drive_sensor_left()).epsilon(1e-12));
+    CHECK(old_style.drive_sensor_right() == doctest::Approx(migrated.drive_sensor_right()).epsilon(1e-12));
+  };
+
+  for (Drive* d : {&old_style, &migrated}) set_counts(*d, 1500, 1620);
+  same_readings();
+  CHECK(old_style.drive_sensor_left() > 20.0);  // a real distance, not two zeros agreeing
+
+  // Shift both to the same wheel rpm: the inches carried across the shift came from the constructors' scales, so they only
+  // agree afterwards if the constructors agreed before.
+  for (double wheel_rpm : {300.0, 450.0}) {
     old_style.drive_rpm_set(wheel_rpm);
     migrated.drive_rpm_set(wheel_rpm);
-    CAPTURE(wheel_rpm);
-    CHECK(old_style.drive_tick_per_inch() == doctest::Approx(migrated.drive_tick_per_inch()).epsilon(1e-12));
+    same_readings();
+    for (Drive* d : {&old_style, &migrated}) set_counts(*d, 2100 + wheel_rpm, 2300 + wheel_rpm);
+    same_readings();
   }
 }
 
