@@ -272,11 +272,17 @@ void Drive::tracking_wheels_tracking() {
 }
 
 void Drive::ez_tracking_task() {
+  bool tracked = tracking_pass();
+  travel_sample(tracked);
+}
+
+// Returns whether tracking ran, false when it was held off
+bool Drive::tracking_pass() {
   // Don't let this function run if odom is disabled
   // and prime the "lasts" to the current sensor values
   if (!imu_calibration_complete || !odometry_enabled) {
     tracking_prime();
-    return;
+    return false;
   }
 
   // EZ-Template's own tracking was just put back after a custom tracking function (drive_defaults_set()).  Its own poses
@@ -315,5 +321,6 @@ void Drive::ez_tracking_task() {
   xy_last_pose = now;
   xy_last_pose_valid = finite;
   if (finite) xy_last_finite_pose = now;
+  return true;
 }
 }  // namespace ez

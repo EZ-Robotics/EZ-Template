@@ -42,6 +42,27 @@ static constexpr int STUCK_WATCH_REARM_CAP = 4;
 // window, not the step) still raises the floor -- deliberately left alone, a separate design call.
 static constexpr double STUCK_STEP_DISTANCE_CAP = 1.0;
 static constexpr double STUCK_STEP_ANGLE_CAP = 3.0;
+// What the library calls "stopped", in one place. Every wait that has to decide whether a robot is done moving asks the same
+// question: did it travel less than a floor speed times W over the last W milliseconds, W being the window of the exit in
+// question (see Drive::travel_sample() below for how the path length is measured).
+//
+// The floors are fixed. No tuning value (an exit time, an error, a speed) moves them, because they are what keeps a team's own
+// tuning from changing what "stopped" means: a step-per-window test hides a speed of step / window, so a 50 ms window used to
+// call anything under 20 in/s stopped and a robot decelerating through its last 3 in at 13 in/s came back clean 2.6 in short.
+//   1.5 in/s: drive sides and odom xy. Slow enough that a robot still closing on its target is not called stopped (a heavy
+//             drivetrain crawls in at 3 to 5 in/s), fast enough that the last inch of a settle is not waited out for nothing.
+//   4 deg/s:  turns, swings and the odom heading, the same idea at the rate a drivetrain turns.
+static constexpr double STOP_SPEED_DISTANCE = 1.5;
+static constexpr double STOP_SPEED_ANGLE = 4.0;
+// The backlash band travel is measured through (see ez::detail::PathTracker): one sensor count. Without it a sensor that
+// flickers one count at rest would add a count of travel per flicker, which is 2.55 in/s on a 450 rpm 3.25 in drive if it
+// flickers every 10 ms tick and would keep a resting robot from ever being stopped. A swing of more than a count is counted in
+// full.
+//   Drive sides and odom xy: 1 / drive_tick_per_inch(), the count of whatever sensor the drive is on (a tracking wheel's own
+//   count when trackers are in use).
+//   Heading: 0.01 degrees. The smallest step the IMU reports could not be found in this repository or the PROS headers, so this
+//   is the V5 inertial sensor's data resolution as it is generally given (centidegrees), not a measured number.
+static constexpr double TRAVEL_BAND_ANGLE = 0.01;
 // How close a wait_until() target has to be to the motion's actual final target to count as
 // literally the same target, not just a waypoint short of it -- used only to decide whether
 // wait_until_drive()/wait_until_turn_swing_internal() get the same "settled inside big error
@@ -466,6 +487,44 @@ void print_unreachable_checkpoint(double checkpoint, double final_target) {
 }
 
 }  // namespace
+
+// Samples everything "stopped" is measured on, once per auto task pass (ez_tracking_task() calls this after tracking ran).
+// Drive sides and heading are read the way the motions' own PIDs read them, so tracking wheels are used when present. Odom xy
+// is the sum of what odom moved each pass (xy_pose_delta, which a pose set is not part of), so relocalizing is not travel.
+void Drive::travel_sample(bool odom_tracked) {
+  if (travel_generation_ != motion_generation) {
+    for (auto& t : travel_) t.reset();
+    travel_generation_ = motion_generation;
+    travel_xy_x_ = travel_xy_y_ = 0.0;
+  }
+  double tick_per_inch = drive_tick_per_inch();
+  double count = tick_per_inch > 0.0 ? 1.0 / tick_per_inch : 0.0;
+  travel_[(int)Travel::Left].band_set(count);
+  travel_[(int)Travel::Right].band_set(count);
+  travel_[(int)Travel::OdomXY].band_set(count);
+  travel_[(int)Travel::Heading].band_set(TRAVEL_BAND_ANGLE);
+  travel_[(int)Travel::OdomHeading].band_set(TRAVEL_BAND_ANGLE);
+  if (odom_tracked) {
+    travel_xy_x_ += xy_pose_delta.x;
+    travel_xy_y_ += xy_pose_delta.y;
+  }
+  std::uint32_t now = pros::millis();
+  std::uint32_t pass = stuck_passes();
+  travel_[(int)Travel::Left].sample(drive_sensor_left(), 0.0, now, pass);
+  travel_[(int)Travel::Right].sample(drive_sensor_right(), 0.0, now, pass);
+  travel_[(int)Travel::Heading].sample(drive_angle_get(), 0.0, now, pass);
+  travel_[(int)Travel::OdomHeading].sample(odom_theta_get(), 0.0, now, pass);
+  travel_[(int)Travel::OdomXY].sample(travel_xy_x_, travel_xy_y_, now, pass);
+}
+
+bool Drive::travel_stopped(Travel channel, int window_ms) {
+  ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+  // Nothing has been sampled for this motion: the auto task has not run since it started, so nothing has had the chance to
+  // exit on it either, and there is no movement to veto an exit with.
+  if (travel_generation_ != motion_generation || !travel_[(int)channel].active()) return true;
+  bool angle = channel == Travel::Heading || channel == Travel::OdomHeading;
+  return travel_[(int)channel].stopped(window_ms, angle ? STOP_SPEED_ANGLE : STOP_SPEED_DISTANCE, pros::millis());
+}
 
 // See drive.hpp's own comment on InterferedScope/motion_generation/interfered_generation for the concurrency
 // hazard this exists to fix: every retarget guard below used to end a stale wait with a bare

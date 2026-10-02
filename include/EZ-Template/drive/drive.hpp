@@ -17,6 +17,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include "EZ-Template/lock.hpp"
 #include "EZ-Template/slew.hpp"
 #include "EZ-Template/tracking_wheel.hpp"
+#include "EZ-Template/travel.hpp"
 #include "EZ-Template/util.hpp"
 #include "EZ-Units/units.hpp"
 #include "pros/motor_group.hpp"
@@ -3878,6 +3879,25 @@ private:
    * Recursive so nested public calls and user callbacks that call setters are safe.
    */
   ez::Lock<pros::RecursiveMutex> drive_mutex;
+
+  // What the waits mean by "stopped": how far each measured thing has travelled over a recent window, sampled once per auto task
+  // pass and cleared by every new motion. See travel_sample() in exit_conditions.cpp, which also owns the speed floors.
+  enum class Travel {
+    Left,
+    Right,
+    Heading,
+    OdomHeading,
+    OdomXY
+  };
+  ez::detail::PathTracker travel_[5];
+  std::uint32_t travel_generation_ = 0;
+  double travel_xy_x_ = 0.0, travel_xy_y_ = 0.0;  // odom xy as the sum of what odom moved, so a pose set is not travel
+  void travel_sample(bool odom_tracked);
+  bool tracking_pass();
+  // False when the thing moved more than the floor allows over the last window_ms, or when that cannot be told. True when it
+  // was stopped, and also when nothing has been sampled for this motion at all (nothing is running the auto task, so there
+  // is nothing to veto an exit with).
+  bool travel_stopped(Travel channel, int window_ms);
 
   // The drive motors an mA exit should watch: every motor on the wanted sides that is not handed to the PTO.
   // Rebuilt on every call; see its definition in exit_conditions.cpp.

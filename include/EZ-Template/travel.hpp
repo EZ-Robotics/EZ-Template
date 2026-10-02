@@ -86,7 +86,6 @@ public:
   // The path length over the last window_ms (at least MIN_WINDOW_MS) and the span of time it really covers, which is at least
   // that.  False when it cannot be told: no history, not enough of it to cover the window, or a stale latest sample.
   bool travel_over(int window_ms, std::uint32_t now_ms, double& travel, double& span_ms) const {
-    return false;  // STUB: never answers
     if (!has_baseline_ || count_ < 2) return false;
     if ((std::int32_t)(now_ms - newest_t()) > STALE_MS) return false;
     if (window_ms < MIN_WINDOW_MS) window_ms = MIN_WINDOW_MS;
