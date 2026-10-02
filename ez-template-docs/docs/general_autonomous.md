@@ -300,9 +300,11 @@ void drive_mode_set(e_mode p_mode, bool stop_drive = true);
 
 
 ### drive_rpm_set()
-Set the cartridge/wheel rpm of the robot.     
+Sets the wheel's RPM: the same number as the constructor's `ticks`, cartridge RPM * (motor gear / wheel gear).  It's the one number EZ-Template has for your gearing, and it's how a shifting transmission tells the drive about a gear change: call it with the wheel RPM of the new gear when you shift.  
 
-`rpm` rpm of the cartridge or wheel
+You can call it at any time, even in the middle of a motion.  Odom, the running motion, active brake and the waits carry on from where the robot is, and only the distance traveled after the change uses the new RPM.  Has no effect if you have two tracking wheels.  
+
+`rpm` the wheel's RPM, as in the constructor's `ticks`
 <Tabs
   groupId="drive_rpm_set"
   defaultValue="proto"
@@ -340,50 +342,6 @@ void drive_rpm_set(double rpm);
 
 </TabItem>
 </Tabs>
-
-
-### drive_ratio_set()
-Set the ratio of the robot.  
-
-`ratio` ratio of the gears  
-<Tabs
-  groupId="drive_ratio_set"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-
-<TabItem value="example">
-
-```cpp
-void drive_example() {
-  chassis.pid_drive_set(24_in, DRIVE_SPEED);
-  chassis.pid_wait();
-
-  chassis.drive_ratio_set(0.083);  // Engage torque rpm
-
-  chassis.pid_drive_set(-24_in, DRIVE_SPEED);
-  chassis.pid_wait();
-
-  chassis.drive_ratio_set(1.79);  // Return back to normal rpm
-}
-```
-
-</TabItem>
-
-
-<TabItem value="proto">
-
-```cpp
-void drive_ratio_set(double ratio);
-```
-
-
-</TabItem>
-</Tabs>
-
 
 
 ### pid_drive_toggle()
@@ -811,7 +769,7 @@ double drive_tick_per_inch();
 
 
 ### drive_rpm_get()
-Returns the current cartridge / wheel rpm.     
+Returns the wheel's RPM: the constructor's `ticks`, or the last value given to `drive_rpm_set()`.     
 <Tabs
   groupId="drive_rpm_get"
   defaultValue="proto"
@@ -846,49 +804,6 @@ void drive_example() {
 
 ```cpp
 double drive_rpm_get();
-```
-
-
-</TabItem>
-</Tabs>
-
-
-### drive_ratio_get()
-Returns the ratio of the drive.    
-<Tabs
-  groupId="drive_ratio_get"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-
-<TabItem value="example">
-
-```cpp
-void drive_example() {
-  chassis.pid_drive_set(24_in, DRIVE_SPEED);
-  chassis.pid_wait();
-
-  chassis.drive_ratio_set(0.083);  // Engage torque rpm
-  printf("%.2f\n", chassis.drive_ratio_get());
-
-  chassis.pid_drive_set(-24_in, DRIVE_SPEED);
-  chassis.pid_wait();
-
-  chassis.drive_ratio_set(1.79);  // Return back to normal rpm
-  printf("%.2f\n", chassis.drive_ratio_get());
-}
-```
-
-</TabItem>
-
-
-<TabItem value="proto">
-
-```cpp
-double drive_ratio_get();
 ```
 
 

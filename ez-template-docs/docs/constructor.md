@@ -15,9 +15,14 @@ This is the standard setup that uses built in motor encoders.
 `right_motor_ports` input `{-3, 4...}`. make ports negative if reversed         
 `imu_port` port the IMU is plugged into       
 `wheel_diameter` diameter of your drive wheels      
-`ticks` motor cartridge RPM   
+`ticks` the wheel's RPM: cartridge RPM * (motor gear / wheel gear)   
 
-If your drivetrain has external gearing (a transmission, or a wheel gear that differs from the motor gear), set `ticks` to your wheel's effective RPM (cartridge RPM * (motor gear / wheel gear)) so tracking still reads distances correctly. If that ratio changes at runtime (a shifting transmission), use [`drive_ratio_set()`](https://ez-robotics.github.io/EZ-Template/docs/general_autonomous#drive_ratio_set) instead of recomputing `ticks` by hand.
+`ticks` is the wheel's RPM, so a 600 RPM cartridge with a 36 tooth motor gear driving a 48 tooth wheel gear is 600 * (36 / 48) = 450.  With no external gearing it is just the cartridge RPM (100, 200 or 600).  Get it wrong and every distance the robot reports is off by the same factor.  If your gearing changes at runtime (a shifting transmission), call [`drive_rpm_set()`](https://ez-robotics.github.io/EZ-Template/docs/general_autonomous#drive_rpm_set) with the new gear's wheel RPM whenever you shift.  You can do that at any time, even in the middle of a motion.
+
+:::note Upgrading from 3.2.x or an earlier 4.0 beta
+The constructor used to take a sixth argument, `ratio`.  It was removed in 4.0, and `ticks` is now the wheel's RPM.  A project that still passes it builds with a deprecation warning and gives the same result as the migrated call, but the warning will become an error in a later major version.  To migrate, fold the ratio into `ticks` and delete the last argument: `ticks = cartridge_rpm / ratio`, so `(..., 3.25, 600, 1.667)` becomes `(..., 3.25, 360)`.  Deleting the last argument without changing `ticks` makes every distance `ratio` times too long.  See [3.2.x -> 4.0.0](../migration/3.2-4.0.md).
+:::
+
 <Tabs
   groupId="ex1"
   defaultValue="proto"
@@ -89,9 +94,9 @@ Same as Integrated Encoders, but takes multiple IMU ports instead of one.  If th
 `right_motor_ports` input `{-3, 4...}`. make ports negative if reversed         
 `imu_ports` input `{5, 6...}`. multiple IMU ports      
 `wheel_diameter` diameter of your drive wheels      
-`ticks` motor cartridge RPM   
+`ticks` the wheel's RPM: cartridge RPM * (motor gear / wheel gear)   
 
-If your drivetrain has external gearing (a transmission, or a wheel gear that differs from the motor gear), set `ticks` to your wheel's effective RPM (cartridge RPM * (motor gear / wheel gear)) so tracking still reads distances correctly. If that ratio changes at runtime (a shifting transmission), use [`drive_ratio_set()`](https://ez-robotics.github.io/EZ-Template/docs/general_autonomous#drive_ratio_set) instead of recomputing `ticks` by hand.
+`ticks` is the wheel's RPM, so a 600 RPM cartridge with a 36 tooth motor gear driving a 48 tooth wheel gear is 600 * (36 / 48) = 450.  With no external gearing it is just the cartridge RPM (100, 200 or 600).  Get it wrong and every distance the robot reports is off by the same factor.  If your gearing changes at runtime (a shifting transmission), call [`drive_rpm_set()`](https://ez-robotics.github.io/EZ-Template/docs/general_autonomous#drive_rpm_set) with the new gear's wheel RPM whenever you shift.  You can do that at any time, even in the middle of a motion.
 <Tabs
   groupId="ex_redundant_imu"
   defaultValue="proto"
@@ -132,7 +137,7 @@ double wheel_diameter, double ticks);
  
 
 ## Driver Control Only
-A minimal constructor with no IMU port, wheel diameter, ticks, or ratio. Driver control works normally, but PID driving/turning/swinging and odometry are not usable from this constructor. Intended for brand new users and short-term setups (classrooms, summer camps) where getting a drivetrain moving matters more than tuned autonomous routines. Switch to the [Integrated Encoders](#integrated-encoders) constructor once you're ready to add an IMU and autonomous movements.
+A minimal constructor with no IMU port, wheel diameter, or ticks. Driver control works normally, but PID driving/turning/swinging and odometry are not usable from this constructor. Intended for brand new users and short-term setups (classrooms, summer camps) where getting a drivetrain moving matters more than tuned autonomous routines. Switch to the [Integrated Encoders](#integrated-encoders) constructor once you're ready to add an IMU and autonomous movements.
 
 `left_motor_ports` input `{1, -2...}`. make ports negative if reversed      
 `right_motor_ports` input `{-3, 4...}`. make ports negative if reversed         
