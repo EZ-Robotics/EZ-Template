@@ -293,3 +293,64 @@ TEST_CASE("with tracking wheels set, drive_ratio_set and drive_rpm_set change no
   CHECK(r.chassis.drive_sensor_right() == r0);
   CHECK(r.chassis.drive_tick_per_inch() == tpi0);
 }
+
+// --- Found by the verification round: a degenerate value must not poison the carried inches --------------------------------------
+
+TEST_CASE("a bad ratio (0 or negative) followed by a good one leaves the sensors finite and where the raw count says") {
+  for (double bad : {0.0, -1.0}) {
+    Rig r;
+    r.chassis.pid_drive_set(24_in, 110);
+    r.chassis.pid_wait();
+    r.idle(5);
+    double l0 = r.chassis.drive_sensor_left();
+    double r0 = r.chassis.drive_sensor_right();
+
+    r.chassis.drive_ratio_set(bad);
+    r.chassis.drive_ratio_set(1.0);
+
+    CAPTURE(bad);
+    CHECK(std::isfinite(r.chassis.drive_sensor_left()));
+    CHECK(std::isfinite(r.chassis.drive_sensor_right()));
+    CHECK(std::fabs(r.chassis.drive_sensor_left() - l0) < 0.05);
+    CHECK(std::fabs(r.chassis.drive_sensor_right() - r0) < 0.05);
+  }
+}
+
+TEST_CASE("a bad rpm (0) followed by a good one leaves the sensors finite and where the raw count says") {
+  Rig r;
+  r.chassis.pid_drive_set(24_in, 110);
+  r.chassis.pid_wait();
+  r.idle(5);
+  double l0 = r.chassis.drive_sensor_left();
+
+  r.chassis.drive_rpm_set(0.0);
+  r.chassis.drive_rpm_set(600.0);
+
+  CHECK(std::isfinite(r.chassis.drive_sensor_left()));
+  CHECK(std::fabs(r.chassis.drive_sensor_left() - l0) < 0.05);
+}
+
+TEST_CASE("the active brake holds a still robot across a shift, with the sticks released") {
+  for (double kp : {2.0, 4.0}) {
+    Rig r;
+    r.sim.use_real_auto_task(true);
+    r.chassis.opcontrol_drive_activebrake_set(kp);
+    r.chassis.pid_drive_set(24_in, 110);
+    r.chassis.pid_wait();
+    for (int i = 0; i < 50; i++) {
+      r.chassis.opcontrol_arcade_standard(ez::SPLIT);
+      pros::delay(ez::util::DELAY_TIME);
+    }
+    double p0 = r.sim.left().position_in;
+    r.sim.shift_gearing(300.0);
+    r.chassis.drive_rpm_set(300.0);
+    double worst = 0;
+    for (int i = 0; i < 100; i++) {
+      r.chassis.opcontrol_arcade_standard(ez::SPLIT);
+      pros::delay(ez::util::DELAY_TIME);
+      worst = std::fmax(worst, std::fabs(r.sim.left().position_in - p0));
+    }
+    CAPTURE(kp);
+    CHECK(worst < 0.5);
+  }
+}
