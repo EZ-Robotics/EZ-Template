@@ -2819,6 +2819,16 @@ public:
 
   /**
    * Lock the code in a while loop until the robot has settled.
+   *
+   * Settled means the robot is inside the motion's small or big error for that exit's time AND has stopped: it travelled less than
+   * 1.5 in/s (4 deg/s for a turn or swing) times that time over that time, never a speed measured in one tick. The same speed floor is
+   * used everywhere the library calls a robot stopped, and no exit condition moves it. A wait never reports a robot settled while it
+   * is moving faster than 1.5 in/s (4 deg/s) on average over its exit window, except a robot oscillating at its target, which ends
+   * after it stops making progress (no new low in its error for max(velocity_exit_time, 1 in / 1.5 in/s, or 3 deg / 4 deg/s)).
+   *
+   * Inside big_error, a robot that stopped, or is pinned or jammed there so that the mA exit fires (mA_timeout), is a finished
+   * motion: the wait returns and `interfered` stays false. Outside big_error, a robot stopped by something returns with `interfered`
+   * true.
    */
   void pid_wait();
 
@@ -2949,6 +2959,13 @@ public:
    * Autonomous interference detection.
    *
    * Returns true when interfered, and false when nothing happened.
+   *
+   * Every wait (pid_wait(), pid_wait_until(), pid_wait_quick(), pid_wait_quick_chain() and the odom waits) decides this with one rule.
+   * A motion that settled, or whose mA exit fired, inside big_error of its final target is finished and not interfered. A
+   * pid_wait_until() checkpoint it did not cross counts as reached when it is that final target, when the robot is within the
+   * motion's small_error of it, or when the robot settled inside big_error of the final target with the checkpoint between where it
+   * rested and that target; a checkpoint that can never be reached (past the target, or behind the start) is printed, not interfered.
+   * A reachable checkpoint a robot was stopped short of outside big_error is interfered.
    */
   bool interfered = false;
 
@@ -3566,12 +3583,16 @@ public:
   /**
    * Set's constants for drive exit conditions.
    *
+   * The small and big exits also need the robot to have stopped: it travelled less than 1.5 in/s (4 deg/s for a turn or swing) times
+   * the exit's time over that time (see pid_wait()). When the timer has run out and the robot is still moving, the exit comes the
+   * moment it stops, as long as it stayed inside the error.
+   *
    * \param p_small_exit_time
-   *        time to exit when within small_error, in ms
+   *        time to exit when within small_error (and stopped), in ms
    * \param p_small_error
    *        small timer will start when error is within this, in inches
    * \param p_big_exit_time
-   *        time to exit when within big_error, in ms
+   *        time to exit when within big_error (and stopped), in ms
    * \param p_big_error
    *        big timer will start when error is within this, in inches
    * \param p_velocity_exit_time
