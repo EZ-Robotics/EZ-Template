@@ -117,7 +117,8 @@ inline void report_daemon_priority_once() {
   if (daemon == nullptr)
     snprintf(text, sizeof(text), "EZ-Template: could not find the PROS system daemon, so a task holding a chassis lock cannot be shielded from deletion.\n");
   else
-    snprintf(text, sizeof(text), "EZ-Template: the PROS system daemon runs at priority %lu, not below %lu, so a task holding a chassis lock cannot be shielded from deletion.\n",
+    snprintf(text, sizeof(text),
+             "EZ-Template: the PROS system daemon runs at priority %lu, not below %lu, so a task holding a chassis lock cannot be shielded from deletion.\n",
              static_cast<unsigned long>(priority), static_cast<unsigned long>(KILL_SAFE_PRIORITY));
   emit(text);
 }
@@ -137,7 +138,7 @@ class Guard;
  */
 template <typename M>
 class Lock {
- public:
+public:
   Lock() = default;
   Lock(const Lock&) = delete;
   Lock& operator=(const Lock&) = delete;
@@ -162,7 +163,7 @@ class Lock {
     va_end(arguments);
   }
 
- private:
+private:
   template <typename, bool>
   friend class Guard;
   friend struct LockTestAccess;
@@ -188,7 +189,7 @@ class Lock {
  */
 template <typename M, bool Boost>
 class Guard {
- public:
+public:
   explicit Guard(Lock<M>& lock) : lock_(lock) {
     if constexpr (Boost) {
       if (detail::scheduler_running.load(std::memory_order_relaxed) && !lock_.held_by_caller()) raise();
@@ -230,7 +231,7 @@ class Guard {
   Guard(const Guard&) = delete;
   Guard& operator=(const Guard&) = delete;
 
- private:
+private:
   void raise() {
     std::uint32_t before = pros::c::task_get_priority(nullptr);
     if (before >= detail::KILL_SAFE_PRIORITY) return;  // already at the top, or inheriting it: raising would strand the base there
