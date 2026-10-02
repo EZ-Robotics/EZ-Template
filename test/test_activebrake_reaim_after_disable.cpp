@@ -124,3 +124,67 @@ TEST_CASE("control: a shove while enabled, with no disable, is still pulled back
     CHECK(o.target_shift < 1e-9);  // never re-aimed, so the brake keeps pulling toward where it was released
   }
 }
+
+// Re-aim fires once per enable, never on every pass. After the enable edge a robot that is pushed is pulled back to the
+// target the edge set, whether the status says driver control or autonomous (a hybrid or skills routine run from driver).
+namespace {
+// Runs `n` driver passes with the sticks released.
+void driver_passes(Drive& chassis, int n) {
+  for (int i = 0; i < n; i++) {
+    drive_one(chassis, Style::Arcade);
+    pros::delay(util::DELAY_TIME);
+  }
+}
+
+double target_shift_after_push(bool autonomous_status) {
+  test_stub::reset_all();
+  auto a = sim::archetype_light_fast();
+  Drive chassis({1, -2}, {-3, 4}, 5, a.wheel_diameter_in, a.cartridge_rpm);
+  DriveTestAccess::imu_calibration_complete(chassis) = true;
+  chassis.pid_print_toggle(false);
+  sim::SimRobot sim(chassis, a, sim::NoiseConfig{false, 1});
+  sim.use_real_auto_task(true);
+  chassis.opcontrol_drive_activebrake_set(4.0);
+
+  sticks(Style::Arcade, 0);
+  field(true, false);
+  ticks(50);
+  field(false, autonomous_status);
+  driver_passes(chassis, 30);
+  double target_before = chassis.left_activebrakePID.target;
+  sim.displace(-3.0);
+  driver_passes(chassis, 30);
+  return std::fabs(chassis.left_activebrakePID.target - target_before);
+}
+}  // namespace
+
+TEST_CASE("control: after the enable re-aim, a push is not re-aimed away (driver status and autonomous status)") {
+  CHECK(target_shift_after_push(false) < 1e-9);
+  CHECK(target_shift_after_push(true) < 1e-9);
+}
+
+TEST_CASE("a one-pass disable blip mid-driver re-aims once to where the robot is, and a later push is still pulled back") {
+  test_stub::reset_all();
+  auto a = sim::archetype_light_fast();
+  Drive chassis({1, -2}, {-3, 4}, 5, a.wheel_diameter_in, a.cartridge_rpm);
+  DriveTestAccess::imu_calibration_complete(chassis) = true;
+  chassis.pid_print_toggle(false);
+  sim::SimRobot sim(chassis, a, sim::NoiseConfig{false, 1});
+  sim.use_real_auto_task(true);
+  chassis.opcontrol_drive_activebrake_set(4.0);
+
+  field(false, false);
+  sticks(Style::Arcade, 60);
+  driver_passes(chassis, 100);
+  sticks(Style::Arcade, 0);
+  driver_passes(chassis, 50);
+  field(true, false);
+  ticks(1);
+  field(false, false);
+  driver_passes(chassis, 20);
+  CHECK(std::fabs(chassis.left_activebrakePID.target - chassis.drive_sensor_left()) < 0.05);
+  double target_before = chassis.left_activebrakePID.target;
+  sim.displace(-3.0);
+  driver_passes(chassis, 20);
+  CHECK(std::fabs(chassis.left_activebrakePID.target - target_before) < 1e-9);
+}
