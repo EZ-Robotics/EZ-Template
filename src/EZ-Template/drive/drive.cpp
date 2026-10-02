@@ -94,6 +94,15 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
   drive_defaults_set();
 }
 
+// Compatibility constructors for projects written before ratio was removed (see drive.hpp). Both hand the folded ticks to the
+// five-argument constructor, so there is one way the numbers get into the Drive.
+Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks, double ratio)
+    : Drive(std::move(left_motor_ports), std::move(right_motor_ports), imu_port, wheel_diameter, ticks / ratio) {}
+
+Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, std::vector<int> imu_ports, double wheel_diameter, double ticks,
+             double ratio)
+    : Drive(std::move(left_motor_ports), std::move(right_motor_ports), std::move(imu_ports), wheel_diameter, ticks / ratio) {}
+
 Drive::~Drive() {
   // pros::v5::Imu has virtual member functions but a non-virtual destructor.
   // Every pointer in all_imus was allocated as exactly `new pros::Imu(...)`
@@ -208,20 +217,46 @@ double Drive::drive_tick_per_inch() {
 void Drive::drive_tick_per_inch_compute() {
   CIRCUMFERENCE = WHEEL_DIAMETER * M_PI;
 
-  if (is_tracker == DRIVE_INTEGRATED) TICK_PER_REV = (50.0 * (3600.0 / CARTRIDGE)) * RATIO;  // with no cart, the encoder reads 50 counts per rotation
+  if (is_tracker == DRIVE_INTEGRATED) TICK_PER_REV = (50.0 * (3600.0 / CARTRIDGE));  // with no cart, the encoder reads 50 counts per rotation
 
   TICK_PER_INCH = (TICK_PER_REV / CIRCUMFERENCE);
 }
 
-void Drive::drive_ratio_set(double ratio) {
-  RATIO = ratio;
-  drive_tick_per_inch_compute();
-}
-double Drive::drive_ratio_get() { return RATIO; }
 void Drive::drive_rpm_set(double rpm) {
+  ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+
+  if (is_tracker != DRIVE_INTEGRATED) {
+    // Two tracking wheels read in inches on their own and never use CARTRIDGE
+    CARTRIDGE = rpm;
+    drive_tick_per_inch_compute();
+    return;
+  }
+
+  // Everything that can block (the encoder reads) happens first. What follows changes the scale without blocking, at the
+  // guard's raised priority, so no other task can read the scale half changed.
+  int raw_left = drive_sensor_left_raw();  // a failed read gives the last good one, so it cannot poison the offset
+  int raw_right = drive_sensor_right_raw();
+  double old_tick_per_inch = TICK_PER_INCH;
+  double in_left = sensor_offset_in_left + (raw_left - sensor_offset_raw_left) / old_tick_per_inch;
+  double in_right = sensor_offset_in_right + (raw_right - sensor_offset_raw_right) / old_tick_per_inch;
+
   CARTRIDGE = rpm;
   drive_tick_per_inch_compute();
+
+  // The raw counts did not move, so the robot did not either: carry the inches it had across. Only when the scale really
+  // changed, so setting a value that is already set leaves every reading exactly as it was. And only when the old scale gave
+  // real inches: after an rpm of 0 (ticks per inch infinite) or infinity (ticks per inch 0) the inches above are 0 / 0 or
+  // raw / 0, and storing them would leave both sensors at NaN after the next good value, where without the offsets that
+  // sequence recovers. Then the older offsets stay, and the reading carries on from them at the new scale.
+  bool carried_inches_are_real = std::isfinite(old_tick_per_inch) && old_tick_per_inch != 0.0 && std::isfinite(in_left) && std::isfinite(in_right);
+  if (TICK_PER_INCH != old_tick_per_inch && carried_inches_are_real) {
+    sensor_offset_in_left = in_left;
+    sensor_offset_in_right = in_right;
+    sensor_offset_raw_left = raw_left;
+    sensor_offset_raw_right = raw_right;
+  }
 }
+
 double Drive::drive_rpm_get() { return CARTRIDGE; }
 
 void Drive::private_drive_set(int left, int right) {
@@ -281,6 +316,10 @@ void Drive::drive_sensor_reset() {
   // Reset sensors
   last_good_raw_left = 0;
   last_good_raw_right = 0;
+  sensor_offset_in_left = 0.0;
+  sensor_offset_in_right = 0.0;
+  sensor_offset_raw_left = 0;
+  sensor_offset_raw_right = 0;
   left_motors.front().tare_position();
   right_motors.front().tare_position();
   if (odom_tracker_left_enabled) odom_tracker_left->reset();
@@ -309,7 +348,12 @@ int Drive::drive_sensor_right_raw() {
 }
 double Drive::drive_sensor_right() {
   if (is_tracker == ODOM_TRACKER) return odom_tracker_right->get();
-  return drive_sensor_right_raw() / drive_tick_per_inch();
+  // The raw read comes first and outside the lock (it can block, and nothing inside a guard may). The offsets and the scale
+  // are then taken together under it, so a shift from another task lands before or after the whole reading, never between
+  // its parts. drive_mutex is recursive: the tracking and auto passes already hold it when they call this.
+  int raw = drive_sensor_right_raw();
+  ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+  return sensor_offset_in_right + (raw - sensor_offset_raw_right) / drive_tick_per_inch();
 }
 int Drive::drive_velocity_right() { return right_motors.front().get_actual_velocity(); }
 double Drive::drive_mA_right() { return right_motors.front().get_current_draw(); }
@@ -327,7 +371,10 @@ int Drive::drive_sensor_left_raw() {
 }
 double Drive::drive_sensor_left() {
   if (is_tracker == ODOM_TRACKER) return odom_tracker_left->get();
-  return drive_sensor_left_raw() / drive_tick_per_inch();
+  // Same as drive_sensor_right(): raw read outside the lock, offsets and scale as one snapshot under it.
+  int raw = drive_sensor_left_raw();
+  ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+  return sensor_offset_in_left + (raw - sensor_offset_raw_left) / drive_tick_per_inch();
 }
 int Drive::drive_velocity_left() { return left_motors.front().get_actual_velocity(); }
 double Drive::drive_mA_left() { return left_motors.front().get_current_draw(); }

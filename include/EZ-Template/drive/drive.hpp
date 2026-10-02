@@ -410,8 +410,9 @@ public:
    * If your drivetrain has external gearing (a transmission, or a wheel gear that
    * differs from the motor gear), set `ticks` to your wheel's effective RPM
    * (cartridge RPM * (motor gear / wheel gear)) so tracking still reads distances
-   * correctly. If that ratio changes at runtime (a shifting transmission), use
-   * drive_ratio_set() instead of recomputing `ticks` by hand.
+   * correctly. If your gearing changes at runtime (a shifting transmission), call
+   * drive_rpm_set() with the new gear's wheel RPM whenever you shift. You can do that at any
+   * time, even in the middle of a motion: odom and the motion carry on from where the robot is.
    *
    * \param left_motor_ports
    *        input {1, -2...}. make ports negative if reversed
@@ -422,7 +423,9 @@ public:
    * \param wheel_diameter
    *        diameter of your drive wheels
    * \param ticks
-   *        motor cartridge RPM
+   *        the wheel's RPM: cartridge RPM * (motor gear / wheel gear). A 600 RPM cartridge with a 36 tooth motor
+   *        gear driving a 48 tooth wheel gear is 600 * (36 / 48) = 450. With no external gearing it is just the
+   *        cartridge RPM (100, 200 or 600).
    */
   Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks);
 
@@ -432,8 +435,9 @@ public:
    * If your drivetrain has external gearing (a transmission, or a wheel gear that
    * differs from the motor gear), set `ticks` to your wheel's effective RPM
    * (cartridge RPM * (motor gear / wheel gear)) so tracking still reads distances
-   * correctly. If that ratio changes at runtime (a shifting transmission), use
-   * drive_ratio_set() instead of recomputing `ticks` by hand.
+   * correctly. If your gearing changes at runtime (a shifting transmission), call
+   * drive_rpm_set() with the new gear's wheel RPM whenever you shift. You can do that at any
+   * time, even in the middle of a motion: odom and the motion carry on from where the robot is.
    *
    * \param left_motor_ports
    *        input {1, -2...}. make ports negative if reversed
@@ -444,9 +448,68 @@ public:
    * \param wheel_diameter
    *        diameter of your drive wheels
    * \param ticks
-   *        motor cartridge RPM
+   *        the wheel's RPM: cartridge RPM * (motor gear / wheel gear). A 600 RPM cartridge with a 36 tooth motor
+   *        gear driving a 48 tooth wheel gear is 600 * (36 / 48) = 450. With no external gearing it is just the
+   *        cartridge RPM (100, 200 or 600).
    */
   Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, std::vector<int> imu_ports, double wheel_diameter, double ticks);
+
+  // What the compiler says about either six-argument constructor. One string for both so they cannot drift apart.
+#define EZ_DRIVE_RATIO_ARG_DEPRECATED \
+  "Drive's 6th argument (ratio) was removed in 4.0. Pass the wheel RPM instead: cartridge_rpm / ratio. 600 and 1.667 becomes 360: (..., 3.25, 600, 1.667) -> (..., 3.25, 360)"
+  /**
+   * Compatibility only: the constructor 3.x and 4.0 beta.1 to beta.3 had, with a `ratio` as the sixth argument.
+   * It exists so those projects still compile, and it will be removed in a later major version.
+   *
+   * To migrate, fold the ratio into the wheel RPM and drop the last argument: `ticks = cartridge_rpm / ratio`. For example,
+   * 600 and 1.667 becomes 360: `Drive(left, right, 21, 3.25, 600, 1.667)` becomes `Drive(left, right, 21, 3.25, 360)`.
+   * Deleting the last argument without changing `ticks` makes every distance `ratio` times too long.
+   *
+   * It gives exactly the result of the migrated call: `ticks / ratio` goes to the five-argument constructor. Like that
+   * constructor, it does not check its numbers, so a `ratio` of 0 reads as infinite ticks (every distance reads 0) and a
+   * negative `ratio` reads distances backwards.
+   *
+   * \param left_motor_ports
+   *        input {1, -2...}. make ports negative if reversed
+   * \param right_motor_ports
+   *        input {-3, 4...}. make ports negative if reversed
+   * \param imu_port
+   *        port the IMU is plugged into
+   * \param wheel_diameter
+   *        diameter of your drive wheels
+   * \param ticks
+   *        motor cartridge RPM (it becomes `ticks / ratio`, the wheel RPM)
+   * \param ratio
+   *        wheel gear / motor gear, as in 3.x
+   */
+  [[deprecated(EZ_DRIVE_RATIO_ARG_DEPRECATED)]]
+  Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks, double ratio);
+
+  /**
+   * Compatibility only: the redundant IMU constructor 3.x and 4.0 beta.1 to beta.3 had, with a `ratio` as the sixth
+   * argument. It exists so those projects still compile, and it will be removed in a later major version.
+   *
+   * To migrate, fold the ratio into the wheel RPM and drop the last argument: `ticks = cartridge_rpm / ratio`. For example,
+   * 600 and 1.667 becomes 360: `Drive(left, right, {21, 20}, 3.25, 600, 1.667)` becomes `Drive(left, right, {21, 20}, 3.25, 360)`.
+   * It gives exactly the result of the migrated call, and like the five-argument constructor it does not check its numbers
+   * (a `ratio` of 0 reads as infinite ticks, a negative one reads distances backwards).
+   *
+   * \param left_motor_ports
+   *        input {1, -2...}. make ports negative if reversed
+   * \param right_motor_ports
+   *        input {-3, 4...}. make ports negative if reversed
+   * \param imu_ports
+   *        input {5, 6...}. multiple IMU ports
+   * \param wheel_diameter
+   *        diameter of your drive wheels
+   * \param ticks
+   *        motor cartridge RPM (it becomes `ticks / ratio`, the wheel RPM)
+   * \param ratio
+   *        wheel gear / motor gear, as in 3.x
+   */
+  [[deprecated(EZ_DRIVE_RATIO_ARG_DEPRECATED)]]
+  Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, std::vector<int> imu_ports, double wheel_diameter, double ticks, double ratio);
+#undef EZ_DRIVE_RATIO_ARG_DEPRECATED
 
   // Deconstructor
   ~Drive();
@@ -1359,6 +1422,9 @@ public:
    *
    * On a failed sensor read, returns the last successfully-read raw value instead of the
    * PROS_ERR/PROS_ERR_F sentinel the underlying read failed with.
+   *
+   * This is the raw count since the last reset, in encoder ticks. It does not change when drive_rpm_set()
+   * changes what a tick is worth, so after one of those it is no longer a fixed multiple of drive_sensor_right().
    */
   int drive_sensor_right_raw();
 
@@ -1391,6 +1457,9 @@ public:
    *
    * On a failed sensor read, returns the last successfully-read raw value instead of the
    * PROS_ERR/PROS_ERR_F sentinel the underlying read failed with.
+   *
+   * This is the raw count since the last reset, in encoder ticks. It does not change when drive_rpm_set()
+   * changes what a tick is worth, so after one of those it is no longer a fixed multiple of drive_sensor_left().
    */
   int drive_sensor_left_raw();
 
@@ -2952,28 +3021,45 @@ public:
   bool interfered = false;
 
   /**
-   * Set the ratio of the robot.
+   * Removed in 4.0. Calling it is a compile error that says what to call instead. It is a template only so the error can carry that message
+   * on every compiler (`= delete("reason")` needs GCC 15, and the projects build with GCC 14): a project that never calls it compiles as if it were not there.
    *
-   * \param ratio
-   *        ratio of the gears
+   * To shift a transmission, call drive_rpm_set() with the wheel RPM of the new gear: cartridge RPM / ratio.
    */
-  void drive_ratio_set(double ratio);
+  template <bool Called = true>
+  void drive_ratio_set(double) {
+    static_assert(!Called,
+                  "drive_ratio_set() was removed in 4.0. To shift, call drive_rpm_set(wheel_rpm) with the wheel RPM of the new gear (cartridge_rpm / ratio).");
+  }
 
   /**
-   * Set the cartridge/wheel rpm of the robot.
+   * Sets the wheel's RPM: the same number as the constructor's `ticks`, cartridge RPM * (motor gear / wheel gear). It is the
+   * one number EZ-Template has for your gearing, and it is how a shifting transmission tells the drive about a gear
+   * change: call it with the wheel RPM of the new gear when you shift.
+   *
+   * You can call it at any time, even in the middle of a motion: odom, the running motion, the active
+   * brake and the waits carry on from where the robot is, and only the distance traveled after the change
+   * uses the new RPM.
+   *
+   * Has no effect if you have two tracking wheels.
    *
    * \param rpm
-   *        rpm of the cartridge or wheel
+   *        the wheel's RPM, as in the constructor's `ticks`
    */
   void drive_rpm_set(double rpm);
 
   /**
-   * Returns the ratio of the drive.
+   * Removed in 4.0, like drive_ratio_set(). Calling it is a compile error that says to use drive_rpm_get().
    */
-  double drive_ratio_get();
+  template <bool Called = true>
+  double drive_ratio_get() {
+    static_assert(!Called, "drive_ratio_get() was removed in 4.0. Use drive_rpm_get(), the wheel RPM.");
+    return 0.0;
+  }
 
   /**
-   * Returns the current cartridge / wheel rpm.
+   * Returns the wheel's RPM: the constructor's `ticks`, or the last value given to drive_rpm_set(). It is the one number
+   * the drive has for its gearing, and it is what a shifting transmission changes when it shifts.
    */
   double drive_rpm_get();
 
@@ -3981,6 +4067,15 @@ private:
   // last raw reading that wasn't a PROS_ERR/PROS_ERR_F/non-finite sensor-read failure.
   int last_good_raw_left = 0;
   int last_good_raw_right = 0;
+
+  // Keeps drive_sensor_left()/right() continuous when ticks per inch changes (drive_rpm_set()): the inches
+  // the sensor read at the last change, and the raw count it was read at. The reading is
+  // offset_in + (raw - offset_raw) / ticks per inch, so a change in scale only applies to the distance traveled after it.
+  // All four are 0 until a change, and drive_sensor_reset() zeroes them with the sensors. Written under drive_mutex.
+  double sensor_offset_in_left = 0.0;
+  double sensor_offset_in_right = 0.0;
+  int sensor_offset_raw_left = 0;
+  int sensor_offset_raw_right = 0;
   bool imu_only_imu_warning_shown = false;
 
   // Cross-check state for imu_drift_deg, kept separate from the stuck/eject
@@ -4156,15 +4251,14 @@ private:
 
   /**
    * Recomputes TICK_PER_REV/CIRCUMFERENCE/TICK_PER_INCH from WHEEL_DIAMETER,
-   * CARTRIDGE, RATIO and is_tracker. Called from every constructor and from
-   * drive_ratio_set()/drive_rpm_set(), the only places those inputs change;
+   * CARTRIDGE and is_tracker. Called from every constructor and from
+   * drive_rpm_set(), the only places those inputs change;
    * drive_tick_per_inch() just returns the cached TICK_PER_INCH so it's
    * cheap to call from drive_sensor_left()/_right() every sensor read.
    */
   void drive_tick_per_inch_compute();
 
   double CARTRIDGE = 0.0;
-  double RATIO = 1.0;
   double WHEEL_DIAMETER = 0.0;
 
   /**
