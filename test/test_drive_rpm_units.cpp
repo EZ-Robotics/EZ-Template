@@ -1,9 +1,9 @@
-// What `ticks`, drive_rpm_set() and drive_ratio_set() mean, in numbers. The header comments on those say:
-//   - `ticks` / drive_rpm_set() is the wheel's own RPM: cartridge RPM * (motor gear / wheel gear)
-//   - drive_ratio_set() is motor turns per wheel turn (wheel gear / motor gear) and multiplies ticks per wheel turn
-// so a 600 cartridge geared 36:48 (motor gear 36T, wheel gear 48T) is 450 wheel RPM, and all three ways of saying
-// so have to land on the same ticks per inch. These pass before and after the documentation fix: they lock the
-// meaning the docs now state, they are not a reproduction of a bug.
+// What `ticks` and drive_rpm_set() mean, in numbers. The header comments on those say that both are the wheel's own RPM:
+// cartridge RPM * (motor gear / wheel gear). So a 600 cartridge geared 36:48 (motor gear 36T, wheel gear 48T) is 450 wheel
+// RPM, and the constructor and drive_rpm_set() have to land on the same ticks per inch. These pass before and after the
+// documentation fix: they lock the meaning the docs now state, they are not a reproduction of a bug.
+// (3.x and the betas also had drive_ratio_set(), wheel gear / motor gear. It was removed in 4.0: the same drive is
+// drive_rpm_set(cartridge RPM / ratio).)
 #include <cmath>
 
 #include "doctest.h"
@@ -30,21 +30,20 @@ TEST_CASE("ticks is the wheel's rpm: a 600 cartridge geared 36:48 is 450 and rea
   CHECK(d.drive_tick_per_inch() == doctest::Approx(39.177).epsilon(0.0001));
   CHECK(d.drive_tick_per_inch() == doctest::Approx(expected_tpi(450)));
   CHECK(d.drive_rpm_get() == doctest::Approx(450));
-  CHECK(d.drive_ratio_get() == doctest::Approx(1.0));
 }
 
-TEST_CASE("drive_ratio_set is motor turns per wheel turn: ticks 600 with ratio 48/36 is the same 39.177") {
+TEST_CASE("drive_rpm_set is cartridge * motor gear / wheel gear: ticks 600 with gears 36:48 is the same 39.177") {
   Drive d = make(600);
   CHECK(d.drive_tick_per_inch() == doctest::Approx(expected_tpi(600)));  // 29.382, the geared wheel is not accounted for yet
-  d.drive_ratio_set(48.0 / 36.0);
+  d.drive_rpm_set(600.0 * 36.0 / 48.0);
   CHECK(d.drive_tick_per_inch() == doctest::Approx(39.177).epsilon(0.0001));
   CHECK(d.drive_tick_per_inch() == doctest::Approx(expected_tpi(450)));
-  CHECK(d.drive_ratio_get() == doctest::Approx(48.0 / 36.0));
+  CHECK(d.drive_rpm_get() == doctest::Approx(450));
 }
 
-TEST_CASE("the ratio goes the other way from the ticks formula: 36/48 on top of ticks 600 is wrong, not right") {
+TEST_CASE("the gears go the other way from what it looks like: 600 * 48 / 36 is wrong, not right") {
   Drive d = make(600);
-  d.drive_ratio_set(36.0 / 48.0);
+  d.drive_rpm_set(600.0 * 48.0 / 36.0);
   CHECK(d.drive_tick_per_inch() == doctest::Approx(22.037).epsilon(0.0001));
   CHECK(d.drive_tick_per_inch() != doctest::Approx(expected_tpi(450)).epsilon(0.01));
 }

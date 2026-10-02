@@ -265,7 +265,7 @@ public:
   // A transmission shifts: the wheel's real speed becomes `new_wheel_rpm` (the same number drive_rpm_set() takes), so the
   // motors' free speed and torque change with it and each encoder tick now stands for a different distance. The encoders
   // keep counting from where they were: the raw count does not jump, only how many ticks a wheel inch is worth does. A
-  // test that wants the library told calls drive_rpm_set() / drive_ratio_set() itself, at the same instant, AFTER this: the sim
+  // test that wants the library told calls drive_rpm_set() itself, at the same instant, AFTER this: the sim
   // reads what the Drive believes right now to work out the physical scale it is leaving, so telling the library first makes
   // it take the new number for the old one.
   void shift_gearing(double new_wheel_rpm) {

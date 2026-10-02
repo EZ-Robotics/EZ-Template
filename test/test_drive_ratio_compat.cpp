@@ -26,7 +26,6 @@ TEST_CASE("the six-argument constructor with a ratio reads the same ticks per in
   Drive migrated({1, -2}, {-3, 4}, 5, kWheel, kCart / kRatio);
   CHECK(old_style.drive_tick_per_inch() == doctest::Approx(migrated.drive_tick_per_inch()).epsilon(1e-9));
   CHECK(old_style.drive_rpm_get() == doctest::Approx(kCart / kRatio));
-  CHECK(old_style.drive_ratio_get() == doctest::Approx(1.0));
 }
 
 TEST_CASE("the six-argument redundant-imu constructor does the same") {
@@ -34,7 +33,6 @@ TEST_CASE("the six-argument redundant-imu constructor does the same") {
   Drive old_style({1, -2}, {-3, 4}, std::vector<int>{5, 6}, kWheel, kCart, kRatio);
   Drive migrated({1, -2}, {-3, 4}, std::vector<int>{5, 6}, kWheel, kCart / kRatio);
   CHECK(old_style.drive_tick_per_inch() == doctest::Approx(migrated.drive_tick_per_inch()).epsilon(1e-9));
-  CHECK(old_style.drive_ratio_get() == doctest::Approx(1.0));
   CHECK(DriveTestAccess::all_imus(old_style).size() == 2);
 }
 
@@ -53,19 +51,16 @@ TEST_CASE("a ratio of 1 changes nothing from the five-argument constructor") {
   CHECK(six.drive_tick_per_inch() == doctest::Approx(five.drive_tick_per_inch()).epsilon(1e-12));
 }
 
-TEST_CASE("a project that passed a ratio and also calls drive_ratio_set() gets ticks / ratio, times what drive_ratio_set() was given") {
-  // In beta.3 and before, drive_ratio_set() REPLACED the constructor's ratio, so such a project ran at base(ticks) * s. Folded into
-  // ticks the constructor's ratio now stays, so it runs at base(ticks / ratio) * s. This is the documented formula; it is not the
-  // number beta.3 gave for this one combination, and the upgrade note says to drop the constructor ratio if drive_ratio_set() is
-  // what the project really meant.
+TEST_CASE("a project that passed a ratio and shifts with drive_rpm_set gets the same distances as the migrated one") {
   test_stub::reset_all();
-  Drive both({1, -2}, {-3, 4}, 5, kWheel, kCart, kRatio);
-  double s = 1.25;
-  both.drive_ratio_set(s);
-  Drive reference({1, -2}, {-3, 4}, 5, kWheel, kCart / kRatio);
-  reference.drive_ratio_set(s);
-  CHECK(both.drive_tick_per_inch() == doctest::Approx(reference.drive_tick_per_inch()).epsilon(1e-9));
-  CHECK(both.drive_ratio_get() == doctest::Approx(s));
+  Drive old_style({1, -2}, {-3, 4}, 5, kWheel, kCart, kRatio);
+  Drive migrated({1, -2}, {-3, 4}, 5, kWheel, kCart / kRatio);
+  for (double wheel_rpm : {200.0, 300.0, 450.0}) {
+    old_style.drive_rpm_set(wheel_rpm);
+    migrated.drive_rpm_set(wheel_rpm);
+    CAPTURE(wheel_rpm);
+    CHECK(old_style.drive_tick_per_inch() == doctest::Approx(migrated.drive_tick_per_inch()).epsilon(1e-12));
+  }
 }
 
 TEST_CASE("every five-argument and driver-only call shape still picks its own constructor and reads what it did") {
@@ -76,7 +71,6 @@ TEST_CASE("every five-argument and driver-only call shape still picks its own co
   CHECK(a.drive_rpm_get() == doctest::Approx(600));
   CHECK(b.drive_rpm_get() == doctest::Approx(450));
   CHECK(c.drive_rpm_get() == doctest::Approx(200));
-  CHECK(a.drive_ratio_get() == doctest::Approx(1.0));
 }
 
 TEST_CASE("after a six-argument constructor drive_rpm_set takes the wheel rpm directly, the folded ratio is not applied again") {
@@ -86,5 +80,4 @@ TEST_CASE("after a six-argument constructor drive_rpm_set takes the wheel rpm di
   Drive direct({1, -2}, {-3, 4}, 5, kWheel, 450);
   CHECK(old_style.drive_tick_per_inch() == doctest::Approx(direct.drive_tick_per_inch()).epsilon(1e-9));
   CHECK(old_style.drive_rpm_get() == doctest::Approx(450));
-  CHECK(old_style.drive_ratio_get() == doctest::Approx(1.0));
 }
