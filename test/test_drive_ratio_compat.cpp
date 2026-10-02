@@ -70,9 +70,9 @@ TEST_CASE("a project that passed a ratio and also calls drive_ratio_set() gets t
 
 TEST_CASE("every five-argument and driver-only call shape still picks its own constructor and reads what it did") {
   test_stub::reset_all();
-  Drive a({1, -2}, {-3, 4}, 5, 3.25, 600);                                // int literal ticks
-  Drive b({1, -2}, {-3, 4}, std::vector<int>{5, 6}, 3.25, 450.0);        // redundant imus, double ticks
-  Drive c({1, -2}, {-3, 4});                                              // driver control only
+  Drive a({1, -2}, {-3, 4}, 5, 3.25, 600);                         // int literal ticks
+  Drive b({1, -2}, {-3, 4}, std::vector<int>{5, 6}, 3.25, 450.0);  // redundant imus, double ticks
+  Drive c({1, -2}, {-3, 4});                                       // driver control only
   CHECK(a.drive_rpm_get() == doctest::Approx(600));
   CHECK(b.drive_rpm_get() == doctest::Approx(450));
   CHECK(c.drive_rpm_get() == doctest::Approx(200));

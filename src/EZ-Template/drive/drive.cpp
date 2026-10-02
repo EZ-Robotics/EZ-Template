@@ -92,6 +92,15 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
   drive_defaults_set();
 }
 
+// Compatibility constructors for projects written before ratio was removed (see drive.hpp). Both hand the folded ticks to the
+// five-argument constructor, so RATIO stays 1 and there is one way the numbers get into the Drive.
+Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks, double ratio)
+    : Drive(std::move(left_motor_ports), std::move(right_motor_ports), imu_port, wheel_diameter, ticks / ratio) {}
+
+Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, std::vector<int> imu_ports, double wheel_diameter, double ticks,
+             double ratio)
+    : Drive(std::move(left_motor_ports), std::move(right_motor_ports), std::move(imu_ports), wheel_diameter, ticks / ratio) {}
+
 Drive::~Drive() {
   // pros::v5::Imu has virtual member functions but a non-virtual destructor.
   // Every pointer in all_imus was allocated as exactly `new pros::Imu(...)`

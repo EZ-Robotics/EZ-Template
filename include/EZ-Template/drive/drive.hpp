@@ -448,6 +448,55 @@ public:
    */
   Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, std::vector<int> imu_ports, double wheel_diameter, double ticks);
 
+  /**
+   * Compatibility only: the constructor 3.x and 4.0 beta.1 to beta.3 had, with a `ratio` as the sixth argument.
+   * It exists so those projects still compile, and it will be removed in a later major version.
+   *
+   * To migrate, fold the ratio into `ticks` and drop the last argument: `ticks = cartridge_rpm / ratio`. For example,
+   * `Drive(left, right, 21, 3.25, 600, 1.667)` becomes `Drive(left, right, 21, 3.25, 360)`. Deleting the last
+   * argument without changing `ticks` makes every distance `ratio` times too long.
+   *
+   * It gives exactly the result of the migrated call: `ticks / ratio` goes to the five-argument constructor and
+   * drive_ratio_get() stays 1. Like that constructor, it does not check its numbers, so a `ratio` of 0 reads as
+   * infinite ticks (every distance reads 0) and a negative `ratio` reads distances backwards.
+   *
+   * \param left_motor_ports
+   *        input {1, -2...}. make ports negative if reversed
+   * \param right_motor_ports
+   *        input {-3, 4...}. make ports negative if reversed
+   * \param imu_port
+   *        port the IMU is plugged into
+   * \param wheel_diameter
+   *        diameter of your drive wheels
+   * \param ticks
+   *        motor cartridge RPM (it becomes `ticks / ratio`)
+   * \param ratio
+   *        wheel gear / motor gear, as in 3.x
+   */
+  [[deprecated("ratio was removed in 4.0. Fold it into ticks, ticks = cartridge_rpm / ratio, and drop the last argument")]]
+  Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks, double ratio);
+
+  /**
+   * Compatibility only: the redundant IMU constructor 3.x and 4.0 beta.1 to beta.3 had, with a `ratio` as the sixth
+   * argument. See the single IMU version above for what to change; it behaves the same, and will be removed in a later
+   * major version.
+   *
+   * \param left_motor_ports
+   *        input {1, -2...}. make ports negative if reversed
+   * \param right_motor_ports
+   *        input {-3, 4...}. make ports negative if reversed
+   * \param imu_ports
+   *        input {5, 6...}. multiple IMU ports
+   * \param wheel_diameter
+   *        diameter of your drive wheels
+   * \param ticks
+   *        motor cartridge RPM (it becomes `ticks / ratio`)
+   * \param ratio
+   *        wheel gear / motor gear, as in 3.x
+   */
+  [[deprecated("ratio was removed in 4.0. Fold it into ticks, ticks = cartridge_rpm / ratio, and drop the last argument")]]
+  Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, std::vector<int> imu_ports, double wheel_diameter, double ticks, double ratio);
+
   // Deconstructor
   ~Drive();
 
