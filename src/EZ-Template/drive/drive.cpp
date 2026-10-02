@@ -93,7 +93,7 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
 }
 
 // Compatibility constructors for projects written before ratio was removed (see drive.hpp). Both hand the folded ticks to the
-// five-argument constructor, so RATIO stays 1 and there is one way the numbers get into the Drive.
+// five-argument constructor, so there is one way the numbers get into the Drive.
 Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks, double ratio)
     : Drive(std::move(left_motor_ports), std::move(right_motor_ports), imu_port, wheel_diameter, ticks / ratio) {}
 
@@ -215,23 +215,22 @@ double Drive::drive_tick_per_inch() {
 void Drive::drive_tick_per_inch_compute() {
   CIRCUMFERENCE = WHEEL_DIAMETER * M_PI;
 
-  if (is_tracker == DRIVE_INTEGRATED) TICK_PER_REV = (50.0 * (3600.0 / CARTRIDGE)) * RATIO;  // with no cart, the encoder reads 50 counts per rotation
+  if (is_tracker == DRIVE_INTEGRATED) TICK_PER_REV = (50.0 * (3600.0 / CARTRIDGE));  // with no cart, the encoder reads 50 counts per rotation
 
   TICK_PER_INCH = (TICK_PER_REV / CIRCUMFERENCE);
 }
 
-void Drive::drive_scale_set(double ratio, double rpm) {
+void Drive::drive_rpm_set(double rpm) {
   ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
 
   if (is_tracker != DRIVE_INTEGRATED) {
-    // Two tracking wheels read in inches on their own and never use RATIO or CARTRIDGE
-    RATIO = ratio;
+    // Two tracking wheels read in inches on their own and never use CARTRIDGE
     CARTRIDGE = rpm;
     drive_tick_per_inch_compute();
     return;
   }
 
-  // Everything that can block (the encoder reads) happens first. What follows changes five numbers without blocking, at the
+  // Everything that can block (the encoder reads) happens first. What follows changes the scale without blocking, at the
   // guard's raised priority, so no other task can read the scale half changed.
   int raw_left = drive_sensor_left_raw();  // a failed read gives the last good one, so it cannot poison the offset
   int raw_right = drive_sensor_right_raw();
@@ -239,15 +238,14 @@ void Drive::drive_scale_set(double ratio, double rpm) {
   double in_left = sensor_offset_in_left + (raw_left - sensor_offset_raw_left) / old_tick_per_inch;
   double in_right = sensor_offset_in_right + (raw_right - sensor_offset_raw_right) / old_tick_per_inch;
 
-  RATIO = ratio;
   CARTRIDGE = rpm;
   drive_tick_per_inch_compute();
 
   // The raw counts did not move, so the robot did not either: carry the inches it had across. Only when the scale really
   // changed, so setting a value that is already set leaves every reading exactly as it was. And only when the old scale gave
-  // real inches: after a ratio of 0 (ticks per inch 0) the inches above are 0 / 0, and storing them would leave both sensors
-  // at NaN after the next good value, where without the offsets that sequence recovers. Then the older offsets stay, and the
-  // reading carries on from them at the new scale.
+  // real inches: after an rpm of 0 (ticks per inch infinite) or infinity (ticks per inch 0) the inches above are 0 / 0 or
+  // raw / 0, and storing them would leave both sensors at NaN after the next good value, where without the offsets that
+  // sequence recovers. Then the older offsets stay, and the reading carries on from them at the new scale.
   bool carried_inches_are_real = std::isfinite(old_tick_per_inch) && old_tick_per_inch != 0.0 && std::isfinite(in_left) && std::isfinite(in_right);
   if (TICK_PER_INCH != old_tick_per_inch && carried_inches_are_real) {
     sensor_offset_in_left = in_left;
@@ -257,9 +255,6 @@ void Drive::drive_scale_set(double ratio, double rpm) {
   }
 }
 
-void Drive::drive_ratio_set(double ratio) { drive_scale_set(ratio, CARTRIDGE); }
-double Drive::drive_ratio_get() { return RATIO; }
-void Drive::drive_rpm_set(double rpm) { drive_scale_set(RATIO, rpm); }
 double Drive::drive_rpm_get() { return CARTRIDGE; }
 
 void Drive::private_drive_set(int left, int right) {

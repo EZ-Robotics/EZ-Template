@@ -3017,23 +3017,15 @@ public:
   bool interfered = false;
 
   /**
-   * Sets the gear ratio on top of the constructor's `ticks`: motor turns per wheel turn, which is
-   * wheel gear / motor gear. It multiplies how many encoder ticks a wheel turn is worth. A 36 tooth
-   * motor gear driving a 48 tooth wheel gear is `48.0 / 36.0`. That is the inverse of the formula
-   * that gives `ticks` (motor gear / wheel gear), so do not use one number for both: if you put your
-   * gearing in `ticks`, leave this at 1.
+   * Removed in 4.0. Calling it is a compile error that says what to call instead. It is a template only so the error can carry that message
+   * on every compiler (`= delete("reason")` needs GCC 15, and the projects build with GCC 14): a project that never calls it compiles as if it were not there.
    *
-   * Most teams never call this and put their gearing in `ticks`. To tell EZ-Template about a shift,
-   * drive_rpm_set() is simpler. You can call either at any time, even in the middle of a motion: odom, the
-   * running motion, the active brake and the waits carry on from where the robot is, and only the distance
-   * traveled after the change uses the new ratio.
-   *
-   * Has no effect if you have two tracking wheels.
-   *
-   * \param ratio
-   *        motor turns per wheel turn (wheel gear / motor gear), default 1.0
+   * To shift a transmission, call drive_rpm_set() with the wheel RPM of the new gear: cartridge RPM / ratio.
    */
-  void drive_ratio_set(double ratio);
+  template <bool Called = true>
+  void drive_ratio_set(double) {
+    static_assert(!Called, "drive_ratio_set() was removed in 4.0. To shift, call drive_rpm_set(wheel_rpm) with the wheel RPM of the new gear (cartridge_rpm / ratio).");
+  }
 
   /**
    * Sets the wheel's RPM, the same number as the constructor's `ticks`: cartridge RPM * (motor gear /
@@ -3052,10 +3044,13 @@ public:
   void drive_rpm_set(double rpm);
 
   /**
-   * Returns the ratio set by drive_ratio_set(): motor turns per wheel turn (wheel gear / motor gear). It
-   * is 1 unless you set it.
+   * Removed in 4.0, like drive_ratio_set(). Calling it is a compile error that says to use drive_rpm_get().
    */
-  double drive_ratio_get();
+  template <bool Called = true>
+  double drive_ratio_get() {
+    static_assert(!Called, "drive_ratio_get() was removed in 4.0. Use drive_rpm_get(), the wheel RPM.");
+    return 0.0;
+  }
 
   /**
    * Returns the wheel's RPM: the constructor's `ticks`, or the last value given to drive_rpm_set().
@@ -4249,21 +4244,14 @@ private:
 
   /**
    * Recomputes TICK_PER_REV/CIRCUMFERENCE/TICK_PER_INCH from WHEEL_DIAMETER,
-   * CARTRIDGE, RATIO and is_tracker. Called from every constructor and from
-   * drive_ratio_set()/drive_rpm_set(), the only places those inputs change;
+   * CARTRIDGE and is_tracker. Called from every constructor and from
+   * drive_rpm_set(), the only places those inputs change;
    * drive_tick_per_inch() just returns the cached TICK_PER_INCH so it's
    * cheap to call from drive_sensor_left()/_right() every sensor read.
    */
   void drive_tick_per_inch_compute();
 
-  /**
-   * The one place RATIO and CARTRIDGE change after construction (drive_ratio_set(), drive_rpm_set()). Takes drive_mutex, and
-   * if ticks per inch changes, carries both sensors' inch readings across the change (see sensor_offset_in_left).
-   */
-  void drive_scale_set(double ratio, double rpm);
-
   double CARTRIDGE = 0.0;
-  double RATIO = 1.0;
   double WHEEL_DIAMETER = 0.0;
 
   /**
