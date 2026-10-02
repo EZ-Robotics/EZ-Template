@@ -19,6 +19,7 @@ void Drive::odom_x_set(double x) {
   l_pose.x = x;
   r_pose.x = x;
   central_pose.x = x;
+  xy_last_pose.x = x;  // a pose set is not movement, see ez_tracking_task()
   was_odom_just_set = true;
 }
 void Drive::odom_x_set(ez::QLength p_x) { odom_x_set(p_x.convert(ez::inch)); }
@@ -29,6 +30,7 @@ void Drive::odom_y_set(double y) {
   l_pose.y = y;
   r_pose.y = y;
   central_pose.y = y;
+  xy_last_pose.y = y;  // a pose set is not movement, see ez_tracking_task()
   was_odom_just_set = true;
 }
 void Drive::odom_y_set(ez::QLength p_y) { odom_y_set(p_y.convert(ez::inch)); }
@@ -86,6 +88,9 @@ double Drive::drive_width_get() { return global_track_width; }
 void Drive::odom_tracking_set(std::function<void(void)> tracking_task) {
   ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
   tracking = tracking_task;
+  tracking_is_custom = true;  // drive_defaults_set() sets this back to false for EZ-Template's own tracking
+  tracking_resync_pending = false;
+  xy_last_pose_valid = false;  // the new function's first pose may be in a different frame, so that pass measures no movement
 }
 
 std::pair<float, float> Drive::decide_vert_sensor(ez::tracking_wheel* tracker, bool is_tracker_enabled, float ime, float ime_track) {
@@ -169,6 +174,12 @@ void Drive::tracking_prime() {
 
   // Angle, matching the sign convention used in tracking_wheels_tracking()
   t_last = -ez::util::to_rad(drive_angle_get());
+
+  // A pause in tracking or a sensor reset moves nothing: the pose stays where it is, so the next pass measures from it
+  // and counts only what the robot moves from here on.
+  xy_last_pose = odom_current;
+  xy_last_pose_valid = std::isfinite(odom_current.x) && std::isfinite(odom_current.y) && std::isfinite(odom_current.theta);
+  xy_pose_delta = {0.0, 0.0, 0.0};
 }
 
 // Tracking based on https://wiki.purduesigbots.com/software/odometry
@@ -268,16 +279,41 @@ void Drive::ez_tracking_task() {
     return;
   }
 
+  // EZ-Template's own tracking was just put back after a custom tracking function (drive_defaults_set()).  Its own poses
+  // and last sensor readings are from before the custom tracker ran: everything the robot drove since would be counted
+  // twice or lost.  Pick up from where the custom tracker left the pose instead.  One pass of movement is lost doing this.
+  if (tracking_resync_pending && !tracking_is_custom) {
+    // A custom tracker that lost its signal (a GPS, say) may have left a non-finite pose: copying that would leave odom non-finite
+    // for good, so pick up from the last finite pose it wrote instead.
+    pose from = std::isfinite(odom_current.x) && std::isfinite(odom_current.y) ? odom_current : xy_last_finite_pose;
+    l_pose.x = r_pose.x = central_pose.x = from.x;
+    l_pose.y = r_pose.y = central_pose.y = from.y;
+    odom_current.x = from.x;
+    odom_current.y = from.y;
+    tracking_prime();
+    tracking_resync_pending = false;
+  }
+
   // Use ez's tracking or a custom tracking function made by the user
   tracking();
 
-  // This is used for PID as a "current" sensor value
-  // what this value actually is doesn't matter, it just needs to move with the correct sign
-  xy_current_fake = fabs(is_past_target({0.0, 0.0}, odom_pose_get()));
-  if (!was_odom_just_set)
-    xy_delta_fake = fabs(xy_current_fake - xy_last_fake);
+  // How far the robot moved this pass, from its own pose.  ptp_task() turns this into xyPID's sensor.
+  // odom_x_set() and odom_y_set() move xy_last_pose along with the pose, so a pose set (odom_xyt_set(), a
+  // relocalization every pass, ...) never counts as movement, while what the robot really moved since then still does.
+  // A heading set changes no x or y, so the same holds for drive_angle_set().
+  // A custom tracking function may write its own pose over a pose set (a GPS, for example), and then the jump back
+  // would look like movement.  So with custom tracking, the pass after a pose set counts as no movement instead.
+  // (A custom tracking function that sets the pose with odom_x_set() / odom_y_set() itself reads no movement at all.)
+  pose now = odom_pose_get();
+  bool finite = std::isfinite(now.x) && std::isfinite(now.y) && std::isfinite(now.theta);
+  if (!xy_last_pose_valid || !finite || (was_odom_just_set && tracking_is_custom))
+    xy_pose_delta = {0.0, 0.0, 0.0};
   else
-    was_odom_just_set = false;
-  xy_last_fake = xy_current_fake;
+    xy_pose_delta = {now.x - xy_last_pose.x, now.y - xy_last_pose.y, 0.0};
+  if (!std::isfinite(xy_pose_delta.x) || !std::isfinite(xy_pose_delta.y)) xy_pose_delta = {0.0, 0.0, 0.0};
+  was_odom_just_set = false;
+  xy_last_pose = now;
+  xy_last_pose_valid = finite;
+  if (finite) xy_last_finite_pose = now;
 }
 }  // namespace ez

@@ -56,7 +56,6 @@ void Drive::drive_angle_set(double angle) {
   central_pose.theta = angle;
   l_pose.theta = angle;
   r_pose.theta = angle;
-  was_odom_just_set = true;
 }
 void Drive::drive_angle_set(ez::QAngle p_angle) {
   double angle = p_angle.convert(ez::degree);  // Convert unit to degree

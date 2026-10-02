@@ -16,6 +16,7 @@
 
 #include <array>
 #include <cmath>
+#include <functional>
 #include <random>
 #include <vector>
 
@@ -241,6 +242,11 @@ public:
   // How many auto task passes run per tick (default 1). Two or three is a task that catches up after being late, and a
   // heavy robot is only stable in the sim with more than one.
   void passes_per_tick(int n) { passes_per_tick_ = n; }
+  // Run on every auto task pass, just before and just after it, with the pass's number (counting from 0 across the
+  // sim's life). Before is where a test relocalizes or shoves the robot the way another thread would between passes;
+  // after is where it reads what the pass computed. Both are empty by default.
+  std::function<void(int)> before_pass;
+  std::function<void(int)> after_pass;
   // Moves both wheels `inches` along the robot's heading at once, without giving the robot any velocity: what being
   // pushed a short way and let go looks like to the sensors. The motors read the new position right away, not only
   // after the next tick.
@@ -253,6 +259,17 @@ public:
       for (auto& m : *side)
         if (!drive_.pto_check(m)) m.fake().position = pos;
     }
+  }
+
+  // Zeroes both wheels' encoder readings without moving the robot: what drive_sensor_reset()'s tare_position() does on a real
+  // motor. The sim keeps its own wheel positions and writes them to the motors every tick, so a tare made only on the motor
+  // is undone one tick later; a test that resets sensors mid motion calls this right after.
+  void tare_encoders() {
+    left_.position_in = 0.0;
+    right_.position_in = 0.0;
+    for (auto* side : {&drive_.left_motors, &drive_.right_motors})
+      for (auto& m : *side)
+        if (!drive_.pto_check(m)) m.fake().position = 0.0;
   }
 
   // --- Physical interference, all off by default. Times are sim milliseconds (now_ms(), one DELAY_TIME per tick). ---
@@ -315,10 +332,13 @@ private:
   // AND ends with its own pros::delay(), which would re-enter on_delay from inside on_delay.
   void tick() {
     for (int i = 0; i < passes_per_tick_; i++) {
+      if (before_pass) before_pass(pass_count_);
       if (use_real_auto_task_)
         run_real_auto_task_pass();
       else
         run_auto_task_pass();
+      if (after_pass) after_pass(pass_count_);
+      pass_count_++;
     }
     step_physics(ez::util::DELAY_TIME / 1000.0);
   }
@@ -684,6 +704,7 @@ private:
   bool wall_set_ = false, was_pinned_ = false;
   double wall_in_ = 0.0, pin_left_in_ = 0.0, pin_right_in_ = 0.0, pin_heading_deg_ = 0.0;
   bool use_real_auto_task_ = false;
+  int pass_count_ = 0;
   int passes_per_tick_ = 1;
   bool imu_written_ = false;
   double imu_last_written_ = 0.0;

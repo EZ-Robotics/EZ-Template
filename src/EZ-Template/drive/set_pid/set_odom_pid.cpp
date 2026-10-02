@@ -609,9 +609,6 @@ void Drive::raw_pid_odom_ptp_set(odom imovement, bool slew_on, bool is_boomerang
     angle_const = odom_angularPID.constants_get();
   current_a_odomPID.constants_set(angle_const.kp, angle_const.ki, angle_const.kd, angle_const.start_i);
 
-  // Get the starting point for if we're positive or negative.  This is used to find if we've past target
-  past_target = util::sgn(is_past_target(odom_target, odom_pose_get()));
-
   slew_min_when_it_enabled = pid_speed_max_get();
 
   // This is used for wait_until

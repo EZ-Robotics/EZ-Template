@@ -3844,12 +3844,23 @@ public:
   /**
    * Sets a new task to use for tracking.
    *
-   * In this function, you must:
+   * In this function, you must write the pose directly:
    *  - odom_current.x =
    *  - odom_current.y =
    *  - odom_current.theta =
    *
+   * Do not call odom_xyt_set(), odom_xy_set(), odom_x_set(), odom_y_set() or odom_pose_set() inside this
+   * function, those are for setting the pose from your own code.  A tracking function that calls them gets no xy D term (kD)
+   * in odom motions, because a pose that was set is not counted as the robot moving.
+   *
+   * When your own code sets the pose while a custom tracking function is running, the pass right after the set counts as no
+   * movement for the xy D term.  The library cannot tell if your tracking function kept the pose that was set or wrote its own
+   * over it, like a GPS does.  Setting the pose on every pass leaves the xy D term at 0.
+   *
    * This function does not need to loop, that is done for you in EZ-Template.
+   *
+   * To go back to EZ-Template's own tracking, call drive_defaults_set() (it sets every other default again too).  Odom picks up
+   * from the last pose your function wrote.
    *
    * \param tracking_task
    *        new function for tracking
@@ -4002,7 +4013,6 @@ private:
   pose turn_to_point_target = {0.0, 0.0, 0.0};
   void turn_set_internal(double target, int speed, e_angle_behavior behavior, bool slew_on);
   double odom_imu_start = 0.0;
-  int past_target = 0;
   double SPACING = 0.5;
   double LOOK_AHEAD = 7.0;
   double dlead = 0.5;
@@ -4013,11 +4023,20 @@ private:
   pose l_pose{0.0, 0.0, 0.0};
   pose r_pose{0.0, 0.0, 0.0};
   pose central_pose{0.0, 0.0, 0.0};
-  double xy_current_fake = 0.0;
-  double xy_last_fake = 0.0;
+  // xyPID's "sensor" (new_current_fake) and how much it moved on the last pass (xy_delta_fake).  It moves by how much
+  // the robot's own movement changed xyPID's error on that pass (ptp_task()), so xyPID's derivative is the robot's real
+  // speed toward its target, wherever on the field the robot is.
   double xy_delta_fake = 0.0;
   double new_current_fake = 0.0;
-  bool was_odom_just_set = false;
+  pose xy_last_pose{0.0, 0.0, 0.0};  // odom pose at the end of the last tracking pass
+  // how far odom moved over the last tracking pass, not counting pose sets (0 on the pass after a pose set with custom tracking)
+  pose xy_pose_delta{0.0, 0.0, 0.0};
+  bool xy_last_pose_valid = false;          // false until a tracking pass has run, after tracking was paused or reset, and after a non-finite pose
+  bool was_odom_just_set = false;           // a pose set happened since the last tracking pass
+  bool tracking_is_custom = false;          // odom_tracking_set() was called by the user (drive_defaults_set() clears it)
+  pose xy_last_finite_pose{0.0, 0.0, 0.0};  // the last odom pose that was finite (a custom tracker may stop writing one)
+  // EZ-Template's own tracking was put back after a custom one, pick up from odom_current on the next tracking pass
+  bool tracking_resync_pending = false;
   std::pair<float, float> decide_vert_sensor(ez::tracking_wheel* tracker, bool is_tracker_enabled, float ime = 0.0, float ime_track = 0.0);
   pose solve_xy_vert(float p_track_width, float current_t, float delta_vert, float delta_t);
   pose solve_xy_horiz(float p_track_width, float current_t, float delta_horiz, float delta_t);
