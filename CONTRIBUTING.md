@@ -7,7 +7,7 @@
 
 ## Commits & PR titles
 
-Lead with a [gitmoji](https://gitmoji.dev):
+Lead with a gitmoji from [gitmoji.dev](https://gitmoji.dev), which is the standard. The table below is the common ones; if none fits, pick the closest from the site instead of stretching a row.
 
 | | |
 | --- | --- |
@@ -21,6 +21,7 @@ Lead with a [gitmoji](https://gitmoji.dev):
 | 📝 | Docs |
 | 👷 | CI/build |
 | 🔧 | Config |
+| 🔖 | Version bump / release |
 | ⬆️ | Upgrade dependency |
 | ⏪️ | Revert |
 
