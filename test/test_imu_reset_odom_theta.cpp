@@ -110,9 +110,14 @@ TEST_CASE("control: the next tracking pass after the reset moves the pose only b
 
   turn_and_settle(chassis, 89.0);
   double x = chassis.odom_x_get(), y = chassis.odom_y_get();
+  // The turn PID still holds its 89 degree target, which the reset moves out from under it; clear it, as
+  // measure_offsets() does, so the robot really stays put
+  chassis.pid_targets_reset();
   chassis.drive_imu_reset();
   for (int i = 0; i < 3; i++) pros::delay(util::DELAY_TIME);
-  CHECK(chassis.odom_theta_get() == doctest::Approx(0.0).epsilon(0.01));
+  // The robot may still coast a fraction of a degree after the turn; the pose must follow the imu, not jump
+  CHECK(std::fabs(chassis.odom_theta_get() - chassis.drive_angle_get()) < 0.05);
+  CHECK(std::fabs(chassis.odom_theta_get()) < 1.0);
   CHECK(std::fabs(chassis.odom_x_get() - x) < 0.05);
   CHECK(std::fabs(chassis.odom_y_get() - y) < 0.05);
 }
