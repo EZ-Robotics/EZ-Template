@@ -81,7 +81,8 @@ struct Rig {
     std::uint32_t t0 = pros::millis();
     bool ok = run_capped(std::forward<F>(f), max_ticks);
     if (elapsed_ms != nullptr) *elapsed_ms = pros::millis() - t0;
-    record();
+    // No sample is added here: the last one is the pass the wait decided on. The tick after it (the physics step the wait's last
+    // delay ran) is something the wait never saw, and counting it would judge the wait on movement it could not have known about.
     return ok;
   }
 
@@ -116,8 +117,31 @@ struct Rig {
     }
     return span > 0 ? sum / (span / 1000.0) : 0.0;
   }
+  // How many times the channel reversed direction over the last window_ms of the trace: a robot hunting about its target does it every
+  // few ticks, a robot that overshoots once does it once
+  int reversals(double Sample::*field, int window_ms) const {
+    if (trace.size() < 3) return 0;
+    double end = trace.back().t_ms;
+    int n = 0;
+    double last_delta = 0;
+    for (size_t i = trace.size() - 1; i > 0 && end - trace[i - 1].t_ms <= window_ms + 1e-9; i--) {
+      double delta = trace[i].*field - trace[i - 1].*field;
+      if (std::fabs(delta) < 1e-9) continue;
+      if (last_delta != 0 && (delta > 0) != (last_delta > 0)) n++;
+      last_delta = delta;
+    }
+    return n;
+  }
+  bool hunting(int window_ms = 200) const {
+    return reversals(&Sample::heading, window_ms) >= 6 || reversals(&Sample::left, window_ms) >= 6 || reversals(&Sample::right, window_ms) >= 6;
+  }
   double drive_speed_over(int window_ms) const { return std::fmax(speed_over(&Sample::left, window_ms), speed_over(&Sample::right, window_ms)); }
   double angle_speed_over(int window_ms) const { return speed_over(&Sample::heading, window_ms); }
+
+  // What "under the stop speed" means to the library over a window: the stop speed plus one sensor count per window, because
+  // movement of less than a count is not counted as travel (see travel.hpp). At a 50 ms window that is 0.5 in/s on a 450 rpm drive.
+  double drive_floor(int window_ms) { return FLOOR_DISTANCE + (1.0 / chassis.drive_tick_per_inch()) / (window_ms / 1000.0); }
+  double angle_floor(int window_ms) const { return FLOOR_ANGLE + 0.01 / (window_ms / 1000.0); }
 
   // Instantaneous true speed, the faster side
   double drive_speed_now() const { return std::fmax(std::fabs(sim.left().velocity_in_s), std::fabs(sim.right().velocity_in_s)); }

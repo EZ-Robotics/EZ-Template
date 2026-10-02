@@ -125,7 +125,9 @@ struct Row {
   End end = End::Other;
   double speed_at_end = 0;  // over the ending exit's window, in/s or deg/s
   double speed_limit = 0;
-  double after = 0;  // travel in the next 500 ms, in or deg
+  double slack = 0;      // what the one-count deadband lets through over the window: band / window
+  bool hunting = false;  // the sim left the robot chattering about its target, which only the no-progress backstop can end
+  double after = 0;      // travel in the next 500 ms, in or deg
   bool angular = false;
 };
 
@@ -218,6 +220,10 @@ Row run_row(const sim::SimArchetype& arch, int passes, const ExitSet& es, const 
                                         : r.chassis.xyPID;
     int window = (int)std::max(wait_window(pid, row.end), 20.0);
     row.angular = mo.kind == Kind::Turn || mo.kind == Kind::Swing;
+    row.hunting = r.hunting();
+    // One sensor count (0.01 degrees for the heading) is not counted as travel, so a robot can be a count per window faster than the
+    // stop speed and still read stopped
+    row.slack = (row.angular ? 0.01 : 1.0 / r.chassis.drive_tick_per_inch()) / (window / 1000.0);
     if (mo.kind == Kind::Drive) {
       row.speed_at_end = r.drive_speed_over(window);
       row.speed_limit = FLOOR_DISTANCE;
@@ -232,6 +238,7 @@ Row run_row(const sim::SimArchetype& arch, int passes, const ExitSet& es, const 
     }
   }
   if (row.returned && w.which == 0) {
+    row.hunting = row.hunting || r.hunting();
     auto after = r.run_on(500);
     row.angular = mo.kind == Kind::Turn || mo.kind == Kind::Swing;
     row.after = row.angular ? after.angle : after.distance;
@@ -241,7 +248,7 @@ Row run_row(const sim::SimArchetype& arch, int passes, const ExitSet& es, const 
 
 struct Totals {
   std::vector<std::string> not_returned, interfered, fast_settle, after_big;
-  int rows = 0, after_over_tight = 0, after_rows = 0;
+  int rows = 0, after_over_tight = 0, after_rows = 0, hunting = 0;
   std::vector<double> elapsed, final_error;
 };
 
@@ -261,11 +268,12 @@ void run_sweep(const sim::SimArchetype& arch, int passes, const std::string& lab
         if (csv != nullptr)
           std::fprintf(csv, "%s,%d,%.0f,%d,%.3f,%d,%.3f,%.3f,%.3f\n", row.key.c_str(), row.returned, row.elapsed_ms, row.interfered, row.final_error,
                        (int)row.end, row.speed_at_end, row.speed_limit, row.after);
+        if (row.returned && row.hunting) t.hunting++;
         if (!row.returned) t.not_returned.push_back(row.key);
         if (row.returned && row.interfered) t.interfered.push_back(row.key);
-        if (row.returned && row.end != End::Crossing && row.speed_limit > 0 && row.speed_at_end >= row.speed_limit)
+        if (row.returned && row.end != End::Crossing && row.speed_limit > 0 && !row.hunting && row.speed_at_end >= row.speed_limit + row.slack)
           t.fast_settle.push_back(row.key + " (" + std::to_string(row.speed_at_end) + " vs " + std::to_string(row.speed_limit) + ")");
-        if (row.returned && w.which == 0) {
+        if (row.returned && w.which == 0 && !row.hunting) {
           t.after_rows++;
           double tight = row.angular ? 1.0 : 0.3;
           double loose = row.angular ? 2.0 : 0.75;
@@ -284,9 +292,9 @@ void run_sweep(const sim::SimArchetype& arch, int passes, const std::string& lab
     std::sort(fe.begin(), fe.end());
     auto pct = [](const std::vector<double>& v, double p) { return v.empty() ? 0.0 : v[std::min(v.size() - 1, (size_t)(p * v.size()))]; };
     std::printf(
-        "  [sweep] %-22s %-9s rows=%d no_return=%zu interfered=%zu fast_settle=%zu after_big=%zu after>tight=%d/%d  return ms med/p95/max=%.0f/%.0f/%.0f  final err med/p95=%.2f/%.2f\n",
+        "  [sweep] %-22s %-9s rows=%d no_return=%zu interfered=%zu fast_settle=%zu after_big=%zu after>tight=%d/%d hunting=%d  return ms med/p95/max=%.0f/%.0f/%.0f  final err med/p95=%.2f/%.2f\n",
         label.c_str(), es.name, t.rows, t.not_returned.size(), t.interfered.size(), t.fast_settle.size(), t.after_big.size(), t.after_over_tight, t.after_rows,
-        pct(e, 0.5), pct(e, 0.95), e.empty() ? 0.0 : e.back(), pct(fe, 0.5), pct(fe, 0.95));
+        t.hunting, pct(e, 0.5), pct(e, 0.95), e.empty() ? 0.0 : e.back(), pct(fe, 0.5), pct(fe, 0.95));
     auto report = [&](const char* what, const std::vector<std::string>& v) {
       std::string text;
       for (size_t i = 0; i < v.size() && i < 8; i++) text += "\n    " + v[i];

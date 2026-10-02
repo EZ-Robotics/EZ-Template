@@ -35,7 +35,7 @@ TEST_CASE("classroom robot, 50 ms window, stuck watch only: pid_wait() does not 
   REQUIRE(r.wait([&] { r.chassis.pid_wait(); }, 3000));
   CHECK_FALSE(r.chassis.interfered);
   CHECK(r.drive_speed_now() < 3.0);
-  CHECK(r.drive_speed_over(50) < FLOOR_DISTANCE);
+  CHECK(r.drive_speed_over(50) < r.drive_floor(50));
   CHECK(std::fabs(24.0 - r.trace.back().avg) < 1.0);
   CHECK(r.run_on(500).distance < 0.3);
 }
@@ -47,7 +47,7 @@ TEST_CASE("light_fast, 50 ms window, stuck watch only: pid_wait() does not retur
   REQUIRE(r.wait([&] { r.chassis.pid_wait(); }, 3000));
   CHECK_FALSE(r.chassis.interfered);
   CHECK(r.drive_speed_now() < 3.0);
-  CHECK(r.drive_speed_over(50) < FLOOR_DISTANCE);
+  CHECK(r.drive_speed_over(50) < r.drive_floor(50));
   CHECK(r.run_on(500).distance < 0.3);
 }
 
@@ -59,7 +59,7 @@ TEST_CASE("light_fast, 50 ms window, stuck watch only: a 90 degree turn and a 90
     REQUIRE(r.wait([&] { r.chassis.pid_wait(); }, 3000));
     CHECK_FALSE(r.chassis.interfered);
     CHECK(r.angle_speed_now() < 8.0);
-    CHECK(r.angle_speed_over(50) < FLOOR_ANGLE);
+    CHECK(r.angle_speed_over(50) < r.angle_floor(50));
     CHECK(r.run_on(500).angle < 1.0);
   }
   {
@@ -69,7 +69,7 @@ TEST_CASE("light_fast, 50 ms window, stuck watch only: a 90 degree turn and a 90
     REQUIRE(r.wait([&] { r.chassis.pid_wait(); }, 3000));
     CHECK_FALSE(r.chassis.interfered);
     CHECK(r.angle_speed_now() < 8.0);
-    CHECK(r.angle_speed_over(50) < FLOOR_ANGLE);
+    CHECK(r.angle_speed_over(50) < r.angle_floor(50));
     CHECK(r.run_on(500).angle < 1.0);
   }
   {
@@ -79,7 +79,7 @@ TEST_CASE("light_fast, 50 ms window, stuck watch only: a 90 degree turn and a 90
     REQUIRE(r.wait([&] { r.chassis.pid_wait(); }, 3000));
     CHECK_FALSE(r.chassis.interfered);
     CHECK(r.angle_speed_now() < 8.0);
-    CHECK(r.angle_speed_over(50) < FLOOR_ANGLE);
+    CHECK(r.angle_speed_over(50) < r.angle_floor(50));
     CHECK(r.run_on(500).angle < 1.0);
   }
 }
@@ -91,7 +91,7 @@ TEST_CASE("a sticky robot, 100 ms window, stuck watch only: pid_wait() on a 24 i
   REQUIRE(r.wait([&] { r.chassis.pid_wait(); }, 3000));
   CHECK_FALSE(r.chassis.interfered);
   CHECK(r.drive_speed_now() < 3.0);
-  CHECK(r.drive_speed_over(100) < FLOOR_DISTANCE);
+  CHECK(r.drive_speed_over(100) < r.drive_floor(100));
   CHECK(r.run_on(500).distance < 0.3);
 }
 

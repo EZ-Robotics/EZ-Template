@@ -3900,6 +3900,10 @@ private:
   // Whether anything has been sampled for the current motion at all. When nothing has, the auto task has not run since the motion
   // started, so no exit can have fired on it either and there is no movement to veto one with.
   bool travel_tracked(Travel channel);
+  // pid.exit_condition(motors) with SMALL_EXIT / BIG_EXIT held until the robot is also stopped. Gate is exit_conditions.cpp's own
+  // ExitGate; defined there, where it is used.
+  template <class Gate>
+  exit_output gated_exit(Gate& gate, PID& pid, std::vector<pros::Motor> motors, double live_error);
 
   // The drive motors an mA exit should watch: every motor on the wanted sides that is not handed to the PTO.
   // Rebuilt on every call; see its definition in exit_conditions.cpp.

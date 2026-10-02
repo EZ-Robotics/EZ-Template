@@ -121,7 +121,10 @@ Result run_turn_control(const sim::SimArchetype& a, double target, int speed) {
     r.elapsed_ms = cap.second;
   });
   r.interfered = chassis.interfered;
-  r.stuck_msg = out.find("Turn: Stuck") != std::string::npos;
+  // A stall, not a settle: "Turn: Stuck, but stopped inside the big error window, counted as settled" is a clean return. A robot
+  // the sim leaves chattering about its target at the sample rate (it does for heavy_slow and sticky_high_friction at one pass per
+  // poll) is never stopped, so it is ended by the stuck watch's no-progress backstop and prints that.
+  r.stuck_msg = out.find("Turn: Stuck") != std::string::npos && out.find("counted as settled") == std::string::npos;
   r.final_error = std::fabs(target - chassis.drive_angle_get());
   r.peak_overshoot = peak.peak_past_target;
   r.peak_samples = peak.samples;
@@ -161,6 +164,9 @@ TEST_CASE("control run: all archetypes at TEAM_CORPUS's tight Worlds turn consta
     DriveTestAccess::imu_calibration_complete(chassis) = true;
     sim::NoiseConfig no_noise{/*enabled=*/false, /*seed=*/1};
     sim::SimRobot sim(chassis, a, no_noise);
+    // heavy_slow chatters about its target at one pass per poll (the sim is unstable there, see test_exit_gate_small_big_stopped.cpp),
+    // which is not what this guard is about
+    if (std::string(a.name) == "heavy_slow") sim.passes_per_tick(2);
 
     chassis.pid_turn_exit_condition_set(10, 3, 30, 7, 100, 100);  // TEAM_CORPUS.md's tight Worlds turn constants
     chassis.pid_turn_set(90, 110);
@@ -173,7 +179,10 @@ TEST_CASE("control run: all archetypes at TEAM_CORPUS's tight Worlds turn consta
       elapsed_ms = r.second;
     });
 
-    bool mA_exit_msg = out.find("Turn: mA") != std::string::npos;
+    // An mA exit that ends the wait outside big_error (or marks it interfered) is the fault this guards against. Inside big_error it
+    // is a settle ("mA exit inside the big error window, counted as settled"): with a small exit time of 10 ms the small exit now
+    // waits for the robot to stop, and a heavy robot braking into the band can draw over current for the 100 ms mA_timeout first.
+    bool mA_exit_msg = out.find("Turn: mA") != std::string::npos && out.find("mA exit inside the big error window, counted as settled") == std::string::npos;
     double final_error = std::fabs(90.0 - chassis.drive_angle_get());
     INFO("archetype=", std::string(a.name), " returned=", returned, " elapsed_ms=", elapsed_ms, " interfered=", chassis.interfered,
          " final_error=", final_error, " out=[", out, "]");

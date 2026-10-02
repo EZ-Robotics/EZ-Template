@@ -28,7 +28,7 @@ TEST_CASE("a heavy robot crawling in is not cut off by the big exit: it returns 
     REQUIRE(r.wait([&] { r.chassis.pid_wait(); }, 3000, &elapsed));
     CAPTURE(passes);
     CHECK_FALSE(r.chassis.interfered);
-    CHECK(r.drive_speed_over(250) < FLOOR_DISTANCE);
+    CHECK(r.drive_speed_over(90) < r.drive_floor(90));  // over the shortest exit window: the small exit is what ends it
     // The start commit returns at 1.25 in short, moving 3.8 in/s, at 1470 ms
     double err = std::fabs(24.0 - r.trace.back().avg);
     std::printf("  [heavy/%d] returned at %.0f ms, %.2f in short (start commit: 1470 ms, 1.25 in)\n", passes, elapsed, err);
@@ -45,7 +45,7 @@ TEST_CASE("a light robot crossing the small band at speed does not return from i
   r.chassis.pid_drive_set(24_in, 110);
   REQUIRE(r.wait([&] { r.chassis.pid_wait(); }, 3000));
   CHECK_FALSE(r.chassis.interfered);
-  CHECK(r.drive_speed_over(50) < FLOOR_DISTANCE);
+  CHECK(r.drive_speed_over(50) < r.drive_floor(50));
   CHECK(r.drive_speed_now() < 3.0);
 }
 
@@ -104,7 +104,7 @@ TEST_CASE("every exit on, 50 ms velocity window: pid_wait() does not return whil
     CAPTURE(arch.name);
     CHECK_FALSE(r.chassis.interfered);
     CHECK(r.drive_speed_now() < 3.0);
-    CHECK(r.drive_speed_over(50) < FLOOR_DISTANCE);
+    CHECK(r.drive_speed_over(50) < r.drive_floor(50));
     CHECK(std::fabs(24.0 - r.trace.back().avg) < 1.0);
     CHECK(r.run_on(500).distance < 0.3);
   }
@@ -120,7 +120,7 @@ TEST_CASE("every exit on, 50 ms velocity window: a 90 degree turn and a 90 degre
       CAPTURE(arch.name);
       CHECK_FALSE(r.chassis.interfered);
       CHECK(r.angle_speed_now() < 8.0);
-      CHECK(r.angle_speed_over(50) < FLOOR_ANGLE);
+      CHECK(r.angle_speed_over(50) < r.angle_floor(50));
       CHECK(r.run_on(500).angle < 1.0);
     }
     {
@@ -131,7 +131,7 @@ TEST_CASE("every exit on, 50 ms velocity window: a 90 degree turn and a 90 degre
       CAPTURE(arch.name);
       CHECK_FALSE(r.chassis.interfered);
       CHECK(r.angle_speed_now() < 8.0);
-      CHECK(r.angle_speed_over(50) < FLOOR_ANGLE);
+      CHECK(r.angle_speed_over(50) < r.angle_floor(50));
       CHECK(r.run_on(500).angle < 1.0);
     }
   }
@@ -144,6 +144,6 @@ TEST_CASE("2550R's exits (90/1/200/3/100/100) on a sticky robot: pid_wait() on a
   REQUIRE(r.wait([&] { r.chassis.pid_wait(); }, 3000));
   CHECK_FALSE(r.chassis.interfered);
   CHECK(r.drive_speed_now() < 3.0);
-  CHECK(r.drive_speed_over(100) < FLOOR_DISTANCE);
+  CHECK(r.drive_speed_over(100) < r.drive_floor(100));
   CHECK(r.run_on(500).distance < 0.3);
 }

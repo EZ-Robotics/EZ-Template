@@ -458,6 +458,92 @@ private:
   std::uint32_t last_progress_, last_progress_pass_;
 };
 
+// A window exit (SMALL_EXIT / BIG_EXIT) from a PID only says the robot has been inside the band for the exit's time: position.
+// Taking it on that alone cut a heavy robot crawling in at 3 to 5 in/s off 1 to 1.5 in short, and let a light robot spend
+// small_exit_time crossing the small band at speed and be called done. So a wait takes the exit only once the robot has also
+// stopped: it travelled less than the stop speed over the exit's own time.
+//
+// The position timer keeps counting exactly as it did. When the PID has reported its exit the gate remembers it ("band time
+// met") for as long as the live error stays inside that band, and hands the exit to the wait on the first poll the robot is also
+// stopped, so a vetoed exit does not cost a second full timer (PID::exit_condition() resets its timers whenever it returns
+// SMALL/BIG). Leaving the band forgets it, as the PID's own timer does. A robot that is already stopped when its timer completes
+// gets the exit on the same poll as before. Anything else the PID reports (mA, velocity) passes straight through.
+//
+// A vetoed exit also wiped the PID's mA progress along with its other timers (PID::exit_condition() resets all of them on any
+// latch), which would let repeated vetoes starve the mA exit. That is put back the way the pre last point loops put it back.
+//
+// A robot oscillating about its target is never stopped, so it never gets a window exit here; the stuck watch's no-progress
+// backstop ends it. A gate is only armed when that backstop exists (the team has not turned off both the velocity exit and the
+// mA exit), so a configuration with no backstop keeps ending on position alone rather than waiting for ever.
+//
+// "tracked" says whether anything is being sampled at all: when the auto task has not run since the motion started there is no
+// movement to veto with and the exit passes, as it did before.
+class ExitGate {
+public:
+  ExitGate(std::function<bool(int)> stopped, std::function<bool()> tracked, bool armed)
+      : stopped_(std::move(stopped)), tracked_(std::move(tracked)), armed_(armed) {}
+
+  // What the wait gets for the PID's raw result: SMALL_EXIT / BIG_EXIT held back until the robot is also stopped. live_error is
+  // the PID's own error, what the recheck of a latched exit reads. See Drive::gated_exit(), which makes the PID call.
+  exit_output filter(exit_output raw, const PID& pid, double live_error) {
+    if (raw == SMALL_EXIT) {
+      small_met_ = true;
+    } else if (raw == BIG_EXIT) {
+      big_met_ = true;
+    } else if (raw != RUNNING) {
+      return raw;
+    }
+    double error = std::fabs(live_error);
+    if (small_met_ && !(error < pid.exit.small_error)) small_met_ = false;
+    if (big_met_ && !(error < pid.exit.big_error)) big_met_ = false;
+    if (small_met_ && stopped_for(pid.exit.small_exit_time)) {
+      clear();
+      return SMALL_EXIT;
+    }
+    if (big_met_ && stopped_for(pid.exit.big_exit_time)) {
+      clear();
+      return BIG_EXIT;
+    }
+    return RUNNING;
+  }
+
+  // A window exit this gate gave the wait earlier is only still true if the robot has not moved since. True when it has (a
+  // shove, a creep): the caller puts it back with hold() and goes on waiting.
+  bool moving(exit_output latched, const PID& pid) const {
+    if (latched != SMALL_EXIT && latched != BIG_EXIT) return false;
+    return !stopped_for(latched == SMALL_EXIT ? pid.exit.small_exit_time : pid.exit.big_exit_time);
+  }
+  // The exit's time is already met: take it as soon as the robot is stopped
+  void hold(exit_output e) {
+    if (e == SMALL_EXIT) small_met_ = true;
+    if (e == BIG_EXIT) big_met_ = true;
+  }
+  void clear() { small_met_ = big_met_ = false; }
+
+private:
+  // Stopped over window_ms, or nothing to say it is not
+  bool stopped_for(int window_ms) const {
+    if (!armed_ || !stopped_ || !tracked_ || !tracked_()) return true;
+    return stopped_(window_ms);
+  }
+
+  std::function<bool(int)> stopped_;
+  std::function<bool()> tracked_;
+  bool armed_;
+  bool small_met_ = false, big_met_ = false;
+};
+
+// The same over-current predicate PID::exit_condition(const std::vector<pros::Motor>&) uses: a transient PROS_ERR is not over
+// current, but a PROS_ERR paired with a position that is not finite is a motor that has gone away, and counts.
+bool any_over_current(std::vector<pros::Motor>& motors) {
+  for (auto& m : motors) {
+    std::int32_t over = m.is_over_current();
+    bool dead = over == PROS_ERR && !std::isfinite(m.get_position());
+    if (over == 1 || dead) return true;
+  }
+  return false;
+}
+
 // A velocity exit doesn't end an odom wait: a robot pivoting at a corner, or just slow, reads as stopped to it while
 // it's still getting somewhere.  StuckWatch decides stuck instead.  Small, big and current exits end it as always.
 exit_output without_velocity(exit_output e) { return e == VELOCITY_EXIT ? RUNNING : e; }
@@ -573,6 +659,19 @@ bool Drive::travel_stopped(Travel channel, int window_ms) {
 bool Drive::travel_tracked(Travel channel) {
   ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
   return travel_generation_ == motion_generation && travel_[(int)channel].active();
+}
+
+// pid.exit_condition(motors) for a wait that holds SMALL_EXIT / BIG_EXIT until the robot is also stopped (ExitGate above). The
+// held exit costs the PID its timers, mA progress included (PID::exit_condition() resets them all on any latch), and PID makes
+// Drive its only friend for putting that back, so this lives here and not in ExitGate.
+template <class Gate>
+exit_output Drive::gated_exit(Gate& gate, PID& pid, std::vector<pros::Motor> motors, double live_error) {
+  bool over_current = pid.exit.mA_timeout != 0 && any_over_current(motors);
+  PID::MATimerSnapshot mA_snapshot = pid.mA_timer_snapshot();
+  exit_output raw = pid.exit_condition(motors);
+  exit_output result = gate.filter(raw, pid, live_error);
+  if ((raw == SMALL_EXIT || raw == BIG_EXIT) && result == RUNNING && over_current) pid.mA_timer_restore_and_credit(mA_snapshot);
+  return result;
 }
 
 // See drive.hpp's own comment on InterferedScope/motion_generation/interfered_generation for the concurrency
@@ -828,6 +927,9 @@ void Drive::pid_wait() {
     // wait on this same motion used up its own cap.
     int left_stuck_watch_rearm_count = 0;
     int right_stuck_watch_rearm_count = 0;
+    ExitGate left_gate(left_stopped, [this] { return travel_tracked(Travel::Left); }, leftPID.exit.velocity_exit_time != 0 || leftPID.exit.mA_timeout != 0);
+    ExitGate right_gate(
+        right_stopped, [this] { return travel_tracked(Travel::Right); }, rightPID.exit.velocity_exit_time != 0 || rightPID.exit.mA_timeout != 0);
     bool stalled = false;
     // A stuck-but-settled break below is its own, already-final decision (at least one side never
     // finished its own exit timer at all -- still RUNNING -- but the stuck watch gave up waiting on
@@ -853,8 +955,8 @@ void Drive::pid_wait() {
         // this out (without_velocity(), above); DRIVE didn't. SingleStuckWatch (below) still catches a
         // genuine stall independently -- it watches PID error, not velocity -- so filtering this out can't
         // turn a real stall into a hang.
-        left_exit = left_exit != RUNNING ? left_exit : without_velocity(leftPID.exit_condition(mA_exit_motors(true, false)));
-        right_exit = right_exit != RUNNING ? right_exit : without_velocity(rightPID.exit_condition(mA_exit_motors(false, true)));
+        left_exit = left_exit != RUNNING ? left_exit : without_velocity(gated_exit(left_gate, leftPID, mA_exit_motors(true, false), leftPID.error));
+        right_exit = right_exit != RUNNING ? right_exit : without_velocity(gated_exit(right_gate, rightPID, mA_exit_motors(false, true), rightPID.error));
         bool left_stuck = left_exit == RUNNING && left_watch.stuck(leftPID.error);
         bool right_stuck = right_exit == RUNNING && right_watch.stuck(rightPID.error);
         // Stuck only when at least one side is still RUNNING and every side that's still RUNNING is stuck --
@@ -945,6 +1047,26 @@ void Drive::pid_wait() {
         }
       }
 
+      // A side that latched while it was stopped and has moved since (a shove, a creep) is not settled: its exit goes back to the
+      // gate, which hands it over again as soon as the side is stopped. Its watch gets the same fresh clock an un-latch above gives
+      // it, so a clock left over from before it latched cannot call it settled while it is still moving.
+      if (left_gate.moving(left_exit, leftPID)) {
+        left_gate.hold(left_exit);
+        left_exit = RUNNING;
+        if (left_stuck_watch_rearm_count < STUCK_WATCH_REARM_CAP) {
+          left_watch = SingleStuckWatch(leftPID, leftPID.error, true, STUCK_STEP_DISTANCE_CAP, left_stopped);
+          ++left_stuck_watch_rearm_count;
+        }
+      }
+      if (right_gate.moving(right_exit, rightPID)) {
+        right_gate.hold(right_exit);
+        right_exit = RUNNING;
+        if (right_stuck_watch_rearm_count < STUCK_WATCH_REARM_CAP) {
+          right_watch = SingleStuckWatch(rightPID, rightPID.error, true, STUCK_STEP_DISTANCE_CAP, right_stopped);
+          ++right_stuck_watch_rearm_count;
+        }
+      }
+
       if (left_exit == RUNNING || right_exit == RUNNING) {
         pros::delay(util::DELAY_TIME);
         continue;
@@ -990,6 +1112,11 @@ void Drive::pid_wait() {
                      [this](int w) { return travel_stopped(Travel::OdomXY, w) && travel_stopped(Travel::OdomHeading, w); });
     bool stalled = false;
     bool ended_on_mA = false;  // the wait ended on an mA exit before the last point, which stalled below stands for
+    auto odom_stopped = [this](int w) { return travel_stopped(Travel::OdomXY, w) && travel_stopped(Travel::OdomHeading, w); };
+    auto odom_tracked = [this] { return travel_tracked(Travel::OdomXY) && travel_tracked(Travel::OdomHeading); };
+    bool odom_gate_armed = team_stuck_window(xyPID, current_a_odomPID) != 0;
+    ExitGate xy_gate(odom_stopped, odom_tracked, odom_gate_armed);
+    ExitGate a_gate(odom_stopped, odom_tracked, odom_gate_armed);
 
     // A concurrent pid_odom_*_set() from another task retargets xyPID/current_a_odomPID (and resets pp_index
     // and pp_movements) mid-wait -- same hazard as the DRIVE branch above, just for odom.  odom_target_start
@@ -1028,6 +1155,7 @@ void Drive::pid_wait() {
         }
         if (pp_index != a_exit_index) {
           a_exit = RUNNING;
+          a_gate.clear();
           a_exit_index = pp_index;
         }
         secondary_velocity_sensor_update(xyPID);
@@ -1069,7 +1197,7 @@ void Drive::pid_wait() {
         exit_output xy_pass = xyPID.exit_condition(xy_motors);
         if (xy_mA_tracked && xy_over_current && (xy_pass == SMALL_EXIT || xy_pass == BIG_EXIT || xy_pass == VELOCITY_EXIT))
           xyPID.mA_timer_restore_and_credit(xy_mA_snapshot);
-        a_exit = a_exit != RUNNING ? a_exit : without_velocity(current_a_odomPID.exit_condition(mA_exit_motors()));
+        a_exit = a_exit != RUNNING ? a_exit : without_velocity(gated_exit(a_gate, current_a_odomPID, mA_exit_motors(), current_a_odomPID.error));
 
         if (xy_pass == mA_EXIT || watch.stuck(pp_index, target_distance(), xyPID.error, current_a_odomPID.error, travelled(), turned())) {
           stalled = true;
@@ -1083,7 +1211,10 @@ void Drive::pid_wait() {
         pros::delay(util::DELAY_TIME);
       }
     }
-    if (pp_index != a_exit_index) a_exit = RUNNING;  // the final move onto the last point never re-enters the loop above
+    if (pp_index != a_exit_index) {  // the final move onto the last point never re-enters the loop above
+      a_exit = RUNNING;
+      a_gate.clear();
+    }
 
     // When we're at the last point in PP / we're just going to point. The inner loop is exactly the
     // original per-pass loop (same checks, same single trailing delay per pass) -- wrapped in an
@@ -1101,8 +1232,8 @@ void Drive::pid_wait() {
         secondary_velocity_sensor_update(xyPID);
         secondary_velocity_sensor_update(current_a_odomPID);
         xy_velocity_exit_hold_update();
-        xy_exit = xy_exit != RUNNING ? xy_exit : without_velocity(xyPID.exit_condition(mA_exit_motors()));
-        a_exit = a_exit != RUNNING ? a_exit : without_velocity(current_a_odomPID.exit_condition(mA_exit_motors()));
+        xy_exit = xy_exit != RUNNING ? xy_exit : without_velocity(gated_exit(xy_gate, xyPID, mA_exit_motors(), xyPID.error));
+        a_exit = a_exit != RUNNING ? a_exit : without_velocity(gated_exit(a_gate, current_a_odomPID, mA_exit_motors(), current_a_odomPID.error));
         if ((xy_exit == RUNNING || a_exit == RUNNING) &&
             watch.stuck(pp_index, target_distance(), xyPID.error, current_a_odomPID.error, travelled(), turned())) {
           // Stopped inside both big error windows is where a big exit would have left it: that's settled, not stuck.
@@ -1148,6 +1279,16 @@ void Drive::pid_wait() {
         a_exit = RUNNING;
       else if (a_exit == BIG_EXIT && std::fabs(current_a_odomPID.error) >= current_a_odomPID.exit.big_error)
         a_exit = RUNNING;
+
+      // Latched while stopped, moving since: back to the gate (see the DRIVE branch)
+      if (xy_gate.moving(xy_exit, xyPID)) {
+        xy_gate.hold(xy_exit);
+        xy_exit = RUNNING;
+      }
+      if (a_gate.moving(a_exit, current_a_odomPID)) {
+        a_gate.hold(a_exit);
+        a_exit = RUNNING;
+      }
 
       if (xy_exit == RUNNING || a_exit == RUNNING) {
         pros::delay(util::DELAY_TIME);
@@ -1217,6 +1358,9 @@ void Drive::pid_wait() {
     // neither the settled check nor the stuck check resets. Stop here, same as the DRIVE branch's
     // matching flag and comment above.
     bool settled_via_stuck = false;
+    ExitGate turn_gate([this](int w) { return travel_stopped(mode == TURN_TO_POINT ? Travel::OdomHeading : Travel::Heading, w); },
+                       [this] { return travel_tracked(mode == TURN_TO_POINT ? Travel::OdomHeading : Travel::Heading); },
+                       turnPID.exit.velocity_exit_time != 0 || turnPID.exit.mA_timeout != 0);
     while (true) {
       while (turn_exit == RUNNING) {
         if (mode != mode_snapshot || turnPID.target_get() != turn_target) {
@@ -1227,7 +1371,7 @@ void Drive::pid_wait() {
         secondary_velocity_sensor_update(turnPID);
         // See the matching comment in the DRIVE branch above -- a slow (not stalled) turn must not be
         // ended by the velocity channel alone.
-        turn_exit = turn_exit != RUNNING ? turn_exit : without_velocity(turnPID.exit_condition(mA_exit_motors()));
+        turn_exit = turn_exit != RUNNING ? turn_exit : without_velocity(gated_exit(turn_gate, turnPID, mA_exit_motors(), turnPID.error));
         if (turn_exit == RUNNING && watch.stuck(turnPID.error)) {
           // Same settled carve-out as the DRIVE branch above.
           bool settled = std::fabs(turnPID.error) < turnPID.exit.big_error && stuck_passes() != entry_task_passes;
@@ -1263,6 +1407,11 @@ void Drive::pid_wait() {
       if (turn_exit == SMALL_EXIT && std::fabs(turnPID.error) >= turnPID.exit.small_error) {
         turn_exit = RUNNING;
       } else if (turn_exit == BIG_EXIT && std::fabs(turnPID.error) >= turnPID.exit.big_error) {
+        turn_exit = RUNNING;
+      }
+
+      if (turn_gate.moving(turn_exit, turnPID)) {  // latched while stopped, moving since: back to the gate
+        turn_gate.hold(turn_exit);
         turn_exit = RUNNING;
       }
 
@@ -1302,6 +1451,8 @@ void Drive::pid_wait() {
     // Same stuck-but-settled carve-out as the TURN branch above -- see its comment for why this must
     // stop here rather than fall into the recheck below.
     bool settled_via_stuck = false;
+    ExitGate swing_gate([this](int w) { return travel_stopped(Travel::Heading, w); }, [this] { return travel_tracked(Travel::Heading); },
+                        swingPID.exit.velocity_exit_time != 0 || swingPID.exit.mA_timeout != 0);
     while (true) {
       while (swing_exit == RUNNING) {
         if (mode != mode_snapshot || swingPID.target_get() != swing_target) {
@@ -1316,7 +1467,7 @@ void Drive::pid_wait() {
         // the held (non-swinging) side with its own PID output whenever swing_opposite_speed is 0 (the
         // default), so it can genuinely stall/over-current too (e.g. a defender pinning it while the
         // swinging side is unobstructed); checking only the swinging side's motors missed that entirely.
-        swing_exit = swing_exit != RUNNING ? swing_exit : without_velocity(swingPID.exit_condition(mA_exit_motors()));
+        swing_exit = swing_exit != RUNNING ? swing_exit : without_velocity(gated_exit(swing_gate, swingPID, mA_exit_motors(), swingPID.error));
         if (swing_exit == RUNNING && watch.stuck(swingPID.error)) {
           // Same settled carve-out as the DRIVE branch above.
           bool settled = std::fabs(swingPID.error) < swingPID.exit.big_error && stuck_passes() != entry_task_passes;
@@ -1337,6 +1488,11 @@ void Drive::pid_wait() {
       if (swing_exit == SMALL_EXIT && std::fabs(swingPID.error) >= swingPID.exit.small_error) {
         swing_exit = RUNNING;
       } else if (swing_exit == BIG_EXIT && std::fabs(swingPID.error) >= swingPID.exit.big_error) {
+        swing_exit = RUNNING;
+      }
+
+      if (swing_gate.moving(swing_exit, swingPID)) {  // latched while stopped, moving since: back to the gate
+        swing_gate.hold(swing_exit);
         swing_exit = RUNNING;
       }
 
@@ -1424,6 +1580,15 @@ void Drive::wait_until_drive(double target) {
       right_watch(rightPID, is_odom ? r_error : rightPID.error, std::fabs(drive_sensor_right() - r_start) > stuck_step(rightPID, STUCK_STEP_DISTANCE_CAP),
                   STUCK_STEP_DISTANCE_CAP, [this](int w) { return travel_stopped(Travel::Right, w); });
 
+  // Small and big exit only end the wait once the robot is also stopped, see ExitGate. An odom move strips its position exits below
+  // (leftPID/rightPID aim at a look ahead point there), so only a plain drive and the xy failsafe are gated.
+  ExitGate left_gate([this](int w) { return travel_stopped(Travel::Left, w); }, [this] { return travel_tracked(Travel::Left); },
+                     leftPID.exit.velocity_exit_time != 0 || leftPID.exit.mA_timeout != 0);
+  ExitGate right_gate([this](int w) { return travel_stopped(Travel::Right, w); }, [this] { return travel_tracked(Travel::Right); },
+                      rightPID.exit.velocity_exit_time != 0 || rightPID.exit.mA_timeout != 0);
+  ExitGate xy_gate([this](int w) { return travel_stopped(Travel::OdomXY, w) && travel_stopped(Travel::OdomHeading, w); },
+                   [this] { return travel_tracked(Travel::OdomXY) && travel_tracked(Travel::OdomHeading); }, team_stuck_window(xyPID, current_a_odomPID) != 0);
+
   // Whether this wait_until()'s own target IS (not just near) the motion's actual final target, not
   // some earlier waypoint the robot is meant to drive through. pid_wait()'s DRIVE branch already
   // treats "the no-progress watch fired, but every side that's still RUNNING is already sitting
@@ -1483,7 +1648,7 @@ void Drive::wait_until_drive(double target) {
         // turn-bias pivot up to its own fallback; a genuinely slow, healthy, straight cruise still
         // needs this filter. SingleStuckWatch (via l_error/r_error below) remains the real stall
         // backstop.
-        exit_output xy_exit = without_velocity(xyPID.exit_condition(mA_exit_motors()));
+        exit_output xy_exit = without_velocity(gated_exit(xy_gate, xyPID, mA_exit_motors(), xyPID.error));
         if (xy_exit != RUNNING) {
           if (print_toggle) std::cout << "  XY: " << exit_to_string(xy_exit) << " Wait Until Exit Failsafe, the move ended before reaching " << target << "\n";
           if (xy_exit == mA_EXIT || xy_exit == VELOCITY_EXIT) interfered_scope.mark();
@@ -1504,10 +1669,10 @@ void Drive::wait_until_drive(double target) {
         // through unfiltered, since over-current is real regardless of target.
         if (left_exit == RUNNING)
           left_exit = without_velocity(is_odom ? without_position_exits(leftPID.exit_condition(mA_exit_motors(true, false)))
-                                               : leftPID.exit_condition(mA_exit_motors(true, false)));
+                                               : gated_exit(left_gate, leftPID, mA_exit_motors(true, false), leftPID.error));
         if (right_exit == RUNNING)
           right_exit = without_velocity(is_odom ? without_position_exits(rightPID.exit_condition(mA_exit_motors(false, true)))
-                                                : rightPID.exit_condition(mA_exit_motors(false, true)));
+                                                : gated_exit(right_gate, rightPID, mA_exit_motors(false, true), rightPID.error));
         bool left_stuck = left_exit == RUNNING && left_watch.stuck(is_odom ? l_error : leftPID.error);
         bool right_stuck = right_exit == RUNNING && right_watch.stuck(is_odom ? r_error : rightPID.error);
         // See the matching comment in pid_wait()'s DRIVE branch -- both sides exiting normally on the same pass
@@ -1567,6 +1732,16 @@ void Drive::wait_until_drive(double target) {
         if (right_exit == SMALL_EXIT && std::fabs(rightPID.error) >= rightPID.exit.small_error) {
           right_exit = RUNNING;
         } else if (right_exit == BIG_EXIT && std::fabs(rightPID.error) >= rightPID.exit.big_error) {
+          right_exit = RUNNING;
+        }
+
+        // Latched while stopped, moving since: back to the gate (see pid_wait()'s DRIVE branch)
+        if (left_gate.moving(left_exit, leftPID)) {
+          left_gate.hold(left_exit);
+          left_exit = RUNNING;
+        }
+        if (right_gate.moving(right_exit, rightPID)) {
+          right_gate.hold(right_exit);
           right_exit = RUNNING;
         }
 
@@ -1755,6 +1930,11 @@ void Drive::wait_until_turn_swing_internal(double target) {
   SingleStuckWatch turn_watch(turnPID, turnPID.error, already_moved, STUCK_STEP_ANGLE_CAP,
                               [this](int w) { return travel_stopped(mode == TURN_TO_POINT ? Travel::OdomHeading : Travel::Heading, w); });
   SingleStuckWatch swing_watch(swingPID, swingPID.error, already_moved, STUCK_STEP_ANGLE_CAP, [this](int w) { return travel_stopped(Travel::Heading, w); });
+  ExitGate turn_gate([this](int w) { return travel_stopped(mode == TURN_TO_POINT ? Travel::OdomHeading : Travel::Heading, w); },
+                     [this] { return travel_tracked(mode == TURN_TO_POINT ? Travel::OdomHeading : Travel::Heading); },
+                     turnPID.exit.velocity_exit_time != 0 || turnPID.exit.mA_timeout != 0);
+  ExitGate swing_gate([this](int w) { return travel_stopped(Travel::Heading, w); }, [this] { return travel_tracked(Travel::Heading); },
+                      swingPID.exit.velocity_exit_time != 0 || swingPID.exit.mA_timeout != 0);
 
   while (true) {
     if (mode != mode_snapshot || turnPID.target_get() != turn_target || swingPID.target_get() != swing_target) {
@@ -1773,7 +1953,7 @@ void Drive::wait_until_turn_swing_internal(double target) {
           secondary_velocity_sensor_update(turnPID);
           // See the matching comment in pid_wait()'s DRIVE branch -- a slow (not stalled) turn must not
           // be ended by the velocity channel alone.
-          turn_exit = turn_exit != RUNNING ? turn_exit : without_velocity(turnPID.exit_condition(mA_exit_motors()));
+          turn_exit = turn_exit != RUNNING ? turn_exit : without_velocity(gated_exit(turn_gate, turnPID, mA_exit_motors(), turnPID.error));
           if (turn_exit == RUNNING && turn_watch.stuck(turnPID.error)) {
             // Same settled carve-out as pid_wait()'s TURN branch, gated to only apply when this
             // wait_until()'s target really is the motion's final target -- see turn_at_final_target's
@@ -1798,6 +1978,11 @@ void Drive::wait_until_turn_swing_internal(double target) {
           if (turn_exit == SMALL_EXIT && std::fabs(turnPID.error) >= turnPID.exit.small_error) {
             turn_exit = RUNNING;
           } else if (turn_exit == BIG_EXIT && std::fabs(turnPID.error) >= turnPID.exit.big_error) {
+            turn_exit = RUNNING;
+          }
+
+          if (turn_gate.moving(turn_exit, turnPID)) {  // latched while stopped, moving since: back to the gate
+            turn_gate.hold(turn_exit);
             turn_exit = RUNNING;
           }
 
@@ -1843,7 +2028,7 @@ void Drive::wait_until_turn_swing_internal(double target) {
           // See the matching comment in pid_wait()'s DRIVE branch -- a slow (not stalled) swing must not
           // be ended by the velocity channel alone. Polls both sides' motors, not just the actively-swinging
           // side's -- see pid_wait()'s SWING branch for why the held side needs checking too.
-          swing_exit = swing_exit != RUNNING ? swing_exit : without_velocity(swingPID.exit_condition(mA_exit_motors()));
+          swing_exit = swing_exit != RUNNING ? swing_exit : without_velocity(gated_exit(swing_gate, swingPID, mA_exit_motors(), swingPID.error));
           if (swing_exit == RUNNING && swing_watch.stuck(swingPID.error)) {
             // Same settled carve-out as pid_wait()'s SWING branch, gated to only apply when this
             // wait_until()'s target really is the motion's final target -- see swing_at_final_target's
@@ -1864,6 +2049,11 @@ void Drive::wait_until_turn_swing_internal(double target) {
           if (swing_exit == SMALL_EXIT && std::fabs(swingPID.error) >= swingPID.exit.small_error) {
             swing_exit = RUNNING;
           } else if (swing_exit == BIG_EXIT && std::fabs(swingPID.error) >= swingPID.exit.big_error) {
+            swing_exit = RUNNING;
+          }
+
+          if (swing_gate.moving(swing_exit, swingPID)) {  // latched while stopped, moving since: back to the gate
+            swing_gate.hold(swing_exit);
             swing_exit = RUNNING;
           }
 
@@ -1972,6 +2162,11 @@ void Drive::pid_wait_until_point(pose target) {
   StuckWatch watch(xyPID, current_a_odomPID, pp_index, util::distance_to_point(target, odom_pose_get()), util::distance_to_point(odom_start, odom_pose_get()),
                    std::fabs(odom_theta_get() - odom_start.theta),
                    [this](int w) { return travel_stopped(Travel::OdomXY, w) && travel_stopped(Travel::OdomHeading, w); });
+  auto odom_stopped = [this](int w) { return travel_stopped(Travel::OdomXY, w) && travel_stopped(Travel::OdomHeading, w); };
+  auto odom_tracked = [this] { return travel_tracked(Travel::OdomXY) && travel_tracked(Travel::OdomHeading); };
+  bool odom_gate_armed = team_stuck_window(xyPID, current_a_odomPID) != 0;
+  ExitGate xy_gate(odom_stopped, odom_tracked, odom_gate_armed);
+  ExitGate a_gate(odom_stopped, odom_tracked, odom_gate_armed);
 
   // Whether pure pursuit is still before its last point right now -- see pid_wait()'s own matching comment
   // (on the pre-last-point loop in its odom branch) for why xy's window exits mean nothing there: before the
@@ -2018,7 +2213,7 @@ void Drive::pid_wait_until_point(pose target) {
         }
       }
       PID::MATimerSnapshot xy_mA_snapshot = xyPID.mA_timer_snapshot();
-      exit_output xy_pass = xyPID.exit_condition(xy_motors);
+      exit_output xy_pass = xy_before_last_point ? xyPID.exit_condition(xy_motors) : gated_exit(xy_gate, xyPID, xy_motors, xyPID.error);
       if (xy_before_last_point) {
         if (xy_mA_tracked && xy_over_current && (xy_pass == SMALL_EXIT || xy_pass == BIG_EXIT || xy_pass == VELOCITY_EXIT))
           xyPID.mA_timer_restore_and_credit(xy_mA_snapshot);
@@ -2027,7 +2222,7 @@ void Drive::pid_wait_until_point(pose target) {
         xy_exit = without_velocity(xy_pass);
       }
     }
-    a_exit = a_exit != RUNNING ? a_exit : without_velocity(current_a_odomPID.exit_condition(mA_exit_motors()));
+    a_exit = a_exit != RUNNING ? a_exit : without_velocity(gated_exit(a_gate, current_a_odomPID, mA_exit_motors(), current_a_odomPID.error));
 
     // Same stuck check as pid_wait(), for a robot that is stuck but moving, which the exits above miss
     if (watch.stuck(pp_index, util::distance_to_point(target, odom_pose_get()), xyPID.error, current_a_odomPID.error,
@@ -2056,6 +2251,15 @@ void Drive::pid_wait_until_point(pose target) {
         a_exit = RUNNING;
       else if (a_exit == BIG_EXIT && std::fabs(current_a_odomPID.error) >= current_a_odomPID.exit.big_error)
         a_exit = RUNNING;
+      // Latched while stopped, moving since: back to the gate
+      if (xy_gate.moving(xy_exit, xyPID)) {
+        xy_gate.hold(xy_exit);
+        xy_exit = RUNNING;
+      }
+      if (a_gate.moving(a_exit, current_a_odomPID)) {
+        a_gate.hold(a_exit);
+        a_exit = RUNNING;
+      }
     }
 
     if (xy_exit != RUNNING && a_exit != RUNNING) {
@@ -2157,6 +2361,8 @@ void Drive::pid_wait_until_index_started(int index) {
   StuckWatch watch(xyPID, current_a_odomPID, pp_index, point_distance(), util::distance_to_point(odom_start, odom_pose_get()),
                    std::fabs(odom_theta_get() - odom_start.theta),
                    [this](int w) { return travel_stopped(Travel::OdomXY, w) && travel_stopped(Travel::OdomHeading, w); });
+  ExitGate a_gate([this](int w) { return travel_stopped(Travel::OdomXY, w) && travel_stopped(Travel::OdomHeading, w); },
+                  [this] { return travel_tracked(Travel::OdomXY) && travel_tracked(Travel::OdomHeading); }, team_stuck_window(xyPID, current_a_odomPID) != 0);
 
   // Same concurrent-retarget guard as pid_wait()'s odom branch -- this function had none, unlike every
   // other public wait in this file. A concurrent pid_odom_*_set() from another task resets pp_index to 0
@@ -2205,7 +2411,7 @@ void Drive::pid_wait_until_index_started(int index) {
         xyPID.mA_timer_restore_and_credit(xy_mA_snapshot);
       if (xy_pass == mA_EXIT) xy_exit = mA_EXIT;
     }
-    a_exit = a_exit != RUNNING ? a_exit : without_velocity(current_a_odomPID.exit_condition(mA_exit_motors()));
+    a_exit = a_exit != RUNNING ? a_exit : without_velocity(gated_exit(a_gate, current_a_odomPID, mA_exit_motors(), current_a_odomPID.error));
 
     // Same stuck check as pid_wait(), for a robot that is stuck but moving, which the exits above miss
     if (watch.stuck(pp_index, point_distance(), xyPID.error, current_a_odomPID.error, util::distance_to_point(odom_start, odom_pose_get()),
@@ -2229,6 +2435,10 @@ void Drive::pid_wait_until_index_started(int index) {
         a_exit = RUNNING;
       else if (a_exit == BIG_EXIT && std::fabs(current_a_odomPID.error) >= current_a_odomPID.exit.big_error)
         a_exit = RUNNING;
+      if (a_gate.moving(a_exit, current_a_odomPID)) {  // latched while stopped, moving since: back to the gate
+        a_gate.hold(a_exit);
+        a_exit = RUNNING;
+      }
     }
 
     if (xy_exit != RUNNING && a_exit != RUNNING) {
