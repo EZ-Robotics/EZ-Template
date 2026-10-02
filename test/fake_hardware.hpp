@@ -80,6 +80,7 @@ inline void reset_all() {
   g_competition = FakeCompetitionStatus{};
   g_sched = FakeScheduler{};
   pros::motor_fake_registry().clear();
+  pros::motor_read_hook = nullptr;
 }
 
 }  // namespace test_stub
