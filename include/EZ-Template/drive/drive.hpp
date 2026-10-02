@@ -466,6 +466,10 @@ public:
    * drive_ratio_get() stays 1. Like that constructor, it does not check its numbers, so a `ratio` of 0 reads as
    * infinite ticks (every distance reads 0) and a negative `ratio` reads distances backwards.
    *
+   * After this constructor, drive_rpm_set(x) takes the wheel's RPM directly: the folded `ratio` is not applied to it
+   * again, so pass the full wheel RPM of the gear you are shifting to. drive_ratio_get() is 1, and a later
+   * drive_ratio_set(s) multiplies on top of `ticks / ratio`, not instead of `ratio` as it did in 3.x.
+   *
    * \param left_motor_ports
    *        input {1, -2...}. make ports negative if reversed
    * \param right_motor_ports

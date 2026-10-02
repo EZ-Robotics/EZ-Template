@@ -78,3 +78,13 @@ TEST_CASE("every five-argument and driver-only call shape still picks its own co
   CHECK(c.drive_rpm_get() == doctest::Approx(200));
   CHECK(a.drive_ratio_get() == doctest::Approx(1.0));
 }
+
+TEST_CASE("after a six-argument constructor drive_rpm_set takes the wheel rpm directly, the folded ratio is not applied again") {
+  test_stub::reset_all();
+  Drive old_style({1, -2}, {-3, 4}, 5, kWheel, kCart, kRatio);
+  old_style.drive_rpm_set(450);
+  Drive direct({1, -2}, {-3, 4}, 5, kWheel, 450);
+  CHECK(old_style.drive_tick_per_inch() == doctest::Approx(direct.drive_tick_per_inch()).epsilon(1e-9));
+  CHECK(old_style.drive_rpm_get() == doctest::Approx(450));
+  CHECK(old_style.drive_ratio_get() == doctest::Approx(1.0));
+}

@@ -351,7 +351,12 @@ int Drive::drive_sensor_right_raw() {
 }
 double Drive::drive_sensor_right() {
   if (is_tracker == ODOM_TRACKER) return odom_tracker_right->get();
-  return sensor_offset_in_right + (drive_sensor_right_raw() - sensor_offset_raw_right) / drive_tick_per_inch();
+  // The raw read comes first and outside the lock (it can block, and nothing inside a guard may). The offsets and the scale
+  // are then taken together under it, so a shift from another task lands before or after the whole reading, never between
+  // its parts. drive_mutex is recursive: the tracking and auto passes already hold it when they call this.
+  int raw = drive_sensor_right_raw();
+  ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+  return sensor_offset_in_right + (raw - sensor_offset_raw_right) / drive_tick_per_inch();
 }
 int Drive::drive_velocity_right() { return right_motors.front().get_actual_velocity(); }
 double Drive::drive_mA_right() { return right_motors.front().get_current_draw(); }
@@ -369,7 +374,10 @@ int Drive::drive_sensor_left_raw() {
 }
 double Drive::drive_sensor_left() {
   if (is_tracker == ODOM_TRACKER) return odom_tracker_left->get();
-  return sensor_offset_in_left + (drive_sensor_left_raw() - sensor_offset_raw_left) / drive_tick_per_inch();
+  // Same as drive_sensor_right(): raw read outside the lock, offsets and scale as one snapshot under it.
+  int raw = drive_sensor_left_raw();
+  ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+  return sensor_offset_in_left + (raw - sensor_offset_raw_left) / drive_tick_per_inch();
 }
 int Drive::drive_velocity_left() { return left_motors.front().get_actual_velocity(); }
 double Drive::drive_mA_left() { return left_motors.front().get_current_draw(); }
