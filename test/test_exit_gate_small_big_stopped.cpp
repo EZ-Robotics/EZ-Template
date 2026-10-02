@@ -101,7 +101,7 @@ TEST_CASE("every exit on, 50 ms velocity window: pid_wait() does not return whil
     r.chassis.pid_drive_exit_condition_set(90_ms, 1_in, 250_ms, 3_in, 50_ms, 500_ms);
     r.chassis.pid_drive_set(24_in, 110, true);
     REQUIRE(r.wait([&] { r.chassis.pid_wait(); }, 3000));
-    CAPTURE(arch.name);
+    CAPTURE(std::string(arch.name));
     CHECK_FALSE(r.chassis.interfered);
     CHECK(r.drive_speed_now() < 3.0);
     CHECK(r.drive_speed_over(50) < r.drive_floor(50));
@@ -117,7 +117,7 @@ TEST_CASE("every exit on, 50 ms velocity window: a 90 degree turn and a 90 degre
       r.chassis.pid_turn_exit_condition_set(90_ms, 1_deg, 250_ms, 3_deg, 50_ms, 500_ms);
       r.chassis.pid_turn_set(90_deg, 110);
       REQUIRE(r.wait([&] { r.chassis.pid_wait(); }, 3000));
-      CAPTURE(arch.name);
+      CAPTURE(std::string(arch.name));
       CHECK_FALSE(r.chassis.interfered);
       CHECK(r.angle_speed_now() < 8.0);
       CHECK(r.angle_speed_over(50) < r.angle_floor(50));
@@ -128,7 +128,7 @@ TEST_CASE("every exit on, 50 ms velocity window: a 90 degree turn and a 90 degre
       r.chassis.pid_swing_exit_condition_set(90_ms, 1_deg, 250_ms, 3_deg, 50_ms, 500_ms);
       r.chassis.pid_swing_set(ez::LEFT_SWING, 90_deg, 110, 0);
       REQUIRE(r.wait([&] { r.chassis.pid_wait(); }, 3000));
-      CAPTURE(arch.name);
+      CAPTURE(std::string(arch.name));
       CHECK_FALSE(r.chassis.interfered);
       CHECK(r.angle_speed_now() < 8.0);
       CHECK(r.angle_speed_over(50) < r.angle_floor(50));

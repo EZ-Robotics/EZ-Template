@@ -79,7 +79,7 @@ TEST_CASE("pid_wait_quick() TURN_TO_POINT: settling inside small_error at the mo
   CHECK_FALSE(chassis.interfered);
 }
 
-TEST_CASE("pid_wait_until() TURN_TO_POINT: a stall short of an explicit checkpoint before the real aim still returns interfered=true") {
+TEST_CASE("pid_wait_until() TURN_TO_POINT: a stall short of an explicit checkpoint, inside big_error of the real aim, returns interfered=false") {
   Drive chassis = make_chassis();
   chassis.pid_print_toggle(false);
   DriveTestAccess::imu_calibration_complete(chassis) = true;
@@ -114,7 +114,10 @@ TEST_CASE("pid_wait_until() TURN_TO_POINT: a stall short of an explicit checkpoi
   MESSAGE("returned=", returned, " interfered=", chassis.interfered, " turnPID.error=", chassis.turnPID.error, " aim=", g_aim, " checkpoint=", checkpoint,
           " stall_at=", g_stall_at);
   REQUIRE(returned);
-  CHECK(chassis.interfered);
+  // Rewritten for the one rule for "finished" (checkpoint_end() in exit_conditions.cpp): the robot settled inside big_error of the
+  // motion's final target with this checkpoint between where it rested and that target, so the checkpoint counts as reached, the way
+  // pid_wait() on the same motion says clean. This used to read interfered; outside big_error it still does (see test_exit_gate_verdicts.cpp).
+  CHECK_FALSE(chassis.interfered);
 }
 
 // A CHAINED turn-to-point call is supposed to get no settled exemption at all, matching every other
@@ -125,7 +128,7 @@ TEST_CASE("pid_wait_until() TURN_TO_POINT: a stall short of an explicit checkpoi
 // plain TURN -- never bumps turnPID's own target for TURN_TO_POINT (turn_pid_task() adds the chain
 // scale to its live error directly instead), so chain_target_start and turn_target stay numerically
 // equal even though this call is genuinely chained. The gate has to notice that some other way.
-TEST_CASE("pid_wait_quick_chain() TURN_TO_POINT: a stall at the real aim still returns interfered=true when chained") {
+TEST_CASE("pid_wait_quick_chain() TURN_TO_POINT: a stall 5 degrees short of the real aim, inside big_error, returns interfered=false when chained") {
   Drive chassis = make_chassis();
   chassis.pid_print_toggle(false);
   DriveTestAccess::imu_calibration_complete(chassis) = true;
@@ -156,5 +159,8 @@ TEST_CASE("pid_wait_quick_chain() TURN_TO_POINT: a stall at the real aim still r
 
   MESSAGE("returned=", returned, " interfered=", chassis.interfered, " turnPID.error=", chassis.turnPID.error, " aim=", g_aim, " stall_at=", g_stall_at);
   REQUIRE(returned);
-  CHECK(chassis.interfered);
+  // Rewritten for the one rule for "finished" (checkpoint_end() in exit_conditions.cpp): the robot settled inside big_error of the
+  // motion's final target with this checkpoint between where it rested and that target, so the checkpoint counts as reached, the way
+  // pid_wait() on the same motion says clean. This used to read interfered; outside big_error it still does (see test_exit_gate_verdicts.cpp).
+  CHECK_FALSE(chassis.interfered);
 }
