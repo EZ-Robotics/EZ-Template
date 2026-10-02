@@ -691,6 +691,8 @@ void drive_sensor_reset();
 ### drive_imu_reset()
 Resets the current imu value.  Defaults to 0, recommended to run at the start of your autonomous routine.   
 
+Also sets the heading `odom_theta_get()` reads, so an odom motion started right after a reset starts from the new heading.  
+
 `new_heading` new heading value
 <Tabs
   groupId="drive_imu_reset"
