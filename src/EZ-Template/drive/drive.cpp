@@ -220,15 +220,42 @@ void Drive::drive_tick_per_inch_compute() {
   TICK_PER_INCH = (TICK_PER_REV / CIRCUMFERENCE);
 }
 
-void Drive::drive_ratio_set(double ratio) {
+void Drive::drive_scale_set(double ratio, double rpm) {
+  ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+
+  if (is_tracker != DRIVE_INTEGRATED) {
+    // Two tracking wheels read in inches on their own and never use RATIO or CARTRIDGE
+    RATIO = ratio;
+    CARTRIDGE = rpm;
+    drive_tick_per_inch_compute();
+    return;
+  }
+
+  // Everything that can block (the encoder reads) happens first. What follows changes five numbers without blocking, at the
+  // guard's raised priority, so no other task can read the scale half changed.
+  int raw_left = drive_sensor_left_raw();  // a failed read gives the last good one, so it cannot poison the offset
+  int raw_right = drive_sensor_right_raw();
+  double old_tick_per_inch = TICK_PER_INCH;
+  double in_left = sensor_offset_in_left + (raw_left - sensor_offset_raw_left) / old_tick_per_inch;
+  double in_right = sensor_offset_in_right + (raw_right - sensor_offset_raw_right) / old_tick_per_inch;
+
   RATIO = ratio;
-  drive_tick_per_inch_compute();
-}
-double Drive::drive_ratio_get() { return RATIO; }
-void Drive::drive_rpm_set(double rpm) {
   CARTRIDGE = rpm;
   drive_tick_per_inch_compute();
+
+  // The raw counts did not move, so the robot did not either: carry the inches it had across. Only when the scale really
+  // changed, so setting a value that is already set leaves every reading exactly as it was.
+  if (TICK_PER_INCH != old_tick_per_inch) {
+    sensor_offset_in_left = in_left;
+    sensor_offset_in_right = in_right;
+    sensor_offset_raw_left = raw_left;
+    sensor_offset_raw_right = raw_right;
+  }
 }
+
+void Drive::drive_ratio_set(double ratio) { drive_scale_set(ratio, CARTRIDGE); }
+double Drive::drive_ratio_get() { return RATIO; }
+void Drive::drive_rpm_set(double rpm) { drive_scale_set(RATIO, rpm); }
 double Drive::drive_rpm_get() { return CARTRIDGE; }
 
 void Drive::private_drive_set(int left, int right) {
@@ -288,6 +315,10 @@ void Drive::drive_sensor_reset() {
   // Reset sensors
   last_good_raw_left = 0;
   last_good_raw_right = 0;
+  sensor_offset_in_left = 0.0;
+  sensor_offset_in_right = 0.0;
+  sensor_offset_raw_left = 0;
+  sensor_offset_raw_right = 0;
   left_motors.front().tare_position();
   right_motors.front().tare_position();
   if (odom_tracker_left_enabled) odom_tracker_left->reset();
@@ -316,7 +347,7 @@ int Drive::drive_sensor_right_raw() {
 }
 double Drive::drive_sensor_right() {
   if (is_tracker == ODOM_TRACKER) return odom_tracker_right->get();
-  return drive_sensor_right_raw() / drive_tick_per_inch();
+  return sensor_offset_in_right + (drive_sensor_right_raw() - sensor_offset_raw_right) / drive_tick_per_inch();
 }
 int Drive::drive_velocity_right() { return right_motors.front().get_actual_velocity(); }
 double Drive::drive_mA_right() { return right_motors.front().get_current_draw(); }
@@ -334,7 +365,7 @@ int Drive::drive_sensor_left_raw() {
 }
 double Drive::drive_sensor_left() {
   if (is_tracker == ODOM_TRACKER) return odom_tracker_left->get();
-  return drive_sensor_left_raw() / drive_tick_per_inch();
+  return sensor_offset_in_left + (drive_sensor_left_raw() - sensor_offset_raw_left) / drive_tick_per_inch();
 }
 int Drive::drive_velocity_left() { return left_motors.front().get_actual_velocity(); }
 double Drive::drive_mA_left() { return left_motors.front().get_current_draw(); }

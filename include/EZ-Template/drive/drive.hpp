@@ -1408,6 +1408,9 @@ public:
    *
    * On a failed sensor read, returns the last successfully-read raw value instead of the
    * PROS_ERR/PROS_ERR_F sentinel the underlying read failed with.
+   *
+   * This is the raw count since the last reset, in encoder ticks. It does not change when drive_ratio_set() or drive_rpm_set()
+   * change what a tick is worth, so after one of those it is no longer a fixed multiple of drive_sensor_right().
    */
   int drive_sensor_right_raw();
 
@@ -1440,6 +1443,9 @@ public:
    *
    * On a failed sensor read, returns the last successfully-read raw value instead of the
    * PROS_ERR/PROS_ERR_F sentinel the underlying read failed with.
+   *
+   * This is the raw count since the last reset, in encoder ticks. It does not change when drive_ratio_set() or drive_rpm_set()
+   * change what a tick is worth, so after one of those it is no longer a fixed multiple of drive_sensor_left().
    */
   int drive_sensor_left_raw();
 
@@ -4029,6 +4035,15 @@ private:
   // last raw reading that wasn't a PROS_ERR/PROS_ERR_F/non-finite sensor-read failure.
   int last_good_raw_left = 0;
   int last_good_raw_right = 0;
+
+  // Keeps drive_sensor_left()/right() continuous when ticks per inch changes (drive_ratio_set(), drive_rpm_set()): the inches
+  // the sensor read at the last change, and the raw count it was read at. The reading is
+  // offset_in + (raw - offset_raw) / ticks per inch, so a change in scale only applies to the distance traveled after it.
+  // All four are 0 until a change, and drive_sensor_reset() zeroes them with the sensors. Written under drive_mutex.
+  double sensor_offset_in_left = 0.0;
+  double sensor_offset_in_right = 0.0;
+  int sensor_offset_raw_left = 0;
+  int sensor_offset_raw_right = 0;
   bool imu_only_imu_warning_shown = false;
 
   // Cross-check state for imu_drift_deg, kept separate from the stuck/eject
@@ -4210,6 +4225,12 @@ private:
    * cheap to call from drive_sensor_left()/_right() every sensor read.
    */
   void drive_tick_per_inch_compute();
+
+  /**
+   * The one place RATIO and CARTRIDGE change after construction (drive_ratio_set(), drive_rpm_set()). Takes drive_mutex, and
+   * if ticks per inch changes, carries both sensors' inch readings across the change (see sensor_offset_in_left).
+   */
+  void drive_scale_set(double ratio, double rpm);
 
   double CARTRIDGE = 0.0;
   double RATIO = 1.0;
