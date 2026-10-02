@@ -102,9 +102,13 @@ void autonomous() {
 
 
 ### pid_wait_until()
-Lock the code in a while loop until this position has passed for driving with units.  If an odom movement ends before the robot has traveled `target`, for example a 24 inch move waiting until 30 inches, the loop is released when the movement finishes.              
+Lock the code in a while loop until the robot has driven this far, with units.  
 
-`target` for driving, using units     
+The target is how far the robot has driven since *this* motion started, with the same sign as the drive.  It is not measured from the end of the drive.  `pid_drive_set(24_in, 110); pid_wait_until(6_in);` returns after 6 inches, with 18 inches still to go.  Backward drives use negative numbers: `pid_drive_set(-24_in, 110); pid_wait_until(-6_in);`.  
+
+If the checkpoint can't be reached (past the distance the drive goes, or the wrong sign), the wait returns when the motion finishes and prints why.  `interfered` is only set when something actually stopped the robot.  For example, an odom movement that ends before the robot has traveled `target`, like a 24 inch move waiting until 30 inches, releases the loop when the movement finishes.              
+
+`target` distance driven since this motion started, using units, the same sign as the drive     
 <Tabs
   groupId="pid_wait_until_distance"
   defaultValue="proto"
@@ -146,9 +150,13 @@ void pid_wait_until(ez::QLength target);
 
 
 ### pid_wait_until()
-Lock the code in a while loop until this position has passed for turning or swinging with units.             
+Lock the code in a while loop until the robot has turned or swung past this heading, with units.  
 
-`target` for turning, using units     
+The target is an absolute heading, the same as the heading you gave the turn or swing.  `pid_turn_set(90_deg, 90); pid_wait_until(45_deg);` returns when the robot faces 45 degrees, with 45 degrees still to go.  
+
+If the checkpoint can't be reached (past the heading the motion goes to, or on the other side of where it started), the wait returns when the motion finishes and prints why.  `interfered` is only set when something actually stopped the robot.             
+
+`target` absolute heading for a turn or swing, using units     
 <Tabs
   groupId="pid_wait_until_angle"
   defaultValue="proto"
@@ -192,6 +200,8 @@ void pid_wait_until(ez::QAngle target);
 
 ### pid_speed_max_set()
 Changes max speed during a drive motion.  
+
+This also applies mid-motion to a running odom motion (`pid_odom_set()`, `pid_odom_pp_set()`, `pid_odom_injected_pp_set()`, `pid_odom_smooth_pp_set()`, `pid_odom_boomerang_set()` and `pid_odom_ptp_set()`).  The new cap replaces the stored speed on every remaining point of the path, not just the current one, and lasts only for the motion currently running.  The next `pid_*_set()` call starts fresh with its own speed.  
 
 `speed` new clipped speed, between 0 and 127     
 <Tabs
@@ -470,9 +480,15 @@ void pid_print_toggle(bool toggle);
 
 
 ### pid_wait_until()
-Lock the code in a while loop until this position has passed for driving without units.  If an odom movement ends before the robot has traveled `target`, for example a 24 inch move waiting until 30 inches, the loop is released when the movement finishes.          
+Lock the code in a while loop until the robot has driven this far, or turned or swung past this heading, without units.  
 
-`target` for driving or turning, using a double.  degrees for turns/swings, inches for driving  
+For drives the target is how far the robot has driven since *this* motion started, in inches, with the same sign as the drive.  `pid_drive_set(24_in, 110); pid_wait_until(6);` returns after 6 inches, with 18 inches still to go.  Backward drives use negative numbers: `pid_drive_set(-24_in, 110); pid_wait_until(-6);`.  
+
+For turns and swings the target is an absolute heading in degrees, the same as the turn target.  `pid_turn_set(90_deg, 90); pid_wait_until(45);` returns when the robot faces 45 degrees.  
+
+If the checkpoint can't be reached (past the target, or the wrong sign), the wait returns when the motion finishes and prints why.  `interfered` is only set when something actually stopped the robot.  This check is for drives, turns and swings.  An odom motion returns when it finishes without a message, for example a 24 inch move waiting until 30 inches.          
+
+`target` for driving, inches driven since this motion started (same sign as the drive).  For turns/swings, an absolute heading in degrees  
 <Tabs
   groupId="pid_wait_until_double"
   defaultValue="proto"

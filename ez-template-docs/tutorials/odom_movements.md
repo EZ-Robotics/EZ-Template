@@ -35,6 +35,8 @@ this point to point section feels like it needs an image, honestly I'm not sure 
 
 Two PID loops run simultaneously.  One for forward/backwards movements (we call this xyPID) and one for turning (angularPID).  The constants used for xyPID are your normal drive constants, in all of our testing we found that there was no need for odometry motions to have unique constants.  Unique constants for angularPID was found to be necessary, and you can use another unique set of constants for Boomerang motions (Boomerang is explained further below).  
 
+xyPID's D term (`kD`) reads the robot's own speed, so odom motions behave the same wherever on the field they run.  If you tuned your drive `kD` on 4.0.0-beta.3 or earlier and an odom motion now runs at a different speed or overshoots by a different amount, retune `kD`.  
+
 A short explanation of how moving to a point works:
 - angularPID is calculated using the arc tangent between the target point and our current point, this gives us an angle that we can use as our target angle  
 - xyPID is calculated distance between our current position and the target point, this gives us the result of `target - current` in PID

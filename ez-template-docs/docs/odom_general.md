@@ -223,6 +223,12 @@ Sets a new task to use for tracking.
 
 In the function you pass in, you must set `odom_current.x`, `odom_current.y`, and `odom_current.theta`.  `x` and `y` are in inches and `theta` is in degrees.  The function does not need to loop, that is done for you by EZ-Template.
 
+Write the pose directly.  Don't call `odom_xyt_set()`, `odom_xy_set()`, `odom_x_set()`, `odom_y_set()` or `odom_pose_set()` inside your function, those are for setting the pose from your own code.  A tracking function that calls them gets no xy D term (`kD`) in odom motions, because a pose that was set is not counted as the robot moving.
+
+When your own code sets the pose while a custom tracking function is running, the pass right after the set counts as no movement for the xy D term.  EZ-Template can't tell if your function kept the pose that was set or wrote its own over it, like a GPS does.  Setting the pose on every pass leaves the xy D term at 0.
+
+To go back to EZ-Template's own tracking, call `drive_defaults_set()` (it sets every other default again too).  Odom picks up from the last pose your function wrote.
+
 EZ-Template calls your function about every 10 ms from its background task, while that task holds the drive lock.  Setters like `pid_drive_set()` wait for that lock, so don't call `pros::delay()` or anything else that blocks in your function, or every setter will wait on it.
 
 `tracking_task` new function for tracking
@@ -867,7 +873,7 @@ void autonomous() {
 
 
 ### odom_pose_set()
-Sets the current pose of the robot.        
+Sets the current pose of the robot. If `t` is left out, only `x` and `y` are set and the heading is left as it is.        
 
 `itarget` `{x, y, t}` units in inches and degrees   
 <Tabs
@@ -920,7 +926,7 @@ void autonomous() {
 
 
 ### odom_pose_set()
-Set the current pose of the robot.        
+Set the current pose of the robot. If `t` is left out, only `x` and `y` are set and the heading is left as it is.        
 
 `itarget` `{x, y, t}` as a unit   
 <Tabs
@@ -1304,7 +1310,7 @@ Set's constants for odom driving exit conditions.
 `p_big_error` big timer will start when error is within this, in units        
 `p_velocity_exit_time` time, in units, for velocity to be 0 after the robot has moved (or after 1 second if it never moves)          
 `p_mA_timeout` mA timer will start when the first motor on the side(s) being driven is over its current limit, in units     
-`use_imu` true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time), false uses only the main sensor         
+`use_imu` true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time). Off by default: acceleration reads near 0 during an ordinary constant-speed cruise too, so this can't tell cruising from stalled and used to cause exits mid-motion. It's the only exit that can catch wheels spinning free (lifted or high-centered), which the main sensor and mA_timeout both miss -- turn it on if that case matters more to you than early exits on a slow cruise.         
 <Tabs
   groupId="pid_odom_drive_exit_condition_set_oka"
   defaultValue="proto"
@@ -1316,7 +1322,7 @@ Set's constants for odom driving exit conditions.
 <TabItem value="proto">
 
 ```cpp
-void pid_odom_drive_exit_condition_set(ez::QTime p_small_exit_time, ez::QLength p_small_error, ez::QTime p_big_exit_time, ez::QLength p_big_error, ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = true);
+void pid_odom_drive_exit_condition_set(ez::QTime p_small_exit_time, ez::QLength p_small_error, ez::QTime p_big_exit_time, ez::QLength p_big_error, ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = false);
 ```
 </TabItem>
 
@@ -1342,7 +1348,7 @@ Set's constants for odom driving exit conditions.
 `p_big_error` big timer will start when error is within this, in inches        
 `p_velocity_exit_time` velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), in ms   
 `p_mA_timeout` mA timer will start when the first motor on the side(s) being driven is over its current limit, in ms      
-`use_imu` true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time), false uses only the main sensor         
+`use_imu` true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time). Off by default: acceleration reads near 0 during an ordinary constant-speed cruise too, so this can't tell cruising from stalled and used to cause exits mid-motion. It's the only exit that can catch wheels spinning free (lifted or high-centered), which the main sensor and mA_timeout both miss -- turn it on if that case matters more to you than early exits on a slow cruise.         
 <Tabs
   groupId="pid_odom_drive_exit_condition_set"
   defaultValue="proto"
@@ -1354,7 +1360,7 @@ Set's constants for odom driving exit conditions.
 <TabItem value="proto">
 
 ```cpp
-void pid_odom_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = true);
+void pid_odom_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = false);
 ```
 </TabItem>
 
@@ -1381,7 +1387,7 @@ Set's constants for odom turning exit conditions.
 `p_big_error` big timer will start when error is within this, in units        
 `p_velocity_exit_time` time, in units, for velocity to be 0 after the robot has moved (or after 1 second if it never moves)          
 `p_mA_timeout` mA timer will start when the first motor on the side(s) being driven is over its current limit, in units     
-`use_imu` true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time), false uses only the main sensor         
+`use_imu` true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time). Off by default: acceleration reads near 0 during an ordinary constant-speed cruise too, so this can't tell cruising from stalled and used to cause exits mid-motion. It's the only exit that can catch wheels spinning free (lifted or high-centered), which the main sensor and mA_timeout both miss -- turn it on if that case matters more to you than early exits on a slow cruise.         
 <Tabs
   groupId="pid_odom_turn_exit_condition_set_oka"
   defaultValue="proto"
@@ -1393,7 +1399,7 @@ Set's constants for odom turning exit conditions.
 <TabItem value="proto">
 
 ```cpp
-void pid_odom_turn_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error, ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = true);
+void pid_odom_turn_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error, ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = false);
 ```
 </TabItem>
 
@@ -1416,7 +1422,7 @@ Set's constants for odom turning exit conditions.
 `p_big_error` big timer will start when error is within this, in degrees
 `p_velocity_exit_time`  velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), in ms
 `p_mA_timeout` mA timer will start when the first motor on the side(s) being driven is over its current limit, in ms   
-`use_imu` true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time), false uses only the main sensor    
+`use_imu` true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for p_velocity_exit_time). Off by default: acceleration reads near 0 during an ordinary constant-speed cruise too, so this can't tell cruising from stalled and used to cause exits mid-motion. It's the only exit that can catch wheels spinning free (lifted or high-centered), which the main sensor and mA_timeout both miss -- turn it on if that case matters more to you than early exits on a slow cruise.    
 <Tabs
   groupId="pid_odom_turn_exit_condition_set"
   defaultValue="proto"
@@ -1428,7 +1434,7 @@ Set's constants for odom turning exit conditions.
 <TabItem value="proto">
 
 ```cpp
-void pid_odom_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = true);
+void pid_odom_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = false);
 ```
 </TabItem>
 

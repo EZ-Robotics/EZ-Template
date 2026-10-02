@@ -1002,7 +1002,9 @@ void pid_turn_set(united_pose p_itarget, drive_directions dir, int speed, e_angl
 
 
 ### pid_wait_until_point()
-Lock the code in a while loop until this point has been passed.
+Lock the code in a while loop until the robot has passed this point on the field.
+
+The target is a field position, not a distance: `pid_wait_until_point({24_in, 24_in});` returns when the robot passes (24, 24).
 
 `target` `{x, y}` pose with units for the robot to pass through before the while loop is released  
 <Tabs
@@ -1047,7 +1049,9 @@ void autonomous() {
 
 
 ### pid_wait_until()
-Lock the code in a while loop until this point has been passed.
+Lock the code in a while loop until the robot has passed this point on the field.  Wrapper for pid_wait_until_point.
+
+The target is a field position, not a distance: `pid_wait_until({24_in, 24_in});` returns when the robot passes (24, 24).
 
 `target` `{x, y}` pose with units for the robot to pass through before the while loop is released  
 <Tabs
@@ -2078,7 +2082,9 @@ void pid_turn_set(pose itarget, drive_directions dir, int speed, e_angle_behavio
 
 
 ### pid_wait_until_index()
-Lock the code in a while loop until this point has been passed.  
+Lock the code in a while loop until the robot has passed this point of your path.  
+
+`pid_odom_set({{{0_in, 24_in}, fwd, 110}, {{24_in, 24_in}, fwd, 110}}); pid_wait_until_index(0);` returns once the robot has passed the first point, (0, 24).
 
 `index` index of your input points, 0 is the first point in the index   
 <Tabs
@@ -2169,7 +2175,9 @@ void autonomous() {
 
 
 ### pid_wait_until_point()
-Lock the code in a while loop until this point has been passed.
+Lock the code in a while loop until the robot has passed this point on the field.
+
+The target is a field position, not a distance: `pid_wait_until_point({24, 24});` returns when the robot passes (24, 24).
 
 `target` `{x, y}` pose for the robot to pass through before the while loop is released  
 <Tabs
@@ -2219,7 +2227,9 @@ void autonomous() {
 
 
 ### pid_wait_until()
-Lock the code in a while loop until this point has been passed.
+Lock the code in a while loop until the robot has passed this point on the field.  Wrapper for pid_wait_until_point.
+
+The target is a field position, not a distance: `pid_wait_until({24, 24});` returns when the robot passes (24, 24).
 
 `target` `{x, y}` pose for the robot to pass through before the while loop is released  
 <Tabs

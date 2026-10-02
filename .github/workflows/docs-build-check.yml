@@ -1,0 +1,66 @@
+# Builds the docs on every PR into the staging or live branch, so a broken link
+# (onBrokenLinks is "throw") or a build error shows up on the PR instead of
+# failing the deploy after the merge. Also posts the promotion checklist on PRs
+# into website. Deploying stays in deploy-to-github-pages.yml.
+name: Docs build check
+
+on:
+  pull_request:
+    branches: [website, website-dev]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-build-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  # Same heap limit as the deploy workflow
+  NODE_OPTIONS: --max-old-space-size=6144
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22.x
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Build
+        run: npm run build
+
+  promotion-checklist:
+    # Only when a PR into website is opened, and only for PRs from this repo (a fork's token cannot comment)
+    if: >-
+      github.base_ref == 'website' &&
+      github.event.action == 'opened' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Post the promotion checklist
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          cat > checklist.md <<'EOF'
+          ## Promotion checklist
+
+          This PR deploys the live site when it merges.
+
+          - [ ] The **Docs build check** passes.
+          - [ ] You tested the changes on `website-dev` (`npm run start`, or `npm run build && npm run serve`).
+          - [ ] Anything the docs link to is live, such as a release page or download.
+          - [ ] Merge with **Create a merge commit**. Do not squash or rebase this PR: that puts a commit on `website` that `website-dev` does not have, the branches diverge, and the next promotion conflicts.
+
+          The steps are in the README, under "Branches and promoting docs".
+          EOF
+          gh pr comment "$PR_URL" --body-file checklist.md

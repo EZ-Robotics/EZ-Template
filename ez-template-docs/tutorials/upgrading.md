@@ -11,13 +11,13 @@ This only works for 2.x and beyond.  You cannot upgrade from 1.x to 2.x, 2.x to 
 :::
 
 ## Download EZ-Template
-Download the most recent `EZ-Template@x.x.x.zip` [here](https://github.com/EZ-Robotics/EZ-Template/releases/tag/v4.0.0-beta.3).  
+Download the most recent `EZ-Template@x.x.x.zip` [here](https://github.com/EZ-Robotics/EZ-Template/releases/tag/v4.0.0-beta.4).  
 
 ## Bring the File Into Your Project
 Bring this file into your project.  You can do this through file explorer or by dragging it into VScode.  
-:::note
+:::caution
 
-If you have a previous EZ-Template version in your project, you can remove this if you want.  Leaving it won't harm anything though.  
+If your project has a previous EZ-Template version's files at `src/EZ-Template/` or `include/EZ-Template/`, delete both folders first.  Applying a new version doesn't remove old files it no longer ships, and leftover ones from an older version can fail to compile against the new headers with errors that don't look related to EZ-Template at all.
 
 :::
 

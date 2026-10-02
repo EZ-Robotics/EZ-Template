@@ -18,7 +18,7 @@ import TabItem from '@theme/TabItem';
 Sets the chassis to controller joysticks using tank control.   
 Run in usercontrol.   
 
-This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.  The controller buttons that change the curves are enabled by default, use `opcontrol_curve_buttons_toggle(false)` to turn them off.     
+This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.  The controller buttons that change the curves are disabled by default, use `opcontrol_curve_buttons_toggle(true)` to turn them on.     
 <Tabs
   groupId="opcontrol_tank"
   defaultValue="proto"
@@ -62,7 +62,7 @@ void opcontrol_tank();
 Sets the chassis to controller joysticks using standard arcade control, where left stick is fwd/rev.    
 Run in usercontrol.    
 
-This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.  The controller buttons that change the curves are enabled by default, use `opcontrol_curve_buttons_toggle(false)` to turn them off.    
+This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.  The controller buttons that change the curves are disabled by default, use `opcontrol_curve_buttons_toggle(true)` to turn them on.    
 
 `stick_type` ez::SINGLE or ez::SPLIT control  
 <Tabs
@@ -111,7 +111,7 @@ void opcontrol_arcade_standard(e_type stick_type);
 Sets the chassis to controller joysticks using flipped arcade control, where right stick is fwd/rev.   
 Run in usercontrol.   
 
-This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.  The controller buttons that change the curves are enabled by default, use `opcontrol_curve_buttons_toggle(false)` to turn them off.   
+This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.  The controller buttons that change the curves are disabled by default, use `opcontrol_curve_buttons_toggle(true)` to turn them on.   
 
 `stick_type` ez::SINGLE or ez::SPLIT control   
 <Tabs
@@ -170,7 +170,7 @@ Curvature is like arcade, but the turn stick sets the curvature of the arc the r
 
 Because the turn is scaled by how fast you're driving, the robot would not be able to turn while stopped.  `opcontrol_curvature_point_turn_gain_set()` controls how much the robot can turn on a point.    
 
-This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.  The controller buttons that change the curves are enabled by default, use `opcontrol_curve_buttons_toggle(false)` to turn them off.    
+This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.  The controller buttons that change the curves are disabled by default, use `opcontrol_curve_buttons_toggle(true)` to turn them on.    
 
 `stick_type` ez::SINGLE or ez::SPLIT control  
 <Tabs
@@ -219,7 +219,7 @@ Curvature is like arcade, but the turn stick sets the curvature of the arc the r
 
 Because the turn is scaled by how fast you're driving, the robot would not be able to turn while stopped.  `opcontrol_curvature_point_turn_gain_set()` controls how much the robot can turn on a point.    
 
-This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.  The controller buttons that change the curves are enabled by default, use `opcontrol_curve_buttons_toggle(false)` to turn them off.    
+This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.  The controller buttons that change the curves are disabled by default, use `opcontrol_curve_buttons_toggle(true)` to turn them on.    
 
 `stick_type` ez::SINGLE or ez::SPLIT control  
 <Tabs
@@ -448,7 +448,7 @@ void opcontrol_curve_default_set(double left, double right = 0);
 
 
 ### opcontrol_curve_buttons_toggle()
-Enables/disables modifying the joystick input curves with the controller.   
+Enables/disables modifying the joystick input curves with the controller.  This is disabled by default.   
 
 `toggle` true enables, false disables  
 <Tabs
@@ -502,9 +502,9 @@ True enabled, false disabled.
 
 ```cpp
 void initialize() {
-  printf("Enabled? %i\n", chassis.opcontrol_curve_buttons_toggle_get()); // Returns true
-  chassis.opcontrol_curve_buttons_toggle(false);
   printf("Enabled? %i\n", chassis.opcontrol_curve_buttons_toggle_get()); // Returns false
+  chassis.opcontrol_curve_buttons_toggle(true);
+  printf("Enabled? %i\n", chassis.opcontrol_curve_buttons_toggle_get()); // Returns true
 }
 ```
 
@@ -760,6 +760,8 @@ Sets a new threshold for the joystick.
 
 The joysticks will not return a value if they are within this.   
 
+The default is 3.  A controller's stick at rest often reads 1 or 2 instead of 0, and active brake only runs while both sticks read exactly 0, so with a threshold of 0 those sticks keep active brake off.  Set this to 0 to pass every stick value through, including 1 and 2.   
+
 `threshold` new threshold  
 <Tabs
   groupId="opcontrol_joystick_threshold_set"
@@ -929,6 +931,165 @@ void opcontrol() {
   }
 }
 ```
+</TabItem>
+</Tabs>
+
+
+
+
+### opcontrol_joystick_slowmode_toggle()
+Slow mode for driver practice that scales the drive by `opcontrol_joystick_slowmode_speed_set()` / 127, on top of `opcontrol_speed_max_set()` (the two multiply together, they don't replace each other), instead of cutting the drive off like `opcontrol_joystick_practicemode_toggle()` does.  This also scales down active brake's holding power while a joystick is released, the same way `opcontrol_speed_max_set()` does.  Meant as a training mode, not something to leave on for a competition match.
+
+`toggle`  true enables, false disables      
+<Tabs
+  groupId="opcontrol_joystick_slowmode_toggle"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+<TabItem value="proto">
+
+```cpp
+void opcontrol_joystick_slowmode_toggle(bool toggle);
+```
+</TabItem>
+<TabItem value="example">
+
+
+```cpp
+void opcontrol() {
+  while (true) {
+    chassis.opcontrol_tank();  // Tank control
+
+    // Toggle slow mode
+    if (master.get_digital_new_press(DIGITAL_L1)) {
+      chassis.opcontrol_joystick_slowmode_toggle(!chassis.opcontrol_joystick_slowmode_toggle_get());
+    }
+
+    pros::delay(ez::util::DELAY_TIME);  // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
+  }
+}
+```
+</TabItem>
+</Tabs>
+
+
+
+
+### opcontrol_joystick_slowmode_toggle_get()
+Gets current state of the toggle.   
+
+True is enabled, false is disabled.    
+<Tabs
+  groupId="opcontrol_joystick_slowmode_toggle_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+<TabItem value="proto">
+
+```cpp
+bool opcontrol_joystick_slowmode_toggle_get();
+```
+</TabItem>
+<TabItem value="example">
+
+
+```cpp
+void opcontrol() {
+  while (true) {
+    chassis.opcontrol_tank();  // Tank control
+
+    // Toggle slow mode
+    if (master.get_digital_new_press(DIGITAL_L1)) {
+      chassis.opcontrol_joystick_slowmode_toggle(!chassis.opcontrol_joystick_slowmode_toggle_get());
+    }
+
+    pros::delay(ez::util::DELAY_TIME);  // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
+  }
+}
+```
+</TabItem>
+</Tabs>
+
+
+
+
+### opcontrol_joystick_slowmode_speed_set()
+Sets the speed used while `opcontrol_joystick_slowmode_toggle()` is enabled.  This multiplies with `opcontrol_speed_max_set()` rather than overriding it, so the actual cap while slow mode is on is `opcontrol_speed_max_set()` * speed / 127.
+
+`speed`  the speed limit, out of 127      
+<Tabs
+  groupId="opcontrol_joystick_slowmode_speed_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  chassis.opcontrol_joystick_slowmode_speed_set(90);  // A gentler slow mode than the default of 64
+}
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+
+```cpp
+void opcontrol_joystick_slowmode_speed_set(int speed);
+```
+
+
+
+</TabItem>
+</Tabs>
+
+
+### opcontrol_joystick_slowmode_speed_get()
+Returns the speed used while `opcontrol_joystick_slowmode_toggle()` is enabled.
+<Tabs
+  groupId="opcontrol_joystick_slowmode_speed_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  chassis.opcontrol_joystick_slowmode_speed_set(90);
+  printf("%d\n", chassis.opcontrol_joystick_slowmode_speed_get());  // Prints 90
+}
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+
+```cpp
+int opcontrol_joystick_slowmode_speed_get();
+```
+
+
+
 </TabItem>
 </Tabs>
 
@@ -1124,6 +1285,81 @@ void opcontrol() {
 
 ```cpp
 bool opcontrol_drive_reverse_get();
+```
+
+
+
+</TabItem>
+</Tabs>
+
+
+### opcontrol_speed_max_set()
+Sets the max speed for user control.
+
+`speed` the speed limit, 0 - 127. A value above 127 is set to 127 and a negative value is treated as its magnitude  
+<Tabs
+  groupId="opcontrol_speed_max_set"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  chassis.opcontrol_speed_max_set(100);  // Caps user control output at 100
+}
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+
+```cpp
+void opcontrol_speed_max_set(int speed);
+```
+
+
+
+</TabItem>
+</Tabs>
+
+
+### opcontrol_speed_max_get()
+Returns the max speed for user control.
+<Tabs
+  groupId="opcontrol_speed_max_get"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+void initialize() {
+  chassis.opcontrol_speed_max_set(100);
+  printf("%d\n", chassis.opcontrol_speed_max_get());  // Prints 100
+}
+```
+
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+
+```cpp
+int opcontrol_speed_max_get();
 ```
 
 
