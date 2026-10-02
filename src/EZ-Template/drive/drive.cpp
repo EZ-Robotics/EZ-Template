@@ -346,6 +346,14 @@ void Drive::drive_imu_reset(double new_heading) {
   angle_rad = util::to_rad(new_heading);
   t_last = -angle_rad;
   last_good_angle = new_heading;
+
+  // Also the pose odom_theta_get() reports: odom_current.theta is otherwise only refreshed on the next tracking
+  // pass, and every odom motion seeds its angle PID from odom_theta_get(). The maintenance task's set_rotation() of a
+  // recovering IMU is not a heading reset and does not come through here.
+  odom_current.theta = new_heading;
+  central_pose.theta = new_heading;
+  l_pose.theta = new_heading;
+  r_pose.theta = new_heading;
 }
 double Drive::get_this_imu(pros::Imu* imu) { return imu->get_rotation() * imu_scale_map[imu->get_port()]; }
 
