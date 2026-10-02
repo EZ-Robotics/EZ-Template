@@ -142,3 +142,41 @@ TEST_CASE("control: a redundant IMU recovering (check_imu_task) does not change 
   CHECK(DriveTestAccess::odom_current(chassis).theta == doctest::Approx(before));
   CHECK(chassis.drive_angle_get() == doctest::Approx(30.0));
 }
+
+TEST_CASE("attack: scaled IMU, the pose heading is what the IMU reads back after the reset") {
+  test_stub::reset_all();
+  Drive chassis({1, -2}, {-3, 4}, {5, 6}, 3.25, 360);
+  DriveTestAccess::imu_calibration_complete(chassis) = true;
+  chassis.drive_imus_scalers_3600_set({3550.0, 3650.0});
+  chassis.drive_imu_reset(45.0);
+  CHECK(chassis.drive_angle_get() == doctest::Approx(45.0));
+  CHECK(chassis.odom_theta_get() == doctest::Approx(chassis.drive_angle_get()));
+}
+
+TEST_CASE("attack: a reset in the middle of an odom motion keeps the pose heading on the imu and the motion finishing") {
+  test_stub::reset_all();
+  auto a = sim::archetype_light_fast();
+  Drive chassis({1, -2}, {-3, 4}, 5, a.wheel_diameter_in, a.cartridge_rpm);
+  DriveTestAccess::imu_calibration_complete(chassis) = true;
+  chassis.pid_print_toggle(false);
+  sim::SimRobot sim(chassis, a, sim::NoiseConfig{false, 1});
+
+  chassis.pid_odom_set({{0_in, 24_in}, ez::fwd, 110});
+  for (int i = 0; i < 20; i++) pros::delay(util::DELAY_TIME);
+  chassis.drive_imu_reset(0.0);  // the heading is already about 0, so nothing should change
+  CHECK(chassis.odom_theta_get() == doctest::Approx(chassis.drive_angle_get()));
+  chassis.pid_wait();
+  CHECK(chassis.odom_y_get() == doctest::Approx(24.0).epsilon(0.05));
+  CHECK_FALSE(chassis.interfered);
+}
+
+TEST_CASE("attack: reset twice in a row, and reset to the heading the pose already has") {
+  test_stub::reset_all();
+  auto a = sim::archetype_light_fast();
+  Drive chassis({1, -2}, {-3, 4}, 5, a.wheel_diameter_in, a.cartridge_rpm);
+  DriveTestAccess::imu_calibration_complete(chassis) = true;
+  chassis.drive_imu_reset(170.0);
+  chassis.drive_imu_reset(-170.0);
+  CHECK(chassis.odom_theta_get() == doctest::Approx(-170.0));
+  CHECK(chassis.drive_angle_get() == doctest::Approx(-170.0));
+}
