@@ -244,8 +244,12 @@ void Drive::drive_scale_set(double ratio, double rpm) {
   drive_tick_per_inch_compute();
 
   // The raw counts did not move, so the robot did not either: carry the inches it had across. Only when the scale really
-  // changed, so setting a value that is already set leaves every reading exactly as it was.
-  if (TICK_PER_INCH != old_tick_per_inch) {
+  // changed, so setting a value that is already set leaves every reading exactly as it was. And only when the old scale gave
+  // real inches: after a ratio of 0 (ticks per inch 0) the inches above are 0 / 0, and storing them would leave both sensors
+  // at NaN after the next good value, where without the offsets that sequence recovers. Then the older offsets stay, and the
+  // reading carries on from them at the new scale.
+  bool carried_inches_are_real = std::isfinite(old_tick_per_inch) && old_tick_per_inch != 0.0 && std::isfinite(in_left) && std::isfinite(in_right);
+  if (TICK_PER_INCH != old_tick_per_inch && carried_inches_are_real) {
     sensor_offset_in_left = in_left;
     sensor_offset_in_right = in_right;
     sensor_offset_raw_left = raw_left;
