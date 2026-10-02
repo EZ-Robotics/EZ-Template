@@ -79,6 +79,8 @@ check "okapi units included, stale main.h line"             fail "ambiguous"  "$
 check "okapilib removed, stale main.h line"                 fail "okapi"      "$STALE"
 check_quiet "current constructor shapes do not warn"                    ""
 check_warns "3.x/beta six-argument constructor compiles and says what to change" "ticks = cartridge_rpm / ratio" "-DLEGACY_RATIO_CONSTRUCTOR"
+check "drive_ratio_set() was removed and the error says to call drive_rpm_set()"  fail "drive_rpm_set"  "-DLEGACY_RATIO_SET"
+check "drive_ratio_get() was removed and the error says to call drive_rpm_get()"  fail "drive_rpm_get"  "-DLEGACY_RATIO_GET"
 
 [ $fail -eq 0 ] && echo "upgrade compile matrix: all as documented"
 exit $fail

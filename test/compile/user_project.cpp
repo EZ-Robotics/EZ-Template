@@ -36,6 +36,14 @@ ez::Drive legacy_redundant_chassis({-5, -6, -7}, {11, 15, 16}, std::vector<int>{
 #endif
 
 void user_autons() {
+#ifdef LEGACY_RATIO_SET
+  // What a project that shifts with the ratio has. Removed in 4.0: it must stop compiling and name drive_rpm_set().
+  chassis.drive_ratio_set(1.667);
+#endif
+#ifdef LEGACY_RATIO_GET
+  double ratio = chassis.drive_ratio_get();
+  (void)ratio;
+#endif
   chassis.odom_xyt_set(0_in, 0_in, 0_deg);
   chassis.pid_drive_set(24_in, 110);
   chassis.pid_wait_until(6_in);
