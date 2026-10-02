@@ -50,9 +50,10 @@ void initialize() {
   // chassis.odom_tracker_right_set(&right_tracker);
 
   // Configure your chassis controls
-  chassis.opcontrol_curve_buttons_toggle(true);   // Enables modifying the controller curve with buttons on the joysticks
+  // chassis.opcontrol_curve_buttons_toggle(true);  // Uncomment to enable modifying the controller curve with buttons on the joysticks (off by default)
   chassis.opcontrol_drive_activebrake_set(0.0);   // Sets the active brake kP. We recommend ~2.  0 will disable.
-  chassis.opcontrol_curve_default_set(0.0, 0.0);  // Defaults for curve. If using tank, only the first parameter is used. (Comment this line out if you have an SD card!)
+  chassis.opcontrol_curve_default_set(0.0, 0.0);  // Defaults for curve. If using tank, only the first parameter is used. (Comment this line out if you have an
+                                                  // SD card!)
 
   // Set the drive to your own constants from autons.cpp!
   default_constants();
@@ -144,7 +145,7 @@ void autonomous() {
 /**
  * Simplifies printing tracker values to the brain screen
  */
-void screen_print_tracker(ez::tracking_wheel *tracker, std::string name, int line) {
+void screen_print_tracker(ez::tracking_wheel* tracker, std::string name, int line) {
   std::string tracker_value = "", tracker_width = "";
   // Check if the tracker exists
   if (tracker != nullptr) {
@@ -154,23 +155,23 @@ void screen_print_tracker(ez::tracking_wheel *tracker, std::string name, int lin
   ez::screen_print(tracker_value + tracker_width, line);  // Print final tracker text
 }
 
-void ez_motor_temperatures(){ // A basic display for chassis motors.
-  if(chassis.left_motors.size() * 2 < 12){
-    for(int i = 0; i < chassis.left_motors.size(); i++){
+void ez_motor_temperatures() {  // A basic display for chassis motors.
+  if (chassis.left_motors.size() * 2 < 12) {
+    for (int i = 0; i < chassis.left_motors.size(); i++) {
       ez::screen_print("Motor " + std::to_string(chassis.left_motors[i].get_port()) + ": " +
-      std::to_string(static_cast<int>(chassis.left_motors[i].get_temperature())) + " *C*\t" + "Motor " + 
-      std::to_string(chassis.right_motors[i].get_port()) + ": " + 
-      std::to_string(static_cast<int>(chassis.right_motors[i].get_temperature())) +" *C", 
-      i); //i iterates the line number
+                           std::to_string(static_cast<int>(chassis.left_motors[i].get_temperature())) + " *C*\t" + "Motor " +
+                           std::to_string(chassis.right_motors[i].get_port()) + ": " +
+                           std::to_string(static_cast<int>(chassis.right_motors[i].get_temperature())) + " *C",
+                       i);  // i iterates the line number
     }
   }
 }
-  /**                   Temperature key
-*  Level 1 - Temp greater than 55 deg C or 131 deg F - 50% Power
-*  Level 2 - Temp greater than 60 deg C or 140 deg F - 25% Power - Less than 25% power is useless on a comp robot
-*  Level 3 - Temp greater than 65 deg C or 149 deg F - 12.5% Power
-*  Level 4 - Temp greater than 70 deg C or 158 deg F - 0% Power
-*/
+/**                   Temperature key
+ *  Level 1 - Temp greater than 55 deg C or 131 deg F - 50% Power
+ *  Level 2 - Temp greater than 60 deg C or 140 deg F - 25% Power - Less than 25% power is useless on a comp robot
+ *  Level 3 - Temp greater than 65 deg C or 149 deg F - 12.5% Power
+ *  Level 4 - Temp greater than 70 deg C or 158 deg F - 0% Power
+ */
 
 /**
  * Ez screen task
@@ -196,9 +197,9 @@ void ez_screen_task() {
           screen_print_tracker(chassis.odom_tracker_right, "r", 5);
           screen_print_tracker(chassis.odom_tracker_back, "b", 6);
           screen_print_tracker(chassis.odom_tracker_front, "f", 7);
-        }
-        else if(ez::as::page_blank_is_on(1)) ez_motor_temperatures();
-        
+        } else if (ez::as::page_blank_is_on(1))
+          ez_motor_temperatures();
+
         // . . .
         // Add your own blank pages here!
         // . . .
@@ -207,8 +208,7 @@ void ez_screen_task() {
 
     // Remove all blank pages when connected to a comp switch
     else {
-      if (ez::as::page_blank_amount() > 0)
-        ez::as::page_blank_remove_all();
+      if (ez::as::page_blank_amount() > 0) ez::as::page_blank_remove_all();
     }
 
     pros::delay(ez::util::DELAY_TIME);
@@ -233,8 +233,7 @@ void ez_template_extras() {
     //  When enabled:
     //  * use A and Y to increment / decrement the constants
     //  * use the arrow keys to navigate the constants
-    if (master.get_digital_new_press(DIGITAL_X))
-      chassis.pid_tuner_toggle();
+    if (master.get_digital_new_press(DIGITAL_X)) chassis.pid_tuner_toggle();
 
     // Trigger the selected autonomous routine
     if (master.get_digital(DIGITAL_B) && master.get_digital(DIGITAL_DOWN)) {
@@ -249,8 +248,7 @@ void ez_template_extras() {
 
   // Disable PID Tuner when connected to a comp switch
   else {
-    if (chassis.pid_tuner_enabled())
-      chassis.pid_tuner_disable();
+    if (chassis.pid_tuner_enabled()) chassis.pid_tuner_disable();
   }
 }
 
