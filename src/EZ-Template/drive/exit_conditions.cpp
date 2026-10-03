@@ -95,13 +95,6 @@ double stuck_step(PID& pid, double cap) {
   return pid.velocity_sensor_main_exit_get();
 }
 
-// The progress step the settle clock uses, see StuckWatch. A team's own small_error is a real step and is used as it is. With
-// small_error unset the stuck watch's step is the velocity exit's per-pass noise floor, a few hundredths of an inch. That is right
-// for telling a pinned robot from a shoved one, but far too fine to credit as progress toward "settled": a sticky robot creeping
-// home at step / window made a new low just inside the window over and over, and big_error holds tens of such steps. Inside
-// big_error the step a team that sets small_error already gets, at most the shipped defaults' (1 in, 3 degrees), is the one credited.
-double settle_step(PID& pid, double cap) { return pid.exit.small_error > 0 ? stuck_step(pid, cap) : std::fmax(stuck_step(pid, cap), cap); }
-
 // How long a robot can go without a new low inside big_error before it is called settled while still moving: the time it takes to
 // make one step of progress at the stop speed, for the slowest channel. A robot still closing faster than the stop speed on
 // average makes a new low well inside it. Pass a step of 0 for a channel that is not there.
@@ -115,6 +108,19 @@ int backstop_window_ms(double step_a, double floor_a, double step_b, double floo
 // inside its small band arrive, not get stuck: the speed gate holds the small exit until the robot has stopped, and a heavy robot
 // coasting in can run past the stuck watch's window first. Both errors are 0 only when the team has no exits at all.
 double settle_error(const PID& pid) { return std::fmax(pid.exit.big_error, pid.exit.small_error); }
+
+// The progress step the settle clock uses, see StuckWatch. The stuck watch's own step is the team's small_error, or with none the
+// velocity exit's per-pass noise floor, a few hundredths of an inch. A team's own small_error is used as it is while big_error is at most
+// 3 of them, which the shipped defaults are (1 in against 3 in), so big_error holds a few steps. A finer one, or none, is too fine to
+// credit as progress toward "settled": a robot creeping home at step / window made a new low just inside the window over and over, and
+// big_error / step of them (tens to hundreds for a small_error of 0.03 to 0.2 in) each restarted the clock. Those are credited at a
+// third of big_error instead, at most the cap (1 in, 3 degrees); with no small_error at all, the cap. Time inside big_error is then at
+// most (big_error / step + 1) windows for every team, about 3 s at the defaults.
+static constexpr double SETTLE_STEPS_IN_BIG_ERROR = 3.0;
+double settle_step(PID& pid, double cap) {
+  if (pid.exit.small_error <= 0) return std::fmax(stuck_step(pid, cap), cap);
+  return std::fmax(stuck_step(pid, cap), std::fmin(cap, settle_error(pid) / SETTLE_STEPS_IN_BIG_ERROR));
+}
 
 // StuckWatch's stuck-detection window, in ms: xy's own velocity_exit_time if set, else xy's own
 // mA_timeout, else -- a team can zero both of xy's own velocity and current exits, a legitimate,
