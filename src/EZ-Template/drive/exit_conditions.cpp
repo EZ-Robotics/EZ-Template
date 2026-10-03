@@ -2191,6 +2191,10 @@ void Drive::pid_wait_until_point(pose target) {
   // See pid_wait()'s matching comment on InterferedScope -- opened here, alongside the snapshot above and
   // before this call's own leading settle delay, for the same reason.
   InterferedScope interfered_scope(*this);
+  // ez_auto_task's pass count as of this call, taken BEFORE the leading settle delay (as pid_wait() does), so the pass that delay lets
+  // run counts as one that ran since this wait began. Taken after it, a wait on a motion that had already settled never saw a pass
+  // and refused its own settled verdict (see pid_wait(): errors are only this motion's once the task has run).
+  const std::uint32_t entry_task_passes = stuck_passes();
 
   pros::delay(10);
 
@@ -2210,7 +2214,6 @@ void Drive::pid_wait_until_point(pose target) {
   }
 
   int xy_sgn = util::sgn(is_past_target(target, odom_pose_get()));
-  const std::uint32_t entry_task_passes = stuck_passes();  // see pid_wait(): errors are only this motion's once the task has run
   // Whether this checkpoint IS the path's last point (the motion's own final target), and where that is: only then can a robot that
   // stopped inside both big errors be called settled, and mA counts as a settle against the final target, not a point on the way
   pose final_target = target;
