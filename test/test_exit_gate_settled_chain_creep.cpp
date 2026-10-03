@@ -80,6 +80,9 @@ TEST_CASE("controls: a robot pinned outside big_error on a chain wait is still i
       REQUIRE(ok);
       CHECK(r.chassis.interfered);
       CHECK(e < BOUND_MS);
+      // The same instant the start of this change returned at, so the settle clock cannot have moved a pin's verdict
+      double expected = c.small_error > 0 ? (pin_at == 150.0 ? 920.0 : 1080.0) : (pin_at == 150.0 ? 930.0 : 1080.0);
+      CHECK(std::fabs(e - expected) < 1.0);
       if (std::getenv("EZ_CREEP_PRINT")) std::printf("[creep-pin] %s pin=%.0f interfered=%d elapsed %.0f\n", c.name, pin_at, (int)r.chassis.interfered, e);
     }
   }
