@@ -1667,10 +1667,12 @@ void Drive::wait_until_drive(double target) {
   // The xy gate's only backstop in this loop is left_watch / right_watch, which read leftPID's and rightPID's own exits (copies of xy's
   // on an odom move). Unlike the odom waits' StuckWatch they do not fall back to the heading exits' window, so the gate is armed only
   // when both of those watches are on, or a robot hunting about the target would be held for ever with nothing to end the wait.
+  // Likewise it waits on xy alone: nothing in this loop watches the heading, and a robot held in place and spun has one wheel making
+  // real progress toward the distance, so with the heading in the gate the wheel watch could not end the wait before that wheel got
+  // there (36 to 94 s at 6 to 8 deg/s). A gate holds an exit only for what a backstop here would catch.
   bool xy_gate_armed =
       (leftPID.exit.velocity_exit_time != 0 || leftPID.exit.mA_timeout != 0) && (rightPID.exit.velocity_exit_time != 0 || rightPID.exit.mA_timeout != 0);
-  ExitGate xy_gate([this](int w) { return travel_stopped(Travel::OdomXY, w) && travel_stopped(Travel::OdomHeading, w); },
-                   [this] { return travel_tracked(Travel::OdomXY) && travel_tracked(Travel::OdomHeading); }, xy_gate_armed);
+  ExitGate xy_gate([this](int w) { return travel_stopped(Travel::OdomXY, w); }, [this] { return travel_tracked(Travel::OdomXY); }, xy_gate_armed);
 
   // Whether this wait_until()'s own target IS (not just near) the motion's actual final target, not
   // some earlier waypoint the robot is meant to drive through. pid_wait()'s DRIVE branch already
