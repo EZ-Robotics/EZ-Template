@@ -103,6 +103,12 @@ int backstop_window_ms(double step_a, double floor_a, double step_b, double floo
   return std::isfinite(ms) && ms > 0.0 ? (int)std::ceil(ms) : 0;
 }
 
+// How close to its target a robot has to be for a stop to count as "settled" rather than "stuck": inside big_error, or inside
+// small_error when that is the wider of the two. A team that turns the big exit off (big_error 0) still has a robot that stopped
+// inside its small band arrive, not get stuck: the speed gate holds the small exit until the robot has stopped, and a heavy robot
+// coasting in can run past the stuck watch's window first. Both errors are 0 only when the team has no exits at all.
+double settle_error(const PID& pid) { return std::fmax(pid.exit.big_error, pid.exit.small_error); }
+
 // StuckWatch's stuck-detection window, in ms: xy's own velocity_exit_time if set, else xy's own
 // mA_timeout, else -- a team can zero both of xy's own velocity and current exits, a legitimate,
 // already-supported per-axis choice with no hard ceiling -- angle's own equivalent instead, so turning
@@ -230,8 +236,8 @@ public:
         index_(index),
         window_(stuck_window(xy, angle)),
         settled_window_(team_stuck_window(xy, angle)),
-        xy_big_(xy.exit.big_error),
-        a_big_(angle.exit.big_error),
+        xy_big_(settle_error(xy)),
+        a_big_(settle_error(angle)),
         moved_(travelled > xy_.step || turned > a_.step),
         stopped_(std::move(stopped)),
         backstop_ms_(backstop_window_ms(xy_.step, STOP_SPEED_DISTANCE, a_.step, STOP_SPEED_ANGLE)),
@@ -393,7 +399,7 @@ public:
       : ch_(stuck_step(pid, cap), std::fabs(error), error),
         window_(floored_window(pid.exit.velocity_exit_time != 0 ? pid.exit.velocity_exit_time : pid.exit.mA_timeout)),
         settled_window_(pid.exit.velocity_exit_time != 0 ? pid.exit.velocity_exit_time : pid.exit.mA_timeout),
-        big_error_(pid.exit.big_error),
+        big_error_(settle_error(pid)),
         moved_(already_moved),
         stopped_(std::move(stopped)),
         backstop_ms_(backstop_window_ms(ch_.step, cap == STUCK_STEP_ANGLE_CAP ? STOP_SPEED_ANGLE : STOP_SPEED_DISTANCE, 0.0, 1.0)),
@@ -991,8 +997,8 @@ void Drive::pid_wait() {
           // a side that latched early and has since been shoved or pinned off target must not count as
           // settled just because it once exited cleanly (see the recheck below, which applies this identical
           // rule to a full double latch instead of this stuck-detected path).
-          bool left_settled = std::fabs(leftPID.error) < leftPID.exit.big_error;
-          bool right_settled = std::fabs(rightPID.error) < rightPID.exit.big_error;
+          bool left_settled = std::fabs(leftPID.error) < settle_error(leftPID);
+          bool right_settled = std::fabs(rightPID.error) < settle_error(rightPID);
           // ...and only if ez_auto_task has run since this wait began (see entry_task_passes above); if it
           // has not, both errors are the previous motion's leftovers, not a reading of this one.
           bool settled = left_settled && right_settled && stuck_passes() != entry_task_passes;
@@ -1107,7 +1113,7 @@ void Drive::pid_wait() {
     bool ma_exit = left_exit == mA_EXIT || right_exit == mA_EXIT;
     bool velocity_exit = left_exit == VELOCITY_EXIT || right_exit == VELOCITY_EXIT;
     if (!stalled && ma_exit && !velocity_exit &&
-        ma_exit_settled(std::fabs(leftPID.error) < leftPID.exit.big_error && std::fabs(rightPID.error) < rightPID.exit.big_error,
+        ma_exit_settled(std::fabs(leftPID.error) < settle_error(leftPID) && std::fabs(rightPID.error) < settle_error(rightPID),
                         stuck_passes() != entry_task_passes)) {
       if (print_toggle) std::cout << "  Drive: mA exit inside the big error windows, counted as settled\n";
     } else if (stalled || ma_exit || velocity_exit) {
@@ -1259,8 +1265,8 @@ void Drive::pid_wait() {
             watch.stuck(pp_index, target_distance(), xyPID.error, current_a_odomPID.error, travelled(), turned())) {
           // Stopped inside both big error windows is where a big exit would have left it: that's settled, not stuck.
           // (A robot hovering across the small error window can keep both exit timers from ever finishing.)
-          bool settled = (target_distance() < xyPID.exit.big_error && std::fabs(current_a_odomPID.error) < current_a_odomPID.exit.big_error) ||
-                         watch.settled_just_outside();
+          bool settled =
+              (target_distance() < settle_error(xyPID) && std::fabs(current_a_odomPID.error) < settle_error(current_a_odomPID)) || watch.settled_just_outside();
           stalled = !settled;
           settled_via_stuck = settled;
           if (print_toggle)
@@ -1327,7 +1333,7 @@ void Drive::pid_wait() {
     bool velocity_exit = xy_exit == VELOCITY_EXIT || a_exit == VELOCITY_EXIT;
     bool stuck_exit = stalled && !ended_on_mA;
     if (!stuck_exit && ma_exit && !velocity_exit &&
-        ma_exit_settled(target_distance() < xyPID.exit.big_error && std::fabs(current_a_odomPID.error) < current_a_odomPID.exit.big_error,
+        ma_exit_settled(target_distance() < settle_error(xyPID) && std::fabs(current_a_odomPID.error) < settle_error(current_a_odomPID),
                         stuck_passes() != entry_task_passes)) {
       if (print_toggle) std::cout << "  XY: mA exit inside the big error windows, counted as settled\n";
     } else if (stalled || ma_exit || velocity_exit) {
@@ -1396,7 +1402,7 @@ void Drive::pid_wait() {
         turn_exit = turn_exit != RUNNING ? turn_exit : without_velocity(gated_exit(turn_gate, turnPID, mA_exit_motors(), turnPID.error));
         if (turn_exit == RUNNING && watch.stuck(turnPID.error)) {
           // Same settled carve-out as the DRIVE branch above.
-          bool settled = std::fabs(turnPID.error) < turnPID.exit.big_error && stuck_passes() != entry_task_passes;
+          bool settled = std::fabs(turnPID.error) < settle_error(turnPID) && stuck_passes() != entry_task_passes;
           stalled = !settled;
           settled_via_stuck = settled;
           if (print_toggle)
@@ -1448,7 +1454,7 @@ void Drive::pid_wait() {
     // message already printed for this same pass.
     if (print_toggle && !stalled && turn_exit != RUNNING) std::cout << "  Turn: " << exit_to_string(turn_exit) << " Exit, error: " << turnPID.error << "\n";
 
-    if (!stalled && turn_exit == mA_EXIT && ma_exit_settled(std::fabs(turnPID.error) < turnPID.exit.big_error, stuck_passes() != entry_task_passes)) {
+    if (!stalled && turn_exit == mA_EXIT && ma_exit_settled(std::fabs(turnPID.error) < settle_error(turnPID), stuck_passes() != entry_task_passes)) {
       if (print_toggle) std::cout << "  Turn: mA exit inside the big error window, counted as settled\n";
     } else if (stalled || turn_exit == mA_EXIT || turn_exit == VELOCITY_EXIT) {
       interfered_scope.mark();
@@ -1492,7 +1498,7 @@ void Drive::pid_wait() {
         swing_exit = swing_exit != RUNNING ? swing_exit : without_velocity(gated_exit(swing_gate, swingPID, mA_exit_motors(), swingPID.error));
         if (swing_exit == RUNNING && watch.stuck(swingPID.error)) {
           // Same settled carve-out as the DRIVE branch above.
-          bool settled = std::fabs(swingPID.error) < swingPID.exit.big_error && stuck_passes() != entry_task_passes;
+          bool settled = std::fabs(swingPID.error) < settle_error(swingPID) && stuck_passes() != entry_task_passes;
           stalled = !settled;
           settled_via_stuck = settled;
           if (print_toggle)
@@ -1529,7 +1535,7 @@ void Drive::pid_wait() {
     // message already printed for this same pass.
     if (print_toggle && !stalled && swing_exit != RUNNING) std::cout << "  Swing: " << exit_to_string(swing_exit) << " Exit, error: " << swingPID.error << "\n";
 
-    if (!stalled && swing_exit == mA_EXIT && ma_exit_settled(std::fabs(swingPID.error) < swingPID.exit.big_error, stuck_passes() != entry_task_passes)) {
+    if (!stalled && swing_exit == mA_EXIT && ma_exit_settled(std::fabs(swingPID.error) < settle_error(swingPID), stuck_passes() != entry_task_passes)) {
       if (print_toggle) std::cout << "  Swing: mA exit inside the big error window, counted as settled\n";
     } else if (stalled || swing_exit == mA_EXIT || swing_exit == VELOCITY_EXIT) {
       interfered_scope.mark();
@@ -1682,7 +1688,7 @@ void Drive::wait_until_drive(double target) {
           // An mA exit inside big_error of the final target is a settle (see ma_exit_settled()), anything else that is not a window exit is not
           bool ma_settles =
               xy_exit == mA_EXIT &&
-              ma_exit_settled((std::fabs(xyPID.error) < xyPID.exit.big_error && std::fabs(current_a_odomPID.error) < current_a_odomPID.exit.big_error),
+              ma_exit_settled((std::fabs(xyPID.error) < settle_error(xyPID) && std::fabs(current_a_odomPID.error) < settle_error(current_a_odomPID)),
                               stuck_passes() != entry_task_passes);
           if (ma_settles) {
             if (print_toggle) std::cout << "  XY: mA exit inside the big error windows, counted as settled" << std::endl;
@@ -1722,8 +1728,8 @@ void Drive::wait_until_drive(double target) {
           // been shoved or pinned off target must not count as settled just because it once exited
           // cleanly (same rule as the recheck in the else branch below, applied here to the
           // stuck-detected path instead). An odom move has no look ahead free error to judge this by.
-          bool left_settled = std::fabs(leftPID.error) < leftPID.exit.big_error;
-          bool right_settled = std::fabs(rightPID.error) < rightPID.exit.big_error;
+          bool left_settled = std::fabs(leftPID.error) < settle_error(leftPID);
+          bool right_settled = std::fabs(rightPID.error) < settle_error(rightPID);
           bool settled = !is_odom && left_settled && right_settled && stuck_passes() != entry_task_passes;
           CheckpointEnd end = checkpoint_end(settled, at_final_target, unreachable, is_odom ? INFINITY : std::fmax(std::fabs(l_error), std::fabs(r_error)),
                                              leftPID.exit.small_error, !is_odom);
@@ -1799,7 +1805,7 @@ void Drive::wait_until_drive(double target) {
           // one only inside big_error of the final target (see ma_exit_settled()); a velocity exit never is.
           bool mA_exit = left_exit == mA_EXIT || right_exit == mA_EXIT;
           bool velocity_exit = left_exit == VELOCITY_EXIT || right_exit == VELOCITY_EXIT;
-          bool inside_big = !is_odom && std::fabs(leftPID.error) < leftPID.exit.big_error && std::fabs(rightPID.error) < rightPID.exit.big_error;
+          bool inside_big = !is_odom && std::fabs(leftPID.error) < settle_error(leftPID) && std::fabs(rightPID.error) < settle_error(rightPID);
           bool settled = !velocity_exit && (!mA_exit || ma_exit_settled(inside_big, stuck_passes() != entry_task_passes));
           CheckpointEnd end = checkpoint_end(settled, at_final_target, unreachable, is_odom ? INFINITY : std::fmax(std::fabs(l_error), std::fabs(r_error)),
                                              leftPID.exit.small_error, !is_odom);
@@ -2003,7 +2009,7 @@ void Drive::wait_until_turn_swing_internal(double target) {
             // Same settled carve-out as pid_wait()'s TURN branch, gated to only apply when this
             // wait_until()'s target really is the motion's final target -- see turn_at_final_target's
             // comment above.
-            bool settled = std::fabs(turnPID.error) < turnPID.exit.big_error && stuck_passes() != entry_task_passes;
+            bool settled = std::fabs(turnPID.error) < settle_error(turnPID) && stuck_passes() != entry_task_passes;
             CheckpointEnd end = checkpoint_end(settled, turn_at_final_target, turn_unreachable, std::fabs(g_error), turnPID.exit.small_error, true);
             bool stalled = end == CheckpointEnd::Interfered;
             if (print_toggle)
@@ -2045,7 +2051,7 @@ void Drive::wait_until_turn_swing_internal(double target) {
             // A window exit is a settle by definition; an mA exit only inside big_error of the final target (see ma_exit_settled())
             bool mA_exit = turn_exit == mA_EXIT;
             bool settled = turn_exit != VELOCITY_EXIT &&
-                           (!mA_exit || ma_exit_settled(std::fabs(turnPID.error) < turnPID.exit.big_error, stuck_passes() != entry_task_passes));
+                           (!mA_exit || ma_exit_settled(std::fabs(turnPID.error) < settle_error(turnPID), stuck_passes() != entry_task_passes));
             CheckpointEnd end = checkpoint_end(settled, turn_at_final_target, turn_unreachable, std::fabs(g_error), turnPID.exit.small_error, true);
             bool stalled = end == CheckpointEnd::Interfered;
             if (mA_exit && !stalled && print_toggle) std::cout << "  Turn: mA exit inside the big error window, counted as settled" << std::endl;
@@ -2085,7 +2091,7 @@ void Drive::wait_until_turn_swing_internal(double target) {
             // Same settled carve-out as pid_wait()'s SWING branch, gated to only apply when this
             // wait_until()'s target really is the motion's final target -- see swing_at_final_target's
             // comment above.
-            bool settled = std::fabs(swingPID.error) < swingPID.exit.big_error && stuck_passes() != entry_task_passes;
+            bool settled = std::fabs(swingPID.error) < settle_error(swingPID) && stuck_passes() != entry_task_passes;
             CheckpointEnd end = checkpoint_end(settled, swing_at_final_target, swing_unreachable, std::fabs(g_error), swingPID.exit.small_error, true);
             bool stalled = end == CheckpointEnd::Interfered;
             if (print_toggle)
@@ -2118,7 +2124,7 @@ void Drive::wait_until_turn_swing_internal(double target) {
             // A window exit is a settle by definition; an mA exit only inside big_error of the final target (see ma_exit_settled())
             bool mA_exit = swing_exit == mA_EXIT;
             bool settled = swing_exit != VELOCITY_EXIT &&
-                           (!mA_exit || ma_exit_settled(std::fabs(swingPID.error) < swingPID.exit.big_error, stuck_passes() != entry_task_passes));
+                           (!mA_exit || ma_exit_settled(std::fabs(swingPID.error) < settle_error(swingPID), stuck_passes() != entry_task_passes));
             CheckpointEnd end = checkpoint_end(settled, swing_at_final_target, swing_unreachable, std::fabs(g_error), swingPID.exit.small_error, true);
             bool stalled = end == CheckpointEnd::Interfered;
             if (mA_exit && !stalled && print_toggle) std::cout << "  Swing: mA exit inside the big error window, counted as settled" << std::endl;
@@ -2228,8 +2234,8 @@ void Drive::pid_wait_until_point(pose target) {
   }
   bool at_final_target = std::fabs(target.x - final_target.x) < FINAL_TARGET_TOLERANCE && std::fabs(target.y - final_target.y) < FINAL_TARGET_TOLERANCE;
   auto inside_both_big = [&]() {
-    return util::distance_to_point(final_target, odom_pose_get()) < xyPID.exit.big_error &&
-           std::fabs(current_a_odomPID.error) < current_a_odomPID.exit.big_error && stuck_passes() != entry_task_passes;
+    return util::distance_to_point(final_target, odom_pose_get()) < settle_error(xyPID) &&
+           std::fabs(current_a_odomPID.error) < settle_error(current_a_odomPID) && stuck_passes() != entry_task_passes;
   };
 
   exit_output xy_exit = RUNNING;
