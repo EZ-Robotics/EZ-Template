@@ -280,6 +280,12 @@ public:
   void push(double newtons, double start_ms, double duration_ms) { forces_.push_back({newtons, start_ms, start_ms + duration_ms}); }
   // The robot is held still, in every direction, from `start_ms` for `duration_ms` (a robot pinned against a defender).
   void pin(double start_ms, double duration_ms) { pins_.push_back({0.0, start_ms, start_ms + duration_ms}); }
+  // The robot is held (pinned) and carried at v in/s along its heading and w deg/s (library sign, clockwise positive) for the
+  // window: wheels, heading and encoders all move, nothing the motors do changes it. A robot dragged along by something else.
+  void carry(double v_in_s, double w_deg_s, double start_ms, double duration_ms) {
+    pins_.push_back({0.0, start_ms, start_ms + duration_ms});
+    carries_.push_back({v_in_s, w_deg_s, start_ms, start_ms + duration_ms});
+  }
   // A wall `position_in` inches ahead of where the wheels are zero: the average wheel travel cannot pass it, and
   // whatever velocity it hits it at is lost. The motors keep pushing, so they stall against it.
   void wall(double position_in) {
@@ -571,6 +577,22 @@ private:
       left_wheel_v_new = 0.0;
       right_wheel_v_new = 0.0;
       heading_deg_ = pin_heading_deg_;
+      double cv = 0.0, cw = 0.0;
+      for (const auto& c : carries_)
+        if (sim_ms_ >= c.start_ms && sim_ms_ < c.end_ms) {
+          cv += c.v;
+          cw += c.w;
+        }
+      if (cv != 0.0 || cw != 0.0) {
+        yaw_rate_deg_s_ = -cw;
+        common_velocity_in_s_ = cv;
+        double yaw_rad = yaw_rate_deg_s_ * M_PI / 180.0;
+        left_wheel_v_new = cv * 0.0254 - yaw_rad * track_radius_m;
+        right_wheel_v_new = cv * 0.0254 + yaw_rad * track_radius_m;
+        pin_heading_deg_ += yaw_rate_deg_s_ * dt_s;
+        pin_left_in_ += left_wheel_v_new / 0.0254 * dt_s;
+        pin_right_in_ += right_wheel_v_new / 0.0254 * dt_s;
+      }
     }
     was_pinned_ = pinned;
 
@@ -700,6 +722,10 @@ private:
     double value, start_ms, end_ms;
   };
   std::vector<Window> forces_, pins_;
+  struct Carry {
+    double v, w, start_ms, end_ms;
+  };
+  std::vector<Carry> carries_;
   double sim_ms_ = 0.0;
   bool wall_set_ = false, was_pinned_ = false;
   double wall_in_ = 0.0, pin_left_in_ = 0.0, pin_right_in_ = 0.0, pin_heading_deg_ = 0.0;
