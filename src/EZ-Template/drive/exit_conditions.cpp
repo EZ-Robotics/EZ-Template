@@ -245,6 +245,7 @@ public:
   // distance: how far the robot is from the point it's driving to.  xy_error and a_error: the PIDs' signed errors.
   bool stuck(int index, double distance, double xy_error, double a_error, double travelled, double turned) {
     if (window_ == 0) return false;
+    settled_just_outside_ = false;
     std::uint32_t now = pros::millis();
     std::uint32_t pass = stuck_passes();
     bool progress = false;     // genuinely getting somewhere: this is what makes the robot "moved"
@@ -292,7 +293,17 @@ public:
     //   backstop: neither channel made a new low for max(the team's window, step / stop speed).
     bool inside_big = xy_big_ > 0 && distance < xy_big_ && a_big_ > 0 && std::fabs(a_error) < a_big_;
     if (inside_big && stopped_ && (moved_ || (std::int32_t)(now - last_progress_) > 0) && stopped_(settled_window_)) return true;
-    int window = inside_big ? std::max(settled_window_, backstop_ms_) : window_;
+    // A robot the speed gate held inside big_error because it was still moving, and which then crept a little outside it, is where a
+    // big exit would have left it, give or take the creep: it gets the same two ways to settle as inside. "A little" is one progress
+    // step of the xy error. A robot that was never inside, or is further out, is stuck as before.
+    if (inside_big) was_inside_big_ = true;
+    bool just_outside = !inside_big && was_inside_big_ && xy_big_ > 0 && distance < xy_big_ + xy_.step && a_big_ > 0 && std::fabs(a_error) < a_big_;
+    bool may_settle = moved_ || (std::int32_t)(now - last_progress_) > 0;
+    if (just_outside && stopped_ && may_settle && stopped_(settled_window_)) {
+      settled_just_outside_ = true;
+      return true;
+    }
+    int window = inside_big || just_outside ? std::max(settled_window_, backstop_ms_) : window_;
     std::int32_t waited = now - last_progress_;
     if (waited <= window) return false;
     // Confirming ez_auto_task really kept running (not just wall-clock time passing while it's starved or dead)
@@ -333,10 +344,16 @@ public:
     // still caught by the STARVED_WINDOWS wall-clock fallback below, unchanged.  Flagging the latency tradeoff
     // for a design call, the same as the Channel rebound latch above.
     int expected_passes = (int)(window / (double)util::DELAY_TIME);
-    return (std::int32_t)(pass - last_progress_pass_) > expected_passes || waited > STUCK_STARVED_WINDOWS * window;
+    bool stuck = (std::int32_t)(pass - last_progress_pass_) > expected_passes || waited > STUCK_STARVED_WINDOWS * window;
+    settled_just_outside_ = stuck && just_outside;
+    return stuck;
   }
 
+  // The last stuck() verdict was a robot at rest just outside big_error after having been inside it: settled, not stuck
+  bool settled_just_outside() const { return settled_just_outside_; }
+
 private:
+  bool was_inside_big_ = false, settled_just_outside_ = false;
   Channel xy_, a_;
   int index_;
   int window_;          // the team's window, floored: what a stuck verdict outside the big errors waits for
@@ -1242,7 +1259,8 @@ void Drive::pid_wait() {
             watch.stuck(pp_index, target_distance(), xyPID.error, current_a_odomPID.error, travelled(), turned())) {
           // Stopped inside both big error windows is where a big exit would have left it: that's settled, not stuck.
           // (A robot hovering across the small error window can keep both exit timers from ever finishing.)
-          bool settled = target_distance() < xyPID.exit.big_error && std::fabs(current_a_odomPID.error) < current_a_odomPID.exit.big_error;
+          bool settled = (target_distance() < xyPID.exit.big_error && std::fabs(current_a_odomPID.error) < current_a_odomPID.exit.big_error) ||
+                         watch.settled_just_outside();
           stalled = !settled;
           settled_via_stuck = settled;
           if (print_toggle)
