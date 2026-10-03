@@ -2227,10 +2227,13 @@ void Drive::pid_wait_until_point(pose target) {
   int xy_sgn = util::sgn(is_past_target(target, odom_pose_get()));
   // Whether this checkpoint IS the path's last point (the motion's own final target), and where that is: only then can a robot that
   // stopped inside both big errors be called settled, and mA counts as a settle against the final target, not a point on the way
+  // odom_target_start is the last point the motion was set with, for a path and a point to point move alike. The last entry of
+  // pp_movements is not: pid_wait_quick_chain() pushes a point past the checkpoint onto it, and a robot resting on the checkpoint is
+  // outside big_error of that pushed point, so a chain wait entered on a motion that had already settled read interfered.
   pose final_target = target;
   {
     ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
-    final_target = mode == PURE_PURSUIT && !pp_movements.empty() ? pp_movements.back().target : odom_target_start;
+    final_target = odom_target_start;
   }
   bool at_final_target = std::fabs(target.x - final_target.x) < FINAL_TARGET_TOLERANCE && std::fabs(target.y - final_target.y) < FINAL_TARGET_TOLERANCE;
   auto inside_both_big = [&]() {
