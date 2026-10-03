@@ -33,8 +33,9 @@ namespace detail {
  * or dead task), answers "not stopped": the existing starved-task fallbacks own that case.
  *
  * A fixed ring, no allocation.  CAPACITY samples at the 10 ms pass time is 2.5 s of history, so any window up to 2 s is
- * answered in full; a longer one is answered over the stored history, which is a shorter window and so only ever makes
- * "stopped" harder to reach.
+ * answered in full; a longer one is answered as the average speed over the stored history, so motion older than the ring
+ * is forgotten and such a window can read "stopped" where the full window would not.  Exit windows beyond 2 s are not
+ * supported.
  *
  * Not thread safe on its own: the drive samples and asks under its mutex.
  */
@@ -101,7 +102,7 @@ public:
     }
     if (base < 0) {
       // Not covered.  If the ring has not lost anything the window is longer than the motion has been running, which says
-      // nothing; if it has, use what is left (a shorter window, so stopped is harder to reach).
+      // nothing; if it has, use what is left (the average speed over a shorter span, which forgets older motion).
       if (!wrapped_) return false;
       base = index_from_newest(count_ - 1);
     }
