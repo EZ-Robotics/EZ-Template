@@ -95,6 +95,13 @@ double stuck_step(PID& pid, double cap) {
   return pid.velocity_sensor_main_exit_get();
 }
 
+// The progress step the settle clock uses, see StuckWatch. A team's own small_error is a real step and is used as it is. With
+// small_error unset the stuck watch's step is the velocity exit's per-pass noise floor, a few hundredths of an inch. That is right
+// for telling a pinned robot from a shoved one, but far too fine to credit as progress toward "settled": a sticky robot creeping
+// home at step / window made a new low just inside the window over and over, and big_error holds tens of such steps. Inside
+// big_error the step a team that sets small_error already gets, at most the shipped defaults' (1 in, 3 degrees), is the one credited.
+double settle_step(PID& pid, double cap) { return pid.exit.small_error > 0 ? stuck_step(pid, cap) : std::fmax(stuck_step(pid, cap), cap); }
+
 // How long a robot can go without a new low inside big_error before it is called settled while still moving: the time it takes to
 // make one step of progress at the stop speed, for the slowest channel. A robot still closing faster than the stop speed on
 // average makes a new low well inside it. Pass a step of 0 for a channel that is not there.
@@ -233,6 +240,8 @@ public:
   StuckWatch(PID& xy, PID& angle, int index, double distance, double travelled, double turned, std::function<bool(int)> stopped = nullptr)
       : xy_(stuck_step(xy, STUCK_STEP_DISTANCE_CAP), distance, xy.error),
         a_(stuck_step(angle, STUCK_STEP_ANGLE_CAP), std::fabs(angle.error), angle.error),
+        xs_(settle_step(xy, STUCK_STEP_DISTANCE_CAP), distance, xy.error),
+        as_(settle_step(angle, STUCK_STEP_ANGLE_CAP), std::fabs(angle.error), angle.error),
         index_(index),
         window_(stuck_window(xy, angle)),
         settled_window_(team_stuck_window(xy, angle)),
@@ -240,30 +249,37 @@ public:
         a_big_(settle_error(angle)),
         moved_(travelled > xy_.step || turned > a_.step),
         stopped_(std::move(stopped)),
-        backstop_ms_(backstop_window_ms(xy_.step, STOP_SPEED_DISTANCE, a_.step, STOP_SPEED_ANGLE)),
+        backstop_ms_(backstop_window_ms(xs_.step, STOP_SPEED_DISTANCE, as_.step, STOP_SPEED_ANGLE)),
         a_seed_pass_(stuck_passes()),
         a_seeded_(false) {
     int allowance = moved_ ? 0 : STUCK_START_ALLOWANCE_MS;
-    last_progress_ = pros::millis() + allowance;
-    last_progress_pass_ = stuck_passes() + allowance / util::DELAY_TIME;
+    last_progress_ = last_settle_ = pros::millis() + allowance;
+    last_progress_pass_ = last_settle_pass_ = stuck_passes() + allowance / util::DELAY_TIME;
   }
 
   // distance: how far the robot is from the point it's driving to.  xy_error and a_error: the PIDs' signed errors.
-  bool stuck(int index, double distance, double xy_error, double a_error, double travelled, double turned) {
+  // settle_distance: how far it is from where it counts as settled, when that is not only the point (negative: the same as distance).
+  bool stuck(int index, double distance, double xy_error, double a_error, double travelled, double turned, double settle_distance = -1.0) {
     if (window_ == 0) return false;
     settled_just_outside_ = false;
     std::uint32_t now = pros::millis();
     std::uint32_t pass = stuck_passes();
     bool progress = false;     // genuinely getting somewhere: this is what makes the robot "moved"
     bool disturbance = false;  // a shove landing or peaking: restarts the clock, but is not progress
+    // The same two for the settle clock, which runs on the settle step (see settle_step())
+    bool settle_progress = false, settle_disturbance = false;
     if (index != index_) {
       index_ = index;
       xy_ = Channel(xy_.step, distance, xy_error);
       a_ = Channel(a_.step, std::fabs(a_error), a_error);
-      progress = true;
+      xs_ = Channel(xs_.step, distance, xy_error);
+      as_ = Channel(as_.step, std::fabs(a_error), a_error);
+      progress = settle_progress = true;
     }
     if (xy_.made(distance, xy_error)) progress = true;
+    if (xs_.made(distance, xy_error)) settle_progress = true;
     disturbance = xy_.latched || xy_.peaked;
+    settle_disturbance = xs_.latched || xs_.peaked;
     // The angle channel's own construction-time seed (angle.error at that moment) can be a leftover
     // reading from the PREVIOUS motion: motion_reset()/timers_reset() never touch `error`, only a real
     // compute_error() does, so if this wait's own first tick lands before the background task has
@@ -280,37 +296,50 @@ public:
     if (!a_seeded_) {
       if (pass != a_seed_pass_) {
         a_ = Channel(a_.step, std::fabs(a_error), a_error);
+        as_ = Channel(as_.step, std::fabs(a_error), a_error);
         a_seeded_ = true;
       }
     } else {
       if (a_.made(std::fabs(a_error), a_error)) progress = true;
       disturbance = disturbance || a_.latched || a_.peaked;
+      if (as_.made(std::fabs(a_error), a_error)) settle_progress = true;
+      settle_disturbance = settle_disturbance || as_.latched || as_.peaked;
     }
-    if (!moved_ && (travelled > xy_.step || turned > a_.step)) moved_ = progress = true;
+    if (!moved_ && (travelled > xy_.step || turned > a_.step)) moved_ = progress = settle_progress = true;
     // Before the robot has moved, progress can't cut the start allowance short
     if ((progress || disturbance) && (moved_ || (std::int32_t)(now - last_progress_) > 0)) {
       last_progress_ = now;
       last_progress_pass_ = pass;
+    }
+    if ((settle_progress || settle_disturbance) && (moved_ || (std::int32_t)(now - last_settle_) > 0)) {
+      last_settle_ = now;
+      last_settle_pass_ = pass;
     }
     // Inside both big errors a stuck verdict is a clean "settled" return, so the floor has nothing to protect there; see
     // SingleStuckWatch::stuck(). Flooring it only let the mA exit fire first on a robot resting in the friction deadband.
     // There it is settled in either of two ways, see SingleStuckWatch::stuck() for why:
     //   stopped:  the robot travelled less than the stop speed over the team's own window (xy and heading both), and
     //   backstop: neither channel made a new low for max(the team's window, step / stop speed).
-    bool inside_big = xy_big_ > 0 && distance < xy_big_ && a_big_ > 0 && std::fabs(a_error) < a_big_;
-    if (inside_big && stopped_ && (moved_ || (std::int32_t)(now - last_progress_) > 0) && stopped_(settled_window_)) return true;
+    double settle_d = settle_distance < 0 ? distance : std::fmin(distance, settle_distance);
+    bool inside_big = xy_big_ > 0 && settle_d < xy_big_ && a_big_ > 0 && std::fabs(a_error) < a_big_;
+    if (inside_big && stopped_ && (moved_ || (std::int32_t)(now - last_settle_) > 0) && stopped_(settled_window_)) return true;
     // A robot the speed gate held inside big_error because it was still moving, and which then crept a little outside it, is where a
     // big exit would have left it, give or take the creep: it gets the same two ways to settle as inside. "A little" is one progress
     // step of the xy error. A robot that was never inside, or is further out, is stuck as before.
     if (inside_big) was_inside_big_ = true;
-    bool just_outside = !inside_big && was_inside_big_ && xy_big_ > 0 && distance < xy_big_ + xy_.step && a_big_ > 0 && std::fabs(a_error) < a_big_;
-    bool may_settle = moved_ || (std::int32_t)(now - last_progress_) > 0;
+    bool just_outside = !inside_big && was_inside_big_ && xy_big_ > 0 && settle_d < xy_big_ + xy_.step && a_big_ > 0 && std::fabs(a_error) < a_big_;
+    bool may_settle = moved_ || (std::int32_t)(now - last_settle_) > 0;
     if (just_outside && stopped_ && may_settle && stopped_(settled_window_)) {
       settled_just_outside_ = true;
       return true;
     }
-    int window = inside_big || just_outside ? std::max(settled_window_, backstop_ms_) : window_;
-    std::int32_t waited = now - last_progress_;
+    // Settling is timed on the settle clock: a new low has to be a settle step below the last, so a robot creeping home in noise-sized
+    // steps cannot keep restarting it. Time inside big_error is then at most (big_error / settle step + 1) windows. Outside, the fine
+    // clock keeps a shove or a pin reading as before.
+    bool settling = inside_big || just_outside;
+    int window = settling ? std::max(settled_window_, backstop_ms_) : window_;
+    std::int32_t waited = now - (settling ? last_settle_ : last_progress_);
+    std::uint32_t since_pass = pass - (settling ? last_settle_pass_ : last_progress_pass_);
     if (waited <= window) return false;
     // Confirming ez_auto_task really kept running (not just wall-clock time passing while it's starved or dead)
     // needs an expected pass count for window_.  This used to derive that count from this watch's own observed
@@ -350,7 +379,7 @@ public:
     // still caught by the STARVED_WINDOWS wall-clock fallback below, unchanged.  Flagging the latency tradeoff
     // for a design call, the same as the Channel rebound latch above.
     int expected_passes = (int)(window / (double)util::DELAY_TIME);
-    bool stuck = (std::int32_t)(pass - last_progress_pass_) > expected_passes || waited > STUCK_STARVED_WINDOWS * window;
+    bool stuck = (std::int32_t)since_pass > expected_passes || waited > STUCK_STARVED_WINDOWS * window;
     settled_just_outside_ = stuck && just_outside;
     return stuck;
   }
@@ -361,6 +390,7 @@ public:
 private:
   bool was_inside_big_ = false, settled_just_outside_ = false;
   Channel xy_, a_;
+  Channel xs_, as_;  // the same two channels on the settle step: what the settle clock credits
   int index_;
   int window_;          // the team's window, floored: what a stuck verdict outside the big errors waits for
   int settled_window_;  // the team's own window, unfloored: what it waits for inside both big errors
@@ -373,6 +403,7 @@ private:
   std::uint32_t a_seed_pass_;
   bool a_seeded_;
   std::uint32_t last_progress_, last_progress_pass_;
+  std::uint32_t last_settle_, last_settle_pass_;  // the settle clock: when xs_ / as_ last made progress, restarts included
 };
 
 // The same progress backstop as StuckWatch, but for a single PID with no odometry and no path index -- DRIVE,
@@ -397,17 +428,18 @@ public:
   // builds a watch on its own).
   SingleStuckWatch(PID& pid, double error, bool already_moved, double cap, std::function<bool(int)> stopped = nullptr)
       : ch_(stuck_step(pid, cap), std::fabs(error), error),
+        cs_(settle_step(pid, cap), std::fabs(error), error),
         window_(floored_window(pid.exit.velocity_exit_time != 0 ? pid.exit.velocity_exit_time : pid.exit.mA_timeout)),
         settled_window_(pid.exit.velocity_exit_time != 0 ? pid.exit.velocity_exit_time : pid.exit.mA_timeout),
         big_error_(settle_error(pid)),
         moved_(already_moved),
         stopped_(std::move(stopped)),
-        backstop_ms_(backstop_window_ms(ch_.step, cap == STUCK_STEP_ANGLE_CAP ? STOP_SPEED_ANGLE : STOP_SPEED_DISTANCE, 0.0, 1.0)),
+        backstop_ms_(backstop_window_ms(cs_.step, cap == STUCK_STEP_ANGLE_CAP ? STOP_SPEED_ANGLE : STOP_SPEED_DISTANCE, 0.0, 1.0)),
         last_pass_(stuck_passes()),
         seeded_(false) {
     int allowance = moved_ ? 0 : STUCK_START_ALLOWANCE_MS;
-    last_progress_ = pros::millis() + allowance;
-    last_progress_pass_ = stuck_passes() + allowance / util::DELAY_TIME;
+    last_progress_ = last_settle_ = pros::millis() + allowance;
+    last_progress_pass_ = last_settle_pass_ = stuck_passes() + allowance / util::DELAY_TIME;
   }
 
   bool stuck(double error) {
@@ -415,7 +447,8 @@ public:
     std::uint32_t now = pros::millis();
     std::uint32_t pass = stuck_passes();
     bool progress = false;
-    bool disturbance = false;  // a shove landing or peaking: restarts the clock, but is not progress
+    bool disturbance = false;                                  // a shove landing or peaking: restarts the clock, but is not progress
+    bool settle_progress = false, settle_disturbance = false;  // the same for the settle clock, see StuckWatch::stuck()
     // Only ever act on `error` on a pass where the background task has actually ticked since the last
     // time this checked (stuck_passes(), the same heartbeat the wall-clock/pass-count starvation check
     // below already trusts) -- the caller (this wait's own loop) and that background compute loop are two
@@ -433,16 +466,23 @@ public:
       last_pass_ = pass;
       if (!seeded_) {
         ch_ = Channel(ch_.step, std::fabs(error), error);
+        cs_ = Channel(cs_.step, std::fabs(error), error);
         seeded_ = true;
       } else {
         progress = ch_.made(std::fabs(error), error);
         disturbance = ch_.latched || ch_.peaked;
+        settle_progress = cs_.made(std::fabs(error), error);
+        settle_disturbance = cs_.latched || cs_.peaked;
       }
     }
-    if (!moved_ && progress) moved_ = true;
+    if (!moved_ && progress) moved_ = settle_progress = true;
     if ((progress || disturbance) && (moved_ || (std::int32_t)(now - last_progress_) > 0)) {
       last_progress_ = now;
       last_progress_pass_ = pass;
+    }
+    if ((settle_progress || settle_disturbance) && (moved_ || (std::int32_t)(now - last_settle_) > 0)) {
+      last_settle_ = now;
+      last_settle_pass_ = pass;
     }
     // Inside big_error a stuck verdict is a clean "settled" return, not an interfered one, so the floor has nothing to
     // protect there (it exists so a shove is not called stuck). Flooring it would only delay that clean return long
@@ -458,18 +498,20 @@ public:
     //             because closing at that speed makes a new low every step / stop speed.
     // Not before the robot has moved (or the start allowance ran out): a motion shorter than big_error starts at rest inside it.
     bool inside_big = big_error_ > 0 && std::fabs(error) < big_error_;
-    if (inside_big && stopped_ && (moved_ || (std::int32_t)(now - last_progress_) > 0) && stopped_(settled_window_)) return true;
+    if (inside_big && stopped_ && (moved_ || (std::int32_t)(now - last_settle_) > 0) && stopped_(settled_window_)) return true;
     int window = inside_big ? std::max(settled_window_, backstop_ms_) : window_;
-    std::int32_t waited = now - last_progress_;
+    std::int32_t waited = now - (inside_big ? last_settle_ : last_progress_);
+    std::uint32_t since_pass = pass - (inside_big ? last_settle_pass_ : last_progress_pass_);
     if (waited <= window) return false;
     // See the matching comment in StuckWatch::stuck() -- a fixed, nominal-DELAY_TIME pass count, not one
     // derived from this watch's own observed (and self-referential) cadence.
     int expected_passes = (int)(window / (double)util::DELAY_TIME);
-    return (std::int32_t)(pass - last_progress_pass_) > expected_passes || waited > STUCK_STARVED_WINDOWS * window;
+    return (std::int32_t)since_pass > expected_passes || waited > STUCK_STARVED_WINDOWS * window;
   }
 
 private:
   Channel ch_;
+  Channel cs_;          // the same channel on the settle step: what the settle clock credits
   int window_;          // the team's window, floored: what a stuck verdict outside big_error waits for
   int settled_window_;  // the team's own window, unfloored: what it waits for inside big_error
   double big_error_;
@@ -479,6 +521,7 @@ private:
   std::uint32_t last_pass_;
   bool seeded_;
   std::uint32_t last_progress_, last_progress_pass_;
+  std::uint32_t last_settle_, last_settle_pass_;  // the settle clock: when cs_ last made progress, restarts included
 };
 
 // A window exit (SMALL_EXIT / BIG_EXIT) from a PID only says the robot has been inside the band for the exit's time: position.
@@ -2236,9 +2279,21 @@ void Drive::pid_wait_until_point(pose target) {
     final_target = odom_target_start;
   }
   bool at_final_target = std::fabs(target.x - final_target.x) < FINAL_TARGET_TOLERANCE && std::fabs(target.y - final_target.y) < FINAL_TARGET_TOLERANCE;
+  // After pid_wait_quick_chain() the PID drives to a point pushed past the final point, and a robot that came to rest there is as
+  // settled as one resting on the final point: the exits it is gated on are measured to the pushed point. -1 when nothing was pushed.
+  auto chain_end_distance = [&]() {
+    ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+    if (mode != PURE_PURSUIT || pp_movements.empty() || injected_pp_index.empty() || (int)pp_movements.size() - 1 <= injected_pp_index.back()) return -1.0;
+    return util::distance_to_point(pp_movements.back().target, odom_pose_get());
+  };
+  auto settle_distance = [&]() {
+    double chain_end = chain_end_distance();
+    double d = util::distance_to_point(final_target, odom_pose_get());
+    return chain_end < 0 ? d : std::fmin(d, chain_end);
+  };
   auto inside_both_big = [&]() {
-    return util::distance_to_point(final_target, odom_pose_get()) < settle_error(xyPID) &&
-           std::fabs(current_a_odomPID.error) < settle_error(current_a_odomPID) && stuck_passes() != entry_task_passes;
+    return settle_distance() < settle_error(xyPID) && std::fabs(current_a_odomPID.error) < settle_error(current_a_odomPID) &&
+           stuck_passes() != entry_task_passes;
   };
 
   exit_output xy_exit = RUNNING;
@@ -2310,7 +2365,8 @@ void Drive::pid_wait_until_point(pose target) {
 
     // Same stuck check as pid_wait(), for a robot that is stuck but moving, which the exits above miss
     if (watch.stuck(pp_index, util::distance_to_point(target, odom_pose_get()), xyPID.error, current_a_odomPID.error,
-                    util::distance_to_point(odom_start, odom_pose_get()), std::fabs(odom_theta_get() - odom_start.theta))) {
+                    util::distance_to_point(odom_start, odom_pose_get()), std::fabs(odom_theta_get() - odom_start.theta),
+                    at_final_target ? settle_distance() : -1.0)) {
       // Stopped inside both big errors of the final target is a settle; at the final target that is a clean finish, and a mid path point
       // the robot is within the xy small_error of counts as reached. Anything else is a real stall.
       CheckpointEnd end =
