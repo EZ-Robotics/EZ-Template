@@ -2289,8 +2289,11 @@ void Drive::pid_wait_until_point(pose target) {
   bool at_final_target = std::fabs(target.x - final_target.x) < FINAL_TARGET_TOLERANCE && std::fabs(target.y - final_target.y) < FINAL_TARGET_TOLERANCE;
   // After pid_wait_quick_chain() the PID drives to a point pushed past the final point, and a robot that came to rest there is as
   // settled as one resting on the final point: the exits it is gated on are measured to the pushed point. -1 when nothing was pushed.
+  // A point to point move keeps the pushed point in odom_target and the point it was set with in odom_target_start.
   auto chain_end_distance = [&]() {
     ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+    if (mode == POINT_TO_POINT)
+      return odom_target.x == odom_target_start.x && odom_target.y == odom_target_start.y ? -1.0 : util::distance_to_point(odom_target, odom_pose_get());
     if (mode != PURE_PURSUIT || pp_movements.empty() || injected_pp_index.empty() || (int)pp_movements.size() - 1 <= injected_pp_index.back()) return -1.0;
     return util::distance_to_point(pp_movements.back().target, odom_pose_get());
   };
