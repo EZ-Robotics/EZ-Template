@@ -42,6 +42,10 @@ inline std::map<int, MotorFakeState>& motor_fake_registry() {
   return registry;
 }
 
+// Test-only: when set, every Motor::get_position() calls it once the value is read and before it returns, so a test can
+// land another task's call inside a sensor read. Null by default and cleared by test_stub::reset_all().
+inline void (*motor_read_hook)() = nullptr;
+
 class Motor {
  public:
   Motor() = default;
@@ -62,7 +66,11 @@ class Motor {
   // disconnected flag is_over_current() honors below, since a real disconnected motor fails
   // every read, not just that one. INFINITY inline for the same include-order reason as
   // is_over_current()'s INT32_MAX below.
-  double get_position() const { return fake().disconnected ? INFINITY : (double)fake().position; }
+  double get_position() const {
+    double position = fake().disconnected ? INFINITY : (double)fake().position;
+    if (motor_read_hook != nullptr) motor_read_hook();  // test-only: runs after the value is read, before it is returned
+    return position;
+  }
   double get_actual_velocity() const { return fake().actual_velocity; }
   double get_current_draw() const { return fake().current_draw; }
   double get_voltage() const { return fake().voltage; }

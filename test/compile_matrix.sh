@@ -42,6 +42,32 @@ check() {
   fi
 }
 
+# check_warns <name> <warning text> <defines and include flags> [times]
+# Must compile, and the compiler's output must contain the text (a fixed string) on at least `times` lines (default 1). The matrix
+# does not build with -Werror, so a deprecation warning does not fail a compile, and nothing here needs
+# -Wno-error=deprecated-declarations.
+check_warns() {
+  name="$1"; pattern="$2"; extra="$3"; times="${4:-1}"
+  # shellcheck disable=SC2086
+  $CXX $FLAGS $INC $extra $SRC >"$LOG" 2>&1
+  rc=$?
+  if [ $rc -ne 0 ]; then echo "FAIL  $name (expected to compile)"; sed -n 1,8p "$LOG"; fail=1
+  elif [ "$(grep -cF "$pattern" "$LOG")" -lt "$times" ]; then echo "FAIL  $name (compiled, but fewer than $times warnings with: $pattern)"; sed -n 1,8p "$LOG"; fail=1
+  else echo "ok    $name (compiles, warns as documented)"; fi
+}
+
+# check_quiet <name> <defines and include flags>
+# Must compile with no deprecation warning: the constructor shapes in use today must not start warning.
+check_quiet() {
+  name="$1"; extra="$2"
+  # shellcheck disable=SC2086
+  $CXX $FLAGS $INC $extra $SRC >"$LOG" 2>&1
+  rc=$?
+  if [ $rc -ne 0 ]; then echo "FAIL  $name (expected to compile)"; sed -n 1,8p "$LOG"; fail=1
+  elif grep -qi "deprecated" "$LOG"; then echo "FAIL  $name (compiled, but warns about a deprecation)"; grep -i -m3 "deprecated" "$LOG"; fail=1
+  else echo "ok    $name (compiles, no deprecation warning)"; fi
+}
+
 OKAPI="-I fixtures"
 STALE="-DSTALE_MAIN_H_LINE"
 USES="-DUSER_INCLUDES_OKAPI_UNITS"
@@ -52,7 +78,12 @@ check "okapilib installed, stale main.h line (common case)" pass -            "$
 check "okapi units included, main.h line removed"           pass -            "$OKAPI $USES"
 check "okapi units included, stale main.h line"             fail "ambiguous"  "$OKAPI $USES $STALE"
 check "okapilib removed, stale main.h line"                 fail "okapi"      "$STALE"
-
+check_quiet "current constructor shapes do not warn"                    ""
+# Both six-argument constructors (single imu, redundant imus) warn, and the warning line alone says how to migrate
+check_warns "3.x/beta six-argument constructors compile and give the formula" "cartridge_rpm / ratio" "-DLEGACY_RATIO_CONSTRUCTOR" 2
+check_warns "3.x/beta six-argument constructors compile and give the example"  "(..., 3.25, 600, 1.667) -> (..., 3.25, 360)" "-DLEGACY_RATIO_CONSTRUCTOR" 2
+check "drive_ratio_set() was removed and the error says to call drive_rpm_set()"  fail "drive_rpm_set"  "-DLEGACY_RATIO_SET"
+check "drive_ratio_get() was removed and the error says to call drive_rpm_get()"  fail "drive_rpm_get"  "-DLEGACY_RATIO_GET"
 
 [ $fail -eq 0 ] && echo "upgrade compile matrix: all as documented"
 exit $fail

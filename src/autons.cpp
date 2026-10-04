@@ -358,8 +358,8 @@ void measure_offsets() {
     pros::delay(250);
 
     // Calculate delta in angle.  This is signed (clockwise is positive) and is not wrapped, because the
-    // trackers saw the whole turn, not the angle it wraps to.  It is read from the imu, odom_theta_get() only
-    // catches up with a reset when the tracking task next runs.
+    // trackers saw the whole turn, not the angle it wraps to.  It is read from the imu, so it is not wrapped to
+    // odom_theta_get()'s range.
     double t_delta = ez::util::to_rad(chassis.drive_angle_get() - imu_start);
     if (fabs(t_delta) < ez::util::to_rad(10.0)) continue;  // The robot did not turn, nothing to measure
 

@@ -253,12 +253,28 @@ public:
   void displace(double inches) {
     left_.position_in += inches;
     right_.position_in += inches;
-    double tick_per_inch = drive_.drive_tick_per_inch();
+    double tick_per_inch = encoder_tick_per_inch();
     for (auto* side : {&drive_.left_motors, &drive_.right_motors}) {
-      double pos = (side == &drive_.left_motors ? left_.position_in : right_.position_in) * tick_per_inch;
+      bool is_left = side == &drive_.left_motors;
+      double pos = (is_left ? left_.position_in : right_.position_in) * tick_per_inch + (is_left ? enc_off_left_ : enc_off_right_);
       for (auto& m : *side)
         if (!drive_.pto_check(m)) m.fake().position = pos;
     }
+  }
+
+  // A transmission shifts: the wheel's real speed becomes `new_wheel_rpm` (the same number drive_rpm_set() takes), so the
+  // motors' free speed and torque change with it and each encoder tick now stands for a different distance. The encoders
+  // keep counting from where they were: the raw count does not jump, only how many ticks a wheel inch is worth does. A
+  // test that wants the library told calls drive_rpm_set() itself, at the same instant, AFTER this: the sim
+  // reads what the Drive believes right now to work out the physical scale it is leaving, so telling the library first makes
+  // it take the new number for the old one.
+  void shift_gearing(double new_wheel_rpm) {
+    double old_tpi = encoder_tick_per_inch();
+    double new_tpi = old_tpi * archetype_.cartridge_rpm / new_wheel_rpm;
+    enc_off_left_ += left_.position_in * (old_tpi - new_tpi);
+    enc_off_right_ += right_.position_in * (old_tpi - new_tpi);
+    phys_tpi_ = new_tpi;
+    archetype_.cartridge_rpm = new_wheel_rpm;
   }
 
   // Zeroes both wheels' encoder readings without moving the robot: what drive_sensor_reset()'s tare_position() does on a real
@@ -267,6 +283,8 @@ public:
   void tare_encoders() {
     left_.position_in = 0.0;
     right_.position_in = 0.0;
+    enc_off_left_ = 0.0;
+    enc_off_right_ = 0.0;
     for (auto* side : {&drive_.left_motors, &drive_.right_motors})
       for (auto& m : *side)
         if (!drive_.pto_check(m)) m.fake().position = 0.0;
@@ -648,9 +666,9 @@ private:
   }
 
   void write_back(double left_current_a, double right_current_a) {
-    double tick_per_inch = drive_.drive_tick_per_inch();
+    double tick_per_inch = encoder_tick_per_inch();
 
-    auto write_side = [&](std::vector<pros::Motor>& motors, SideState& side, double current_a) {
+    auto write_side = [&](std::vector<pros::Motor>& motors, SideState& side, double current_a, double offset_ticks) {
       double reported_pos_in = side.position_in + gaussian(archetype_.encoder_noise_stddev_in);
       double reported_vel_in_s = side.velocity_in_s + gaussian(archetype_.velocity_noise_stddev_in_s);
       for (auto& m : motors) {
@@ -658,7 +676,7 @@ private:
         // stalls) must survive the tick instead of being overwritten with the drive's own reading.
         if (drive_.pto_check(m)) continue;
         auto& fake = m.fake();
-        fake.position = reported_pos_in * tick_per_inch;
+        fake.position = reported_pos_in * tick_per_inch + offset_ticks;
         fake.actual_velocity = reported_vel_in_s * tick_per_inch;
         fake.current_draw = current_a * 1000.0;  // PROS reports current in mA
         // 2.5A: the default current limit (sourced, Purdue SIGBots wiki, per SIM_FIDELITY.md),
@@ -666,8 +684,8 @@ private:
         fake.over_current = current_a >= 2.5;
       }
     };
-    write_side(drive_.left_motors, left_, left_current_a);
-    write_side(drive_.right_motors, right_, right_current_a);
+    write_side(drive_.left_motors, left_, left_current_a, enc_off_left_);
+    write_side(drive_.right_motors, right_, right_current_a, enc_off_right_);
 
     // Tracking-wheel archetypes: a dedicated tracker never slips with the drive base and isn't
     // modeled separately here (its reading would be identical to the noise-free position in this
@@ -730,6 +748,14 @@ private:
   bool wall_set_ = false, was_pinned_ = false;
   double wall_in_ = 0.0, pin_left_in_ = 0.0, pin_right_in_ = 0.0, pin_heading_deg_ = 0.0;
   bool use_real_auto_task_ = false;
+
+  // Ticks per wheel inch the encoders really count at. Until shift_gearing() is called this is whatever the Drive believes
+  // (so every existing test is unchanged); after, it is the physical value, which the Drive only learns about if the test
+  // tells it. enc_off_* keep the raw count continuous across a shift.
+  double encoder_tick_per_inch() { return phys_tpi_ > 0.0 ? phys_tpi_ : drive_.drive_tick_per_inch(); }
+  double phys_tpi_ = 0.0;
+  double enc_off_left_ = 0.0;
+  double enc_off_right_ = 0.0;
   int pass_count_ = 0;
   int passes_per_tick_ = 1;
   bool imu_written_ = false;
