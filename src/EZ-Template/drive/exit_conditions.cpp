@@ -331,9 +331,10 @@ public:
     if (inside_big && stopped_ && (moved_ || (std::int32_t)(now - last_settle_) > 0) && stopped_(settled_window_)) return true;
     // A robot the speed gate held inside big_error because it was still moving, and which then crept a little outside it, is where a
     // big exit would have left it, give or take the creep: it gets the same two ways to settle as inside. "A little" is one progress
-    // step of the xy error. A robot that was never inside, or is further out, is stuck as before.
+    // step of each channel's error: the position's, and the heading's too, since the bearing to a point a little over an inch away
+    // swings by a couple of degrees for a hair of sideways drift. A robot that was never inside, or is further out, is stuck as before.
     if (inside_big) was_inside_big_ = true;
-    bool just_outside = !inside_big && was_inside_big_ && xy_big_ > 0 && settle_d < xy_big_ + xy_.step && a_big_ > 0 && std::fabs(a_error) < a_big_;
+    bool just_outside = !inside_big && was_inside_big_ && xy_big_ > 0 && settle_d < xy_big_ + xy_.step && a_big_ > 0 && std::fabs(a_error) < a_big_ + a_.step;
     bool may_settle = moved_ || (std::int32_t)(now - last_settle_) > 0;
     if (just_outside && stopped_ && may_settle && stopped_(settled_window_)) {
       settled_just_outside_ = true;
