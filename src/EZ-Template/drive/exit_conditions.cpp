@@ -2290,10 +2290,20 @@ void Drive::pid_wait_until_point(pose target) {
   // After pid_wait_quick_chain() the PID drives to a point pushed past the final point, and a robot that came to rest there is as
   // settled as one resting on the final point: the exits it is gated on are measured to the pushed point. -1 when nothing was pushed.
   // A point to point move keeps the pushed point in odom_target and the point it was set with in odom_target_start.
+  // A point to point move's pushed point only counts when it is beyond the final point along the way the move arrives (from where it
+  // started to the final point). The push goes along the final point's own angle when it has one, and a point to point move does not
+  // steer by that angle, so it can land between the robot and the final point: a robot held up to big_error + 3 in short of the final
+  // point would then be within big_error of it and read settled. Pure pursuit is left as it was: a boomerang that ends on an angle
+  // pointing back at where it started is driven to that early point, and a robot resting there has arrived.
   auto chain_end_distance = [&]() {
     ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
-    if (mode == POINT_TO_POINT)
-      return odom_target.x == odom_target_start.x && odom_target.y == odom_target_start.y ? -1.0 : util::distance_to_point(odom_target, odom_pose_get());
+    if (mode == POINT_TO_POINT) {
+      if (odom_target.x == odom_target_start.x && odom_target.y == odom_target_start.y) return -1.0;
+      bool beyond = (odom_target.x - odom_target_start.x) * (odom_target_start.x - odom_second_to_last.x) +
+                        (odom_target.y - odom_target_start.y) * (odom_target_start.y - odom_second_to_last.y) >
+                    0.0;
+      return beyond ? util::distance_to_point(odom_target, odom_pose_get()) : -1.0;
+    }
     if (mode != PURE_PURSUIT || pp_movements.empty() || injected_pp_index.empty() || (int)pp_movements.size() - 1 <= injected_pp_index.back()) return -1.0;
     return util::distance_to_point(pp_movements.back().target, odom_pose_get());
   };
