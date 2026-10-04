@@ -2390,8 +2390,9 @@ void Drive::pid_wait_until_point(pose target) {
                     at_final_target ? settle_distance() : -1.0)) {
       // Stopped inside both big errors of the final target is a settle; at the final target that is a clean finish, and a mid path point
       // the robot is within the xy small_error of counts as reached. Anything else is a real stall.
-      CheckpointEnd end =
-          checkpoint_end(inside_both_big(), at_final_target, false, util::distance_to_point(target, odom_pose_get()), xyPID.exit.small_error, false);
+      // A robot that stopped just outside big_error after being inside it is settled too, as in pid_wait()
+      CheckpointEnd end = checkpoint_end(inside_both_big() || watch.settled_just_outside(), at_final_target, false,
+                                         util::distance_to_point(target, odom_pose_get()), xyPID.exit.small_error, false);
       if (end != CheckpointEnd::Interfered) {
         if (print_toggle) std::cout << "  XY: Stuck, but stopped inside the big error windows, counted as settled" << std::endl;
         return;
