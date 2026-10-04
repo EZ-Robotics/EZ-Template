@@ -11,7 +11,12 @@ using namespace ez;
 using namespace gate;
 
 TEST_CASE("a noisy sticky odom point move that coasts to rest just outside a 1 in big_error is not interfered") {
-  for (unsigned seed : {1u, 2u, 3u, 4u, 5u, 6u}) {
+  // The robot also rests a little outside the heading's big_error (the bearing to a point a little over an inch away moves by a
+  // couple of degrees for a hair of sideways drift), and that has to be forgiven by the same one progress step the position is.
+  // Seeds 1 to 6 plus the ones that read interfered without it: 4, 16, 248 and 315 under libstdc++'s noise, 392 and 394 under
+  // MSVC's (std::normal_distribution is not the same sequence on every standard library, so a seed that rests there on one does
+  // not on the other).
+  for (unsigned seed : {1u, 2u, 3u, 4u, 5u, 6u, 16u, 248u, 315u, 392u, 394u}) {
     Rig r(sim::archetype_sticky_high_friction(), 1, true, seed);
     r.chassis.pid_odom_drive_exit_condition_set(40_ms, 0.5_in, 100_ms, 1_in, 500_ms, 1000_ms);
     r.chassis.pid_odom_turn_exit_condition_set(40_ms, 1.335_deg, 100_ms, 2.0_deg, 500_ms, 1000_ms);
