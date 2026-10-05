@@ -631,6 +631,12 @@ exit_output without_velocity(exit_output e) { return e == VELOCITY_EXIT ? RUNNIN
 // DRIVE (a plain, non-odom move) is unaffected: leftPID/rightPID's target there already is the real drive target.
 exit_output without_position_exits(exit_output e) { return (e == SMALL_EXIT || e == BIG_EXIT) ? RUNNING : e; }
 
+// Whether a side that was still RUNNING when this pass began had its SMALL_EXIT / BIG_EXIT released by the gate on this very pass.
+// The stuck watch has to be consulted on that pass too: a released exit is vetoed again by the recheck of the latched exit as soon as
+// the shifted window reads the robot as moving, and a robot that reads stopped, moving, stopped, moving on consecutive passes is
+// released and vetoed for ever, with no pass on which the side is RUNNING for the watch to see. An mA exit is never one of these.
+bool released_window_exit(bool was_running, exit_output now) { return was_running && (now == SMALL_EXIT || now == BIG_EXIT); }
+
 // What a pid_wait_until() checkpoint means for `interfered` when the wait ends without the robot crossing it. One rule
 // for drive, turn and swing, so they cannot disagree. (Not used for the odom waits: pid_wait_until_point()'s window-exit
 // failsafe already returns clean, only its stuck check and mA/velocity exits mark interfered, and wait_until_drive() on
@@ -1032,14 +1038,25 @@ void Drive::pid_wait() {
         // this out (without_velocity(), above); DRIVE didn't. SingleStuckWatch (below) still catches a
         // genuine stall independently -- it watches PID error, not velocity -- so filtering this out can't
         // turn a real stall into a hang.
+        bool left_was_running = left_exit == RUNNING;
+        bool right_was_running = right_exit == RUNNING;
         left_exit = left_exit != RUNNING ? left_exit : without_velocity(gated_exit(left_gate, leftPID, mA_exit_motors(true, false), leftPID.error));
         right_exit = right_exit != RUNNING ? right_exit : without_velocity(gated_exit(right_gate, rightPID, mA_exit_motors(false, true), rightPID.error));
-        bool left_stuck = left_exit == RUNNING && left_watch.stuck(leftPID.error);
-        bool right_stuck = right_exit == RUNNING && right_watch.stuck(rightPID.error);
+        // The watch is consulted on every pass for every side that was RUNNING when the pass began, including the pass the gate releases
+        // that side's exit. A side released and vetoed again by the recheck below, pass after pass, would otherwise never be seen by it.
+        bool left_released = released_window_exit(left_was_running, left_exit);
+        bool right_released = released_window_exit(right_was_running, right_exit);
+        bool left_stuck = (left_exit == RUNNING || left_released) && left_watch.stuck(leftPID.error);
+        bool right_stuck = (right_exit == RUNNING || right_released) && right_watch.stuck(rightPID.error);
+        // A side released on a pass the watch calls it stuck is still RUNNING, and stuck, for this pass
+        exit_output left_now = left_released && left_stuck ? RUNNING : left_exit;
+        exit_output right_now = right_released && right_stuck ? RUNNING : right_exit;
         // Stuck only when at least one side is still RUNNING and every side that's still RUNNING is stuck --
         // not when both sides just happened to exit normally on the same pass, which the (exit != RUNNING) half
         // of each clause would otherwise also satisfy.
-        if ((left_exit == RUNNING || right_exit == RUNNING) && (left_exit != RUNNING || left_stuck) && (right_exit != RUNNING || right_stuck)) {
+        if ((left_now == RUNNING || right_now == RUNNING) && (left_now != RUNNING || left_stuck) && (right_now != RUNNING || right_stuck)) {
+          left_exit = left_now;
+          right_exit = right_now;
           // A side that's still RUNNING and already sitting inside its own big error window is where a big
           // exit would have left it: that's settled, not stuck. (A side hovering across its own small error
           // window can keep both its own exit timers from ever finishing.) A side that already latched an
@@ -1309,10 +1326,19 @@ void Drive::pid_wait() {
         secondary_velocity_sensor_update(xyPID);
         secondary_velocity_sensor_update(current_a_odomPID);
         xy_velocity_exit_hold_update();
+        bool xy_was_running = xy_exit == RUNNING;
+        bool a_was_running = a_exit == RUNNING;
         xy_exit = xy_exit != RUNNING ? xy_exit : without_velocity(gated_exit(xy_gate, xyPID, mA_exit_motors(), xyPID.error));
         a_exit = a_exit != RUNNING ? a_exit : without_velocity(gated_exit(a_gate, current_a_odomPID, mA_exit_motors(), current_a_odomPID.error));
-        if ((xy_exit == RUNNING || a_exit == RUNNING) &&
+        // The watch is consulted whenever either axis is RUNNING (the other may already have latched an mA exit), and also on the pass
+        // the gate releases an axis that was RUNNING: see released_window_exit()
+        bool xy_released = released_window_exit(xy_was_running, xy_exit);
+        bool a_released = released_window_exit(a_was_running, a_exit);
+        if ((xy_exit == RUNNING || a_exit == RUNNING || xy_released || a_released) &&
             watch.stuck(pp_index, target_distance(), xyPID.error, current_a_odomPID.error, travelled(), turned())) {
+          // An axis released on a pass the watch calls it stuck is still RUNNING, and stuck, for this pass
+          if (xy_released) xy_exit = RUNNING;
+          if (a_released) a_exit = RUNNING;
           // Stopped inside both big error windows is where a big exit would have left it: that's settled, not stuck.
           // (A robot hovering across the small error window can keep both exit timers from ever finishing.)
           bool settled =
@@ -1450,7 +1476,10 @@ void Drive::pid_wait() {
         // See the matching comment in the DRIVE branch above -- a slow (not stalled) turn must not be
         // ended by the velocity channel alone.
         turn_exit = turn_exit != RUNNING ? turn_exit : without_velocity(gated_exit(turn_gate, turnPID, mA_exit_motors(), turnPID.error));
-        if (turn_exit == RUNNING && watch.stuck(turnPID.error)) {
+        // Consulted on the pass the gate releases the exit too, see released_window_exit(). The loop only runs while turn_exit is RUNNING.
+        bool turn_released = released_window_exit(true, turn_exit);
+        if ((turn_exit == RUNNING || turn_released) && watch.stuck(turnPID.error)) {
+          if (turn_released) turn_exit = RUNNING;
           // Same settled carve-out as the DRIVE branch above.
           bool settled = std::fabs(turnPID.error) < settle_error(turnPID) && stuck_passes() != entry_task_passes;
           stalled = !settled;
@@ -1546,7 +1575,9 @@ void Drive::pid_wait() {
         // default), so it can genuinely stall/over-current too (e.g. a defender pinning it while the
         // swinging side is unobstructed); checking only the swinging side's motors missed that entirely.
         swing_exit = swing_exit != RUNNING ? swing_exit : without_velocity(gated_exit(swing_gate, swingPID, mA_exit_motors(), swingPID.error));
-        if (swing_exit == RUNNING && watch.stuck(swingPID.error)) {
+        bool swing_released = released_window_exit(true, swing_exit);  // see the TURN branch above
+        if ((swing_exit == RUNNING || swing_released) && watch.stuck(swingPID.error)) {
+          if (swing_released) swing_exit = RUNNING;
           // Same settled carve-out as the DRIVE branch above.
           bool settled = std::fabs(swingPID.error) < settle_error(swingPID) && stuck_passes() != entry_task_passes;
           stalled = !settled;
@@ -1762,17 +1793,26 @@ void Drive::wait_until_drive(double target) {
         // for a genuinely slow, healthy cruise everywhere else in this file is exactly as blind to gearing
         // here, so it still needs without_velocity() on top, same as every other site; mA_EXIT is left
         // through unfiltered, since over-current is real regardless of target.
+        bool left_was_running = left_exit == RUNNING;
+        bool right_was_running = right_exit == RUNNING;
         if (left_exit == RUNNING)
           left_exit = without_velocity(is_odom ? without_position_exits(leftPID.exit_condition(mA_exit_motors(true, false)))
                                                : gated_exit(left_gate, leftPID, mA_exit_motors(true, false), leftPID.error));
         if (right_exit == RUNNING)
           right_exit = without_velocity(is_odom ? without_position_exits(rightPID.exit_condition(mA_exit_motors(false, true)))
                                                 : gated_exit(right_gate, rightPID, mA_exit_motors(false, true), rightPID.error));
-        bool left_stuck = left_exit == RUNNING && left_watch.stuck(is_odom ? l_error : leftPID.error);
-        bool right_stuck = right_exit == RUNNING && right_watch.stuck(is_odom ? r_error : rightPID.error);
+        // Consulted on the pass the gate releases a side's exit too, see released_window_exit() and pid_wait()'s DRIVE branch
+        bool left_released = released_window_exit(left_was_running, left_exit);
+        bool right_released = released_window_exit(right_was_running, right_exit);
+        bool left_stuck = (left_exit == RUNNING || left_released) && left_watch.stuck(is_odom ? l_error : leftPID.error);
+        bool right_stuck = (right_exit == RUNNING || right_released) && right_watch.stuck(is_odom ? r_error : rightPID.error);
+        exit_output left_now = left_released && left_stuck ? RUNNING : left_exit;
+        exit_output right_now = right_released && right_stuck ? RUNNING : right_exit;
         // See the matching comment in pid_wait()'s DRIVE branch -- both sides exiting normally on the same pass
         // must not read as stuck.
-        if ((left_exit == RUNNING || right_exit == RUNNING) && (left_exit != RUNNING || left_stuck) && (right_exit != RUNNING || right_stuck)) {
+        if ((left_now == RUNNING || right_now == RUNNING) && (left_now != RUNNING || left_stuck) && (right_now != RUNNING || right_stuck)) {
+          left_exit = left_now;
+          right_exit = right_now;
           // Same settled carve-out as pid_wait()'s DRIVE branch, gated to only apply when this
           // wait_until()'s target really is the motion's final target -- see at_final_target's comment.
           // A side that already latched an exit is only trusted as settled here if its live error
@@ -2057,7 +2097,10 @@ void Drive::wait_until_turn_swing_internal(double target) {
           // See the matching comment in pid_wait()'s DRIVE branch -- a slow (not stalled) turn must not
           // be ended by the velocity channel alone.
           turn_exit = turn_exit != RUNNING ? turn_exit : without_velocity(gated_exit(turn_gate, turnPID, mA_exit_motors(), turnPID.error));
-          if (turn_exit == RUNNING && turn_watch.stuck(turnPID.error)) {
+          // Consulted on the pass the gate releases the exit too, see released_window_exit(). This branch only runs while it is RUNNING.
+          bool turn_released = released_window_exit(true, turn_exit);
+          if ((turn_exit == RUNNING || turn_released) && turn_watch.stuck(turnPID.error)) {
+            if (turn_released) turn_exit = RUNNING;
             // Same settled carve-out as pid_wait()'s TURN branch, gated to only apply when this
             // wait_until()'s target really is the motion's final target -- see turn_at_final_target's
             // comment above.
@@ -2139,7 +2182,9 @@ void Drive::wait_until_turn_swing_internal(double target) {
           // be ended by the velocity channel alone. Polls both sides' motors, not just the actively-swinging
           // side's -- see pid_wait()'s SWING branch for why the held side needs checking too.
           swing_exit = swing_exit != RUNNING ? swing_exit : without_velocity(gated_exit(swing_gate, swingPID, mA_exit_motors(), swingPID.error));
-          if (swing_exit == RUNNING && swing_watch.stuck(swingPID.error)) {
+          bool swing_released = released_window_exit(true, swing_exit);  // see the TURN branch above
+          if ((swing_exit == RUNNING || swing_released) && swing_watch.stuck(swingPID.error)) {
+            if (swing_released) swing_exit = RUNNING;
             // Same settled carve-out as pid_wait()'s SWING branch, gated to only apply when this
             // wait_until()'s target really is the motion's final target -- see swing_at_final_target's
             // comment above.
