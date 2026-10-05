@@ -172,3 +172,20 @@ TEST_CASE("pid_wait_until(angle) on a swing returns within 4 s on a heading that
   CHECK_MESSAGE(ok, "pid_wait_until() did not return within 15 s");
   CHECK_MESSAGE(ms < 4000.0, "returned after " << ms << " ms");
 }
+
+// What could go wrong with consulting the watch on the release pass: a robot released and judged stuck on that same pass takes the
+// stuck verdict instead of the window exit. On a healthy motion that is the same settle: not interfered, no later than the window exit
+// (490 ms before), and the robot is stopped by the library's own floor when it returns.
+TEST_CASE("a healthy 6 in drive at the 2550R exits settles on the release pass: not interfered, no later than the window exit, stopped") {
+  Rig r(sim::archetype_light_fast(), 1, false, 1);
+  r.chassis.pid_drive_exit_condition_set(90, 1, 200, 3, 100, 100);
+  double ms = 0;
+  r.chassis.pid_drive_set(6_in, 40);
+  bool ok = r.wait([&] { r.chassis.pid_wait(); }, CAP_TICKS, &ms);
+  REQUIRE(ok);
+  CHECK_FALSE(r.chassis.interfered);
+  CHECK_MESSAGE(ms <= 490.0, "returned after " << ms << " ms");
+  CHECK_MESSAGE(r.drive_speed_over(100) < r.drive_floor(100), "still moving at " << r.drive_speed_over(100) << " in/s");
+  auto after = r.run_on(500);
+  CHECK_MESSAGE(after.distance < 0.3, "moved " << after.distance << " in in the 500 ms after it returned");
+}
