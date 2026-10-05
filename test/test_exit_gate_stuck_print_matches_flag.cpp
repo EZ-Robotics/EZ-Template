@@ -28,7 +28,8 @@ TEST_CASE("an odom drive on sticky_high_friction prints \"counted as settled\" e
     CAPTURE(s);
     REQUIRE(returned);
     bool says_settled = printed.find("counted as settled") != std::string::npos;
-    CHECK_MESSAGE(says_settled == !r.chassis.interfered, "printed " << (says_settled ? "settled" : "not settled") << " but interfered=" << r.chassis.interfered << "\n"
+    CHECK_MESSAGE(says_settled == !r.chassis.interfered, "printed " << (says_settled ? "settled" : "not settled") << " but interfered=" << r.chassis.interfered
+                                                                    << "\n"
                                                                     << printed);
   }
 }

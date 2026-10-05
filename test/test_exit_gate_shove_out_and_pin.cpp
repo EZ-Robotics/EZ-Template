@@ -115,7 +115,9 @@ static void shove_and_pin_light_fast(bool path3) {
   CHECK_MESSAGE(held >= 6, "only " << held << " of " << cases << " runs were held outside big_error");
 }
 
-TEST_CASE("an odom point carried back out of big_error and pinned reads interfered on every wait, light_fast, shipped defaults") { shove_and_pin_light_fast(false); }
+TEST_CASE("an odom point carried back out of big_error and pinned reads interfered on every wait, light_fast, shipped defaults") {
+  shove_and_pin_light_fast(false);
+}
 
 TEST_CASE("the same on a three point path ending at (24, 36)") { shove_and_pin_light_fast(true); }
 

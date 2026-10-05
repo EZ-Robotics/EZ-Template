@@ -267,7 +267,6 @@ public:
   // settle_distance: how far it is from where it counts as settled, when that is not only the point (negative: the same as distance).
   bool stuck(int index, double distance, double xy_error, double a_error, double travelled, double turned, double settle_distance = -1.0) {
     if (window_ == 0) return false;
-    settled_just_outside_ = false;
     std::uint32_t now = pros::millis();
     std::uint32_t pass = stuck_passes();
     bool progress = false;     // genuinely getting somewhere: this is what makes the robot "moved"
@@ -329,21 +328,10 @@ public:
     double settle_d = settle_distance < 0 ? distance : std::fmin(distance, settle_distance);
     bool inside_big = xy_big_ > 0 && settle_d < xy_big_ && a_big_ > 0 && std::fabs(a_error) < a_big_;
     if (inside_big && stopped_ && (moved_ || (std::int32_t)(now - last_settle_) > 0) && stopped_(settled_window_)) return true;
-    // A robot the speed gate held inside big_error because it was still moving, and which then crept a little outside it, is where a
-    // big exit would have left it, give or take the creep: it gets the same two ways to settle as inside. "A little" is one progress
-    // step of each channel's error: the position's, and the heading's too, since the bearing to a point a little over an inch away
-    // swings by a couple of degrees for a hair of sideways drift. A robot that was never inside, or is further out, is stuck as before.
-    if (inside_big) was_inside_big_ = true;
-    bool just_outside = !inside_big && was_inside_big_ && xy_big_ > 0 && settle_d < xy_big_ + xy_.step && a_big_ > 0 && std::fabs(a_error) < a_big_ + a_.step;
-    bool may_settle = moved_ || (std::int32_t)(now - last_settle_) > 0;
-    if (just_outside && stopped_ && may_settle && stopped_(settled_window_)) {
-      settled_just_outside_ = true;
-      return true;
-    }
     // Settling is timed on the settle clock: a new low has to be a settle step below the last, so a robot creeping home in noise-sized
     // steps cannot keep restarting it. Time inside big_error is then at most (big_error / settle step + 1) windows. Outside, the fine
     // clock keeps a shove or a pin reading as before.
-    bool settling = inside_big || just_outside;
+    bool settling = inside_big;
     int window = settling ? std::max(settled_window_, backstop_ms_) : window_;
     std::int32_t waited = now - (settling ? last_settle_ : last_progress_);
     std::uint32_t since_pass = pass - (settling ? last_settle_pass_ : last_progress_pass_);
@@ -387,15 +375,10 @@ public:
     // for a design call, the same as the Channel rebound latch above.
     int expected_passes = (int)(window / (double)util::DELAY_TIME);
     bool stuck = (std::int32_t)since_pass > expected_passes || waited > STUCK_STARVED_WINDOWS * window;
-    settled_just_outside_ = stuck && just_outside;
     return stuck;
   }
 
-  // The last stuck() verdict was a robot at rest just outside big_error after having been inside it: settled, not stuck
-  bool settled_just_outside() const { return settled_just_outside_; }
-
 private:
-  bool was_inside_big_ = false, settled_just_outside_ = false;
   Channel xy_, a_;
   Channel xs_, as_;  // the same two channels on the settle step: what the settle clock credits
   int index_;
@@ -1341,8 +1324,7 @@ void Drive::pid_wait() {
           if (a_released) a_exit = RUNNING;
           // Stopped inside both big error windows is where a big exit would have left it: that's settled, not stuck.
           // (A robot hovering across the small error window can keep both exit timers from ever finishing.)
-          bool settled =
-              (target_distance() < settle_error(xyPID) && std::fabs(current_a_odomPID.error) < settle_error(current_a_odomPID)) || watch.settled_just_outside();
+          bool settled = target_distance() < settle_error(xyPID) && std::fabs(current_a_odomPID.error) < settle_error(current_a_odomPID);
           stalled = !settled;
           settled_via_stuck = settled;
           if (print_toggle)
@@ -2436,9 +2418,8 @@ void Drive::pid_wait_until_point(pose target) {
                     at_final_target ? settle_distance() : -1.0)) {
       // Stopped inside both big errors of the final target is a settle; at the final target that is a clean finish, and a mid path point
       // the robot is within the xy small_error of counts as reached. Anything else is a real stall.
-      // A robot that stopped just outside big_error after being inside it is settled too, as in pid_wait()
-      CheckpointEnd end = checkpoint_end(inside_both_big() || watch.settled_just_outside(), at_final_target, false,
-                                         util::distance_to_point(target, odom_pose_get()), xyPID.exit.small_error, false);
+      CheckpointEnd end =
+          checkpoint_end(inside_both_big(), at_final_target, false, util::distance_to_point(target, odom_pose_get()), xyPID.exit.small_error, false);
       if (end != CheckpointEnd::Interfered) {
         if (print_toggle) std::cout << "  XY: Stuck, but stopped inside the big error windows, counted as settled" << std::endl;
         return;
