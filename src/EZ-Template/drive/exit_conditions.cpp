@@ -1707,6 +1707,38 @@ void Drive::wait_until_drive(double target) {
   // for pid_wait_quick_chain(), which is why a chained checkpoint is inside it and reachable). See checkpoint_unreachable().
   double final_distance = left_target - l_start;
   bool unreachable = !is_odom && checkpoint_unreachable(0.0, final_distance, target);
+  // An odom move's leftPID/rightPID error is measured to a frozen look-ahead point, so "settled" is judged the way pid_wait()'s odom branch
+  // judges it on the path's last point: the robot is inside settle_error() of the motion's final target (odom_target_start, the last point a
+  // path was set with) in xy and, when the move has a heading, in angle, and ez_auto_task has run since this wait began. Anywhere but the last
+  // point nothing is settled: the robot has not got as far as the motion goes.
+  auto odom_settled = [&]() {
+    if (!is_odom) return false;
+    pose final_target;
+    bool on_last_point;
+    {
+      ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+      final_target = odom_target_start;
+      on_last_point = mode == POINT_TO_POINT || (mode == PURE_PURSUIT && pp_index == (int)pp_movements.size() - 1);
+    }
+    if (!on_last_point || stuck_passes() == entry_task_passes) return false;
+    bool has_angle = final_target.theta != ANGLE_NOT_SET;
+    return util::distance_to_point(final_target, odom_pose_get()) < settle_error(xyPID) &&
+           (!has_angle || std::fabs(current_a_odomPID.error) < settle_error(current_a_odomPID));
+  };
+  // Whether the checkpoint lies between where the robot came to rest along the move and the motion's final target (or behind where it
+  // came to rest, which it has then passed). An odom move has no end distance of its own, so "the target" is how far the robot still is from
+  // the final target, plus the settle error, which is also what a checkpoint given as the move's nominal distance can be off by.
+  auto odom_between = [&]() {
+    if (!is_odom) return true;
+    pose final_target;
+    {
+      ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+      final_target = odom_target_start;
+    }
+    double rest = ((drive_sensor_left() - l_start) + (drive_sensor_right() - r_start)) / 2.0;
+    double ahead = util::sgn(target) * (target - rest);
+    return ahead <= util::distance_to_point(final_target, odom_pose_get()) + settle_error(xyPID);
+  };
 
   while (true) {
     if (mode != mode_snapshot) {
@@ -1751,10 +1783,7 @@ void Drive::wait_until_drive(double target) {
         if (xy_exit != RUNNING) {
           if (print_toggle) std::cout << "  XY: " << exit_to_string(xy_exit) << " Wait Until Exit Failsafe, the move ended before reaching " << target << "\n";
           // An mA exit inside big_error of the final target is a settle (see ma_exit_settled()), anything else that is not a window exit is not
-          bool ma_settles =
-              xy_exit == mA_EXIT &&
-              ma_exit_settled((std::fabs(xyPID.error) < settle_error(xyPID) && std::fabs(current_a_odomPID.error) < settle_error(current_a_odomPID)),
-                              stuck_passes() != entry_task_passes);
+          bool ma_settles = xy_exit == mA_EXIT && ma_exit_settled(odom_settled(), true);
           if (ma_settles) {
             if (print_toggle) std::cout << "  XY: mA exit inside the big error windows, counted as settled" << std::endl;
           } else if (xy_exit == mA_EXIT || xy_exit == VELOCITY_EXIT) {
@@ -1804,9 +1833,9 @@ void Drive::wait_until_drive(double target) {
           // stuck-detected path instead). An odom move has no look ahead free error to judge this by.
           bool left_settled = std::fabs(leftPID.error) < settle_error(leftPID);
           bool right_settled = std::fabs(rightPID.error) < settle_error(rightPID);
-          bool settled = !is_odom && left_settled && right_settled && stuck_passes() != entry_task_passes;
+          bool settled = is_odom ? odom_settled() : left_settled && right_settled && stuck_passes() != entry_task_passes;
           CheckpointEnd end = checkpoint_end(settled, at_final_target, unreachable, is_odom ? INFINITY : std::fmax(std::fabs(l_error), std::fabs(r_error)),
-                                             leftPID.exit.small_error, !is_odom);
+                                             leftPID.exit.small_error, odom_between());
           bool stalled = end == CheckpointEnd::Interfered;
           if (print_toggle)
             std::cout << "  Drive: " << (stalled ? "Stuck" : "Stuck, but stopped inside the big error windows, counted as settled")
@@ -1879,10 +1908,10 @@ void Drive::wait_until_drive(double target) {
           // one only inside big_error of the final target (see ma_exit_settled()); a velocity exit never is.
           bool mA_exit = left_exit == mA_EXIT || right_exit == mA_EXIT;
           bool velocity_exit = left_exit == VELOCITY_EXIT || right_exit == VELOCITY_EXIT;
-          bool inside_big = !is_odom && std::fabs(leftPID.error) < settle_error(leftPID) && std::fabs(rightPID.error) < settle_error(rightPID);
+          bool inside_big = is_odom ? odom_settled() : std::fabs(leftPID.error) < settle_error(leftPID) && std::fabs(rightPID.error) < settle_error(rightPID);
           bool settled = !velocity_exit && (!mA_exit || ma_exit_settled(inside_big, stuck_passes() != entry_task_passes));
           CheckpointEnd end = checkpoint_end(settled, at_final_target, unreachable, is_odom ? INFINITY : std::fmax(std::fabs(l_error), std::fabs(r_error)),
-                                             leftPID.exit.small_error, !is_odom);
+                                             leftPID.exit.small_error, odom_between());
           bool stalled = end == CheckpointEnd::Interfered;
           if (mA_exit && !stalled && print_toggle) std::cout << "  Drive: mA exit inside the big error windows, counted as settled" << std::endl;
           if (end == CheckpointEnd::Unreachable) {

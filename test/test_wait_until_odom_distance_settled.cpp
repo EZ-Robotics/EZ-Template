@@ -68,7 +68,8 @@ void own_distance_reads_clean(const ExitSet& e, const char* label) {
       for (int speed : {60, 110})
         for (double distance : {8.0, 24.0, 48.0, -24.0}) {
           Outcome o = wait_until_own_distance(s, noise, e, distance, speed);
-          std::string what = std::string(s.name) + " noise=" + std::to_string(noise) + " speed=" + std::to_string(speed) + " D=" + std::to_string((int)distance);
+          std::string what =
+              std::string(s.name) + " noise=" + std::to_string(noise) + " speed=" + std::to_string(speed) + " D=" + std::to_string((int)distance);
           CHECK_MESSAGE(o.returned, what << ": did not return");
           runs++;
           if (o.interfered) {
@@ -124,4 +125,21 @@ TEST_CASE("control: a mid-path pid_wait_until(distance) on a three point path wi
       REQUIRE(ok);
       CHECK(r.chassis.interfered);
     }
+}
+
+// What could go wrong with the rule: a robot held inside the settle error short of the checkpoint now reads clean. That is the rule the
+// other waits already follow (inside big_error a stopped robot returns clean even if something is holding it there), and it is what this
+// pins down, so it cannot change without somebody meaning it.
+TEST_CASE("accepted: a wall 2 in before the checkpoint, inside the 3 in big_error, reads clean") {
+  for (auto& s : setups()) {
+    Rig r(s.arch, s.passes, false, 11);
+    r.chassis.pid_odom_drive_exit_condition_set(250, 1, 500, 3, 100, 250);
+    r.sim.wall(22.0);
+    r.chassis.pid_odom_set(24.0, 110, true);
+    double ms = 0;
+    bool ok = r.wait([&] { r.chassis.pid_wait_until(24.0); }, 1500, &ms);
+    INFO(std::string(s.name));
+    REQUIRE(ok);
+    CHECK_FALSE(r.chassis.interfered);
+  }
 }
