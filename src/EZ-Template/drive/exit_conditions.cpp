@@ -528,6 +528,10 @@ private:
 // A vetoed exit also wiped the PID's mA progress along with its other timers (PID::exit_condition() resets all of them on any
 // latch), which would let repeated vetoes starve the mA exit. That is put back the way the pre last point loops put it back.
 //
+// An mA exit is held the same way: over current alone does not end a wait while the robot is still moving (a heavy robot accelerating
+// hard draws over current the whole way), it ends once the robot is also stopped over the mA window. A pinned robot is stopped, so it
+// still ends on mA at mA_timeout.
+//
 // A robot oscillating about its target is never stopped, so it never gets a window exit here; the stuck watch's no-progress
 // backstop ends it. A gate is only armed when that backstop exists (the team has not turned off both the velocity exit and the
 // mA exit), so a configuration with no backstop keeps ending on position alone rather than waiting for ever.
