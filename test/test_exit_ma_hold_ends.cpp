@@ -56,9 +56,10 @@ void set_all_exits(Drive& c, int st, double se, int bt, double be, int vt, int m
 
 }  // namespace
 
-// The scenario the termination attack found (the heading limit cycles and creeps about 0.2 deg/s, outside its big_error): sticky_high_friction, noise seed 44, the auto task running every 5th tick, the motors reading over
-// current on every tick, an odom point to (1, 1) with an end heading of 90 and a wall in front of it. xy exits (50, 0.75, 250, 3, 500, 2000) and
-// angle exits (250, 0, 200, 1, 500, 100). The previous head returned at 2020 ms interfered (the mA exit); held for ever it never returned.
+// The scenario the termination attack found (the heading limit cycles and creeps about 0.2 deg/s, outside its big_error): sticky_high_friction, noise seed 44,
+// the auto task running every 5th tick, the motors reading over current on every tick, an odom point to (1, 1) with an end heading of 90 and a wall in front of
+// it. xy exits (50, 0.75, 250, 3, 500, 2000) and angle exits (250, 0, 200, 1, 500, 100). The previous head returned at 2020 ms interfered (the mA exit); held
+// for ever it never returned.
 TEST_CASE("a held mA exit on a sticky robot whose task runs every 5th tick returns within two mA windows") {
   for (double wall : {0.5, 1.5, 2.5}) {
     Rig r(sim::archetype_sticky_high_friction(), 1, true, 44);

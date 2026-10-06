@@ -549,7 +549,7 @@ public:
     // An mA exit is held the same way: it is only taken once the robot is also stopped over the mA window. A pinned or held robot reads
     // stopped and ends on mA at mA_timeout as always; a robot that is still moving while it draws over current (a heavy robot
     // accelerating hard) is not done, and the stuck watch is what ends the wait if it never arrives.
-    if (raw == mA_EXIT) return mA_stopped(pid) ? mA_EXIT : RUNNING;
+    if (raw == mA_EXIT) return take_mA(pid, live_error) ? mA_EXIT : RUNNING;
     if (raw == SMALL_EXIT) {
       small_met_ = true;
     } else if (raw == BIG_EXIT) {
@@ -571,9 +571,41 @@ public:
     return RUNNING;
   }
 
-  // Whether the robot is stopped over the mA window, which is what an mA exit has to wait for. Also for the waits that read a PID's mA
-  // exit without going through filter() (xy before the last point of a path, whose other exits mean nothing).
-  bool mA_stopped(const PID& pid) const { return stopped_for(pid.exit.mA_timeout); }
+  // Whether a raw mA exit is taken now. Stopped over the mA window takes it at once. A robot that is not stopped is held, because over
+  // current while it is still on its way is not a stall (a heavy robot accelerating hard draws it the whole way) -- but only while it is
+  // getting somewhere: a robot that limit cycles about its target adds up path length however little it gets anywhere, so it never reads
+  // stopped, and one that is dragged away from it is moving too. So over each mA window the error has to come down by the stop speed times
+  // the window (1.5 in/s, 4 deg/s); a robot that has not is not on its way and the exit is taken. Each window starts from the lowest error of
+  // the last, so a robot closing on its target at the stop speed or faster is held for as long as it does, which is at most its distance over
+  // the stop speed. Also for the waits that read a PID's mA exit without going through filter() (xy before the last point of a path, whose
+  // other exits mean nothing). `live_error` is the error to the target that exit is for.
+  bool take_mA(const PID& pid, double live_error) {
+    if (stopped_for(pid.exit.mA_timeout)) {
+      mA_held_ = false;
+      return true;
+    }
+    double error = std::fabs(live_error);
+    std::uint32_t now = pros::millis();
+    if (!mA_held_) {
+      mA_held_ = true;
+      mA_window_ms_ = now;
+      mA_window_start_ = mA_window_best_ = error;
+      return false;
+    }
+    mA_window_best_ = std::fmin(mA_window_best_, error);
+    int window = std::max(pid.exit.mA_timeout, (int)ez::detail::PathTracker::MIN_WINDOW_MS);
+    std::int32_t waited = now - mA_window_ms_;
+    if (waited < window) return false;
+    if (mA_window_start_ - mA_window_best_ < net_floor_ * waited / 1000.0) return true;
+    mA_window_ms_ = now;
+    mA_window_start_ = mA_window_best_;
+    return false;
+  }
+  // This gate's error is an angle: the stop speed it is held against is the angular one
+  ExitGate& angular() {
+    net_floor_ = STOP_SPEED_ANGLE;
+    return *this;
+  }
 
   // A window exit this gate gave the wait earlier is only still true if the robot has not moved since. True when it has (a
   // shove, a creep): the caller puts it back with hold() and goes on waiting.
@@ -586,7 +618,10 @@ public:
     if (e == SMALL_EXIT) small_met_ = true;
     if (e == BIG_EXIT) big_met_ = true;
   }
-  void clear() { small_met_ = big_met_ = false; }
+  void clear() {
+    small_met_ = big_met_ = false;
+    mA_held_ = false;
+  }
 
 private:
   // Stopped over window_ms, or nothing to say it is not
@@ -599,6 +634,10 @@ private:
   std::function<bool()> tracked_;
   bool armed_;
   bool small_met_ = false, big_met_ = false;
+  bool mA_held_ = false;  // an mA exit is being held, and the window its progress is judged over: see take_mA()
+  std::uint32_t mA_window_ms_ = 0;
+  double mA_window_start_ = 0, mA_window_best_ = 0;
+  double net_floor_ = STOP_SPEED_DISTANCE;
 };
 
 // The same over-current predicate PID::exit_condition(const std::vector<pros::Motor>&) uses: a transient PROS_ERR is not over
@@ -1208,6 +1247,7 @@ void Drive::pid_wait() {
     bool odom_gate_armed = team_stuck_window(xyPID, current_a_odomPID) != 0;
     ExitGate xy_gate(odom_stopped, odom_tracked, odom_gate_armed);
     ExitGate a_gate(odom_stopped, odom_tracked, odom_gate_armed);
+    a_gate.angular();
 
     // A concurrent pid_odom_*_set() from another task retargets xyPID/current_a_odomPID (and resets pp_index
     // and pp_movements) mid-wait -- same hazard as the DRIVE branch above, just for odom.  odom_target_start
@@ -1287,7 +1327,7 @@ void Drive::pid_wait() {
         PID::MATimerSnapshot xy_mA_snapshot = xyPID.mA_timer_snapshot();
         exit_output xy_pass = xyPID.exit_condition(xy_motors);
         // An mA exit is only taken once the robot is also stopped (see ExitGate); a held one is put back like a discarded exit
-        bool xy_mA_held = xy_pass == mA_EXIT && !xy_gate.mA_stopped(xyPID);
+        bool xy_mA_held = xy_pass == mA_EXIT && !xy_gate.take_mA(xyPID, target_distance());
         if (xy_mA_held) xy_pass = RUNNING;
         if (xy_mA_tracked && xy_over_current && (xy_mA_held || xy_pass == SMALL_EXIT || xy_pass == BIG_EXIT || xy_pass == VELOCITY_EXIT))
           xyPID.mA_timer_restore_and_credit(xy_mA_snapshot);
@@ -1464,6 +1504,7 @@ void Drive::pid_wait() {
     ExitGate turn_gate([this](int w) { return travel_stopped(mode == TURN_TO_POINT ? Travel::OdomHeading : Travel::Heading, w); },
                        [this] { return travel_tracked(mode == TURN_TO_POINT ? Travel::OdomHeading : Travel::Heading); },
                        turnPID.exit.velocity_exit_time != 0 || turnPID.exit.mA_timeout != 0);
+    turn_gate.angular();
     while (true) {
       while (turn_exit == RUNNING) {
         if (mode != mode_snapshot || turnPID.target_get() != turn_target) {
@@ -1559,6 +1600,7 @@ void Drive::pid_wait() {
     bool settled_via_stuck = false;
     ExitGate swing_gate([this](int w) { return travel_stopped(Travel::Heading, w); }, [this] { return travel_tracked(Travel::Heading); },
                         swingPID.exit.velocity_exit_time != 0 || swingPID.exit.mA_timeout != 0);
+    swing_gate.angular();
     while (true) {
       while (swing_exit == RUNNING) {
         if (mode != mode_snapshot || swingPID.target_get() != swing_target) {
@@ -1825,22 +1867,22 @@ void Drive::wait_until_drive(double target) {
         bool right_was_running = right_exit == RUNNING;
         // On an odom move the position exits are dropped, but an mA exit is still held until the robot is stopped (see ExitGate), and a held
         // one is put back so it fires again on the first pass the robot is stopped
-        auto odom_side_exit = [&](ExitGate& gate, PID& pid, bool left) {
+        auto odom_side_exit = [&](ExitGate& gate, PID& pid, bool left, double remaining) {
           std::vector<pros::Motor> motors = mA_exit_motors(left, !left);
           bool over_current = pid.exit.mA_timeout != 0 && any_over_current(motors);
           PID::MATimerSnapshot snapshot = pid.mA_timer_snapshot();
           exit_output raw = pid.exit_condition(motors);
-          if (raw == mA_EXIT && !gate.mA_stopped(pid)) {
+          if (raw == mA_EXIT && !gate.take_mA(pid, remaining)) {
             if (over_current) pid.mA_timer_restore_and_credit(snapshot);
             return RUNNING;
           }
           return without_position_exits(raw);
         };
         if (left_exit == RUNNING)
-          left_exit =
-              without_velocity(is_odom ? odom_side_exit(left_gate, leftPID, true) : gated_exit(left_gate, leftPID, mA_exit_motors(true, false), leftPID.error));
+          left_exit = without_velocity(is_odom ? odom_side_exit(left_gate, leftPID, true, l_error)
+                                               : gated_exit(left_gate, leftPID, mA_exit_motors(true, false), leftPID.error));
         if (right_exit == RUNNING)
-          right_exit = without_velocity(is_odom ? odom_side_exit(right_gate, rightPID, false)
+          right_exit = without_velocity(is_odom ? odom_side_exit(right_gate, rightPID, false, r_error)
                                                 : gated_exit(right_gate, rightPID, mA_exit_motors(false, true), rightPID.error));
         // Consulted on the pass the gate releases a side's exit too, see released_window_exit() and pid_wait()'s DRIVE branch
         bool left_released = released_window_exit(left_was_running, left_exit);
@@ -2117,8 +2159,10 @@ void Drive::wait_until_turn_swing_internal(double target) {
   ExitGate turn_gate([this](int w) { return travel_stopped(mode == TURN_TO_POINT ? Travel::OdomHeading : Travel::Heading, w); },
                      [this] { return travel_tracked(mode == TURN_TO_POINT ? Travel::OdomHeading : Travel::Heading); },
                      turnPID.exit.velocity_exit_time != 0 || turnPID.exit.mA_timeout != 0);
+  turn_gate.angular();
   ExitGate swing_gate([this](int w) { return travel_stopped(Travel::Heading, w); }, [this] { return travel_tracked(Travel::Heading); },
                       swingPID.exit.velocity_exit_time != 0 || swingPID.exit.mA_timeout != 0);
+  swing_gate.angular();
 
   while (true) {
     if (mode != mode_snapshot || turnPID.target_get() != turn_target || swingPID.target_get() != swing_target) {
@@ -2414,6 +2458,7 @@ void Drive::pid_wait_until_point(pose target) {
   bool odom_gate_armed = team_stuck_window(xyPID, current_a_odomPID) != 0;
   ExitGate xy_gate(odom_stopped, odom_tracked, odom_gate_armed);
   ExitGate a_gate(odom_stopped, odom_tracked, odom_gate_armed);
+  a_gate.angular();
 
   // Whether pure pursuit is still before its last point right now -- see pid_wait()'s own matching comment
   // (on the pre-last-point loop in its odom branch) for why xy's window exits mean nothing there: before the
@@ -2462,7 +2507,7 @@ void Drive::pid_wait_until_point(pose target) {
       PID::MATimerSnapshot xy_mA_snapshot = xyPID.mA_timer_snapshot();
       exit_output xy_pass = xy_before_last_point ? xyPID.exit_condition(xy_motors) : gated_exit(xy_gate, xyPID, xy_motors, xyPID.error);
       // An mA exit is only taken once the robot is also stopped (see ExitGate); a held one is put back like a discarded exit
-      bool xy_mA_held = xy_before_last_point && xy_pass == mA_EXIT && !xy_gate.mA_stopped(xyPID);
+      bool xy_mA_held = xy_before_last_point && xy_pass == mA_EXIT && !xy_gate.take_mA(xyPID, util::distance_to_point(target, odom_pose_get()));
       if (xy_mA_held) xy_pass = RUNNING;
       if (xy_before_last_point) {
         if (xy_mA_tracked && xy_over_current && (xy_mA_held || xy_pass == SMALL_EXIT || xy_pass == BIG_EXIT || xy_pass == VELOCITY_EXIT))
@@ -2630,6 +2675,7 @@ void Drive::pid_wait_until_index_started(int index) {
                    [this](int w) { return travel_stopped(Travel::OdomXY, w) && travel_stopped(Travel::OdomHeading, w); });
   ExitGate a_gate([this](int w) { return travel_stopped(Travel::OdomXY, w) && travel_stopped(Travel::OdomHeading, w); },
                   [this] { return travel_tracked(Travel::OdomXY) && travel_tracked(Travel::OdomHeading); }, team_stuck_window(xyPID, current_a_odomPID) != 0);
+  a_gate.angular();
   ExitGate xy_gate([this](int w) { return travel_stopped(Travel::OdomXY, w) && travel_stopped(Travel::OdomHeading, w); },
                    [this] { return travel_tracked(Travel::OdomXY) && travel_tracked(Travel::OdomHeading); }, team_stuck_window(xyPID, current_a_odomPID) != 0);
 
@@ -2677,7 +2723,7 @@ void Drive::pid_wait_until_index_started(int index) {
       PID::MATimerSnapshot xy_mA_snapshot = xyPID.mA_timer_snapshot();
       exit_output xy_pass = xyPID.exit_condition(xy_motors);
       // An mA exit is only taken once the robot is also stopped (see ExitGate); a held one is put back like a discarded exit
-      bool xy_mA_held = xy_pass == mA_EXIT && !xy_gate.mA_stopped(xyPID);
+      bool xy_mA_held = xy_pass == mA_EXIT && !xy_gate.take_mA(xyPID, point_distance());
       if (xy_mA_held) xy_pass = RUNNING;
       if (xy_mA_tracked && xy_over_current && (xy_mA_held || xy_pass == SMALL_EXIT || xy_pass == BIG_EXIT || xy_pass == VELOCITY_EXIT))
         xyPID.mA_timer_restore_and_credit(xy_mA_snapshot);
