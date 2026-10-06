@@ -447,3 +447,42 @@ TEST_CASE("team code writing odom_current between passes reads the same for a tr
     }
   }
 }
+
+// drive_sensor_reset() while the team relocalizes on every pass: the drive sides jump back to 0, which is not the robot moving.
+// The wait ends when it would have with no reset.
+TEST_CASE("drive_sensor_reset() while the pose is set from team code on every pass is not read as the robot moving") {
+  for (int passes : {1, 2}) {
+    for (bool noise : {false, true}) {
+      for (int at : {0, 50, 60, 70, 80, 100}) {  // 0: no reset
+        gate::Rig r(sim::archetype_light_fast(), passes, noise, 3);
+        Truth truth(r.sim, r.chassis);
+        install(r.chassis, truth, Style::Direct);
+        r.chassis.odom_xyt_set(0, 0, 0);
+        truth.reset(0, 0);
+        for (int i = 0; i < 5; i++) pros::delay(ez::util::DELAY_TIME);
+        int pass = 0;
+        r.sim.before_pass = [&](int) {
+          pass++;
+          r.chassis.odom_xy_set(truth.x, truth.y);
+          if (pass == at) {
+            r.chassis.drive_sensor_reset();
+            r.sim.tare_encoders();          // the sim writes its wheel positions to the motors every tick, see tare_encoders()
+            truth.reset(truth.x, truth.y);  // the tracker's wheel reading restarts from 0 with them
+          }
+        };
+        r.chassis.pid_odom_set(odom{pose{0, -30, ANGLE_NOT_SET}, rev, 110});
+        double ms = 0;
+        static double no_reset_ms = 0;
+        CAPTURE(passes);
+        CAPTURE(noise);
+        CAPTURE(at);
+        REQUIRE(r.wait([&] { r.chassis.pid_wait(); }, 1500, &ms));
+        CHECK(std::hypot(truth.x, truth.y + 30) < 1.5);
+        if (at == 0)
+          no_reset_ms = ms;
+        else
+          CHECK(ms <= no_reset_ms + 20);
+      }
+    }
+  }
+}
