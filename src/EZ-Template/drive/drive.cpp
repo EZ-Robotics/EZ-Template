@@ -326,6 +326,7 @@ void Drive::drive_sensor_reset() {
   if (odom_tracker_right_enabled) odom_tracker_right->reset();
   if (odom_tracker_front_enabled) odom_tracker_front->reset();
   if (odom_tracker_back_enabled) odom_tracker_back->reset();
+  travel_sides_valid_ = false;  // the drive sides jumping back to 0 is not the robot moving (travel_sample())
 
   // Reset odom stuff to the freshly-zeroed sensor values
   tracking_prime();
