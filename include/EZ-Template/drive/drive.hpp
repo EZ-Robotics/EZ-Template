@@ -3999,6 +3999,8 @@ private:
   ez::detail::PathTracker travel_[5];
   std::uint32_t travel_generation_ = 0;
   double travel_xy_x_ = 0.0, travel_xy_y_ = 0.0;  // odom xy as the sum of what odom moved, so a pose set is not travel
+  double travel_last_left_ = 0.0, travel_last_right_ = 0.0;  // the drive sides at the last sample
+  bool travel_sides_valid_ = false;                            // travel_last_left_/right_ hold finite readings
   void travel_sample(bool odom_tracked);
   bool tracking_pass();
   // True only when the thing is known to have travelled less than the stop speed allows over the last window_ms. Not knowing (no
@@ -4179,6 +4181,7 @@ private:
   bool was_odom_just_set = false;           // a pose set happened since the last tracking pass
   bool tracking_is_custom = false;          // odom_tracking_set() was called by the user (drive_defaults_set() clears it)
   pose xy_last_finite_pose{0.0, 0.0, 0.0};  // the last odom pose that was finite (a custom tracker may stop writing one)
+  bool xy_movement_unknown = false;         // the last tracking pass had custom tracking and a pose set from the team's code
   // EZ-Template's own tracking was put back after a custom one, pick up from odom_current on the next tracking pass
   bool tracking_resync_pending = false;
   std::pair<float, float> decide_vert_sensor(ez::tracking_wheel* tracker, bool is_tracker_enabled, float ime = 0.0, float ime_track = 0.0);

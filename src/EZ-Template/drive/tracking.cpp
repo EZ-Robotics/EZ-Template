@@ -315,12 +315,13 @@ bool Drive::tracking_pass() {
   // A heading set changes no x or y, so the same holds for drive_angle_set().
   // A custom tracking function may write its own pose over a pose set (a GPS, for example), and then the jump back
   // would look like movement.  So with custom tracking, the pass after a pose set from the team's code counts as no
-  // movement instead.
+  // movement instead, and the odom xy "stopped" check takes that pass's movement from the drive sides (travel_sample()).
   // A custom tracking function that writes its pose with the setters is measured the same as one that writes odom_current:
   // `last` was taken before it ran, so its own setter calls moving xy_last_pose do not hide what it tracked.
   pose now = odom_pose_get();
   bool finite = std::isfinite(now.x) && std::isfinite(now.y) && std::isfinite(now.theta);
-  if (!xy_last_pose_valid || !finite || (set_since_last_pass && tracking_is_custom))
+  xy_movement_unknown = set_since_last_pass && tracking_is_custom;
+  if (!xy_last_pose_valid || !finite || xy_movement_unknown)
     xy_pose_delta = {0.0, 0.0, 0.0};
   else
     xy_pose_delta = {now.x - last.x, now.y - last.y, 0.0};

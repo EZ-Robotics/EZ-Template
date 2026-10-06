@@ -754,14 +754,29 @@ void Drive::travel_sample(bool odom_tracked) {
   travel_[(int)Travel::OdomXY].band_set(count);
   travel_[(int)Travel::Heading].band_set(TRAVEL_BAND_ANGLE);
   travel_[(int)Travel::OdomHeading].band_set(TRAVEL_BAND_ANGLE);
-  if (odom_tracked) {
+  std::uint32_t now = pros::millis();
+  std::uint32_t pass = stuck_passes();
+  double left = drive_sensor_left();
+  double right = drive_sensor_right();
+  if (odom_tracked && xy_movement_unknown) {
+    // Custom tracking, on the pass after a pose set from the team's code: odom can't say how far the robot moved on this pass
+    // (xy_pose_delta is 0), and taking that as no movement would read a robot relocalized on every pass as stopped at full
+    // speed.  The drive sides can say it: their average movement along the heading.
+    double moved = (left - travel_last_left_ + right - travel_last_right_) / 2.0;
+    double heading = util::to_rad(odom_theta_get());
+    if (travel_sides_valid_ && std::isfinite(moved) && std::isfinite(heading)) {
+      travel_xy_x_ += moved * std::sin(heading);
+      travel_xy_y_ += moved * std::cos(heading);
+    }
+  } else if (odom_tracked) {
     travel_xy_x_ += xy_pose_delta.x;
     travel_xy_y_ += xy_pose_delta.y;
   }
-  std::uint32_t now = pros::millis();
-  std::uint32_t pass = stuck_passes();
-  travel_[(int)Travel::Left].sample(drive_sensor_left(), 0.0, now, pass);
-  travel_[(int)Travel::Right].sample(drive_sensor_right(), 0.0, now, pass);
+  travel_last_left_ = left;
+  travel_last_right_ = right;
+  travel_sides_valid_ = std::isfinite(left) && std::isfinite(right);
+  travel_[(int)Travel::Left].sample(left, 0.0, now, pass);
+  travel_[(int)Travel::Right].sample(right, 0.0, now, pass);
   travel_[(int)Travel::Heading].sample(drive_angle_get(), 0.0, now, pass);
   travel_[(int)Travel::OdomHeading].sample(odom_theta_get(), 0.0, now, pass);
   travel_[(int)Travel::OdomXY].sample(travel_xy_x_, travel_xy_y_, now, pass);
