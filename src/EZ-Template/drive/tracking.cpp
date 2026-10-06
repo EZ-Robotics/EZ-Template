@@ -300,22 +300,30 @@ bool Drive::tracking_pass() {
     tracking_resync_pending = false;
   }
 
+  // Pose sets made by the team's own code since the last pass.  Read before the tracking function runs: a custom one may
+  // write its pose with odom_x_set() / odom_y_set() itself, and that is tracking, not a pose set.
+  bool set_since_last_pass = was_odom_just_set;
+  pose last = xy_last_pose;
+
   // Use ez's tracking or a custom tracking function made by the user
   tracking();
 
-  // How far the robot moved this pass, from its own pose.  ptp_task() turns this into xyPID's sensor.
+  // How far the robot moved this pass, from its own pose.  ptp_task() turns this into xyPID's sensor, and travel_sample()
+  // into the odom xy "stopped" check the waits use.
   // odom_x_set() and odom_y_set() move xy_last_pose along with the pose, so a pose set (odom_xyt_set(), a
   // relocalization every pass, ...) never counts as movement, while what the robot really moved since then still does.
   // A heading set changes no x or y, so the same holds for drive_angle_set().
   // A custom tracking function may write its own pose over a pose set (a GPS, for example), and then the jump back
-  // would look like movement.  So with custom tracking, the pass after a pose set counts as no movement instead.
-  // (A custom tracking function that sets the pose with odom_x_set() / odom_y_set() itself reads no movement at all.)
+  // would look like movement.  So with custom tracking, the pass after a pose set from the team's code counts as no
+  // movement instead.
+  // A custom tracking function that writes its pose with the setters is measured the same as one that writes odom_current:
+  // `last` was taken before it ran, so its own setter calls moving xy_last_pose do not hide what it tracked.
   pose now = odom_pose_get();
   bool finite = std::isfinite(now.x) && std::isfinite(now.y) && std::isfinite(now.theta);
-  if (!xy_last_pose_valid || !finite || (was_odom_just_set && tracking_is_custom))
+  if (!xy_last_pose_valid || !finite || (set_since_last_pass && tracking_is_custom))
     xy_pose_delta = {0.0, 0.0, 0.0};
   else
-    xy_pose_delta = {now.x - xy_last_pose.x, now.y - xy_last_pose.y, 0.0};
+    xy_pose_delta = {now.x - last.x, now.y - last.y, 0.0};
   if (!std::isfinite(xy_pose_delta.x) || !std::isfinite(xy_pose_delta.y)) xy_pose_delta = {0.0, 0.0, 0.0};
   was_odom_just_set = false;
   xy_last_pose = now;

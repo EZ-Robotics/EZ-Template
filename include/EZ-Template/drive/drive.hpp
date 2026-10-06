@@ -3952,18 +3952,18 @@ public:
   /**
    * Sets a new task to use for tracking.
    *
-   * In this function, you must write the pose directly:
+   * In this function, write the pose your tracking measured, either directly:
    *  - odom_current.x =
    *  - odom_current.y =
    *  - odom_current.theta =
    *
-   * Do not call odom_xyt_set(), odom_xy_set(), odom_x_set(), odom_y_set() or odom_pose_set() inside this
-   * function, those are for setting the pose from your own code.  A tracking function that calls them gets no xy D term (kD)
-   * in odom motions, because a pose that was set is not counted as the robot moving.
+   * or with odom_xyt_set(), odom_xy_set(), odom_x_set(), odom_y_set() or odom_pose_set().  Both work the same: however
+   * far your function moves the pose on a pass is how far the robot moved, for the xy D term (kD) and for knowing when the
+   * robot has stopped.  A correction your function makes (snapping to a wall, a GPS update) counts as movement on that pass.
    *
-   * When your own code sets the pose while a custom tracking function is running, the pass right after the set counts as no
-   * movement for the xy D term.  The library cannot tell if your tracking function kept the pose that was set or wrote its own
-   * over it, like a GPS does.  Setting the pose on every pass leaves the xy D term at 0.
+   * When your own code calls one of those setters outside this function while it is running, the pass right after counts as
+   * no movement for the xy D term.  The library cannot tell if your tracking function kept the pose that was set or wrote its
+   * own over it, like a GPS does.  Setting the pose from your own code on every pass leaves the xy D term at 0.
    *
    * This function does not need to loop, that is done for you in EZ-Template.
    *
@@ -4172,7 +4172,8 @@ private:
   double xy_delta_fake = 0.0;
   double new_current_fake = 0.0;
   pose xy_last_pose{0.0, 0.0, 0.0};  // odom pose at the end of the last tracking pass
-  // how far odom moved over the last tracking pass, not counting pose sets (0 on the pass after a pose set with custom tracking)
+  // how far odom moved over the last tracking pass, not counting pose sets from the team's code (0 on the pass after one with
+  // custom tracking).  A custom tracking function's own setter calls are tracking and do count.
   pose xy_pose_delta{0.0, 0.0, 0.0};
   bool xy_last_pose_valid = false;          // false until a tracking pass has run, after tracking was paused or reset, and after a non-finite pose
   bool was_odom_just_set = false;           // a pose set happened since the last tracking pass
