@@ -3998,9 +3998,9 @@ private:
   };
   ez::detail::PathTracker travel_[5];
   std::uint32_t travel_generation_ = 0;
-  double travel_xy_x_ = 0.0, travel_xy_y_ = 0.0;  // odom xy as the sum of what odom moved, so a pose set is not travel
+  double travel_xy_x_ = 0.0, travel_xy_y_ = 0.0;             // odom xy as the sum of what odom moved, so a pose set is not travel
   double travel_last_left_ = 0.0, travel_last_right_ = 0.0;  // the drive sides at the last sample
-  bool travel_sides_valid_ = false;                            // travel_last_left_/right_ hold finite readings
+  bool travel_sides_valid_ = false;                          // travel_last_left_/right_ hold finite readings
   void travel_sample(bool odom_tracked);
   bool tracking_pass();
   // True only when the thing is known to have travelled less than the stop speed allows over the last window_ms. Not knowing (no

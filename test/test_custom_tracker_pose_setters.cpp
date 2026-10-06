@@ -22,17 +22,32 @@ using namespace ez;
 namespace {
 
 // How a tracking function writes the pose it tracked
-enum class Style { Direct, XThenY, XY, XYT, PoseSet, IncrementalSetters, Count };
+enum class Style {
+  Direct,
+  XThenY,
+  XY,
+  XYT,
+  PoseSet,
+  IncrementalSetters,
+  Count
+};
 
 std::string style_name(Style s) {
   switch (s) {
-    case Style::Direct: return "odom_current";
-    case Style::XThenY: return "odom_x_set + odom_y_set";
-    case Style::XY: return "odom_xy_set";
-    case Style::XYT: return "odom_xyt_set";
-    case Style::PoseSet: return "odom_pose_set";
-    case Style::IncrementalSetters: return "odom_x_set(odom_x_get() + dx)";
-    default: return "?";
+    case Style::Direct:
+      return "odom_current";
+    case Style::XThenY:
+      return "odom_x_set + odom_y_set";
+    case Style::XY:
+      return "odom_xy_set";
+    case Style::XYT:
+      return "odom_xyt_set";
+    case Style::PoseSet:
+      return "odom_pose_set";
+    case Style::IncrementalSetters:
+      return "odom_x_set(odom_x_get() + dx)";
+    default:
+      return "?";
   }
 }
 
@@ -91,16 +106,29 @@ void install(Drive& chassis, Truth& truth, Style style) {
   });
 }
 
-enum class Motion { Ptp, PtpRev, PurePursuit, Boomerang, QuickChainThenWait, Count };
+enum class Motion {
+  Ptp,
+  PtpRev,
+  PurePursuit,
+  Boomerang,
+  QuickChainThenWait,
+  Count
+};
 
 std::string motion_name(Motion m) {
   switch (m) {
-    case Motion::Ptp: return "ptp";
-    case Motion::PtpRev: return "ptp rev";
-    case Motion::PurePursuit: return "pure pursuit";
-    case Motion::Boomerang: return "boomerang";
-    case Motion::QuickChainThenWait: return "quick chain then wait";
-    default: return "?";
+    case Motion::Ptp:
+      return "ptp";
+    case Motion::PtpRev:
+      return "ptp rev";
+    case Motion::PurePursuit:
+      return "pure pursuit";
+    case Motion::Boomerang:
+      return "boomerang";
+    case Motion::QuickChainThenWait:
+      return "quick chain then wait";
+    default:
+      return "?";
   }
 }
 
@@ -352,7 +380,12 @@ TEST_CASE("EZ-Template's own tracking wrapped in odom_tracking_set() ends the sa
 namespace {
 
 // What the team's own code does to the pose between passes, while the tracking function tracks the true position
-enum class Team { Nothing, SetterEveryPass, DirectWriteEveryPassOffset, DirectWriteOnceBack4 };
+enum class Team {
+  Nothing,
+  SetterEveryPass,
+  DirectWriteEveryPassOffset,
+  DirectWriteOnceBack4
+};
 
 struct TeamEnd : End {
   double d_at_write = 0;  // xyPID's derivative on the pass after the team's single write (DirectWriteOnceBack4)
@@ -409,7 +442,7 @@ TEST_CASE("a custom tracker with the pose set from team code on every pass does 
       for (Style style : {Style::Direct, Style::XY}) {
         TeamEnd e = run_team(a, style, passes, Team::SetterEveryPass);
         std::string arch = a.name;
-          CAPTURE(arch);
+        CAPTURE(arch);
         CAPTURE(passes);
         CAPTURE(style_name(style));
         REQUIRE(e.returned);
