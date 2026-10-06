@@ -620,6 +620,10 @@ public:
   /**
    * Sets the current angle of the robot.
    *
+   * This sets the IMU's heading and moves the heading PID's target to it, so it is for setting the heading at a known
+   * moment (the start of a match, a reset against a wall).  Do not call it in a loop: every call overwrites the IMU's
+   * heading and the heading target of whatever motion is running.  To correct position in a loop, use odom_xy_set().
+   *
    * \param a
    *        new angle in degrees
    */
@@ -642,6 +646,7 @@ public:
    * Sets the current pose of the robot.
    *
    * If t is left out, only x and y are set and the heading is left as it is.
+   * Setting t is a heading set, see odom_theta_set(): do not do it in a loop.
    *
    * \param itarget
    *        {x, y, t} units in inches and degrees
@@ -660,6 +665,9 @@ public:
 
   /**
    * Sets the current X and Y coordinate for the robot.
+   *
+   * This leaves the heading alone, so it is the one to call repeatedly, for example to correct position from a GPS every
+   * pass.  A custom tracking function can also call it to write its pose.
    *
    * \param x
    *        new x value, in inches
@@ -680,6 +688,10 @@ public:
 
   /**
    * Sets the current X, Y, and Theta values for the robot.
+   *
+   * This sets the IMU's heading and moves the heading PID's target to it, so it is for setting the heading at a known
+   * moment (the start of a match, a reset against a wall).  Do not call it in a loop: every call overwrites the IMU's
+   * heading and the heading target of whatever motion is running.  To correct position in a loop, use odom_xy_set().
    *
    * \param x
    *        new x value, in inches
