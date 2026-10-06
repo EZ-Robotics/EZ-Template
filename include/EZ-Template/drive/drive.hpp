@@ -620,6 +620,10 @@ public:
   /**
    * Sets the current angle of the robot.
    *
+   * This sets the IMU's heading and moves the heading PID's target to it, so it is for setting the heading at a known
+   * moment (the start of a match, a reset against a wall).  Do not call it in a loop: every call overwrites the IMU's
+   * heading and the heading target of whatever motion is running.  To correct position in a loop, use odom_xy_set().
+   *
    * \param a
    *        new angle in degrees
    */
@@ -642,6 +646,7 @@ public:
    * Sets the current pose of the robot.
    *
    * If t is left out, only x and y are set and the heading is left as it is.
+   * Setting t is a heading set, see odom_theta_set(): do not do it in a loop.
    *
    * \param itarget
    *        {x, y, t} units in inches and degrees
@@ -660,6 +665,9 @@ public:
 
   /**
    * Sets the current X and Y coordinate for the robot.
+   *
+   * This leaves the heading alone, so it is the one to call repeatedly, for example to correct position from a GPS every
+   * pass.  A custom tracking function can also call it to write its pose.
    *
    * \param x
    *        new x value, in inches
@@ -680,6 +688,10 @@ public:
 
   /**
    * Sets the current X, Y, and Theta values for the robot.
+   *
+   * This sets the IMU's heading and moves the heading PID's target to it, so it is for setting the heading at a known
+   * moment (the start of a match, a reset against a wall).  Do not call it in a loop: every call overwrites the IMU's
+   * heading and the heading target of whatever motion is running.  To correct position in a loop, use odom_xy_set().
    *
    * \param x
    *        new x value, in inches
@@ -3952,18 +3964,18 @@ public:
   /**
    * Sets a new task to use for tracking.
    *
-   * In this function, you must write the pose directly:
+   * In this function, write the pose your tracking measured, either directly:
    *  - odom_current.x =
    *  - odom_current.y =
    *  - odom_current.theta =
    *
-   * Do not call odom_xyt_set(), odom_xy_set(), odom_x_set(), odom_y_set() or odom_pose_set() inside this
-   * function, those are for setting the pose from your own code.  A tracking function that calls them gets no xy D term (kD)
-   * in odom motions, because a pose that was set is not counted as the robot moving.
+   * or with odom_xyt_set(), odom_xy_set(), odom_x_set(), odom_y_set() or odom_pose_set().  Both work the same: however
+   * far your function moves the pose on a pass is how far the robot moved, for the xy D term (kD) and for knowing when the
+   * robot has stopped.  A correction your function makes (snapping to a wall, a GPS update) counts as movement on that pass.
    *
-   * When your own code sets the pose while a custom tracking function is running, the pass right after the set counts as no
-   * movement for the xy D term.  The library cannot tell if your tracking function kept the pose that was set or wrote its own
-   * over it, like a GPS does.  Setting the pose on every pass leaves the xy D term at 0.
+   * When your own code calls one of those setters outside this function while it is running, the pass right after counts as
+   * no movement for the xy D term.  The library cannot tell if your tracking function kept the pose that was set or wrote its
+   * own over it, like a GPS does.  Setting the pose from your own code on every pass leaves the xy D term at 0.
    *
    * This function does not need to loop, that is done for you in EZ-Template.
    *
@@ -3998,7 +4010,9 @@ private:
   };
   ez::detail::PathTracker travel_[5];
   std::uint32_t travel_generation_ = 0;
-  double travel_xy_x_ = 0.0, travel_xy_y_ = 0.0;  // odom xy as the sum of what odom moved, so a pose set is not travel
+  double travel_xy_x_ = 0.0, travel_xy_y_ = 0.0;             // odom xy as the sum of what odom moved, so a pose set is not travel
+  double travel_last_left_ = 0.0, travel_last_right_ = 0.0;  // the drive sides at the last sample
+  bool travel_sides_valid_ = false;                          // travel_last_left_/right_ hold finite readings
   void travel_sample(bool odom_tracked);
   bool tracking_pass();
   // True only when the thing is known to have travelled less than the stop speed allows over the last window_ms. Not knowing (no
@@ -4172,12 +4186,14 @@ private:
   double xy_delta_fake = 0.0;
   double new_current_fake = 0.0;
   pose xy_last_pose{0.0, 0.0, 0.0};  // odom pose at the end of the last tracking pass
-  // how far odom moved over the last tracking pass, not counting pose sets (0 on the pass after a pose set with custom tracking)
+  // how far odom moved over the last tracking pass, not counting pose sets from the team's code (0 on the pass after one with
+  // custom tracking).  A custom tracking function's own setter calls are tracking and do count.
   pose xy_pose_delta{0.0, 0.0, 0.0};
   bool xy_last_pose_valid = false;          // false until a tracking pass has run, after tracking was paused or reset, and after a non-finite pose
   bool was_odom_just_set = false;           // a pose set happened since the last tracking pass
   bool tracking_is_custom = false;          // odom_tracking_set() was called by the user (drive_defaults_set() clears it)
   pose xy_last_finite_pose{0.0, 0.0, 0.0};  // the last odom pose that was finite (a custom tracker may stop writing one)
+  bool xy_movement_unknown = false;         // the last tracking pass had custom tracking and a pose set from the team's code
   // EZ-Template's own tracking was put back after a custom one, pick up from odom_current on the next tracking pass
   bool tracking_resync_pending = false;
   std::pair<float, float> decide_vert_sensor(ez::tracking_wheel* tracker, bool is_tracker_enabled, float ime = 0.0, float ime_track = 0.0);

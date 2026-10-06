@@ -64,6 +64,7 @@ struct DriveTestAccess {
   // xyPID's sensor and the geometry behind it (ptp_task()), for the odom origin tests
   static double is_past_target(Drive& d, pose target, pose current) { return d.is_past_target(target, current); }
   static pose& odom_target(Drive& d) { return d.odom_target; }
+  static const pose& xy_pose_delta(Drive& d) { return d.xy_pose_delta; }
   static int drive_dir_sign(Drive& d) { return d.current_drive_direction == REV ? -1 : 1; }
   static double& xy_delta_fake(Drive& d) { return d.xy_delta_fake; }
   static double& new_current_fake(Drive& d) { return d.new_current_fake; }
