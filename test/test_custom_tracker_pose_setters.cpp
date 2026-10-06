@@ -400,6 +400,28 @@ TeamEnd run_team(const sim::SimArchetype& a, Style style, int passes, Team team)
 
 }  // namespace
 
+// The team's own code relocalizing on every pass (a GPS read in a separate task, say) while a custom tracking function runs:
+// the library cannot tell how far the robot moved on a pass after a pose set, so it must not take that as "stopped" either.
+TEST_CASE("a custom tracker with the pose set from team code on every pass does not return clean while the robot is still driving") {
+  sim::SimArchetype archs[] = {gate::archetype_classroom(), sim::archetype_light_fast(), sim::archetype_heavy_slow()};
+  for (const auto& a : archs) {
+    for (int passes : {1, 2}) {
+      for (Style style : {Style::Direct, Style::XY}) {
+        TeamEnd e = run_team(a, style, passes, Team::SetterEveryPass);
+        std::string arch = a.name;
+          CAPTURE(arch);
+        CAPTURE(passes);
+        CAPTURE(style_name(style));
+        REQUIRE(e.returned);
+        if (!e.interfered) {
+          CHECK(e.true_short < 1.5);
+          CHECK(e.true_speed < 5.0);
+        }
+      }
+    }
+  }
+}
+
 // Team code that writes odom_current itself, outside the tracking function, with no setter. EZ-Template measures a custom
 // tracker's movement from the pose the last pass ended on, so a tracker that writes the true pose back reads only the real
 // movement: it arrives as if nothing was written, with no derivative kick from the write.
