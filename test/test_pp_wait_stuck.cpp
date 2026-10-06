@@ -306,8 +306,9 @@ TEST_CASE("pid_wait returns interfered when the robot never moves") {
   Outcome o = run(chassis, pinned_from_start, 400);
   CHECK(o.returned);
   CHECK(o.interfered);
-  // same start-of-motion budget the velocity exit has: 1000 ms to arm, then 500 ms
-  CHECK(o.passes <= 150 + 5);
+  // same start-of-motion budget the velocity exit has: 1000 ms to arm, then the stuck window. The robot sits on the path's first
+  // point, inside both big errors, where the window is max(the velocity exit's 500 ms, 3 degrees / 4 deg/s = 750 ms)
+  CHECK(o.passes <= 100 + 75 + 5);
 }
 
 TEST_CASE("pid_wait does not return during a slow pivot at a corner, only once the path is finished") {
@@ -684,5 +685,7 @@ TEST_CASE("stopped inside the big error windows on the last point counts as sett
   Outcome o = run(chassis, hover_on_small_window, 600);
   REQUIRE(o.returned);
   CHECK_FALSE(o.interfered);
-  CHECK(o.passes <= 20 + 55);
+  // A robot hovering across the small window is never stopped, so it is ended by the no-progress backstop: no new low for
+  // max(the velocity exit's 500 ms, 3 degrees / 4 deg/s = 750 ms)
+  CHECK(o.passes <= 20 + 75 + 5);
 }

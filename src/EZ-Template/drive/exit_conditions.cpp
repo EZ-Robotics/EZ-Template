@@ -5,6 +5,8 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
 #include <cmath>
+#include <functional>
+#include <utility>
 
 #include "EZ-Template/drive/drive.hpp"
 #include "EZ-Template/util.hpp"
@@ -42,6 +44,27 @@ static constexpr int STUCK_WATCH_REARM_CAP = 4;
 // window, not the step) still raises the floor -- deliberately left alone, a separate design call.
 static constexpr double STUCK_STEP_DISTANCE_CAP = 1.0;
 static constexpr double STUCK_STEP_ANGLE_CAP = 3.0;
+// What the library calls "stopped", in one place. Every wait that has to decide whether a robot is done moving asks the same
+// question: did it travel less than a floor speed times W over the last W milliseconds, W being the window of the exit in
+// question (see Drive::travel_sample() below for how the path length is measured).
+//
+// The floors are fixed. No tuning value (an exit time, an error, a speed) moves them, because they are what keeps a team's own
+// tuning from changing what "stopped" means: a step-per-window test hides a speed of step / window, so a 50 ms window used to
+// call anything under 20 in/s stopped and a robot decelerating through its last 3 in at 13 in/s came back clean 2.6 in short.
+//   1.5 in/s: drive sides and odom xy. Slow enough that a robot still closing on its target is not called stopped (a heavy
+//             drivetrain crawls in at 3 to 5 in/s), fast enough that the last inch of a settle is not waited out for nothing.
+//   4 deg/s:  turns, swings and the odom heading, the same idea at the rate a drivetrain turns.
+static constexpr double STOP_SPEED_DISTANCE = 1.5;
+static constexpr double STOP_SPEED_ANGLE = 4.0;
+// The backlash band travel is measured through (see ez::detail::PathTracker): one sensor count. Without it a sensor that
+// flickers one count at rest would add a count of travel per flicker, which is 2.55 in/s on a 450 rpm 3.25 in drive if it
+// flickers every 10 ms tick and would keep a resting robot from ever being stopped. A swing of more than a count is counted in
+// full.
+//   Drive sides and odom xy: 1 / drive_tick_per_inch(), the count of whatever sensor the drive is on (a tracking wheel's own
+//   count when trackers are in use).
+//   Heading: 0.01 degrees. The smallest step the IMU reports could not be found in this repository or the PROS headers, so this
+//   is the V5 inertial sensor's data resolution as it is generally given (centidegrees), not a measured number.
+static constexpr double TRAVEL_BAND_ANGLE = 0.01;
 // How close a wait_until() target has to be to the motion's actual final target to count as
 // literally the same target, not just a waypoint short of it -- used only to decide whether
 // wait_until_drive()/wait_until_turn_swing_internal() get the same "settled inside big error
@@ -70,6 +93,33 @@ std::uint32_t stuck_passes() { return ez::detail::stats.auto_task_passes.load(st
 double stuck_step(PID& pid, double cap) {
   if (pid.exit.small_error > 0) return std::fmin(pid.exit.small_error, cap);
   return pid.velocity_sensor_main_exit_get();
+}
+
+// How long a robot can go without a new low inside big_error before it is called settled while still moving: the time it takes to
+// make one step of progress at the stop speed, for the slowest channel. A robot still closing faster than the stop speed on
+// average makes a new low well inside it. Pass a step of 0 for a channel that is not there.
+int backstop_window_ms(double step_a, double floor_a, double step_b, double floor_b) {
+  double ms = std::fmax(step_a / floor_a, step_b / floor_b) * 1000.0;
+  return std::isfinite(ms) && ms > 0.0 ? (int)std::ceil(ms) : 0;
+}
+
+// How close to its target a robot has to be for a stop to count as "settled" rather than "stuck": inside big_error, or inside
+// small_error when that is the wider of the two. A team that turns the big exit off (big_error 0) still has a robot that stopped
+// inside its small band arrive, not get stuck: the speed gate holds the small exit until the robot has stopped, and a heavy robot
+// coasting in can run past the stuck watch's window first. Both errors are 0 only when the team has no exits at all.
+double settle_error(const PID& pid) { return std::fmax(pid.exit.big_error, pid.exit.small_error); }
+
+// The progress step the settle clock uses, see StuckWatch. The stuck watch's own step is the team's small_error, or with none the
+// velocity exit's per-pass noise floor, a few hundredths of an inch. A team's own small_error is used as it is while big_error is at most
+// 3 of them, which the shipped defaults are (1 in against 3 in), so big_error holds a few steps. A finer one, or none, is too fine to
+// credit as progress toward "settled": a robot creeping home at step / window made a new low just inside the window over and over, and
+// big_error / step of them (tens to hundreds for a small_error of 0.03 to 0.2 in) each restarted the clock. Those are credited at a
+// third of big_error instead, at most the cap (1 in, 3 degrees); with no small_error at all, the cap. Time inside big_error is then at
+// most (big_error / step + 1) windows for every team, about 3 s at the defaults.
+static constexpr double SETTLE_STEPS_IN_BIG_ERROR = 3.0;
+double settle_step(PID& pid, double cap) {
+  if (pid.exit.small_error <= 0) return std::fmax(stuck_step(pid, cap), cap);
+  return std::fmax(stuck_step(pid, cap), std::fmin(cap, settle_error(pid) / SETTLE_STEPS_IN_BIG_ERROR));
 }
 
 // StuckWatch's stuck-detection window, in ms: xy's own velocity_exit_time if set, else xy's own
@@ -192,37 +242,49 @@ struct Channel {
 class StuckWatch {
 public:
   // travelled and turned: how far the robot has moved and turned since the motion started
-  StuckWatch(PID& xy, PID& angle, int index, double distance, double travelled, double turned)
+  // stopped: whether the robot (xy and heading both) travelled less than the stop speed over the last window_ms
+  StuckWatch(PID& xy, PID& angle, int index, double distance, double travelled, double turned, std::function<bool(int)> stopped = nullptr)
       : xy_(stuck_step(xy, STUCK_STEP_DISTANCE_CAP), distance, xy.error),
         a_(stuck_step(angle, STUCK_STEP_ANGLE_CAP), std::fabs(angle.error), angle.error),
+        xs_(settle_step(xy, STUCK_STEP_DISTANCE_CAP), distance, xy.error),
+        as_(settle_step(angle, STUCK_STEP_ANGLE_CAP), std::fabs(angle.error), angle.error),
         index_(index),
         window_(stuck_window(xy, angle)),
         settled_window_(team_stuck_window(xy, angle)),
-        xy_big_(xy.exit.big_error),
-        a_big_(angle.exit.big_error),
+        xy_big_(settle_error(xy)),
+        a_big_(settle_error(angle)),
         moved_(travelled > xy_.step || turned > a_.step),
+        stopped_(std::move(stopped)),
+        backstop_ms_(backstop_window_ms(xs_.step, STOP_SPEED_DISTANCE, as_.step, STOP_SPEED_ANGLE)),
         a_seed_pass_(stuck_passes()),
         a_seeded_(false) {
     int allowance = moved_ ? 0 : STUCK_START_ALLOWANCE_MS;
-    last_progress_ = pros::millis() + allowance;
-    last_progress_pass_ = stuck_passes() + allowance / util::DELAY_TIME;
+    last_progress_ = last_settle_ = pros::millis() + allowance;
+    last_progress_pass_ = last_settle_pass_ = stuck_passes() + allowance / util::DELAY_TIME;
   }
 
   // distance: how far the robot is from the point it's driving to.  xy_error and a_error: the PIDs' signed errors.
-  bool stuck(int index, double distance, double xy_error, double a_error, double travelled, double turned) {
+  // settle_distance: how far it is from where it counts as settled, when that is not only the point (negative: the same as distance).
+  bool stuck(int index, double distance, double xy_error, double a_error, double travelled, double turned, double settle_distance = -1.0) {
     if (window_ == 0) return false;
     std::uint32_t now = pros::millis();
     std::uint32_t pass = stuck_passes();
     bool progress = false;     // genuinely getting somewhere: this is what makes the robot "moved"
     bool disturbance = false;  // a shove landing or peaking: restarts the clock, but is not progress
+    // The same two for the settle clock, which runs on the settle step (see settle_step())
+    bool settle_progress = false, settle_disturbance = false;
     if (index != index_) {
       index_ = index;
       xy_ = Channel(xy_.step, distance, xy_error);
       a_ = Channel(a_.step, std::fabs(a_error), a_error);
-      progress = true;
+      xs_ = Channel(xs_.step, distance, xy_error);
+      as_ = Channel(as_.step, std::fabs(a_error), a_error);
+      progress = settle_progress = true;
     }
     if (xy_.made(distance, xy_error)) progress = true;
+    if (xs_.made(distance, xy_error)) settle_progress = true;
     disturbance = xy_.latched || xy_.peaked;
+    settle_disturbance = xs_.latched || xs_.peaked;
     // The angle channel's own construction-time seed (angle.error at that moment) can be a leftover
     // reading from the PREVIOUS motion: motion_reset()/timers_reset() never touch `error`, only a real
     // compute_error() does, so if this wait's own first tick lands before the background task has
@@ -239,22 +301,40 @@ public:
     if (!a_seeded_) {
       if (pass != a_seed_pass_) {
         a_ = Channel(a_.step, std::fabs(a_error), a_error);
+        as_ = Channel(as_.step, std::fabs(a_error), a_error);
         a_seeded_ = true;
       }
     } else {
       if (a_.made(std::fabs(a_error), a_error)) progress = true;
       disturbance = disturbance || a_.latched || a_.peaked;
+      if (as_.made(std::fabs(a_error), a_error)) settle_progress = true;
+      settle_disturbance = settle_disturbance || as_.latched || as_.peaked;
     }
-    if (!moved_ && (travelled > xy_.step || turned > a_.step)) moved_ = progress = true;
+    if (!moved_ && (travelled > xy_.step || turned > a_.step)) moved_ = progress = settle_progress = true;
     // Before the robot has moved, progress can't cut the start allowance short
     if ((progress || disturbance) && (moved_ || (std::int32_t)(now - last_progress_) > 0)) {
       last_progress_ = now;
       last_progress_pass_ = pass;
     }
+    if ((settle_progress || settle_disturbance) && (moved_ || (std::int32_t)(now - last_settle_) > 0)) {
+      last_settle_ = now;
+      last_settle_pass_ = pass;
+    }
     // Inside both big errors a stuck verdict is a clean "settled" return, so the floor has nothing to protect there; see
     // SingleStuckWatch::stuck(). Flooring it only let the mA exit fire first on a robot resting in the friction deadband.
-    int window = (xy_big_ > 0 && distance < xy_big_ && a_big_ > 0 && std::fabs(a_error) < a_big_) ? settled_window_ : window_;
-    std::int32_t waited = now - last_progress_;
+    // There it is settled in either of two ways, see SingleStuckWatch::stuck() for why:
+    //   stopped:  the robot travelled less than the stop speed over the team's own window (xy and heading both), and
+    //   backstop: neither channel made a new low for max(the team's window, step / stop speed).
+    double settle_d = settle_distance < 0 ? distance : std::fmin(distance, settle_distance);
+    bool inside_big = xy_big_ > 0 && settle_d < xy_big_ && a_big_ > 0 && std::fabs(a_error) < a_big_;
+    if (inside_big && stopped_ && (moved_ || (std::int32_t)(now - last_settle_) > 0) && stopped_(settled_window_)) return true;
+    // Settling is timed on the settle clock: a new low has to be a settle step below the last, so a robot creeping home in noise-sized
+    // steps cannot keep restarting it. Time inside big_error is then at most (big_error / settle step + 1) windows. Outside, the fine
+    // clock keeps a shove or a pin reading as before.
+    bool settling = inside_big;
+    int window = settling ? std::max(settled_window_, backstop_ms_) : window_;
+    std::int32_t waited = now - (settling ? last_settle_ : last_progress_);
+    std::uint32_t since_pass = pass - (settling ? last_settle_pass_ : last_progress_pass_);
     if (waited <= window) return false;
     // Confirming ez_auto_task really kept running (not just wall-clock time passing while it's starved or dead)
     // needs an expected pass count for window_.  This used to derive that count from this watch's own observed
@@ -294,21 +374,26 @@ public:
     // still caught by the STARVED_WINDOWS wall-clock fallback below, unchanged.  Flagging the latency tradeoff
     // for a design call, the same as the Channel rebound latch above.
     int expected_passes = (int)(window / (double)util::DELAY_TIME);
-    return (std::int32_t)(pass - last_progress_pass_) > expected_passes || waited > STUCK_STARVED_WINDOWS * window;
+    bool stuck = (std::int32_t)since_pass > expected_passes || waited > STUCK_STARVED_WINDOWS * window;
+    return stuck;
   }
 
 private:
   Channel xy_, a_;
+  Channel xs_, as_;  // the same two channels on the settle step: what the settle clock credits
   int index_;
   int window_;          // the team's window, floored: what a stuck verdict outside the big errors waits for
   int settled_window_;  // the team's own window, unfloored: what it waits for inside both big errors
   double xy_big_, a_big_;
   bool moved_;
+  std::function<bool(int)> stopped_;
+  int backstop_ms_;  // how long without a new low inside the big errors before the robot is called settled while still moving
   // stuck_passes() at construction, and whether the angle channel has re-seeded itself from the first
   // confirmed-fresh reading since -- see the matching comment in stuck() above.
   std::uint32_t a_seed_pass_;
   bool a_seeded_;
   std::uint32_t last_progress_, last_progress_pass_;
+  std::uint32_t last_settle_, last_settle_pass_;  // the settle clock: when xs_ / as_ last made progress, restarts included
 };
 
 // The same progress backstop as StuckWatch, but for a single PID with no odometry and no path index -- DRIVE,
@@ -329,17 +414,22 @@ public:
   // `cap`: STUCK_STEP_DISTANCE_CAP for a distance-type PID (DRIVE), STUCK_STEP_ANGLE_CAP for an angle-type
   // one (TURN/SWING) -- this PID's own small_error alone doesn't say which, so the caller (which already
   // knows) passes it in, same as StuckWatch's constructor already picks the right one for xy_ vs a_.
-  SingleStuckWatch(PID& pid, double error, bool already_moved, double cap)
+  // `stopped`: whether the robot travelled less than the stop speed over the last window_ms (null: never, as in a test that
+  // builds a watch on its own).
+  SingleStuckWatch(PID& pid, double error, bool already_moved, double cap, std::function<bool(int)> stopped = nullptr)
       : ch_(stuck_step(pid, cap), std::fabs(error), error),
+        cs_(settle_step(pid, cap), std::fabs(error), error),
         window_(floored_window(pid.exit.velocity_exit_time != 0 ? pid.exit.velocity_exit_time : pid.exit.mA_timeout)),
         settled_window_(pid.exit.velocity_exit_time != 0 ? pid.exit.velocity_exit_time : pid.exit.mA_timeout),
-        big_error_(pid.exit.big_error),
+        big_error_(settle_error(pid)),
         moved_(already_moved),
+        stopped_(std::move(stopped)),
+        backstop_ms_(backstop_window_ms(cs_.step, cap == STUCK_STEP_ANGLE_CAP ? STOP_SPEED_ANGLE : STOP_SPEED_DISTANCE, 0.0, 1.0)),
         last_pass_(stuck_passes()),
         seeded_(false) {
     int allowance = moved_ ? 0 : STUCK_START_ALLOWANCE_MS;
-    last_progress_ = pros::millis() + allowance;
-    last_progress_pass_ = stuck_passes() + allowance / util::DELAY_TIME;
+    last_progress_ = last_settle_ = pros::millis() + allowance;
+    last_progress_pass_ = last_settle_pass_ = stuck_passes() + allowance / util::DELAY_TIME;
   }
 
   bool stuck(double error) {
@@ -347,7 +437,8 @@ public:
     std::uint32_t now = pros::millis();
     std::uint32_t pass = stuck_passes();
     bool progress = false;
-    bool disturbance = false;  // a shove landing or peaking: restarts the clock, but is not progress
+    bool disturbance = false;                                  // a shove landing or peaking: restarts the clock, but is not progress
+    bool settle_progress = false, settle_disturbance = false;  // the same for the settle clock, see StuckWatch::stuck()
     // Only ever act on `error` on a pass where the background task has actually ticked since the last
     // time this checked (stuck_passes(), the same heartbeat the wall-clock/pass-count starvation check
     // below already trusts) -- the caller (this wait's own loop) and that background compute loop are two
@@ -365,40 +456,149 @@ public:
       last_pass_ = pass;
       if (!seeded_) {
         ch_ = Channel(ch_.step, std::fabs(error), error);
+        cs_ = Channel(cs_.step, std::fabs(error), error);
         seeded_ = true;
       } else {
         progress = ch_.made(std::fabs(error), error);
         disturbance = ch_.latched || ch_.peaked;
+        settle_progress = cs_.made(std::fabs(error), error);
+        settle_disturbance = cs_.latched || cs_.peaked;
       }
     }
-    if (!moved_ && progress) moved_ = true;
+    if (!moved_ && progress) moved_ = settle_progress = true;
     if ((progress || disturbance) && (moved_ || (std::int32_t)(now - last_progress_) > 0)) {
       last_progress_ = now;
       last_progress_pass_ = pass;
+    }
+    if ((settle_progress || settle_disturbance) && (moved_ || (std::int32_t)(now - last_settle_) > 0)) {
+      last_settle_ = now;
+      last_settle_pass_ = pass;
     }
     // Inside big_error a stuck verdict is a clean "settled" return, not an interfered one, so the floor has nothing to
     // protect there (it exists so a shove is not called stuck). Flooring it would only delay that clean return long
     // enough for the mA exit to fire first on a robot resting in the friction deadband, and report interfered on a
     // motion that finished. So inside big_error the watch keeps the team's own window, as it always has.
-    int window = (big_error_ > 0 && std::fabs(error) < big_error_) ? settled_window_ : window_;
-    std::int32_t waited = now - last_progress_;
+    //
+    // There, settled means one of two things, and neither is "no full step of progress in a window" on its own (that hid a speed
+    // of step / window, which at a 50 ms window is anything under 20 in/s):
+    //   stopped:  the robot travelled less than the stop speed over the team's own window. A robot that really is still
+    //             finishes at the team's window, exactly as before.
+    //   backstop: no new low for max(the team's window, step / stop speed). That ends a robot hunting back and forth, which
+    //             is never stopped, and it cannot fire on a robot still closing faster than the stop speed on average,
+    //             because closing at that speed makes a new low every step / stop speed.
+    // Not before the robot has moved (or the start allowance ran out): a motion shorter than big_error starts at rest inside it.
+    bool inside_big = big_error_ > 0 && std::fabs(error) < big_error_;
+    if (inside_big && stopped_ && (moved_ || (std::int32_t)(now - last_settle_) > 0) && stopped_(settled_window_)) return true;
+    int window = inside_big ? std::max(settled_window_, backstop_ms_) : window_;
+    std::int32_t waited = now - (inside_big ? last_settle_ : last_progress_);
+    std::uint32_t since_pass = pass - (inside_big ? last_settle_pass_ : last_progress_pass_);
     if (waited <= window) return false;
     // See the matching comment in StuckWatch::stuck() -- a fixed, nominal-DELAY_TIME pass count, not one
     // derived from this watch's own observed (and self-referential) cadence.
     int expected_passes = (int)(window / (double)util::DELAY_TIME);
-    return (std::int32_t)(pass - last_progress_pass_) > expected_passes || waited > STUCK_STARVED_WINDOWS * window;
+    return (std::int32_t)since_pass > expected_passes || waited > STUCK_STARVED_WINDOWS * window;
   }
 
 private:
   Channel ch_;
+  Channel cs_;          // the same channel on the settle step: what the settle clock credits
   int window_;          // the team's window, floored: what a stuck verdict outside big_error waits for
   int settled_window_;  // the team's own window, unfloored: what it waits for inside big_error
   double big_error_;
   bool moved_;
+  std::function<bool(int)> stopped_;
+  int backstop_ms_;  // how long without a new low inside big_error before the robot is called settled while still moving
   std::uint32_t last_pass_;
   bool seeded_;
   std::uint32_t last_progress_, last_progress_pass_;
+  std::uint32_t last_settle_, last_settle_pass_;  // the settle clock: when cs_ last made progress, restarts included
 };
+
+// A window exit (SMALL_EXIT / BIG_EXIT) from a PID only says the robot has been inside the band for the exit's time: position.
+// Taking it on that alone cut a heavy robot crawling in at 3 to 5 in/s off 1 to 1.5 in short, and let a light robot spend
+// small_exit_time crossing the small band at speed and be called done. So a wait takes the exit only once the robot has also
+// stopped: it travelled less than the stop speed over the exit's own time.
+//
+// The position timer keeps counting exactly as it did. When the PID has reported its exit the gate remembers it ("band time
+// met") for as long as the live error stays inside that band, and hands the exit to the wait on the first poll the robot is also
+// stopped, so a vetoed exit does not cost a second full timer (PID::exit_condition() resets its timers whenever it returns
+// SMALL/BIG). Leaving the band forgets it, as the PID's own timer does. A robot that is already stopped when its timer completes
+// gets the exit on the same poll as before. Anything else the PID reports (mA, velocity) passes straight through.
+//
+// A vetoed exit also wiped the PID's mA progress along with its other timers (PID::exit_condition() resets all of them on any
+// latch), which would let repeated vetoes starve the mA exit. That is put back the way the pre last point loops put it back.
+//
+// A robot oscillating about its target is never stopped, so it never gets a window exit here; the stuck watch's no-progress
+// backstop ends it. A gate is only armed when that backstop exists (the team has not turned off both the velocity exit and the
+// mA exit), so a configuration with no backstop keeps ending on position alone rather than waiting for ever.
+//
+// "tracked" says whether anything is being sampled at all: when the auto task has not run since the motion started there is no
+// movement to veto with and the exit passes, as it did before.
+class ExitGate {
+public:
+  ExitGate(std::function<bool(int)> stopped, std::function<bool()> tracked, bool armed)
+      : stopped_(std::move(stopped)), tracked_(std::move(tracked)), armed_(armed) {}
+
+  // What the wait gets for the PID's raw result: SMALL_EXIT / BIG_EXIT held back until the robot is also stopped. live_error is
+  // the PID's own error, what the recheck of a latched exit reads. See Drive::gated_exit(), which makes the PID call.
+  exit_output filter(exit_output raw, const PID& pid, double live_error) {
+    if (raw == SMALL_EXIT) {
+      small_met_ = true;
+    } else if (raw == BIG_EXIT) {
+      big_met_ = true;
+    } else if (raw != RUNNING) {
+      return raw;
+    }
+    double error = std::fabs(live_error);
+    if (small_met_ && !(error < pid.exit.small_error)) small_met_ = false;
+    if (big_met_ && !(error < pid.exit.big_error)) big_met_ = false;
+    if (small_met_ && stopped_for(pid.exit.small_exit_time)) {
+      clear();
+      return SMALL_EXIT;
+    }
+    if (big_met_ && stopped_for(pid.exit.big_exit_time)) {
+      clear();
+      return BIG_EXIT;
+    }
+    return RUNNING;
+  }
+
+  // A window exit this gate gave the wait earlier is only still true if the robot has not moved since. True when it has (a
+  // shove, a creep): the caller puts it back with hold() and goes on waiting.
+  bool moving(exit_output latched, const PID& pid) const {
+    if (latched != SMALL_EXIT && latched != BIG_EXIT) return false;
+    return !stopped_for(latched == SMALL_EXIT ? pid.exit.small_exit_time : pid.exit.big_exit_time);
+  }
+  // The exit's time is already met: take it as soon as the robot is stopped
+  void hold(exit_output e) {
+    if (e == SMALL_EXIT) small_met_ = true;
+    if (e == BIG_EXIT) big_met_ = true;
+  }
+  void clear() { small_met_ = big_met_ = false; }
+
+private:
+  // Stopped over window_ms, or nothing to say it is not
+  bool stopped_for(int window_ms) const {
+    if (!armed_ || !stopped_ || !tracked_ || !tracked_()) return true;
+    return stopped_(window_ms);
+  }
+
+  std::function<bool(int)> stopped_;
+  std::function<bool()> tracked_;
+  bool armed_;
+  bool small_met_ = false, big_met_ = false;
+};
+
+// The same over-current predicate PID::exit_condition(const std::vector<pros::Motor>&) uses: a transient PROS_ERR is not over
+// current, but a PROS_ERR paired with a position that is not finite is a motor that has gone away, and counts.
+bool any_over_current(std::vector<pros::Motor>& motors) {
+  for (auto& m : motors) {
+    std::int32_t over = m.is_over_current();
+    bool dead = over == PROS_ERR && !std::isfinite(m.get_position());
+    if (over == 1 || dead) return true;
+  }
+  return false;
+}
 
 // A velocity exit doesn't end an odom wait: a robot pivoting at a corner, or just slow, reads as stopped to it while
 // it's still getting somewhere.  StuckWatch decides stuck instead.  Small, big and current exits end it as always.
@@ -413,6 +613,12 @@ exit_output without_velocity(exit_output e) { return e == VELOCITY_EXIT ? RUNNIN
 // regardless of which target produced the error that triggered them, so those are still real stall signals here.
 // DRIVE (a plain, non-odom move) is unaffected: leftPID/rightPID's target there already is the real drive target.
 exit_output without_position_exits(exit_output e) { return (e == SMALL_EXIT || e == BIG_EXIT) ? RUNNING : e; }
+
+// Whether a side that was still RUNNING when this pass began had its SMALL_EXIT / BIG_EXIT released by the gate on this very pass.
+// The stuck watch has to be consulted on that pass too: a released exit is vetoed again by the recheck of the latched exit as soon as
+// the shifted window reads the robot as moving, and a robot that reads stopped, moving, stopped, moving on consecutive passes is
+// released and vetoed for ever, with no pass on which the side is RUNNING for the watch to see. An mA exit is never one of these.
+bool released_window_exit(bool was_running, exit_output now) { return was_running && (now == SMALL_EXIT || now == BIG_EXIT); }
 
 // What a pid_wait_until() checkpoint means for `interfered` when the wait ends without the robot crossing it. One rule
 // for drive, turn and swing, so they cannot disagree. (Not used for the odom waits: pid_wait_until_point()'s window-exit
@@ -431,33 +637,46 @@ bool checkpoint_unreachable(double start, double final_target, double checkpoint
 }
 
 enum class CheckpointEnd {
-  Interfered,              // something stopped the robot short of a checkpoint it could reach
-  Clean,                   // the checkpoint is the motion's own final target and the motion settled
-  Unreachable,             // the motion settled and the checkpoint could never be reached: not an interference
-  ReachedWithinSmallError  // the live distance to the checkpoint is inside the motion PID's own small_error
+  Interfered,               // something stopped the robot short of a checkpoint it could reach
+  Clean,                    // the checkpoint is the motion's own final target and the motion settled
+  Unreachable,              // the motion settled and the checkpoint could never be reached: not an interference
+  ReachedWithinSmallError,  // the live distance to the checkpoint is inside the motion PID's own small_error
+  SettledShortOfCheckpoint  // the motion settled inside big_error of its final target with the checkpoint between there and the target
 };
 
-// The motion's own window exit (SMALL_EXIT/BIG_EXIT) latched before the checkpoint was crossed. Never used for mA_EXIT,
-// VELOCITY_EXIT or a stuck watch: those keep marking interfered exactly as before. A robot inside its own small_error of
-// the checkpoint has, by the team's own definition, arrived -- this is what a chained motion needs, whose target is
-// pushed past the checkpoint so it is never the final target, and it also covers a checkpoint just short of the target
-// that the robot settles within small_error of without quite crossing. A small_error of 0 means it is not configured, and
-// never counts.
-CheckpointEnd checkpoint_end_on_window_exit(bool at_final_target, bool unreachable, double distance_to_checkpoint, double small_error) {
-  if (at_final_target) return CheckpointEnd::Clean;
-  if (unreachable) return CheckpointEnd::Unreachable;
-  if (small_error > 0.0 && distance_to_checkpoint <= small_error) return CheckpointEnd::ReachedWithinSmallError;
-  return CheckpointEnd::Interfered;
-}
-
-// The stuck watch fired. Only "stopped inside big_error" at the motion's own final target, or of a motion whose checkpoint
-// could never have been reached, counts as the motion settling; anything else is a real stall and stays interfered.
-CheckpointEnd checkpoint_end_on_stuck(bool at_final_target, bool unreachable, bool settled) {
+// Whether a pid_wait_until() checkpoint counts as reached when the wait ended without the robot crossing it. The one rule every
+// wait that can end that way uses (drive, turn and swing, and the odom point waits), so they cannot disagree about one motion at
+// one instant.
+//
+// `settled` says the wait ended through a window exit, a stuck verdict that found the robot stopped inside big_error, or an mA exit
+// that found it inside big_error, of the motion's final target on every axis it has. Only then can the checkpoint count; a robot
+// stopped by something outside big_error is interfered, whatever the checkpoint. Then it counts when:
+//   - it IS the motion's final target (at_final_target), or
+//   - it can never be reached (unreachable): printed by the caller and not an interference, or
+//   - the live distance to it is within the motion PID's own small_error (a chained motion's target is pushed past the checkpoint
+//     so it is never the final target, and a checkpoint just short of the target is one the robot may settle within small_error
+//     of without crossing). A small_error of 0 means it is not configured and never counts, or
+//   - the robot settled inside big_error of the final target and the checkpoint lies between where it came to rest and that target
+//     (between): it did get as far as the motion goes, so a checkpoint on the way there is reached, as pid_wait() on the same
+//     motion would have said clean.
+// Anything else is a checkpoint a reachable robot stopped short of: interfered.
+CheckpointEnd checkpoint_end(bool settled, bool at_final_target, bool unreachable, double distance_to_checkpoint, double small_error, bool between) {
   if (!settled) return CheckpointEnd::Interfered;
   if (at_final_target) return CheckpointEnd::Clean;
   if (unreachable) return CheckpointEnd::Unreachable;
+  if (small_error > 0.0 && distance_to_checkpoint <= small_error) return CheckpointEnd::ReachedWithinSmallError;
+  if (between) return CheckpointEnd::SettledShortOfCheckpoint;
   return CheckpointEnd::Interfered;
 }
+
+// An mA exit ends a wait at the team's own mA_timeout, as it always did. What it MEANS is decided here: when the robot is inside
+// big_error of the motion's final target on every axis the motion has, an mA exit is a settle, not an interference. That is the
+// rule the stuck watch already follows (inside big_error a stopped robot returns clean even if something is holding it there),
+// and it removes a race the other way would keep: a heavy or sticky robot resting in the friction deadband draws over current,
+// and whether the settled verdict or the mA exit came first decided if a finished motion read interfered. Outside big_error an
+// mA exit marks interfered exactly as before. `fresh`: the auto task has run since the wait began, so the errors are this
+// motion's and not the last one's.
+bool ma_exit_settled(bool inside_big_on_every_axis, bool fresh) { return inside_big_on_every_axis && fresh; }
 
 // Always printed, not gated on print_toggle: the team wrote something that can never do what they meant.
 void print_unreachable_checkpoint(double checkpoint, double final_target) {
@@ -466,6 +685,60 @@ void print_unreachable_checkpoint(double checkpoint, double final_target) {
 }
 
 }  // namespace
+
+// Samples everything "stopped" is measured on, once per auto task pass (ez_tracking_task() calls this after tracking ran).
+// Drive sides and heading are read the way the motions' own PIDs read them, so tracking wheels are used when present. Odom xy
+// is the sum of what odom moved each pass (xy_pose_delta, which a pose set is not part of), so relocalizing is not travel.
+void Drive::travel_sample(bool odom_tracked) {
+  if (travel_generation_ != motion_generation) {
+    for (auto& t : travel_) t.reset();
+    travel_generation_ = motion_generation;
+    travel_xy_x_ = travel_xy_y_ = 0.0;
+  }
+  double tick_per_inch = drive_tick_per_inch();
+  double count = tick_per_inch > 0.0 ? 1.0 / tick_per_inch : 0.0;
+  travel_[(int)Travel::Left].band_set(count);
+  travel_[(int)Travel::Right].band_set(count);
+  travel_[(int)Travel::OdomXY].band_set(count);
+  travel_[(int)Travel::Heading].band_set(TRAVEL_BAND_ANGLE);
+  travel_[(int)Travel::OdomHeading].band_set(TRAVEL_BAND_ANGLE);
+  if (odom_tracked) {
+    travel_xy_x_ += xy_pose_delta.x;
+    travel_xy_y_ += xy_pose_delta.y;
+  }
+  std::uint32_t now = pros::millis();
+  std::uint32_t pass = stuck_passes();
+  travel_[(int)Travel::Left].sample(drive_sensor_left(), 0.0, now, pass);
+  travel_[(int)Travel::Right].sample(drive_sensor_right(), 0.0, now, pass);
+  travel_[(int)Travel::Heading].sample(drive_angle_get(), 0.0, now, pass);
+  travel_[(int)Travel::OdomHeading].sample(odom_theta_get(), 0.0, now, pass);
+  travel_[(int)Travel::OdomXY].sample(travel_xy_x_, travel_xy_y_, now, pass);
+}
+
+bool Drive::travel_stopped(Travel channel, int window_ms) {
+  ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+  if (travel_generation_ != motion_generation) return false;
+  bool angle = channel == Travel::Heading || channel == Travel::OdomHeading;
+  return travel_[(int)channel].stopped(window_ms, angle ? STOP_SPEED_ANGLE : STOP_SPEED_DISTANCE, pros::millis());
+}
+
+bool Drive::travel_tracked(Travel channel) {
+  ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+  return travel_generation_ == motion_generation && travel_[(int)channel].active();
+}
+
+// pid.exit_condition(motors) for a wait that holds SMALL_EXIT / BIG_EXIT until the robot is also stopped (ExitGate above). The
+// held exit costs the PID its timers, mA progress included (PID::exit_condition() resets them all on any latch), and PID makes
+// Drive its only friend for putting that back, so this lives here and not in ExitGate.
+template <class Gate>
+exit_output Drive::gated_exit(Gate& gate, PID& pid, std::vector<pros::Motor> motors, double live_error) {
+  bool over_current = pid.exit.mA_timeout != 0 && any_over_current(motors);
+  PID::MATimerSnapshot mA_snapshot = pid.mA_timer_snapshot();
+  exit_output raw = pid.exit_condition(motors);
+  exit_output result = gate.filter(raw, pid, live_error);
+  if ((raw == SMALL_EXIT || raw == BIG_EXIT) && result == RUNNING && over_current) pid.mA_timer_restore_and_credit(mA_snapshot);
+  return result;
+}
 
 // See drive.hpp's own comment on InterferedScope/motion_generation/interfered_generation for the concurrency
 // hazard this exists to fix: every retarget guard below used to end a stale wait with a bare
@@ -708,16 +981,21 @@ void Drive::pid_wait() {
     // pid_drive_set() -- not against this particular wait call, so a wait chained onto an already-moving motion
     // (an early pid_wait_until() checkpoint followed by pid_wait() on the same still-running drive, TEAM_CORPUS.md's
     // ordinary "until then wait" pattern) doesn't pay SingleStuckWatch's startup allowance a second time.
+    auto left_stopped = [this](int w) { return travel_stopped(Travel::Left, w); };
+    auto right_stopped = [this](int w) { return travel_stopped(Travel::Right, w); };
     SingleStuckWatch left_watch(leftPID, leftPID.error, std::fabs(drive_sensor_left() - l_start) > stuck_step(leftPID, STUCK_STEP_DISTANCE_CAP),
-                                STUCK_STEP_DISTANCE_CAP),
+                                STUCK_STEP_DISTANCE_CAP, left_stopped),
         right_watch(rightPID, rightPID.error, std::fabs(drive_sensor_right() - r_start) > stuck_step(rightPID, STUCK_STEP_DISTANCE_CAP),
-                    STUCK_STEP_DISTANCE_CAP);
+                    STUCK_STEP_DISTANCE_CAP, right_stopped);
     // How many times the recheck below has reseeded each side's watch on an un-latch -- see
     // STUCK_WATCH_REARM_CAP's own comment. Local to this one pid_wait() call, same as the watches
     // themselves, so every new wait starts a fresh count regardless of how many times a previous
     // wait on this same motion used up its own cap.
     int left_stuck_watch_rearm_count = 0;
     int right_stuck_watch_rearm_count = 0;
+    ExitGate left_gate(left_stopped, [this] { return travel_tracked(Travel::Left); }, leftPID.exit.velocity_exit_time != 0 || leftPID.exit.mA_timeout != 0);
+    ExitGate right_gate(
+        right_stopped, [this] { return travel_tracked(Travel::Right); }, rightPID.exit.velocity_exit_time != 0 || rightPID.exit.mA_timeout != 0);
     bool stalled = false;
     // A stuck-but-settled break below is its own, already-final decision (at least one side never
     // finished its own exit timer at all -- still RUNNING -- but the stuck watch gave up waiting on
@@ -743,14 +1021,25 @@ void Drive::pid_wait() {
         // this out (without_velocity(), above); DRIVE didn't. SingleStuckWatch (below) still catches a
         // genuine stall independently -- it watches PID error, not velocity -- so filtering this out can't
         // turn a real stall into a hang.
-        left_exit = left_exit != RUNNING ? left_exit : without_velocity(leftPID.exit_condition(mA_exit_motors(true, false)));
-        right_exit = right_exit != RUNNING ? right_exit : without_velocity(rightPID.exit_condition(mA_exit_motors(false, true)));
-        bool left_stuck = left_exit == RUNNING && left_watch.stuck(leftPID.error);
-        bool right_stuck = right_exit == RUNNING && right_watch.stuck(rightPID.error);
+        bool left_was_running = left_exit == RUNNING;
+        bool right_was_running = right_exit == RUNNING;
+        left_exit = left_exit != RUNNING ? left_exit : without_velocity(gated_exit(left_gate, leftPID, mA_exit_motors(true, false), leftPID.error));
+        right_exit = right_exit != RUNNING ? right_exit : without_velocity(gated_exit(right_gate, rightPID, mA_exit_motors(false, true), rightPID.error));
+        // The watch is consulted on every pass for every side that was RUNNING when the pass began, including the pass the gate releases
+        // that side's exit. A side released and vetoed again by the recheck below, pass after pass, would otherwise never be seen by it.
+        bool left_released = released_window_exit(left_was_running, left_exit);
+        bool right_released = released_window_exit(right_was_running, right_exit);
+        bool left_stuck = (left_exit == RUNNING || left_released) && left_watch.stuck(leftPID.error);
+        bool right_stuck = (right_exit == RUNNING || right_released) && right_watch.stuck(rightPID.error);
+        // A side released on a pass the watch calls it stuck is still RUNNING, and stuck, for this pass
+        exit_output left_now = left_released && left_stuck ? RUNNING : left_exit;
+        exit_output right_now = right_released && right_stuck ? RUNNING : right_exit;
         // Stuck only when at least one side is still RUNNING and every side that's still RUNNING is stuck --
         // not when both sides just happened to exit normally on the same pass, which the (exit != RUNNING) half
         // of each clause would otherwise also satisfy.
-        if ((left_exit == RUNNING || right_exit == RUNNING) && (left_exit != RUNNING || left_stuck) && (right_exit != RUNNING || right_stuck)) {
+        if ((left_now == RUNNING || right_now == RUNNING) && (left_now != RUNNING || left_stuck) && (right_now != RUNNING || right_stuck)) {
+          left_exit = left_now;
+          right_exit = right_now;
           // A side that's still RUNNING and already sitting inside its own big error window is where a big
           // exit would have left it: that's settled, not stuck. (A side hovering across its own small error
           // window can keep both its own exit timers from ever finishing.) A side that already latched an
@@ -758,8 +1047,8 @@ void Drive::pid_wait() {
           // a side that latched early and has since been shoved or pinned off target must not count as
           // settled just because it once exited cleanly (see the recheck below, which applies this identical
           // rule to a full double latch instead of this stuck-detected path).
-          bool left_settled = std::fabs(leftPID.error) < leftPID.exit.big_error;
-          bool right_settled = std::fabs(rightPID.error) < rightPID.exit.big_error;
+          bool left_settled = std::fabs(leftPID.error) < settle_error(leftPID);
+          bool right_settled = std::fabs(rightPID.error) < settle_error(rightPID);
           // ...and only if ez_auto_task has run since this wait began (see entry_task_passes above); if it
           // has not, both errors are the previous motion's leftovers, not a reading of this one.
           bool settled = left_settled && right_settled && stuck_passes() != entry_task_passes;
@@ -811,26 +1100,46 @@ void Drive::pid_wait() {
       if (left_exit == SMALL_EXIT && std::fabs(leftPID.error) >= leftPID.exit.small_error) {
         left_exit = RUNNING;
         if (left_stuck_watch_rearm_count < STUCK_WATCH_REARM_CAP) {
-          left_watch = SingleStuckWatch(leftPID, leftPID.error, true, STUCK_STEP_DISTANCE_CAP);
+          left_watch = SingleStuckWatch(leftPID, leftPID.error, true, STUCK_STEP_DISTANCE_CAP, left_stopped);
           ++left_stuck_watch_rearm_count;
         }
       } else if (left_exit == BIG_EXIT && std::fabs(leftPID.error) >= leftPID.exit.big_error) {
         left_exit = RUNNING;
         if (left_stuck_watch_rearm_count < STUCK_WATCH_REARM_CAP) {
-          left_watch = SingleStuckWatch(leftPID, leftPID.error, true, STUCK_STEP_DISTANCE_CAP);
+          left_watch = SingleStuckWatch(leftPID, leftPID.error, true, STUCK_STEP_DISTANCE_CAP, left_stopped);
           ++left_stuck_watch_rearm_count;
         }
       }
       if (right_exit == SMALL_EXIT && std::fabs(rightPID.error) >= rightPID.exit.small_error) {
         right_exit = RUNNING;
         if (right_stuck_watch_rearm_count < STUCK_WATCH_REARM_CAP) {
-          right_watch = SingleStuckWatch(rightPID, rightPID.error, true, STUCK_STEP_DISTANCE_CAP);
+          right_watch = SingleStuckWatch(rightPID, rightPID.error, true, STUCK_STEP_DISTANCE_CAP, right_stopped);
           ++right_stuck_watch_rearm_count;
         }
       } else if (right_exit == BIG_EXIT && std::fabs(rightPID.error) >= rightPID.exit.big_error) {
         right_exit = RUNNING;
         if (right_stuck_watch_rearm_count < STUCK_WATCH_REARM_CAP) {
-          right_watch = SingleStuckWatch(rightPID, rightPID.error, true, STUCK_STEP_DISTANCE_CAP);
+          right_watch = SingleStuckWatch(rightPID, rightPID.error, true, STUCK_STEP_DISTANCE_CAP, right_stopped);
+          ++right_stuck_watch_rearm_count;
+        }
+      }
+
+      // A side that latched while it was stopped and has moved since (a shove, a creep) is not settled: its exit goes back to the
+      // gate, which hands it over again as soon as the side is stopped. Its watch gets the same fresh clock an un-latch above gives
+      // it, so a clock left over from before it latched cannot call it settled while it is still moving.
+      if (left_gate.moving(left_exit, leftPID)) {
+        left_gate.hold(left_exit);
+        left_exit = RUNNING;
+        if (left_stuck_watch_rearm_count < STUCK_WATCH_REARM_CAP) {
+          left_watch = SingleStuckWatch(leftPID, leftPID.error, true, STUCK_STEP_DISTANCE_CAP, left_stopped);
+          ++left_stuck_watch_rearm_count;
+        }
+      }
+      if (right_gate.moving(right_exit, rightPID)) {
+        right_gate.hold(right_exit);
+        right_exit = RUNNING;
+        if (right_stuck_watch_rearm_count < STUCK_WATCH_REARM_CAP) {
+          right_watch = SingleStuckWatch(rightPID, rightPID.error, true, STUCK_STEP_DISTANCE_CAP, right_stopped);
           ++right_stuck_watch_rearm_count;
         }
       }
@@ -849,7 +1158,15 @@ void Drive::pid_wait() {
       std::cout << "  Left: " << exit_to_string(left_exit) << " Exit, error: " << leftPID.error << "   Right: " << exit_to_string(right_exit)
                 << " Exit, error: " << rightPID.error << "\n";
 
-    if (stalled || left_exit == mA_EXIT || left_exit == VELOCITY_EXIT || right_exit == mA_EXIT || right_exit == VELOCITY_EXIT) {
+    // The mA exit inside big_error of the target is a settle, not an interference (see ma_exit_settled()). Everything else that
+    // ended the wait other than a clean window exit marks it as before.
+    bool ma_exit = left_exit == mA_EXIT || right_exit == mA_EXIT;
+    bool velocity_exit = left_exit == VELOCITY_EXIT || right_exit == VELOCITY_EXIT;
+    if (!stalled && ma_exit && !velocity_exit &&
+        ma_exit_settled(std::fabs(leftPID.error) < settle_error(leftPID) && std::fabs(rightPID.error) < settle_error(rightPID),
+                        stuck_passes() != entry_task_passes)) {
+      if (print_toggle) std::cout << "  Drive: mA exit inside the big error windows, counted as settled\n";
+    } else if (stalled || ma_exit || velocity_exit) {
       interfered_scope.mark();
     }
   }
@@ -868,8 +1185,15 @@ void Drive::pid_wait() {
     };
     auto travelled = [&]() { return util::distance_to_point(odom_start, odom_pose_get()); };
     auto turned = [&]() { return std::fabs(odom_theta_get() - odom_start.theta); };
-    StuckWatch watch(xyPID, current_a_odomPID, pp_index, target_distance(), travelled(), turned());
+    StuckWatch watch(xyPID, current_a_odomPID, pp_index, target_distance(), travelled(), turned(),
+                     [this](int w) { return travel_stopped(Travel::OdomXY, w) && travel_stopped(Travel::OdomHeading, w); });
     bool stalled = false;
+    bool ended_on_mA = false;  // the wait ended on an mA exit before the last point, which stalled below stands for
+    auto odom_stopped = [this](int w) { return travel_stopped(Travel::OdomXY, w) && travel_stopped(Travel::OdomHeading, w); };
+    auto odom_tracked = [this] { return travel_tracked(Travel::OdomXY) && travel_tracked(Travel::OdomHeading); };
+    bool odom_gate_armed = team_stuck_window(xyPID, current_a_odomPID) != 0;
+    ExitGate xy_gate(odom_stopped, odom_tracked, odom_gate_armed);
+    ExitGate a_gate(odom_stopped, odom_tracked, odom_gate_armed);
 
     // A concurrent pid_odom_*_set() from another task retargets xyPID/current_a_odomPID (and resets pp_index
     // and pp_movements) mid-wait -- same hazard as the DRIVE branch above, just for odom.  odom_target_start
@@ -908,6 +1232,7 @@ void Drive::pid_wait() {
         }
         if (pp_index != a_exit_index) {
           a_exit = RUNNING;
+          a_gate.clear();
           a_exit_index = pp_index;
         }
         secondary_velocity_sensor_update(xyPID);
@@ -949,10 +1274,11 @@ void Drive::pid_wait() {
         exit_output xy_pass = xyPID.exit_condition(xy_motors);
         if (xy_mA_tracked && xy_over_current && (xy_pass == SMALL_EXIT || xy_pass == BIG_EXIT || xy_pass == VELOCITY_EXIT))
           xyPID.mA_timer_restore_and_credit(xy_mA_snapshot);
-        a_exit = a_exit != RUNNING ? a_exit : without_velocity(current_a_odomPID.exit_condition(mA_exit_motors()));
+        a_exit = a_exit != RUNNING ? a_exit : without_velocity(gated_exit(a_gate, current_a_odomPID, mA_exit_motors(), current_a_odomPID.error));
 
         if (xy_pass == mA_EXIT || watch.stuck(pp_index, target_distance(), xyPID.error, current_a_odomPID.error, travelled(), turned())) {
           stalled = true;
+          ended_on_mA = xy_pass == mA_EXIT;
           if (print_toggle)
             std::cout << "  XY: " << (xy_pass == mA_EXIT ? exit_to_string(xy_pass) : "Stuck") << " Exited early at point " << pp_index << " of "
                       << (int)pp_movements.size() - 1 << ", error: " << xyPID.error << ".   Angle error: " << current_a_odomPID.error << ".\n";
@@ -962,7 +1288,10 @@ void Drive::pid_wait() {
         pros::delay(util::DELAY_TIME);
       }
     }
-    if (pp_index != a_exit_index) a_exit = RUNNING;  // the final move onto the last point never re-enters the loop above
+    if (pp_index != a_exit_index) {  // the final move onto the last point never re-enters the loop above
+      a_exit = RUNNING;
+      a_gate.clear();
+    }
 
     // When we're at the last point in PP / we're just going to point. The inner loop is exactly the
     // original per-pass loop (same checks, same single trailing delay per pass) -- wrapped in an
@@ -980,13 +1309,22 @@ void Drive::pid_wait() {
         secondary_velocity_sensor_update(xyPID);
         secondary_velocity_sensor_update(current_a_odomPID);
         xy_velocity_exit_hold_update();
-        xy_exit = xy_exit != RUNNING ? xy_exit : without_velocity(xyPID.exit_condition(mA_exit_motors()));
-        a_exit = a_exit != RUNNING ? a_exit : without_velocity(current_a_odomPID.exit_condition(mA_exit_motors()));
-        if ((xy_exit == RUNNING || a_exit == RUNNING) &&
+        bool xy_was_running = xy_exit == RUNNING;
+        bool a_was_running = a_exit == RUNNING;
+        xy_exit = xy_exit != RUNNING ? xy_exit : without_velocity(gated_exit(xy_gate, xyPID, mA_exit_motors(), xyPID.error));
+        a_exit = a_exit != RUNNING ? a_exit : without_velocity(gated_exit(a_gate, current_a_odomPID, mA_exit_motors(), current_a_odomPID.error));
+        // The watch is consulted whenever either axis is RUNNING (the other may already have latched an mA exit), and also on the pass
+        // the gate releases an axis that was RUNNING: see released_window_exit()
+        bool xy_released = released_window_exit(xy_was_running, xy_exit);
+        bool a_released = released_window_exit(a_was_running, a_exit);
+        if ((xy_exit == RUNNING || a_exit == RUNNING || xy_released || a_released) &&
             watch.stuck(pp_index, target_distance(), xyPID.error, current_a_odomPID.error, travelled(), turned())) {
+          // An axis released on a pass the watch calls it stuck is still RUNNING, and stuck, for this pass
+          if (xy_released) xy_exit = RUNNING;
+          if (a_released) a_exit = RUNNING;
           // Stopped inside both big error windows is where a big exit would have left it: that's settled, not stuck.
           // (A robot hovering across the small error window can keep both exit timers from ever finishing.)
-          bool settled = target_distance() < xyPID.exit.big_error && std::fabs(current_a_odomPID.error) < current_a_odomPID.exit.big_error;
+          bool settled = target_distance() < settle_error(xyPID) && std::fabs(current_a_odomPID.error) < settle_error(current_a_odomPID);
           stalled = !settled;
           settled_via_stuck = settled;
           if (print_toggle)
@@ -1028,6 +1366,16 @@ void Drive::pid_wait() {
       else if (a_exit == BIG_EXIT && std::fabs(current_a_odomPID.error) >= current_a_odomPID.exit.big_error)
         a_exit = RUNNING;
 
+      // Latched while stopped, moving since: back to the gate (see the DRIVE branch)
+      if (xy_gate.moving(xy_exit, xyPID)) {
+        xy_gate.hold(xy_exit);
+        xy_exit = RUNNING;
+      }
+      if (a_gate.moving(a_exit, current_a_odomPID)) {
+        a_gate.hold(a_exit);
+        a_exit = RUNNING;
+      }
+
       if (xy_exit == RUNNING || a_exit == RUNNING) {
         pros::delay(util::DELAY_TIME);
         continue;
@@ -1039,7 +1387,14 @@ void Drive::pid_wait() {
       std::cout << "  XY: " << exit_to_string(xy_exit) << " Exit, error: " << xyPID.error << ".   Angle: " << exit_to_string(a_exit)
                 << " Exit, error: " << current_a_odomPID.error << ".\n";
 
-    if (stalled || xy_exit == mA_EXIT || xy_exit == VELOCITY_EXIT || a_exit == mA_EXIT || a_exit == VELOCITY_EXIT) {
+    bool ma_exit = ended_on_mA || xy_exit == mA_EXIT || a_exit == mA_EXIT;
+    bool velocity_exit = xy_exit == VELOCITY_EXIT || a_exit == VELOCITY_EXIT;
+    bool stuck_exit = stalled && !ended_on_mA;
+    if (!stuck_exit && ma_exit && !velocity_exit &&
+        ma_exit_settled(target_distance() < settle_error(xyPID) && std::fabs(current_a_odomPID.error) < settle_error(current_a_odomPID),
+                        stuck_passes() != entry_task_passes)) {
+      if (print_toggle) std::cout << "  XY: mA exit inside the big error windows, counted as settled\n";
+    } else if (stalled || ma_exit || velocity_exit) {
       interfered_scope.mark();
     }
 
@@ -1069,7 +1424,7 @@ void Drive::pid_wait() {
     // Moved-since-motion-start is judged against chain_sensor_start (set once in turn_set_internal()), not
     // this particular wait call -- see the DRIVE branch's comment above for why, and same JC-1 gap.
     SingleStuckWatch watch(turnPID, turnPID.error, std::fabs(drive_angle_get() - chain_sensor_start) > stuck_step(turnPID, STUCK_STEP_ANGLE_CAP),
-                           STUCK_STEP_ANGLE_CAP);
+                           STUCK_STEP_ANGLE_CAP, [this](int w) { return travel_stopped(mode == TURN_TO_POINT ? Travel::OdomHeading : Travel::Heading, w); });
     bool stalled = false;
     // Same concurrent-retarget guard as the DRIVE branch above.  turnPID.target is only ever rewritten by
     // turn_set_internal() (set_turn_pid.cpp) at the start of a new turn -- TURN_TO_POINT recomputes its own
@@ -1089,6 +1444,9 @@ void Drive::pid_wait() {
     // neither the settled check nor the stuck check resets. Stop here, same as the DRIVE branch's
     // matching flag and comment above.
     bool settled_via_stuck = false;
+    ExitGate turn_gate([this](int w) { return travel_stopped(mode == TURN_TO_POINT ? Travel::OdomHeading : Travel::Heading, w); },
+                       [this] { return travel_tracked(mode == TURN_TO_POINT ? Travel::OdomHeading : Travel::Heading); },
+                       turnPID.exit.velocity_exit_time != 0 || turnPID.exit.mA_timeout != 0);
     while (true) {
       while (turn_exit == RUNNING) {
         if (mode != mode_snapshot || turnPID.target_get() != turn_target) {
@@ -1099,10 +1457,13 @@ void Drive::pid_wait() {
         secondary_velocity_sensor_update(turnPID);
         // See the matching comment in the DRIVE branch above -- a slow (not stalled) turn must not be
         // ended by the velocity channel alone.
-        turn_exit = turn_exit != RUNNING ? turn_exit : without_velocity(turnPID.exit_condition(mA_exit_motors()));
-        if (turn_exit == RUNNING && watch.stuck(turnPID.error)) {
+        turn_exit = turn_exit != RUNNING ? turn_exit : without_velocity(gated_exit(turn_gate, turnPID, mA_exit_motors(), turnPID.error));
+        // Consulted on the pass the gate releases the exit too, see released_window_exit(). The loop only runs while turn_exit is RUNNING.
+        bool turn_released = released_window_exit(true, turn_exit);
+        if ((turn_exit == RUNNING || turn_released) && watch.stuck(turnPID.error)) {
+          if (turn_released) turn_exit = RUNNING;
           // Same settled carve-out as the DRIVE branch above.
-          bool settled = std::fabs(turnPID.error) < turnPID.exit.big_error && stuck_passes() != entry_task_passes;
+          bool settled = std::fabs(turnPID.error) < settle_error(turnPID) && stuck_passes() != entry_task_passes;
           stalled = !settled;
           settled_via_stuck = settled;
           if (print_toggle)
@@ -1138,6 +1499,11 @@ void Drive::pid_wait() {
         turn_exit = RUNNING;
       }
 
+      if (turn_gate.moving(turn_exit, turnPID)) {  // latched while stopped, moving since: back to the gate
+        turn_gate.hold(turn_exit);
+        turn_exit = RUNNING;
+      }
+
       if (turn_exit == RUNNING) {
         pros::delay(util::DELAY_TIME);
         continue;
@@ -1149,7 +1515,9 @@ void Drive::pid_wait() {
     // message already printed for this same pass.
     if (print_toggle && !stalled && turn_exit != RUNNING) std::cout << "  Turn: " << exit_to_string(turn_exit) << " Exit, error: " << turnPID.error << "\n";
 
-    if (stalled || turn_exit == mA_EXIT || turn_exit == VELOCITY_EXIT) {
+    if (!stalled && turn_exit == mA_EXIT && ma_exit_settled(std::fabs(turnPID.error) < settle_error(turnPID), stuck_passes() != entry_task_passes)) {
+      if (print_toggle) std::cout << "  Turn: mA exit inside the big error window, counted as settled\n";
+    } else if (stalled || turn_exit == mA_EXIT || turn_exit == VELOCITY_EXIT) {
       interfered_scope.mark();
     }
   }
@@ -1160,7 +1528,7 @@ void Drive::pid_wait() {
     // Moved-since-motion-start is judged against chain_sensor_start (set once in swing_set_internal()), not
     // this particular wait call -- see the DRIVE branch's comment above for why, and same JC-1 gap.
     SingleStuckWatch watch(swingPID, swingPID.error, std::fabs(drive_angle_get() - chain_sensor_start) > stuck_step(swingPID, STUCK_STEP_ANGLE_CAP),
-                           STUCK_STEP_ANGLE_CAP);
+                           STUCK_STEP_ANGLE_CAP, [this](int w) { return travel_stopped(Travel::Heading, w); });
     bool stalled = false;
     // Same concurrent-retarget guard as the DRIVE branch above -- swingPID.target is only rewritten by
     // swing_set_internal() (set_swing_pid.cpp) at the start of a new swing.  mode is also watched -- see the
@@ -1172,6 +1540,8 @@ void Drive::pid_wait() {
     // Same stuck-but-settled carve-out as the TURN branch above -- see its comment for why this must
     // stop here rather than fall into the recheck below.
     bool settled_via_stuck = false;
+    ExitGate swing_gate([this](int w) { return travel_stopped(Travel::Heading, w); }, [this] { return travel_tracked(Travel::Heading); },
+                        swingPID.exit.velocity_exit_time != 0 || swingPID.exit.mA_timeout != 0);
     while (true) {
       while (swing_exit == RUNNING) {
         if (mode != mode_snapshot || swingPID.target_get() != swing_target) {
@@ -1186,10 +1556,12 @@ void Drive::pid_wait() {
         // the held (non-swinging) side with its own PID output whenever swing_opposite_speed is 0 (the
         // default), so it can genuinely stall/over-current too (e.g. a defender pinning it while the
         // swinging side is unobstructed); checking only the swinging side's motors missed that entirely.
-        swing_exit = swing_exit != RUNNING ? swing_exit : without_velocity(swingPID.exit_condition(mA_exit_motors()));
-        if (swing_exit == RUNNING && watch.stuck(swingPID.error)) {
+        swing_exit = swing_exit != RUNNING ? swing_exit : without_velocity(gated_exit(swing_gate, swingPID, mA_exit_motors(), swingPID.error));
+        bool swing_released = released_window_exit(true, swing_exit);  // see the TURN branch above
+        if ((swing_exit == RUNNING || swing_released) && watch.stuck(swingPID.error)) {
+          if (swing_released) swing_exit = RUNNING;
           // Same settled carve-out as the DRIVE branch above.
-          bool settled = std::fabs(swingPID.error) < swingPID.exit.big_error && stuck_passes() != entry_task_passes;
+          bool settled = std::fabs(swingPID.error) < settle_error(swingPID) && stuck_passes() != entry_task_passes;
           stalled = !settled;
           settled_via_stuck = settled;
           if (print_toggle)
@@ -1210,6 +1582,11 @@ void Drive::pid_wait() {
         swing_exit = RUNNING;
       }
 
+      if (swing_gate.moving(swing_exit, swingPID)) {  // latched while stopped, moving since: back to the gate
+        swing_gate.hold(swing_exit);
+        swing_exit = RUNNING;
+      }
+
       if (swing_exit == RUNNING) {
         pros::delay(util::DELAY_TIME);
         continue;
@@ -1221,7 +1598,9 @@ void Drive::pid_wait() {
     // message already printed for this same pass.
     if (print_toggle && !stalled && swing_exit != RUNNING) std::cout << "  Swing: " << exit_to_string(swing_exit) << " Exit, error: " << swingPID.error << "\n";
 
-    if (stalled || swing_exit == mA_EXIT || swing_exit == VELOCITY_EXIT) {
+    if (!stalled && swing_exit == mA_EXIT && ma_exit_settled(std::fabs(swingPID.error) < settle_error(swingPID), stuck_passes() != entry_task_passes)) {
+      if (print_toggle) std::cout << "  Swing: mA exit inside the big error window, counted as settled\n";
+    } else if (stalled || swing_exit == mA_EXIT || swing_exit == VELOCITY_EXIT) {
       interfered_scope.mark();
     }
   }
@@ -1252,6 +1631,7 @@ void Drive::wait_until_drive(double target) {
   // mode that isn't even DRIVE/POINT_TO_POINT/PURE_PURSUIT (e.g. a real second pid_turn_set()) touches neither
   // leftPID/rightPID's target nor odom_target_start, so without this it would go unnoticed.
   e_mode mode_snapshot = mode;
+  const std::uint32_t entry_task_passes = stuck_passes();  // see pid_wait(): errors are only this motion's once the task has run
   bool odom_mode = is_odom;
   double left_target = leftPID.target_get();
   double right_target = rightPID.target_get();
@@ -1287,9 +1667,26 @@ void Drive::wait_until_drive(double target) {
   // Moved-since-motion-start is judged against l_start/r_start (this motion's own real start), not this
   // particular wait_until() call -- same reasoning as pid_wait()'s DRIVE branch above.
   SingleStuckWatch left_watch(leftPID, is_odom ? l_error : leftPID.error,
-                              std::fabs(drive_sensor_left() - l_start) > stuck_step(leftPID, STUCK_STEP_DISTANCE_CAP), STUCK_STEP_DISTANCE_CAP),
+                              std::fabs(drive_sensor_left() - l_start) > stuck_step(leftPID, STUCK_STEP_DISTANCE_CAP), STUCK_STEP_DISTANCE_CAP,
+                              [this](int w) { return travel_stopped(Travel::Left, w); }),
       right_watch(rightPID, is_odom ? r_error : rightPID.error, std::fabs(drive_sensor_right() - r_start) > stuck_step(rightPID, STUCK_STEP_DISTANCE_CAP),
-                  STUCK_STEP_DISTANCE_CAP);
+                  STUCK_STEP_DISTANCE_CAP, [this](int w) { return travel_stopped(Travel::Right, w); });
+
+  // Small and big exit only end the wait once the robot is also stopped, see ExitGate. An odom move strips its position exits below
+  // (leftPID/rightPID aim at a look ahead point there), so only a plain drive and the xy failsafe are gated.
+  ExitGate left_gate([this](int w) { return travel_stopped(Travel::Left, w); }, [this] { return travel_tracked(Travel::Left); },
+                     leftPID.exit.velocity_exit_time != 0 || leftPID.exit.mA_timeout != 0);
+  ExitGate right_gate([this](int w) { return travel_stopped(Travel::Right, w); }, [this] { return travel_tracked(Travel::Right); },
+                      rightPID.exit.velocity_exit_time != 0 || rightPID.exit.mA_timeout != 0);
+  // The xy gate's only backstop in this loop is left_watch / right_watch, which read leftPID's and rightPID's own exits (copies of xy's
+  // on an odom move). Unlike the odom waits' StuckWatch they do not fall back to the heading exits' window, so the gate is armed only
+  // when both of those watches are on, or a robot hunting about the target would be held for ever with nothing to end the wait.
+  // Likewise it waits on xy alone: nothing in this loop watches the heading, and a robot held in place and spun has one wheel making
+  // real progress toward the distance, so with the heading in the gate the wheel watch could not end the wait before that wheel got
+  // there (36 to 94 s at 6 to 8 deg/s). A gate holds an exit only for what a backstop here would catch.
+  bool xy_gate_armed =
+      (leftPID.exit.velocity_exit_time != 0 || leftPID.exit.mA_timeout != 0) && (rightPID.exit.velocity_exit_time != 0 || rightPID.exit.mA_timeout != 0);
+  ExitGate xy_gate([this](int w) { return travel_stopped(Travel::OdomXY, w); }, [this] { return travel_tracked(Travel::OdomXY); }, xy_gate_armed);
 
   // Whether this wait_until()'s own target IS (not just near) the motion's actual final target, not
   // some earlier waypoint the robot is meant to drive through. pid_wait()'s DRIVE branch already
@@ -1310,6 +1707,38 @@ void Drive::wait_until_drive(double target) {
   // for pid_wait_quick_chain(), which is why a chained checkpoint is inside it and reachable). See checkpoint_unreachable().
   double final_distance = left_target - l_start;
   bool unreachable = !is_odom && checkpoint_unreachable(0.0, final_distance, target);
+  // An odom move's leftPID/rightPID error is measured to a frozen look-ahead point, so "settled" is judged the way pid_wait()'s odom branch
+  // judges it on the path's last point: the robot is inside settle_error() of the motion's final target (odom_target_start, the last point a
+  // path was set with) in xy and, when the move has a heading, in angle, and ez_auto_task has run since this wait began. Anywhere but the last
+  // point nothing is settled: the robot has not got as far as the motion goes.
+  auto odom_settled = [&]() {
+    if (!is_odom) return false;
+    pose final_target;
+    bool on_last_point;
+    {
+      ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+      final_target = odom_target_start;
+      on_last_point = mode == POINT_TO_POINT || (mode == PURE_PURSUIT && pp_index == (int)pp_movements.size() - 1);
+    }
+    if (!on_last_point || stuck_passes() == entry_task_passes) return false;
+    bool has_angle = final_target.theta != ANGLE_NOT_SET;
+    return util::distance_to_point(final_target, odom_pose_get()) < settle_error(xyPID) &&
+           (!has_angle || std::fabs(current_a_odomPID.error) < settle_error(current_a_odomPID));
+  };
+  // Whether the checkpoint lies between where the robot came to rest along the move and the motion's final target (or behind where it
+  // came to rest, which it has then passed). An odom move has no end distance of its own, so "the target" is how far the robot still is from
+  // the final target, plus the settle error, which is also what a checkpoint given as the move's nominal distance can be off by.
+  auto odom_between = [&]() {
+    if (!is_odom) return true;
+    pose final_target;
+    {
+      ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+      final_target = odom_target_start;
+    }
+    double rest = ((drive_sensor_left() - l_start) + (drive_sensor_right() - r_start)) / 2.0;
+    double ahead = util::sgn(target) * (target - rest);
+    return ahead <= util::distance_to_point(final_target, odom_pose_get()) + settle_error(xyPID);
+  };
 
   while (true) {
     if (mode != mode_snapshot) {
@@ -1350,10 +1779,16 @@ void Drive::wait_until_drive(double target) {
         // turn-bias pivot up to its own fallback; a genuinely slow, healthy, straight cruise still
         // needs this filter. SingleStuckWatch (via l_error/r_error below) remains the real stall
         // backstop.
-        exit_output xy_exit = without_velocity(xyPID.exit_condition(mA_exit_motors()));
+        exit_output xy_exit = without_velocity(gated_exit(xy_gate, xyPID, mA_exit_motors(), xyPID.error));
         if (xy_exit != RUNNING) {
           if (print_toggle) std::cout << "  XY: " << exit_to_string(xy_exit) << " Wait Until Exit Failsafe, the move ended before reaching " << target << "\n";
-          if (xy_exit == mA_EXIT || xy_exit == VELOCITY_EXIT) interfered_scope.mark();
+          // An mA exit inside big_error of the final target is a settle (see ma_exit_settled()), anything else that is not a window exit is not
+          bool ma_settles = xy_exit == mA_EXIT && ma_exit_settled(odom_settled(), true);
+          if (ma_settles) {
+            if (print_toggle) std::cout << "  XY: mA exit inside the big error windows, counted as settled" << std::endl;
+          } else if (xy_exit == mA_EXIT || xy_exit == VELOCITY_EXIT) {
+            interfered_scope.mark();
+          }
           return;
         }
       }
@@ -1369,31 +1804,38 @@ void Drive::wait_until_drive(double target) {
         // for a genuinely slow, healthy cruise everywhere else in this file is exactly as blind to gearing
         // here, so it still needs without_velocity() on top, same as every other site; mA_EXIT is left
         // through unfiltered, since over-current is real regardless of target.
+        bool left_was_running = left_exit == RUNNING;
+        bool right_was_running = right_exit == RUNNING;
         if (left_exit == RUNNING)
           left_exit = without_velocity(is_odom ? without_position_exits(leftPID.exit_condition(mA_exit_motors(true, false)))
-                                               : leftPID.exit_condition(mA_exit_motors(true, false)));
+                                               : gated_exit(left_gate, leftPID, mA_exit_motors(true, false), leftPID.error));
         if (right_exit == RUNNING)
           right_exit = without_velocity(is_odom ? without_position_exits(rightPID.exit_condition(mA_exit_motors(false, true)))
-                                                : rightPID.exit_condition(mA_exit_motors(false, true)));
-        bool left_stuck = left_exit == RUNNING && left_watch.stuck(is_odom ? l_error : leftPID.error);
-        bool right_stuck = right_exit == RUNNING && right_watch.stuck(is_odom ? r_error : rightPID.error);
+                                                : gated_exit(right_gate, rightPID, mA_exit_motors(false, true), rightPID.error));
+        // Consulted on the pass the gate releases a side's exit too, see released_window_exit() and pid_wait()'s DRIVE branch
+        bool left_released = released_window_exit(left_was_running, left_exit);
+        bool right_released = released_window_exit(right_was_running, right_exit);
+        bool left_stuck = (left_exit == RUNNING || left_released) && left_watch.stuck(is_odom ? l_error : leftPID.error);
+        bool right_stuck = (right_exit == RUNNING || right_released) && right_watch.stuck(is_odom ? r_error : rightPID.error);
+        exit_output left_now = left_released && left_stuck ? RUNNING : left_exit;
+        exit_output right_now = right_released && right_stuck ? RUNNING : right_exit;
         // See the matching comment in pid_wait()'s DRIVE branch -- both sides exiting normally on the same pass
         // must not read as stuck.
-        if ((left_exit == RUNNING || right_exit == RUNNING) && (left_exit != RUNNING || left_stuck) && (right_exit != RUNNING || right_stuck)) {
+        if ((left_now == RUNNING || right_now == RUNNING) && (left_now != RUNNING || left_stuck) && (right_now != RUNNING || right_stuck)) {
+          left_exit = left_now;
+          right_exit = right_now;
           // Same settled carve-out as pid_wait()'s DRIVE branch, gated to only apply when this
           // wait_until()'s target really is the motion's final target -- see at_final_target's comment.
-          bool settled = false;
-          if (at_final_target || unreachable) {
-            // A side that already latched an exit is only trusted as settled here if its live error
-            // is still inside the window that exit means -- a side that latched early and has since
-            // been shoved or pinned off target must not count as settled just because it once exited
-            // cleanly (same rule as the recheck in the `else` branch below, applied here to the
-            // stuck-detected path instead).
-            bool left_settled = std::fabs(leftPID.error) < leftPID.exit.big_error;
-            bool right_settled = std::fabs(rightPID.error) < rightPID.exit.big_error;
-            settled = left_settled && right_settled;
-          }
-          CheckpointEnd end = checkpoint_end_on_stuck(at_final_target, unreachable, settled);
+          // A side that already latched an exit is only trusted as settled here if its live error
+          // is still inside the window that exit means -- a side that latched early and has since
+          // been shoved or pinned off target must not count as settled just because it once exited
+          // cleanly (same rule as the recheck in the else branch below, applied here to the
+          // stuck-detected path instead). An odom move has no look ahead free error to judge this by.
+          bool left_settled = std::fabs(leftPID.error) < settle_error(leftPID);
+          bool right_settled = std::fabs(rightPID.error) < settle_error(rightPID);
+          bool settled = is_odom ? odom_settled() : left_settled && right_settled && stuck_passes() != entry_task_passes;
+          CheckpointEnd end = checkpoint_end(settled, at_final_target, unreachable, is_odom ? INFINITY : std::fmax(std::fabs(l_error), std::fabs(r_error)),
+                                             leftPID.exit.small_error, odom_between());
           bool stalled = end == CheckpointEnd::Interfered;
           if (print_toggle)
             std::cout << "  Drive: " << (stalled ? "Stuck" : "Stuck, but stopped inside the big error windows, counted as settled")
@@ -1437,6 +1879,16 @@ void Drive::wait_until_drive(double target) {
           right_exit = RUNNING;
         }
 
+        // Latched while stopped, moving since: back to the gate (see pid_wait()'s DRIVE branch)
+        if (left_gate.moving(left_exit, leftPID)) {
+          left_gate.hold(left_exit);
+          left_exit = RUNNING;
+        }
+        if (right_gate.moving(right_exit, rightPID)) {
+          right_gate.hold(right_exit);
+          right_exit = RUNNING;
+        }
+
         if (left_exit == RUNNING || right_exit == RUNNING) {
           // Un-latched -- fall through to the shared delay below and keep waiting instead of
           // returning on a stale result.
@@ -1452,16 +1904,25 @@ void Drive::wait_until_drive(double target) {
           // at_final_target's comment and WAIT_BEHAVIOR_SPEC.md's settled-exemption entry. A
           // checkpoint short of the final target that the robot stopped short of past this point is
           // a real early exit, not a settle.
-          CheckpointEnd end = checkpoint_end_on_window_exit(at_final_target, unreachable,
-                                                            is_odom ? INFINITY : std::fmax(std::fabs(l_error), std::fabs(r_error)), leftPID.exit.small_error);
+          // A window exit is a settle by definition (the recheck above found both sides inside the window it exited through). An mA exit is
+          // one only inside big_error of the final target (see ma_exit_settled()); a velocity exit never is.
+          bool mA_exit = left_exit == mA_EXIT || right_exit == mA_EXIT;
+          bool velocity_exit = left_exit == VELOCITY_EXIT || right_exit == VELOCITY_EXIT;
+          bool inside_big = is_odom ? odom_settled() : std::fabs(leftPID.error) < settle_error(leftPID) && std::fabs(rightPID.error) < settle_error(rightPID);
+          bool settled = !velocity_exit && (!mA_exit || ma_exit_settled(inside_big, stuck_passes() != entry_task_passes));
+          CheckpointEnd end = checkpoint_end(settled, at_final_target, unreachable, is_odom ? INFINITY : std::fmax(std::fabs(l_error), std::fabs(r_error)),
+                                             leftPID.exit.small_error, odom_between());
           bool stalled = end == CheckpointEnd::Interfered;
-          if (left_exit == mA_EXIT || left_exit == VELOCITY_EXIT || right_exit == mA_EXIT || right_exit == VELOCITY_EXIT) {
-            stalled = true;
-          } else if (end == CheckpointEnd::Unreachable) {
+          if (mA_exit && !stalled && print_toggle) std::cout << "  Drive: mA exit inside the big error windows, counted as settled" << std::endl;
+          if (end == CheckpointEnd::Unreachable) {
             print_unreachable_checkpoint(target, final_distance);
           } else if (end == CheckpointEnd::ReachedWithinSmallError && print_toggle) {
             printf("  Drive Wait Until Exit Success, within small_error of the checkpoint. Triggered at: L,R(%.2f, %.2f)  Target: L,R(%.2f, %.2f)\n",
                    drive_sensor_left() - l_start, drive_sensor_right() - r_start, target, target);
+          } else if (end == CheckpointEnd::SettledShortOfCheckpoint && print_toggle) {
+            printf(
+                "  Drive Wait Until Exit Success, settled inside the big error windows short of the checkpoint. Triggered at: L,R(%.2f, %.2f)  Target: L,R(%.2f, %.2f)\n",
+                drive_sensor_left() - l_start, drive_sensor_right() - r_start, target, target);
           }
           if (stalled) interfered_scope.mark();
           return;
@@ -1551,6 +2012,7 @@ void Drive::wait_until_turn_swing_internal(double target) {
   // otherwise be captured as this call's own baseline instead of being noticed -- the same hazard
   // pid_wait_until_index_started() guards against for its own settle delay (see its comment).
   e_mode mode_snapshot = mode;
+  const std::uint32_t entry_task_passes = stuck_passes();  // see pid_wait(): errors are only this motion's once the task has run
   double turn_target = turnPID.target_get();
   double swing_target = swingPID.target_get();
   // See pid_wait()'s matching comment on InterferedScope -- opened here, alongside the snapshots above and
@@ -1619,8 +2081,14 @@ void Drive::wait_until_turn_swing_internal(double target) {
   // wait_until() call, the same as those two branches.
   bool already_moved =
       std::fabs(drive_angle_get() - chain_sensor_start) > std::max(stuck_step(turnPID, STUCK_STEP_ANGLE_CAP), stuck_step(swingPID, STUCK_STEP_ANGLE_CAP));
-  SingleStuckWatch turn_watch(turnPID, turnPID.error, already_moved, STUCK_STEP_ANGLE_CAP);
-  SingleStuckWatch swing_watch(swingPID, swingPID.error, already_moved, STUCK_STEP_ANGLE_CAP);
+  SingleStuckWatch turn_watch(turnPID, turnPID.error, already_moved, STUCK_STEP_ANGLE_CAP,
+                              [this](int w) { return travel_stopped(mode == TURN_TO_POINT ? Travel::OdomHeading : Travel::Heading, w); });
+  SingleStuckWatch swing_watch(swingPID, swingPID.error, already_moved, STUCK_STEP_ANGLE_CAP, [this](int w) { return travel_stopped(Travel::Heading, w); });
+  ExitGate turn_gate([this](int w) { return travel_stopped(mode == TURN_TO_POINT ? Travel::OdomHeading : Travel::Heading, w); },
+                     [this] { return travel_tracked(mode == TURN_TO_POINT ? Travel::OdomHeading : Travel::Heading); },
+                     turnPID.exit.velocity_exit_time != 0 || turnPID.exit.mA_timeout != 0);
+  ExitGate swing_gate([this](int w) { return travel_stopped(Travel::Heading, w); }, [this] { return travel_tracked(Travel::Heading); },
+                      swingPID.exit.velocity_exit_time != 0 || swingPID.exit.mA_timeout != 0);
 
   while (true) {
     if (mode != mode_snapshot || turnPID.target_get() != turn_target || swingPID.target_get() != swing_target) {
@@ -1639,12 +2107,16 @@ void Drive::wait_until_turn_swing_internal(double target) {
           secondary_velocity_sensor_update(turnPID);
           // See the matching comment in pid_wait()'s DRIVE branch -- a slow (not stalled) turn must not
           // be ended by the velocity channel alone.
-          turn_exit = turn_exit != RUNNING ? turn_exit : without_velocity(turnPID.exit_condition(mA_exit_motors()));
-          if (turn_exit == RUNNING && turn_watch.stuck(turnPID.error)) {
+          turn_exit = turn_exit != RUNNING ? turn_exit : without_velocity(gated_exit(turn_gate, turnPID, mA_exit_motors(), turnPID.error));
+          // Consulted on the pass the gate releases the exit too, see released_window_exit(). This branch only runs while it is RUNNING.
+          bool turn_released = released_window_exit(true, turn_exit);
+          if ((turn_exit == RUNNING || turn_released) && turn_watch.stuck(turnPID.error)) {
+            if (turn_released) turn_exit = RUNNING;
             // Same settled carve-out as pid_wait()'s TURN branch, gated to only apply when this
             // wait_until()'s target really is the motion's final target -- see turn_at_final_target's
             // comment above.
-            CheckpointEnd end = checkpoint_end_on_stuck(turn_at_final_target, turn_unreachable, std::fabs(turnPID.error) < turnPID.exit.big_error);
+            bool settled = std::fabs(turnPID.error) < settle_error(turnPID) && stuck_passes() != entry_task_passes;
+            CheckpointEnd end = checkpoint_end(settled, turn_at_final_target, turn_unreachable, std::fabs(g_error), turnPID.exit.small_error, true);
             bool stalled = end == CheckpointEnd::Interfered;
             if (print_toggle)
               std::cout << "  Turn: " << (stalled ? "Stuck" : "Stuck, but stopped inside the big error window, counted as settled")
@@ -1667,6 +2139,11 @@ void Drive::wait_until_turn_swing_internal(double target) {
             turn_exit = RUNNING;
           }
 
+          if (turn_gate.moving(turn_exit, turnPID)) {  // latched while stopped, moving since: back to the gate
+            turn_gate.hold(turn_exit);
+            turn_exit = RUNNING;
+          }
+
           if (turn_exit != RUNNING) {
             if (print_toggle)
               std::cout << "  Turn: " << exit_to_string(turn_exit) << " Wait Until Exit Failsafe, triggered at " << drive_angle_get() << " instead of "
@@ -1677,12 +2154,18 @@ void Drive::wait_until_turn_swing_internal(double target) {
             // BIG_EXIT latch only ends this without interfered=true when this wait_until()'s own
             // target really is the motion's final target -- see turn_at_final_target's own comment
             // for TURN_TO_POINT's rule.
-            CheckpointEnd end = checkpoint_end_on_window_exit(turn_at_final_target, turn_unreachable, std::fabs(g_error), turnPID.exit.small_error);
+            // A window exit is a settle by definition; an mA exit only inside big_error of the final target (see ma_exit_settled())
+            bool mA_exit = turn_exit == mA_EXIT;
+            bool settled = turn_exit != VELOCITY_EXIT &&
+                           (!mA_exit || ma_exit_settled(std::fabs(turnPID.error) < settle_error(turnPID), stuck_passes() != entry_task_passes));
+            CheckpointEnd end = checkpoint_end(settled, turn_at_final_target, turn_unreachable, std::fabs(g_error), turnPID.exit.small_error, true);
             bool stalled = end == CheckpointEnd::Interfered;
-            if (turn_exit == mA_EXIT || turn_exit == VELOCITY_EXIT) {
-              stalled = true;
-            } else if (end == CheckpointEnd::Unreachable) {
+            if (mA_exit && !stalled && print_toggle) std::cout << "  Turn: mA exit inside the big error window, counted as settled" << std::endl;
+            if (end == CheckpointEnd::Unreachable) {
               print_unreachable_checkpoint(target, turn_target);
+            } else if (end == CheckpointEnd::SettledShortOfCheckpoint && print_toggle) {
+              printf("  Turn Wait Until Exit Success, settled inside the big error window short of the checkpoint. Triggered at %.2f.  Target: %.2f\n",
+                     drive_angle_get(), target);
             } else if (end == CheckpointEnd::ReachedWithinSmallError && print_toggle) {
               printf("  Turn Wait Until Exit Success, within small_error of the checkpoint. Triggered at %.2f.  Target: %.2f\n", drive_angle_get(), target);
             }
@@ -1709,12 +2192,15 @@ void Drive::wait_until_turn_swing_internal(double target) {
           // See the matching comment in pid_wait()'s DRIVE branch -- a slow (not stalled) swing must not
           // be ended by the velocity channel alone. Polls both sides' motors, not just the actively-swinging
           // side's -- see pid_wait()'s SWING branch for why the held side needs checking too.
-          swing_exit = swing_exit != RUNNING ? swing_exit : without_velocity(swingPID.exit_condition(mA_exit_motors()));
-          if (swing_exit == RUNNING && swing_watch.stuck(swingPID.error)) {
+          swing_exit = swing_exit != RUNNING ? swing_exit : without_velocity(gated_exit(swing_gate, swingPID, mA_exit_motors(), swingPID.error));
+          bool swing_released = released_window_exit(true, swing_exit);  // see the TURN branch above
+          if ((swing_exit == RUNNING || swing_released) && swing_watch.stuck(swingPID.error)) {
+            if (swing_released) swing_exit = RUNNING;
             // Same settled carve-out as pid_wait()'s SWING branch, gated to only apply when this
             // wait_until()'s target really is the motion's final target -- see swing_at_final_target's
             // comment above.
-            CheckpointEnd end = checkpoint_end_on_stuck(swing_at_final_target, swing_unreachable, std::fabs(swingPID.error) < swingPID.exit.big_error);
+            bool settled = std::fabs(swingPID.error) < settle_error(swingPID) && stuck_passes() != entry_task_passes;
+            CheckpointEnd end = checkpoint_end(settled, swing_at_final_target, swing_unreachable, std::fabs(g_error), swingPID.exit.small_error, true);
             bool stalled = end == CheckpointEnd::Interfered;
             if (print_toggle)
               std::cout << "  Swing: " << (stalled ? "Stuck" : "Stuck, but stopped inside the big error window, counted as settled")
@@ -1733,17 +2219,28 @@ void Drive::wait_until_turn_swing_internal(double target) {
             swing_exit = RUNNING;
           }
 
+          if (swing_gate.moving(swing_exit, swingPID)) {  // latched while stopped, moving since: back to the gate
+            swing_gate.hold(swing_exit);
+            swing_exit = RUNNING;
+          }
+
           if (swing_exit != RUNNING) {
             if (print_toggle)
               std::cout << "  Swing: " << exit_to_string(swing_exit) << " Wait Until Exit Failsafe, triggered at " << drive_angle_get() << " instead of "
                         << target << "\n";
 
-            CheckpointEnd end = checkpoint_end_on_window_exit(swing_at_final_target, swing_unreachable, std::fabs(g_error), swingPID.exit.small_error);
+            // A window exit is a settle by definition; an mA exit only inside big_error of the final target (see ma_exit_settled())
+            bool mA_exit = swing_exit == mA_EXIT;
+            bool settled = swing_exit != VELOCITY_EXIT &&
+                           (!mA_exit || ma_exit_settled(std::fabs(swingPID.error) < settle_error(swingPID), stuck_passes() != entry_task_passes));
+            CheckpointEnd end = checkpoint_end(settled, swing_at_final_target, swing_unreachable, std::fabs(g_error), swingPID.exit.small_error, true);
             bool stalled = end == CheckpointEnd::Interfered;
-            if (swing_exit == mA_EXIT || swing_exit == VELOCITY_EXIT) {
-              stalled = true;
-            } else if (end == CheckpointEnd::Unreachable) {
+            if (mA_exit && !stalled && print_toggle) std::cout << "  Swing: mA exit inside the big error window, counted as settled" << std::endl;
+            if (end == CheckpointEnd::Unreachable) {
               print_unreachable_checkpoint(target, swing_target);
+            } else if (end == CheckpointEnd::SettledShortOfCheckpoint && print_toggle) {
+              printf("  Swing Wait Until Exit Success, settled inside the big error window short of the checkpoint. Triggered at %.2f.  Target: %.2f\n",
+                     drive_angle_get(), target);
             } else if (end == CheckpointEnd::ReachedWithinSmallError && print_toggle) {
               printf("  Swing Wait Until Exit Success, within small_error of the checkpoint. Triggered at %.2f. Target: %.2f\n", drive_angle_get(), target);
             }
@@ -1813,6 +2310,10 @@ void Drive::pid_wait_until_point(pose target) {
   // See pid_wait()'s matching comment on InterferedScope -- opened here, alongside the snapshot above and
   // before this call's own leading settle delay, for the same reason.
   InterferedScope interfered_scope(*this);
+  // ez_auto_task's pass count as of this call, taken BEFORE the leading settle delay (as pid_wait() does), so the pass that delay lets
+  // run counts as one that ran since this wait began. Taken after it, a wait on a motion that had already settled never saw a pass
+  // and refused its own settled verdict (see pid_wait(): errors are only this motion's once the task has run).
+  const std::uint32_t entry_task_passes = stuck_passes();
 
   pros::delay(10);
 
@@ -1832,11 +2333,57 @@ void Drive::pid_wait_until_point(pose target) {
   }
 
   int xy_sgn = util::sgn(is_past_target(target, odom_pose_get()));
+  // Whether this checkpoint IS the path's last point (the motion's own final target), and where that is: only then can a robot that
+  // stopped inside both big errors be called settled, and mA counts as a settle against the final target, not a point on the way
+  // odom_target_start is the last point the motion was set with, for a path and a point to point move alike. The last entry of
+  // pp_movements is not: pid_wait_quick_chain() pushes a point past the checkpoint onto it, and a robot resting on the checkpoint is
+  // outside big_error of that pushed point, so a chain wait entered on a motion that had already settled read interfered.
+  pose final_target = target;
+  {
+    ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+    final_target = odom_target_start;
+  }
+  bool at_final_target = std::fabs(target.x - final_target.x) < FINAL_TARGET_TOLERANCE && std::fabs(target.y - final_target.y) < FINAL_TARGET_TOLERANCE;
+  // After pid_wait_quick_chain() the PID drives to a point pushed past the final point, and a robot that came to rest there is as
+  // settled as one resting on the final point: the exits it is gated on are measured to the pushed point. -1 when nothing was pushed.
+  // A point to point move keeps the pushed point in odom_target and the point it was set with in odom_target_start.
+  // A point to point move's pushed point only counts when it is beyond the final point along the way the move arrives (from where it
+  // started to the final point). The push goes along the final point's own angle when it has one, and a point to point move does not
+  // steer by that angle, so it can land between the robot and the final point: a robot held up to big_error + 3 in short of the final
+  // point would then be within big_error of it and read settled. Pure pursuit is left as it was: a boomerang that ends on an angle
+  // pointing back at where it started is driven to that early point, and a robot resting there has arrived.
+  auto chain_end_distance = [&]() {
+    ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+    if (mode == POINT_TO_POINT) {
+      if (odom_target.x == odom_target_start.x && odom_target.y == odom_target_start.y) return -1.0;
+      bool beyond = (odom_target.x - odom_target_start.x) * (odom_target_start.x - odom_second_to_last.x) +
+                        (odom_target.y - odom_target_start.y) * (odom_target_start.y - odom_second_to_last.y) >
+                    0.0;
+      return beyond ? util::distance_to_point(odom_target, odom_pose_get()) : -1.0;
+    }
+    if (mode != PURE_PURSUIT || pp_movements.empty() || injected_pp_index.empty() || (int)pp_movements.size() - 1 <= injected_pp_index.back()) return -1.0;
+    return util::distance_to_point(pp_movements.back().target, odom_pose_get());
+  };
+  auto settle_distance = [&]() {
+    double chain_end = chain_end_distance();
+    double d = util::distance_to_point(final_target, odom_pose_get());
+    return chain_end < 0 ? d : std::fmin(d, chain_end);
+  };
+  auto inside_both_big = [&]() {
+    return settle_distance() < settle_error(xyPID) && std::fabs(current_a_odomPID.error) < settle_error(current_a_odomPID) &&
+           stuck_passes() != entry_task_passes;
+  };
 
   exit_output xy_exit = RUNNING;
   exit_output a_exit = RUNNING;
   StuckWatch watch(xyPID, current_a_odomPID, pp_index, util::distance_to_point(target, odom_pose_get()), util::distance_to_point(odom_start, odom_pose_get()),
-                   std::fabs(odom_theta_get() - odom_start.theta));
+                   std::fabs(odom_theta_get() - odom_start.theta),
+                   [this](int w) { return travel_stopped(Travel::OdomXY, w) && travel_stopped(Travel::OdomHeading, w); });
+  auto odom_stopped = [this](int w) { return travel_stopped(Travel::OdomXY, w) && travel_stopped(Travel::OdomHeading, w); };
+  auto odom_tracked = [this] { return travel_tracked(Travel::OdomXY) && travel_tracked(Travel::OdomHeading); };
+  bool odom_gate_armed = team_stuck_window(xyPID, current_a_odomPID) != 0;
+  ExitGate xy_gate(odom_stopped, odom_tracked, odom_gate_armed);
+  ExitGate a_gate(odom_stopped, odom_tracked, odom_gate_armed);
 
   // Whether pure pursuit is still before its last point right now -- see pid_wait()'s own matching comment
   // (on the pre-last-point loop in its odom branch) for why xy's window exits mean nothing there: before the
@@ -1883,7 +2430,7 @@ void Drive::pid_wait_until_point(pose target) {
         }
       }
       PID::MATimerSnapshot xy_mA_snapshot = xyPID.mA_timer_snapshot();
-      exit_output xy_pass = xyPID.exit_condition(xy_motors);
+      exit_output xy_pass = xy_before_last_point ? xyPID.exit_condition(xy_motors) : gated_exit(xy_gate, xyPID, xy_motors, xyPID.error);
       if (xy_before_last_point) {
         if (xy_mA_tracked && xy_over_current && (xy_pass == SMALL_EXIT || xy_pass == BIG_EXIT || xy_pass == VELOCITY_EXIT))
           xyPID.mA_timer_restore_and_credit(xy_mA_snapshot);
@@ -1892,11 +2439,20 @@ void Drive::pid_wait_until_point(pose target) {
         xy_exit = without_velocity(xy_pass);
       }
     }
-    a_exit = a_exit != RUNNING ? a_exit : without_velocity(current_a_odomPID.exit_condition(mA_exit_motors()));
+    a_exit = a_exit != RUNNING ? a_exit : without_velocity(gated_exit(a_gate, current_a_odomPID, mA_exit_motors(), current_a_odomPID.error));
 
     // Same stuck check as pid_wait(), for a robot that is stuck but moving, which the exits above miss
     if (watch.stuck(pp_index, util::distance_to_point(target, odom_pose_get()), xyPID.error, current_a_odomPID.error,
-                    util::distance_to_point(odom_start, odom_pose_get()), std::fabs(odom_theta_get() - odom_start.theta))) {
+                    util::distance_to_point(odom_start, odom_pose_get()), std::fabs(odom_theta_get() - odom_start.theta),
+                    at_final_target ? settle_distance() : -1.0)) {
+      // Stopped inside both big errors of the final target is a settle; at the final target that is a clean finish, and a mid path point
+      // the robot is within the xy small_error of counts as reached. Anything else is a real stall.
+      CheckpointEnd end =
+          checkpoint_end(inside_both_big(), at_final_target, false, util::distance_to_point(target, odom_pose_get()), xyPID.exit.small_error, false);
+      if (end != CheckpointEnd::Interfered) {
+        if (print_toggle) std::cout << "  XY: Stuck, but stopped inside the big error windows, counted as settled" << std::endl;
+        return;
+      }
       if (print_toggle) std::cout << "  Stuck before reaching (" << target.x << ", " << target.y << "), at (" << odom_x_get() << ", " << odom_y_get() << ")\n";
       interfered_scope.mark();
       return;
@@ -1921,6 +2477,15 @@ void Drive::pid_wait_until_point(pose target) {
         a_exit = RUNNING;
       else if (a_exit == BIG_EXIT && std::fabs(current_a_odomPID.error) >= current_a_odomPID.exit.big_error)
         a_exit = RUNNING;
+      // Latched while stopped, moving since: back to the gate
+      if (xy_gate.moving(xy_exit, xyPID)) {
+        xy_gate.hold(xy_exit);
+        xy_exit = RUNNING;
+      }
+      if (a_gate.moving(a_exit, current_a_odomPID)) {
+        a_gate.hold(a_exit);
+        a_exit = RUNNING;
+      }
     }
 
     if (xy_exit != RUNNING && a_exit != RUNNING) {
@@ -1930,7 +2495,15 @@ void Drive::pid_wait_until_point(pose target) {
         xyPID.timers_reset();
         current_a_odomPID.timers_reset();
       }
-      if (xy_exit == mA_EXIT || xy_exit == VELOCITY_EXIT || a_exit == mA_EXIT || a_exit == VELOCITY_EXIT) {
+      bool mA_exit = xy_exit == mA_EXIT || a_exit == mA_EXIT;
+      bool velocity_exit = xy_exit == VELOCITY_EXIT || a_exit == VELOCITY_EXIT;
+      // An mA exit inside both big errors of the final target is a settle (see ma_exit_settled()); at the path's last point that is clean,
+      // on the way it counts only when the robot is within the xy small_error of the point
+      CheckpointEnd end = checkpoint_end(!velocity_exit && (!mA_exit || ma_exit_settled(inside_both_big(), true)), at_final_target, false,
+                                         util::distance_to_point(target, odom_pose_get()), xyPID.exit.small_error, false);
+      if (mA_exit && end != CheckpointEnd::Interfered) {
+        if (print_toggle) std::cout << "  XY: mA exit inside the big error windows, counted as settled" << std::endl;
+      } else if (mA_exit || velocity_exit) {
         interfered_scope.mark();
       }
       return;
@@ -2020,7 +2593,10 @@ void Drive::pid_wait_until_index_started(int index) {
     return pp_index < (int)pp_movements.size() ? util::distance_to_point(pp_movements[pp_index].target, odom_pose_get()) : 0.0;
   };
   StuckWatch watch(xyPID, current_a_odomPID, pp_index, point_distance(), util::distance_to_point(odom_start, odom_pose_get()),
-                   std::fabs(odom_theta_get() - odom_start.theta));
+                   std::fabs(odom_theta_get() - odom_start.theta),
+                   [this](int w) { return travel_stopped(Travel::OdomXY, w) && travel_stopped(Travel::OdomHeading, w); });
+  ExitGate a_gate([this](int w) { return travel_stopped(Travel::OdomXY, w) && travel_stopped(Travel::OdomHeading, w); },
+                  [this] { return travel_tracked(Travel::OdomXY) && travel_tracked(Travel::OdomHeading); }, team_stuck_window(xyPID, current_a_odomPID) != 0);
 
   // Same concurrent-retarget guard as pid_wait()'s odom branch -- this function had none, unlike every
   // other public wait in this file. A concurrent pid_odom_*_set() from another task resets pp_index to 0
@@ -2069,7 +2645,7 @@ void Drive::pid_wait_until_index_started(int index) {
         xyPID.mA_timer_restore_and_credit(xy_mA_snapshot);
       if (xy_pass == mA_EXIT) xy_exit = mA_EXIT;
     }
-    a_exit = a_exit != RUNNING ? a_exit : without_velocity(current_a_odomPID.exit_condition(mA_exit_motors()));
+    a_exit = a_exit != RUNNING ? a_exit : without_velocity(gated_exit(a_gate, current_a_odomPID, mA_exit_motors(), current_a_odomPID.error));
 
     // Same stuck check as pid_wait(), for a robot that is stuck but moving, which the exits above miss
     if (watch.stuck(pp_index, point_distance(), xyPID.error, current_a_odomPID.error, util::distance_to_point(odom_start, odom_pose_get()),
@@ -2093,6 +2669,10 @@ void Drive::pid_wait_until_index_started(int index) {
         a_exit = RUNNING;
       else if (a_exit == BIG_EXIT && std::fabs(current_a_odomPID.error) >= current_a_odomPID.exit.big_error)
         a_exit = RUNNING;
+      if (a_gate.moving(a_exit, current_a_odomPID)) {  // latched while stopped, moving since: back to the gate
+        a_gate.hold(a_exit);
+        a_exit = RUNNING;
+      }
     }
 
     if (xy_exit != RUNNING && a_exit != RUNNING) {

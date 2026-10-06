@@ -145,7 +145,8 @@ TEST_CASE("pid_wait_until() DRIVE: settling short of a genuine intermediate wayp
 // uses, just waited on with a different wait_until() target. That isolates the one thing this
 // test is actually about (does the gate correctly tell 47 apart from 48) from any difference in
 // how the settle itself is scripted.
-TEST_CASE("pid_wait_until() DRIVE: a waypoint close to, but not equal to, the final target still returns interfered=true") {
+TEST_CASE(
+    "pid_wait_until() DRIVE: a waypoint close to, but not equal to, the final target returns interfered=false when the robot settles inside big_error (the checkpoint is between there and the target)") {
   Drive chassis = make_chassis();
   chassis.pid_print_toggle(false);
   chassis.pid_drive_exit_condition_set(2000, 1.0, 250, 3.0, 500, 500);
@@ -154,7 +155,10 @@ TEST_CASE("pid_wait_until() DRIVE: a waypoint close to, but not equal to, the fi
   Outcome o = run_wait_until(chassis, hovering_settled_drive, 400, 47.0);
   MESSAGE("returned=" << o.returned << " passes=" << o.passes << " interfered=" << o.interfered);
   CHECK(o.returned);
-  CHECK(o.interfered);  // 47 != 48 -- not the final target, gate must not exempt this
+  // Rewritten for the one rule for "finished" (checkpoint_end() in exit_conditions.cpp): the robot settled inside big_error of the
+  // motion's final target with this checkpoint between where it rested and that target, so the checkpoint counts as reached, the way
+  // pid_wait() on the same motion says clean. This used to read interfered; outside big_error it still does (see test_exit_gate_verdicts.cpp).
+  CHECK_FALSE(o.interfered);  // 47 != 48 -- not the final target, gate must not exempt this
 }
 
 // Float tolerance doesn't make the gate flaky in the OTHER direction either: a target that's
