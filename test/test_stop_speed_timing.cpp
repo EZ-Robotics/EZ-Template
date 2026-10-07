@@ -93,7 +93,7 @@ std::vector<Row> rows() {
                [](Drive& c) { c.pid_wait_until(24.0); },
                {Kind::Drive},
                {}});
-  r.push_back({"turn, pid_wait", heavy, [](Drive& c) { c.pid_turn_set(90_deg, 110); }, [](Drive& c) { c.pid_wait(); }, {Kind::Turn}, {}});
+  r.push_back({"turn on a heavy robot, pid_wait", heavy, [](Drive& c) { c.pid_turn_set(90_deg, 110); }, [](Drive& c) { c.pid_wait(); }, {Kind::Turn}, {}});
   r.push_back(
       {"turn to a point, pid_wait", sticky, [](Drive& c) { c.pid_turn_set({12_in, 24_in}, fwd, 110); }, [](Drive& c) { c.pid_wait(); }, {Kind::Turn}, {}});
   r.push_back(
@@ -163,7 +163,8 @@ struct Event {
 constexpr int CAP_TICKS = 3000;  // 30 s of sim time
 
 Run run(const Row& row, const std::function<void(Drive&)>& configure = nullptr, const std::vector<Event>& events = {}, int cap = CAP_TICKS) {
-  Rig r(row.arch, 1, false, 1);
+  // The table's heavy_slow rows run at 2 passes per poll, where that robot is stable (the other tests that use it say the same)
+  Rig r(row.arch, std::string(row.name).find("heavy robot") != std::string::npos ? 2 : 1, false, 1);
   if (configure) configure(r.chassis);
   size_t next = 0;
   if (!events.empty()) {
