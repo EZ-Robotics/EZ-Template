@@ -90,19 +90,21 @@ TEST_CASE("pid_wait does not hang when both axes oscillate across their exit win
   configure(chassis);
   start_path(chassis);
 
-  // 500 is generous: StuckWatch's own grace (1000ms) plus window (500ms) puts its earliest possible
+  // 1000 is generous: StuckWatch's own grace (1000ms) plus window (500ms) puts its earliest possible
   // fire around pass ~150 from construction, and neither axis's boundary noise ever produces a real,
-  // sustained step of progress (each swing is 0.2, far under either axis's 1.0in/3.0deg step), so
-  // there is no code path here that legitimately needs more passes than that to resolve.
-  Outcome o = run_wait(chassis, 500);
+  // sustained step of progress (each swing is 0.2, far under either axis's 1.0in/3.0deg step). Each of
+  // the (at most STUCK_WATCH_REARM_CAP) times the stuck verdict finds a latched axis outside the band
+  // it exited through and takes the exit back, the watch gets a fresh clock, so a robot hovering like
+  // this one is ended after about 450 passes now and not 300, and no code path needs more than that.
+  Outcome o = run_wait(chassis, 1000);
 
   // The primary assertion: it returned at all. If the relatch logic could thrash forever between
   // SMALL_EXIT and RUNNING without StuckWatch ever getting a chance to end it, this throws
   // test_stub::StopLoop instead and o.returned is false.
   REQUIRE(o.returned);
-  // Bounded, not just "didn't hit the 500-pass ceiling": StuckWatch's own arithmetic caps this well
-  // under 300 passes from construction.
-  CHECK(o.passes < 300);
+  // Bounded, not just "didn't hit the 1000-pass ceiling": StuckWatch's own arithmetic, with the cap on
+  // fresh clocks, puts this well under 600 passes from construction.
+  CHECK(o.passes < 600);
   // Neither axis ever holds still long enough to be a genuine, sustained convergence -- the only
   // honest outcome is StuckWatch's backstop ending this as interfered.
   CHECK(o.interfered);

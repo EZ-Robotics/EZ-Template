@@ -737,6 +737,28 @@ private:
   StopSpeedFn floor_;
 };
 
+// A window exit a side or axis latched earlier (SMALL_EXIT / BIG_EXIT) is only still true while two things hold: its live error is still inside the
+// band the exit was given for, and the gate has not seen the robot move since (ExitGate::moving()). What each wait checks before it trusts one, and
+// what it does when one has stopped holding: take the exit back (take_back_latched()) and keep waiting, with a fresh stuck watch for that side.
+enum class Latch {
+  Holds,
+  OutOfBand,  // its live error is back outside the band
+  Moving      // the robot moved since it latched, the exit goes back to the gate
+};
+
+Latch latched_exit_state(exit_output latched, const PID& pid, const ExitGate& gate, double live_error) {
+  if (latched == SMALL_EXIT && std::fabs(live_error) >= pid.exit.small_error) return Latch::OutOfBand;
+  if (latched == BIG_EXIT && std::fabs(live_error) >= pid.exit.big_error) return Latch::OutOfBand;
+  return gate.moving(latched, pid) ? Latch::Moving : Latch::Holds;
+}
+
+// An exit that is out of its band goes back to RUNNING for the PID's own timers to latch again. One that is only moving goes back to the gate, which
+// hands it over again on the first pass the robot is stopped.
+void take_back_latched(exit_output& exit, Latch state, ExitGate& gate) {
+  if (state == Latch::Moving) gate.hold(exit);
+  exit = RUNNING;
+}
+
 // The same over-current predicate PID::exit_condition(const std::vector<pros::Motor>&) uses: a transient PROS_ERR is not over
 // current, but a PROS_ERR paired with a position that is not finite is a motor that has gone away, and counts.
 bool any_over_current(std::vector<pros::Motor>& motors) {
@@ -1265,6 +1287,17 @@ void Drive::pid_wait() {
     // wait on this same motion used up its own cap.
     int left_stuck_watch_rearm_count = 0;
     int right_stuck_watch_rearm_count = 0;
+    // Gives a side's watch a fresh clock when its latched exit is taken back, as moved already, if the cap allows it
+    auto reseed_left = [&]() {
+      if (left_stuck_watch_rearm_count >= STUCK_WATCH_REARM_CAP) return;
+      left_watch = SingleStuckWatch(leftPID, leftPID.error, true, STUCK_STEP_DISTANCE_CAP, left_stopped, left_in_place, stop_speed_fn(StopSpeed::Drive));
+      ++left_stuck_watch_rearm_count;
+    };
+    auto reseed_right = [&]() {
+      if (right_stuck_watch_rearm_count >= STUCK_WATCH_REARM_CAP) return;
+      right_watch = SingleStuckWatch(rightPID, rightPID.error, true, STUCK_STEP_DISTANCE_CAP, right_stopped, right_in_place, stop_speed_fn(StopSpeed::Drive));
+      ++right_stuck_watch_rearm_count;
+    };
     ExitGate left_gate(left_stopped, [this] { return travel_tracked(Travel::Left); }, leftPID.exit.velocity_exit_time != 0 || leftPID.exit.mA_timeout != 0);
     ExitGate right_gate(
         right_stopped, [this] { return travel_tracked(Travel::Right); }, rightPID.exit.velocity_exit_time != 0 || rightPID.exit.mA_timeout != 0);
@@ -1314,26 +1347,44 @@ void Drive::pid_wait() {
         if ((left_now == RUNNING || right_now == RUNNING) && (left_now != RUNNING || left_stuck) && (right_now != RUNNING || right_stuck)) {
           left_exit = left_now;
           right_exit = right_now;
-          // A side that's still RUNNING and already sitting inside its own big error window is where a big
-          // exit would have left it: that's settled, not stuck. (A side hovering across its own small error
-          // window can keep both its own exit timers from ever finishing.) A side that already latched an
-          // exit is trusted here only if its OWN live error is still inside its big error window right now --
-          // a side that latched early and has since been shoved or pinned off target must not count as
-          // settled just because it once exited cleanly (see the recheck below, which applies this identical
-          // rule to a full double latch instead of this stuck-detected path).
-          bool left_settled = std::fabs(leftPID.error) < settle_error_distance(leftPID);
-          bool right_settled = std::fabs(rightPID.error) < settle_error_distance(rightPID);
-          // ...and only if ez_auto_task has run since this wait began (see entry_task_passes above); if it
-          // has not, both errors are the previous motion's leftovers, not a reading of this one. A verdict that
-          // only the wall clock reached is not settled either, see stuck_settled().
-          bool settled = stuck_settled(left_settled && right_settled, stuck_passes() != entry_task_passes,
-                                       (left_stuck && left_watch.starved()) || (right_stuck && right_watch.starved()));
-          stalled = !settled;
-          settled_via_stuck = settled;
-          if (print_toggle)
-            std::cout << "  Drive: " << (stalled ? "Stuck" : "Stuck, but stopped inside the big error windows, counted as settled") << ", error: L,"
-                      << leftPID.error << " R," << rightPID.error << "\n";
-          break;
+          // A side that already latched a window exit sat out the stuck watch's vote: it stopped being fed to its own watch when it latched.
+          // It only counts as settled if the exit it gave still holds, the way the recheck below treats a full double latch: its live error
+          // still inside the band the exit was given for, and the gate not seeing it move since. If not, the exit is taken back, the side's
+          // watch gets a fresh clock, and the wait goes on. Bounded by STUCK_WATCH_REARM_CAP per side, like every other take-back: a side
+          // that is out of it again after that is counted as it was before this check existed, by its live error against its big error.
+          Latch left_state = latched_exit_state(left_exit, leftPID, left_gate, leftPID.error);
+          Latch right_state = latched_exit_state(right_exit, rightPID, right_gate, rightPID.error);
+          bool left_back = left_state != Latch::Holds && left_stuck_watch_rearm_count < STUCK_WATCH_REARM_CAP;
+          bool right_back = right_state != Latch::Holds && right_stuck_watch_rearm_count < STUCK_WATCH_REARM_CAP;
+          if (left_back) {
+            take_back_latched(left_exit, left_state, left_gate);
+            reseed_left();
+          }
+          if (right_back) {
+            take_back_latched(right_exit, right_state, right_gate);
+            reseed_right();
+          }
+          if (!left_back && !right_back) {
+            // A side that's still RUNNING and already sitting inside its own big error window is where a big
+            // exit would have left it: that's settled, not stuck. (A side hovering across its own small error
+            // window can keep both its own exit timers from ever finishing.) A side that already latched an
+            // exit is trusted here only if its OWN live error is still inside its big error window right now --
+            // a side that latched early and has since been shoved or pinned off target must not count as
+            // settled just because it once exited cleanly.
+            bool left_settled = std::fabs(leftPID.error) < settle_error_distance(leftPID);
+            bool right_settled = std::fabs(rightPID.error) < settle_error_distance(rightPID);
+            // ...and only if ez_auto_task has run since this wait began (see entry_task_passes above); if it
+            // has not, both errors are the previous motion's leftovers, not a reading of this one. A verdict that
+            // only the wall clock reached is not settled either, see stuck_settled().
+            bool settled = stuck_settled(left_settled && right_settled, stuck_passes() != entry_task_passes,
+                                         (left_stuck && left_watch.starved()) || (right_stuck && right_watch.starved()));
+            stalled = !settled;
+            settled_via_stuck = settled;
+            if (print_toggle)
+              std::cout << "  Drive: " << (stalled ? "Stuck" : "Stuck, but stopped inside the big error windows, counted as settled") << ", error: L,"
+                        << leftPID.error << " R," << rightPID.error << "\n";
+            break;
+          }
         }
         pros::delay(util::DELAY_TIME);
       }
@@ -1373,54 +1424,19 @@ void Drive::pid_wait() {
       // (without_velocity() already maps it to RUNNING); mA_EXIT and ERROR_NO_CONSTANTS aren't
       // window exits and are left alone -- the final check below still catches mA_EXIT/VELOCITY_EXIT
       // regardless of this recheck.
-      if (left_exit == SMALL_EXIT && std::fabs(leftPID.error) >= leftPID.exit.small_error) {
-        left_exit = RUNNING;
-        if (left_stuck_watch_rearm_count < STUCK_WATCH_REARM_CAP) {
-          left_watch = SingleStuckWatch(leftPID, leftPID.error, true, STUCK_STEP_DISTANCE_CAP, left_stopped, left_in_place, stop_speed_fn(StopSpeed::Drive));
-          ++left_stuck_watch_rearm_count;
-        }
-      } else if (left_exit == BIG_EXIT && std::fabs(leftPID.error) >= leftPID.exit.big_error) {
-        left_exit = RUNNING;
-        if (left_stuck_watch_rearm_count < STUCK_WATCH_REARM_CAP) {
-          left_watch = SingleStuckWatch(leftPID, leftPID.error, true, STUCK_STEP_DISTANCE_CAP, left_stopped, left_in_place, stop_speed_fn(StopSpeed::Drive));
-          ++left_stuck_watch_rearm_count;
-        }
+      //
+      // A side that latched while it was stopped and has moved since (a shove, a creep) is not settled either: its exit goes back to the
+      // gate, which hands it over again as soon as the side is stopped. Its watch gets the same fresh clock an un-latch gets, so a clock left
+      // over from before it latched cannot call it settled while it is still moving.
+      Latch left_state = latched_exit_state(left_exit, leftPID, left_gate, leftPID.error);
+      if (left_state != Latch::Holds) {
+        take_back_latched(left_exit, left_state, left_gate);
+        reseed_left();
       }
-      if (right_exit == SMALL_EXIT && std::fabs(rightPID.error) >= rightPID.exit.small_error) {
-        right_exit = RUNNING;
-        if (right_stuck_watch_rearm_count < STUCK_WATCH_REARM_CAP) {
-          right_watch =
-              SingleStuckWatch(rightPID, rightPID.error, true, STUCK_STEP_DISTANCE_CAP, right_stopped, right_in_place, stop_speed_fn(StopSpeed::Drive));
-          ++right_stuck_watch_rearm_count;
-        }
-      } else if (right_exit == BIG_EXIT && std::fabs(rightPID.error) >= rightPID.exit.big_error) {
-        right_exit = RUNNING;
-        if (right_stuck_watch_rearm_count < STUCK_WATCH_REARM_CAP) {
-          right_watch =
-              SingleStuckWatch(rightPID, rightPID.error, true, STUCK_STEP_DISTANCE_CAP, right_stopped, right_in_place, stop_speed_fn(StopSpeed::Drive));
-          ++right_stuck_watch_rearm_count;
-        }
-      }
-
-      // A side that latched while it was stopped and has moved since (a shove, a creep) is not settled: its exit goes back to the
-      // gate, which hands it over again as soon as the side is stopped. Its watch gets the same fresh clock an un-latch above gives
-      // it, so a clock left over from before it latched cannot call it settled while it is still moving.
-      if (left_gate.moving(left_exit, leftPID)) {
-        left_gate.hold(left_exit);
-        left_exit = RUNNING;
-        if (left_stuck_watch_rearm_count < STUCK_WATCH_REARM_CAP) {
-          left_watch = SingleStuckWatch(leftPID, leftPID.error, true, STUCK_STEP_DISTANCE_CAP, left_stopped, left_in_place, stop_speed_fn(StopSpeed::Drive));
-          ++left_stuck_watch_rearm_count;
-        }
-      }
-      if (right_gate.moving(right_exit, rightPID)) {
-        right_gate.hold(right_exit);
-        right_exit = RUNNING;
-        if (right_stuck_watch_rearm_count < STUCK_WATCH_REARM_CAP) {
-          right_watch =
-              SingleStuckWatch(rightPID, rightPID.error, true, STUCK_STEP_DISTANCE_CAP, right_stopped, right_in_place, stop_speed_fn(StopSpeed::Drive));
-          ++right_stuck_watch_rearm_count;
-        }
+      Latch right_state = latched_exit_state(right_exit, rightPID, right_gate, rightPID.error);
+      if (right_state != Latch::Holds) {
+        take_back_latched(right_exit, right_state, right_gate);
+        reseed_right();
       }
 
       if (left_exit == RUNNING || right_exit == RUNNING) {
@@ -1467,6 +1483,16 @@ void Drive::pid_wait() {
     StuckWatch watch(
         xyPID, current_a_odomPID, pp_index, target_distance(), travelled(), turned(), [this](int w) { return odom_travel_stopped(w); },
         [this](int w) { return odom_travel_in_place(w); }, stop_speed_fn(StopSpeed::OdomXY), stop_speed_fn(StopSpeed::OdomAngle));
+    // How many times the watch has been given a fresh clock because a latched axis's exit was taken back before the stuck verdict was
+    // trusted, bounded by STUCK_WATCH_REARM_CAP per wait (see the DRIVE branch)
+    int watch_rearm_count = 0;
+    auto reseed_watch = [&]() {
+      if (watch_rearm_count >= STUCK_WATCH_REARM_CAP) return;
+      watch = StuckWatch(
+          xyPID, current_a_odomPID, pp_index, target_distance(), travelled(), turned(), [this](int w) { return odom_travel_stopped(w); },
+          [this](int w) { return odom_travel_in_place(w); }, stop_speed_fn(StopSpeed::OdomXY), stop_speed_fn(StopSpeed::OdomAngle));
+      ++watch_rearm_count;
+    };
     bool stalled = false;
     bool ended_on_mA = false;  // the wait ended on an mA exit before the last point, which stalled below stands for
     auto odom_stopped = [this](int w) { return odom_travel_stopped(w); };
@@ -1607,18 +1633,29 @@ void Drive::pid_wait() {
           // An axis released on a pass the watch calls it stuck is still RUNNING, and stuck, for this pass
           if (xy_released) xy_exit = RUNNING;
           if (a_released) a_exit = RUNNING;
-          // Stopped inside both big error windows is where a big exit would have left it: that's settled, not stuck.
-          // (A robot hovering across the small error window can keep both exit timers from ever finishing.)
-          bool settled =
-              stuck_settled(target_distance() < settle_error_distance(xyPID) && std::fabs(current_a_odomPID.error) < settle_error_angle(current_a_odomPID),
-                            true, watch.starved());
-          stalled = !settled;
-          settled_via_stuck = settled;
-          if (print_toggle)
-            std::cout << "  XY: " << exit_to_string(xy_exit) << ", error: " << xyPID.error << ".   Angle: " << exit_to_string(a_exit)
-                      << ", error: " << current_a_odomPID.error
-                      << (settled ? ".   Stopped inside the big error windows, counted as settled.\n" : ".   Stuck before settling on the target.\n");
-          break;
+          // An axis that already latched a window exit has to still hold it before the robot counts as settled, see the DRIVE branch: its live
+          // error inside the band the exit was given for, and the gate not seeing the robot move since. If not it is taken back, the watch gets a
+          // fresh clock, and the wait goes on, bounded by STUCK_WATCH_REARM_CAP.
+          Latch xy_state = latched_exit_state(xy_exit, xyPID, xy_gate, xyPID.error);
+          Latch a_state = latched_exit_state(a_exit, current_a_odomPID, a_gate, current_a_odomPID.error);
+          if ((xy_state != Latch::Holds || a_state != Latch::Holds) && watch_rearm_count < STUCK_WATCH_REARM_CAP) {
+            if (xy_state != Latch::Holds) take_back_latched(xy_exit, xy_state, xy_gate);
+            if (a_state != Latch::Holds) take_back_latched(a_exit, a_state, a_gate);
+            reseed_watch();
+          } else {
+            // Stopped inside both big error windows is where a big exit would have left it: that's settled, not stuck.
+            // (A robot hovering across the small error window can keep both exit timers from ever finishing.)
+            bool settled =
+                stuck_settled(target_distance() < settle_error_distance(xyPID) && std::fabs(current_a_odomPID.error) < settle_error_angle(current_a_odomPID),
+                              true, watch.starved());
+            stalled = !settled;
+            settled_via_stuck = settled;
+            if (print_toggle)
+              std::cout << "  XY: " << exit_to_string(xy_exit) << ", error: " << xyPID.error << ".   Angle: " << exit_to_string(a_exit)
+                        << ", error: " << current_a_odomPID.error
+                        << (settled ? ".   Stopped inside the big error windows, counted as settled.\n" : ".   Stuck before settling on the target.\n");
+            break;
+          }
         }
         pros::delay(util::DELAY_TIME);
       }
@@ -1644,24 +1681,11 @@ void Drive::pid_wait() {
       // VELOCITY_EXIT is never latched here (without_velocity() already maps it to RUNNING); mA_EXIT and
       // ERROR_NO_CONSTANTS aren't window exits and already force interfered=true below, so they're left
       // alone. If the disturbance never resolves, StuckWatch above is what ends this, not an infinite relatch.
-      if (xy_exit == SMALL_EXIT && std::fabs(xyPID.error) >= xyPID.exit.small_error)
-        xy_exit = RUNNING;
-      else if (xy_exit == BIG_EXIT && std::fabs(xyPID.error) >= xyPID.exit.big_error)
-        xy_exit = RUNNING;
-      if (a_exit == SMALL_EXIT && std::fabs(current_a_odomPID.error) >= current_a_odomPID.exit.small_error)
-        a_exit = RUNNING;
-      else if (a_exit == BIG_EXIT && std::fabs(current_a_odomPID.error) >= current_a_odomPID.exit.big_error)
-        a_exit = RUNNING;
-
       // Latched while stopped, moving since: back to the gate (see the DRIVE branch)
-      if (xy_gate.moving(xy_exit, xyPID)) {
-        xy_gate.hold(xy_exit);
-        xy_exit = RUNNING;
-      }
-      if (a_gate.moving(a_exit, current_a_odomPID)) {
-        a_gate.hold(a_exit);
-        a_exit = RUNNING;
-      }
+      Latch xy_state = latched_exit_state(xy_exit, xyPID, xy_gate, xyPID.error);
+      if (xy_state != Latch::Holds) take_back_latched(xy_exit, xy_state, xy_gate);
+      Latch a_state = latched_exit_state(a_exit, current_a_odomPID, a_gate, current_a_odomPID.error);
+      if (a_state != Latch::Holds) take_back_latched(a_exit, a_state, a_gate);
 
       if (xy_exit == RUNNING || a_exit == RUNNING) {
         pros::delay(util::DELAY_TIME);
@@ -2155,27 +2179,43 @@ void Drive::wait_until_drive(double target) {
         if ((left_now == RUNNING || right_now == RUNNING) && (left_now != RUNNING || left_stuck) && (right_now != RUNNING || right_stuck)) {
           left_exit = left_now;
           right_exit = right_now;
-          // Same settled carve-out as pid_wait()'s DRIVE branch, gated to only apply when this
-          // wait_until()'s target really is the motion's final target -- see at_final_target's comment.
-          // A side that already latched an exit is only trusted as settled here if its live error
-          // is still inside the window that exit means -- a side that latched early and has since
-          // been shoved or pinned off target must not count as settled just because it once exited
-          // cleanly (same rule as the recheck in the else branch below, applied here to the
-          // stuck-detected path instead). An odom move has no look ahead free error to judge this by.
-          bool left_settled = std::fabs(leftPID.error) < settle_error_distance(leftPID);
-          bool right_settled = std::fabs(rightPID.error) < settle_error_distance(rightPID);
-          bool starved = (left_stuck && left_watch.starved()) || (right_stuck && right_watch.starved());
-          bool settled = is_odom ? stuck_settled(odom_settled(), true, starved)
-                                 : stuck_settled(left_settled && right_settled, stuck_passes() != entry_task_passes, starved);
-          CheckpointEnd end = checkpoint_end(settled, at_final_target, unreachable, is_odom ? INFINITY : std::fmax(std::fabs(l_error), std::fabs(r_error)),
-                                             leftPID.exit.small_error, odom_between());
-          bool stalled = end == CheckpointEnd::Interfered;
-          if (print_toggle)
-            std::cout << "  Drive: " << (stalled ? "Stuck" : "Stuck, but stopped inside the big error windows, counted as settled")
-                      << " Wait Until Exit Failsafe, triggered at " << drive_sensor_left() - l_start << " instead of " << target << "\n";
-          if (end == CheckpointEnd::Unreachable) print_unreachable_checkpoint(target, final_distance);
-          if (stalled) interfered_scope.mark();
-          return;
+          // A side that already latched a window exit has to still hold it before the robot counts as settled, exactly as in pid_wait()'s
+          // DRIVE branch (see the comment there): its live error inside the band the exit was given for, and the gate not seeing it move
+          // since. If not the exit is taken back, the side's watch gets a fresh clock, and the wait goes on, bounded by STUCK_WATCH_REARM_CAP.
+          Latch left_state = latched_exit_state(left_exit, leftPID, left_gate, leftPID.error);
+          Latch right_state = latched_exit_state(right_exit, rightPID, right_gate, rightPID.error);
+          bool left_back = left_state != Latch::Holds && left_stuck_watch_rearm_count < STUCK_WATCH_REARM_CAP;
+          bool right_back = right_state != Latch::Holds && right_stuck_watch_rearm_count < STUCK_WATCH_REARM_CAP;
+          if (left_back) {
+            take_back_latched(left_exit, left_state, left_gate);
+            reseed_left();
+          }
+          if (right_back) {
+            take_back_latched(right_exit, right_state, right_gate);
+            reseed_right();
+          }
+          if (!left_back && !right_back) {
+            // Same settled carve-out as pid_wait()'s DRIVE branch, gated to only apply when this
+            // wait_until()'s target really is the motion's final target -- see at_final_target's comment.
+            // A side that already latched an exit is only trusted as settled here if its live error
+            // is still inside the window that exit means -- a side that latched early and has since
+            // been shoved or pinned off target must not count as settled just because it once exited
+            // cleanly. An odom move has no look ahead free error to judge this by.
+            bool left_settled = std::fabs(leftPID.error) < settle_error_distance(leftPID);
+            bool right_settled = std::fabs(rightPID.error) < settle_error_distance(rightPID);
+            bool starved = (left_stuck && left_watch.starved()) || (right_stuck && right_watch.starved());
+            bool settled = is_odom ? stuck_settled(odom_settled(), true, starved)
+                                   : stuck_settled(left_settled && right_settled, stuck_passes() != entry_task_passes, starved);
+            CheckpointEnd end = checkpoint_end(settled, at_final_target, unreachable, is_odom ? INFINITY : std::fmax(std::fabs(l_error), std::fabs(r_error)),
+                                               leftPID.exit.small_error, odom_between());
+            bool stalled = end == CheckpointEnd::Interfered;
+            if (print_toggle)
+              std::cout << "  Drive: " << (stalled ? "Stuck" : "Stuck, but stopped inside the big error windows, counted as settled")
+                        << " Wait Until Exit Failsafe, triggered at " << drive_sensor_left() - l_start << " instead of " << target << "\n";
+            if (end == CheckpointEnd::Unreachable) print_unreachable_checkpoint(target, final_distance);
+            if (stalled) interfered_scope.mark();
+            return;
+          }
         }
         // No delay here -- the loop's own delay at the bottom already advances one DELAY_TIME per pass.  A second
         // delay here made every failsafe in this function take about twice its configured time in real time.
@@ -2198,30 +2238,17 @@ void Drive::wait_until_drive(double target) {
         // the watch keeps the clock it had.
         // VELOCITY_EXIT is never latched here (without_velocity() already maps it to RUNNING);
         // mA_EXIT isn't a window exit and is handled below regardless, so it's left alone.
-        if (left_exit == SMALL_EXIT && std::fabs(leftPID.error) >= leftPID.exit.small_error) {
-          left_exit = RUNNING;
-          reseed_left();
-        } else if (left_exit == BIG_EXIT && std::fabs(leftPID.error) >= leftPID.exit.big_error) {
-          left_exit = RUNNING;
-          reseed_left();
-        }
-        if (right_exit == SMALL_EXIT && std::fabs(rightPID.error) >= rightPID.exit.small_error) {
-          right_exit = RUNNING;
-          reseed_right();
-        } else if (right_exit == BIG_EXIT && std::fabs(rightPID.error) >= rightPID.exit.big_error) {
-          right_exit = RUNNING;
-          reseed_right();
-        }
-
-        // Latched while stopped, moving since: back to the gate (see pid_wait()'s DRIVE branch), with the same fresh watch
-        if (left_gate.moving(left_exit, leftPID)) {
-          left_gate.hold(left_exit);
-          left_exit = RUNNING;
+        //
+        // A side that latched while it was stopped and has moved since goes back to the gate (see pid_wait()'s DRIVE branch), with the same
+        // fresh watch
+        Latch left_state = latched_exit_state(left_exit, leftPID, left_gate, leftPID.error);
+        if (left_state != Latch::Holds) {
+          take_back_latched(left_exit, left_state, left_gate);
           reseed_left();
         }
-        if (right_gate.moving(right_exit, rightPID)) {
-          right_gate.hold(right_exit);
-          right_exit = RUNNING;
+        Latch right_state = latched_exit_state(right_exit, rightPID, right_gate, rightPID.error);
+        if (right_state != Latch::Holds) {
+          take_back_latched(right_exit, right_state, right_gate);
           reseed_right();
         }
 
