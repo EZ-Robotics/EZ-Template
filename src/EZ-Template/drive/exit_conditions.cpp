@@ -2931,6 +2931,18 @@ void Drive::pid_wait_until_index(int index) {
   // own scope already asserted.
   InterferedScope interfered_scope(*this);
 
+  // An index that is not on the path is a mistake in the team's code, not something the robot did: say so once and return, the way
+  // pid_wait_until_index_started() does, without waiting on some other point of the path or marking the motion interfered. Only for a
+  // pure pursuit path: in any other mode phase 1 reports the wrong mode and there is no path to be out of range of.
+  {
+    ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+    int max_index = (int)injected_pp_index.size() - 2;
+    if (mode == PURE_PURSUIT && (index < 0 || index > max_index)) {
+      drive_mutex.print_after_unlock("  Wait Until PP Error!  Index %i is not within range!  %i is max!\n", index, max_index);
+      return;
+    }
+  }
+
   // Whether this motion was already reported blocked before phase 1 ran (an earlier wait on the same motion),
   // and which motion that is, so phase 1's own result can be told apart below.
   bool interfered_before;
