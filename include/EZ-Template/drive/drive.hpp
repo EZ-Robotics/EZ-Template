@@ -2912,6 +2912,11 @@ public:
    * Inside big_error, a robot that stopped, or is pinned or jammed there so that the mA exit fires (mA_timeout), is a finished
    * motion: the wait returns and `interfered` stays false. Outside big_error, a robot stopped by something returns with `interfered`
    * true.
+   *
+   * The one exception to all of the above: when a motion's velocity_exit_time and mA_timeout are both 0 there is no backstop. The stop
+   * check is not armed and the wait ends on position alone, the moment the small or big exit time has run, whether or not the robot has
+   * stopped. The exit condition setters print a warning when they leave a motion that way (odom waits borrow the other odom setting's
+   * backstop when their own has none, so for odom the warning is for both being 0).
    */
   void pid_wait();
 
@@ -3508,6 +3513,11 @@ public:
   /**
    * Set's constants for odom driving exit conditions.
    *
+   * The one exception to the stop check: when p_velocity_exit_time and p_mA_timeout are both 0 there is no backstop, the stop check is
+   * not armed, and the wait ends on position alone, the moment the small or big exit time has run, without waiting for the robot to
+   * stop. Odom waits use the backstop of the other odom setting (pid_odom_drive_exit_condition_set() and
+   * pid_odom_turn_exit_condition_set()) when this one has none, so a warning is printed only when both of them have velocity and mA at 0.
+   *
    * \param p_small_exit_time
    *        time to exit when within small_error, in ms
    * \param p_small_error
@@ -3532,6 +3542,11 @@ public:
 
   /**
    * Set's constants for odom turning exit conditions.
+   *
+   * The one exception to the stop check: when p_velocity_exit_time and p_mA_timeout are both 0 there is no backstop, the stop check is
+   * not armed, and the wait ends on position alone, the moment the small or big exit time has run, without waiting for the robot to
+   * stop. Odom waits use the backstop of the other odom setting (pid_odom_drive_exit_condition_set() and
+   * pid_odom_turn_exit_condition_set()) when this one has none, so a warning is printed only when both of them have velocity and mA at 0.
    *
    * \param p_small_exit_time
    *        time to exit when within small_error, in ms
@@ -3558,6 +3573,11 @@ public:
   /**
    * Set's constants for odom turning exit conditions.
    *
+   * The one exception to the stop check: when p_velocity_exit_time and p_mA_timeout are both 0 there is no backstop, the stop check is
+   * not armed, and the wait ends on position alone, the moment the small or big exit time has run, without waiting for the robot to
+   * stop. Odom waits use the backstop of the other odom setting (pid_odom_drive_exit_condition_set() and
+   * pid_odom_turn_exit_condition_set()) when this one has none, so a warning is printed only when both of them have velocity and mA at 0.
+   *
    * \param p_small_exit_time
    *        time to exit when within small_error, unit
    * \param p_small_error
@@ -3582,6 +3602,11 @@ public:
 
   /**
    * Set's constants for odom driving exit conditions.
+   *
+   * The one exception to the stop check: when p_velocity_exit_time and p_mA_timeout are both 0 there is no backstop, the stop check is
+   * not armed, and the wait ends on position alone, the moment the small or big exit time has run, without waiting for the robot to
+   * stop. Odom waits use the backstop of the other odom setting (pid_odom_drive_exit_condition_set() and
+   * pid_odom_turn_exit_condition_set()) when this one has none, so a warning is printed only when both of them have velocity and mA at 0.
    *
    * \param p_small_exit_time
    *        time to exit when within small_error, unit
@@ -3608,6 +3633,10 @@ public:
   /**
    * Set's constants for drive exit conditions.
    *
+   * The one exception to the stop check: when p_velocity_exit_time and p_mA_timeout are both 0 there is no backstop, the stop check is
+   * not armed, and the wait ends on position alone, the moment the small or big exit time has run, without waiting for the robot to
+   * stop. That is allowed, but a warning is printed every time a setter leaves the motion that way.
+   *
    * \param p_small_exit_time
    *        time to exit when within small_error, unit
    * \param p_small_error
@@ -3632,6 +3661,10 @@ public:
 
   /**
    * Set's constants for turn exit conditions.
+   *
+   * The one exception to the stop check: when p_velocity_exit_time and p_mA_timeout are both 0 there is no backstop, the stop check is
+   * not armed, and the wait ends on position alone, the moment the small or big exit time has run, without waiting for the robot to
+   * stop. That is allowed, but a warning is printed every time a setter leaves the motion that way.
    *
    * \param p_small_exit_time
    *        time to exit when within small_error, unit
@@ -3658,6 +3691,10 @@ public:
   /**
    * Set's constants for swing exit conditions.
    *
+   * The one exception to the stop check: when p_velocity_exit_time and p_mA_timeout are both 0 there is no backstop, the stop check is
+   * not armed, and the wait ends on position alone, the moment the small or big exit time has run, without waiting for the robot to
+   * stop. That is allowed, but a warning is printed every time a setter leaves the motion that way.
+   *
    * \param p_small_exit_time
    *        time to exit when within small_error, unit
    * \param p_small_error
@@ -3682,6 +3719,10 @@ public:
 
   /**
    * Set's constants for drive exit conditions.
+   *
+   * The one exception to the stop check: when p_velocity_exit_time and p_mA_timeout are both 0 there is no backstop, the stop check is
+   * not armed, and the wait ends on position alone, the moment the small or big exit time has run, without waiting for the robot to
+   * stop. That is allowed, but a warning is printed every time a setter leaves the motion that way.
    *
    * The small and big exits also need the robot to have stopped: it travelled less than the stop speed (by default 1.5 in/s, 4 deg/s for a
    * turn or swing, see pid_drive_exit_stop_speed_set()) times the exit's time over that time (see pid_wait()). When the timer has run out and the robot is
@@ -3712,6 +3753,10 @@ public:
   /**
    * Set's constants for turn exit conditions.
    *
+   * The one exception to the stop check: when p_velocity_exit_time and p_mA_timeout are both 0 there is no backstop, the stop check is
+   * not armed, and the wait ends on position alone, the moment the small or big exit time has run, without waiting for the robot to
+   * stop. That is allowed, but a warning is printed every time a setter leaves the motion that way.
+   *
    * \param p_small_exit_time
    *        time to exit when within small_error, in ms
    * \param p_small_error
@@ -3736,6 +3781,10 @@ public:
 
   /**
    * Set's constants for swing exit conditions.
+   *
+   * The one exception to the stop check: when p_velocity_exit_time and p_mA_timeout are both 0 there is no backstop, the stop check is
+   * not armed, and the wait ends on position alone, the moment the small or big exit time has run, without waiting for the robot to
+   * stop. That is allowed, but a warning is printed every time a setter leaves the motion that way.
    *
    * \param p_small_exit_time
    *        time to exit when within small_error, in ms
