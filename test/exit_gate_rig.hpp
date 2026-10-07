@@ -135,6 +135,27 @@ struct Rig {
   bool hunting(int window_ms = 200) const {
     return reversals(&Sample::heading, window_ms) >= 6 || reversals(&Sample::left, window_ms) >= 6 || reversals(&Sample::right, window_ms) >= 6;
   }
+  // Where the robot really is in the odom frame (x right, y forward, from the origin the sim started at): the sim's own wheel travel along
+  // its own heading, summed over the trace. `x0`/`y0` shift the frame for a test that relocalizes the library mid motion and judges against
+  // the frame it was moved into. Never the library's own pose, or the check would be circular.
+  struct Position {
+    double x, y;
+  };
+  Position true_position(double x0 = 0.0, double y0 = 0.0) const {
+    Position p{x0, y0};
+    for (size_t i = 1; i < trace.size(); i++) {
+      double d = trace[i].avg - trace[i - 1].avg;
+      // The sim's heading is counter-clockwise positive, the library's clockwise: x grows with the library's heading
+      double h = (trace[i].heading + trace[i - 1].heading) / 2.0 * M_PI / 180.0;
+      p.x -= d * std::sin(h);
+      p.y += d * std::cos(h);
+    }
+    return p;
+  }
+  double distance_to(double x, double y, double x0 = 0.0, double y0 = 0.0) const {
+    Position p = true_position(x0, y0);
+    return std::hypot(p.x - x, p.y - y);
+  }
   double drive_speed_over(int window_ms) const { return std::fmax(speed_over(&Sample::left, window_ms), speed_over(&Sample::right, window_ms)); }
   double angle_speed_over(int window_ms) const { return speed_over(&Sample::heading, window_ms); }
 
