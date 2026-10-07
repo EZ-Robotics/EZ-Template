@@ -884,6 +884,59 @@ bool ma_exit_settled(bool inside_big_on_every_axis, bool fresh) { return inside_
 // task has run since the wait began (see ma_exit_settled()).
 bool stuck_settled(bool inside_big_on_every_axis, bool fresh, bool starved) { return inside_big_on_every_axis && fresh && !starved; }
 
+// A leg of a motion shorter than this (inches) has no direction to be on one side of.
+static constexpr double CHECKPOINT_LEG_MIN = 0.1;
+// How much farther than the closest path segment a segment may be from a checkpoint and still be one the checkpoint is on (inches)
+static constexpr double CHECKPOINT_ON_PATH_TOLERANCE = 0.25;
+
+// Whether a robot at `robot` has already gone past `checkpoint` on its way into it from `from`: its position projected onto the line from `from` to the
+// checkpoint is at or beyond the checkpoint. That line is the direction of travel into the checkpoint, so a checkpoint behind where the motion started,
+// or beyond where it ends, or off to the side is not reached by being on the far side of some other direction. A `from` on top of the checkpoint has no
+// direction at all (false: nothing is known).
+bool robot_past_checkpoint(const pose& from, const pose& checkpoint, const pose& robot) {
+  double dx = checkpoint.x - from.x;
+  double dy = checkpoint.y - from.y;
+  if (!(std::hypot(dx, dy) >= CHECKPOINT_LEG_MIN)) return false;
+  return (robot.x - checkpoint.x) * dx + (robot.y - checkpoint.y) * dy >= 0.0;
+}
+
+double distance_to_segment(const pose& p, const pose& a, const pose& b) {
+  double dx = b.x - a.x;
+  double dy = b.y - a.y;
+  double length_squared = dx * dx + dy * dy;
+  double t = length_squared > 0.0 ? std::fmin(std::fmax(((p.x - a.x) * dx + (p.y - a.y) * dy) / length_squared, 0.0), 1.0) : 0.0;
+  return std::hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy));
+}
+
+// The point a pure pursuit path comes to `checkpoint` from, the one before it, or nothing when the path cannot say which way the robot arrives. The
+// checkpoint is a point of the path when its index is known (path_index, -1 if not): the leg that arrives at it is the one before. Otherwise it is on the
+// path where the path passes closest to it, the first such place when the path passes it twice (a robot that is past a point on the way out has passed
+// it). A robot that is still on an earlier leg (pp_index, the point it is driving to, is before the start of the leg) has not got to the checkpoint at
+// all, whatever side of it it is on, and a leg that a boomerang is part of has no direction the robot arrives in that the path knows: the robot swings
+// out past the point and comes back around to it.
+std::optional<pose> path_point_before_checkpoint(const std::vector<odom>& path, int pp_index, int path_index, const pose& checkpoint) {
+  int last = (int)path.size() - 1;
+  int leg = -1;  // the leg from path[leg] to path[leg + 1]
+  if (path_index >= 1 && path_index <= last) {
+    leg = path_index - 1;
+  } else {
+    double nearest = INFINITY;
+    for (int i = 0; i < last; i++) nearest = std::fmin(nearest, distance_to_segment(checkpoint, path[i].target, path[i + 1].target));
+    for (int i = 0; i < last; i++) {
+      if (distance_to_segment(checkpoint, path[i].target, path[i + 1].target) > nearest + CHECKPOINT_ON_PATH_TOLERANCE) continue;
+      leg = i;
+      break;
+    }
+  }
+  if (leg < 0 || pp_index < leg) return std::nullopt;
+  if (path[leg].target.theta != ANGLE_NOT_SET || path[leg + 1].target.theta != ANGLE_NOT_SET) return std::nullopt;
+  // A checkpoint on the leg's own first point is reached along the leg before it
+  int from = leg;
+  while (from >= 0 && util::distance_to_point(path[from].target, checkpoint) < CHECKPOINT_LEG_MIN) from--;
+  if (from < 0 || path[from].target.theta != ANGLE_NOT_SET) return std::nullopt;
+  return path[from].target;
+}
+
 // Always printed, not gated on print_toggle: the team wrote something that can never do what they meant.
 void print_unreachable_checkpoint(double checkpoint, double final_target) {
   printf("pid_wait_until(%.2f) can't be reached: this motion goes to %.2f. Check the sign, or that the checkpoint is before the target.\n", checkpoint,
@@ -2727,7 +2780,10 @@ void Drive::pid_wait_until(double target) {
   }
 }
 
-void Drive::pid_wait_until_point(pose target) {
+void Drive::pid_wait_until_point(pose target) { wait_until_point(target, -1); }
+
+// path_index: where the checkpoint is on pp_movements when it is one of the path's own points (pid_wait_until_index() knows), -1 when it is a position
+void Drive::wait_until_point(pose target, int path_index) {
   // Same concurrent-retarget guard as pid_wait()'s odom branch -- this function had none, unlike every
   // other wait_until_*.  odom_target_start is only touched by a top-level odom setter starting a genuinely
   // new motion (see the comment on pid_wait()'s odom branch), so watching it catches a retarget regardless
@@ -2763,6 +2819,26 @@ void Drive::pid_wait_until_point(pose target) {
   // update them.
   if (!(mode == POINT_TO_POINT || mode == PURE_PURSUIT)) {
     printf("Mode needs to be an odom mode (point to point or pure pursuit)!\n");
+    return;
+  }
+
+  // A robot that is already past the checkpoint when this is called has crossed it: waiting for the side it is on to change would wait for ever,
+  // until the motion's own exits or the stuck check ended the wait. Whether it is past is read from the motion's own geometry, how far along the way
+  // into the checkpoint the robot is (see robot_past_checkpoint()), not from the side is_past_target() reads, which depends on where the motion
+  // faces next. A checkpoint the robot has not reached is waited for below exactly as before.
+  std::optional<pose> way_in;
+  {
+    ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+    if (mode == POINT_TO_POINT)
+      way_in = odom_start;
+    else
+      way_in = path_point_before_checkpoint(pp_movements, pp_index, path_index, target);
+  }
+  if (way_in && robot_past_checkpoint(*way_in, target, odom_pose_get())) {
+    if (print_toggle)
+      printf("  XY Wait Until Exit Success, triggered at (%.2f, %.2f).  Target: (%.2f, %.2f)\n", odom_x_get(), odom_y_get(), target.x, target.y);
+    xyPID.timers_reset();
+    current_a_odomPID.timers_reset();
     return;
   }
 
@@ -3220,17 +3296,19 @@ void Drive::pid_wait_until_index(int index) {
   // unlocked reads could index past its end.
   std::vector<int> injected_pp_index_snapshot;
   pose target{};
+  int path_index = -1;
   bool have_target = false;
   {
     ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
     injected_pp_index_snapshot = injected_pp_index;
     if (index >= 0 && index < (int)injected_pp_index_snapshot.size()) {
       target = pp_movements[injected_pp_index_snapshot[index]].target;
+      path_index = injected_pp_index_snapshot[index];
       have_target = true;
     }
   }
   if (!have_target) return;
-  pid_wait_until_point(target);
+  wait_until_point(target, path_index);
 
   // Re-checked against the SAME entry snapshot, after phase 2 too: pid_wait_until_point() now has its
   // own guard against a retarget landing in ITS first settle delay (see the comment on its guard), but

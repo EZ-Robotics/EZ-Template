@@ -3009,6 +3009,10 @@ public:
    *
    * The target is a field position, not a distance: `pid_wait_until_point({24, 24});` returns when the robot passes (24, 24).
    *
+   * A robot that is already past the point when this is called has passed it, and this returns at once. Whether it is past is read along the way the
+   * motion comes to the point, from the point before it on the motion (where it started, for the first), so a point that is behind the start or that
+   * the motion never gets to is waited for as ever.
+   *
    * \param target
    *        {x, y} pose for the robot to pass through before the while loop is released
    */
@@ -4423,6 +4427,8 @@ private:
   // drive_mutex. See its own doc comment in set_pid.cpp for why this exists separately from the
   // public pid_speed_max_set().
   void pid_speed_max_set_internal(int speed);
+  // pid_wait_until_point() with where the checkpoint is on pp_movements when it is one of the path's own points, -1 when it is only a position
+  void wait_until_point(pose target, int path_index);
   std::vector<odom> smooth_path(std::vector<odom> ipath, double weight_smooth, double weight_data, double tolerance);
   double is_past_target(pose target, pose current);
   // Feeds a PID's secondary velocity-exit channel from the imu, but only when that channel is
