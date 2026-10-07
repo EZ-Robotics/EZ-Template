@@ -14,6 +14,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include <tuple>
 
 #include "EZ-Template/PID.hpp"
+#include "EZ-Template/exit_defaults.hpp"
 #include "EZ-Template/lock.hpp"
 #include "EZ-Template/slew.hpp"
 #include "EZ-Template/tracking_wheel.hpp"
@@ -3526,6 +3527,7 @@ public:
    *        time to exit when within big_error, in ms
    * \param p_big_error
    *        big timer will start when error is within this, in inches
+   *        (Zero here and in p_small_error turns this axis's window exits off; waits still settle against the library's default big error, 3 in or 7 degrees.)
    * \param p_velocity_exit_time
    *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), in ms
    * \param p_mA_timeout
@@ -3556,6 +3558,7 @@ public:
    *        time to exit when within big_error, in ms
    * \param p_big_error
    *        big timer will start when error is within this, in degrees
+   *        (Zero here and in p_small_error turns this axis's window exits off; waits still settle against the library's default big error, 3 in or 7 degrees.)
    * \param p_velocity_exit_time
    *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), in ms
    * \param p_mA_timeout
@@ -3586,6 +3589,7 @@ public:
    *        time to exit when within big_error, unit
    * \param p_big_error
    *        big timer will start when error is within this, unit
+   *        (Zero here and in p_small_error turns this axis's window exits off; waits still settle against the library's default big error, 3 in or 7 degrees.)
    * \param p_velocity_exit_time
    *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), unit
    * \param p_mA_timeout
@@ -3616,6 +3620,7 @@ public:
    *        time to exit when within big_error, unit
    * \param p_big_error
    *        big timer will start when error is within this, unit
+   *        (Zero here and in p_small_error turns this axis's window exits off; waits still settle against the library's default big error, 3 in or 7 degrees.)
    * \param p_velocity_exit_time
    *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), unit
    * \param p_mA_timeout
@@ -3645,6 +3650,7 @@ public:
    *        time to exit when within big_error, unit
    * \param p_big_error
    *        big timer will start when error is within this, unit
+   *        (Zero here and in p_small_error turns this axis's window exits off; waits still settle against the library's default big error, 3 in or 7 degrees.)
    * \param p_velocity_exit_time
    *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), unit
    * \param p_mA_timeout
@@ -3674,6 +3680,7 @@ public:
    *        time to exit when within big_error, unit
    * \param p_big_error
    *        big timer will start when error is within this, unit
+   *        (Zero here and in p_small_error turns this axis's window exits off; waits still settle against the library's default big error, 3 in or 7 degrees.)
    * \param p_velocity_exit_time
    *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), unit
    * \param p_mA_timeout
@@ -3703,6 +3710,7 @@ public:
    *        time to exit when within big_error, unit
    * \param p_big_error
    *        big timer will start when error is within this, unit
+   *        (Zero here and in p_small_error turns this axis's window exits off; waits still settle against the library's default big error, 3 in or 7 degrees.)
    * \param p_velocity_exit_time
    *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), unit
    * \param p_mA_timeout
@@ -3736,6 +3744,7 @@ public:
    *        time to exit when within big_error (and stopped), in ms
    * \param p_big_error
    *        big timer will start when error is within this, in inches
+   *        (Zero here and in p_small_error turns this axis's window exits off; waits still settle against the library's default big error, 3 in or 7 degrees.)
    * \param p_velocity_exit_time
    *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), in ms
    * \param p_mA_timeout
@@ -3765,6 +3774,7 @@ public:
    *        time to exit when within big_error, in ms
    * \param p_big_error
    *        big timer will start when error is within this, in degrees
+   *        (Zero here and in p_small_error turns this axis's window exits off; waits still settle against the library's default big error, 3 in or 7 degrees.)
    * \param p_velocity_exit_time
    *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), in ms
    * \param p_mA_timeout
@@ -3794,6 +3804,7 @@ public:
    *        time to exit when within big_error, in ms
    * \param p_big_error
    *        big timer will start when error is within this, in degrees
+   *        (Zero here and in p_small_error turns this axis's window exits off; waits still settle against the library's default big error, 3 in or 7 degrees.)
    * \param p_velocity_exit_time
    *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), in ms
    * \param p_mA_timeout

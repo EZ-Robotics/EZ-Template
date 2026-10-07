@@ -169,11 +169,11 @@ void Drive::drive_defaults_set() {
   slew_swing_constants_set(3_in, 80);
 
   // Exit condition constants
-  pid_turn_exit_condition_set(90_ms, 3_deg, 250_ms, 7_deg, 500_ms, 500_ms);
-  pid_swing_exit_condition_set(90_ms, 3_deg, 250_ms, 7_deg, 500_ms, 500_ms);
-  pid_drive_exit_condition_set(90_ms, 1_in, 250_ms, 3_in, 500_ms, 500_ms);
-  pid_odom_turn_exit_condition_set(90_ms, 3_deg, 250_ms, 7_deg, 500_ms, 750_ms);
-  pid_odom_drive_exit_condition_set(90_ms, 1_in, 250_ms, 3_in, 500_ms, 750_ms);
+  pid_turn_exit_condition_set(90, 3.0, 250, ez::detail::DEFAULT_BIG_ERROR_ANGLE, 500, 500);
+  pid_swing_exit_condition_set(90, 3.0, 250, ez::detail::DEFAULT_BIG_ERROR_ANGLE, 500, 500);
+  pid_drive_exit_condition_set(90, 1.0, 250, ez::detail::DEFAULT_BIG_ERROR_DISTANCE, 500, 500);
+  pid_odom_turn_exit_condition_set(90, 3.0, 250, ez::detail::DEFAULT_BIG_ERROR_ANGLE, 500, 750);
+  pid_odom_drive_exit_condition_set(90, 1.0, 250, ez::detail::DEFAULT_BIG_ERROR_DISTANCE, 500, 750);
 
   pid_odom_behavior_set(ez::shortest);  // Default odom turning to shortest
 
