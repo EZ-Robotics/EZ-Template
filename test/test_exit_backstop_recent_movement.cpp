@@ -88,3 +88,17 @@ TEST_CASE("a robot carried at several times the stop speed from late in the back
     }
   }
 }
+
+TEST_CASE("PathTracker: one noisy sample on a thing creeping under the floor does not make it go somewhere") {
+  // 2.3 deg/s against a 4 deg/s floor, still for the first second. The newest reading is 0.2 deg high (a sensor's noise on one pass): by the two
+  // end samples of the last 100 ms that is 4.3 deg/s and a position beyond everything before it, but the averages over the two halves of it,
+  // which one sample moves a fifth of a half, read 3.1 deg/s.
+  Feed f(0.01);
+  int end = 2000;
+  for (int ms = 0; ms <= end; ms += 10) f.at(ms, ms <= 1000 ? 0.0 : 2.3 * (ms - 1000) / 1000.0);
+  f.at(end + 10, 2.3 * (end + 10 - 1000) / 1000.0 + 0.2);
+  for (int w : {600, 1000, 1500}) {
+    CAPTURE(w);
+    CHECK(f.t.in_place(w, 4.0, f.now(end + 10)));
+  }
+}
