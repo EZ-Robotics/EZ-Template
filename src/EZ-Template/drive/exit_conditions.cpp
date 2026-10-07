@@ -170,6 +170,16 @@ int stuck_window(PID& xy, PID& angle) { return floored_window(team_stuck_window(
 struct Channel {
   double step, low;
   bool side, rebound = false, rebounded = false;
+  // The robot crossing its own target is a disturbance of its own kind, with its own once-per-disturbance latch (`crossed`, cleared the same
+  // way `rebounded` is, against `cross_anchor`). It used to share `rebounded` with the shoves, so the first overshoot of a motion used up
+  // the allowance for the first real shove, which then got no clock restart and no recovery credit. A robot already at its target cannot
+  // make the full step of new headway that clears the latch, so that shove stayed uncredited for the rest of the wait. Now an overshoot
+  // arms only `crossed`, and a shove arms only `rebounded`.
+  bool crossed = false;
+  double cross_anchor = 0;
+  // `low` as it stood before the current rebound began raising it: what a disturbance's anchor is taken from, so a shove that lands while an
+  // overshoot is still being recovered from is anchored where the robot really stood, not at the overshoot's peak.
+  double base = 0;
   // The `low` this channel stood at right before its current disturbance began -- captured the moment `rebounded`
   // latches, before the disturbance is allowed to raise `low` at all. Recovering merely past the disturbance's OWN
   // peak (the `size >= low - step` check just below) is enough to stop counting it as still-ongoing and credit a
@@ -209,15 +219,20 @@ struct Channel {
     // no corruption of its state -- exactly as if that pass hadn't happened. A finite reading right after
     // still cures it immediately, the same as before this guard existed.
     if (!std::isfinite(size) || !std::isfinite(error)) return false;
+    if (!rebound) base = low;
     bool overshot = (error > 0) != side;
-    bool shoved = size > low + step;
-    if ((overshot || shoved) && !rebounded) {
+    bool shoved = !overshot && size > low + step;
+    if (overshot && !crossed) {
+      rebound = crossed = true;
+      cross_anchor = base;
+      // Crossing the target is the robot's own overshoot, not something to wait out, and restarting the clock on it delayed a heavy
+      // robot's clean "settled" verdict until the mA exit fired first. It only starts tracking the peak, so the way back counts.
+      peak_credited = true;
+    } else if (shoved && !rebounded) {
       rebound = rebounded = true;
-      anchor = low;
-      // Only a shove restarts the clock. Crossing the target is the robot's own overshoot, not something to wait out,
-      // and restarting on it delayed a heavy robot's clean "settled" verdict until the mA exit fired first.
-      latched = !overshot;
-      peak_credited = overshot;
+      anchor = base;
+      latched = true;
+      peak_credited = false;
     }
     side = error > 0;
     double worst_before = low;
@@ -233,6 +248,7 @@ struct Channel {
     // "recovered at all", is what keeps a channel oscillating at a fixed amplitude from re-arming itself every
     // poll.
     if (rebounded && low < anchor - step) rebounded = false;
+    if (crossed && low < cross_anchor - step) crossed = false;
     return true;
   }
 };
