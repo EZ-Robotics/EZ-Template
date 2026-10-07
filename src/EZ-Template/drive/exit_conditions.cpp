@@ -967,6 +967,23 @@ void Drive::secondary_velocity_sensor_update(PID& pid) {
 // PID::velocity_exit_hold_set() for the fallback that keeps this from being able to hang pid_wait().
 void Drive::xy_velocity_exit_hold_update() { xyPID.velocity_exit_hold_set(xy_translation_bias_gated); }
 
+namespace {
+// A motion whose velocity exit and mA exit are both 0 has no backstop: the stop check is not armed and the wait ends on position alone.
+// That is allowed, so it is only a warning, printed on every offending call and not gated on print_toggle (the team wrote something that
+// does not do what they probably meant). Called from the setters, outside any lock.
+void warn_no_backstop(const char* setter, const char* motions) {
+  printf("%s: velocity and mA exits are both 0, so %s end on position alone and will not wait for the robot to stop.\n", setter, motions);
+}
+// The odom waits use the odom turn settings when the odom drive ones are 0 (and the other way round), so odom has no backstop only when
+// both are 0 and 0
+void warn_no_odom_backstop(const char* setter) {
+  printf(
+      "%s: velocity and mA exits are both 0 for odom driving and odom turning, so odom motions end on position alone and will not wait for the robot to stop.\n",
+      setter);
+}
+bool no_backstop(int velocity_exit_time, int mA_timeout) { return velocity_exit_time == 0 && mA_timeout == 0; }
+}  // namespace
+
 void Drive::pid_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time,
                                          int p_mA_timeout, bool use_imu) {
   leftPID.exit_condition_set(p_small_exit_time, p_small_error, p_big_exit_time, p_big_error, p_velocity_exit_time, p_mA_timeout);
@@ -975,6 +992,7 @@ void Drive::pid_drive_exit_condition_set(int p_small_exit_time, double p_small_e
   rightPID.velocity_sensor_secondary_toggle_set(use_imu);
   internal_leftPID.exit = leftPID.exit;
   internal_rightPID.exit = rightPID.exit;
+  if (no_backstop(p_velocity_exit_time, p_mA_timeout)) warn_no_backstop("pid_drive_exit_condition_set", "drives");
 }
 
 void Drive::pid_drive_exit_condition_set(ez::QTime p_small_exit_time, ez::QLength p_small_error, ez::QTime p_big_exit_time, ez::QLength p_big_error,
@@ -994,6 +1012,7 @@ void Drive::pid_turn_exit_condition_set(int p_small_exit_time, double p_small_er
                                         int p_mA_timeout, bool use_imu) {
   turnPID.exit_condition_set(p_small_exit_time, p_small_error, p_big_exit_time, p_big_error, p_velocity_exit_time, p_mA_timeout);
   turnPID.velocity_sensor_secondary_toggle_set(use_imu);
+  if (no_backstop(p_velocity_exit_time, p_mA_timeout)) warn_no_backstop("pid_turn_exit_condition_set", "turns");
 }
 
 void Drive::pid_turn_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error,
@@ -1013,6 +1032,7 @@ void Drive::pid_swing_exit_condition_set(int p_small_exit_time, double p_small_e
                                          int p_mA_timeout, bool use_imu) {
   swingPID.exit_condition_set(p_small_exit_time, p_small_error, p_big_exit_time, p_big_error, p_velocity_exit_time, p_mA_timeout);
   swingPID.velocity_sensor_secondary_toggle_set(use_imu);
+  if (no_backstop(p_velocity_exit_time, p_mA_timeout)) warn_no_backstop("pid_swing_exit_condition_set", "swings");
 }
 
 void Drive::pid_swing_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error,
@@ -1032,6 +1052,9 @@ void Drive::pid_odom_drive_exit_condition_set(int p_small_exit_time, double p_sm
                                               int p_mA_timeout, bool use_imu) {
   xyPID.exit_condition_set(p_small_exit_time, p_small_error, p_big_exit_time, p_big_error, p_velocity_exit_time, p_mA_timeout);
   xyPID.velocity_sensor_secondary_toggle_set(use_imu);
+  if (no_backstop(xyPID.exit.velocity_exit_time, xyPID.exit.mA_timeout) &&
+      no_backstop(current_a_odomPID.exit.velocity_exit_time, current_a_odomPID.exit.mA_timeout))
+    warn_no_odom_backstop("pid_odom_drive_exit_condition_set");
 }
 
 void Drive::pid_odom_drive_exit_condition_set(ez::QTime p_small_exit_time, ez::QLength p_small_error, ez::QTime p_big_exit_time, ez::QLength p_big_error,
@@ -1051,6 +1074,9 @@ void Drive::pid_odom_turn_exit_condition_set(int p_small_exit_time, double p_sma
                                              int p_mA_timeout, bool use_imu) {
   current_a_odomPID.exit_condition_set(p_small_exit_time, p_small_error, p_big_exit_time, p_big_error, p_velocity_exit_time, p_mA_timeout);
   current_a_odomPID.velocity_sensor_secondary_toggle_set(use_imu);
+  if (no_backstop(xyPID.exit.velocity_exit_time, xyPID.exit.mA_timeout) &&
+      no_backstop(current_a_odomPID.exit.velocity_exit_time, current_a_odomPID.exit.mA_timeout))
+    warn_no_odom_backstop("pid_odom_turn_exit_condition_set");
 }
 
 void Drive::pid_odom_turn_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error,
