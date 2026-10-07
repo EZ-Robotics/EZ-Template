@@ -2167,6 +2167,19 @@ void Drive::wait_until_drive(double target) {
   ExitGate right_gate(right_stopped, [this] { return travel_tracked(Travel::Right); }, rightPID.exit.velocity_exit_time != 0 || rightPID.exit.mA_timeout != 0);
   left_gate.floor_set(stop_speed_fn(drive_floor));
   right_gate.floor_set(stop_speed_fn(drive_floor));
+  // On an odom move an mA exit is held on the progress of the move, not on the wheel distance to the checkpoint (which grows while a path that turns
+  // back is driven, and does not move while the robot turns before it translates): the path left to drive and the heading, as pid_wait() holds it.
+  std::vector<double> path_after;
+  if (is_odom) {
+    ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+    path_after = path_length_after(pp_movements);
+    left_gate.heading_channel_set(stop_speed_fn(StopSpeed::OdomAngle), [this] { return current_a_odomPID.error; });
+    right_gate.heading_channel_set(stop_speed_fn(StopSpeed::OdomAngle), [this] { return current_a_odomPID.error; });
+  }
+  auto odom_progress = [&]() {
+    ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+    return mode == PURE_PURSUIT ? path_left(pp_movements, path_after, pp_index, odom_pose_get()) : util::distance_to_point(odom_target, odom_pose_get());
+  };
   // The xy gate's only backstop in this loop is left_watch / right_watch, which read leftPID's and rightPID's own exits (copies of xy's
   // on an odom move). Unlike the odom waits' StuckWatch they do not fall back to the heading exits' window, so the gate is armed only
   // when both of those watches are on, or a robot hunting about the target would be held for ever with nothing to end the wait.
@@ -2314,22 +2327,22 @@ void Drive::wait_until_drive(double target) {
         bool right_was_running = right_exit == RUNNING;
         // On an odom move the position exits are dropped, but an mA exit is still held until the robot is stopped (see ExitGate), and a held
         // one is put back so it fires again on the first pass the robot is stopped
-        auto odom_side_exit = [&](ExitGate& gate, PID& pid, bool left, double remaining) {
+        auto odom_side_exit = [&](ExitGate& gate, PID& pid, bool left) {
           std::vector<pros::Motor> motors = mA_exit_motors(left, !left);
           bool over_current = pid.exit.mA_timeout != 0 && any_over_current(motors);
           PID::MATimerSnapshot snapshot = pid.mA_timer_snapshot();
           exit_output raw = pid.exit_condition(motors);
-          if (raw == mA_EXIT && !gate.take_mA(pid, remaining)) {
+          if (raw == mA_EXIT && !gate.take_mA(pid, odom_progress())) {
             if (over_current) pid.mA_timer_restore_and_credit(snapshot);
             return RUNNING;
           }
           return without_position_exits(raw);
         };
         if (left_exit == RUNNING)
-          left_exit = without_velocity(is_odom ? odom_side_exit(left_gate, leftPID, true, l_error)
-                                               : gated_exit(left_gate, leftPID, mA_exit_motors(true, false), leftPID.error));
+          left_exit =
+              without_velocity(is_odom ? odom_side_exit(left_gate, leftPID, true) : gated_exit(left_gate, leftPID, mA_exit_motors(true, false), leftPID.error));
         if (right_exit == RUNNING)
-          right_exit = without_velocity(is_odom ? odom_side_exit(right_gate, rightPID, false, r_error)
+          right_exit = without_velocity(is_odom ? odom_side_exit(right_gate, rightPID, false)
                                                 : gated_exit(right_gate, rightPID, mA_exit_motors(false, true), rightPID.error));
         // Consulted on the pass the gate releases a side's exit too, see released_window_exit() and pid_wait()'s DRIVE branch
         bool left_released = released_window_exit(left_was_running, left_exit);

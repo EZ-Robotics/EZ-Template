@@ -335,3 +335,27 @@ TEST_CASE("pid_wait_until(distance) on a path that turns back does not end on a 
     CHECK_FALSE(r.chassis.interfered);
   }
 }
+
+// What the hold must not do on this wait either: keep a robot that is getting nowhere. Pinned, or dragged away from the move, while over current
+// it ends as interfered in bounded time, close to the mA window of being stopped.
+TEST_CASE("pid_wait_until(distance) on an odom path ends in bounded time when the robot is pinned or dragged away while over current") {
+  for (bool pinned : {true, false}) {
+    Rig r(archetype_classroom(), 1);
+    r.chassis.pid_print_toggle(false);
+    team_exits(r.chassis);
+    Burst burst(r, 500, 60000);
+    if (pinned)
+      r.sim.pin(500, 60000);
+    else
+      r.sim.carry(-15.0, 0.0, 500, 60000);
+    r.chassis.pid_odom_set({{0_in, 72_in}, fwd, 110});
+    double ms = 0;
+    bool ok = r.wait([&] { r.chassis.pid_wait_until(60.0); }, 3000, &ms);
+    const char* label = pinned ? "pinned" : "dragged away";
+    INFO(label);
+    MESSAGE(label, ": returned ", ok, " at ", ms, " ms, interfered ", r.chassis.interfered);
+    REQUIRE(ok);
+    CHECK(r.chassis.interfered);
+    CHECK(ms < (pinned ? 500 + 100 + 100 + 150 : 4000.0));
+  }
+}
