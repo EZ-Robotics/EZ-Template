@@ -171,6 +171,9 @@ private:
     double x = cx_buf_[newest], y = cy_buf_[newest];
     double displacement = std::hypot(x - cx_buf_[base], y - cy_buf_[base]);
     if (displacement / dt < floor_per_s) return false;
+    // ...and the same by the averages over the two halves of it, which a sensor's noise on the two end samples does not move (see net_over())
+    double net = 0.0, half_span = 0.0;
+    if (!net_over(RECENT_MS, now_ms, net, half_span) || net / (half_span / 1000.0) < floor_per_s) return false;
     // Several times the floor, in a nearly straight line, is going somewhere wherever it is: a thing hunting back and forth over a short
     // stretch has a long path and little displacement, and a sensor's noise over a stretch this short does not add up to a straight line
     if (displacement / dt >= RECENT_FAST * floor_per_s && displacement >= 0.5 * (cum_buf_[newest] - cum_buf_[base])) return true;
