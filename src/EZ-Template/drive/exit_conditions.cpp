@@ -780,6 +780,26 @@ Latch latched_exit_state(exit_output latched, const PID& pid, const ExitGate& ga
   return gate.moving(latched, pid) ? Latch::Moving : Latch::Holds;
 }
 
+// The same check, made when a stuck watch has just given up on the wait and the question is whether the robot counts as settled. Two things the
+// check above calls "not holding" are not that for a robot that is stopped inside its big error, and taking the exit back for them gives the watch a
+// whole fresh window each time, up to the re-arm cap, which a robot hovering at the edge of its small band on a noisy sensor does every time:
+//   - a small exit whose error is back outside the small band but still inside the big one is where a big exit would have left the robot, and the
+//     verdict below counts that as settled;
+//   - the gate reads the robot as moving because the sensor's noise adds up to travel over the exit's short window, but the robot went nowhere over
+//     that window or the 200 ms it is at least (in_place), which is a robot that is still, not one that was shoved.
+// A robot that is going somewhere (a shove, a drag), or that is outside the big error, is not either of those, and the exit is taken back as ever.
+Latch latched_exit_state_at_verdict(exit_output latched, const PID& pid, const ExitGate& gate, double live_error, const std::function<bool(int)>& in_place,
+                                    bool on_target = true) {
+  Latch state = latched_exit_state(latched, pid, gate, live_error, on_target);
+  if (state == Latch::OutOfBand && latched == SMALL_EXIT && pid.exit.big_error > 0 && std::fabs(live_error) < pid.exit.big_error) {
+    if (!on_target) return Latch::OffTarget;
+    state = gate.moving(latched, pid) ? Latch::Moving : Latch::Holds;
+  }
+  if (state == Latch::Moving && in_place && in_place(std::max(latched == SMALL_EXIT ? pid.exit.small_exit_time : pid.exit.big_exit_time, 200)))
+    return Latch::Holds;
+  return state;
+}
+
 // An exit that is out of its band goes back to RUNNING for the PID's own timers to latch again. One that is only moving, or that the robot is not on
 // target for, goes back to the gate, which hands it over again on the first pass the robot is stopped (and, for odom xy, on target).
 void take_back_latched(exit_output& exit, Latch state, ExitGate& gate) {
@@ -1483,8 +1503,8 @@ void Drive::pid_wait() {
           // still inside the band the exit was given for, and the gate not seeing it move since. If not, the exit is taken back, the side's
           // watch gets a fresh clock, and the wait goes on. Bounded by STUCK_WATCH_REARM_CAP per side, like every other take-back: a side
           // that is out of it again after that is counted as it was before this check existed, by its live error against its big error.
-          Latch left_state = latched_exit_state(left_exit, leftPID, left_gate, leftPID.error);
-          Latch right_state = latched_exit_state(right_exit, rightPID, right_gate, rightPID.error);
+          Latch left_state = latched_exit_state_at_verdict(left_exit, leftPID, left_gate, leftPID.error, left_in_place);
+          Latch right_state = latched_exit_state_at_verdict(right_exit, rightPID, right_gate, rightPID.error, right_in_place);
           bool left_back = left_state != Latch::Holds && left_stuck_watch_rearm_count < STUCK_WATCH_REARM_CAP;
           bool right_back = right_state != Latch::Holds && right_stuck_watch_rearm_count < STUCK_WATCH_REARM_CAP;
           if (left_back) {
@@ -1624,6 +1644,7 @@ void Drive::pid_wait() {
     bool stalled = false;
     bool ended_on_mA = false;  // the wait ended on an mA exit before the last point, which stalled below stands for
     auto odom_stopped = [this](int w) { return odom_travel_stopped(w); };
+    auto odom_in_place = [this](int w) { return odom_travel_in_place(w); };
     auto odom_tracked = [this] { return travel_tracked(Travel::OdomXY) && travel_tracked(Travel::OdomHeading); };
     bool odom_gate_armed = team_stuck_window(xyPID, current_a_odomPID) != 0;
     ExitGate xy_gate(odom_stopped, odom_tracked, odom_gate_armed);
@@ -1778,8 +1799,9 @@ void Drive::pid_wait() {
           // An axis that already latched a window exit has to still hold it before the robot counts as settled, see the DRIVE branch: its live
           // error inside the band the exit was given for, and the gate not seeing the robot move since. If not it is taken back, the watch gets a
           // fresh clock, and the wait goes on, bounded by STUCK_WATCH_REARM_CAP.
-          Latch xy_state = latched_exit_state(xy_exit, xyPID, xy_gate, xyPID.error, odom_xy_exit_on_target(xy_gate, final_target_distance(), xyPID));
-          Latch a_state = latched_exit_state(a_exit, current_a_odomPID, a_gate, current_a_odomPID.error);
+          Latch xy_state = latched_exit_state_at_verdict(xy_exit, xyPID, xy_gate, xyPID.error, odom_in_place,
+                                                         odom_xy_exit_on_target(xy_gate, final_target_distance(), xyPID));
+          Latch a_state = latched_exit_state_at_verdict(a_exit, current_a_odomPID, a_gate, current_a_odomPID.error, odom_in_place);
           if ((xy_state != Latch::Holds || a_state != Latch::Holds) && watch_rearm_count < STUCK_WATCH_REARM_CAP) {
             if (xy_state != Latch::Holds) take_back_latched(xy_exit, xy_state, xy_gate);
             if (a_state != Latch::Holds) take_back_latched(a_exit, a_state, a_gate);
@@ -2362,8 +2384,8 @@ void Drive::wait_until_drive(double target) {
           // A side that already latched a window exit has to still hold it before the robot counts as settled, exactly as in pid_wait()'s
           // DRIVE branch (see the comment there): its live error inside the band the exit was given for, and the gate not seeing it move
           // since. If not the exit is taken back, the side's watch gets a fresh clock, and the wait goes on, bounded by STUCK_WATCH_REARM_CAP.
-          Latch left_state = latched_exit_state(left_exit, leftPID, left_gate, leftPID.error);
-          Latch right_state = latched_exit_state(right_exit, rightPID, right_gate, rightPID.error);
+          Latch left_state = latched_exit_state_at_verdict(left_exit, leftPID, left_gate, leftPID.error, left_in_place);
+          Latch right_state = latched_exit_state_at_verdict(right_exit, rightPID, right_gate, rightPID.error, right_in_place);
           bool left_back = left_state != Latch::Holds && left_stuck_watch_rearm_count < STUCK_WATCH_REARM_CAP;
           bool right_back = right_state != Latch::Holds && right_stuck_watch_rearm_count < STUCK_WATCH_REARM_CAP;
           if (left_back) {
