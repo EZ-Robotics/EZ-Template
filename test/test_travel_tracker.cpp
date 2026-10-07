@@ -212,3 +212,50 @@ TEST_CASE("PathTracker: two dimensions measure path length of the pose, so a cir
   CHECK_FALSE(f.t.stopped(50, FLOOR_IN_S, f.now(2000)));
   CHECK_FALSE(f.t.stopped(500, FLOOR_IN_S, f.now(2000)));
 }
+
+// A stalled task leaves a hole in the samples. Whatever the robot did inside the hole shows up at once in the first sample after it,
+// and has to be charged to the window that was asked about: spreading it over the hole would turn a 3 in/s shove into 1 in/s.
+TEST_CASE("PathTracker: a robot that sits still through a gap in the samples is stopped after it") {
+  Feed f(COUNT_450_325);
+  for (int ms = 0; ms <= 1000; ms += 10) f.at(ms, 0.0);
+  f.at(1300, 0.0);
+  CHECK(f.t.stopped(90, FLOOR_IN_S, f.now(1300)));
+  CHECK(f.t.stopped(250, FLOOR_IN_S, f.now(1300)));
+}
+
+TEST_CASE("PathTracker: movement that shows up at the end of a gap is charged to the window, not spread over the gap") {
+  Feed f(COUNT_450_325);
+  for (int ms = 0; ms <= 1000; ms += 10) f.at(ms, 0.0);
+  f.at(1300, 0.3);  // 0.3 in over the 300 ms gap would be 1 in/s, under the floor, if spread over it
+  double travel = 0, span = 0;
+  REQUIRE(f.t.travel_over(90, f.now(1300), travel, span));
+  CHECK(span == doctest::Approx(90.0));
+  CHECK(travel == doctest::Approx(0.3 - COUNT_450_325));
+  CHECK_FALSE(f.t.stopped(90, FLOOR_IN_S, f.now(1300)));
+  // A longer window that reaches back past the gap sees the same inches over its own, longer, span
+  CHECK(f.t.stopped(500, FLOOR_IN_S, f.now(1300)));
+}
+
+TEST_CASE("PathTracker: a gap's movement leaves the window once the samples after it are older than the window") {
+  Feed f(COUNT_450_325);
+  for (int ms = 0; ms <= 1000; ms += 10) f.at(ms, 0.0);
+  f.at(1300, 0.3);
+  for (int ms = 1310; ms <= 1500; ms += 10) {
+    f.at(ms, 0.3);
+    // The window still reaches the sample from before the gap until it is shorter than the time since the gap's end
+    if (ms < 1390) CHECK_FALSE(f.t.stopped(90, FLOOR_IN_S, f.now(ms)));
+    if (ms >= 1400) CHECK(f.t.stopped(90, FLOOR_IN_S, f.now(ms)));
+  }
+}
+
+TEST_CASE("PathTracker: a window that is covered is never answered over more than its own length") {
+  Feed f(COUNT_450_325);
+  for (int ms = 0; ms <= 1000; ms += 10) f.at(ms, 0.0);
+  f.at(1400, 0.0);
+  for (int w : {20, 50, 90, 250}) {
+    double travel = 0, span = 0;
+    REQUIRE(f.t.travel_over(w, f.now(1400), travel, span));
+    CAPTURE(w);
+    CHECK(span == doctest::Approx(w));
+  }
+}
