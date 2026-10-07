@@ -3,7 +3,8 @@
 // however little it gets anywhere) or one that is dragged away from it. What the hold is for is a robot that is still GETTING somewhere (a heavy
 // robot accelerating hard draws over current the whole way), so an mA exit that finds the robot not stopped is released as soon as, over one mA
 // window, the error to the target has not come down by the stop speed times that window (1.5 in/s, 4 deg/s). A robot that is closing at the
-// stop speed or faster is still held. Stopped still releases it at once.
+// stop speed or faster is still held. Stopped still releases it at once. An odom xy exit also counts the heading error coming down by its own
+// stop speed times the window as getting somewhere (it is held for that window as well).
 //
 // Every wait is capped in sim time, so "no return" is a failure and not a hung suite.
 #include <cmath>
@@ -60,7 +61,7 @@ void set_all_exits(Drive& c, int st, double se, int bt, double be, int vt, int m
 // the auto task running every 5th tick, the motors reading over current on every tick, an odom point to (1, 1) with an end heading of 90 and a wall in front of
 // it. xy exits (50, 0.75, 250, 3, 500, 2000) and angle exits (250, 0, 200, 1, 500, 100). The previous head returned at 2020 ms interfered (the mA exit); held
 // for ever it never returned.
-TEST_CASE("a held mA exit on a sticky robot whose task runs every 5th tick returns within two mA windows") {
+TEST_CASE("a held mA exit on a sticky robot whose task runs every 5th tick returns within three mA windows") {
   for (double wall : {0.5, 1.5, 2.5}) {
     Rig r(sim::archetype_sticky_high_friction(), 1, true, 44);
     set_all_exits(r.chassis, 50, 0.75, 250, 3.0, 500, 2000, 250, 0.0, 200, 1.0, 500, 100);
@@ -71,8 +72,10 @@ TEST_CASE("a held mA exit on a sticky robot whose task runs every 5th tick retur
     bool ok = r.wait([&] { r.chassis.pid_wait(); }, 3000, &ms);
     CAPTURE(wall);
     CHECK_MESSAGE(ok, "pid_wait() did not return within 30 s");
-    // The bound: the xy mA window (2000 ms) to the latch, then one window (2000 ms) without the error coming down by the stop speed times it
-    CHECK_MESSAGE(ms < 5000.0, "returned after " << ms << " ms");
+    // The bound: the xy mA window (2000 ms) to the latch, then one window (2000 ms) without the error coming down by the stop speed times it, and
+    // one more when the heading error comes down by its stop speed times the window: its swing here is 6 deg or more about a baseline that falls
+    // slowly, so a window that starts at a peak of it sees its trough, and holds the exit. The next window starts from that trough and does not.
+    CHECK_MESSAGE(ms < 7000.0, "returned after " << ms << " ms");
     CHECK(r.chassis.interfered);
   }
 }

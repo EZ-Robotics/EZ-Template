@@ -676,32 +676,51 @@ public:
   // error of the last, so a robot closing on its target at the stop speed or faster is held for as long as it does, which is at most its distance over the stop
   // speed. Also for the waits that read a PID's mA exit without going through filter() (xy before the last point of a path, whose other exits mean nothing).
   // `live_error` is the error to the target that exit is for.
+  //
+  // An odom xy gate has a second channel, the heading error (heading_channel_set()): a robot that turns before it translates is getting somewhere
+  // on its heading while its distance stands still, and the exit is held while either comes down by its own stop speed times the window. Each
+  // channel is judged from its own lowest value (a window starts from where the channel itself got to, never from the other's), so one cannot
+  // make up for the other having gone back: the robot has to be getting somewhere on one of them over the window itself.
   bool take_mA(const PID& pid, double live_error) {
     if (stopped_for(pid.exit.mA_timeout)) {
       mA_held_ = false;
       return true;
     }
     double error = std::fabs(live_error);
+    bool heading = heading_floor_ && heading_error_;
+    double turn = heading ? std::fabs(heading_error_()) : 0.0;
     std::uint32_t now = pros::millis();
     if (!mA_held_) {
       mA_held_ = true;
       mA_window_ms_ = now;
       mA_window_start_ = mA_window_best_ = error;
+      heading_window_start_ = heading_window_best_ = turn;
       return false;
     }
     mA_window_best_ = std::fmin(mA_window_best_, error);
+    if (heading) heading_window_best_ = std::fmin(heading_window_best_, turn);
     int window = std::max(pid.exit.mA_timeout, (int)ez::detail::PathTracker::MIN_WINDOW_MS);
     std::int32_t waited = now - mA_window_ms_;
     if (waited < window) return false;
-    if (mA_window_start_ - mA_window_best_ < stop_speed_or_default(floor_, ez::Drive::STOP_SPEED_DISTANCE_DEFAULT) * waited / 1000.0) return true;
+    bool distance_stuck = mA_window_start_ - mA_window_best_ < stop_speed_or_default(floor_, ez::Drive::STOP_SPEED_DISTANCE_DEFAULT) * waited / 1000.0;
+    bool heading_stuck = !heading || heading_window_start_ - heading_window_best_ < heading_floor_() * waited / 1000.0;
+    if (distance_stuck && heading_stuck) return true;
     mA_window_ms_ = now;
     mA_window_start_ = mA_window_best_;
+    heading_window_start_ = heading_window_best_;
     return false;
   }
   // The stop speed this gate's mA hold is judged against (in/s for a distance error, deg/s for an angle), read fresh on every call. Without
   // one it is the default drive speed.
   ExitGate& floor_set(StopSpeedFn floor) {
     floor_ = std::move(floor);
+    return *this;
+  }
+  // The heading channel of the mA hold, for an odom xy gate: the heading error, read fresh on every call, and the stop speed (deg/s) it has to
+  // come down at
+  ExitGate& heading_channel_set(StopSpeedFn floor, std::function<double()> error) {
+    heading_floor_ = std::move(floor);
+    heading_error_ = std::move(error);
     return *this;
   }
 
@@ -737,7 +756,10 @@ private:
   bool mA_held_ = false;  // an mA exit is being held, and the window its progress is judged over: see take_mA()
   std::uint32_t mA_window_ms_ = 0;
   double mA_window_start_ = 0, mA_window_best_ = 0;
+  double heading_window_start_ = 0, heading_window_best_ = 0;
   StopSpeedFn floor_;
+  StopSpeedFn heading_floor_;
+  std::function<double()> heading_error_;
 };
 
 // A window exit a side or axis latched earlier (SMALL_EXIT / BIG_EXIT) is only still true while two things hold: its live error is still inside the
@@ -935,6 +957,24 @@ std::optional<pose> path_point_before_checkpoint(const std::vector<odom>& path, 
   while (from >= 0 && util::distance_to_point(path[from].target, checkpoint) < CHECKPOINT_LEG_MIN) from--;
   if (from < 0 || path[from].target.theta != ANGLE_NOT_SET) return std::nullopt;
   return path[from].target;
+}
+
+// How much of a pure pursuit path is left to drive, for the progress an mA exit is held on before the path's last point. The distance to the point the
+// robot is driving to is always about a look ahead and does not change while the robot follows the path, so it says nothing about progress: what
+// comes down as the robot drives is that distance plus the length of the path after the point. The length after each point is made once, when a wait
+// begins (path_length_after()), and not on every pass.
+std::vector<double> path_length_after(const std::vector<odom>& path) {
+  std::vector<double> after(path.size(), 0.0);
+  for (int i = (int)path.size() - 2; i >= 0; i--) after[i] = after[i + 1] + util::distance_to_point(path[i + 1].target, path[i].target);
+  return after;
+}
+
+// The path left for a robot at `robot` that is driving to path[index]. A path that is no longer the one `after` was made for (the motion was replaced
+// while a wait was running; the wait ends on its own retarget guard) is left at the distance to the point.
+double path_left(const std::vector<odom>& path, const std::vector<double>& after, int index, const pose& robot) {
+  if (index < 0 || index >= (int)path.size()) return 0.0;
+  double to_point = util::distance_to_point(path[index].target, robot);
+  return after.size() == path.size() ? to_point + after[index] : to_point;
 }
 
 // Always printed, not gated on print_toggle: the team wrote something that can never do what they meant.
@@ -1588,8 +1628,19 @@ void Drive::pid_wait() {
     bool odom_gate_armed = team_stuck_window(xyPID, current_a_odomPID) != 0;
     ExitGate xy_gate(odom_stopped, odom_tracked, odom_gate_armed);
     xy_gate.floor_set(stop_speed_fn(StopSpeed::OdomXY));
+    xy_gate.heading_channel_set(stop_speed_fn(StopSpeed::OdomAngle), [this] { return current_a_odomPID.error; });
     ExitGate a_gate(odom_stopped, odom_tracked, odom_gate_armed);
     a_gate.floor_set(stop_speed_fn(StopSpeed::OdomAngle));
+    // What an mA exit before the path's last point is held on, see path_left()
+    std::vector<double> path_after;
+    {
+      ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+      path_after = path_length_after(pp_movements);
+    }
+    auto path_left_now = [&]() {
+      ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+      return path_left(pp_movements, path_after, pp_index, odom_pose_get());
+    };
 
     // A concurrent pid_odom_*_set() from another task retargets xyPID/current_a_odomPID (and resets pp_index
     // and pp_movements) mid-wait -- same hazard as the DRIVE branch above, just for odom.  odom_target_start
@@ -1669,7 +1720,7 @@ void Drive::pid_wait() {
         PID::MATimerSnapshot xy_mA_snapshot = xyPID.mA_timer_snapshot();
         exit_output xy_pass = xyPID.exit_condition(xy_motors);
         // An mA exit is only taken once the robot is also stopped (see ExitGate); a held one is put back like a discarded exit
-        bool xy_mA_held = xy_pass == mA_EXIT && !xy_gate.take_mA(xyPID, target_distance());
+        bool xy_mA_held = xy_pass == mA_EXIT && !xy_gate.take_mA(xyPID, path_left_now());
         if (xy_mA_held) xy_pass = RUNNING;
         if (xy_mA_tracked && xy_over_current && (xy_mA_held || xy_pass == SMALL_EXIT || xy_pass == BIG_EXIT || xy_pass == VELOCITY_EXIT))
           xyPID.mA_timer_restore_and_credit(xy_mA_snapshot);
@@ -2127,6 +2178,7 @@ void Drive::wait_until_drive(double target) {
   ExitGate xy_gate([this](int w) { return travel_stopped(Travel::OdomXY, w, StopSpeed::OdomXY); }, [this] { return travel_tracked(Travel::OdomXY); },
                    xy_gate_armed);
   xy_gate.floor_set(stop_speed_fn(StopSpeed::OdomXY));
+  xy_gate.heading_channel_set(stop_speed_fn(StopSpeed::OdomAngle), [this] { return current_a_odomPID.error; });
 
   // Whether this wait_until()'s own target IS (not just near) the motion's actual final target, not
   // some earlier waypoint the robot is meant to drive through. pid_wait()'s DRIVE branch already
@@ -2895,8 +2947,19 @@ void Drive::wait_until_point(pose target, int path_index) {
   bool odom_gate_armed = team_stuck_window(xyPID, current_a_odomPID) != 0;
   ExitGate xy_gate(odom_stopped, odom_tracked, odom_gate_armed);
   xy_gate.floor_set(stop_speed_fn(StopSpeed::OdomXY));
+  xy_gate.heading_channel_set(stop_speed_fn(StopSpeed::OdomAngle), [this] { return current_a_odomPID.error; });
   ExitGate a_gate(odom_stopped, odom_tracked, odom_gate_armed);
   a_gate.floor_set(stop_speed_fn(StopSpeed::OdomAngle));
+  // What an mA exit before the path's last point is held on, see path_left()
+  std::vector<double> path_after;
+  {
+    ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+    path_after = path_length_after(pp_movements);
+  }
+  auto path_left_now = [&]() {
+    ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+    return path_left(pp_movements, path_after, pp_index, odom_pose_get());
+  };
 
   // Whether pure pursuit is still before its last point right now -- see pid_wait()'s own matching comment
   // (on the pre-last-point loop in its odom branch) for why xy's window exits mean nothing there: before the
@@ -2945,7 +3008,7 @@ void Drive::wait_until_point(pose target, int path_index) {
       PID::MATimerSnapshot xy_mA_snapshot = xyPID.mA_timer_snapshot();
       exit_output xy_pass = xy_before_last_point ? xyPID.exit_condition(xy_motors) : gated_exit(xy_gate, xyPID, xy_motors, xyPID.error);
       // An mA exit is only taken once the robot is also stopped (see ExitGate); a held one is put back like a discarded exit
-      bool xy_mA_held = xy_before_last_point && xy_pass == mA_EXIT && !xy_gate.take_mA(xyPID, util::distance_to_point(target, odom_pose_get()));
+      bool xy_mA_held = xy_before_last_point && xy_pass == mA_EXIT && !xy_gate.take_mA(xyPID, path_left_now());
       if (xy_mA_held) xy_pass = RUNNING;
       if (xy_before_last_point) {
         if (xy_mA_tracked && xy_over_current && (xy_mA_held || xy_pass == SMALL_EXIT || xy_pass == BIG_EXIT || xy_pass == VELOCITY_EXIT))
@@ -3115,6 +3178,17 @@ void Drive::pid_wait_until_index_started(int index) {
   ExitGate xy_gate([this](int w) { return odom_travel_stopped(w); }, [this] { return travel_tracked(Travel::OdomXY) && travel_tracked(Travel::OdomHeading); },
                    team_stuck_window(xyPID, current_a_odomPID) != 0);
   xy_gate.floor_set(stop_speed_fn(StopSpeed::OdomXY));
+  xy_gate.heading_channel_set(stop_speed_fn(StopSpeed::OdomAngle), [this] { return current_a_odomPID.error; });
+  // What an mA exit before the path's last point is held on, see path_left(). This whole wait is before the checkpoint's point.
+  std::vector<double> path_after;
+  {
+    ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+    path_after = path_length_after(pp_movements);
+  }
+  auto path_left_now = [&]() {
+    ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+    return path_left(pp_movements, path_after, pp_index, odom_pose_get());
+  };
 
   // Same concurrent-retarget guard as pid_wait()'s odom branch -- this function had none, unlike every
   // other public wait in this file. A concurrent pid_odom_*_set() from another task resets pp_index to 0
@@ -3160,7 +3234,7 @@ void Drive::pid_wait_until_index_started(int index) {
       PID::MATimerSnapshot xy_mA_snapshot = xyPID.mA_timer_snapshot();
       exit_output xy_pass = xyPID.exit_condition(xy_motors);
       // An mA exit is only taken once the robot is also stopped (see ExitGate); a held one is put back like a discarded exit
-      bool xy_mA_held = xy_pass == mA_EXIT && !xy_gate.take_mA(xyPID, point_distance());
+      bool xy_mA_held = xy_pass == mA_EXIT && !xy_gate.take_mA(xyPID, path_left_now());
       if (xy_mA_held) xy_pass = RUNNING;
       if (xy_mA_tracked && xy_over_current && (xy_mA_held || xy_pass == SMALL_EXIT || xy_pass == BIG_EXIT || xy_pass == VELOCITY_EXIT))
         xyPID.mA_timer_restore_and_credit(xy_mA_snapshot);
