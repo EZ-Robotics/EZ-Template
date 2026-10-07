@@ -72,7 +72,7 @@ TEST_CASE("a shove that begins late in the backstop window is not read as a robo
   }
 }
 
-TEST_CASE("a robot carried at several times the stop speed from late in the backstop window still ends, interfered, in bounded time") {
+TEST_CASE("a robot carried at several times the stop speed from before the wait settles still ends, interfered, in bounded time") {
   for (double w : {8.0, 16.0, -16.0}) {
     for (int start : {500, 700, 900}) {
       Rig r(sim::archetype_light_fast(), 1, false, 1);
