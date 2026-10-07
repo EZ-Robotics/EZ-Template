@@ -768,11 +768,23 @@ void Drive::travel_sample(bool odom_tracked) {
     travel_generation_ = motion_generation;
     travel_xy_x_ = travel_xy_y_ = 0.0;
   }
+  // The band that hides a one count flicker is one count of the sensor being watched.  Integrated encoders and a matched pair of
+  // tracking wheels have one count between them.  Two tracking wheels of different resolution (an ADI encoder on one side and a
+  // rotation sensor on the other) each get their own, and the xy pose, which is made of both, gets the coarser: a band that is too
+  // big hides at most one count, one that is too small lets the coarser sensor's flicker count as travel.
   double tick_per_inch = drive_tick_per_inch();
   double count = tick_per_inch > 0.0 ? 1.0 / tick_per_inch : 0.0;
-  travel_[(int)Travel::Left].band_set(count);
-  travel_[(int)Travel::Right].band_set(count);
-  travel_[(int)Travel::OdomXY].band_set(count);
+  double count_left = count, count_right = count, count_xy = count;
+  if (is_tracker == ODOM_TRACKER) {
+    double tick_per_inch_left = odom_tracker_left->ticks_per_inch();
+    double tick_per_inch_right = odom_tracker_right->ticks_per_inch();
+    count_left = tick_per_inch_left > 0.0 ? 1.0 / tick_per_inch_left : 0.0;
+    count_right = tick_per_inch_right > 0.0 ? 1.0 / tick_per_inch_right : 0.0;
+    count_xy = std::max(count_left, count_right);
+  }
+  travel_[(int)Travel::Left].band_set(count_left);
+  travel_[(int)Travel::Right].band_set(count_right);
+  travel_[(int)Travel::OdomXY].band_set(count_xy);
   travel_[(int)Travel::Heading].band_set(TRAVEL_BAND_ANGLE);
   travel_[(int)Travel::OdomHeading].band_set(TRAVEL_BAND_ANGLE);
   std::uint32_t now = pros::millis();

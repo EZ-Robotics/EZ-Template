@@ -25,7 +25,9 @@ struct TrackerRig {
   // left: ADI encoder, 360 counts per turn.  right: rotation sensor, 36000 counts per turn.  Same wheel, so the right side's count
   // is 100 times finer.
   TrackerRig(double flicker_left_from_ms, double flicker_right_from_ms)
-      : r(archetype_classroom(), 1, false), left(new tracking_wheel(std::vector<int>{1, 2}, 2.75, 0.0)), right(new tracking_wheel(12, 2.75, 0.0)),
+      : r(archetype_classroom(), 1, false),
+        left(new tracking_wheel(std::vector<int>{1, 2}, 2.75, 0.0)),
+        right(new tracking_wheel(12, 2.75, 0.0)),
         flicker_from_ms(flicker_left_from_ms) {
     r.chassis.odom_tracker_left_set(left.get());
     r.chassis.odom_tracker_right_set(right.get());
