@@ -6,6 +6,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdint>
@@ -57,6 +58,9 @@ public:
   static constexpr int MIN_WINDOW_MS = 20;
   // A latest sample older than this means the task that feeds the tracker is not running (3 passes).
   static constexpr int STALE_MS = 30;
+  // The stretch at the end of a window that in_place() also asks about: how fast the thing is moving now
+  static constexpr int RECENT_MS = 100;
+  static constexpr double RECENT_FAST = 4.0;
 
   void band_set(double band) { band_ = band; }
 
@@ -138,15 +142,58 @@ public:
 
   // Whether the thing went nowhere: its net displacement over the last window_ms (see net_over()) is under floor_per_s (units per second)
   // times the span that is measured over.  A thing that is oscillating about one place has a long path and no net displacement and is in
-  // place; one that is being carried through it, or away from it, is not however slowly.  When there is nothing to say (see net_over()) it
+  // place; one that is being carried through it, or away from it, is not however slowly.  Nor is one that was still for most of the window and
+  // is moving now (see going_somewhere()), which the average over a long window would hide.  When there is nothing to say (see net_over()) it
   // is in place, so a caller that asks this of a robot it would otherwise let go is never left holding it by a tracker that has no history.
   bool in_place(int window_ms, double floor_per_s, std::uint32_t now_ms) const {
     double net = 0.0, span = 0.0;
     if (!net_over(window_ms, now_ms, net, span)) return true;
-    return net < floor_per_s * span / 1000.0;
+    if (net >= floor_per_s * span / 1000.0) return false;
+    // A window can be a couple of seconds long, and a thing that sat still for most of it and began to move late in it is averaged down to
+    // under the floor however fast it is going now.  So the last RECENT_MS of it are asked about as well: a thing that is moving over the
+    // floor right now, and has just left the stretch of ground it covered over the rest of the window, is going somewhere.  (One that is
+    // moving over the floor but is still within where it has been all along, such as a thing hunting back and forth, is not.)
+    return !going_somewhere(window_ms, floor_per_s, now_ms);
   }
 
 private:
+  // Whether the thing is going somewhere at the end of the last window_ms: over the last RECENT_MS it moved over floor_per_s on average (the
+  // straight line from where it was to where it is, so the sensor's noise does not add up), and either it moved RECENT_FAST times that fast
+  // in a nearly straight line, or it now sits outside the ground it covered over the rest of the window by more than half of what the floor
+  // allows over RECENT_MS.  False when that cannot be told.
+  bool going_somewhere(int window_ms, double floor_per_s, std::uint32_t now_ms) const {
+    int base = 0;
+    double span = 0.0;
+    if (!locate(RECENT_MS, now_ms, false, base, span)) return false;
+    int newest = newest_index();
+    double dt = (double)(std::int32_t)(newest_t() - t_at(base)) / 1000.0;
+    if (dt <= 0.0) return false;
+    double x = cx_buf_[newest], y = cy_buf_[newest];
+    double displacement = std::hypot(x - cx_buf_[base], y - cy_buf_[base]);
+    if (displacement / dt < floor_per_s) return false;
+    // Several times the floor, in a nearly straight line, is going somewhere wherever it is: a thing hunting back and forth over a short
+    // stretch has a long path and little displacement, and a sensor's noise over a stretch this short does not add up to a straight line
+    if (displacement / dt >= RECENT_FAST * floor_per_s && displacement >= 0.5 * (cum_buf_[newest] - cum_buf_[base])) return true;
+    // The ground covered by the samples from the start of the window up to the one the recent stretch begins at
+    if (window_ms < MIN_WINDOW_MS) window_ms = MIN_WINDOW_MS;
+    std::uint32_t oldest = newest_t() - (std::uint32_t)window_ms;
+    double min_x = cx_buf_[base], max_x = min_x, min_y = cy_buf_[base], max_y = min_y;
+    int seen = 0;
+    for (int k = 0; k < count_; k++) {
+      int idx = index_from_newest(k);
+      if ((std::int32_t)(t_at(idx) - t_at(base)) > 0) continue;
+      if ((std::int32_t)(t_at(idx) - oldest) < 0) break;
+      min_x = std::min(min_x, cx_buf_[idx]);
+      max_x = std::max(max_x, cx_buf_[idx]);
+      min_y = std::min(min_y, cy_buf_[idx]);
+      max_y = std::max(max_y, cy_buf_[idx]);
+      seen++;
+    }
+    if (seen < 2) return false;
+    double out = std::hypot(std::max({min_x - x, 0.0, x - max_x}), std::max({min_y - y, 0.0, y - max_y}));
+    return out > 0.5 * floor_per_s * RECENT_MS / 1000.0;
+  }
+
   // Finds the sample a window reaches back to: the newest one at or before `window_ms` ago, and the span of time from it to the newest.
   // `short_ok`: answer from the oldest sample when the history does not reach that far back (see net_over()).  Otherwise that is
   // only answered when the ring has lost the start of the window, as the average over what is left, which forgets older motion.

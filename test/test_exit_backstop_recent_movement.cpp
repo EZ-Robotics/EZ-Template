@@ -71,3 +71,20 @@ TEST_CASE("a shove that begins late in the backstop window is not read as a robo
     if (!r.chassis.interfered) CHECK_MESSAGE(speed < 2.0 * 4.0, "returned clean after " << ms << " ms while turning at " << speed << " deg/s");
   }
 }
+
+TEST_CASE("a robot carried at several times the stop speed from late in the backstop window still ends, interfered, in bounded time") {
+  for (double w : {8.0, 16.0, -16.0}) {
+    for (int start : {500, 700, 900}) {
+      Rig r(sim::archetype_light_fast(), 1, false, 1);
+      r.chassis.pid_turn_exit_condition_set(90, 0.0, 0, 0.0, 500, 500);
+      r.sim.carry(0.0, w, start, 60000);
+      r.chassis.pid_turn_set(90_deg, 110);
+      double ms = 0;
+      REQUIRE(r.wait([&] { r.chassis.pid_wait(); }, 2000, &ms));
+      CAPTURE(w);
+      CAPTURE(start);
+      CHECK(r.chassis.interfered);
+      CHECK_MESSAGE(ms < 10000.0, "returned after " << ms << " ms");
+    }
+  }
+}
