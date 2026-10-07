@@ -275,6 +275,7 @@ public:
   // distance: how far the robot is from the point it's driving to.  xy_error and a_error: the PIDs' signed errors.
   // settle_distance: how far it is from where it counts as settled, when that is not only the point (negative: the same as distance).
   bool stuck(int index, double distance, double xy_error, double a_error, double travelled, double turned, double settle_distance = -1.0) {
+    starved_ = false;
     if (window_ == 0) return false;
     std::uint32_t now = pros::millis();
     std::uint32_t pass = stuck_passes();
@@ -388,11 +389,19 @@ public:
     // still caught by the STARVED_WINDOWS wall-clock fallback below, unchanged.  Flagging the latency tradeoff
     // for a design call, the same as the Channel rebound latch above.
     int expected_passes = (int)(window / (double)util::DELAY_TIME);
-    bool stuck = (std::int32_t)since_pass > expected_passes || waited > STUCK_STARVED_WINDOWS * window;
-    return stuck;
+    bool by_passes = (std::int32_t)since_pass > expected_passes;
+    bool by_clock = waited > STUCK_STARVED_WINDOWS * window;
+    starved_ = !by_passes && by_clock;
+    return by_passes || by_clock;
   }
 
+  // Whether the stuck verdict the last call to stuck() returned came from the wall clock alone: the window passed several times over
+  // without the auto task making the passes a task running at its own pace would. Only meaningful after a call that returned true.
+  // A verdict like that rests on errors nothing has updated, so it is never a settled one, see stuck_settled().
+  bool starved() const { return starved_; }
+
 private:
+  bool starved_ = false;
   Channel xy_, a_;
   Channel xs_, as_;  // the same two channels on the settle step: what the settle clock credits
   int index_;
@@ -451,6 +460,7 @@ public:
   }
 
   bool stuck(double error) {
+    starved_ = false;
     if (window_ == 0) return false;
     std::uint32_t now = pros::millis();
     std::uint32_t pass = stuck_passes();
@@ -515,10 +525,17 @@ public:
     // See the matching comment in StuckWatch::stuck() -- a fixed, nominal-DELAY_TIME pass count, not one
     // derived from this watch's own observed (and self-referential) cadence.
     int expected_passes = (int)(window / (double)util::DELAY_TIME);
-    return (std::int32_t)since_pass > expected_passes || waited > STUCK_STARVED_WINDOWS * window;
+    bool by_passes = (std::int32_t)since_pass > expected_passes;
+    bool by_clock = waited > STUCK_STARVED_WINDOWS * window;
+    starved_ = !by_passes && by_clock;
+    return by_passes || by_clock;
   }
 
+  // See StuckWatch::starved()
+  bool starved() const { return starved_; }
+
 private:
+  bool starved_ = false;
   Channel ch_;
   Channel cs_;          // the same channel on the settle step: what the settle clock credits
   int window_;          // the team's window, floored: what a stuck verdict outside big_error waits for
@@ -750,6 +767,13 @@ CheckpointEnd checkpoint_end(bool settled, bool at_final_target, bool unreachabl
 // mA exit marks interfered exactly as before. `fresh`: the auto task has run since the wait began, so the errors are this
 // motion's and not the last one's.
 bool ma_exit_settled(bool inside_big_on_every_axis, bool fresh) { return inside_big_on_every_axis && fresh; }
+
+// What a stuck verdict means, decided in one place for every wait: a robot that is stopped inside big_error of its target on every axis
+// it has is settled (clean), anything else is stalled (interfered). A verdict the wall clock produced alone (`starved`, see
+// StuckWatch::starved()) is never settled: the errors it would be judged by only change when the auto task runs, and a task that has not
+// made a pass for several windows has left the last ones it computed in place, however far the robot has gone since. `fresh`: the auto
+// task has run since the wait began (see ma_exit_settled()).
+bool stuck_settled(bool inside_big_on_every_axis, bool fresh, bool starved) { return inside_big_on_every_axis && fresh && !starved; }
 
 // Always printed, not gated on print_toggle: the team wrote something that can never do what they meant.
 void print_unreachable_checkpoint(double checkpoint, double final_target) {
@@ -1229,8 +1253,10 @@ void Drive::pid_wait() {
           bool left_settled = std::fabs(leftPID.error) < settle_error(leftPID);
           bool right_settled = std::fabs(rightPID.error) < settle_error(rightPID);
           // ...and only if ez_auto_task has run since this wait began (see entry_task_passes above); if it
-          // has not, both errors are the previous motion's leftovers, not a reading of this one.
-          bool settled = left_settled && right_settled && stuck_passes() != entry_task_passes;
+          // has not, both errors are the previous motion's leftovers, not a reading of this one. A verdict that
+          // only the wall clock reached is not settled either, see stuck_settled().
+          bool settled = stuck_settled(left_settled && right_settled, stuck_passes() != entry_task_passes,
+                                       (left_stuck && left_watch.starved()) || (right_stuck && right_watch.starved()));
           stalled = !settled;
           settled_via_stuck = settled;
           if (print_toggle)
@@ -1509,7 +1535,8 @@ void Drive::pid_wait() {
           if (a_released) a_exit = RUNNING;
           // Stopped inside both big error windows is where a big exit would have left it: that's settled, not stuck.
           // (A robot hovering across the small error window can keep both exit timers from ever finishing.)
-          bool settled = target_distance() < settle_error(xyPID) && std::fabs(current_a_odomPID.error) < settle_error(current_a_odomPID);
+          bool settled = stuck_settled(target_distance() < settle_error(xyPID) && std::fabs(current_a_odomPID.error) < settle_error(current_a_odomPID), true,
+                                       watch.starved());
           stalled = !settled;
           settled_via_stuck = settled;
           if (print_toggle)
@@ -1651,7 +1678,7 @@ void Drive::pid_wait() {
         if ((turn_exit == RUNNING || turn_released) && watch.stuck(turnPID.error)) {
           if (turn_released) turn_exit = RUNNING;
           // Same settled carve-out as the DRIVE branch above.
-          bool settled = std::fabs(turnPID.error) < settle_error(turnPID) && stuck_passes() != entry_task_passes;
+          bool settled = stuck_settled(std::fabs(turnPID.error) < settle_error(turnPID), stuck_passes() != entry_task_passes, watch.starved());
           stalled = !settled;
           settled_via_stuck = settled;
           if (print_toggle)
@@ -1751,7 +1778,7 @@ void Drive::pid_wait() {
         if ((swing_exit == RUNNING || swing_released) && watch.stuck(swingPID.error)) {
           if (swing_released) swing_exit = RUNNING;
           // Same settled carve-out as the DRIVE branch above.
-          bool settled = std::fabs(swingPID.error) < settle_error(swingPID) && stuck_passes() != entry_task_passes;
+          bool settled = stuck_settled(std::fabs(swingPID.error) < settle_error(swingPID), stuck_passes() != entry_task_passes, watch.starved());
           stalled = !settled;
           settled_via_stuck = settled;
           if (print_toggle)
@@ -2043,7 +2070,9 @@ void Drive::wait_until_drive(double target) {
           // stuck-detected path instead). An odom move has no look ahead free error to judge this by.
           bool left_settled = std::fabs(leftPID.error) < settle_error(leftPID);
           bool right_settled = std::fabs(rightPID.error) < settle_error(rightPID);
-          bool settled = is_odom ? odom_settled() : left_settled && right_settled && stuck_passes() != entry_task_passes;
+          bool starved = (left_stuck && left_watch.starved()) || (right_stuck && right_watch.starved());
+          bool settled = is_odom ? stuck_settled(odom_settled(), true, starved)
+                                 : stuck_settled(left_settled && right_settled, stuck_passes() != entry_task_passes, starved);
           CheckpointEnd end = checkpoint_end(settled, at_final_target, unreachable, is_odom ? INFINITY : std::fmax(std::fabs(l_error), std::fabs(r_error)),
                                              leftPID.exit.small_error, odom_between());
           bool stalled = end == CheckpointEnd::Interfered;
@@ -2331,7 +2360,7 @@ void Drive::wait_until_turn_swing_internal(double target) {
             // Same settled carve-out as pid_wait()'s TURN branch, gated to only apply when this
             // wait_until()'s target really is the motion's final target -- see turn_at_final_target's
             // comment above.
-            bool settled = std::fabs(turnPID.error) < settle_error(turnPID) && stuck_passes() != entry_task_passes;
+            bool settled = stuck_settled(std::fabs(turnPID.error) < settle_error(turnPID), stuck_passes() != entry_task_passes, turn_watch.starved());
             CheckpointEnd end = checkpoint_end(settled, turn_at_final_target, turn_unreachable, std::fabs(g_error), turnPID.exit.small_error, true);
             bool stalled = end == CheckpointEnd::Interfered;
             if (print_toggle)
@@ -2415,7 +2444,7 @@ void Drive::wait_until_turn_swing_internal(double target) {
             // Same settled carve-out as pid_wait()'s SWING branch, gated to only apply when this
             // wait_until()'s target really is the motion's final target -- see swing_at_final_target's
             // comment above.
-            bool settled = std::fabs(swingPID.error) < settle_error(swingPID) && stuck_passes() != entry_task_passes;
+            bool settled = stuck_settled(std::fabs(swingPID.error) < settle_error(swingPID), stuck_passes() != entry_task_passes, swing_watch.starved());
             CheckpointEnd end = checkpoint_end(settled, swing_at_final_target, swing_unreachable, std::fabs(g_error), swingPID.exit.small_error, true);
             bool stalled = end == CheckpointEnd::Interfered;
             if (print_toggle)
@@ -2669,8 +2698,8 @@ void Drive::pid_wait_until_point(pose target) {
                     at_final_target ? settle_distance() : -1.0)) {
       // Stopped inside both big errors of the final target is a settle; at the final target that is a clean finish, and a mid path point
       // the robot is within the xy small_error of counts as reached. Anything else is a real stall.
-      CheckpointEnd end =
-          checkpoint_end(inside_both_big(), at_final_target, false, util::distance_to_point(target, odom_pose_get()), xyPID.exit.small_error, false);
+      CheckpointEnd end = checkpoint_end(stuck_settled(inside_both_big(), true, watch.starved()), at_final_target, false,
+                                         util::distance_to_point(target, odom_pose_get()), xyPID.exit.small_error, false);
       if (end != CheckpointEnd::Interfered) {
         if (print_toggle) std::cout << "  XY: Stuck, but stopped inside the big error windows, counted as settled" << std::endl;
         return;
