@@ -4351,6 +4351,12 @@ private:
   // True only when the thing is known to have travelled less than the stop speed allows over the last window_ms. Not knowing (no
   // sample covers the window, the auto task has gone quiet) is false: nothing settles a robot on a guess.
   bool travel_stopped(Travel channel, int window_ms, StopSpeed which);
+  // True when the thing's net displacement over the last window_ms (how far the average position of the second half of the window is from
+  // that of the first, not the path between) is under the stop speed times the time between the two: it is going nowhere, whatever it does
+  // on the way. Not knowing is true, the opposite of travel_stopped(), because this only ever takes a verdict away from a wait that would
+  // otherwise return (see StuckWatch), and a wait must never be held on a guess.
+  bool travel_in_place(Travel channel, int window_ms, StopSpeed which);
+  bool odom_travel_in_place(int window_ms);
   // Whether anything has been sampled for the current motion at all. When nothing has, the auto task has not run since the motion
   // started, so no exit can have fired on it either and there is no movement to veto one with.
   bool travel_tracked(Travel channel);

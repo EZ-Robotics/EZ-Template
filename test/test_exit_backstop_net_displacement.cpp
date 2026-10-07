@@ -184,3 +184,32 @@ TEST_CASE("a robot carried over a low stop speed for a long time ends in bounded
   CHECK(r.chassis.interfered);
   CHECK_MESSAGE(ms < 30000.0, "returned after " << ms << " ms");
 }
+
+TEST_CASE("a robot whose sensors flip by more than the stop speed allows on every pass is a hunter, and still ends clean well before the hold runs out") {
+  // A lock-stepped limit cycle: every other pass both sides read 1.5 in more than the robot's true position. That is more than the floor times
+  // the backstop window (1.0 in) at every offset of the window, and the first and last sample of a window with an odd number of samples in
+  // it are always a whole 1.5 in apart. A check on those would call it moving on every pass until the hold ran out, 4.7 s later.
+  for (bool turn : {false, true}) {
+    Rig r(sim::archetype_light_fast(), 1, false, 1);
+    int pass = 0;
+    r.sim.before_pass = [&](int) {
+      pass++;
+      if (r.sim.now_ms() < 1500 || pass % 2 == 0) return;
+      for (auto* side : {&r.chassis.left_motors, &r.chassis.right_motors})
+        for (size_t i = 0; i < side->size(); i++) {
+          // a turn is the two sides in opposite directions, a drive both in the same
+          double sign = turn && side == &r.chassis.right_motors ? -1.0 : 1.0;
+          (*side)[i].fake().position += sign * (turn ? 4.0 : 1.5) * r.chassis.drive_tick_per_inch();
+        }
+    };
+    if (turn)
+      r.chassis.pid_turn_set(90_deg, 110);
+    else
+      r.chassis.pid_drive_set(24_in, 110);
+    double ms = 0;
+    REQUIRE(r.wait([&] { r.chassis.pid_wait(); }, CAP_TICKS, &ms));
+    CAPTURE(turn);
+    CHECK_FALSE(r.chassis.interfered);
+    CHECK_MESSAGE(ms < 3500.0, "returned after " << ms << " ms");
+  }
+}
