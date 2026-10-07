@@ -105,7 +105,7 @@ public:
   // when it cannot be told: no history, not enough of it to cover the window, or a stale latest sample.
   bool travel_over(int window_ms, std::uint32_t now_ms, double& travel, double& span_ms) const {
     int base = 0;
-    if (!locate(window_ms, now_ms, false, base, span_ms)) return false;
+    if (!locate(window_ms, now_ms, false, true, base, span_ms)) return false;
     travel = cum_at_const(newest_index()) - cum_at_const(base);
     return true;
   }
@@ -122,7 +122,7 @@ public:
   bool net_over(int window_ms, std::uint32_t now_ms, double& net, double& span_ms) const {
     int base = 0;
     double window = 0.0;
-    if (!locate(window_ms, now_ms, true, base, window)) return false;
+    if (!locate(window_ms, now_ms, true, false, base, window)) return false;
     double start_x, start_y, mid_x, mid_y, end_x, end_y;
     integral_at(-window, start_x, start_y);
     integral_at(-window / 2.0, mid_x, mid_y);
@@ -164,7 +164,7 @@ private:
   bool going_somewhere(int window_ms, double floor_per_s, std::uint32_t now_ms) const {
     int base = 0;
     double span = 0.0;
-    if (!locate(RECENT_MS, now_ms, false, base, span)) return false;
+    if (!locate(RECENT_MS, now_ms, false, false, base, span)) return false;
     int newest = newest_index();
     double dt = (double)(std::int32_t)(newest_t() - t_at(base)) / 1000.0;
     if (dt <= 0.0) return false;
@@ -197,7 +197,8 @@ private:
   // Finds the sample a window reaches back to: the newest one at or before `window_ms` ago, and the span of time from it to the newest.
   // `short_ok`: answer from the oldest sample when the history does not reach that far back (see net_over()).  Otherwise that is
   // only answered when the ring has lost the start of the window, as the average over what is left, which forgets older motion.
-  bool locate(int window_ms, std::uint32_t now_ms, bool short_ok, int& base_out, double& span_ms) const {
+  // `path_length`: the span is for a path length measured back to that sample (see below), not for positions read at the window's own times.
+  bool locate(int window_ms, std::uint32_t now_ms, bool short_ok, bool path_length, int& base_out, double& span_ms) const {
     if (!has_baseline_ || count_ < 2) return false;
     if ((std::int32_t)(now_ms - newest_t()) > STALE_MS) return false;
     if (window_ms < MIN_WINDOW_MS) window_ms = MIN_WINDOW_MS;
@@ -222,8 +223,11 @@ private:
     if (span_ms <= 0.0) return false;
     // The sample the window reaches back to can be much older than the window when the task missed a stretch of time.  Whatever
     // the robot did in that stretch shows up in the first sample after it, and it is charged to the window that was asked about:
-    // spread over the whole stretch it would be diluted (a 3 in/s shove after a 300 ms stall would read as 1 in/s).
-    if (covered && span_ms > window_ms) span_ms = (double)window_ms;
+    // spread over the whole stretch it would be diluted (a 3 in/s shove after a 300 ms stall would read as 1 in/s).  Only a stretch
+    // longer than the window by STALE_MS (3 passes) is a stall, though: a task passing every 20, 40 or 50 ms has its sample before a 90
+    // ms window 100 to 130 ms back, and travel measured over that, not over 90 ms, is what a robot slowing onto the floor needs to be
+    // read as stopped when it stops.
+    if (covered && span_ms > window_ms + (path_length ? STALE_MS : 0)) span_ms = (double)window_ms;
     base_out = base;
     return true;
   }

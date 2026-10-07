@@ -129,3 +129,21 @@ TEST_CASE("an undisturbed wait comes back about when the robot stops at an auto 
         CHECK_MESSAGE(l.lag <= (every == 2 ? 75.0 : 150.0), "came back " << l.lag << " ms after the robot stopped");
       }
 }
+
+TEST_CASE("PathTracker: movement in a stall of more than a window and three passes is charged to the window in full") {
+  for (int gap : {150, 300, 1000}) {
+    PathTracker t;
+    t.band_set(COUNT_450_325);
+    std::uint32_t pass = 0;
+    for (int ms = 0; ms <= 500; ms += 10) t.sample(0.0, 0.0, T0 + ms, ++pass);
+    // The task stalls for `gap` ms; the robot is pushed over the last 60 ms of it at 3 in/s and the first sample after the gap sees it all
+    int resume = 500 + gap;
+    t.sample(0.18, 0.0, T0 + resume, ++pass);
+    double travel = 0, span = 0;
+    REQUIRE(t.travel_over(90, T0 + resume, travel, span));
+    CAPTURE(gap);
+    CHECK(span == doctest::Approx(90.0));
+    CHECK(travel == doctest::Approx(0.18 - COUNT_450_325));
+    CHECK_FALSE(t.stopped(90, FLOOR_IN_S, T0 + resume));
+  }
+}
