@@ -84,6 +84,9 @@ void crawl() {
   double tpi = c.drive_tick_per_inch();
   set_sensor_inches(c.left_motors, tpi, g_l_start + g_driven);
   set_sensor_inches(c.right_motors, tpi, g_r_start + g_driven);
+  // The odom pose follows the wheels, as the tracking task (not run here) would have it: the stuck backstop of an odom wait_until() reads progress
+  // along the path, which is the pose
+  ez::DriveTestAccess::odom_current(c).y = g_driven;
 
   // xyPID tracks the REAL odom target the whole time (that's what makes it the honest signal
   // wait_until_drive()'s comment says it's meant to be, unlike leftPID/rightPID's frozen
@@ -184,6 +187,9 @@ TEST_CASE("wait_until_drive() pre-last-point (PURE_PURSUIT): the same slow, heal
   std::vector<odom> path;
   for (int i = 1; i <= 5; i++) path.push_back({{0.0, 100.0 + i, ANGLE_NOT_SET}, fwd, 20});
   chassis.pid_odom_pp_set(path);
+  // The path starts with the pose the robot was at, which pp_task() moves on from within a pass or two; the stuck watch of the wait measures progress
+  // to the point being driven to, so this has to move on too, onto the first point of the path itself
+  DriveTestAccess::pp_index(chassis) = 1;
 
   g_chassis = &chassis;
   g_l_start = chassis.drive_sensor_left();

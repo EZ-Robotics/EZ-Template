@@ -61,7 +61,7 @@ void configure_chassis(Drive& chassis) {
 }
 
 // Starts an odom move far beyond anything these tests drive to, either point to point or a
-// multi-point pure pursuit path. Nothing here runs ptp_task/pp_task, so pp_index stays 0 the whole
+// multi-point pure pursuit path. Nothing here runs ptp_task/pp_task, so pp_index stays 1 the whole
 // test -- on a pure pursuit path with more than one point, wait_until_drive()'s on_last_point check
 // (mode == PURE_PURSUIT && pp_index == last) never triggers on its own; point to point always makes
 // on_last_point true, which pin_xy_running() below neutralizes instead.
@@ -72,8 +72,11 @@ void start_move(Drive& chassis, bool point_to_point) {
     return;
   }
   std::vector<odom> path;
-  for (int i = 1; i <= 5; i++) path.push_back({{0.0, 8.0 + i, ANGLE_NOT_SET}, fwd, 110});
+  for (int i = 1; i <= 5; i++) path.push_back({{0.0, 100.0 + i, ANGLE_NOT_SET}, fwd, 110});
   chassis.pid_odom_pp_set(path);
+  // The path starts with the pose the robot was at, which pp_task() moves on from within a pass or two; the wait's stuck watch measures progress
+  // to the point being driven to, so the harness has to move on too, onto the first point of the path itself (far beyond anything driven here)
+  DriveTestAccess::pp_index(chassis) = 1;
 }
 
 void set_sensor_inches(std::vector<pros::Motor>& motors, double tick_per_inch, double inches) {
@@ -116,6 +119,9 @@ void cruise_on_delay() {
   double r_pos = g_r_start + g_right_speed * advancing_pass;
   set_sensor_inches(g_chassis->left_motors, tpi, l_pos);
   set_sensor_inches(g_chassis->right_motors, tpi, r_pos);
+  // The odom pose follows the wheels, as the tracking task (not run here) would have it: the stuck backstop of an odom wait_until() reads progress
+  // along the path, which is the pose
+  ez::DriveTestAccess::odom_current(*g_chassis).y = ((l_pos - g_l_start) + (r_pos - g_r_start)) / 2.0;
   g_chassis->leftPID.error = g_chassis->leftPID.target_get() - l_pos;
   g_chassis->rightPID.error = g_chassis->rightPID.target_get() - r_pos;
   double l_rate = pinned ? (g_pass % 2 == 0 ? 0.2 : -0.2) : g_speed;

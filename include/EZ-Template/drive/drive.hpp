@@ -4617,6 +4617,12 @@ private:
    *        distance from where the movement started to wait for, in inches
    */
   void wait_until_drive(double target);
+  // What the odom waits measure a robot's progress by (see StuckWatch): how far it is from the point the motion is driving to right now (a
+  // boomerang's target, not its carrot, which moves as the robot does), and how far it has moved and turned since the motion started. Locked: a
+  // motion started from another task can replace pp_movements while this reads it.
+  double odom_point_distance();
+  double odom_travelled();
+  double odom_turned();
   void wait_until_turn_swing(double target);
   // Expects an already-resolved, internal-frame absolute target.  Does not flip or re-resolve behavior.
   void wait_until_turn_swing_internal(double target);

@@ -109,3 +109,50 @@ TEST_CASE("pid_wait_until(distance) on an odom move still ends on the crossing o
   CHECK(r.trace.back().avg >= 29.0);
   CHECK(r.trace.back().avg < 36.0);  // ended on the crossing, not with the move
 }
+
+// A shove in the middle of the same turn-back path, with a checkpoint nothing can reach: the wait still ends, and clean only with the robot stopped at the end
+// of its move.
+TEST_CASE("pid_wait_until(distance) on an odom path that turns back ends after a shove, clean only with the robot stopped where the move ends") {
+  for (double start : {200.0, 600.0, 1000.0}) {
+    Rig r(archetype_classroom(), 1, false);
+    r.chassis.pid_print_toggle(false);
+    r.sim.push(100.0, start, 400);
+    r.chassis.pid_odom_pp_set({{{0.0, 24.0, ANGLE_NOT_SET}, fwd, 110}, {{0.0, 6.0, ANGLE_NOT_SET}, rev, 110}});
+    double elapsed = 0;
+    bool ok = r.wait([&]() { r.chassis.pid_wait_until(80.0); }, 6000, &elapsed);
+    CAPTURE(start);
+    MESSAGE("shove at ", start, ": returned=", ok, " elapsed=", elapsed, " interfered=", r.chassis.interfered,
+            " true distance to the end=", r.distance_to(0.0, 6.0));
+    REQUIRE(ok);
+    CHECK(elapsed < 15000);
+    if (!r.chassis.interfered) {
+      CHECK(r.distance_to(0.0, 6.0) < 3.0);
+      CHECK(r.drive_speed_over(100) < FLOOR_DISTANCE + 1.0);
+    }
+  }
+}
+
+// The auto task is parked for good once the robot is under way: nothing updates the errors, so the wait is held by nothing but the wall clock, which
+// ends it, as interfered (a verdict only the wall clock produced is never a settled one).
+TEST_CASE("pid_wait_until(distance) on an odom move still ends, as interfered, when the auto task stops for good") {
+  for (double checkpoint : {30.0, 60.0}) {
+    Rig r(archetype_classroom(), 1, false);
+    r.chassis.pid_print_toggle(false);
+    r.sim.wall(20.0);  // the robot is held where it is by a wall short of both checkpoints, 28 in short of its target, with the motors still driving
+    r.chassis.pid_odom_ptp_set({{0.0, 48.0, ANGLE_NOT_SET}, fwd, 110});
+    bool parked = false;
+    r.sim.before_pass = [&](int) {
+      if (r.sim.now_ms() >= 1000 && !parked) {
+        parked = true;
+        r.sim.passes_per_tick(0);
+      }
+    };
+    double elapsed = 0;
+    bool ok = r.wait([&]() { r.chassis.pid_wait_until(checkpoint); }, 6000, &elapsed);
+    CAPTURE(checkpoint);
+    MESSAGE("checkpoint ", checkpoint, ": returned=", ok, " elapsed=", elapsed, " interfered=", r.chassis.interfered);
+    REQUIRE(ok);
+    CHECK(elapsed < 15000);
+    CHECK(r.chassis.interfered);
+  }
+}

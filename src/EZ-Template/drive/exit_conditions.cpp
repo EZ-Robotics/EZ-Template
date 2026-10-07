@@ -6,6 +6,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include <cmath>
 #include <functional>
+#include <optional>
 #include <utility>
 
 #include "EZ-Template/drive/drive.hpp"
@@ -969,6 +970,15 @@ bool Drive::odom_travel_in_place(int window_ms) {
   return travel_in_place(Travel::OdomXY, window_ms, StopSpeed::OdomXY) && travel_in_place(Travel::OdomHeading, window_ms, StopSpeed::OdomAngle);
 }
 
+double Drive::odom_point_distance() {
+  ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+  pose t = mode == PURE_PURSUIT && pp_index < (int)pp_movements.size() ? pp_movements[pp_index].target : odom_target;
+  return util::distance_to_point(t, odom_pose_get());
+}
+
+double Drive::odom_travelled() { return util::distance_to_point(odom_start, odom_pose_get()); }
+double Drive::odom_turned() { return std::fabs(odom_theta_get() - odom_start.theta); }
+
 double Drive::stop_speed_get(StopSpeed which) {
   ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
   return stop_speed_[(int)which];
@@ -1499,18 +1509,12 @@ void Drive::pid_wait() {
     exit_output xy_exit = RUNNING;
     exit_output a_exit = RUNNING;
 
-    // The point being driven to right now (a boomerang's target, not its carrot, which moves as the robot does).
-    // Locked: a motion started from another task can replace pp_movements while this reads it.
-    auto target_distance = [&]() {
-      ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
-      pose t = mode == PURE_PURSUIT && pp_index < (int)pp_movements.size() ? pp_movements[pp_index].target : odom_target;
-      return util::distance_to_point(t, odom_pose_get());
-    };
+    auto target_distance = [&]() { return odom_point_distance(); };
     // How far the robot is from the motion's final target, which is what a window exit on xy has to be on target for. The target of the motion this
     // wait was started for, not whatever motion is current by now: a wait that was retargeted out from under it ends on the guard below.
     auto final_target_distance = [&]() { return util::distance_to_point(entry_odom_target_start, odom_pose_get()); };
-    auto travelled = [&]() { return util::distance_to_point(odom_start, odom_pose_get()); };
-    auto turned = [&]() { return std::fabs(odom_theta_get() - odom_start.theta); };
+    auto travelled = [&]() { return odom_travelled(); };
+    auto turned = [&]() { return odom_turned(); };
     StuckWatch watch(
         xyPID, current_a_odomPID, pp_index, target_distance(), travelled(), turned(), [this](int w) { return odom_travel_stopped(w); },
         [this](int w) { return odom_travel_in_place(w); }, stop_speed_fn(StopSpeed::OdomXY), stop_speed_fn(StopSpeed::OdomAngle));
@@ -2024,25 +2028,32 @@ void Drive::wait_until_drive(double target) {
   auto right_stopped = [this, drive_floor](int w) { return travel_stopped(Travel::Right, w, drive_floor); };
   auto left_in_place = [this, drive_floor](int w) { return travel_in_place(Travel::Left, w, drive_floor); };
   auto right_in_place = [this, drive_floor](int w) { return travel_in_place(Travel::Right, w, drive_floor); };
-  SingleStuckWatch left_watch(leftPID, is_odom ? l_error : leftPID.error,
-                              std::fabs(drive_sensor_left() - l_start) > stuck_step(leftPID, STUCK_STEP_DISTANCE_CAP), STUCK_STEP_DISTANCE_CAP, left_stopped,
-                              left_in_place, stop_speed_fn(drive_floor)),
-      right_watch(rightPID, is_odom ? r_error : rightPID.error, std::fabs(drive_sensor_right() - r_start) > stuck_step(rightPID, STUCK_STEP_DISTANCE_CAP),
-                  STUCK_STEP_DISTANCE_CAP, right_stopped, right_in_place, stop_speed_fn(drive_floor));
+  SingleStuckWatch left_watch(leftPID, leftPID.error, std::fabs(drive_sensor_left() - l_start) > stuck_step(leftPID, STUCK_STEP_DISTANCE_CAP),
+                              STUCK_STEP_DISTANCE_CAP, left_stopped, left_in_place, stop_speed_fn(drive_floor)),
+      right_watch(rightPID, rightPID.error, std::fabs(drive_sensor_right() - r_start) > stuck_step(rightPID, STUCK_STEP_DISTANCE_CAP), STUCK_STEP_DISTANCE_CAP,
+                  right_stopped, right_in_place, stop_speed_fn(drive_floor));
+  // An odom move is not backstopped by those two: they read the wheel distance still to go to the checkpoint, and a path that turns back (forward,
+  // then in reverse) or never reaches the checkpoint makes that distance first close and then grow, which reads as no progress while the robot is still
+  // driving. It is backstopped by the watch pid_wait() uses, on progress along the path, so the wait ends when the robot crosses the checkpoint, when the
+  // motion settles, or when the robot really is stuck, and not in the middle of a motion that is getting somewhere. A pivot still counts as distance here
+  // (the crossing check below reads wheel travel), which is accepted.
+  std::optional<StuckWatch> odom_watch;
+  if (is_odom)
+    odom_watch.emplace(
+        xyPID, current_a_odomPID, pp_index, odom_point_distance(), odom_travelled(), odom_turned(), [this](int w) { return odom_travel_stopped(w); },
+        [this](int w) { return odom_travel_in_place(w); }, stop_speed_fn(StopSpeed::OdomXY), stop_speed_fn(StopSpeed::OdomAngle));
   // How many times a side's watch has been reseeded when that side's latched exit was taken back, bounded per side per wait by
   // STUCK_WATCH_REARM_CAP, see pid_wait()'s DRIVE branch (and the comment on its recheck) for what this is for and what the bound is for
   int left_stuck_watch_rearm_count = 0;
   int right_stuck_watch_rearm_count = 0;
   auto reseed_left = [&]() {
     if (left_stuck_watch_rearm_count >= STUCK_WATCH_REARM_CAP) return;
-    left_watch =
-        SingleStuckWatch(leftPID, is_odom ? l_error : leftPID.error, true, STUCK_STEP_DISTANCE_CAP, left_stopped, left_in_place, stop_speed_fn(drive_floor));
+    left_watch = SingleStuckWatch(leftPID, leftPID.error, true, STUCK_STEP_DISTANCE_CAP, left_stopped, left_in_place, stop_speed_fn(drive_floor));
     ++left_stuck_watch_rearm_count;
   };
   auto reseed_right = [&]() {
     if (right_stuck_watch_rearm_count >= STUCK_WATCH_REARM_CAP) return;
-    right_watch = SingleStuckWatch(rightPID, is_odom ? r_error : rightPID.error, true, STUCK_STEP_DISTANCE_CAP, right_stopped, right_in_place,
-                                   stop_speed_fn(drive_floor));
+    right_watch = SingleStuckWatch(rightPID, rightPID.error, true, STUCK_STEP_DISTANCE_CAP, right_stopped, right_in_place, stop_speed_fn(drive_floor));
     ++right_stuck_watch_rearm_count;
   };
 
@@ -2083,6 +2094,8 @@ void Drive::wait_until_drive(double target) {
   // for pid_wait_quick_chain(), which is why a chained checkpoint is inside it and reachable). See checkpoint_unreachable().
   double final_distance = left_target - l_start;
   bool unreachable = !is_odom && checkpoint_unreachable(0.0, final_distance, target);
+  // How far the wheels have driven along the move, net: where the robot is along it, which is where it came to rest once it has settled
+  auto odom_rest = [&]() { return ((drive_sensor_left() - l_start) + (drive_sensor_right() - r_start)) / 2.0; };
   // An odom move's leftPID/rightPID error is measured to a frozen look-ahead point, so "settled" is judged the way pid_wait()'s odom branch
   // judges it on the path's last point: the robot is inside settle_error() of the motion's final target (odom_target_start, the last point a
   // path was set with) in xy and, when the move has a heading, in angle, and ez_auto_task has run since this wait began. Anywhere but the last
@@ -2114,10 +2127,14 @@ void Drive::wait_until_drive(double target) {
       ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
       final_target = odom_target_start;
     }
-    double rest = ((drive_sensor_left() - l_start) + (drive_sensor_right() - r_start)) / 2.0;
-    double ahead = util::sgn(target) * (target - rest);
+    double ahead = util::sgn(target) * (target - odom_rest());
     return ahead <= util::distance_to_point(final_target, odom_pose_get()) + settle_error_distance(xyPID);
   };
+  // A checkpoint a motion that settled never reached is one that could never be reached: a plain drive knows that from the distance it was set to
+  // drive, an odom move from where it came to rest, so it is the checkpoint that is not between where the robot rests and where the motion ends, and
+  // the end the message names is where it came to rest. Only meaningful once the motion has settled.
+  auto never_reachable = [&]() { return is_odom ? !odom_between() : unreachable; };
+  auto motion_end = [&]() { return is_odom ? odom_rest() : final_distance; };
 
   while (true) {
     if (mode != mode_snapshot) {
@@ -2171,6 +2188,8 @@ void Drive::wait_until_drive(double target) {
           } else if (xy_exit == mA_EXIT || xy_exit == VELOCITY_EXIT) {
             interfered_scope.mark();
           }
+          // A move that settled (a window exit, or an mA exit inside big_error) without reaching the checkpoint could never reach it
+          if ((ma_settles || xy_exit == SMALL_EXIT || xy_exit == BIG_EXIT) && never_reachable()) print_unreachable_checkpoint(target, motion_end());
           return;
         }
       }
@@ -2210,8 +2229,11 @@ void Drive::wait_until_drive(double target) {
         // Consulted on the pass the gate releases a side's exit too, see released_window_exit() and pid_wait()'s DRIVE branch
         bool left_released = released_window_exit(left_was_running, left_exit);
         bool right_released = released_window_exit(right_was_running, right_exit);
-        bool left_stuck = (left_exit == RUNNING || left_released) && left_watch.stuck(is_odom ? l_error : leftPID.error);
-        bool right_stuck = (right_exit == RUNNING || right_released) && right_watch.stuck(is_odom ? r_error : rightPID.error);
+        // On an odom move one watch speaks for both sides, see odom_watch
+        bool odom_stuck = is_odom && (left_exit == RUNNING || right_exit == RUNNING) &&
+                          odom_watch->stuck(pp_index, odom_point_distance(), xyPID.error, current_a_odomPID.error, odom_travelled(), odom_turned());
+        bool left_stuck = (left_exit == RUNNING || left_released) && (is_odom ? odom_stuck : left_watch.stuck(leftPID.error));
+        bool right_stuck = (right_exit == RUNNING || right_released) && (is_odom ? odom_stuck : right_watch.stuck(rightPID.error));
         exit_output left_now = left_released && left_stuck ? RUNNING : left_exit;
         exit_output right_now = right_released && right_stuck ? RUNNING : right_exit;
         // See the matching comment in pid_wait()'s DRIVE branch -- both sides exiting normally on the same pass
@@ -2243,16 +2265,17 @@ void Drive::wait_until_drive(double target) {
             // cleanly. An odom move has no look ahead free error to judge this by.
             bool left_settled = std::fabs(leftPID.error) < settle_error_distance(leftPID);
             bool right_settled = std::fabs(rightPID.error) < settle_error_distance(rightPID);
-            bool starved = (left_stuck && left_watch.starved()) || (right_stuck && right_watch.starved());
+            bool starved = is_odom ? odom_stuck && odom_watch->starved() : (left_stuck && left_watch.starved()) || (right_stuck && right_watch.starved());
             bool settled = is_odom ? stuck_settled(odom_settled(), true, starved)
                                    : stuck_settled(left_settled && right_settled, stuck_passes() != entry_task_passes, starved);
-            CheckpointEnd end = checkpoint_end(settled, at_final_target, unreachable, is_odom ? INFINITY : std::fmax(std::fabs(l_error), std::fabs(r_error)),
-                                               leftPID.exit.small_error, odom_between());
+            CheckpointEnd end =
+                checkpoint_end(settled, at_final_target, never_reachable(), is_odom ? INFINITY : std::fmax(std::fabs(l_error), std::fabs(r_error)),
+                               leftPID.exit.small_error, odom_between());
             bool stalled = end == CheckpointEnd::Interfered;
             if (print_toggle)
               std::cout << "  Drive: " << (stalled ? "Stuck" : "Stuck, but stopped inside the big error windows, counted as settled")
                         << " Wait Until Exit Failsafe, triggered at " << drive_sensor_left() - l_start << " instead of " << target << "\n";
-            if (end == CheckpointEnd::Unreachable) print_unreachable_checkpoint(target, final_distance);
+            if (end == CheckpointEnd::Unreachable) print_unreachable_checkpoint(target, motion_end());
             if (stalled) interfered_scope.mark();
             return;
           }
@@ -2314,12 +2337,12 @@ void Drive::wait_until_drive(double target) {
           bool inside_big = is_odom ? odom_settled()
                                     : std::fabs(leftPID.error) < settle_error_distance(leftPID) && std::fabs(rightPID.error) < settle_error_distance(rightPID);
           bool settled = !velocity_exit && (!mA_exit || ma_exit_settled(inside_big, stuck_passes() != entry_task_passes));
-          CheckpointEnd end = checkpoint_end(settled, at_final_target, unreachable, is_odom ? INFINITY : std::fmax(std::fabs(l_error), std::fabs(r_error)),
-                                             leftPID.exit.small_error, odom_between());
+          CheckpointEnd end = checkpoint_end(settled, at_final_target, never_reachable(),
+                                             is_odom ? INFINITY : std::fmax(std::fabs(l_error), std::fabs(r_error)), leftPID.exit.small_error, odom_between());
           bool stalled = end == CheckpointEnd::Interfered;
           if (mA_exit && !stalled && print_toggle) std::cout << "  Drive: mA exit inside the big error windows, counted as settled" << std::endl;
           if (end == CheckpointEnd::Unreachable) {
-            print_unreachable_checkpoint(target, final_distance);
+            print_unreachable_checkpoint(target, motion_end());
           } else if (end == CheckpointEnd::ReachedWithinSmallError && print_toggle) {
             printf("  Drive Wait Until Exit Success, within small_error of the checkpoint. Triggered at: L,R(%.2f, %.2f)  Target: L,R(%.2f, %.2f)\n",
                    drive_sensor_left() - l_start, drive_sensor_right() - r_start, target, target);
