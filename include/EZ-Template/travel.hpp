@@ -27,7 +27,8 @@ namespace detail {
  * flicker, which at 10 ms ticks is 2.55 in/s of fake travel), and a real swing larger than one count is still counted in
  * full.
  *
- * Sampled by the auto task once per fresh pass, not by whoever asks.  Two samples with the same timestamp (a task that
+ * Sampled by the auto task once per fresh pass, not by whoever asks.  When the task stalls, the movement during the stall arrives in
+ * the first sample after it and counts in full against the window asked about, not spread over the stall.  Two samples with the same timestamp (a task that
  * catches up runs several passes in one tick, all reading the same sensors) are one sample, and a pass counter that has not
  * moved is no sample at all.  Asking about a window the history does not cover, or one whose latest sample is old (a starved
  * or dead task), answers "not stopped": the existing starved-task fallbacks own that case.
@@ -84,8 +85,10 @@ public:
     push(t_ms);
   }
 
-  // The path length over the last window_ms (at least MIN_WINDOW_MS) and the span of time it really covers, which is at least
-  // that.  False when it cannot be told: no history, not enough of it to cover the window, or a stale latest sample.
+  // The path length over the last window_ms (at least MIN_WINDOW_MS) and the span of time it is measured over, which is the window
+  // itself, or less only when the ring has lost the start of it.  When the samples have a gap in them the travel since the last
+  // sample before the window is all charged to the window, so a gap can only make the robot read faster, never slower.  False
+  // when it cannot be told: no history, not enough of it to cover the window, or a stale latest sample.
   bool travel_over(int window_ms, std::uint32_t now_ms, double& travel, double& span_ms) const {
     if (!has_baseline_ || count_ < 2) return false;
     if ((std::int32_t)(now_ms - newest_t()) > STALE_MS) return false;
@@ -93,6 +96,7 @@ public:
     std::uint32_t want = newest_t() - (std::uint32_t)window_ms;
     // Newest sample at or before `want`
     int base = -1;
+    bool covered = true;
     for (int k = 1; k < count_; k++) {
       int idx = index_from_newest(k);
       if ((std::int32_t)(t_at(idx) - want) <= 0) {
@@ -105,9 +109,14 @@ public:
       // nothing; if it has, use what is left (the average speed over a shorter span, which forgets older motion).
       if (!wrapped_) return false;
       base = index_from_newest(count_ - 1);
+      covered = false;
     }
     span_ms = (double)(std::int32_t)(newest_t() - t_at(base));
     if (span_ms <= 0.0) return false;
+    // The sample the window reaches back to can be much older than the window when the task missed a stretch of time.  Whatever
+    // the robot did in that stretch shows up in the first sample after it, and it is charged to the window that was asked about:
+    // spread over the whole stretch it would be diluted (a 3 in/s shove after a 300 ms stall would read as 1 in/s).
+    if (covered && span_ms > window_ms) span_ms = (double)window_ms;
     travel = cum_at_const(newest_index()) - cum_at_const(base);
     return true;
   }
