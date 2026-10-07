@@ -48,14 +48,17 @@ static constexpr double STUCK_STEP_ANGLE_CAP = 3.0;
 // question: did it travel less than a floor speed times W over the last W milliseconds, W being the window of the exit in
 // question (see Drive::travel_sample() below for how the path length is measured).
 //
-// The floors are fixed. No tuning value (an exit time, an error, a speed) moves them, because they are what keeps a team's own
-// tuning from changing what "stopped" means: a step-per-window test hides a speed of step / window, so a 50 ms window used to
-// call anything under 20 in/s stopped and a robot decelerating through its last 3 in at 13 in/s came back clean 2.6 in short.
+// The floors have their own setters (pid_drive_exit_stop_speed_set() and friends, one per kind of motion, kept in Drive::stop_speed_),
+// and no other tuning value (an exit time, an error, a speed) moves them, because they are what keeps a team's own tuning from changing
+// what "stopped" means: a step-per-window test hides a speed of step / window, so a 50 ms window used to call anything under 20 in/s
+// stopped and a robot decelerating through its last 3 in at 13 in/s came back clean 2.6 in short. They are read on every poll, so a
+// change lands on the next one and leaves every window, timer and latch of a running wait alone. What they start as:
 //   1.5 in/s: drive sides and odom xy. Slow enough that a robot still closing on its target is not called stopped (a heavy
 //             drivetrain crawls in at 3 to 5 in/s), fast enough that the last inch of a settle is not waited out for nothing.
 //   4 deg/s:  turns, swings and the odom heading, the same idea at the rate a drivetrain turns.
-static constexpr double STOP_SPEED_DISTANCE = 1.5;
-static constexpr double STOP_SPEED_ANGLE = 4.0;
+// The code below reads them through a std::function<double()> (null: the default), so a watch or gate built on its own still works.
+using StopSpeedFn = std::function<double()>;
+double stop_speed_or_default(const StopSpeedFn& fn, double fallback) { return fn ? fn() : fallback; }
 // The backlash band travel is measured through (see ez::detail::PathTracker): one sensor count. Without it a sensor that
 // flickers one count at rest would add a count of travel per flicker, which is 2.55 in/s on a 450 rpm 3.25 in drive if it
 // flickers every 10 ms tick and would keep a resting robot from ever being stopped. A swing of more than a count is counted in
@@ -100,7 +103,10 @@ double stuck_step(PID& pid, double cap) {
 // average makes a new low well inside it. Pass a step of 0 for a channel that is not there.
 int backstop_window_ms(double step_a, double floor_a, double step_b, double floor_b) {
   double ms = std::fmax(step_a / floor_a, step_b / floor_b) * 1000.0;
-  return std::isfinite(ms) && ms > 0.0 ? (int)std::ceil(ms) : 0;
+  if (std::isnan(ms) || ms <= 0.0) return 0;
+  // A stop speed the team set very low makes step / floor huge, up to infinity. Keep it a long wait, not 0 (no backstop) and not an int overflow:
+  // the watches multiply this by STUCK_STARVED_WINDOWS. 1e8 ms is more than a day.
+  return (int)std::ceil(std::fmin(ms, 1.0e8));
 }
 
 // How close to its target a robot has to be for a stop to count as "settled" rather than "stuck": inside big_error, or inside
@@ -243,7 +249,9 @@ class StuckWatch {
 public:
   // travelled and turned: how far the robot has moved and turned since the motion started
   // stopped: whether the robot (xy and heading both) travelled less than the stop speed over the last window_ms
-  StuckWatch(PID& xy, PID& angle, int index, double distance, double travelled, double turned, std::function<bool(int)> stopped = nullptr)
+  // xy_floor / a_floor: the stop speeds (in/s, deg/s) read on every call, for the backstop below
+  StuckWatch(PID& xy, PID& angle, int index, double distance, double travelled, double turned, std::function<bool(int)> stopped = nullptr,
+             StopSpeedFn xy_floor = nullptr, StopSpeedFn a_floor = nullptr)
       : xy_(stuck_step(xy, STUCK_STEP_DISTANCE_CAP), distance, xy.error),
         a_(stuck_step(angle, STUCK_STEP_ANGLE_CAP), std::fabs(angle.error), angle.error),
         xs_(settle_step(xy, STUCK_STEP_DISTANCE_CAP), distance, xy.error),
@@ -255,7 +263,8 @@ public:
         a_big_(settle_error(angle)),
         moved_(travelled > xy_.step || turned > a_.step),
         stopped_(std::move(stopped)),
-        backstop_ms_(backstop_window_ms(xs_.step, STOP_SPEED_DISTANCE, as_.step, STOP_SPEED_ANGLE)),
+        xy_floor_(std::move(xy_floor)),
+        a_floor_(std::move(a_floor)),
         a_seed_pass_(stuck_passes()),
         a_seeded_(false) {
     int allowance = moved_ ? 0 : STUCK_START_ALLOWANCE_MS;
@@ -332,7 +341,12 @@ public:
     // steps cannot keep restarting it. Time inside big_error is then at most (big_error / settle step + 1) windows. Outside, the fine
     // clock keeps a shove or a pin reading as before.
     bool settling = inside_big;
-    int window = settling ? std::max(settled_window_, backstop_ms_) : window_;
+    int window = window_;
+    if (settling) {
+      int backstop_ms = backstop_window_ms(xs_.step, stop_speed_or_default(xy_floor_, ez::Drive::STOP_SPEED_DISTANCE_DEFAULT), as_.step,
+                                           stop_speed_or_default(a_floor_, ez::Drive::STOP_SPEED_ANGLE_DEFAULT));
+      window = std::max(settled_window_, backstop_ms);
+    }
     std::int32_t waited = now - (settling ? last_settle_ : last_progress_);
     std::uint32_t since_pass = pass - (settling ? last_settle_pass_ : last_progress_pass_);
     if (waited <= window) return false;
@@ -387,7 +401,9 @@ private:
   double xy_big_, a_big_;
   bool moved_;
   std::function<bool(int)> stopped_;
-  int backstop_ms_;  // how long without a new low inside the big errors before the robot is called settled while still moving
+  // The stop speeds the backstop is made of: how long without a new low inside the big errors before the robot is called settled while
+  // still moving is step / stop speed, read fresh on every call
+  StopSpeedFn xy_floor_, a_floor_;
   // stuck_passes() at construction, and whether the angle channel has re-seeded itself from the first
   // confirmed-fresh reading since -- see the matching comment in stuck() above.
   std::uint32_t a_seed_pass_;
@@ -416,7 +432,8 @@ public:
   // knows) passes it in, same as StuckWatch's constructor already picks the right one for xy_ vs a_.
   // `stopped`: whether the robot travelled less than the stop speed over the last window_ms (null: never, as in a test that
   // builds a watch on its own).
-  SingleStuckWatch(PID& pid, double error, bool already_moved, double cap, std::function<bool(int)> stopped = nullptr)
+  // `floor`: the stop speed (in/s or deg/s, whichever this PID's is), read on every call, for the backstop below
+  SingleStuckWatch(PID& pid, double error, bool already_moved, double cap, std::function<bool(int)> stopped = nullptr, StopSpeedFn floor = nullptr)
       : ch_(stuck_step(pid, cap), std::fabs(error), error),
         cs_(settle_step(pid, cap), std::fabs(error), error),
         window_(floored_window(pid.exit.velocity_exit_time != 0 ? pid.exit.velocity_exit_time : pid.exit.mA_timeout)),
@@ -424,7 +441,8 @@ public:
         big_error_(settle_error(pid)),
         moved_(already_moved),
         stopped_(std::move(stopped)),
-        backstop_ms_(backstop_window_ms(cs_.step, cap == STUCK_STEP_ANGLE_CAP ? STOP_SPEED_ANGLE : STOP_SPEED_DISTANCE, 0.0, 1.0)),
+        floor_(std::move(floor)),
+        floor_default_(cap == STUCK_STEP_ANGLE_CAP ? ez::Drive::STOP_SPEED_ANGLE_DEFAULT : ez::Drive::STOP_SPEED_DISTANCE_DEFAULT),
         last_pass_(stuck_passes()),
         seeded_(false) {
     int allowance = moved_ ? 0 : STUCK_START_ALLOWANCE_MS;
@@ -489,7 +507,8 @@ public:
     // Not before the robot has moved (or the start allowance ran out): a motion shorter than big_error starts at rest inside it.
     bool inside_big = big_error_ > 0 && std::fabs(error) < big_error_;
     if (inside_big && stopped_ && (moved_ || (std::int32_t)(now - last_settle_) > 0) && stopped_(settled_window_)) return true;
-    int window = inside_big ? std::max(settled_window_, backstop_ms_) : window_;
+    int window = window_;
+    if (inside_big) window = std::max(settled_window_, backstop_window_ms(cs_.step, stop_speed_or_default(floor_, floor_default_), 0.0, 1.0));
     std::int32_t waited = now - (inside_big ? last_settle_ : last_progress_);
     std::uint32_t since_pass = pass - (inside_big ? last_settle_pass_ : last_progress_pass_);
     if (waited <= window) return false;
@@ -507,7 +526,8 @@ private:
   double big_error_;
   bool moved_;
   std::function<bool(int)> stopped_;
-  int backstop_ms_;  // how long without a new low inside big_error before the robot is called settled while still moving
+  StopSpeedFn floor_;  // how long without a new low inside big_error before the robot is called settled while still moving is step / this, read fresh
+  double floor_default_;
   std::uint32_t last_pass_;
   bool seeded_;
   std::uint32_t last_progress_, last_progress_pass_;
@@ -576,10 +596,10 @@ public:
   // current while it is still on its way is not a stall (a heavy robot accelerating hard draws it the whole way) -- but only while it is
   // getting somewhere: a robot that limit cycles about its target adds up path length however little it gets anywhere, so it never reads
   // stopped, and one that is dragged away from it is moving too. So over each mA window the error has to come down by the stop speed times
-  // the window (1.5 in/s, 4 deg/s); a robot that has not is not on its way and the exit is taken. Each window starts from the lowest error of
-  // the last, so a robot closing on its target at the stop speed or faster is held for as long as it does, which is at most its distance over
-  // the stop speed. Also for the waits that read a PID's mA exit without going through filter() (xy before the last point of a path, whose
-  // other exits mean nothing). `live_error` is the error to the target that exit is for.
+  // the window (the stop speed: 1.5 in/s, 4 deg/s unless set); a robot that has not is not on its way and the exit is taken. Each window starts from the lowest
+  // error of the last, so a robot closing on its target at the stop speed or faster is held for as long as it does, which is at most its distance over the stop
+  // speed. Also for the waits that read a PID's mA exit without going through filter() (xy before the last point of a path, whose other exits mean nothing).
+  // `live_error` is the error to the target that exit is for.
   bool take_mA(const PID& pid, double live_error) {
     if (stopped_for(pid.exit.mA_timeout)) {
       mA_held_ = false;
@@ -597,14 +617,15 @@ public:
     int window = std::max(pid.exit.mA_timeout, (int)ez::detail::PathTracker::MIN_WINDOW_MS);
     std::int32_t waited = now - mA_window_ms_;
     if (waited < window) return false;
-    if (mA_window_start_ - mA_window_best_ < net_floor_ * waited / 1000.0) return true;
+    if (mA_window_start_ - mA_window_best_ < stop_speed_or_default(floor_, ez::Drive::STOP_SPEED_DISTANCE_DEFAULT) * waited / 1000.0) return true;
     mA_window_ms_ = now;
     mA_window_start_ = mA_window_best_;
     return false;
   }
-  // This gate's error is an angle: the stop speed it is held against is the angular one
-  ExitGate& angular() {
-    net_floor_ = STOP_SPEED_ANGLE;
+  // The stop speed this gate's mA hold is judged against (in/s for a distance error, deg/s for an angle), read fresh on every call. Without
+  // one it is the default drive speed.
+  ExitGate& floor_set(StopSpeedFn floor) {
+    floor_ = std::move(floor);
     return *this;
   }
 
@@ -638,7 +659,7 @@ private:
   bool mA_held_ = false;  // an mA exit is being held, and the window its progress is judged over: see take_mA()
   std::uint32_t mA_window_ms_ = 0;
   double mA_window_start_ = 0, mA_window_best_ = 0;
-  double net_floor_ = STOP_SPEED_DISTANCE;
+  StopSpeedFn floor_;
 };
 
 // The same over-current predicate PID::exit_condition(const std::vector<pros::Motor>&) uses: a transient PROS_ERR is not over
@@ -782,12 +803,61 @@ void Drive::travel_sample(bool odom_tracked) {
   travel_[(int)Travel::OdomXY].sample(travel_xy_x_, travel_xy_y_, now, pass);
 }
 
-bool Drive::travel_stopped(Travel channel, int window_ms) {
+bool Drive::travel_stopped(Travel channel, int window_ms, StopSpeed which) {
   ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
   if (travel_generation_ != motion_generation) return false;
-  bool angle = channel == Travel::Heading || channel == Travel::OdomHeading;
-  return travel_[(int)channel].stopped(window_ms, angle ? STOP_SPEED_ANGLE : STOP_SPEED_DISTANCE, pros::millis());
+  return travel_[(int)channel].stopped(window_ms, stop_speed_[(int)which], pros::millis());
 }
+
+// An odom motion is stopped when its xy and its heading both are, each against its own stop speed
+bool Drive::odom_travel_stopped(int window_ms) {
+  return travel_stopped(Travel::OdomXY, window_ms, StopSpeed::OdomXY) && travel_stopped(Travel::OdomHeading, window_ms, StopSpeed::OdomAngle);
+}
+
+double Drive::stop_speed_get(StopSpeed which) {
+  ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+  return stop_speed_[(int)which];
+}
+
+std::function<double()> Drive::stop_speed_fn(StopSpeed which) {
+  return [this, which] { return stop_speed_get(which); };
+}
+
+// A stop speed that is zero, negative or not a number is refused and the previous value stays, the way drive_imu_scaler_3600_set() refuses a
+// reading it cannot use. Zero or a negative speed would mean the robot can never be stopped, so every small and big exit would wait for the stuck
+// watch, and a NaN compares false with everything. Any other number is the team's to choose: the speed decides what counts as stopped, and the
+// timeouts made out of it (the backstop of the stuck watches is step / speed, an mA hold is distance / speed) follow it, so a very small speed
+// makes waits longer and a very large one makes them end sooner. Always printed, not gated on print_toggle: the team wrote something that did nothing.
+void Drive::stop_speed_set(StopSpeed which, double value, const char* setter) {
+  bool angle = which == StopSpeed::Turn || which == StopSpeed::Swing || which == StopSpeed::OdomAngle;
+  if (!std::isfinite(value) || value <= 0.0) {
+    printf("EZ-Template: %s rejected %g, the stop speed has to be a number above 0 (%s). Keeping %g.\n", setter, value, angle ? "deg/s" : "in/s",
+           stop_speed_get(which));
+    return;
+  }
+  ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+  stop_speed_[(int)which] = value;
+}
+
+void Drive::pid_drive_exit_stop_speed_set(double in_per_s) { stop_speed_set(StopSpeed::Drive, in_per_s, "pid_drive_exit_stop_speed_set"); }
+void Drive::pid_drive_exit_stop_speed_set(ez::QSpeed speed) { pid_drive_exit_stop_speed_set(speed.convert(ez::inch / ez::second)); }
+double Drive::pid_drive_exit_stop_speed_get() { return stop_speed_get(StopSpeed::Drive); }
+
+void Drive::pid_turn_exit_stop_speed_set(double deg_per_s) { stop_speed_set(StopSpeed::Turn, deg_per_s, "pid_turn_exit_stop_speed_set"); }
+void Drive::pid_turn_exit_stop_speed_set(ez::QAngularSpeed speed) { pid_turn_exit_stop_speed_set(speed.convert(ez::degree / ez::second)); }
+double Drive::pid_turn_exit_stop_speed_get() { return stop_speed_get(StopSpeed::Turn); }
+
+void Drive::pid_swing_exit_stop_speed_set(double deg_per_s) { stop_speed_set(StopSpeed::Swing, deg_per_s, "pid_swing_exit_stop_speed_set"); }
+void Drive::pid_swing_exit_stop_speed_set(ez::QAngularSpeed speed) { pid_swing_exit_stop_speed_set(speed.convert(ez::degree / ez::second)); }
+double Drive::pid_swing_exit_stop_speed_get() { return stop_speed_get(StopSpeed::Swing); }
+
+void Drive::pid_odom_drive_exit_stop_speed_set(double in_per_s) { stop_speed_set(StopSpeed::OdomXY, in_per_s, "pid_odom_drive_exit_stop_speed_set"); }
+void Drive::pid_odom_drive_exit_stop_speed_set(ez::QSpeed speed) { pid_odom_drive_exit_stop_speed_set(speed.convert(ez::inch / ez::second)); }
+double Drive::pid_odom_drive_exit_stop_speed_get() { return stop_speed_get(StopSpeed::OdomXY); }
+
+void Drive::pid_odom_turn_exit_stop_speed_set(double deg_per_s) { stop_speed_set(StopSpeed::OdomAngle, deg_per_s, "pid_odom_turn_exit_stop_speed_set"); }
+void Drive::pid_odom_turn_exit_stop_speed_set(ez::QAngularSpeed speed) { pid_odom_turn_exit_stop_speed_set(speed.convert(ez::degree / ez::second)); }
+double Drive::pid_odom_turn_exit_stop_speed_get() { return stop_speed_get(StopSpeed::OdomAngle); }
 
 bool Drive::travel_tracked(Travel channel) {
   ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
@@ -1050,12 +1120,12 @@ void Drive::pid_wait() {
     // pid_drive_set() -- not against this particular wait call, so a wait chained onto an already-moving motion
     // (an early pid_wait_until() checkpoint followed by pid_wait() on the same still-running drive, TEAM_CORPUS.md's
     // ordinary "until then wait" pattern) doesn't pay SingleStuckWatch's startup allowance a second time.
-    auto left_stopped = [this](int w) { return travel_stopped(Travel::Left, w); };
-    auto right_stopped = [this](int w) { return travel_stopped(Travel::Right, w); };
+    auto left_stopped = [this](int w) { return travel_stopped(Travel::Left, w, StopSpeed::Drive); };
+    auto right_stopped = [this](int w) { return travel_stopped(Travel::Right, w, StopSpeed::Drive); };
     SingleStuckWatch left_watch(leftPID, leftPID.error, std::fabs(drive_sensor_left() - l_start) > stuck_step(leftPID, STUCK_STEP_DISTANCE_CAP),
-                                STUCK_STEP_DISTANCE_CAP, left_stopped),
+                                STUCK_STEP_DISTANCE_CAP, left_stopped, stop_speed_fn(StopSpeed::Drive)),
         right_watch(rightPID, rightPID.error, std::fabs(drive_sensor_right() - r_start) > stuck_step(rightPID, STUCK_STEP_DISTANCE_CAP),
-                    STUCK_STEP_DISTANCE_CAP, right_stopped);
+                    STUCK_STEP_DISTANCE_CAP, right_stopped, stop_speed_fn(StopSpeed::Drive));
     // How many times the recheck below has reseeded each side's watch on an un-latch -- see
     // STUCK_WATCH_REARM_CAP's own comment. Local to this one pid_wait() call, same as the watches
     // themselves, so every new wait starts a fresh count regardless of how many times a previous
@@ -1065,6 +1135,8 @@ void Drive::pid_wait() {
     ExitGate left_gate(left_stopped, [this] { return travel_tracked(Travel::Left); }, leftPID.exit.velocity_exit_time != 0 || leftPID.exit.mA_timeout != 0);
     ExitGate right_gate(
         right_stopped, [this] { return travel_tracked(Travel::Right); }, rightPID.exit.velocity_exit_time != 0 || rightPID.exit.mA_timeout != 0);
+    left_gate.floor_set(stop_speed_fn(StopSpeed::Drive));
+    right_gate.floor_set(stop_speed_fn(StopSpeed::Drive));
     bool stalled = false;
     // A stuck-but-settled break below is its own, already-final decision (at least one side never
     // finished its own exit timer at all -- still RUNNING -- but the stuck watch gave up waiting on
@@ -1169,26 +1241,26 @@ void Drive::pid_wait() {
       if (left_exit == SMALL_EXIT && std::fabs(leftPID.error) >= leftPID.exit.small_error) {
         left_exit = RUNNING;
         if (left_stuck_watch_rearm_count < STUCK_WATCH_REARM_CAP) {
-          left_watch = SingleStuckWatch(leftPID, leftPID.error, true, STUCK_STEP_DISTANCE_CAP, left_stopped);
+          left_watch = SingleStuckWatch(leftPID, leftPID.error, true, STUCK_STEP_DISTANCE_CAP, left_stopped, stop_speed_fn(StopSpeed::Drive));
           ++left_stuck_watch_rearm_count;
         }
       } else if (left_exit == BIG_EXIT && std::fabs(leftPID.error) >= leftPID.exit.big_error) {
         left_exit = RUNNING;
         if (left_stuck_watch_rearm_count < STUCK_WATCH_REARM_CAP) {
-          left_watch = SingleStuckWatch(leftPID, leftPID.error, true, STUCK_STEP_DISTANCE_CAP, left_stopped);
+          left_watch = SingleStuckWatch(leftPID, leftPID.error, true, STUCK_STEP_DISTANCE_CAP, left_stopped, stop_speed_fn(StopSpeed::Drive));
           ++left_stuck_watch_rearm_count;
         }
       }
       if (right_exit == SMALL_EXIT && std::fabs(rightPID.error) >= rightPID.exit.small_error) {
         right_exit = RUNNING;
         if (right_stuck_watch_rearm_count < STUCK_WATCH_REARM_CAP) {
-          right_watch = SingleStuckWatch(rightPID, rightPID.error, true, STUCK_STEP_DISTANCE_CAP, right_stopped);
+          right_watch = SingleStuckWatch(rightPID, rightPID.error, true, STUCK_STEP_DISTANCE_CAP, right_stopped, stop_speed_fn(StopSpeed::Drive));
           ++right_stuck_watch_rearm_count;
         }
       } else if (right_exit == BIG_EXIT && std::fabs(rightPID.error) >= rightPID.exit.big_error) {
         right_exit = RUNNING;
         if (right_stuck_watch_rearm_count < STUCK_WATCH_REARM_CAP) {
-          right_watch = SingleStuckWatch(rightPID, rightPID.error, true, STUCK_STEP_DISTANCE_CAP, right_stopped);
+          right_watch = SingleStuckWatch(rightPID, rightPID.error, true, STUCK_STEP_DISTANCE_CAP, right_stopped, stop_speed_fn(StopSpeed::Drive));
           ++right_stuck_watch_rearm_count;
         }
       }
@@ -1200,7 +1272,7 @@ void Drive::pid_wait() {
         left_gate.hold(left_exit);
         left_exit = RUNNING;
         if (left_stuck_watch_rearm_count < STUCK_WATCH_REARM_CAP) {
-          left_watch = SingleStuckWatch(leftPID, leftPID.error, true, STUCK_STEP_DISTANCE_CAP, left_stopped);
+          left_watch = SingleStuckWatch(leftPID, leftPID.error, true, STUCK_STEP_DISTANCE_CAP, left_stopped, stop_speed_fn(StopSpeed::Drive));
           ++left_stuck_watch_rearm_count;
         }
       }
@@ -1208,7 +1280,7 @@ void Drive::pid_wait() {
         right_gate.hold(right_exit);
         right_exit = RUNNING;
         if (right_stuck_watch_rearm_count < STUCK_WATCH_REARM_CAP) {
-          right_watch = SingleStuckWatch(rightPID, rightPID.error, true, STUCK_STEP_DISTANCE_CAP, right_stopped);
+          right_watch = SingleStuckWatch(rightPID, rightPID.error, true, STUCK_STEP_DISTANCE_CAP, right_stopped, stop_speed_fn(StopSpeed::Drive));
           ++right_stuck_watch_rearm_count;
         }
       }
@@ -1254,16 +1326,18 @@ void Drive::pid_wait() {
     };
     auto travelled = [&]() { return util::distance_to_point(odom_start, odom_pose_get()); };
     auto turned = [&]() { return std::fabs(odom_theta_get() - odom_start.theta); };
-    StuckWatch watch(xyPID, current_a_odomPID, pp_index, target_distance(), travelled(), turned(),
-                     [this](int w) { return travel_stopped(Travel::OdomXY, w) && travel_stopped(Travel::OdomHeading, w); });
+    StuckWatch watch(
+        xyPID, current_a_odomPID, pp_index, target_distance(), travelled(), turned(), [this](int w) { return odom_travel_stopped(w); },
+        stop_speed_fn(StopSpeed::OdomXY), stop_speed_fn(StopSpeed::OdomAngle));
     bool stalled = false;
     bool ended_on_mA = false;  // the wait ended on an mA exit before the last point, which stalled below stands for
-    auto odom_stopped = [this](int w) { return travel_stopped(Travel::OdomXY, w) && travel_stopped(Travel::OdomHeading, w); };
+    auto odom_stopped = [this](int w) { return odom_travel_stopped(w); };
     auto odom_tracked = [this] { return travel_tracked(Travel::OdomXY) && travel_tracked(Travel::OdomHeading); };
     bool odom_gate_armed = team_stuck_window(xyPID, current_a_odomPID) != 0;
     ExitGate xy_gate(odom_stopped, odom_tracked, odom_gate_armed);
+    xy_gate.floor_set(stop_speed_fn(StopSpeed::OdomXY));
     ExitGate a_gate(odom_stopped, odom_tracked, odom_gate_armed);
-    a_gate.angular();
+    a_gate.floor_set(stop_speed_fn(StopSpeed::OdomAngle));
 
     // A concurrent pid_odom_*_set() from another task retargets xyPID/current_a_odomPID (and resets pp_index
     // and pp_movements) mid-wait -- same hazard as the DRIVE branch above, just for odom.  odom_target_start
@@ -1496,8 +1570,10 @@ void Drive::pid_wait() {
     exit_output turn_exit = RUNNING;
     // Moved-since-motion-start is judged against chain_sensor_start (set once in turn_set_internal()), not
     // this particular wait call -- see the DRIVE branch's comment above for why, and same JC-1 gap.
-    SingleStuckWatch watch(turnPID, turnPID.error, std::fabs(drive_angle_get() - chain_sensor_start) > stuck_step(turnPID, STUCK_STEP_ANGLE_CAP),
-                           STUCK_STEP_ANGLE_CAP, [this](int w) { return travel_stopped(mode == TURN_TO_POINT ? Travel::OdomHeading : Travel::Heading, w); });
+    SingleStuckWatch watch(
+        turnPID, turnPID.error, std::fabs(drive_angle_get() - chain_sensor_start) > stuck_step(turnPID, STUCK_STEP_ANGLE_CAP), STUCK_STEP_ANGLE_CAP,
+        [this](int w) { return travel_stopped(mode == TURN_TO_POINT ? Travel::OdomHeading : Travel::Heading, w, StopSpeed::Turn); },
+        stop_speed_fn(StopSpeed::Turn));
     bool stalled = false;
     // Same concurrent-retarget guard as the DRIVE branch above.  turnPID.target is only ever rewritten by
     // turn_set_internal() (set_turn_pid.cpp) at the start of a new turn -- TURN_TO_POINT recomputes its own
@@ -1517,10 +1593,10 @@ void Drive::pid_wait() {
     // neither the settled check nor the stuck check resets. Stop here, same as the DRIVE branch's
     // matching flag and comment above.
     bool settled_via_stuck = false;
-    ExitGate turn_gate([this](int w) { return travel_stopped(mode == TURN_TO_POINT ? Travel::OdomHeading : Travel::Heading, w); },
+    ExitGate turn_gate([this](int w) { return travel_stopped(mode == TURN_TO_POINT ? Travel::OdomHeading : Travel::Heading, w, StopSpeed::Turn); },
                        [this] { return travel_tracked(mode == TURN_TO_POINT ? Travel::OdomHeading : Travel::Heading); },
                        turnPID.exit.velocity_exit_time != 0 || turnPID.exit.mA_timeout != 0);
-    turn_gate.angular();
+    turn_gate.floor_set(stop_speed_fn(StopSpeed::Turn));
     while (true) {
       while (turn_exit == RUNNING) {
         if (mode != mode_snapshot || turnPID.target_get() != turn_target) {
@@ -1601,8 +1677,9 @@ void Drive::pid_wait() {
     exit_output swing_exit = RUNNING;
     // Moved-since-motion-start is judged against chain_sensor_start (set once in swing_set_internal()), not
     // this particular wait call -- see the DRIVE branch's comment above for why, and same JC-1 gap.
-    SingleStuckWatch watch(swingPID, swingPID.error, std::fabs(drive_angle_get() - chain_sensor_start) > stuck_step(swingPID, STUCK_STEP_ANGLE_CAP),
-                           STUCK_STEP_ANGLE_CAP, [this](int w) { return travel_stopped(Travel::Heading, w); });
+    SingleStuckWatch watch(
+        swingPID, swingPID.error, std::fabs(drive_angle_get() - chain_sensor_start) > stuck_step(swingPID, STUCK_STEP_ANGLE_CAP), STUCK_STEP_ANGLE_CAP,
+        [this](int w) { return travel_stopped(Travel::Heading, w, StopSpeed::Swing); }, stop_speed_fn(StopSpeed::Swing));
     bool stalled = false;
     // Same concurrent-retarget guard as the DRIVE branch above -- swingPID.target is only rewritten by
     // swing_set_internal() (set_swing_pid.cpp) at the start of a new swing.  mode is also watched -- see the
@@ -1614,9 +1691,9 @@ void Drive::pid_wait() {
     // Same stuck-but-settled carve-out as the TURN branch above -- see its comment for why this must
     // stop here rather than fall into the recheck below.
     bool settled_via_stuck = false;
-    ExitGate swing_gate([this](int w) { return travel_stopped(Travel::Heading, w); }, [this] { return travel_tracked(Travel::Heading); },
+    ExitGate swing_gate([this](int w) { return travel_stopped(Travel::Heading, w, StopSpeed::Swing); }, [this] { return travel_tracked(Travel::Heading); },
                         swingPID.exit.velocity_exit_time != 0 || swingPID.exit.mA_timeout != 0);
-    swing_gate.angular();
+    swing_gate.floor_set(stop_speed_fn(StopSpeed::Swing));
     while (true) {
       while (swing_exit == RUNNING) {
         if (mode != mode_snapshot || swingPID.target_get() != swing_target) {
@@ -1697,6 +1774,8 @@ void Drive::wait_until_drive(double target) {
   // drive target.  Only the odom case needs the exit-condition filtering and the real-distance-keyed backstop below
   // -- DRIVE's own target already tracks what this wait is actually waiting for.
   bool is_odom = mode == POINT_TO_POINT || mode == PURE_PURSUIT;
+  // An odom move's side watches follow xy's exits (leftPID/rightPID carry copies of them), so they use the odom xy stop speed
+  const StopSpeed drive_floor = is_odom ? StopSpeed::OdomXY : StopSpeed::Drive;
   // Same concurrent-retarget guard as pid_wait()'s branches.  In DRIVE mode leftPID/rightPID's target only
   // changes on a real second pid_drive_set(), same as pid_wait()'s DRIVE branch.  In odom modes (this function
   // also runs for POINT_TO_POINT/PURE_PURSUIT) leftPID/rightPID's target is the fixed look-ahead point and
@@ -1741,18 +1820,21 @@ void Drive::wait_until_drive(double target) {
   // simply driven past that near point reads to it as permanent non-progress and would be falsely flagged stuck.
   // Moved-since-motion-start is judged against l_start/r_start (this motion's own real start), not this
   // particular wait_until() call -- same reasoning as pid_wait()'s DRIVE branch above.
-  SingleStuckWatch left_watch(leftPID, is_odom ? l_error : leftPID.error,
-                              std::fabs(drive_sensor_left() - l_start) > stuck_step(leftPID, STUCK_STEP_DISTANCE_CAP), STUCK_STEP_DISTANCE_CAP,
-                              [this](int w) { return travel_stopped(Travel::Left, w); }),
-      right_watch(rightPID, is_odom ? r_error : rightPID.error, std::fabs(drive_sensor_right() - r_start) > stuck_step(rightPID, STUCK_STEP_DISTANCE_CAP),
-                  STUCK_STEP_DISTANCE_CAP, [this](int w) { return travel_stopped(Travel::Right, w); });
+  SingleStuckWatch left_watch(
+      leftPID, is_odom ? l_error : leftPID.error, std::fabs(drive_sensor_left() - l_start) > stuck_step(leftPID, STUCK_STEP_DISTANCE_CAP),
+      STUCK_STEP_DISTANCE_CAP, [this, drive_floor](int w) { return travel_stopped(Travel::Left, w, drive_floor); }, stop_speed_fn(drive_floor)),
+      right_watch(
+          rightPID, is_odom ? r_error : rightPID.error, std::fabs(drive_sensor_right() - r_start) > stuck_step(rightPID, STUCK_STEP_DISTANCE_CAP),
+          STUCK_STEP_DISTANCE_CAP, [this, drive_floor](int w) { return travel_stopped(Travel::Right, w, drive_floor); }, stop_speed_fn(drive_floor));
 
   // Small and big exit only end the wait once the robot is also stopped, see ExitGate. An odom move strips its position exits below
   // (leftPID/rightPID aim at a look ahead point there), so only a plain drive and the xy failsafe are gated.
-  ExitGate left_gate([this](int w) { return travel_stopped(Travel::Left, w); }, [this] { return travel_tracked(Travel::Left); },
+  ExitGate left_gate([this, drive_floor](int w) { return travel_stopped(Travel::Left, w, drive_floor); }, [this] { return travel_tracked(Travel::Left); },
                      leftPID.exit.velocity_exit_time != 0 || leftPID.exit.mA_timeout != 0);
-  ExitGate right_gate([this](int w) { return travel_stopped(Travel::Right, w); }, [this] { return travel_tracked(Travel::Right); },
+  ExitGate right_gate([this, drive_floor](int w) { return travel_stopped(Travel::Right, w, drive_floor); }, [this] { return travel_tracked(Travel::Right); },
                       rightPID.exit.velocity_exit_time != 0 || rightPID.exit.mA_timeout != 0);
+  left_gate.floor_set(stop_speed_fn(drive_floor));
+  right_gate.floor_set(stop_speed_fn(drive_floor));
   // The xy gate's only backstop in this loop is left_watch / right_watch, which read leftPID's and rightPID's own exits (copies of xy's
   // on an odom move). Unlike the odom waits' StuckWatch they do not fall back to the heading exits' window, so the gate is armed only
   // when both of those watches are on, or a robot hunting about the target would be held for ever with nothing to end the wait.
@@ -1761,7 +1843,9 @@ void Drive::wait_until_drive(double target) {
   // there (36 to 94 s at 6 to 8 deg/s). A gate holds an exit only for what a backstop here would catch.
   bool xy_gate_armed =
       (leftPID.exit.velocity_exit_time != 0 || leftPID.exit.mA_timeout != 0) && (rightPID.exit.velocity_exit_time != 0 || rightPID.exit.mA_timeout != 0);
-  ExitGate xy_gate([this](int w) { return travel_stopped(Travel::OdomXY, w); }, [this] { return travel_tracked(Travel::OdomXY); }, xy_gate_armed);
+  ExitGate xy_gate([this](int w) { return travel_stopped(Travel::OdomXY, w, StopSpeed::OdomXY); }, [this] { return travel_tracked(Travel::OdomXY); },
+                   xy_gate_armed);
+  xy_gate.floor_set(stop_speed_fn(StopSpeed::OdomXY));
 
   // Whether this wait_until()'s own target IS (not just near) the motion's actual final target, not
   // some earlier waypoint the robot is meant to drive through. pid_wait()'s DRIVE branch already
@@ -2169,16 +2253,20 @@ void Drive::wait_until_turn_swing_internal(double target) {
   // wait_until() call, the same as those two branches.
   bool already_moved =
       std::fabs(drive_angle_get() - chain_sensor_start) > std::max(stuck_step(turnPID, STUCK_STEP_ANGLE_CAP), stuck_step(swingPID, STUCK_STEP_ANGLE_CAP));
-  SingleStuckWatch turn_watch(turnPID, turnPID.error, already_moved, STUCK_STEP_ANGLE_CAP,
-                              [this](int w) { return travel_stopped(mode == TURN_TO_POINT ? Travel::OdomHeading : Travel::Heading, w); });
-  SingleStuckWatch swing_watch(swingPID, swingPID.error, already_moved, STUCK_STEP_ANGLE_CAP, [this](int w) { return travel_stopped(Travel::Heading, w); });
-  ExitGate turn_gate([this](int w) { return travel_stopped(mode == TURN_TO_POINT ? Travel::OdomHeading : Travel::Heading, w); },
+  SingleStuckWatch turn_watch(
+      turnPID, turnPID.error, already_moved, STUCK_STEP_ANGLE_CAP,
+      [this](int w) { return travel_stopped(mode == TURN_TO_POINT ? Travel::OdomHeading : Travel::Heading, w, StopSpeed::Turn); },
+      stop_speed_fn(StopSpeed::Turn));
+  SingleStuckWatch swing_watch(
+      swingPID, swingPID.error, already_moved, STUCK_STEP_ANGLE_CAP, [this](int w) { return travel_stopped(Travel::Heading, w, StopSpeed::Swing); },
+      stop_speed_fn(StopSpeed::Swing));
+  ExitGate turn_gate([this](int w) { return travel_stopped(mode == TURN_TO_POINT ? Travel::OdomHeading : Travel::Heading, w, StopSpeed::Turn); },
                      [this] { return travel_tracked(mode == TURN_TO_POINT ? Travel::OdomHeading : Travel::Heading); },
                      turnPID.exit.velocity_exit_time != 0 || turnPID.exit.mA_timeout != 0);
-  turn_gate.angular();
-  ExitGate swing_gate([this](int w) { return travel_stopped(Travel::Heading, w); }, [this] { return travel_tracked(Travel::Heading); },
+  turn_gate.floor_set(stop_speed_fn(StopSpeed::Turn));
+  ExitGate swing_gate([this](int w) { return travel_stopped(Travel::Heading, w, StopSpeed::Swing); }, [this] { return travel_tracked(Travel::Heading); },
                       swingPID.exit.velocity_exit_time != 0 || swingPID.exit.mA_timeout != 0);
-  swing_gate.angular();
+  swing_gate.floor_set(stop_speed_fn(StopSpeed::Swing));
 
   while (true) {
     if (mode != mode_snapshot || turnPID.target_get() != turn_target || swingPID.target_get() != swing_target) {
@@ -2466,15 +2554,17 @@ void Drive::pid_wait_until_point(pose target) {
 
   exit_output xy_exit = RUNNING;
   exit_output a_exit = RUNNING;
-  StuckWatch watch(xyPID, current_a_odomPID, pp_index, util::distance_to_point(target, odom_pose_get()), util::distance_to_point(odom_start, odom_pose_get()),
-                   std::fabs(odom_theta_get() - odom_start.theta),
-                   [this](int w) { return travel_stopped(Travel::OdomXY, w) && travel_stopped(Travel::OdomHeading, w); });
-  auto odom_stopped = [this](int w) { return travel_stopped(Travel::OdomXY, w) && travel_stopped(Travel::OdomHeading, w); };
+  StuckWatch watch(
+      xyPID, current_a_odomPID, pp_index, util::distance_to_point(target, odom_pose_get()), util::distance_to_point(odom_start, odom_pose_get()),
+      std::fabs(odom_theta_get() - odom_start.theta), [this](int w) { return odom_travel_stopped(w); }, stop_speed_fn(StopSpeed::OdomXY),
+      stop_speed_fn(StopSpeed::OdomAngle));
+  auto odom_stopped = [this](int w) { return odom_travel_stopped(w); };
   auto odom_tracked = [this] { return travel_tracked(Travel::OdomXY) && travel_tracked(Travel::OdomHeading); };
   bool odom_gate_armed = team_stuck_window(xyPID, current_a_odomPID) != 0;
   ExitGate xy_gate(odom_stopped, odom_tracked, odom_gate_armed);
+  xy_gate.floor_set(stop_speed_fn(StopSpeed::OdomXY));
   ExitGate a_gate(odom_stopped, odom_tracked, odom_gate_armed);
-  a_gate.angular();
+  a_gate.floor_set(stop_speed_fn(StopSpeed::OdomAngle));
 
   // Whether pure pursuit is still before its last point right now -- see pid_wait()'s own matching comment
   // (on the pre-last-point loop in its odom branch) for why xy's window exits mean nothing there: before the
@@ -2686,14 +2776,16 @@ void Drive::pid_wait_until_index_started(int index) {
     ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
     return pp_index < (int)pp_movements.size() ? util::distance_to_point(pp_movements[pp_index].target, odom_pose_get()) : 0.0;
   };
-  StuckWatch watch(xyPID, current_a_odomPID, pp_index, point_distance(), util::distance_to_point(odom_start, odom_pose_get()),
-                   std::fabs(odom_theta_get() - odom_start.theta),
-                   [this](int w) { return travel_stopped(Travel::OdomXY, w) && travel_stopped(Travel::OdomHeading, w); });
-  ExitGate a_gate([this](int w) { return travel_stopped(Travel::OdomXY, w) && travel_stopped(Travel::OdomHeading, w); },
-                  [this] { return travel_tracked(Travel::OdomXY) && travel_tracked(Travel::OdomHeading); }, team_stuck_window(xyPID, current_a_odomPID) != 0);
-  a_gate.angular();
-  ExitGate xy_gate([this](int w) { return travel_stopped(Travel::OdomXY, w) && travel_stopped(Travel::OdomHeading, w); },
-                   [this] { return travel_tracked(Travel::OdomXY) && travel_tracked(Travel::OdomHeading); }, team_stuck_window(xyPID, current_a_odomPID) != 0);
+  StuckWatch watch(
+      xyPID, current_a_odomPID, pp_index, point_distance(), util::distance_to_point(odom_start, odom_pose_get()),
+      std::fabs(odom_theta_get() - odom_start.theta), [this](int w) { return odom_travel_stopped(w); }, stop_speed_fn(StopSpeed::OdomXY),
+      stop_speed_fn(StopSpeed::OdomAngle));
+  ExitGate a_gate([this](int w) { return odom_travel_stopped(w); }, [this] { return travel_tracked(Travel::OdomXY) && travel_tracked(Travel::OdomHeading); },
+                  team_stuck_window(xyPID, current_a_odomPID) != 0);
+  a_gate.floor_set(stop_speed_fn(StopSpeed::OdomAngle));
+  ExitGate xy_gate([this](int w) { return odom_travel_stopped(w); }, [this] { return travel_tracked(Travel::OdomXY) && travel_tracked(Travel::OdomHeading); },
+                   team_stuck_window(xyPID, current_a_odomPID) != 0);
+  xy_gate.floor_set(stop_speed_fn(StopSpeed::OdomXY));
 
   // Same concurrent-retarget guard as pid_wait()'s odom branch -- this function had none, unlike every
   // other public wait in this file. A concurrent pid_odom_*_set() from another task resets pp_index to 0

@@ -57,7 +57,17 @@ struct DriveTestAccess {
 
   // What the waits mean by "stopped" (travel.hpp). Channels are Drive::Travel: 0 left, 1 right, 2 heading, 3 odom heading, 4 odom xy
   static ez::detail::PathTracker& travel(Drive& d, int channel) { return d.travel_[channel]; }
-  static bool travel_stopped(Drive& d, int channel, int window_ms) { return d.travel_stopped(static_cast<Drive::Travel>(channel), window_ms); }
+  // The stop speed defaults to the one the channel's usual motion uses (left and right: drive, heading: turn); pass `which` (a Drive::StopSpeed)
+  // to ask with another
+  static bool travel_stopped(Drive& d, int channel, int window_ms, int which = -1) {
+    static constexpr Drive::StopSpeed by_channel[5] = {Drive::StopSpeed::Drive, Drive::StopSpeed::Drive, Drive::StopSpeed::Turn, Drive::StopSpeed::OdomAngle,
+                                                       Drive::StopSpeed::OdomXY};
+    return d.travel_stopped(static_cast<Drive::Travel>(channel), window_ms, which < 0 ? by_channel[channel] : static_cast<Drive::StopSpeed>(which));
+  }
+  // The five stop speeds as a raw array, in Drive::StopSpeed order: drive, turn, swing, odom xy, odom angle
+  static double* stop_speeds(Drive& d) { return d.stop_speed_; }
+  // Whether an odom motion's xy and heading are both stopped over the window, each against its own stop speed
+  static bool odom_travel_stopped(Drive& d, int window_ms) { return d.odom_travel_stopped(window_ms); }
   static bool travel_tracked(Drive& d, int channel) { return d.travel_tracked(static_cast<Drive::Travel>(channel)); }
   static std::uint32_t& travel_generation(Drive& d) { return d.travel_generation_; }
 
