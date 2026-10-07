@@ -1962,21 +1962,36 @@ void Drive::wait_until_drive(double target) {
   // simply driven past that near point reads to it as permanent non-progress and would be falsely flagged stuck.
   // Moved-since-motion-start is judged against l_start/r_start (this motion's own real start), not this
   // particular wait_until() call -- same reasoning as pid_wait()'s DRIVE branch above.
-  SingleStuckWatch left_watch(
-      leftPID, is_odom ? l_error : leftPID.error, std::fabs(drive_sensor_left() - l_start) > stuck_step(leftPID, STUCK_STEP_DISTANCE_CAP),
-      STUCK_STEP_DISTANCE_CAP, [this, drive_floor](int w) { return travel_stopped(Travel::Left, w, drive_floor); },
-      [this, drive_floor](int w) { return travel_in_place(Travel::Left, w, drive_floor); }, stop_speed_fn(drive_floor)),
-      right_watch(
-          rightPID, is_odom ? r_error : rightPID.error, std::fabs(drive_sensor_right() - r_start) > stuck_step(rightPID, STUCK_STEP_DISTANCE_CAP),
-          STUCK_STEP_DISTANCE_CAP, [this, drive_floor](int w) { return travel_stopped(Travel::Right, w, drive_floor); },
-          [this, drive_floor](int w) { return travel_in_place(Travel::Right, w, drive_floor); }, stop_speed_fn(drive_floor));
+  auto left_stopped = [this, drive_floor](int w) { return travel_stopped(Travel::Left, w, drive_floor); };
+  auto right_stopped = [this, drive_floor](int w) { return travel_stopped(Travel::Right, w, drive_floor); };
+  auto left_in_place = [this, drive_floor](int w) { return travel_in_place(Travel::Left, w, drive_floor); };
+  auto right_in_place = [this, drive_floor](int w) { return travel_in_place(Travel::Right, w, drive_floor); };
+  SingleStuckWatch left_watch(leftPID, is_odom ? l_error : leftPID.error,
+                              std::fabs(drive_sensor_left() - l_start) > stuck_step(leftPID, STUCK_STEP_DISTANCE_CAP), STUCK_STEP_DISTANCE_CAP, left_stopped,
+                              left_in_place, stop_speed_fn(drive_floor)),
+      right_watch(rightPID, is_odom ? r_error : rightPID.error, std::fabs(drive_sensor_right() - r_start) > stuck_step(rightPID, STUCK_STEP_DISTANCE_CAP),
+                  STUCK_STEP_DISTANCE_CAP, right_stopped, right_in_place, stop_speed_fn(drive_floor));
+  // How many times a side's watch has been reseeded when that side's latched exit was taken back, bounded per side per wait by
+  // STUCK_WATCH_REARM_CAP, see pid_wait()'s DRIVE branch (and the comment on its recheck) for what this is for and what the bound is for
+  int left_stuck_watch_rearm_count = 0;
+  int right_stuck_watch_rearm_count = 0;
+  auto reseed_left = [&]() {
+    if (left_stuck_watch_rearm_count >= STUCK_WATCH_REARM_CAP) return;
+    left_watch =
+        SingleStuckWatch(leftPID, is_odom ? l_error : leftPID.error, true, STUCK_STEP_DISTANCE_CAP, left_stopped, left_in_place, stop_speed_fn(drive_floor));
+    ++left_stuck_watch_rearm_count;
+  };
+  auto reseed_right = [&]() {
+    if (right_stuck_watch_rearm_count >= STUCK_WATCH_REARM_CAP) return;
+    right_watch = SingleStuckWatch(rightPID, is_odom ? r_error : rightPID.error, true, STUCK_STEP_DISTANCE_CAP, right_stopped, right_in_place,
+                                   stop_speed_fn(drive_floor));
+    ++right_stuck_watch_rearm_count;
+  };
 
   // Small and big exit only end the wait once the robot is also stopped, see ExitGate. An odom move strips its position exits below
   // (leftPID/rightPID aim at a look ahead point there), so only a plain drive and the xy failsafe are gated.
-  ExitGate left_gate([this, drive_floor](int w) { return travel_stopped(Travel::Left, w, drive_floor); }, [this] { return travel_tracked(Travel::Left); },
-                     leftPID.exit.velocity_exit_time != 0 || leftPID.exit.mA_timeout != 0);
-  ExitGate right_gate([this, drive_floor](int w) { return travel_stopped(Travel::Right, w, drive_floor); }, [this] { return travel_tracked(Travel::Right); },
-                      rightPID.exit.velocity_exit_time != 0 || rightPID.exit.mA_timeout != 0);
+  ExitGate left_gate(left_stopped, [this] { return travel_tracked(Travel::Left); }, leftPID.exit.velocity_exit_time != 0 || leftPID.exit.mA_timeout != 0);
+  ExitGate right_gate(right_stopped, [this] { return travel_tracked(Travel::Right); }, rightPID.exit.velocity_exit_time != 0 || rightPID.exit.mA_timeout != 0);
   left_gate.floor_set(stop_speed_fn(drive_floor));
   right_gate.floor_set(stop_speed_fn(drive_floor));
   // The xy gate's only backstop in this loop is left_watch / right_watch, which read leftPID's and rightPID's own exits (copies of xy's
@@ -2171,40 +2186,43 @@ void Drive::wait_until_drive(double target) {
         // internal timers) -- the same treatment pid_wait()'s odom branch already gives a clean
         // double-exit. A side that has drifted back outside its own window since latching is
         // un-latched (back to RUNNING), falling through to keep waiting instead of trusting a stale
-        // result. Its stuck watch is left un-reseeded here: it already stopped being fed the moment
-        // this side first latched, so its own clock keeps reading time elapsed since well before it
-        // ever latched, not since this un-latch.
+        // result.
         //
-        // This has the identical shape as issue #532 (a side that finishes early, sits idle while
-        // its sibling keeps running, then is un-latched here by a fresh disturbance can be measured
-        // against a stale clock and read stuck instantly, with no real grace period) -- pid_wait()'s
-        // DRIVE branch above was fixed for exactly this by reseeding its watch on un-latch, up to
-        // STUCK_WATCH_REARM_CAP times per side per wait; past that, it falls back to exactly this
-        // un-reseeded behavior for the rest of the wait too (unconditional reseeding measurably hung
-        // a side oscillating right at its own window's edge -- see PR #543's own discussion for the
-        // measured repro, not just a theoretical concern). That fix (cap included) was scoped to
-        // pid_wait() only; this wait_until_drive() call site has the same gap, left as-is here.
+        // Its stuck watch is reseeded when that happens, exactly as pid_wait()'s DRIVE branch does it
+        // (see the comment on its recheck, and GitHub issue #532): a side stops being fed the moment it
+        // latches, so a watch left as it was reads time elapsed since well before this disturbance
+        // began, and a push that lands after the side latched, with the other side still waiting, is
+        // called stuck the very next pass with no grace period at all. Bounded by
+        // STUCK_WATCH_REARM_CAP per side per wait, for the same reason it is there (reseeding every
+        // relatch of a side oscillating at its window's edge starves both backstops): past the cap
+        // the watch keeps the clock it had.
         // VELOCITY_EXIT is never latched here (without_velocity() already maps it to RUNNING);
         // mA_EXIT isn't a window exit and is handled below regardless, so it's left alone.
         if (left_exit == SMALL_EXIT && std::fabs(leftPID.error) >= leftPID.exit.small_error) {
           left_exit = RUNNING;
+          reseed_left();
         } else if (left_exit == BIG_EXIT && std::fabs(leftPID.error) >= leftPID.exit.big_error) {
           left_exit = RUNNING;
+          reseed_left();
         }
         if (right_exit == SMALL_EXIT && std::fabs(rightPID.error) >= rightPID.exit.small_error) {
           right_exit = RUNNING;
+          reseed_right();
         } else if (right_exit == BIG_EXIT && std::fabs(rightPID.error) >= rightPID.exit.big_error) {
           right_exit = RUNNING;
+          reseed_right();
         }
 
-        // Latched while stopped, moving since: back to the gate (see pid_wait()'s DRIVE branch)
+        // Latched while stopped, moving since: back to the gate (see pid_wait()'s DRIVE branch), with the same fresh watch
         if (left_gate.moving(left_exit, leftPID)) {
           left_gate.hold(left_exit);
           left_exit = RUNNING;
+          reseed_left();
         }
         if (right_gate.moving(right_exit, rightPID)) {
           right_gate.hold(right_exit);
           right_exit = RUNNING;
+          reseed_right();
         }
 
         if (left_exit == RUNNING || right_exit == RUNNING) {
