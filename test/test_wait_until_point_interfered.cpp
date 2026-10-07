@@ -101,6 +101,7 @@ TEST_CASE("pid_wait_until_point leaves interfered alone when the wait ends norma
   g_chassis = &chassis;
   configure(chassis);
   start_point_move(chassis);
+  chassis.odom_xy_set(0.0, 24.0);  // the fake PIDs read zero error, so the robot is on its target, which a window exit stands on
   motors_pull_too_much_current(chassis, false);
 
   CHECK(returns(500, [&] { chassis.pid_wait_until_point({0.0, 24.0, 0.0}); }));

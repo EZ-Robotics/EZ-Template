@@ -127,8 +127,8 @@ TEST_CASE("pid_wait() odom: a real heading bump-and-slow-recovery survives when 
   // travel since the motion's own start right from construction, the same as an ordinary motion that's
   // already been running a moment, so this test exercises StuckWatch's real window instead of its
   // "hasn't moved yet" startup allowance (which would otherwise swallow this whole scenario inside its
-  // own grace period).
-  chassis.odom_pose_set({0.0, 5.0, ANGLE_NOT_SET});
+  // own grace period). The pose is the target: the scripted xy error is zero, and a window exit stands only while the robot is on its target.
+  chassis.odom_pose_set({0.0, 24.0, ANGLE_NOT_SET});
 
   Outcome o = run_wait(chassis, every_tick_lands, 300);
   MESSAGE("every tick lands: returned=" << o.returned << " passes=" << o.passes << " interfered=" << o.interfered);
@@ -140,7 +140,7 @@ TEST_CASE("pid_wait() odom: an ordinary missed first tick makes the same surviva
   Drive chassis = make_fresh_chassis();
   configure(chassis);
   chassis.pid_odom_ptp_set({{0.0, 24.0, 0.0}, fwd, 60});
-  chassis.odom_pose_set({0.0, 5.0, ANGLE_NOT_SET});
+  chassis.odom_pose_set({0.0, 24.0, ANGLE_NOT_SET});
 
   Outcome o = run_wait(chassis, skip_first_tick, 300);
   MESSAGE("first tick skipped: returned=" << o.returned << " passes=" << o.passes << " interfered=" << o.interfered);

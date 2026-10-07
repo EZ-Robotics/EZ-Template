@@ -194,6 +194,8 @@ TEST_CASE("pid_wait_quick() on point-to-point still sets headingPID to the final
   chassis.pid_odom_drive_exit_condition_set(0, 1.0, 250, 3.0, 500, 750);  // small_exit_time=0: fires on the first in-tolerance pass
   chassis.pid_odom_turn_exit_condition_set(0, 3.0, 250, 7.0, 500, 750);
   chassis.pid_odom_ptp_set({{0.0, 24.0, 45.0}, fwd, 100});
+  // The scripted xy error is zero, so the robot is on its target: a window exit stands only while it really is
+  chassis.odom_xy_set(0.0, 24.0);
   // A real compute_error() call, not a direct `.error =` write -- small_exit_time=0 only needs ONE
   // real compute to fire on the wait's first check (see PID.cpp's freshness gate).
   chassis.xyPID.compute_error(0.0, 0.0);

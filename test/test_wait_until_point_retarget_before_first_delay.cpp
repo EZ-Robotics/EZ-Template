@@ -177,6 +177,8 @@ TEST_CASE("pid_wait_until_point(): an ordinary, un-retargeted call still returns
   chassis.pid_odom_drive_exit_condition_set(0, 1.0, 250, 3.0, 500, 750);  // small_exit_time=0: fires on the first in-tolerance pass
   chassis.pid_odom_turn_exit_condition_set(0, 3.0, 250, 7.0, 500, 750);
   chassis.pid_odom_ptp_set({{0.0, 24.0, 0.0}, fwd, 100});
+  // The scripted xy error is zero, so the robot is on its target: a window exit stands only while it really is
+  chassis.odom_xy_set(0.0, 24.0);
   // A real compute_error() call, not a direct `.error =` write -- small_exit_time=0 only needs ONE
   // real compute to fire on the wait's very first poll (see PID.cpp's freshness gate).
   chassis.xyPID.compute_error(0.0, 0.0);
@@ -203,6 +205,8 @@ TEST_CASE("pid_wait_quick() on point-to-point: an ordinary, un-retargeted call s
   chassis.pid_odom_drive_exit_condition_set(0, 1.0, 250, 3.0, 500, 750);
   chassis.pid_odom_turn_exit_condition_set(0, 3.0, 250, 7.0, 500, 750);
   chassis.pid_odom_ptp_set({{0.0, 24.0, 45.0}, fwd, 100});
+  // The scripted xy error is zero, so the robot is on its target: a window exit stands only while it really is
+  chassis.odom_xy_set(0.0, 24.0);
   // A real compute_error() call, not a direct `.error =` write -- small_exit_time=0 only needs ONE
   // real compute to fire on the wait's very first poll (see PID.cpp's freshness gate).
   chassis.xyPID.compute_error(0.0, 0.0);
@@ -231,6 +235,8 @@ TEST_CASE("pid_wait_until_index(): an ordinary, un-retargeted call still returns
   std::vector<odom> path;
   for (int i = 1; i <= 10; i++) path.push_back({{0.0, 7.0 + i, ANGLE_NOT_SET}, fwd, 100});
   chassis.pid_odom_pp_set(path);
+  // The scripted xy error is zero, so the robot is on its target: a window exit stands only while it really is
+  chassis.odom_xy_set(0.0, 17.0);
 
   // Neither phase 1 (pid_wait_until_index_started()) nor phase 2 (pid_wait_until_point(), before pure
   // pursuit's last point) trusts xy's position exit as a clean finish on its own -- see

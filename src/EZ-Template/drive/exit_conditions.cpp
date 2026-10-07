@@ -710,6 +710,8 @@ public:
     if (latched != SMALL_EXIT && latched != BIG_EXIT) return false;
     return !stopped_for(latched == SMALL_EXIT ? pid.exit.small_exit_time : pid.exit.big_exit_time);
   }
+  // Whether this gate holds anything back at all: false when the team has no backstop to end a wait the gate would hold for ever
+  bool armed() const { return armed_; }
   // The exit's time is already met: take it as soon as the robot is stopped
   void hold(exit_output e) {
     if (e == SMALL_EXIT) small_met_ = true;
@@ -743,20 +745,46 @@ private:
 enum class Latch {
   Holds,
   OutOfBand,  // its live error is back outside the band
+  OffTarget,  // odom xy only: the robot is not within the settle error of the final target, whatever the xy error reads
   Moving      // the robot moved since it latched, the exit goes back to the gate
 };
 
-Latch latched_exit_state(exit_output latched, const PID& pid, const ExitGate& gate, double live_error) {
+// `on_target` is only ever false for odom xy, see odom_xy_exit_stands()
+Latch latched_exit_state(exit_output latched, const PID& pid, const ExitGate& gate, double live_error, bool on_target = true) {
   if (latched == SMALL_EXIT && std::fabs(live_error) >= pid.exit.small_error) return Latch::OutOfBand;
   if (latched == BIG_EXIT && std::fabs(live_error) >= pid.exit.big_error) return Latch::OutOfBand;
+  if ((latched == SMALL_EXIT || latched == BIG_EXIT) && !on_target) return Latch::OffTarget;
   return gate.moving(latched, pid) ? Latch::Moving : Latch::Holds;
 }
 
-// An exit that is out of its band goes back to RUNNING for the PID's own timers to latch again. One that is only moving goes back to the gate, which
-// hands it over again on the first pass the robot is stopped.
+// An exit that is out of its band goes back to RUNNING for the PID's own timers to latch again. One that is only moving, or that the robot is not on
+// target for, goes back to the gate, which hands it over again on the first pass the robot is stopped (and, for odom xy, on target).
 void take_back_latched(exit_output& exit, Latch state, ExitGate& gate) {
-  if (state == Latch::Moving) gate.hold(exit);
+  if (state == Latch::Moving || state == Latch::OffTarget) gate.hold(exit);
   exit = RUNNING;
+}
+
+// An odom xy window exit (SMALL_EXIT / BIG_EXIT) only says the xy error has been inside a band for the exit's time. That error is the robot's distance to
+// the target projected onto the line from the robot to the point the motion faces, one look ahead past the target, so every point on the circle whose
+// diameter runs from the target to that point reads an error of 0. A robot shoved past its target, or one whose position was moved under it, can come to
+// rest on that circle inches from the target and read as settled to the controller and to every exit built on its error. So the exit stands only while the
+// robot's true distance to the final target is inside the settle error, which is the same band a stuck robot is called settled by (see settle_error()).
+bool odom_xy_exit_stands(double distance_to_final_target, const PID& xy) { return distance_to_final_target < settle_error_distance(xy); }
+
+// Whether an odom xy window exit is on target as far as the wait is concerned: it is when the robot is within the settle error of the final target, and
+// always where there is no stuck watch to end a wait that is holding the exit back (see ExitGate): a configuration with no backstop ends on position
+// alone, as ever, and holding its exit back would hold the wait for ever.
+bool odom_xy_exit_on_target(const ExitGate& gate, double distance_to_final_target, const PID& xy) {
+  return !gate.armed() || odom_xy_exit_stands(distance_to_final_target, xy);
+}
+
+// A window exit xy just gave a wait that the robot is not on target for: it is not taken, and goes back to the gate (so it is handed over again on the first
+// pass the robot is on target and stopped). The wait keeps going on the stuck watch, which ends a robot that is not getting anywhere as interfered, so a
+// vetoed exit cannot hold a wait for ever.
+void veto_off_target_xy_exit(exit_output& xy_exit, ExitGate& gate, const PID& xy, const std::function<double()>& distance_to_final_target) {
+  if ((xy_exit != SMALL_EXIT && xy_exit != BIG_EXIT) || odom_xy_exit_on_target(gate, distance_to_final_target(), xy)) return;
+  gate.hold(xy_exit);
+  xy_exit = RUNNING;
 }
 
 // The same over-current predicate PID::exit_condition(const std::vector<pros::Motor>&) uses: a transient PROS_ERR is not over
@@ -1478,6 +1506,9 @@ void Drive::pid_wait() {
       pose t = mode == PURE_PURSUIT && pp_index < (int)pp_movements.size() ? pp_movements[pp_index].target : odom_target;
       return util::distance_to_point(t, odom_pose_get());
     };
+    // How far the robot is from the motion's final target, which is what a window exit on xy has to be on target for. The target of the motion this
+    // wait was started for, not whatever motion is current by now: a wait that was retargeted out from under it ends on the guard below.
+    auto final_target_distance = [&]() { return util::distance_to_point(entry_odom_target_start, odom_pose_get()); };
     auto travelled = [&]() { return util::distance_to_point(odom_start, odom_pose_get()); };
     auto turned = [&]() { return std::fabs(odom_theta_get() - odom_start.theta); };
     StuckWatch watch(
@@ -1623,6 +1654,9 @@ void Drive::pid_wait() {
         bool xy_was_running = xy_exit == RUNNING;
         bool a_was_running = a_exit == RUNNING;
         xy_exit = xy_exit != RUNNING ? xy_exit : without_velocity(gated_exit(xy_gate, xyPID, mA_exit_motors(), xyPID.error));
+        // A window exit the robot is not on target for does not stand, see odom_xy_exit_stands(). It is only the xy exit that was just released
+        // that is vetoed here: one latched earlier is rechecked below
+        if (xy_was_running) veto_off_target_xy_exit(xy_exit, xy_gate, xyPID, final_target_distance);
         a_exit = a_exit != RUNNING ? a_exit : without_velocity(gated_exit(a_gate, current_a_odomPID, mA_exit_motors(), current_a_odomPID.error));
         // The watch is consulted whenever either axis is RUNNING (the other may already have latched an mA exit), and also on the pass
         // the gate releases an axis that was RUNNING: see released_window_exit()
@@ -1636,7 +1670,7 @@ void Drive::pid_wait() {
           // An axis that already latched a window exit has to still hold it before the robot counts as settled, see the DRIVE branch: its live
           // error inside the band the exit was given for, and the gate not seeing the robot move since. If not it is taken back, the watch gets a
           // fresh clock, and the wait goes on, bounded by STUCK_WATCH_REARM_CAP.
-          Latch xy_state = latched_exit_state(xy_exit, xyPID, xy_gate, xyPID.error);
+          Latch xy_state = latched_exit_state(xy_exit, xyPID, xy_gate, xyPID.error, odom_xy_exit_on_target(xy_gate, final_target_distance(), xyPID));
           Latch a_state = latched_exit_state(a_exit, current_a_odomPID, a_gate, current_a_odomPID.error);
           if ((xy_state != Latch::Holds || a_state != Latch::Holds) && watch_rearm_count < STUCK_WATCH_REARM_CAP) {
             if (xy_state != Latch::Holds) take_back_latched(xy_exit, xy_state, xy_gate);
@@ -1681,8 +1715,8 @@ void Drive::pid_wait() {
       // VELOCITY_EXIT is never latched here (without_velocity() already maps it to RUNNING); mA_EXIT and
       // ERROR_NO_CONSTANTS aren't window exits and already force interfered=true below, so they're left
       // alone. If the disturbance never resolves, StuckWatch above is what ends this, not an infinite relatch.
-      // Latched while stopped, moving since: back to the gate (see the DRIVE branch)
-      Latch xy_state = latched_exit_state(xy_exit, xyPID, xy_gate, xyPID.error);
+      // Latched while stopped, moving since, or not on target since: back to the gate (see the DRIVE branch)
+      Latch xy_state = latched_exit_state(xy_exit, xyPID, xy_gate, xyPID.error, odom_xy_exit_on_target(xy_gate, final_target_distance(), xyPID));
       if (xy_state != Latch::Holds) take_back_latched(xy_exit, xy_state, xy_gate);
       Latch a_state = latched_exit_state(a_exit, current_a_odomPID, a_gate, current_a_odomPID.error);
       if (a_state != Latch::Holds) take_back_latched(a_exit, a_state, a_gate);
@@ -2067,6 +2101,9 @@ void Drive::wait_until_drive(double target) {
     return util::distance_to_point(final_target, odom_pose_get()) < settle_error_distance(xyPID) &&
            (!has_angle || std::fabs(current_a_odomPID.error) < settle_error_angle(current_a_odomPID));
   };
+  // How far the robot is from the motion's final target right now, what a window exit on xy has to be on target for (odom_xy_exit_stands())
+  // (the motion this wait was started for: retarget_target is the snapshot taken before the leading delay)
+  auto odom_final_distance = [&]() { return util::distance_to_point(retarget_target, odom_pose_get()); };
   // Whether the checkpoint lies between where the robot came to rest along the move and the motion's final target (or behind where it
   // came to rest, which it has then passed). An odom move has no end distance of its own, so "the target" is how far the robot still is from
   // the final target, plus the settle error, which is also what a checkpoint given as the move's nominal distance can be off by.
@@ -2122,6 +2159,9 @@ void Drive::wait_until_drive(double target) {
         // needs this filter. SingleStuckWatch (via l_error/r_error below) remains the real stall
         // backstop.
         exit_output xy_exit = without_velocity(gated_exit(xy_gate, xyPID, mA_exit_motors(), xyPID.error));
+        // A window exit the robot is not on target for does not stand, see odom_xy_exit_stands(). Held for the stuck watches below, which end
+        // a robot that is not getting anywhere.
+        veto_off_target_xy_exit(xy_exit, xy_gate, xyPID, odom_final_distance);
         if (xy_exit != RUNNING) {
           if (print_toggle) std::cout << "  XY: " << exit_to_string(xy_exit) << " Wait Until Exit Failsafe, the move ended before reaching " << target << "\n";
           // An mA exit inside big_error of the final target is a settle (see ma_exit_settled()), anything else that is not a window exit is not
@@ -2814,6 +2854,9 @@ void Drive::pid_wait_until_point(pose target) {
         if (xy_pass == mA_EXIT) xy_exit = mA_EXIT;
       } else {
         xy_exit = without_velocity(xy_pass);
+        // A window exit the robot is not on target for does not stand, see odom_xy_exit_stands(). The distance is to the final target (or the
+        // point past it a chain wait pushed), the same as the settled verdict below.
+        veto_off_target_xy_exit(xy_exit, xy_gate, xyPID, settle_distance);
       }
     }
     a_exit = a_exit != RUNNING ? a_exit : without_velocity(gated_exit(a_gate, current_a_odomPID, mA_exit_motors(), current_a_odomPID.error));
@@ -2846,19 +2889,13 @@ void Drive::pid_wait_until_point(pose target) {
       // the interfered check below regardless, so they're left alone. A latched axis that has drifted
       // back outside its window is un-latched, falling through to keep waiting -- the stuck check above
       // remains the backstop if the disturbance never resolves.
-      if (xy_exit == SMALL_EXIT && std::fabs(xyPID.error) >= xyPID.exit.small_error)
-        xy_exit = RUNNING;
-      else if (xy_exit == BIG_EXIT && std::fabs(xyPID.error) >= xyPID.exit.big_error)
-        xy_exit = RUNNING;
       if (a_exit == SMALL_EXIT && std::fabs(current_a_odomPID.error) >= current_a_odomPID.exit.small_error)
         a_exit = RUNNING;
       else if (a_exit == BIG_EXIT && std::fabs(current_a_odomPID.error) >= current_a_odomPID.exit.big_error)
         a_exit = RUNNING;
-      // Latched while stopped, moving since: back to the gate
-      if (xy_gate.moving(xy_exit, xyPID)) {
-        xy_gate.hold(xy_exit);
-        xy_exit = RUNNING;
-      }
+      // Latched while stopped, moving since, or not on target since: back to the gate
+      Latch xy_state = latched_exit_state(xy_exit, xyPID, xy_gate, xyPID.error, odom_xy_exit_on_target(xy_gate, settle_distance(), xyPID));
+      if (xy_state != Latch::Holds) take_back_latched(xy_exit, xy_state, xy_gate);
       if (a_gate.moving(a_exit, current_a_odomPID)) {
         a_gate.hold(a_exit);
         a_exit = RUNNING;

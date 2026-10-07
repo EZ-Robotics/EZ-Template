@@ -32,7 +32,7 @@ struct Case {
 }  // namespace
 
 TEST_CASE("second chain wait on a settled point to point move reads clean just outside big_error of the pushed target") {
-  const Case cases[] = {{"light, 1 pass, small exit off, big 0.5", four_inch(sim::archetype_light_fast()), 1, 0.0, 0.5, false},
+  const Case cases[] = {{"light, 1 pass, small exit off, big 0.6", four_inch(sim::archetype_light_fast()), 1, 0.0, 0.6, false},
                         {"sticky, 2 passes, small 0.5, big 2", four_inch(sim::archetype_sticky_high_friction()), 2, 0.5, 2.0, true}};
   for (const Case& cs : cases) {
     Rig r(cs.arch, cs.passes);
