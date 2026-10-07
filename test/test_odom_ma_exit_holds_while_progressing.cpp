@@ -313,3 +313,25 @@ TEST_CASE("a robot that is held in place and turned toward its heading is held w
     }
   }
 }
+
+// pid_wait_until(distance) watches each side's wheel distance to the checkpoint, which grows on a path that turns back. Over current while
+// the robot is driving the way back must not end the wait with the robot driving at full speed.
+TEST_CASE("pid_wait_until(distance) on a path that turns back does not end on a burst of over current while the robot is driving") {
+  for (double from : {600.0, 800.0, 1000.0}) {
+    Rig r(archetype_classroom(), 1);
+    r.chassis.pid_print_toggle(false);
+    team_exits(r.chassis);
+    Burst burst(r, from, from + 400);
+    r.chassis.pid_odom_pp_set({{{0.0, 24.0, ANGLE_NOT_SET}, fwd, 110}, {{0.0, 6.0, ANGLE_NOT_SET}, rev, 110}});
+    double ms = 0;
+    bool ok = r.wait([&] { r.chassis.pid_wait_until(30.0); }, 3000, &ms);
+    INFO("burst from " << from);
+    MESSAGE("burst from ", from, ": returned ", ok, " at ", ms, " ms, interfered ", r.chassis.interfered, ", ", r.distance_to(0.0, 6.0), " in from the end, ",
+            r.drive_speed_over(100), " in/s");
+    REQUIRE(ok);
+    CHECK(r.distance_to(0.0, 6.0) < 3.0);
+    // Clean, and not with the robot still driving into its last inches
+    CHECK(r.drive_speed_over(100) < FLOOR_DISTANCE + 1.0);
+    CHECK_FALSE(r.chassis.interfered);
+  }
+}
