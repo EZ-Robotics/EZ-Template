@@ -15,6 +15,7 @@
 
 #include "doctest.h"
 #include "drive_test_access.hpp"
+#include "stdout_capture.hpp"
 
 using namespace ez;
 using test_stub::g_sched;
@@ -60,6 +61,17 @@ TEST_CASE("every public setter holds the chassis lock at a raised priority, once
       {"pid_odom_pp_set", [](Drive& c) { c.pid_odom_pp_set({{{0.0, 12.0, 0.0}, fwd, 110}, {{0.0, 24.0, 0.0}, fwd, 110}}); }},
       {"pid_odom_set (double, int)", [](Drive& c) { c.pid_odom_set(24.0, 110); }},
       {"pid_speed_max_set", [](Drive& c) { c.pid_speed_max_set(100); }},
+      {"pid_drive_exit_stop_speed_set", [](Drive& c) { c.pid_drive_exit_stop_speed_set(2.0); }},
+      {"pid_drive_exit_stop_speed_set (units)", [](Drive& c) { c.pid_drive_exit_stop_speed_set(2_in / 1_s); }},
+      {"pid_drive_exit_stop_speed_set (refused)", [](Drive& c) { test_stub::capture_stdout([&] { c.pid_drive_exit_stop_speed_set(0.0); }); }},
+      {"pid_turn_exit_stop_speed_set", [](Drive& c) { c.pid_turn_exit_stop_speed_set(6.0); }},
+      {"pid_turn_exit_stop_speed_set (units)", [](Drive& c) { c.pid_turn_exit_stop_speed_set(6_deg / 1_s); }},
+      {"pid_swing_exit_stop_speed_set", [](Drive& c) { c.pid_swing_exit_stop_speed_set(6.0); }},
+      {"pid_swing_exit_stop_speed_set (units)", [](Drive& c) { c.pid_swing_exit_stop_speed_set(6_deg / 1_s); }},
+      {"pid_odom_drive_exit_stop_speed_set", [](Drive& c) { c.pid_odom_drive_exit_stop_speed_set(2.0); }},
+      {"pid_odom_drive_exit_stop_speed_set (units)", [](Drive& c) { c.pid_odom_drive_exit_stop_speed_set(2_in / 1_s); }},
+      {"pid_odom_turn_exit_stop_speed_set", [](Drive& c) { c.pid_odom_turn_exit_stop_speed_set(6.0); }},
+      {"pid_odom_turn_exit_stop_speed_set (units)", [](Drive& c) { c.pid_odom_turn_exit_stop_speed_set(6_deg / 1_s); }},
       {"pid_targets_reset", [](Drive& c) { c.pid_targets_reset(); }},
       {"pid_swing_set", [](Drive& c) { c.pid_swing_set(LEFT_SWING, 45.0, 110); }},
       {"pid_turn_set (angle)", [](Drive& c) { c.pid_turn_set(90.0, 110); }},
