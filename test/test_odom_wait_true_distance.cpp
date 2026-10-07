@@ -105,3 +105,80 @@ TEST_CASE("an odom wait whose position is relocalized mid move does not end clea
     CHECK(r.drive_speed_over(100) < r.drive_floor(100));
   }
 }
+
+// The other waits that can end on an odom xy window exit, with the robot held still 24 in short of the target while the xy error reads zero (the fake
+// PIDs: every poll feeds exit_condition() the error it was given, and the auto task pass counter moves on). Neither of these waits can end on crossing
+// their checkpoint, which is past the target, so the window exit is the only way they end clean. Crossing a checkpoint ends a wait by design, wherever
+// the robot is when it does, so these cannot be run on the sim, where a shoved robot passes the checkpoint on its way.
+namespace {
+
+enum class Wait {
+  UntilPoint,    // pid_wait_until() a point
+  UntilDistance  // pid_wait_until() a distance
+};
+
+const char* name(Wait w) { return w == Wait::UntilPoint ? "pid_wait_until(point)" : "pid_wait_until(60_in)"; }
+
+ez::Drive* g_chassis = nullptr;
+void feed_zero_error() {
+  ez::detail::stats.auto_task_passes.fetch_add(1);
+  ez::DriveTestAccess::refresh(g_chassis->xyPID);
+  ez::DriveTestAccess::refresh(g_chassis->current_a_odomPID);
+}
+
+struct Scripted {
+  bool returned;
+  int polls;
+  bool interfered;
+};
+
+Scripted run_scripted(Wait w, int velocity_exit_time) {
+  ez::Drive chassis = make_drive(archetype_classroom());
+  g_chassis = &chassis;
+  ez::DriveTestAccess::imu_calibration_complete(chassis) = true;
+  chassis.pid_print_toggle(false);
+  chassis.pid_odom_drive_exit_condition_set(0, 1.0, 250, 3.0, velocity_exit_time, 0);
+  chassis.pid_odom_turn_exit_condition_set(0, 3.0, 250, 7.0, velocity_exit_time, 0);
+  chassis.pid_odom_ptp_set({{0.0, 48.0}, fwd, 110});
+  // The robot sits at the start, 48 in short, and the xy error reads zero
+  chassis.xyPID.compute_error(0.0, 0.0);
+  chassis.current_a_odomPID.compute_error(0.0, 0.0);
+  test_stub::g_clock.on_delay = feed_zero_error;
+  int polls = 0;
+  test_stub::g_clock.delay_calls_until_stop = 3000;
+  bool returned = true;
+  try {
+    if (w == Wait::UntilPoint)
+      chassis.pid_wait_until(pose{0.0, 60.0, 0.0});
+    else
+      chassis.pid_wait_until(60_in);
+  } catch (test_stub::StopLoop&) {
+    returned = false;
+  }
+  polls = 3000 - test_stub::g_clock.delay_calls_until_stop;
+  test_stub::g_clock.delay_calls_until_stop = -1;
+  test_stub::g_clock.on_delay = nullptr;
+  return {returned, polls, chassis.interfered};
+}
+
+}  // namespace
+
+TEST_CASE("a window exit on odom xy does not end a wait on a checkpoint past the target while the robot is 48 in short of it") {
+  for (Wait w : {Wait::UntilPoint, Wait::UntilDistance}) {
+    Scripted r = run_scripted(w, 500);
+    CAPTURE(std::string(name(w)));
+    MESSAGE(name(w), ": returned=", r.returned, " interfered=", r.interfered);
+    // The stuck watch ends it: a wait held back by the veto must never hang
+    REQUIRE(r.returned);
+    CHECK(r.interfered);
+  }
+}
+
+TEST_CASE("with no velocity or mA exit there is no stuck watch, so a window exit on odom xy still ends the wait on position alone") {
+  for (Wait w : {Wait::UntilPoint, Wait::UntilDistance}) {
+    Scripted r = run_scripted(w, 0);
+    CAPTURE(std::string(name(w)));
+    REQUIRE(r.returned);
+    CHECK_FALSE(r.interfered);
+  }
+}
