@@ -2902,10 +2902,12 @@ public:
    * Lock the code in a while loop until the robot has settled.
    *
    * Settled means the robot is inside the motion's small or big error for that exit's time AND has stopped: it travelled less than
-   * 1.5 in/s (4 deg/s for a turn or swing) times that time over that time, never a speed measured in one tick. The same speed floor is
-   * used everywhere the library calls a robot stopped, and no exit condition moves it. A wait never reports a robot settled while it
-   * is moving faster than 1.5 in/s (4 deg/s) on average over its exit window, except a robot oscillating at its target, which ends
-   * after it stops making progress (no new low in its error for max(velocity_exit_time, 1 in / 1.5 in/s, or 3 deg / 4 deg/s)).
+   * the stop speed (1.5 in/s, 4 deg/s for a turn or swing, unless you set it, see pid_drive_exit_stop_speed_set()) times that time over
+   * that time, never a speed measured in one tick. The same stop speed is used everywhere the library calls a robot stopped, and no exit
+   * condition moves it. With the default stop speeds a wait never reports a robot settled while it is moving faster than 1.5 in/s
+   * (4 deg/s) on average over its exit window (a higher stop speed ends waits sooner, with the robot still moving up to that fast),
+   * except a robot oscillating at its target, which ends after it stops making progress (no new low in its error for
+   * max(velocity_exit_time, 1 in / stop speed, or 3 deg / stop speed): 0.67 s and 0.75 s at the defaults).
    *
    * Inside big_error, a robot that stopped, or is pinned or jammed there so that the mA exit fires (mA_timeout), is a finished
    * motion: the wait returns and `interfered` stays false. Outside big_error, a robot stopped by something returns with `interfered`
@@ -3681,9 +3683,9 @@ public:
   /**
    * Set's constants for drive exit conditions.
    *
-   * The small and big exits also need the robot to have stopped: it travelled less than 1.5 in/s (4 deg/s for a turn or swing) times
-   * the exit's time over that time (see pid_wait()). When the timer has run out and the robot is still moving, the exit comes the
-   * moment it stops, as long as it stayed inside the error.
+   * The small and big exits also need the robot to have stopped: it travelled less than the stop speed (by default 1.5 in/s, 4 deg/s for a
+   * turn or swing, see pid_drive_exit_stop_speed_set()) times the exit's time over that time (see pid_wait()). When the timer has run out and the robot is
+   * still moving, the exit comes the moment it stops, as long as it stayed inside the error.
    *
    * \param p_small_exit_time
    *        time to exit when within small_error (and stopped), in ms
@@ -3756,6 +3758,261 @@ public:
    */
   void pid_swing_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time,
                                     int p_mA_timeout, bool use_imu = false);
+
+  // The speed a robot has to be under to count as "stopped", per kind of motion. Small exit, big exit, mA exit and the stuck watch inside
+  // big_error all ask the same question: did the robot travel less than this speed times W over the last W milliseconds, W being the
+  // window of the exit in question (its exit time). See pid_wait().
+  //
+  // These are real speeds, in inches per second or degrees per second. They are not the 0 to 127 motor speed that pid_drive_set() and
+  // pid_speed_max_set() take.
+  //
+  // The defaults are 1.5 in/s and 4 deg/s, and a robot that never calls these behaves exactly as it always has. Raising a speed makes
+  // that kind of motion end sooner, with more momentum: a robot still moving a little under the new speed is called stopped. Lowering it
+  // makes the motion end later, because the robot has to be stiller first. Zero, a negative number, NaN and infinity are refused: a
+  // warning is printed and the previous value stays, because a robot can never be under them (or, for NaN, anything is). Every other
+  // number is yours to choose, with no minimum and no maximum, and the timeouts built from it follow it: the stuck watch's backstop is a
+  // step divided by this speed, so a very small one makes a robot that hunts about its target wait very long (0.1 deg/s: about 30 s for
+  // a turn, against 0.75 s at the default), and a very large one makes the motion end while the robot is still moving fast.
+  //
+  // A stop speed is read on every poll, so calling a setter in the middle of a motion changes the answer on the very next poll and does not
+  // restart a timer, window or latch of the wait that is running. That is not how everything a wait uses from pid_*_exit_condition_set()
+  // behaves: a wait copies the windows and progress steps of its stuck watch from them once, when it starts. The backstop built from a stop
+  // speed is still live, because only the step is copied.
+
+  /// What the stop speed is until it is set, for a drive (or odom xy), in in/s
+  static constexpr double STOP_SPEED_DISTANCE_DEFAULT = 1.5;
+  /// What the stop speed is until it is set, for a turn, swing or odom angle, in deg/s
+  static constexpr double STOP_SPEED_ANGLE_DEFAULT = 4.0;
+
+  /**
+   * Sets the speed a drive (pid_drive_set()) has to be under to count as stopped, in inches per second.
+   *
+   * Small exit, big exit, the mA exit and the stuck watch inside big_error wait for the robot to travel less than this speed times W over
+   * the last W milliseconds, W being the window of that exit (its exit time). See pid_wait().
+   *
+   * Plain numbers are in in/s, not the 0 to 127 motor speed. Default is 1.5. A higher speed ends drives sooner, with the robot still
+   * moving up to that fast. A lower one waits until the robot is stiller, and a robot that hunts about its target and never gets that
+   * still waits for the stuck watch's backstop, which is 1 in divided by this speed (1 in at 0.1 in/s is 10 s, 0.67 s at the default). Zero, a negative number,
+   * NaN and infinity are refused with a printed warning and the previous value is kept; any other number is accepted. It is read on every poll, so it takes
+   * effect on the next poll, even in the middle of a motion, and restarts no timer, window or latch.
+   *
+   * \param in_per_s
+   *        in/s, not the 0 to 127 motor speed
+   *
+   * \code
+   * chassis.pid_drive_exit_stop_speed_set(2.0);          // in/s
+   * chassis.pid_drive_exit_stop_speed_set(2_in / 1_s);   // the same, with units
+   * \endcode
+   */
+  void pid_drive_exit_stop_speed_set(double in_per_s);
+
+  /**
+   * Same as pid_drive_exit_stop_speed_set(double), with a speed that has units: 2_in / 1_s is the same speed written with
+   * EZ-Units, and any other unit of speed works too.
+   *
+   * Zero, a negative number, NaN and infinity are refused with a printed warning and the previous value is kept.
+   *
+   * \param speed
+   *        the stop speed, with units
+   *
+   * \code
+   * chassis.pid_drive_exit_stop_speed_set(2_in / 1_s);   // the same, with units
+   * \endcode
+   */
+  void pid_drive_exit_stop_speed_set(ez::QSpeed speed);
+
+  /**
+   * Returns the stop speed of a drive (pid_drive_set()), in in/s. It is 1.5 until it is set.
+   *
+   * \code
+   * double stop_speed = chassis.pid_drive_exit_stop_speed_get();
+   * \endcode
+   */
+  double pid_drive_exit_stop_speed_get();
+
+  /**
+   * Sets the speed a turn (pid_turn_set(), including a turn to a point) has to be under to count as stopped, in degrees per second.
+   *
+   * Small exit, big exit, the mA exit and the stuck watch inside big_error wait for the robot to travel less than this speed times W over
+   * the last W milliseconds, W being the window of that exit (its exit time). See pid_wait().
+   *
+   * Plain numbers are in deg/s, not the 0 to 127 motor speed. Default is 4. A higher speed ends turns sooner, with the robot still
+   * moving up to that fast. A lower one waits until the robot is stiller, and a robot that hunts about its target and never gets that
+   * still waits for the stuck watch's backstop, which is 3 deg divided by this speed (3 deg at 0.1 deg/s is 30 s, 0.75 s at the default). Zero, a negative
+   * number, NaN and infinity are refused with a printed warning and the previous value is kept; any other number is accepted. It is read on every poll, so it
+   * takes effect on the next poll, even in the middle of a motion, and restarts no timer, window or latch.
+   *
+   * \param deg_per_s
+   *        deg/s, not the 0 to 127 motor speed
+   *
+   * \code
+   * chassis.pid_turn_exit_stop_speed_set(6.0);           // deg/s
+   * chassis.pid_turn_exit_stop_speed_set(6_deg / 1_s);   // the same, with units
+   * \endcode
+   */
+  void pid_turn_exit_stop_speed_set(double deg_per_s);
+
+  /**
+   * Same as pid_turn_exit_stop_speed_set(double), with a speed that has units: 6_deg / 1_s is the same speed written with
+   * EZ-Units, and any other unit of speed works too.
+   *
+   * Zero, a negative number, NaN and infinity are refused with a printed warning and the previous value is kept.
+   *
+   * \param speed
+   *        the stop speed, with units
+   *
+   * \code
+   * chassis.pid_turn_exit_stop_speed_set(6_deg / 1_s);   // the same, with units
+   * \endcode
+   */
+  void pid_turn_exit_stop_speed_set(ez::QAngularSpeed speed);
+
+  /**
+   * Returns the stop speed of a turn (pid_turn_set(), including a turn to a point), in deg/s. It is 4 until it is set.
+   *
+   * \code
+   * double stop_speed = chassis.pid_turn_exit_stop_speed_get();
+   * \endcode
+   */
+  double pid_turn_exit_stop_speed_get();
+
+  /**
+   * Sets the speed a swing (pid_swing_set()) has to be under to count as stopped, in degrees per second.
+   *
+   * Small exit, big exit, the mA exit and the stuck watch inside big_error wait for the robot to travel less than this speed times W over
+   * the last W milliseconds, W being the window of that exit (its exit time). See pid_wait().
+   *
+   * Plain numbers are in deg/s, not the 0 to 127 motor speed. Default is 4. A higher speed ends swings sooner, with the robot still
+   * moving up to that fast. A lower one waits until the robot is stiller, and a robot that hunts about its target and never gets that
+   * still waits for the stuck watch's backstop, which is 3 deg divided by this speed (3 deg at 0.1 deg/s is 30 s, 0.75 s at the default). Zero, a negative
+   * number, NaN and infinity are refused with a printed warning and the previous value is kept; any other number is accepted. It is read on every poll, so it
+   * takes effect on the next poll, even in the middle of a motion, and restarts no timer, window or latch.
+   *
+   * \param deg_per_s
+   *        deg/s, not the 0 to 127 motor speed
+   *
+   * \code
+   * chassis.pid_swing_exit_stop_speed_set(6.0);          // deg/s
+   * chassis.pid_swing_exit_stop_speed_set(6_deg / 1_s);  // the same, with units
+   * \endcode
+   */
+  void pid_swing_exit_stop_speed_set(double deg_per_s);
+
+  /**
+   * Same as pid_swing_exit_stop_speed_set(double), with a speed that has units: 6_deg / 1_s is the same speed written with
+   * EZ-Units, and any other unit of speed works too.
+   *
+   * Zero, a negative number, NaN and infinity are refused with a printed warning and the previous value is kept.
+   *
+   * \param speed
+   *        the stop speed, with units
+   *
+   * \code
+   * chassis.pid_swing_exit_stop_speed_set(6_deg / 1_s);  // the same, with units
+   * \endcode
+   */
+  void pid_swing_exit_stop_speed_set(ez::QAngularSpeed speed);
+
+  /**
+   * Returns the stop speed of a swing (pid_swing_set()), in deg/s. It is 4 until it is set.
+   *
+   * \code
+   * double stop_speed = chassis.pid_swing_exit_stop_speed_get();
+   * \endcode
+   */
+  double pid_swing_exit_stop_speed_get();
+
+  /**
+   * Sets the speed an odom motion's xy (pid_odom_set() moves) has to be under to count as stopped, in inches per second.
+   *
+   * Small exit, big exit, the mA exit and the stuck watch inside big_error wait for the robot to travel less than this speed times W over
+   * the last W milliseconds, W being the window of that exit (its exit time). See pid_wait().
+   *
+   * Plain numbers are in in/s, not the 0 to 127 motor speed. Default is 1.5. A higher speed ends odom moves sooner, with the robot still
+   * moving up to that fast. A lower one waits until the robot is stiller, and a robot that hunts about its target and never gets that
+   * still waits for the stuck watch's backstop, which is 1 in divided by this speed (1 in at 0.1 in/s is 10 s, 0.67 s at the default). Zero, a negative number,
+   * NaN and infinity are refused with a printed warning and the previous value is kept; any other number is accepted. It is read on every poll, so it takes
+   * effect on the next poll, even in the middle of a motion, and restarts no timer, window or latch.
+   *
+   * \param in_per_s
+   *        in/s, not the 0 to 127 motor speed
+   *
+   * \code
+   * chassis.pid_odom_drive_exit_stop_speed_set(2.0);          // in/s
+   * chassis.pid_odom_drive_exit_stop_speed_set(2_in / 1_s);   // the same, with units
+   * \endcode
+   */
+  void pid_odom_drive_exit_stop_speed_set(double in_per_s);
+
+  /**
+   * Same as pid_odom_drive_exit_stop_speed_set(double), with a speed that has units: 2_in / 1_s is the same speed written with
+   * EZ-Units, and any other unit of speed works too.
+   *
+   * Zero, a negative number, NaN and infinity are refused with a printed warning and the previous value is kept.
+   *
+   * \param speed
+   *        the stop speed, with units
+   *
+   * \code
+   * chassis.pid_odom_drive_exit_stop_speed_set(2_in / 1_s);   // the same, with units
+   * \endcode
+   */
+  void pid_odom_drive_exit_stop_speed_set(ez::QSpeed speed);
+
+  /**
+   * Returns the stop speed of an odom motion's xy (pid_odom_set() moves), in in/s. It is 1.5 until it is set.
+   *
+   * \code
+   * double stop_speed = chassis.pid_odom_drive_exit_stop_speed_get();
+   * \endcode
+   */
+  double pid_odom_drive_exit_stop_speed_get();
+
+  /**
+   * Sets the speed an odom motion's heading (pid_odom_set() moves) has to be under to count as stopped, in degrees per second.
+   *
+   * Small exit, big exit, the mA exit and the stuck watch inside big_error wait for the robot to travel less than this speed times W over
+   * the last W milliseconds, W being the window of that exit (its exit time). See pid_wait().
+   *
+   * Plain numbers are in deg/s, not the 0 to 127 motor speed. Default is 4. A higher speed ends odom moves sooner, with the robot still
+   * moving up to that fast. A lower one waits until the robot is stiller, and a robot that hunts about its target and never gets that
+   * still waits for the stuck watch's backstop, which is 3 deg divided by this speed (3 deg at 0.1 deg/s is 30 s, 0.75 s at the default). Zero, a negative
+   * number, NaN and infinity are refused with a printed warning and the previous value is kept; any other number is accepted. It is read on every poll, so it
+   * takes effect on the next poll, even in the middle of a motion, and restarts no timer, window or latch.
+   *
+   * \param deg_per_s
+   *        deg/s, not the 0 to 127 motor speed
+   *
+   * \code
+   * chassis.pid_odom_turn_exit_stop_speed_set(6.0);          // deg/s
+   * chassis.pid_odom_turn_exit_stop_speed_set(6_deg / 1_s);  // the same, with units
+   * \endcode
+   */
+  void pid_odom_turn_exit_stop_speed_set(double deg_per_s);
+
+  /**
+   * Same as pid_odom_turn_exit_stop_speed_set(double), with a speed that has units: 6_deg / 1_s is the same speed written with
+   * EZ-Units, and any other unit of speed works too.
+   *
+   * Zero, a negative number, NaN and infinity are refused with a printed warning and the previous value is kept.
+   *
+   * \param speed
+   *        the stop speed, with units
+   *
+   * \code
+   * chassis.pid_odom_turn_exit_stop_speed_set(6_deg / 1_s);  // the same, with units
+   * \endcode
+   */
+  void pid_odom_turn_exit_stop_speed_set(ez::QAngularSpeed speed);
+
+  /**
+   * Returns the stop speed of an odom motion's heading (pid_odom_set() moves), in deg/s. It is 4 until it is set.
+   *
+   * \code
+   * double stop_speed = chassis.pid_odom_turn_exit_stop_speed_get();
+   * \endcode
+   */
+  double pid_odom_turn_exit_stop_speed_get();
 
   /**
    * Returns current TICK_PER_INCH.
@@ -4008,6 +4265,22 @@ private:
     OdomHeading,
     OdomXY
   };
+  // Which stop speed a question about "stopped" is asked with: the one of the motion whose exit conditions govern the wait. A turn to a
+  // point is a turn (turnPID's exits) even though it is measured on the odom heading, and the drive side watches of an odom move
+  // follow xy's exits, so they use the odom xy speed.
+  enum class StopSpeed {
+    Drive,
+    Turn,
+    Swing,
+    OdomXY,
+    OdomAngle
+  };
+  double stop_speed_[5] = {STOP_SPEED_DISTANCE_DEFAULT, STOP_SPEED_ANGLE_DEFAULT, STOP_SPEED_ANGLE_DEFAULT, STOP_SPEED_DISTANCE_DEFAULT,
+                           STOP_SPEED_ANGLE_DEFAULT};
+  double stop_speed_get(StopSpeed which);
+  void stop_speed_set(StopSpeed which, double value, const char* setter);
+  std::function<double()> stop_speed_fn(StopSpeed which);  // stop_speed_get(which) as a callable, for the watches and gates
+  bool odom_travel_stopped(int window_ms);
   ez::detail::PathTracker travel_[5];
   std::uint32_t travel_generation_ = 0;
   double travel_xy_x_ = 0.0, travel_xy_y_ = 0.0;             // odom xy as the sum of what odom moved, so a pose set is not travel
@@ -4017,7 +4290,7 @@ private:
   bool tracking_pass();
   // True only when the thing is known to have travelled less than the stop speed allows over the last window_ms. Not knowing (no
   // sample covers the window, the auto task has gone quiet) is false: nothing settles a robot on a guess.
-  bool travel_stopped(Travel channel, int window_ms);
+  bool travel_stopped(Travel channel, int window_ms, StopSpeed which);
   // Whether anything has been sampled for the current motion at all. When nothing has, the auto task has not run since the motion
   // started, so no exit can have fired on it either and there is no movement to veto one with.
   bool travel_tracked(Travel channel);

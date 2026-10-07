@@ -28,6 +28,15 @@ void default_constants() {
   chassis.pid_drive_exit_condition_set(90_ms, 1_in, 250_ms, 3_in, 500_ms, 500_ms);
   chassis.pid_odom_turn_exit_condition_set(90_ms, 3_deg, 250_ms, 7_deg, 500_ms, 750_ms);
   chassis.pid_odom_drive_exit_condition_set(90_ms, 1_in, 250_ms, 3_in, 500_ms, 750_ms);
+
+  // How slow the robot has to be to count as stopped, which the small, big and mA exits wait for.  These are the defaults.
+  // - a higher number ends a motion sooner, with the robot still moving a little; a lower one waits until it is stiller
+  chassis.pid_turn_exit_stop_speed_set(4_deg / 1_s);
+  chassis.pid_swing_exit_stop_speed_set(4_deg / 1_s);
+  chassis.pid_drive_exit_stop_speed_set(1.5_in / 1_s);
+  chassis.pid_odom_turn_exit_stop_speed_set(4_deg / 1_s);
+  chassis.pid_odom_drive_exit_stop_speed_set(1.5_in / 1_s);
+
   chassis.pid_turn_chain_constant_set(3_deg);
   chassis.pid_swing_chain_constant_set(5_deg);
   chassis.pid_drive_chain_constant_set(3_in);
