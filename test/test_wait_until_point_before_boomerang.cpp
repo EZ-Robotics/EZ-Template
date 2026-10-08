@@ -60,7 +60,8 @@ std::vector<Arch> archs() {
 
 void check(const char* what, const Arch& a, Setter how, const std::vector<odom>& path, const pose& point, const std::function<void(Drive&)>& wait) {
   Res r = run(a.arch, a.passes, how, path, point, wait);
-  INFO(std::string(what), " on ", std::string(a.name), ", setter ", (int)how, ": returned=", r.ret, " at ", r.ms, " ms, interfered=", r.interfered, ", ", r.away, " in from the point");
+  INFO(std::string(what), " on ", std::string(a.name), ", setter ", (int)how, ": returned=", r.ret, " at ", r.ms, " ms, interfered=", r.interfered, ", ",
+       r.away, " in from the point");
   REQUIRE(r.ret);
   CHECK_FALSE(r.interfered);
   CHECK(r.away <= 10.0);

@@ -464,9 +464,9 @@ public:
     return by_passes || by_clock;
   }
 
-  // Whether the stuck verdict the last call to stuck() returned came from the wall clock alone: the window passed several times over and the auto task has been quiet for
-  // a whole window, not slow (a task passing every 50 ms is slow, and alive). Only meaningful after a call that returned true.
-  // A verdict like that rests on errors nothing has updated, so it is never a settled one, see stuck_settled().
+  // Whether the stuck verdict the last call to stuck() returned came from the wall clock alone: the window passed several times over and the auto task has been
+  // quiet for a whole window, not slow (a task passing every 50 ms is slow, and alive). Only meaningful after a call that returned true. A verdict like that
+  // rests on errors nothing has updated, so it is never a settled one, see stuck_settled().
   bool starved() const { return starved_; }
 
 private:
@@ -974,25 +974,38 @@ double distance_to_segment(const pose& p, const pose& a, const pose& b) {
   return std::hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy));
 }
 
+// How many points the path starts with that are reached along a straight line: all of them, up to the first boomerang
+int path_straight_legs(const std::vector<odom>& path) {
+  int legs = 0;
+  for (const auto& movement : path) {
+    if (movement.target.theta != ANGLE_NOT_SET) break;
+    legs++;
+  }
+  return legs;
+}
+
 // The points a pure pursuit motion drives through, from where it started: leg k runs from points[k] to points[k + 1], which is the path's own point k, the
 // one the motion is driving to while pp_index is k. A boomerang (a point with an angle) is not reached along a straight line from the point before it,
-// so the legs stop before the first one: they are the straight stretch the path starts with. Empty when that is none.
+// so the legs stop before the first one: they are the straight stretch the path starts with (path_straight_legs() of them). Empty when that is none.
+// The boomerang point itself ends one more stretch, not a real leg (the robot does not drive it straight), which stands for the rest of the motion: a
+// robot that has cut the last corner and is heading for the boomerang is nearer that stretch than the leg before it, which is how it is told to be past
+// the last vertex, a place the plane along the last leg never reaches.
 std::vector<pose> path_legs_points(const std::vector<odom>& path, const pose& start) {
   std::vector<pose> points = {start};
   for (const auto& movement : path) {
-    if (movement.target.theta != ANGLE_NOT_SET) break;
     points.push_back(movement.target);
+    if (movement.target.theta != ANGLE_NOT_SET) break;
   }
-  if (points.size() < 2) return {};
+  if (path_straight_legs(path) < 1) return {};
   return points;
 }
 
 // The leg of the path a checkpoint is on, the one that arrives at it: leg path_index when the checkpoint is one of the path's own points (-1 if it is
 // not known), otherwise the first leg the checkpoint is on, where the path passes closest to it (a robot that is past a point on the way out has passed
-// it). -1 when there is no such leg. `path_size` is how many points the path has: more than there are legs when a boomerang cuts them short, and then a
+// it). -1 when there is no such leg. `legs` is how many of the points are real legs (the points have one more stretch after them when a boomerang ends the
+// path's straight part, which is not one). `path_size` is how many points the path has: more than there are legs when a boomerang cuts them short, and then a
 // checkpoint that is a point past the legs, or a position that is not on them, is not on a leg.
-int checkpoint_leg(const std::vector<pose>& points, int path_index, const pose& checkpoint, std::size_t path_size) {
-  int legs = (int)points.size() - 1;
+int checkpoint_leg(const std::vector<pose>& points, int legs, int path_index, const pose& checkpoint, std::size_t path_size) {
   if (legs < 1) return -1;
   if (path_index >= 0 && path_index < legs) return path_index;
   bool cut_short = path_size > (std::size_t)legs;
@@ -3066,7 +3079,7 @@ void Drive::wait_until_point(pose target, int path_index) {
     ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
     if (mode == PURE_PURSUIT) {
       leg_points = path_legs_points(pp_movements, odom_start);
-      if (!leg_points.empty()) cp_leg = checkpoint_leg(leg_points, path_index, target, pp_movements.size());
+      if (!leg_points.empty()) cp_leg = checkpoint_leg(leg_points, path_straight_legs(pp_movements), path_index, target, pp_movements.size());
     }
   }
   LegTracker leg_tracker(leg_points);

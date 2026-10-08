@@ -65,7 +65,8 @@ TEST_CASE("a robot hunting about its drive target reads settled at any auto task
       double ms = 0;
       bool returned = r.wait([&] { r.chassis.pid_wait(); }, 3000, &ms);
       test_stub::g_clock.on_delay = Pace::inner;
-      INFO(row.name, " task pace ", every * 10, " ms: returned=", returned, " at ", ms, " ms, interfered=", r.chassis.interfered, ", true position=", avg_position(r));
+      INFO(row.name, " task pace ", every * 10, " ms: returned=", returned, " at ", ms, " ms, interfered=", r.chassis.interfered,
+           ", true position=", avg_position(r));
       // Never a hang
       CHECK(returned);
       if (!returned) continue;
@@ -111,7 +112,8 @@ TEST_CASE("a slow auto task that dies for good inside the big error never lets a
     double ms = 0;
     bool returned = r.wait([&] { r.chassis.pid_wait(); }, 3000, &ms);
     test_stub::g_clock.on_delay = Pace::inner;
-    INFO("task pace ", every * 10, " ms before it died: returned=", returned, " at ", ms, " ms, interfered=", r.chassis.interfered, ", true position=", avg_position(r));
+    INFO("task pace ", every * 10, " ms before it died: returned=", returned, " at ", ms, " ms, interfered=", r.chassis.interfered,
+         ", true position=", avg_position(r));
     CHECK(carried);
     CHECK(returned);
     if (!returned) continue;
