@@ -951,25 +951,31 @@ double distance_to_segment(const pose& p, const pose& a, const pose& b) {
 }
 
 // The points a pure pursuit motion drives through, from where it started: leg k runs from points[k] to points[k + 1], which is the path's own point k, the
-// one the motion is driving to while pp_index is k. Empty when the path has a point with an angle (a boomerang), which has no leg a checkpoint can be on.
+// one the motion is driving to while pp_index is k. A boomerang (a point with an angle) is not reached along a straight line from the point before it,
+// so the legs stop before the first one: they are the straight stretch the path starts with. Empty when that is none.
 std::vector<pose> path_legs_points(const std::vector<odom>& path, const pose& start) {
   std::vector<pose> points = {start};
   for (const auto& movement : path) {
-    if (movement.target.theta != ANGLE_NOT_SET) return {};
+    if (movement.target.theta != ANGLE_NOT_SET) break;
     points.push_back(movement.target);
   }
+  if (points.size() < 2) return {};
   return points;
 }
 
 // The leg of the path a checkpoint is on, the one that arrives at it: leg path_index when the checkpoint is one of the path's own points (-1 if it is
 // not known), otherwise the first leg the checkpoint is on, where the path passes closest to it (a robot that is past a point on the way out has passed
-// it). -1 when there is no such leg.
-int checkpoint_leg(const std::vector<pose>& points, int path_index, const pose& checkpoint) {
+// it). -1 when there is no such leg. `path_size` is how many points the path has: more than there are legs when a boomerang cuts them short, and then a
+// checkpoint that is a point past the legs, or a position that is not on them, is not on a leg.
+int checkpoint_leg(const std::vector<pose>& points, int path_index, const pose& checkpoint, std::size_t path_size) {
   int legs = (int)points.size() - 1;
   if (legs < 1) return -1;
   if (path_index >= 0 && path_index < legs) return path_index;
+  bool cut_short = path_size > (std::size_t)legs;
+  if (cut_short && path_index >= 0) return -1;
   double nearest = INFINITY;
   for (int i = 0; i < legs; i++) nearest = std::fmin(nearest, distance_to_segment(checkpoint, points[i], points[i + 1]));
+  if (cut_short && nearest > CHECKPOINT_ON_PATH_TOLERANCE * 2.0) return -1;
   for (int i = 0; i < legs; i++)
     if (distance_to_segment(checkpoint, points[i], points[i + 1]) <= nearest + CHECKPOINT_ON_PATH_TOLERANCE) return i;
   return -1;
@@ -2964,7 +2970,7 @@ void Drive::wait_until_point(pose target, int path_index) {
     ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
     if (mode == PURE_PURSUIT) {
       leg_points = path_legs_points(pp_movements, odom_start);
-      if (!leg_points.empty()) cp_leg = checkpoint_leg(leg_points, path_index, target);
+      if (!leg_points.empty()) cp_leg = checkpoint_leg(leg_points, path_index, target, pp_movements.size());
     }
   }
   auto on_way = [&]() {
