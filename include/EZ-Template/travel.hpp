@@ -76,6 +76,9 @@ public:
   // Whether anything has been sampled since the last reset
   bool active() const { return has_baseline_; }
 
+  // Whether the newest sample is older than age_ms: the task that feeds the tracker has not run for that long. False when nothing has been sampled.
+  bool quiet(std::uint32_t now_ms, int age_ms) const { return has_baseline_ && count_ > 0 && (std::int32_t)(now_ms - newest_t()) > age_ms; }
+
   // `pass` is the auto task's pass counter.  A position that is not finite is ignored, like a pass that did not happen.
   void sample(double x, double y, std::uint32_t t_ms, std::uint32_t pass) {
     if (!std::isfinite(x) || !std::isfinite(y)) return;

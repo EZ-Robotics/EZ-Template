@@ -4364,6 +4364,10 @@ private:
   // Whether anything has been sampled for the current motion at all. When nothing has, the auto task has not run since the motion
   // started, so no exit can have fired on it either and there is no movement to veto one with.
   bool travel_tracked(Travel channel);
+  // Whether the auto task has gone quiet during this motion: it sampled the robot and has not for longer than age_ms. The errors an mA exit is judged
+  // by are only this motion's while it runs (see ma_exit_settled()).
+  bool task_quiet(int age_ms);
+  bool task_ran_since(std::uint32_t entry_passes);
   // pid.exit_condition(motors) with SMALL_EXIT / BIG_EXIT held until the robot is also stopped. Gate is exit_conditions.cpp's own
   // ExitGate; defined there, where it is used.
   template <class Gate>

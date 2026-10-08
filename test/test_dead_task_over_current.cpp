@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 
+#include "EZ-Template/travel.hpp"
 #include "doctest.h"
 #include "exit_gate_rig.hpp"
 
@@ -66,10 +67,12 @@ TEST_CASE("a task that is gone for good never lets an mA exit end a wait clean, 
       {"turn pid_wait", [](Drive& c) { c.pid_turn_set(90_deg, 110); }, [](Drive& c) { c.pid_wait(); }, true, 90},
       {"swing pid_wait", [](Drive& c) { c.pid_swing_set(ez::LEFT_SWING, 90_deg, 110); }, [](Drive& c) { c.pid_wait(); }, true, 90},
       {"odom point pid_wait", [](Drive& c) { c.pid_odom_set({{0_in, 24_in}, fwd, 110}); }, [](Drive& c) { c.pid_wait(); }, false, 24},
-      {"odom path pid_wait", [](Drive& c) { c.pid_odom_set({{{0_in, 12_in}, fwd, 110}, {{0_in, 24_in}, fwd, 110}}); }, [](Drive& c) { c.pid_wait(); }, false, 24},
+      {"odom path pid_wait", [](Drive& c) { c.pid_odom_set({{{0_in, 12_in}, fwd, 110}, {{0_in, 24_in}, fwd, 110}}); }, [](Drive& c) { c.pid_wait(); }, false,
+       24},
       {"drive pid_wait_until the target", [](Drive& c) { c.pid_drive_set(48_in, 110); }, [](Drive& c) { c.pid_wait_until(48_in); }, false, 48},
       {"turn pid_wait_until the target", [](Drive& c) { c.pid_turn_set(90_deg, 110); }, [](Drive& c) { c.pid_wait_until(90_deg); }, true, 90},
-      {"odom point pid_wait_until_point", [](Drive& c) { c.pid_odom_set({{0_in, 24_in}, fwd, 110}); }, [](Drive& c) { c.pid_wait_until_point({0, 24}); }, false, 24},
+      {"odom point pid_wait_until_point", [](Drive& c) { c.pid_odom_set({{0_in, 24_in}, fwd, 110}); }, [](Drive& c) { c.pid_wait_until_point({0, 24}); }, false,
+       24},
   };
   for (const Case& cs : cases) {
     Rig r(archetype_classroom(), 1, false);
@@ -83,8 +86,8 @@ TEST_CASE("a task that is gone for good never lets an mA exit end a wait clean, 
     bool ok = r.wait([&] { cs.wait(r.chassis); }, 2500, &ms);
     test_stub::g_clock.on_delay = Parker::inner;
     double off = cs.angular ? std::fabs(cs.target + r.sim.heading_deg()) : std::fabs(cs.target - avg_position(r));
-    INFO(std::string(cs.name), ": parked=", Parker::parked, ", returned=", ok, " at ", ms, " ms, interfered=", r.chassis.interfered, ", ", off, std::string(cs.angular ? " deg" : " in"),
-         " off");
+    INFO(std::string(cs.name), ": parked=", Parker::parked, ", returned=", ok, " at ", ms, " ms, interfered=", r.chassis.interfered, ", ", off,
+         std::string(cs.angular ? " deg" : " in"), " off");
     CHECK(Parker::parked);
     // Never a hang
     CHECK(ok);
@@ -94,4 +97,16 @@ TEST_CASE("a task that is gone for good never lets an mA exit end a wait clean, 
     // So a clean return would be a wrong verdict
     CHECK(r.chassis.interfered);
   }
+}
+
+TEST_CASE("PathTracker: it is quiet only when something was sampled and the newest sample is older than asked") {
+  ez::detail::PathTracker t;
+  CHECK_FALSE(t.quiet(5000, 350));
+  std::uint32_t pass = 0;
+  for (int ms = 0; ms <= 200; ms += 10) t.sample(0.0, 0.0, 5000 + ms, ++pass);
+  CHECK_FALSE(t.quiet(5200, 350));
+  CHECK_FALSE(t.quiet(5550, 350));
+  CHECK(t.quiet(5551, 350));
+  t.reset();
+  CHECK_FALSE(t.quiet(9000, 350));
 }
