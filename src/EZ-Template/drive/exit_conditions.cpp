@@ -997,6 +997,75 @@ enum class OnWay {
   After    // on a later leg: it has crossed the checkpoint
 };
 
+// How far apart (as the cosine of the angle between them) two legs have to run opposite ways to be one line driven out and back
+static constexpr double CHECKPOINT_RETRACE_COS = -0.98;
+
+// Whether the robot is on two legs at once that run opposite ways over the same line: both within tolerance of the nearest leg, and the legs back to
+// back. Where it is on the way out and where it is on the way back cannot be read from where it is, only from how far along the path it has got.
+bool robot_on_retraced_legs(const std::vector<pose>& points, int last, const pose& robot, double nearest) {
+  std::vector<int> near_legs;
+  for (int j = 0; j <= last; j++)
+    if (util::distance_to_point(points[j], points[j + 1]) >= CHECKPOINT_LEG_MIN &&
+        distance_to_segment(robot, points[j], points[j + 1]) <= nearest + CHECKPOINT_ON_PATH_TOLERANCE * 2.0)
+      near_legs.push_back(j);
+  for (std::size_t a = 0; a < near_legs.size(); a++)
+    for (std::size_t b = a + 1; b < near_legs.size(); b++) {
+      const pose &a0 = points[near_legs[a]], &a1 = points[near_legs[a] + 1], &b0 = points[near_legs[b]], &b1 = points[near_legs[b] + 1];
+      double dot = (a1.x - a0.x) * (b1.x - b0.x) + (a1.y - a0.y) * (b1.y - b0.y);
+      if (dot <= CHECKPOINT_RETRACE_COS * util::distance_to_point(a0, a1) * util::distance_to_point(b0, b1)) return true;
+    }
+  return false;
+}
+
+// Which leg of a pure pursuit path the robot has got to, by how far along the path it is. That never goes back: the robot is looked for from where it was
+// last found, forward to the end of the leg the look-ahead is on (it cannot be farther along than that), and a leg is taken over an earlier one only
+// when it is nearer by more than the tolerance. So on a path that runs back over itself, a robot on the way out stays on the way out for as long as it is
+// where it was, and is on the way back once it is back behind where it had got to, which is the one thing that tells the two apart.
+// The first look is from a look-ahead (plus a little) before the start of the leg the look-ahead is on, which is as far behind it as the robot can be.
+class LegTracker {
+public:
+  explicit LegTracker(const std::vector<pose>& points) : points_(points) {
+    arc_.assign(points.size(), 0.0);
+    for (std::size_t i = 1; i < points.size(); i++) arc_[i] = arc_[i - 1] + util::distance_to_point(points[i], points[i - 1]);
+  }
+
+  int update(const pose& robot, int pp_index, double look_ahead) {
+    int legs = (int)points_.size() - 1;
+    if (legs < 1) return -1;
+    int carrot_leg = std::min(std::max(pp_index, 0), legs - 1);
+    double hi = arc_[carrot_leg + 1];
+    double lo = seeded_ ? from_ : std::fmax(0.0, arc_[carrot_leg] - look_ahead - SEED_SLACK);
+    lo = std::fmin(lo, hi);
+    double best_distance = INFINITY;
+    double best_arc = lo;
+    int best_leg = carrot_leg;
+    for (int j = 0; j < legs && arc_[j] <= hi; j++) {
+      double length = arc_[j + 1] - arc_[j];
+      if (length < 1e-9 || arc_[j + 1] < lo) continue;
+      double a = std::fmax(arc_[j], lo), b = std::fmin(arc_[j + 1], hi);
+      const pose &p0 = points_[j], &p1 = points_[j + 1];
+      double ux = (p1.x - p0.x) / length, uy = (p1.y - p0.y) / length;
+      double along = std::fmin(std::fmax((robot.x - p0.x) * ux + (robot.y - p0.y) * uy + arc_[j], a), b) - arc_[j];
+      double distance = std::hypot(robot.x - (p0.x + along * ux), robot.y - (p0.y + along * uy));
+      if (distance < best_distance - CHECKPOINT_ON_PATH_TOLERANCE) {
+        best_distance = distance;
+        best_arc = arc_[j] + along;
+        best_leg = j;
+      }
+    }
+    seeded_ = true;
+    from_ = best_arc;
+    return best_leg;
+  }
+
+private:
+  static constexpr double SEED_SLACK = 1.0;
+  std::vector<pose> points_;
+  std::vector<double> arc_;
+  bool seeded_ = false;
+  double from_ = 0.0;
+};
+
 // pp_index is the point the look-ahead is on, which is ahead of the robot by up to a look-ahead. So while it is on an earlier leg than the checkpoint's
 // the robot cannot have got there, and the side of the checkpoint it is on means nothing. The leg the robot is on is the one it is nearest, of the
 // legs up to the look-ahead's. When that is clearly (not tied, as on a path that runs back over itself) a later leg than the checkpoint's, it has crossed
@@ -1004,11 +1073,14 @@ enum class OnWay {
 // that leg is clearly nearer than every earlier one. Anything else, a robot on an earlier leg whose look-ahead has already rounded the corner onto the
 // checkpoint's, or one level with the corner itself, is still before it: the plane through the checkpoint square to its leg lies behind such a robot
 // for a turn of more than 90 degrees and ahead of it otherwise, and says nothing about whether the checkpoint has been reached.
-OnWay robot_on_way_to_checkpoint(const std::vector<pose>& points, int leg, int pp_index, const pose& robot) {
+OnWay robot_on_way_to_checkpoint(const std::vector<pose>& points, int leg, int pp_index, const pose& robot, LegTracker& tracker, double look_ahead) {
+  int tracked = tracker.update(robot, pp_index, look_ahead);
   if (pp_index < leg) return OnWay::Before;
   int last = std::min(pp_index, (int)points.size() - 2);
   double nearest = INFINITY;
   for (int j = 0; j <= last; j++) nearest = std::fmin(nearest, distance_to_segment(robot, points[j], points[j + 1]));
+  // On a line the path drives out along and back over, the leg it has got to is the one that says
+  if (robot_on_retraced_legs(points, last, robot, nearest)) return tracked > leg ? OnWay::After : tracked == leg ? OnWay::Own : OnWay::Before;
   bool near_up_to_leg = false;
   for (int j = 0; j <= std::min(leg, last); j++)
     if (distance_to_segment(robot, points[j], points[j + 1]) <= nearest + CHECKPOINT_ON_PATH_TOLERANCE * 2.0) near_up_to_leg = true;
@@ -2973,9 +3045,10 @@ void Drive::wait_until_point(pose target, int path_index) {
       if (!leg_points.empty()) cp_leg = checkpoint_leg(leg_points, path_index, target, pp_movements.size());
     }
   }
+  LegTracker leg_tracker(leg_points);
   auto on_way = [&]() {
     ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
-    return mode == PURE_PURSUIT ? robot_on_way_to_checkpoint(leg_points, cp_leg, pp_index, odom_pose_get()) : OnWay::Own;
+    return mode == PURE_PURSUIT ? robot_on_way_to_checkpoint(leg_points, cp_leg, pp_index, odom_pose_get(), leg_tracker, odom_look_ahead_get()) : OnWay::Own;
   };
   // What the stuck watch is fed as the distance to the checkpoint
   auto distance_to_checkpoint = [&]() {
