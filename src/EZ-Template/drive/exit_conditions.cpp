@@ -176,6 +176,8 @@ int stuck_window(PID& xy, PID& angle) { return floored_window(team_stuck_window(
 // gets its own credit again, but only once this one has been recovered from for real -- see `anchor` below for
 // exactly what that requires.
 struct Channel {
+  // How many steps past where it stood before crossing its target a robot may overshoot on its own before the error rising further is a shove
+  static constexpr double OVERSHOOT_ROOM_STEPS = 2.0;
   double step, low;
   bool side, rebound = false, rebounded = false;
   // The robot crossing its own target is a disturbance of its own kind, with its own once-per-disturbance latch (`crossed`, cleared the same
@@ -229,7 +231,12 @@ struct Channel {
     if (!std::isfinite(size) || !std::isfinite(error)) return false;
     if (!rebound) base = low;
     bool overshot = (error > 0) != side;
-    bool shoved = !overshot && size > low + step;
+    // A shove is the error a full step worse than the best it has reached. While the robot is only coming back from an overshoot `low` follows the
+    // error up, to track the peak, so it is no reference for that: a push that adds less than a step per pass would never get ahead of it. A shove is
+    // then judged against `base`, where the robot stood before it crossed, with room for the overshoot itself (the robot's own motion past its target,
+    // up to two steps, is not a shove).
+    bool from_overshoot = rebound && crossed && !rebounded && step > 0.0;
+    bool shoved = !overshot && size > (from_overshoot ? base + OVERSHOOT_ROOM_STEPS * step : low) + (from_overshoot ? 0.0 : step);
     if (overshot && !crossed) {
       rebound = crossed = true;
       cross_anchor = base;
@@ -261,6 +268,24 @@ struct Channel {
   }
 };
 
+// How long the auto task has been quiet, as the wait loop sees it: the time since the pass counter last differed from the value read on the
+// previous call. A task passing every 40 or 50 ms is slow but never quiet for a window (350 ms at the least); one that is blocked or
+// deleted is quiet from then on. This, not a count of passes against a nominal 10 ms pace, is what tells the two apart.
+class TaskPulse {
+public:
+  TaskPulse(std::uint32_t pass, std::uint32_t now) : pass_(pass), changed_(now) {}
+  void observe(std::uint32_t pass, std::uint32_t now) {
+    if (pass != pass_) {
+      pass_ = pass;
+      changed_ = now;
+    }
+  }
+  std::int32_t quiet_ms(std::uint32_t now) const { return (std::int32_t)(now - changed_); }
+
+private:
+  std::uint32_t pass_, changed_;
+};
+
 // Tells an odom wait when the robot is stuck: no progress for the xy velocity exit's time.  Progress is pure
 // pursuit moving onto a new point, or the distance to the point being driven to or the heading error coming down
 // to a new low, a full step below the last one -- that PID's small exit error if it has one set, otherwise the
@@ -280,23 +305,6 @@ struct Channel {
 // so a task starved of time (a busy higher priority task) freezes them without the robot being stuck.  But a task
 // that never runs again (blocked for good, or deleted) must not hold the wait forever, so past STARVED_WINDOWS windows
 // on the clock alone it counts as stuck anyway.
-// How long the auto task has been quiet, as the wait loop sees it: the time since the pass counter last differed from the value read on the
-// previous call. A task passing every 40 or 50 ms is slow but never quiet for a window (350 ms at the least); one that is blocked or
-// deleted is quiet from then on. This, not a count of passes against a nominal 10 ms pace, is what tells the two apart.
-class TaskPulse {
-public:
-  TaskPulse(std::uint32_t pass, std::uint32_t now) : pass_(pass), changed_(now) {}
-  void observe(std::uint32_t pass, std::uint32_t now) {
-    if (pass != pass_) {
-      pass_ = pass;
-      changed_ = now;
-    }
-  }
-  std::int32_t quiet_ms(std::uint32_t now) const { return (std::int32_t)(now - changed_); }
-
-private:
-  std::uint32_t pass_, changed_;
-};
 
 class StuckWatch {
 public:
