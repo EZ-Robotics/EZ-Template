@@ -64,3 +64,55 @@ TEST_CASE("a held mA exit on a hunting robot under permanent over current ends w
     CHECK(ms < 25000.0);
   }
 }
+
+namespace {
+
+enum class WaitKind { Wait, Index, Quick, UntilPoint };
+
+const char* kind_name(WaitKind k) {
+  switch (k) {
+    case WaitKind::Wait: return "pid_wait";
+    case WaitKind::Index: return "pid_wait_until_index";
+    case WaitKind::Quick: return "pid_wait_quick";
+    case WaitKind::UntilPoint: return "pid_wait_until(point)";
+  }
+  return "";
+}
+
+}  // namespace
+
+// The same hold with the mA timeout the shipped-style exits use (100 ms) and a task that passes every 150 to 400 ms, so every stretch between two
+// passes is longer than the mA window. The robot is driven round a closed square by a controller that runs at 3 to 7 Hz (it hunts and spins), under
+// permanent over current from 100 ms. Every wait that reads the mA exit has to end: a hold that gives up its progress window on every stall of the
+// task never completes it, and these waits ran for minutes.
+TEST_CASE("a held mA exit of 100 ms under permanent over current ends for every odom wait when the auto task passes every 150 to 400 ms") {
+  for (int every : {15, 20, 30, 40}) {
+    for (WaitKind kind : {WaitKind::Wait, WaitKind::Index, WaitKind::Quick, WaitKind::UntilPoint}) {
+      Rig r(archetype_classroom(), 1, false, 1);
+      r.chassis.pid_print_toggle(false);
+      r.chassis.pid_odom_drive_exit_condition_set(90, 1, 200, 3, 100, 100);
+      r.chassis.pid_odom_turn_exit_condition_set(90, 3, 200, 7, 100, 100);
+      Slow::install(r, every, 100.0);
+      r.chassis.pid_odom_set(std::vector<odom>{
+          {{0, 24, ANGLE_NOT_SET}, fwd, 110}, {{24, 24, ANGLE_NOT_SET}, fwd, 110}, {{24, 0, ANGLE_NOT_SET}, fwd, 110}, {{0, 0, ANGLE_NOT_SET}, fwd, 110},
+          {{0, 24, ANGLE_NOT_SET}, fwd, 110}});
+      double ms = 0;
+      bool returned = r.wait(
+          [&] {
+            switch (kind) {
+              case WaitKind::Wait: r.chassis.pid_wait(); break;
+              case WaitKind::Index: r.chassis.pid_wait_until_index(3); break;
+              case WaitKind::Quick: r.chassis.pid_wait_quick(); break;
+              case WaitKind::UntilPoint: r.chassis.pid_wait_until(pose{0, 24, 0.0}); break;
+            }
+          },
+          4000, &ms);
+      Slow::uninstall();
+      INFO(kind_name(kind), ", task pace ", every * 10, " ms: returned=", returned, " at ", ms, " ms, interfered=", r.chassis.interfered);
+      // A robot that is not getting anywhere is ended within a few mA windows of the task's passes, not after tens of seconds: the same wait ended
+      // within a second before the exit was held, and the hold is bounded by how far the robot still has to go over the stop speed
+      CHECK(returned);
+      CHECK(ms < 8000.0);
+    }
+  }
+}
