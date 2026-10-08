@@ -950,35 +950,6 @@ double distance_to_segment(const pose& p, const pose& a, const pose& b) {
   return std::hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy));
 }
 
-// The point a pure pursuit path comes to `checkpoint` from, the one before it, or nothing when the path cannot say which way the robot arrives. The
-// checkpoint is a point of the path when its index is known (path_index, -1 if not): the leg that arrives at it is the one before. Otherwise it is on the
-// path where the path passes closest to it, the first such place when the path passes it twice (a robot that is past a point on the way out has passed
-// it). A robot that is still on an earlier leg (pp_index, the point it is driving to, is before the start of the leg) has not got to the checkpoint at
-// all, whatever side of it it is on, and a leg that a boomerang is part of has no direction the robot arrives in that the path knows: the robot swings
-// out past the point and comes back around to it.
-std::optional<pose> path_point_before_checkpoint(const std::vector<odom>& path, int pp_index, int path_index, const pose& checkpoint) {
-  int last = (int)path.size() - 1;
-  int leg = -1;  // the leg from path[leg] to path[leg + 1]
-  if (path_index >= 1 && path_index <= last) {
-    leg = path_index - 1;
-  } else {
-    double nearest = INFINITY;
-    for (int i = 0; i < last; i++) nearest = std::fmin(nearest, distance_to_segment(checkpoint, path[i].target, path[i + 1].target));
-    for (int i = 0; i < last; i++) {
-      if (distance_to_segment(checkpoint, path[i].target, path[i + 1].target) > nearest + CHECKPOINT_ON_PATH_TOLERANCE) continue;
-      leg = i;
-      break;
-    }
-  }
-  if (leg < 0 || pp_index < leg) return std::nullopt;
-  if (path[leg].target.theta != ANGLE_NOT_SET || path[leg + 1].target.theta != ANGLE_NOT_SET) return std::nullopt;
-  // A checkpoint on the leg's own first point is reached along the leg before it
-  int from = leg;
-  while (from >= 0 && util::distance_to_point(path[from].target, checkpoint) < CHECKPOINT_LEG_MIN) from--;
-  if (from < 0 || path[from].target.theta != ANGLE_NOT_SET) return std::nullopt;
-  return path[from].target;
-}
-
 // The points a pure pursuit motion drives through, from where it started: leg k runs from points[k] to points[k + 1], which is the path's own point k, the
 // one the motion is driving to while pp_index is k. Empty when the path has a point with an angle (a boomerang), which has no leg a checkpoint can be on.
 std::vector<pose> path_legs_points(const std::vector<odom>& path, const pose& start) {
@@ -1004,25 +975,42 @@ int checkpoint_leg(const std::vector<pose>& points, int path_index, const pose& 
   return -1;
 }
 
+// The point a pure pursuit motion comes to a checkpoint on `leg` from, the start of the leg, or nothing when it has no direction there. A checkpoint on the
+// leg's own first point is reached along the leg before it.
+std::optional<pose> point_before_checkpoint(const std::vector<pose>& points, int leg, const pose& checkpoint) {
+  int from = leg;
+  while (from >= 0 && util::distance_to_point(points[from], checkpoint) < CHECKPOINT_LEG_MIN) from--;
+  if (from < 0) return std::nullopt;
+  return points[from];
+}
+
 // Where a robot driving to path point `pp_index` is, on the way to a checkpoint on `leg`
 enum class OnWay {
-  Before,  // on an earlier leg: it has not got to the checkpoint, however it is placed against it
-  Own,     // on the checkpoint's own leg, or not known to be anywhere else: the checkpoint is crossed when the robot is abeam of it
+  Before,  // on an earlier leg, or too near one to tell: it has not got to the checkpoint, however it is placed against it
+  Own,     // clearly on the checkpoint's own leg: the checkpoint is crossed when the robot is level with it along that leg
   After    // on a later leg: it has crossed the checkpoint
 };
 
 // pp_index is the point the look-ahead is on, which is ahead of the robot by up to a look-ahead. So while it is on an earlier leg than the checkpoint's
 // the robot cannot have got there, and the side of the checkpoint it is on means nothing. The leg the robot is on is the one it is nearest, of the
 // legs up to the look-ahead's. When that is clearly (not tied, as on a path that runs back over itself) a later leg than the checkpoint's, it has crossed
-// the checkpoint, whatever side of it it is on: a robot that has turned back past a point is behind it. Anything else is left to the own leg's test.
+// the checkpoint, whatever side of it it is on: a robot that has turned back past a point is behind it. It is on the checkpoint's own leg only when
+// that leg is clearly nearer than every earlier one. Anything else, a robot on an earlier leg whose look-ahead has already rounded the corner onto the
+// checkpoint's, or one level with the corner itself, is still before it: the plane through the checkpoint square to its leg lies behind such a robot
+// for a turn of more than 90 degrees and ahead of it otherwise, and says nothing about whether the checkpoint has been reached.
 OnWay robot_on_way_to_checkpoint(const std::vector<pose>& points, int leg, int pp_index, const pose& robot) {
   if (pp_index < leg) return OnWay::Before;
   int last = std::min(pp_index, (int)points.size() - 2);
   double nearest = INFINITY;
   for (int j = 0; j <= last; j++) nearest = std::fmin(nearest, distance_to_segment(robot, points[j], points[j + 1]));
+  bool near_up_to_leg = false;
   for (int j = 0; j <= std::min(leg, last); j++)
-    if (distance_to_segment(robot, points[j], points[j + 1]) <= nearest + CHECKPOINT_ON_PATH_TOLERANCE * 2.0) return OnWay::Own;
-  return last > leg ? OnWay::After : OnWay::Own;
+    if (distance_to_segment(robot, points[j], points[j + 1]) <= nearest + CHECKPOINT_ON_PATH_TOLERANCE * 2.0) near_up_to_leg = true;
+  if (!near_up_to_leg) return OnWay::After;
+  double own = distance_to_segment(robot, points[leg], points[leg + 1]);
+  for (int j = 0; j < leg; j++)
+    if (distance_to_segment(robot, points[j], points[j + 1]) <= own + CHECKPOINT_ON_PATH_TOLERANCE) return OnWay::Before;
+  return OnWay::Own;
 }
 
 // How far a robot driving to path point `pp_index` has to go to get to a checkpoint on `leg`: along the path, to the point it is driving to, through
@@ -2966,29 +2954,10 @@ void Drive::wait_until_point(pose target, int path_index) {
     return;
   }
 
-  // A robot that is already past the checkpoint when this is called has crossed it: waiting for the side it is on to change would wait for ever,
-  // until the motion's own exits or the stuck check ended the wait. Whether it is past is read from the motion's own geometry, how far along the way
-  // into the checkpoint the robot is (see robot_past_checkpoint()), not from the side is_past_target() reads, which depends on where the motion
-  // faces next. A checkpoint the robot has not reached is waited for below exactly as before.
-  std::optional<pose> way_in;
-  {
-    ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
-    if (mode == POINT_TO_POINT)
-      way_in = odom_start;
-    else
-      way_in = path_point_before_checkpoint(pp_movements, pp_index, path_index, target);
-  }
-  if (way_in && robot_past_checkpoint(*way_in, target, odom_pose_get())) {
-    if (print_toggle)
-      printf("  XY Wait Until Exit Success, triggered at (%.2f, %.2f).  Target: (%.2f, %.2f)\n", odom_x_get(), odom_y_get(), target.x, target.y);
-    xyPID.timers_reset();
-    current_a_odomPID.timers_reset();
-    return;
-  }
-
   // Where the checkpoint is on a pure pursuit path: the leg that arrives at it (see checkpoint_leg()), or -1 for a motion that has no legs to be on, which
   // is crossed by the side of the point the robot is on alone, as before. Crossing is a matter of progress along the path first: a robot on an earlier leg
-  // has not got there, and one on a later leg has, whichever side of the point it is on. Only on the checkpoint's own leg is it the side that counts.
+  // has not got there, and one on a later leg has, whichever side of the point it is on. Only on the checkpoint's own leg is it where the robot is along
+  // that leg that counts.
   std::vector<pose> leg_points;
   int cp_leg = -1;
   {
@@ -3008,8 +2977,20 @@ void Drive::wait_until_point(pose target, int path_index) {
     return mode == PURE_PURSUIT ? distance_along_path_to_checkpoint(leg_points, cp_leg, pp_index, target, odom_pose_get())
                                 : util::distance_to_point(target, odom_pose_get());
   };
+  // The way the motion comes into the checkpoint, to read how far along that way the robot is from (see robot_past_checkpoint()), not from the side
+  // is_past_target() reads, which depends on where the motion faces next
+  std::optional<pose> way_in;
+  {
+    ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+    if (mode == POINT_TO_POINT)
+      way_in = odom_start;
+    else if (cp_leg >= 0)
+      way_in = point_before_checkpoint(leg_points, cp_leg, target);
+  }
+  // A robot that is already past the checkpoint when this is called has crossed it: waiting for the side it is on to change would wait for ever,
+  // until the motion's own exits or the stuck check ended the wait. A checkpoint the robot has not reached is waited for below.
   OnWay way_at_entry = cp_leg >= 0 ? on_way() : OnWay::Own;
-  if (way_at_entry == OnWay::After) {
+  if (way_at_entry == OnWay::After || (way_at_entry == OnWay::Own && way_in && robot_past_checkpoint(*way_in, target, odom_pose_get()))) {
     if (print_toggle)
       printf("  XY Wait Until Exit Success, triggered at (%.2f, %.2f).  Target: (%.2f, %.2f)\n", odom_x_get(), odom_y_get(), target.x, target.y);
     xyPID.timers_reset();
@@ -3212,6 +3193,8 @@ void Drive::wait_until_point(pose target, int path_index) {
     OnWay way = cp_leg >= 0 ? on_way() : OnWay::Own;
     if (way == OnWay::After) {
       crossed = true;
+    } else if (way == OnWay::Own && cp_leg >= 0 && way_in) {
+      crossed = robot_past_checkpoint(*way_in, target, odom_pose_get());
     } else if (way == OnWay::Own) {
       int xy_sgn_now = util::sgn(is_past_target(target, odom_pose_get()));
       if (!xy_sgn_known) {
