@@ -175,3 +175,67 @@ TEST_CASE("a robot hunting across its target at a fixed amplitude is still ended
   CHECK(r.interfered);
   CHECK(r.passes < 260);
 }
+
+namespace {
+
+// Close from 30 to 0.4 (0.2 per pass). Then, if `overshoot`, cross the target to -0.4, and either way get pushed away from it a little under a
+// step per pass (0.9, so no single pass is a full step worse), up to 40 away over 45 passes (longer than the stuck window), and recover at 0.1 per pass, back
+// to 0. The push starts right after the crossing, while the overshoot has not been recovered from yet.
+void gradual_shove_script(Drive& c, int n, bool overshoot) {
+  double error, derivative;
+  const int arrive = 148;
+  const int push = arrive + 3;
+  const int top = push + 45;
+  if (n <= arrive) {
+    error = 30.0 - 0.2 * n;
+    derivative = -0.2;
+  } else if (n <= push) {
+    error = overshoot ? 0.4 - 0.8 * (n - arrive) / 3.0 : 0.4;
+    derivative = -0.1;
+  } else if (n <= top) {
+    double away = 0.4 + 0.9 * (n - push);
+    error = overshoot ? -away : away;
+    derivative = overshoot ? -0.9 : 0.9;
+  } else {
+    double away = std::fmax(0.0, 0.4 + 0.9 * (top - push) - 0.1 * (n - top));
+    error = overshoot ? -away : away;
+    derivative = overshoot ? 0.1 : -0.1;
+  }
+  set_error(c, error, derivative);
+}
+
+}  // namespace
+
+TEST_CASE("a shove of a little under a step per pass that lands right after an overshoot gets the same restart as one that does not") {
+  Result with = run_script([](Drive& c, int n) { gradual_shove_script(c, n, true); }, 1500);
+  Result without = run_script([](Drive& c, int n) { gradual_shove_script(c, n, false); }, 1500);
+  MESSAGE("with overshoot: returned=", with.returned, " interfered=", with.interfered, " passes=", with.passes);
+  MESSAGE("without overshoot: returned=", without.returned, " interfered=", without.interfered, " passes=", without.passes);
+  REQUIRE(with.returned);
+  REQUIRE(without.returned);
+  // The push and the recovery from it are progress the whole way, so neither run is stuck, and the overshoot changes nothing about it
+  CHECK_FALSE(without.interfered);
+  CHECK_FALSE(with.interfered);
+  CHECK(with.passes == doctest::Approx(without.passes).epsilon(0.1));
+}
+
+TEST_CASE("a back shove that lands just after a swing crossed its target ends clean at rest, as one just before does") {
+  // Default exits, light_fast at 3 passes per poll, swing to 60 degrees. The robot crosses its target at about 310 ms. A 150 N shove of 300 ms back
+  // from it raises the error a little under a step per pass: those starting before the crossing were waited out and returned clean, those starting
+  // after were called stuck while the robot was still flying away.
+  for (double start : {100.0, 230.0, 260.0, 290.0, 330.0, 400.0}) {
+    Rig r(sim::archetype_light_fast(), 3, false);
+    r.chassis.pid_print_toggle(false);
+    r.chassis.pid_swing_set(ez::LEFT_SWING, 60.0, 110);
+    r.sim.push(-150.0, start, 300.0);
+    double elapsed = 0;
+    bool ok = r.wait([&]() { r.chassis.pid_wait(); }, 1500, &elapsed);
+    double speed = r.angle_speed_over(100);
+    double off = std::fabs(60.0 + r.sim.heading_deg());
+    INFO("shove at ", start, " ms: elapsed=", elapsed, " ms, interfered=", r.chassis.interfered, ", true speed=", speed, " deg/s, true error=", off, " deg");
+    REQUIRE(ok);
+    CHECK_FALSE(r.chassis.interfered);
+    CHECK(speed < r.angle_floor(100));
+    CHECK(off < 4.0);
+  }
+}
