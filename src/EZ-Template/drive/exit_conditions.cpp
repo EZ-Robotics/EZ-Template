@@ -280,6 +280,24 @@ struct Channel {
 // so a task starved of time (a busy higher priority task) freezes them without the robot being stuck.  But a task
 // that never runs again (blocked for good, or deleted) must not hold the wait forever, so past STARVED_WINDOWS windows
 // on the clock alone it counts as stuck anyway.
+// How long the auto task has been quiet, as the wait loop sees it: the time since the pass counter last differed from the value read on the
+// previous call. A task passing every 40 or 50 ms is slow but never quiet for a window (350 ms at the least); one that is blocked or
+// deleted is quiet from then on. This, not a count of passes against a nominal 10 ms pace, is what tells the two apart.
+class TaskPulse {
+public:
+  TaskPulse(std::uint32_t pass, std::uint32_t now) : pass_(pass), changed_(now) {}
+  void observe(std::uint32_t pass, std::uint32_t now) {
+    if (pass != pass_) {
+      pass_ = pass;
+      changed_ = now;
+    }
+  }
+  std::int32_t quiet_ms(std::uint32_t now) const { return (std::int32_t)(now - changed_); }
+
+private:
+  std::uint32_t pass_, changed_;
+};
+
 class StuckWatch {
 public:
   // travelled and turned: how far the robot has moved and turned since the motion started
@@ -304,6 +322,7 @@ public:
         xy_floor_(std::move(xy_floor)),
         a_floor_(std::move(a_floor)),
         a_seed_pass_(stuck_passes()),
+        pulse_(stuck_passes(), pros::millis()),
         a_seeded_(false) {
     int allowance = moved_ ? 0 : STUCK_START_ALLOWANCE_MS;
     last_progress_ = last_settle_ = pros::millis() + allowance;
@@ -317,6 +336,7 @@ public:
     if (window_ == 0) return false;
     std::uint32_t now = pros::millis();
     std::uint32_t pass = stuck_passes();
+    pulse_.observe(pass, now);
     bool progress = false;     // genuinely getting somewhere: this is what makes the robot "moved"
     bool disturbance = false;  // a shove landing or peaking: restarts the clock, but is not progress
     // The same two for the settle clock, which runs on the settle step (see settle_step())
@@ -429,7 +449,7 @@ public:
     int expected_passes = (int)(window / (double)util::DELAY_TIME);
     bool by_passes = (std::int32_t)since_pass > expected_passes;
     bool by_clock = waited > STUCK_STARVED_WINDOWS * window;
-    starved_ = !by_passes && by_clock;
+    starved_ = !by_passes && by_clock && pulse_.quiet_ms(now) > window_;
     // Inside the big errors that verdict is "settled", and what it rests on is a robot that stopped making new lows, not one that stopped.
     // A robot oscillating about its target is that. So is one that is being carried through it, or away from it, and that is going
     // somewhere: it is settled only if it went nowhere over the window, and otherwise the wait goes on (it leaves the big errors, and the
@@ -444,8 +464,8 @@ public:
     return by_passes || by_clock;
   }
 
-  // Whether the stuck verdict the last call to stuck() returned came from the wall clock alone: the window passed several times over
-  // without the auto task making the passes a task running at its own pace would. Only meaningful after a call that returned true.
+  // Whether the stuck verdict the last call to stuck() returned came from the wall clock alone: the window passed several times over and the auto task has been quiet for
+  // a whole window, not slow (a task passing every 50 ms is slow, and alive). Only meaningful after a call that returned true.
   // A verdict like that rests on errors nothing has updated, so it is never a settled one, see stuck_settled().
   bool starved() const { return starved_; }
 
@@ -466,6 +486,7 @@ private:
   // stuck_passes() at construction, and whether the angle channel has re-seeded itself from the first
   // confirmed-fresh reading since -- see the matching comment in stuck() above.
   std::uint32_t a_seed_pass_;
+  TaskPulse pulse_;
   bool a_seeded_;
   std::uint32_t last_progress_, last_progress_pass_;
   std::uint32_t last_settle_, last_settle_pass_;  // the settle clock: when xs_ / as_ last made progress, restarts included
@@ -507,6 +528,7 @@ public:
         floor_(std::move(floor)),
         floor_default_(cap == STUCK_STEP_ANGLE_CAP ? ez::Drive::STOP_SPEED_ANGLE_DEFAULT : ez::Drive::STOP_SPEED_DISTANCE_DEFAULT),
         last_pass_(stuck_passes()),
+        pulse_(stuck_passes(), pros::millis()),
         seeded_(false) {
     int allowance = moved_ ? 0 : STUCK_START_ALLOWANCE_MS;
     last_progress_ = last_settle_ = pros::millis() + allowance;
@@ -518,6 +540,7 @@ public:
     if (window_ == 0) return false;
     std::uint32_t now = pros::millis();
     std::uint32_t pass = stuck_passes();
+    pulse_.observe(pass, now);
     bool progress = false;
     bool disturbance = false;                                  // a shove landing or peaking: restarts the clock, but is not progress
     bool settle_progress = false, settle_disturbance = false;  // the same for the settle clock, see StuckWatch::stuck()
@@ -581,7 +604,7 @@ public:
     int expected_passes = (int)(window / (double)util::DELAY_TIME);
     bool by_passes = (std::int32_t)since_pass > expected_passes;
     bool by_clock = waited > STUCK_STARVED_WINDOWS * window;
-    starved_ = !by_passes && by_clock;
+    starved_ = !by_passes && by_clock && pulse_.quiet_ms(now) > window_;
     // Settled only if it went nowhere over the window, for a bounded time, see StuckWatch::stuck()
     if (inside_big && by_passes && in_place_ && waited <= window + in_place_hold_ms(big_error_, stop_speed_or_default(floor_, floor_default_), 0.0, 1.0) &&
         !in_place_(window))
@@ -605,6 +628,7 @@ private:
   StopSpeedFn floor_;  // how long without a new low inside big_error before the robot is called settled while still moving is step / this, read fresh
   double floor_default_;
   std::uint32_t last_pass_;
+  TaskPulse pulse_;
   bool seeded_;
   std::uint32_t last_progress_, last_progress_pass_;
   std::uint32_t last_settle_, last_settle_pass_;  // the settle clock: when cs_ last made progress, restarts included
