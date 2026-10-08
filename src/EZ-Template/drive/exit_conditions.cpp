@@ -178,7 +178,9 @@ int stuck_window(PID& xy, PID& angle) { return floored_window(team_stuck_window(
 // gets its own credit again, but only once this one has been recovered from for real -- see `anchor` below for
 // exactly what that requires.
 struct Channel {
-  // How many steps past where it stood before crossing its target a robot may overshoot on its own before the error rising further is a shove
+  // How many steps past where it stood before crossing its target the error may rise, after the robot has crossed it, before that rise is taken for a
+  // push. A robot's own overshoot cannot be told from a push while it is still rising (both rise, and a gradual push does not look like anything
+  // else), so a rise of that size is credited once, as a possible push, without using up the latch a push proper arms.
   static constexpr double OVERSHOOT_ROOM_STEPS = 2.0;
   double step, low;
   bool side, rebound = false, rebounded = false;
@@ -189,6 +191,14 @@ struct Channel {
   // arms only `crossed`, and a shove arms only `rebounded`.
   bool crossed = false;
   double cross_anchor = 0;
+  // While the error is only coming back from an overshoot (`rebound` with `crossed`, no shove latched) it is followed from its peak: `peak_seen` is
+  // the most it has risen to since the crossing, `turned` is whether it has since come down by half a step (a robot only ringing in its sensor does
+  // not), and `trough` the least it has been since. A push that lands after that is the error rising a full step from `trough`: the robot came back,
+  // then was pushed out again, which is a shove like any other and arms `rebounded`. A rise that has not turned yet is the robot's own overshoot, or a
+  // push that began with it, and cannot be told which: it earns one restart of its own (`over_latched`, cleared with `crossed`) and nothing else, so
+  // that a real shove that follows the overshoot is still credited.
+  double peak_seen = 0, trough = 0;
+  bool turned = false, over_latched = false;
   // `low` as it stood before the current rebound began raising it: what a disturbance's anchor is taken from, so a shove that lands while an
   // overshoot is still being recovered from is anchored where the robot really stood, not at the overshoot's peak.
   double base = 0;
@@ -234,14 +244,16 @@ struct Channel {
     if (!rebound) base = low;
     bool overshot = (error > 0) != side;
     // A shove is the error a full step worse than the best it has reached. While the robot is only coming back from an overshoot `low` follows the
-    // error up, to track the peak, so it is no reference for that: a push that adds less than a step per pass would never get ahead of it. A shove is
-    // then judged against `base`, where the robot stood before it crossed, with room for the overshoot itself (the robot's own motion past its target,
-    // up to two steps, is not a shove).
+    // error up, to track the peak, so it is no reference for that: a push that adds less than a step per pass would never get ahead of it. Then a
+    // shove is judged against the lowest the error has been since its peak (see `trough`), and a rise that has not turned yet is the ambiguous one.
     bool from_overshoot = rebound && crossed && !rebounded && step > 0.0;
-    bool shoved = !overshot && size > (from_overshoot ? base + OVERSHOOT_ROOM_STEPS * step : low) + (from_overshoot ? 0.0 : step);
+    bool shoved = !overshot && (from_overshoot ? turned && size > trough + step : size > low + step);
+    bool possible_push = from_overshoot && !overshot && !turned && !over_latched && size > base + OVERSHOOT_ROOM_STEPS * step;
     if (overshot && !crossed) {
       rebound = crossed = true;
       cross_anchor = base;
+      peak_seen = size;
+      turned = over_latched = false;
       // Crossing the target is the robot's own overshoot, not something to wait out, and restarting the clock on it delayed a heavy
       // robot's clean "settled" verdict until the mA exit fired first. It only starts tracking the peak, so the way back counts.
       peak_credited = true;
@@ -250,6 +262,21 @@ struct Channel {
       anchor = base;
       latched = true;
       peak_credited = false;
+      turned = false;
+    } else if (possible_push) {
+      over_latched = true;
+      latched = true;
+      peak_credited = false;
+    }
+    if (from_overshoot && rebound && crossed && !rebounded) {
+      if (turned) {
+        trough = std::fmin(trough, size);
+      } else if (size > peak_seen) {
+        peak_seen = size;
+      } else if (size <= peak_seen - 0.5 * step) {
+        turned = true;
+        trough = size;
+      }
     }
     side = error > 0;
     double worst_before = low;
@@ -259,13 +286,14 @@ struct Channel {
     if (size >= low - step) return false;
     low = size;
     rebound = false;
+    turned = false;
     // The current disturbance is only now considered fully closed out -- eligible to let a LATER, separate
     // disturbance re-latch and get its own leniency -- once recovery has carried `low` a full step past where
     // this one started, not merely past its own peak. See `anchor`'s comment above for why that margin, not just
     // "recovered at all", is what keeps a channel oscillating at a fixed amplitude from re-arming itself every
     // poll.
     if (rebounded && low < anchor - step) rebounded = false;
-    if (crossed && low < cross_anchor - step) crossed = false;
+    if (crossed && low < cross_anchor - step) crossed = over_latched = false;
     return true;
   }
 };
