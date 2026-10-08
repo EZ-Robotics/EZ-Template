@@ -140,7 +140,9 @@ double settle_error_angle(const PID& pid) { return settle_error(pid, ez::detail:
 // credit as progress toward "settled": a robot creeping home at step / window made a new low just inside the window over and over, and
 // big_error / step of them (tens to hundreds for a small_error of 0.03 to 0.2 in) each restarted the clock. Those are credited at a
 // third of big_error instead, at most the cap (1 in, 3 degrees); with no small_error at all, the cap. Time inside big_error is then at
-// most (big_error / step + 1) windows for every team, about 3 s at the defaults.
+// most (big_error / step + 1) windows for every team, about 3 s at the defaults for a robot the in-place check reads as going nowhere. While that
+// check holds a robot that is going somewhere, each window can run longer by up to in_place_hold_ms() (2 big_error / stop speed, 4 s at the defaults), so a
+// robot that keeps making new lows and keeps that check true takes up to (big_error / step + 1) * (window + hold), about 19 s at the defaults.
 static constexpr double SETTLE_STEPS_IN_BIG_ERROR = 3.0;
 double settle_step(PID& pid, double cap) {
   if (pid.exit.small_error <= 0) return std::fmax(stuck_step(pid, cap), cap);
