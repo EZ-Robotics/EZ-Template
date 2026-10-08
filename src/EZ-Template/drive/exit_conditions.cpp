@@ -752,6 +752,10 @@ public:
   // channel is judged from its own lowest value (a window starts from where the channel itself got to, never from the other's), so one cannot
   // make up for the other having gone back: the robot has to be getting somewhere on one of them over the window itself.
   bool take_mA(const PID& pid, double live_error) {
+    // The progress a held exit is judged on is read off what the auto task last wrote, and while the task has not passed it stands still however the
+    // robot is moving: a window of that says nothing about whether the robot is getting anywhere. The exit is held until the task passes again, and a
+    // task that never does is ended by the stuck watch (as starved, interfered), so this cannot hold a wait for ever.
+    if (quiet_ && quiet_()) return false;
     if (stopped_for(pid.exit.mA_timeout)) {
       mA_held_ = false;
       return true;
@@ -793,6 +797,11 @@ public:
     heading_error_ = std::move(error);
     return *this;
   }
+  // Whether the auto task has gone quiet, so that the progress an mA exit is held on is stale (see take_mA()). Without one the task is taken to be running.
+  ExitGate& quiet_set(std::function<bool()> quiet) {
+    quiet_ = std::move(quiet);
+    return *this;
+  }
 
   // A window exit this gate gave the wait earlier is only still true if the robot has not moved since. True when it has (a
   // shove, a creep): the caller puts it back with hold() and goes on waiting.
@@ -830,6 +839,7 @@ private:
   StopSpeedFn floor_;
   StopSpeedFn heading_floor_;
   std::function<double()> heading_error_;
+  std::function<bool()> quiet_;
 };
 
 // A window exit a side or axis latched earlier (SMALL_EXIT / BIG_EXIT) is only still true while two things hold: its live error is still inside the
@@ -2416,6 +2426,10 @@ void Drive::wait_until_drive(double target) {
     path_after = path_length_after(pp_movements);
     left_gate.heading_channel_set(stop_speed_fn(StopSpeed::OdomAngle), [this] { return current_a_odomPID.error; });
     right_gate.heading_channel_set(stop_speed_fn(StopSpeed::OdomAngle), [this] { return current_a_odomPID.error; });
+    // The path left to drive and the heading are the odom pose's, which the auto task writes: see ExitGate::take_mA()
+    auto task_stalled = [this] { return task_quiet(ez::detail::PathTracker::STALE_MS); };
+    left_gate.quiet_set(task_stalled);
+    right_gate.quiet_set(task_stalled);
   }
   auto odom_progress = [&]() {
     ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
@@ -2433,6 +2447,7 @@ void Drive::wait_until_drive(double target) {
                    xy_gate_armed);
   xy_gate.floor_set(stop_speed_fn(StopSpeed::OdomXY));
   xy_gate.heading_channel_set(stop_speed_fn(StopSpeed::OdomAngle), [this] { return current_a_odomPID.error; });
+  xy_gate.quiet_set([this] { return task_quiet(ez::detail::PathTracker::STALE_MS); });
 
   // Whether this wait_until()'s own target IS (not just near) the motion's actual final target, not
   // some earlier waypoint the robot is meant to drive through. pid_wait()'s DRIVE branch already
