@@ -1170,6 +1170,13 @@ private:
 OnWay robot_on_way_to_checkpoint(const std::vector<pose>& points, int leg, int pp_index, const pose& robot, LegTracker& tracker, double look_ahead) {
   int tracked = tracker.update(robot, pp_index, look_ahead);
   if (pp_index < leg) return OnWay::Before;
+  // The path's last leg has nothing after it. A robot that is level with its end or beyond it, along the leg, with the look-ahead on it, has driven through
+  // the point whatever earlier leg it is also near: a robot that overshot the end and rests a little to the side of it is nearer the last point than the leg
+  // before it by less than the tolerance, and was taken to be before it for ever.
+  if (leg == (int)points.size() - 2) {
+    double dx = points[leg + 1].x - points[leg].x, dy = points[leg + 1].y - points[leg].y;
+    if (std::hypot(dx, dy) >= CHECKPOINT_LEG_MIN && (robot.x - points[leg + 1].x) * dx + (robot.y - points[leg + 1].y) * dy >= 0.0) return OnWay::Own;
+  }
   int last = std::min(pp_index, (int)points.size() - 2);
   double nearest = INFINITY;
   for (int j = 0; j <= last; j++) nearest = std::fmin(nearest, distance_to_segment(robot, points[j], points[j + 1]));
