@@ -1142,8 +1142,12 @@ OnWay robot_on_way_to_checkpoint(const std::vector<pose>& points, int leg, int p
     if (distance_to_segment(robot, points[j], points[j + 1]) <= nearest + CHECKPOINT_ON_PATH_TOLERANCE * 2.0) near_up_to_leg = true;
   if (!near_up_to_leg) return OnWay::After;
   double own = distance_to_segment(robot, points[leg], points[leg + 1]);
+  // An earlier leg as near as the checkpoint's own is no leg to read the robot's place from: the robot is before the checkpoint, unless the way it has
+  // got along the path says it has rounded it. A path that closes a loop runs its last leg back onto its first, and a robot that has cut the corner and
+  // is going up the first leg's line is as near that earlier leg as the one it is on, for ever after. It is on a later leg than the checkpoint's, which
+  // is the one thing that tells it from a robot that has not got there.
   for (int j = 0; j < leg; j++)
-    if (distance_to_segment(robot, points[j], points[j + 1]) <= own + CHECKPOINT_ON_PATH_TOLERANCE) return OnWay::Before;
+    if (distance_to_segment(robot, points[j], points[j + 1]) <= own + CHECKPOINT_ON_PATH_TOLERANCE) return tracked > leg ? OnWay::After : OnWay::Before;
   return OnWay::Own;
 }
 
