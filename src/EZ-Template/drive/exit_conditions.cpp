@@ -459,17 +459,24 @@ public:
     int expected_passes = (int)(window / (double)util::DELAY_TIME);
     bool by_passes = (std::int32_t)since_pass > expected_passes;
     bool by_clock = waited > STUCK_STARVED_WINDOWS * window;
-    starved_ = !by_passes && by_clock && pulse_.quiet_ms(now) > window_;
+    // A task that has been quiet for a whole window is gone (a slow one is not, see TaskPulse), and whatever it left behind is not something
+    // to call settled on, whichever of the two ways the verdict was reached.
+    bool quiet = pulse_.quiet_ms(now) > window_;
+    starved_ = quiet && (by_passes || by_clock);
     // Inside the big errors that verdict is "settled", and what it rests on is a robot that stopped making new lows, not one that stopped.
     // A robot oscillating about its target is that. So is one that is being carried through it, or away from it, and that is going
     // somewhere: it is settled only if it went nowhere over the window, and otherwise the wait goes on (it leaves the big errors, and the
-    // clock outside them ends it). A verdict the wall clock produced alone has no history to be checked against and is left as it is.
+    // clock outside them ends it). That goes for a verdict the clock reached as much as for one the passes did: a task passing every 50 ms
+    // reaches its verdicts by the clock. Over a stretch in which the task has not passed (the tracker's newest sample is stale, see
+    // PathTracker::STALE_MS) the check has nothing to read, which is not "went nowhere": the robot is held until it has. A verdict that
+    // nothing has updated for a whole window is none of this and ends the wait, interfered.
     // The wait goes on for a bounded time only, see in_place_hold_ms(): a robot that really goes somewhere has crossed the big errors
     // by then, and one that is still inside them is hunting in a way the check could not read as in place.
-    if (settling && by_passes && in_place_ &&
+    bool stale = pulse_.quiet_ms(now) > ez::detail::PathTracker::STALE_MS;
+    if (settling && !starved_ && in_place_ &&
         waited <= window + in_place_hold_ms(xy_big_, stop_speed_or_default(xy_floor_, ez::Drive::STOP_SPEED_DISTANCE_DEFAULT), a_big_,
                                             stop_speed_or_default(a_floor_, ez::Drive::STOP_SPEED_ANGLE_DEFAULT)) &&
-        !in_place_(window))
+        (stale || !in_place_(window)))
       return false;
     return by_passes || by_clock;
   }
@@ -614,10 +621,11 @@ public:
     int expected_passes = (int)(window / (double)util::DELAY_TIME);
     bool by_passes = (std::int32_t)since_pass > expected_passes;
     bool by_clock = waited > STUCK_STARVED_WINDOWS * window;
-    starved_ = !by_passes && by_clock && pulse_.quiet_ms(now) > window_;
+    starved_ = pulse_.quiet_ms(now) > window_ && (by_passes || by_clock);
     // Settled only if it went nowhere over the window, for a bounded time, see StuckWatch::stuck()
-    if (inside_big && by_passes && in_place_ && waited <= window + in_place_hold_ms(big_error_, stop_speed_or_default(floor_, floor_default_), 0.0, 1.0) &&
-        !in_place_(window))
+    bool stale = pulse_.quiet_ms(now) > ez::detail::PathTracker::STALE_MS;
+    if (inside_big && !starved_ && in_place_ && waited <= window + in_place_hold_ms(big_error_, stop_speed_or_default(floor_, floor_default_), 0.0, 1.0) &&
+        (stale || !in_place_(window)))
       return false;
     return by_passes || by_clock;
   }
