@@ -95,3 +95,23 @@ TEST_CASE("pid_wait_until(point) on the first leg of a path with more legs waits
   std::vector<odom> u = {Q(0, 24), Q(24, 24), Q(24, 2)};
   check(archetype_classroom(), {{"first leg", u, 0, 12, 0}, {"first leg", u, 0, 12, 300}});
 }
+
+TEST_CASE("pid_wait_until(point) just past the last corner of a path is answered when the robot crosses it, not at the end of the motion") {
+  // light_fast is on the corner's far leg before the look-ahead ever reports it: a wait that takes its start from that moment reads the robot as past
+  // the point already and never sees it cross, and comes back at the end of the path, 20 in on
+  std::vector<odom> s = {Q(10, 15), Q(-10, 30), Q(10, 45)};
+  std::vector<odom> hairpins = {Q(0, 24), Q(17, 7), Q(17, 31)};
+  std::vector<Case> cases;
+  for (int pre : {0, 200}) cases.push_back({"S", s, -8.8, 30.9, pre});
+  for (int pre : {0, 200, 400}) cases.push_back({"two hairpins", hairpins, 17, 8.5, pre});
+  for (const auto& c : cases) {
+    Res r = run(sim::archetype_light_fast(), c.path, c.pre, pose{c.x, c.y, ANGLE_NOT_SET});
+    CAPTURE(c.name);
+    CAPTURE(c.pre);
+    REQUIRE(r.ret);
+    CHECK_FALSE(r.interfered);
+    double short_by = std::hypot(r.end_x - c.x, r.end_y - c.y);
+    CHECK_MESSAGE(short_by <= 5.0,
+                  "came back after " << r.ms << " ms at (" << r.end_x << ", " << r.end_y << "), " << short_by << " in from (" << c.x << ", " << c.y << ")");
+  }
+}
