@@ -63,6 +63,18 @@ public:
   static constexpr double RECENT_FAST = 4.0;
 
   void band_set(double band) { band_ = band; }
+  double band() const { return band_; }
+
+  // The newest sample's band-followed position and the time it was taken at, for a caller that compares it with a live reading of the same thing.
+  // False when nothing has been sampled.
+  bool newest_position(double& x, double& y, std::uint32_t& t_ms) const {
+    if (!has_baseline_ || count_ < 1) return false;
+    int idx = newest_index();
+    x = cx_buf_[idx];
+    y = cy_buf_[idx];
+    t_ms = t_[idx];
+    return true;
+  }
 
   // Forget the history.  The next sample is the new baseline.
   void reset() {

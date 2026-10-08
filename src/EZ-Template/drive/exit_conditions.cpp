@@ -487,24 +487,22 @@ public:
     int expected_passes = (int)(window / (double)util::DELAY_TIME);
     bool by_passes = (std::int32_t)since_pass > expected_passes;
     bool by_clock = waited > STUCK_STARVED_WINDOWS * window;
-    // A task that has been quiet for a whole window is gone (a slow one is not, see TaskPulse), and whatever it left behind is not something
-    // to call settled on, whichever of the two ways the verdict was reached.
+    // A task that has been quiet for a whole window is gone (a slow one is not, see TaskPulse), and a verdict the clock alone produced rests on errors
+    // nothing has updated, so it is never a settled one.
     bool quiet = pulse_.quiet_ms(now) > window_;
-    starved_ = quiet && (by_passes || by_clock);
     // Inside the big errors that verdict is "settled", and what it rests on is a robot that stopped making new lows, not one that stopped.
     // A robot oscillating about its target is that. So is one that is being carried through it, or away from it, and that is going
     // somewhere: it is settled only if it went nowhere over the window, and otherwise the wait goes on (it leaves the big errors, and the
     // clock outside them ends it). That goes for a verdict the clock reached as much as for one the passes did: a task passing every 50 ms
-    // reaches its verdicts by the clock. Over a stretch in which the task has not passed (the tracker's newest sample is stale, see
-    // PathTracker::STALE_MS) the check has nothing to read, which is not "went nowhere": the robot is held until it has. A verdict that
-    // nothing has updated for a whole window is none of this and ends the wait, interfered.
+    // reaches its verdicts by the clock. A stretch in which the task has not passed is read off the sensors (see Drive::travel_in_place()).
     // The wait goes on for a bounded time only, see in_place_hold_ms(): a robot that really goes somewhere has crossed the big errors
     // by then, and one that is still inside them is hunting in a way the check could not read as in place.
-    bool stale = pulse_.quiet_ms(now) > ez::detail::PathTracker::STALE_MS;
-    if (settling && !starved_ && in_place_ &&
+    bool moving = settling && in_place_ && !in_place_(window);
+    // ...and a robot that is going somewhere while the task has not passed for a whole window cannot be judged at all, whichever way the verdict came
+    starved_ = quiet && ((!by_passes && by_clock) || (by_passes && moving));
+    if (moving && !starved_ && (by_passes || by_clock) &&
         waited <= window + in_place_hold_ms(xy_big_, stop_speed_or_default(xy_floor_, ez::Drive::STOP_SPEED_DISTANCE_DEFAULT), a_big_,
-                                            stop_speed_or_default(a_floor_, ez::Drive::STOP_SPEED_ANGLE_DEFAULT)) &&
-        (stale || !in_place_(window)))
+                                            stop_speed_or_default(a_floor_, ez::Drive::STOP_SPEED_ANGLE_DEFAULT)))
       return false;
     return by_passes || by_clock;
   }
@@ -649,11 +647,12 @@ public:
     int expected_passes = (int)(window / (double)util::DELAY_TIME);
     bool by_passes = (std::int32_t)since_pass > expected_passes;
     bool by_clock = waited > STUCK_STARVED_WINDOWS * window;
-    starved_ = pulse_.quiet_ms(now) > window_ && (by_passes || by_clock);
+    bool quiet = pulse_.quiet_ms(now) > window_;
     // Settled only if it went nowhere over the window, for a bounded time, see StuckWatch::stuck()
-    bool stale = pulse_.quiet_ms(now) > ez::detail::PathTracker::STALE_MS;
-    if (inside_big && !starved_ && in_place_ && waited <= window + in_place_hold_ms(big_error_, stop_speed_or_default(floor_, floor_default_), 0.0, 1.0) &&
-        (stale || !in_place_(window)))
+    bool moving = inside_big && in_place_ && !in_place_(window);
+    starved_ = quiet && ((!by_passes && by_clock) || (by_passes && moving));
+    if (moving && !starved_ && (by_passes || by_clock) &&
+        waited <= window + in_place_hold_ms(big_error_, stop_speed_or_default(floor_, floor_default_), 0.0, 1.0))
       return false;
     return by_passes || by_clock;
   }
@@ -755,7 +754,21 @@ public:
     // The progress a held exit is judged on is read off what the auto task last wrote, and while the task has not passed it stands still however the
     // robot is moving: a window of that says nothing about whether the robot is getting anywhere. The exit is held until the task passes again, and a
     // task that never does is ended by the stuck watch (as starved, interfered), so this cannot hold a wait for ever.
-    if (quiet_ && quiet_()) return false;
+    int stale = stale_ ? stale_() : 0;
+    if (stale == 0) {
+      stale_run_ = false;
+    } else {
+      // Held while the task has not passed. A stall as long as the window leaves nothing of it that is the robot's (and the robot has moved): the window
+      // starts again on the first fresh reading. A shorter one does not, or a task that passes every few hundred ms (stale between its passes, with the
+      // robot moving) would restart it on every pass and the exit would never be taken.
+      std::uint32_t now = pros::millis();
+      if (!stale_run_) {
+        stale_run_ = true;
+        stale_since_ = now;
+      }
+      if (stale == 2 && (std::int32_t)(now - stale_since_) >= std::max(pid.exit.mA_timeout, (int)ez::detail::PathTracker::MIN_WINDOW_MS)) mA_held_ = false;
+      return false;
+    }
     if (stopped_for(pid.exit.mA_timeout)) {
       mA_held_ = false;
       return true;
@@ -797,9 +810,11 @@ public:
     heading_error_ = std::move(error);
     return *this;
   }
-  // Whether the auto task has gone quiet, so that the progress an mA exit is held on is stale (see take_mA()). Without one the task is taken to be running.
-  ExitGate& quiet_set(std::function<bool()> quiet) {
-    quiet_ = std::move(quiet);
+  // Whether the progress an mA exit is held on is stale, see take_mA(): 0 if the auto task is passing or the robot has not moved since it last did,
+  // 1 if it has not passed for a few passes (the exit is held until it does), 2 if it has been quiet for long enough for the sensors to show that the robot
+  // has moved since (held, and the window starts again). Without one the task is taken to be running.
+  ExitGate& stale_set(std::function<int()> stale) {
+    stale_ = std::move(stale);
     return *this;
   }
 
@@ -839,7 +854,9 @@ private:
   StopSpeedFn floor_;
   StopSpeedFn heading_floor_;
   std::function<double()> heading_error_;
-  std::function<bool()> quiet_;
+  std::function<int()> stale_;
+  bool stale_run_ = false;  // stale_() has answered 1 or 2 on every call since stale_since_
+  std::uint32_t stale_since_ = 0;
 };
 
 // A window exit a side or axis latched earlier (SMALL_EXIT / BIG_EXIT) is only still true while two things hold: its live error is still inside the
@@ -1298,6 +1315,13 @@ bool Drive::travel_stopped(Travel channel, int window_ms, StopSpeed which) {
 bool Drive::travel_in_place(Travel channel, int window_ms, StopSpeed which) {
   ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
   if (travel_generation_ != motion_generation) return true;
+  // A tracker whose newest sample is stale has nothing to say about the last window, which is not "went nowhere": a robot that has been carried
+  // through its target while the task missed a few passes has gone somewhere. The sensors can say, read live: if the robot has not moved since that
+  // sample the window is as it was.
+  if (travel_[(int)channel].quiet(pros::millis(), ez::detail::PathTracker::STALE_MS)) {
+    bool angular = channel == Travel::Heading || channel == Travel::OdomHeading;
+    return stale_state(!angular, angular) == 0;
+  }
   return travel_[(int)channel].in_place(window_ms, stop_speed_[(int)which], pros::millis());
 }
 
@@ -1366,7 +1390,44 @@ void Drive::pid_odom_turn_exit_stop_speed_set(ez::QAngularSpeed speed) { pid_odo
 double Drive::pid_odom_turn_exit_stop_speed_get() { return stop_speed_get(StopSpeed::OdomAngle); }
 
 // Whether the auto task has run since a wait began and is not quiet now (see ma_exit_settled())
-bool Drive::task_ran_since(std::uint32_t entry_passes) { return stuck_passes() != entry_passes && !task_quiet(STUCK_WINDOW_FLOOR_MS); }
+// What counts as a robot that has not moved since the tracker's newest sample, read off the sensors live: within this many sensor counts of where the tracker
+// had it (a count of flicker, plus the noise of a single reading), and this fraction of what the stop speed allows over the time since. A single live
+// reading is noisier than the tracker, which averages, so the allowance is wider than its band.
+static constexpr double LIVE_STILL_BANDS = 4.0;
+static constexpr double LIVE_STILL_FRACTION = 0.5;
+// How long the tracker's newest sample has to be old before the sensors can say whether the robot has moved since: over a shorter stretch what a robot
+// moving at the stop speed covers is lost in a single reading's noise, and a task that has missed a few passes is waited for instead
+static constexpr int LIVE_STILL_MIN_MS = 100;
+
+int Drive::stale_state(bool sides, bool heading) {
+  ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+  if (travel_generation_ != motion_generation) return 0;
+  std::uint32_t now = pros::millis();
+  double hx, hy;
+  std::uint32_t newest;
+  if (!travel_[(int)Travel::Heading].newest_position(hx, hy, newest)) return 0;
+  int age = (int)(std::int32_t)(now - newest);
+  if (age <= ez::detail::PathTracker::STALE_MS) return 0;
+  if (age < LIVE_STILL_MIN_MS) return 1;
+  // The slowest the robot may be moving and still count as still, for whichever motion this is
+  double distance_floor = std::fmin(stop_speed_[(int)StopSpeed::Drive], stop_speed_[(int)StopSpeed::OdomXY]);
+  double angle_floor = std::fmin(std::fmin(stop_speed_[(int)StopSpeed::Turn], stop_speed_[(int)StopSpeed::Swing]), stop_speed_[(int)StopSpeed::OdomAngle]);
+  double seconds = age / 1000.0;
+  auto moved = [&](Travel channel, double live, double floor) {
+    double x, y;
+    std::uint32_t t;
+    if (!travel_[(int)channel].newest_position(x, y, t)) return false;
+    return std::fabs(live - x) > LIVE_STILL_BANDS * travel_[(int)channel].band() + LIVE_STILL_FRACTION * floor * seconds;
+  };
+  bool any = false;
+  if (sides) any = moved(Travel::Left, drive_sensor_left(), distance_floor) || moved(Travel::Right, drive_sensor_right(), distance_floor);
+  if (heading) any = moved(Travel::Heading, drive_angle_get(), angle_floor) || any;
+  return any ? 2 : 0;
+}
+
+bool Drive::task_errors_current(int age_ms) { return !(task_quiet(age_ms) && stale_state(true, true) != 0); }
+
+bool Drive::task_ran_since(std::uint32_t entry_passes) { return stuck_passes() != entry_passes && task_errors_current(STUCK_WINDOW_FLOOR_MS); }
 
 bool Drive::task_quiet(int age_ms) {
   ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
@@ -1686,8 +1747,10 @@ void Drive::pid_wait() {
       ++right_stuck_watch_rearm_count;
     };
     ExitGate left_gate(left_stopped, [this] { return travel_tracked(Travel::Left); }, leftPID.exit.velocity_exit_time != 0 || leftPID.exit.mA_timeout != 0);
+    left_gate.stale_set([this] { return stale_state(true, true); });
     ExitGate right_gate(
         right_stopped, [this] { return travel_tracked(Travel::Right); }, rightPID.exit.velocity_exit_time != 0 || rightPID.exit.mA_timeout != 0);
+    right_gate.stale_set([this] { return stale_state(true, true); });
     left_gate.floor_set(stop_speed_fn(StopSpeed::Drive));
     right_gate.floor_set(stop_speed_fn(StopSpeed::Drive));
     bool stalled = false;
@@ -1884,9 +1947,11 @@ void Drive::pid_wait() {
     auto odom_tracked = [this] { return travel_tracked(Travel::OdomXY) && travel_tracked(Travel::OdomHeading); };
     bool odom_gate_armed = team_stuck_window(xyPID, current_a_odomPID) != 0;
     ExitGate xy_gate(odom_stopped, odom_tracked, odom_gate_armed);
+    xy_gate.stale_set([this] { return stale_state(true, true); });
     xy_gate.floor_set(stop_speed_fn(StopSpeed::OdomXY));
     xy_gate.heading_channel_set(stop_speed_fn(StopSpeed::OdomAngle), [this] { return current_a_odomPID.error; });
     ExitGate a_gate(odom_stopped, odom_tracked, odom_gate_armed);
+    a_gate.stale_set([this] { return stale_state(true, true); });
     a_gate.floor_set(stop_speed_fn(StopSpeed::OdomAngle));
     // What an mA exit before the path's last point is held on, see path_left()
     std::vector<double> path_after;
@@ -2161,6 +2226,7 @@ void Drive::pid_wait() {
     ExitGate turn_gate([this](int w) { return travel_stopped(mode == TURN_TO_POINT ? Travel::OdomHeading : Travel::Heading, w, StopSpeed::Turn); },
                        [this] { return travel_tracked(mode == TURN_TO_POINT ? Travel::OdomHeading : Travel::Heading); },
                        turnPID.exit.velocity_exit_time != 0 || turnPID.exit.mA_timeout != 0);
+    turn_gate.stale_set([this] { return stale_state(true, true); });
     turn_gate.floor_set(stop_speed_fn(StopSpeed::Turn));
     while (true) {
       while (turn_exit == RUNNING) {
@@ -2259,6 +2325,7 @@ void Drive::pid_wait() {
     bool settled_via_stuck = false;
     ExitGate swing_gate([this](int w) { return travel_stopped(Travel::Heading, w, StopSpeed::Swing); }, [this] { return travel_tracked(Travel::Heading); },
                         swingPID.exit.velocity_exit_time != 0 || swingPID.exit.mA_timeout != 0);
+    swing_gate.stale_set([this] { return stale_state(true, true); });
     swing_gate.floor_set(stop_speed_fn(StopSpeed::Swing));
     while (true) {
       while (swing_exit == RUNNING) {
@@ -2422,7 +2489,9 @@ void Drive::wait_until_drive(double target) {
   // Small and big exit only end the wait once the robot is also stopped, see ExitGate. An odom move strips its position exits below
   // (leftPID/rightPID aim at a look ahead point there), so only a plain drive and the xy failsafe are gated.
   ExitGate left_gate(left_stopped, [this] { return travel_tracked(Travel::Left); }, leftPID.exit.velocity_exit_time != 0 || leftPID.exit.mA_timeout != 0);
+  left_gate.stale_set([this] { return stale_state(true, true); });
   ExitGate right_gate(right_stopped, [this] { return travel_tracked(Travel::Right); }, rightPID.exit.velocity_exit_time != 0 || rightPID.exit.mA_timeout != 0);
+  right_gate.stale_set([this] { return stale_state(true, true); });
   left_gate.floor_set(stop_speed_fn(drive_floor));
   right_gate.floor_set(stop_speed_fn(drive_floor));
   // On an odom move an mA exit is held on the progress of the move, not on the wheel distance to the checkpoint (which grows while a path that turns
@@ -2433,10 +2502,6 @@ void Drive::wait_until_drive(double target) {
     path_after = path_length_after(pp_movements);
     left_gate.heading_channel_set(stop_speed_fn(StopSpeed::OdomAngle), [this] { return current_a_odomPID.error; });
     right_gate.heading_channel_set(stop_speed_fn(StopSpeed::OdomAngle), [this] { return current_a_odomPID.error; });
-    // The path left to drive and the heading are the odom pose's, which the auto task writes: see ExitGate::take_mA()
-    auto task_stalled = [this] { return task_quiet(ez::detail::PathTracker::STALE_MS); };
-    left_gate.quiet_set(task_stalled);
-    right_gate.quiet_set(task_stalled);
   }
   auto odom_progress = [&]() {
     ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
@@ -2452,9 +2517,9 @@ void Drive::wait_until_drive(double target) {
       (leftPID.exit.velocity_exit_time != 0 || leftPID.exit.mA_timeout != 0) && (rightPID.exit.velocity_exit_time != 0 || rightPID.exit.mA_timeout != 0);
   ExitGate xy_gate([this](int w) { return travel_stopped(Travel::OdomXY, w, StopSpeed::OdomXY); }, [this] { return travel_tracked(Travel::OdomXY); },
                    xy_gate_armed);
+  xy_gate.stale_set([this] { return stale_state(true, true); });
   xy_gate.floor_set(stop_speed_fn(StopSpeed::OdomXY));
   xy_gate.heading_channel_set(stop_speed_fn(StopSpeed::OdomAngle), [this] { return current_a_odomPID.error; });
-  xy_gate.quiet_set([this] { return task_quiet(ez::detail::PathTracker::STALE_MS); });
 
   // Whether this wait_until()'s own target IS (not just near) the motion's actual final target, not
   // some earlier waypoint the robot is meant to drive through. pid_wait()'s DRIVE branch already
@@ -2563,7 +2628,7 @@ void Drive::wait_until_drive(double target) {
         if (xy_exit != RUNNING) {
           if (print_toggle) std::cout << "  XY: " << exit_to_string(xy_exit) << " Wait Until Exit Failsafe, the move ended before reaching " << target << "\n";
           // An mA exit inside big_error of the final target is a settle (see ma_exit_settled()), anything else that is not a window exit is not
-          bool ma_settles = xy_exit == mA_EXIT && ma_exit_settled(odom_settled(), !task_quiet(STUCK_WINDOW_FLOOR_MS));
+          bool ma_settles = xy_exit == mA_EXIT && ma_exit_settled(odom_settled(), task_errors_current(STUCK_WINDOW_FLOOR_MS));
           if (ma_settles) {
             if (print_toggle) std::cout << "  XY: mA exit inside the big error windows, counted as settled" << std::endl;
           } else if (xy_exit == mA_EXIT || xy_exit == VELOCITY_EXIT) {
@@ -2900,9 +2965,11 @@ void Drive::wait_until_turn_swing_internal(double target) {
   ExitGate turn_gate([this](int w) { return travel_stopped(mode == TURN_TO_POINT ? Travel::OdomHeading : Travel::Heading, w, StopSpeed::Turn); },
                      [this] { return travel_tracked(mode == TURN_TO_POINT ? Travel::OdomHeading : Travel::Heading); },
                      turnPID.exit.velocity_exit_time != 0 || turnPID.exit.mA_timeout != 0);
+  turn_gate.stale_set([this] { return stale_state(true, true); });
   turn_gate.floor_set(stop_speed_fn(StopSpeed::Turn));
   ExitGate swing_gate([this](int w) { return travel_stopped(Travel::Heading, w, StopSpeed::Swing); }, [this] { return travel_tracked(Travel::Heading); },
                       swingPID.exit.velocity_exit_time != 0 || swingPID.exit.mA_timeout != 0);
+  swing_gate.stale_set([this] { return stale_state(true, true); });
   swing_gate.floor_set(stop_speed_fn(StopSpeed::Swing));
 
   while (true) {
@@ -3248,9 +3315,11 @@ void Drive::wait_until_point(pose target, int path_index) {
   auto odom_tracked = [this] { return travel_tracked(Travel::OdomXY) && travel_tracked(Travel::OdomHeading); };
   bool odom_gate_armed = team_stuck_window(xyPID, current_a_odomPID) != 0;
   ExitGate xy_gate(odom_stopped, odom_tracked, odom_gate_armed);
+  xy_gate.stale_set([this] { return stale_state(true, true); });
   xy_gate.floor_set(stop_speed_fn(StopSpeed::OdomXY));
   xy_gate.heading_channel_set(stop_speed_fn(StopSpeed::OdomAngle), [this] { return current_a_odomPID.error; });
   ExitGate a_gate(odom_stopped, odom_tracked, odom_gate_armed);
+  a_gate.stale_set([this] { return stale_state(true, true); });
   a_gate.floor_set(stop_speed_fn(StopSpeed::OdomAngle));
   // What an mA exit before the path's last point is held on, see path_left()
   std::vector<double> path_after;
@@ -3376,7 +3445,7 @@ void Drive::wait_until_point(pose target, int path_index) {
       bool velocity_exit = xy_exit == VELOCITY_EXIT || a_exit == VELOCITY_EXIT;
       // An mA exit inside both big errors of the final target is a settle (see ma_exit_settled()); at the path's last point that is clean,
       // on the way it counts only when the robot is within the xy small_error of the point
-      CheckpointEnd end = checkpoint_end(!velocity_exit && (!mA_exit || ma_exit_settled(inside_both_big(), !task_quiet(STUCK_WINDOW_FLOOR_MS))),
+      CheckpointEnd end = checkpoint_end(!velocity_exit && (!mA_exit || ma_exit_settled(inside_both_big(), task_errors_current(STUCK_WINDOW_FLOOR_MS))),
                                          at_final_target, false, util::distance_to_point(target, odom_pose_get()), xyPID.exit.small_error, false);
       if (mA_exit && end != CheckpointEnd::Interfered) {
         if (print_toggle) std::cout << "  XY: mA exit inside the big error windows, counted as settled" << std::endl;
@@ -3492,9 +3561,11 @@ void Drive::pid_wait_until_index_started(int index) {
       stop_speed_fn(StopSpeed::OdomXY), stop_speed_fn(StopSpeed::OdomAngle));
   ExitGate a_gate([this](int w) { return odom_travel_stopped(w); }, [this] { return travel_tracked(Travel::OdomXY) && travel_tracked(Travel::OdomHeading); },
                   team_stuck_window(xyPID, current_a_odomPID) != 0);
+  a_gate.stale_set([this] { return stale_state(true, true); });
   a_gate.floor_set(stop_speed_fn(StopSpeed::OdomAngle));
   ExitGate xy_gate([this](int w) { return odom_travel_stopped(w); }, [this] { return travel_tracked(Travel::OdomXY) && travel_tracked(Travel::OdomHeading); },
                    team_stuck_window(xyPID, current_a_odomPID) != 0);
+  xy_gate.stale_set([this] { return stale_state(true, true); });
   xy_gate.floor_set(stop_speed_fn(StopSpeed::OdomXY));
   xy_gate.heading_channel_set(stop_speed_fn(StopSpeed::OdomAngle), [this] { return current_a_odomPID.error; });
   // What an mA exit before the path's last point is held on, see path_left(). This whole wait is before the checkpoint's point.

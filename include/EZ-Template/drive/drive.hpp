@@ -4367,6 +4367,13 @@ private:
   // Whether the auto task has gone quiet during this motion: it sampled the robot and has not for longer than age_ms. The errors an mA exit is judged
   // by are only this motion's while it runs (see ma_exit_settled()).
   bool task_quiet(int age_ms);
+  // How stale what the auto task last wrote is, as far as the robot is concerned (the drive sides and/or the heading): 0 when the tracker's newest sample is
+  // recent, or the robot has not moved since it by more than the noise of a live reading and half what the stop speed allows over the time since; 1 when it is
+  // older than the tracker's staleness limit but too recent for the sensors to say, so a task that missed a few passes is waited for; 2 when the sensors, read
+  // live, show that the robot has moved since.
+  int stale_state(bool sides, bool heading);
+  // Whether the errors the auto task wrote are still the robot's: it has not gone quiet for age_ms, or it has and the robot has not moved in the meantime
+  bool task_errors_current(int age_ms);
   bool task_ran_since(std::uint32_t entry_passes);
   // pid.exit_condition(motors) with SMALL_EXIT / BIG_EXIT held until the robot is also stopped. Gate is exit_conditions.cpp's own
   // ExitGate; defined there, where it is used.
