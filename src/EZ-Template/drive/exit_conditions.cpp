@@ -229,9 +229,13 @@ struct Channel {
   // window then runs out on it; oscillating shoves on a robot pinned between them never re-arm the latch at all.
   bool latched = false, peaked = false;
   bool peak_credited = false;
+  // Set for the pass that gave a rise that cannot be told from the robot's own overshoot its restart (see `over_latched`). The watch that owns this channel
+  // gives that restart once per wait, not once per channel and lap (`push_ok`): a robot spun round through its target rises on the heading and then on the
+  // distance, and again on every lap, and each of those restarts carried the wait on to the next fall from a peak, which is a run of new lows.
+  bool pushed = false;
   Channel(double p_step, double size, double error) : step(p_step), low(size), side(error > 0) {}
-  bool made(double size, double error) {
-    latched = peaked = false;
+  bool made(double size, double error, bool push_ok = true) {
+    latched = peaked = pushed = false;
     // A NaN size/error -- e.g. a caller-supplied NaN target, making every pass' distance/error compute to
     // NaN -- must not read as progress.  Every comparison against NaN is false, so unguarded this fell
     // through the "still above the last low?" check below no matter how many times it ran, crediting a new
@@ -248,7 +252,7 @@ struct Channel {
     // shove is judged against the lowest the error has been since its peak (see `trough`), and a rise that has not turned yet is the ambiguous one.
     bool from_overshoot = rebound && crossed && !rebounded && step > 0.0;
     bool shoved = !overshot && (from_overshoot ? turned && size > trough + step : size > low + step);
-    bool possible_push = from_overshoot && !overshot && !turned && !over_latched && size > base + OVERSHOOT_ROOM_STEPS * step;
+    bool possible_push = push_ok && from_overshoot && !overshot && !turned && !over_latched && size > base + OVERSHOOT_ROOM_STEPS * step;
     if (overshot && !crossed) {
       rebound = crossed = true;
       cross_anchor = base;
@@ -264,7 +268,7 @@ struct Channel {
       peak_credited = false;
       turned = false;
     } else if (possible_push) {
-      over_latched = true;
+      over_latched = pushed = true;
       latched = true;
       peak_credited = false;
     }
@@ -387,8 +391,10 @@ public:
       as_ = Channel(as_.step, std::fabs(a_error), a_error);
       progress = settle_progress = true;
     }
-    if (xy_.made(distance, xy_error)) progress = true;
-    if (xs_.made(distance, xy_error)) settle_progress = true;
+    if (xy_.made(distance, xy_error, !push_spent_)) progress = true;
+    if (xs_.made(distance, xy_error, !settle_push_spent_)) settle_progress = true;
+    push_spent_ = push_spent_ || xy_.pushed;
+    settle_push_spent_ = settle_push_spent_ || xs_.pushed;
     disturbance = xy_.latched || xy_.peaked;
     settle_disturbance = xs_.latched || xs_.peaked;
     // The angle channel's own construction-time seed (angle.error at that moment) can be a leftover
@@ -411,10 +417,12 @@ public:
         a_seeded_ = true;
       }
     } else {
-      if (a_.made(std::fabs(a_error), a_error)) progress = true;
+      if (a_.made(std::fabs(a_error), a_error, !push_spent_)) progress = true;
       disturbance = disturbance || a_.latched || a_.peaked;
-      if (as_.made(std::fabs(a_error), a_error)) settle_progress = true;
+      if (as_.made(std::fabs(a_error), a_error, !settle_push_spent_)) settle_progress = true;
       settle_disturbance = settle_disturbance || as_.latched || as_.peaked;
+      push_spent_ = push_spent_ || a_.pushed;
+      settle_push_spent_ = settle_push_spent_ || as_.pushed;
     }
     if (!moved_ && (travelled > xy_.step || turned > a_.step)) moved_ = progress = settle_progress = true;
     // Before the robot has moved, progress can't cut the start allowance short
@@ -516,6 +524,8 @@ private:
   bool starved_ = false;
   Channel xy_, a_;
   Channel xs_, as_;  // the same two channels on the settle step: what the settle clock credits
+  // Whether the one restart for a rise that may be an overshoot or a push has been given, on either channel (and on the settle step)
+  bool push_spent_ = false, settle_push_spent_ = false;
   int index_;
   int window_;          // the team's window, floored: what a stuck verdict outside the big errors waits for
   int settled_window_;  // the team's own window, unfloored: what it waits for inside both big errors
