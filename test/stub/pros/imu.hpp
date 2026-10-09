@@ -6,6 +6,10 @@
 
 namespace pros {
 
+// Test-only: when set, every Imu::get_rotation() calls it once the value is read and before it returns, so a test can land another task's call inside a
+// sensor read. Null by default and cleared by test_stub::reset_all().
+inline void (*imu_read_hook)() = nullptr;
+
 class Imu {
  public:
   struct accel_s_t {
@@ -23,7 +27,11 @@ class Imu {
   bool fake_installed = true;
 
   std::int32_t get_port() const { return port_; }
-  double get_rotation() const { return fake_rotation; }
+  double get_rotation() const {
+    double rotation = fake_rotation;
+    if (imu_read_hook != nullptr) imu_read_hook();  // test-only: runs after the value is read, before it is returned
+    return rotation;
+  }
   std::int32_t set_rotation(double target) {
     fake_rotation = target;
     return 1;

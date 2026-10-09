@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 
+#include "pros/imu.hpp"
 #include "pros/motors.hpp"
 
 namespace test_stub {
@@ -81,6 +82,7 @@ inline void reset_all() {
   g_sched = FakeScheduler{};
   pros::motor_fake_registry().clear();
   pros::motor_read_hook = nullptr;
+  pros::imu_read_hook = nullptr;
 }
 
 }  // namespace test_stub
