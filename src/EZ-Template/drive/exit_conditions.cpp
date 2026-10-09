@@ -1329,9 +1329,15 @@ bool Drive::travel_in_place(Travel channel, int window_ms, StopSpeed which) {
   // newest sample that old on a fair share of polls, and a robot that was held still up to it is not one that has gone somewhere (the verdict taken back on
   // such a poll starts the watch over), where one that was being carried up to it is.
   int stale = stale_state(!angular, angular);
-  if (stale != 1) return stale == 0;
+  if (stale == 2) return false;
   ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
   if (travel_generation_ != motion_generation) return true;
+  if (stale == 0) {
+    // The tracker was stale and the sensors showed no movement since its sample. The task can have passed while they were read, though, and a
+    // tracker that is fresh by now is the one to ask about the window, as it would have been had the pass come first.
+    if (travel_[(int)channel].quiet(pros::millis(), ez::detail::PathTracker::STALE_MS)) return true;
+    return travel_[(int)channel].in_place(window_ms, stop_speed_[(int)which], pros::millis());
+  }
   double x, y;
   std::uint32_t newest;
   return !travel_[(int)channel].newest_position(x, y, newest) || travel_[(int)channel].in_place(window_ms, stop_speed_[(int)which], newest);
