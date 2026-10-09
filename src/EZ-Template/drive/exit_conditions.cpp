@@ -752,23 +752,12 @@ public:
   // make up for the other having gone back: the robot has to be getting somewhere on one of them over the window itself.
   bool take_mA(const PID& pid, double live_error) {
     // The progress a held exit is judged on is read off what the auto task last wrote, and while the task has not passed it stands still however the
-    // robot is moving: a window of that says nothing about whether the robot is getting anywhere. The exit is held until the task passes again, and a
-    // task that never does is ended by the stuck watch (as starved, interfered), so this cannot hold a wait for ever.
-    int stale = stale_ ? stale_() : 0;
-    if (stale == 0) {
-      stale_run_ = false;
-    } else {
-      // Held while the task has not passed. A stall as long as the window leaves nothing of it that is the robot's (and the robot has moved): the window
-      // starts again on the first fresh reading. A shorter one does not, or a task that passes every few hundred ms (stale between its passes, with the
-      // robot moving) would restart it on every pass and the exit would never be taken.
-      std::uint32_t now = pros::millis();
-      if (!stale_run_) {
-        stale_run_ = true;
-        stale_since_ = now;
-      }
-      if (stale == 2 && (std::int32_t)(now - stale_since_) >= std::max(pid.exit.mA_timeout, (int)ez::detail::PathTracker::MIN_WINDOW_MS)) mA_held_ = false;
-      return false;
-    }
+    // robot is moving: nothing is judged then, and the exit is held until the task passes again. A window that runs through such a stretch is judged on
+    // the first fresh reading after it, from the error it started at to the lowest the fresh readings reached, which is the robot's own progress. It is
+    // never started again because the task was away, however long: a task that passes every few hundred ms is away between all its passes, and a window
+    // that started again each time would never complete. A task that never passes again is ended by the stuck watch (as starved, interfered), so this
+    // cannot hold a wait for ever.
+    if ((stale_ ? stale_() : 0) != 0) return false;
     if (stopped_for(pid.exit.mA_timeout)) {
       mA_held_ = false;
       return true;
@@ -812,7 +801,7 @@ public:
   }
   // Whether the progress an mA exit is held on is stale, see take_mA(): 0 if the auto task is passing or the robot has not moved since it last did,
   // 1 if it has not passed for a few passes (the exit is held until it does), 2 if it has been quiet for long enough for the sensors to show that the robot
-  // has moved since (held, and the window starts again). Without one the task is taken to be running.
+  // has moved since (held the same way). Without one the task is taken to be running.
   ExitGate& stale_set(std::function<int()> stale) {
     stale_ = std::move(stale);
     return *this;
@@ -855,8 +844,6 @@ private:
   StopSpeedFn heading_floor_;
   std::function<double()> heading_error_;
   std::function<int()> stale_;
-  bool stale_run_ = false;  // stale_() has answered 1 or 2 on every call since stale_since_
-  std::uint32_t stale_since_ = 0;
 };
 
 // A window exit a side or axis latched earlier (SMALL_EXIT / BIG_EXIT) is only still true while two things hold: its live error is still inside the
