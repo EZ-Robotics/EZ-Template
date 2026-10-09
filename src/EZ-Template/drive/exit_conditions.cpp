@@ -1309,10 +1309,16 @@ bool Drive::travel_in_place(Travel channel, int window_ms, StopSpeed which) {
   if (travel_generation_ != motion_generation) return true;
   // A tracker whose newest sample is stale has nothing to say about the last window, which is not "went nowhere": a robot that has been carried
   // through its target while the task missed a few passes has gone somewhere. The sensors can say, read live: if the robot has not moved since that
-  // sample the window is as it was.
+  // sample the window is as it was. A sample too young for them to tell (stale_state() 1) is asked about as of its own time instead: a task that
+  // passes every 50 to 100 ms leaves its newest sample that old on a fair share of polls, and a robot that was held still up to it is not one that
+  // has gone somewhere (the verdict taken back on such a poll starts the watch over), where one that was being carried up to it is.
   if (travel_[(int)channel].quiet(pros::millis(), ez::detail::PathTracker::STALE_MS)) {
     bool angular = channel == Travel::Heading || channel == Travel::OdomHeading;
-    return stale_state(!angular, angular) == 0;
+    int stale = stale_state(!angular, angular);
+    if (stale != 1) return stale == 0;
+    double x, y;
+    std::uint32_t newest;
+    return !travel_[(int)channel].newest_position(x, y, newest) || travel_[(int)channel].in_place(window_ms, stop_speed_[(int)which], newest);
   }
   return travel_[(int)channel].in_place(window_ms, stop_speed_[(int)which], pros::millis());
 }
