@@ -1315,22 +1315,26 @@ bool Drive::travel_stopped(Travel channel, int window_ms, StopSpeed which) {
 }
 
 bool Drive::travel_in_place(Travel channel, int window_ms, StopSpeed which) {
-  ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
-  if (travel_generation_ != motion_generation) return true;
+  bool angular = channel == Travel::Heading || channel == Travel::OdomHeading;
+  {
+    ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+    if (travel_generation_ != motion_generation) return true;
+    if (!travel_[(int)channel].quiet(pros::millis(), ez::detail::PathTracker::STALE_MS))
+      return travel_[(int)channel].in_place(window_ms, stop_speed_[(int)which], pros::millis());
+  }
   // A tracker whose newest sample is stale has nothing to say about the last window, which is not "went nowhere": a robot that has been carried
   // through its target while the task missed a few passes has gone somewhere. The sensors can say, read live: if the robot has not moved since that
-  // sample the window is as it was. A sample too young for them to tell (stale_state() 1) is asked about as of its own time instead: a task that
-  // passes every 50 to 100 ms leaves its newest sample that old on a fair share of polls, and a robot that was held still up to it is not one that
-  // has gone somewhere (the verdict taken back on such a poll starts the watch over), where one that was being carried up to it is.
-  if (travel_[(int)channel].quiet(pros::millis(), ez::detail::PathTracker::STALE_MS)) {
-    bool angular = channel == Travel::Heading || channel == Travel::OdomHeading;
-    int stale = stale_state(!angular, angular);
-    if (stale != 1) return stale == 0;
-    double x, y;
-    std::uint32_t newest;
-    return !travel_[(int)channel].newest_position(x, y, newest) || travel_[(int)channel].in_place(window_ms, stop_speed_[(int)which], newest);
-  }
-  return travel_[(int)channel].in_place(window_ms, stop_speed_[(int)which], pros::millis());
+  // sample the window is as it was. They are read with no lock held (stale_state() takes it only to read the tracker): a sensor read can block on its port.
+  // A sample too young for them to tell (stale_state() 1) is asked about as of its own time instead: a task that passes every 50 to 100 ms leaves its
+  // newest sample that old on a fair share of polls, and a robot that was held still up to it is not one that has gone somewhere (the verdict taken back on
+  // such a poll starts the watch over), where one that was being carried up to it is.
+  int stale = stale_state(!angular, angular);
+  if (stale != 1) return stale == 0;
+  ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+  if (travel_generation_ != motion_generation) return true;
+  double x, y;
+  std::uint32_t newest;
+  return !travel_[(int)channel].newest_position(x, y, newest) || travel_[(int)channel].in_place(window_ms, stop_speed_[(int)which], newest);
 }
 
 // An odom motion is stopped when its xy and its heading both are, each against its own stop speed
@@ -1408,28 +1412,44 @@ static constexpr double LIVE_STILL_FRACTION = 0.5;
 static constexpr int LIVE_STILL_MIN_MS = 100;
 
 int Drive::stale_state(bool sides, bool heading) {
-  ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
-  if (travel_generation_ != motion_generation) return 0;
-  std::uint32_t now = pros::millis();
-  double hx, hy;
-  std::uint32_t newest;
-  if (!travel_[(int)Travel::Heading].newest_position(hx, hy, newest)) return 0;
-  int age = (int)(std::int32_t)(now - newest);
-  if (age <= ez::detail::PathTracker::STALE_MS) return 0;
-  if (age < LIVE_STILL_MIN_MS) return 1;
-  // The slowest the robot may be moving and still count as still, for whichever motion this is
-  double distance_floor = std::fmin(stop_speed_[(int)StopSpeed::Drive], stop_speed_[(int)StopSpeed::OdomXY]);
-  double angle_floor = std::fmin(std::fmin(stop_speed_[(int)StopSpeed::Turn], stop_speed_[(int)StopSpeed::Swing]), stop_speed_[(int)StopSpeed::OdomAngle]);
+  // The tracker's side is read under the lock; the sensors are read after it is released, since a sensor read can block on its port.
+  struct Ref {
+    bool have = false;
+    double x = 0, limit_band = 0;
+  } ref[3];
+  double distance_floor, angle_floor;
+  int age;
+  {
+    ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+    if (travel_generation_ != motion_generation) return 0;
+    std::uint32_t now = pros::millis();
+    double hx, hy;
+    std::uint32_t newest;
+    if (!travel_[(int)Travel::Heading].newest_position(hx, hy, newest)) return 0;
+    age = (int)(std::int32_t)(now - newest);
+    if (age <= ez::detail::PathTracker::STALE_MS) return 0;
+    if (age < LIVE_STILL_MIN_MS) return 1;
+    // The slowest the robot may be moving and still count as still, for whichever motion this is
+    distance_floor = std::fmin(stop_speed_[(int)StopSpeed::Drive], stop_speed_[(int)StopSpeed::OdomXY]);
+    angle_floor = std::fmin(std::fmin(stop_speed_[(int)StopSpeed::Turn], stop_speed_[(int)StopSpeed::Swing]), stop_speed_[(int)StopSpeed::OdomAngle]);
+    const Travel ch[3] = {Travel::Left, Travel::Right, Travel::Heading};
+    for (int i = 0; i < 3; i++) {
+      double x, y;
+      std::uint32_t t;
+      if (travel_[(int)ch[i]].newest_position(x, y, t)) {
+        ref[i].have = true;
+        ref[i].x = x;
+        ref[i].limit_band = LIVE_STILL_BANDS * travel_[(int)ch[i]].band();
+      }
+    }
+  }
   double seconds = age / 1000.0;
-  auto moved = [&](Travel channel, double live, double floor) {
-    double x, y;
-    std::uint32_t t;
-    if (!travel_[(int)channel].newest_position(x, y, t)) return false;
-    return std::fabs(live - x) > LIVE_STILL_BANDS * travel_[(int)channel].band() + LIVE_STILL_FRACTION * floor * seconds;
+  auto moved = [&](int i, double live, double floor) {
+    return ref[i].have && std::fabs(live - ref[i].x) > ref[i].limit_band + LIVE_STILL_FRACTION * floor * seconds;
   };
   bool any = false;
-  if (sides) any = moved(Travel::Left, drive_sensor_left(), distance_floor) || moved(Travel::Right, drive_sensor_right(), distance_floor);
-  if (heading) any = moved(Travel::Heading, drive_angle_get(), angle_floor) || any;
+  if (sides) any = moved(0, drive_sensor_left(), distance_floor) || moved(1, drive_sensor_right(), distance_floor);
+  if (heading) any = moved(2, drive_angle_get(), angle_floor) || any;
   return any ? 2 : 0;
 }
 
