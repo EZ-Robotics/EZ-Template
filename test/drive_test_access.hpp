@@ -69,6 +69,10 @@ struct DriveTestAccess {
   // Whether an odom motion's xy and heading are both stopped over the window, each against its own stop speed
   static bool odom_travel_stopped(Drive& d, int window_ms) { return d.odom_travel_stopped(window_ms); }
   static bool travel_tracked(Drive& d, int channel) { return d.travel_tracked(static_cast<Drive::Travel>(channel)); }
+  // Whether the newest sample of the stop tracker is stale, and what the sensors say of the robot since (0 nothing to say, 1 too young, 2 moved)
+  static int stale_state(Drive& d, bool sides, bool heading) { return d.stale_state(sides, heading); }
+  // Whether an odom motion's xy and heading both went nowhere over the window, asking the sensors when the tracker is stale
+  static bool odom_travel_in_place(Drive& d, int window_ms) { return d.odom_travel_in_place(window_ms); }
   static std::uint32_t& travel_generation(Drive& d) { return d.travel_generation_; }
 
   // xyPID's sensor and the geometry behind it (ptp_task()), for the odom origin tests
