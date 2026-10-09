@@ -1952,8 +1952,12 @@ void Drive::pid_wait() {
     auto target_distance = [&]() { return odom_point_distance(); };
     // How far the robot is from the last point of the motion, the one pushed past the final point by a chain included: what the robot is settled on. The
     // point it is driving to now is an earlier one while the motion is on its way, and a robot can be inside the big error of that and far from the end.
+    // Along a path it is the path left to drive, not the straight line to the last point: a path that loops back onto its start or hooks back to within
+    // a few inches of it ends beside a robot that has not left.
     auto last_point_distance = [&]() {
       ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+      if (mode == PURE_PURSUIT && pp_index >= 0 && pp_index < (int)pp_movements.size())
+        return path_left(pp_movements, path_length_after(pp_movements), pp_index, odom_pose_get());
       pose t = mode == PURE_PURSUIT && !pp_movements.empty() ? pp_movements.back().target : odom_target;
       return util::distance_to_point(t, odom_pose_get());
     };
