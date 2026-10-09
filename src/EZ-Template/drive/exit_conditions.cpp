@@ -1930,6 +1930,13 @@ void Drive::pid_wait() {
     exit_output a_exit = RUNNING;
 
     auto target_distance = [&]() { return odom_point_distance(); };
+    // How far the robot is from the last point of the motion, the one pushed past the final point by a chain included: what the robot is settled on. The
+    // point it is driving to now is an earlier one while the motion is on its way, and a robot can be inside the big error of that and far from the end.
+    auto last_point_distance = [&]() {
+      ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+      pose t = mode == PURE_PURSUIT && !pp_movements.empty() ? pp_movements.back().target : odom_target;
+      return util::distance_to_point(t, odom_pose_get());
+    };
     // How far the robot is from the motion's final target, which is what a window exit on xy has to be on target for. The target of the motion this
     // wait was started for, not whatever motion is current by now: a wait that was retargeted out from under it ends on the guard below.
     auto final_target_distance = [&]() { return util::distance_to_point(entry_odom_target_start, odom_pose_get()); };
@@ -2118,9 +2125,9 @@ void Drive::pid_wait() {
           } else {
             // Stopped inside both big error windows is where a big exit would have left it: that's settled, not stuck.
             // (A robot hovering across the small error window can keep both exit timers from ever finishing.)
-            bool settled =
-                stuck_settled(target_distance() < settle_error_distance(xyPID) && std::fabs(current_a_odomPID.error) < settle_error_angle(current_a_odomPID),
-                              true, watch.starved());
+            bool settled = stuck_settled(
+                last_point_distance() < settle_error_distance(xyPID) && std::fabs(current_a_odomPID.error) < settle_error_angle(current_a_odomPID), true,
+                watch.starved());
             stalled = !settled;
             settled_via_stuck = settled;
             if (print_toggle)
@@ -2175,7 +2182,7 @@ void Drive::pid_wait() {
     bool velocity_exit = xy_exit == VELOCITY_EXIT || a_exit == VELOCITY_EXIT;
     bool stuck_exit = stalled && !ended_on_mA;
     if (!stuck_exit && ma_exit && !velocity_exit &&
-        ma_exit_settled(target_distance() < settle_error_distance(xyPID) && std::fabs(current_a_odomPID.error) < settle_error_angle(current_a_odomPID),
+        ma_exit_settled(last_point_distance() < settle_error_distance(xyPID) && std::fabs(current_a_odomPID.error) < settle_error_angle(current_a_odomPID),
                         task_ran_since(entry_task_passes))) {
       if (print_toggle) std::cout << "  XY: mA exit inside the big error windows, counted as settled\n";
     } else if (stalled || ma_exit || velocity_exit) {
