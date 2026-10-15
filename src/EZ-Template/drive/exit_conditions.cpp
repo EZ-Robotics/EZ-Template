@@ -216,7 +216,8 @@ void Drive::pid_wait() {
           return;
         }
 
-        if ((xy_exit == mA_EXIT || xy_exit == VELOCITY_EXIT) && (a_exit == mA_EXIT || a_exit == VELOCITY_EXIT)) {
+        // The heading has already settled when the xy exit gets to mA or velocity (driving into a goal or a wall), so xy ending is enough
+        if ((xy_exit == mA_EXIT || xy_exit == VELOCITY_EXIT) && a_exit != RUNNING) {
           if (print_toggle)
             std::cout << "  XY: " << exit_to_string(xy_exit) << " Exited early, error: " << xyPID.error << ".   Angle: " << exit_to_string(a_exit)
                       << " Exited early, error: " << current_a_odomPID.error << ".\n";
