@@ -3690,6 +3690,61 @@ public:
                                     int p_mA_timeout, bool use_imu = false);
 
   /**
+   * Sets how slow the robot has to be moving to count as stopped when it drives, in inches per second.  This is a real speed, not the 0 to 127
+   * motor speed.  The default is 1.5.
+   *
+   * The robot's speed is how far it moved over the last 100 ms.  The small and big exits only count time while the robot is under this speed (the
+   * timer pauses while it is moving, it does not start over), and the velocity exit waits for it.  A higher speed ends motions sooner, with the
+   * robot still moving a little.  A lower one waits for the robot to be stiller.  A speed of 0 or less, or one that isn't a number, is refused with
+   * a printed warning and the old speed is kept.
+   *
+   * Applies to drives and odom moves.  The default is a placeholder until it is tuned from a robot log.
+   *
+   * \param in_per_s
+   *        inches per second
+   */
+  void pid_distance_exit_stop_speed_set(double in_per_s);
+
+  /**
+   * Same as pid_distance_exit_stop_speed_set(double), with a speed that has units: `2_in / 1_s`.
+   *
+   * \param speed
+   *        speed with units
+   */
+  void pid_distance_exit_stop_speed_set(ez::QSpeed speed);
+
+  /**
+   * Returns how slow a drive has to be moving to count as stopped, in inches per second.
+   */
+  double pid_distance_exit_stop_speed_get();
+
+  /**
+   * Sets how slow the robot has to be turning to count as stopped when it turns or swings, in degrees per second.  This is a real speed, not the
+   * 0 to 127 motor speed.  The default is 4.
+   *
+   * Works the same as pid_distance_exit_stop_speed_set(): measured over the last 100 ms, the small and big exits pause their timers while the
+   * robot is above it, and the velocity exit waits for it.  Applies to turns, swings, and the heading of odom moves.  The default is a
+   * placeholder until it is tuned from a robot log.
+   *
+   * \param deg_per_s
+   *        degrees per second
+   */
+  void pid_angle_exit_stop_speed_set(double deg_per_s);
+
+  /**
+   * Same as pid_angle_exit_stop_speed_set(double), with a speed that has units: `6_deg / 1_s`.
+   *
+   * \param speed
+   *        speed with units
+   */
+  void pid_angle_exit_stop_speed_set(ez::QAngularSpeed speed);
+
+  /**
+   * Returns how slow a turn or swing has to be moving to count as stopped, in degrees per second.
+   */
+  double pid_angle_exit_stop_speed_get();
+
+  /**
    * Returns current TICK_PER_INCH.
    */
   double drive_tick_per_inch();

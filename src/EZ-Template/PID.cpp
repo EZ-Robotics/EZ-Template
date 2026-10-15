@@ -73,6 +73,14 @@ double PID::compute_error(double err, double current) {
 }
 
 double PID::raw_compute() {
+  // Speed over the last SPEED_WINDOW ms, not one tick: a window that ran long because compute() stopped for a while says nothing about the speed
+  std::uint32_t now = pros::millis();
+  if (now - speed_start_ms >= SPEED_WINDOW) {
+    speed = now - speed_start_ms > 2 * SPEED_WINDOW ? 0.0 : std::fabs(cur - speed_start_cur) * 1000.0 / (now - speed_start_ms);
+    speed_start_cur = cur;
+    speed_start_ms = now;
+  }
+
   // calculate derivative on measurement instead of error to avoid "derivative kick"
   // https://www.isa.org/intech-home/2023/june-2023/features/fundamentals-pid-control
   derivative = cur - prev_current;
@@ -134,8 +142,11 @@ bool PID::velocity_sensor_secondary_toggle_get() { return use_second_sensor; }
 void PID::velocity_sensor_secondary_set(double secondary_sensor) { second_sensor = secondary_sensor; }
 double PID::velocity_sensor_secondary_get() { return second_sensor; }
 
-void PID::velocity_sensor_main_exit_set(double zero) { velocity_zero_main = zero; }
-double PID::velocity_sensor_main_exit_get() { return velocity_zero_main; }
+void PID::velocity_sensor_main_exit_set(double zero) { stop_speed_set(zero * 1000.0 / util::DELAY_TIME); }
+double PID::velocity_sensor_main_exit_get() { return stop_speed_get() * util::DELAY_TIME / 1000.0; }
+void PID::stop_speed_set(double units_per_s) { stop_speed = units_per_s; }
+double PID::stop_speed_get() { return stop_speed; }
+double PID::speed_get() { return speed; }
 
 void PID::velocity_sensor_secondary_exit_set(double zero) { velocity_zero_secondary = zero; }
 double PID::velocity_sensor_secondary_exit_get() { return velocity_zero_secondary; }
@@ -165,8 +176,8 @@ exit_output PID::exit_condition_core(int elapsed, bool print) {
   // If the robot gets within the target, make sure it's there for small_timeout amount of time
   if (exit.small_error != 0) {
     if (std::fabs(error) < exit.small_error) {
-      j += elapsed;
-      i = 0;  // While this is running, don't run big thresh
+      if (speed <= stop_speed) j += elapsed;  // the timer pauses while the robot is moving
+      i = 0;                                  // While this is running, don't run big thresh
       if (j > exit.small_exit_time) {
         timers_reset();
         if (print) exit_condition_print(SMALL_EXIT);
@@ -181,7 +192,7 @@ exit_output PID::exit_condition_core(int elapsed, bool print) {
   // a certain amount of time, exit and continue.  This does not run while small_timeout is running
   if (exit.big_error != 0 && exit.big_exit_time != 0) {  // Check if this condition is enabled
     if (std::fabs(error) < exit.big_error) {
-      i += elapsed;
+      if (speed <= stop_speed) i += elapsed;  // the timer pauses while the robot is moving
       if (i > exit.big_exit_time) {
         timers_reset();
         if (print) exit_condition_print(BIG_EXIT);
@@ -197,12 +208,12 @@ exit_output PID::exit_condition_core(int elapsed, bool print) {
   // If it never moves (pinned, stalled) arm anyway after a fallback window so pid_wait can't hang.
   if (exit.velocity_exit_time != 0 && !velocity_armed) {
     arm_timer += elapsed;
-    if (std::fabs(derivative) > velocity_zero_main || arm_timer > VELOCITY_ARM_FALLBACK) velocity_armed = true;
+    if (speed > stop_speed || arm_timer > VELOCITY_ARM_FALLBACK) velocity_armed = true;
   }
 
   // If the motor velocity is 0, the code will timeout and set interfered to true.
   if (exit.velocity_exit_time != 0 && velocity_armed) {  // Check if this condition is enabled
-    if (std::fabs(derivative) <= velocity_zero_main) {
+    if (speed <= stop_speed) {
       k += elapsed;
       if (k > exit.velocity_exit_time) {
         timers_reset();

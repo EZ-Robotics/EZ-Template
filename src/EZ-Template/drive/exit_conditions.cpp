@@ -110,11 +110,33 @@ void Drive::pid_odom_turn_exit_condition_set(ez::QTime p_small_exit_time, ez::QA
   pid_odom_turn_exit_condition_set(set, se, bet, be, vet, mAt, use_imu);
 }
 
+// The speed a robot has to be under to count as stopped, in inches per second for drives and degrees per second for turns and swings.  A speed that
+// can't be a stop speed (0 or less, NaN, infinity) is refused with a warning.
+void Drive::pid_distance_exit_stop_speed_set(double in_per_s) {
+  if (!(in_per_s > 0.0) || !std::isfinite(in_per_s)) {
+    printf("pid_distance_exit_stop_speed_set needs a speed above 0, keeping %.2f in/s\n", pid_distance_exit_stop_speed_get());
+    return;
+  }
+  for (PID* pid : {&leftPID, &rightPID, &xyPID}) pid->stop_speed_set(in_per_s);
+}
+void Drive::pid_distance_exit_stop_speed_set(ez::QSpeed speed) { pid_distance_exit_stop_speed_set(speed.convert(ez::inch / ez::second)); }
+double Drive::pid_distance_exit_stop_speed_get() { return xyPID.stop_speed_get(); }
+
+void Drive::pid_angle_exit_stop_speed_set(double deg_per_s) {
+  if (!(deg_per_s > 0.0) || !std::isfinite(deg_per_s)) {
+    printf("pid_angle_exit_stop_speed_set needs a speed above 0, keeping %.2f deg/s\n", pid_angle_exit_stop_speed_get());
+    return;
+  }
+  for (PID* pid : {&turnPID, &swingPID, &current_a_odomPID}) pid->stop_speed_set(deg_per_s);
+}
+void Drive::pid_angle_exit_stop_speed_set(ez::QAngularSpeed speed) { pid_angle_exit_stop_speed_set(speed.convert(ez::degree / ez::second)); }
+double Drive::pid_angle_exit_stop_speed_get() { return turnPID.stop_speed_get(); }
+
 // xyPID's exit condition, except its velocity exit doesn't count while the robot pivots in place.  A point beside or behind the robot makes turn bias
 // zero translation until the heading is close, and xyPID reads that as stopped.  A pinned robot is stopped in heading too, so that still counts.
 exit_output Drive::xy_exit_condition() {
   exit_output xy_exit = xyPID.exit_condition({left_motors[0], right_motors[0]});
-  bool pivoting = xy_translation_bias_gated && std::fabs(current_a_odomPID.derivative) > current_a_odomPID.velocity_sensor_main_exit_get();
+  bool pivoting = xy_translation_bias_gated && current_a_odomPID.speed_get() > current_a_odomPID.stop_speed_get();
   return xy_exit == VELOCITY_EXIT && pivoting ? RUNNING : xy_exit;
 }
 
@@ -171,8 +193,7 @@ void Drive::pid_wait() {
         xy_exit = xy_exit != RUNNING ? xy_exit : xy_exit_condition();
         a_exit = a_exit != RUNNING ? a_exit : current_a_odomPID.exit_condition({left_motors[0], right_motors[0]});
 
-        bool still = std::fabs(xyPID.derivative) <= xyPID.velocity_sensor_main_exit_get() &&
-                     std::fabs(current_a_odomPID.derivative) <= current_a_odomPID.velocity_sensor_main_exit_get();
+        bool still = xyPID.speed_get() <= xyPID.stop_speed_get() && current_a_odomPID.speed_get() <= current_a_odomPID.stop_speed_get();
         waited += util::DELAY_TIME;
         moved = moved || !still;
         stalled = still && (moved || waited > 1000) ? stalled + util::DELAY_TIME : 0;

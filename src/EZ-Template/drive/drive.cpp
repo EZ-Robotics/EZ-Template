@@ -175,6 +175,10 @@ void Drive::drive_defaults_set() {
   pid_odom_turn_exit_condition_set(90_ms, 3_deg, 250_ms, 7_deg, 500_ms, 750_ms);
   pid_odom_drive_exit_condition_set(90_ms, 1_in, 250_ms, 3_in, 500_ms, 750_ms);
 
+  // How slow the robot has to be to count as stopped.  Placeholders until a robot log sets them
+  pid_distance_exit_stop_speed_set(1.5);
+  pid_angle_exit_stop_speed_set(4.0);
+
   pid_odom_behavior_set(ez::shortest);  // Default odom turning to shortest
 
   // Motion chaining

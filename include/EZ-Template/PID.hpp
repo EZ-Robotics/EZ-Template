@@ -84,7 +84,7 @@ public:
    * \param p_big_error
    *        sets big_error, timer will start when error is within this
    * \param p_velocity_exit_time
-   *        sets velocity_exit_time, timer will start when velocity is 0 after the robot has moved.
+   *        sets velocity_exit_time, timer will start when the sensor is under the stop speed after the robot has moved.
    *        If the robot never moves, it starts after 1 second.
    * \param p_mA_timeout
    *        sets mA_timeout, time the motor can be over its current limit before exiting.  Only checked by the exit_condition overloads that take a motor or
@@ -181,7 +181,8 @@ public:
   bool velocity_sensor_secondary_toggle_get();
 
   /**
-   * Sets the threshold that the main sensor will return 0 velocity within.
+   * Sets the stop speed: how slow the sensor has to be moving to count as stopped, as the distance it moves in one 10 ms tick.  The same
+   * number as stop_speed_set(), 100 times smaller.
    *
    * \param zero
    *        a small double
@@ -189,9 +190,29 @@ public:
   void velocity_sensor_main_exit_set(double zero);
 
   /**
-   * Returns the threshold that the main sensor will return 0 velocity within.
+   * Returns the stop speed as the distance the sensor moves in one 10 ms tick.
    */
   double velocity_sensor_main_exit_get();
+
+  /**
+   * Sets the stop speed: how slow the sensor has to be moving to count as stopped, in sensor units per second.  The small and big exits only
+   * count time while the sensor is under it, and the velocity exit waits for it.  The speed is measured from the sensor over the last 100 ms.
+   * The default is 5.
+   *
+   * \param units_per_s
+   *        sensor units per second
+   */
+  void stop_speed_set(double units_per_s);
+
+  /**
+   * Returns the stop speed, in sensor units per second.
+   */
+  double stop_speed_get();
+
+  /**
+   * Returns how fast the sensor has been moving over the last 100 ms, in sensor units per second.  It updates on every compute()/compute_error().
+   */
+  double speed_get();
 
   /**
    * Sets the threshold that the secondary sensor will read as stopped within.  Despite the name, EZ-Template
@@ -305,7 +326,12 @@ public:
   double derivative = 0.0;
 
 private:
-  double velocity_zero_main = 0.05;
+  double stop_speed = 5.0;  // units per second
+  // The sensor's speed over the last SPEED_WINDOW ms, in units per second, and where that window started
+  double speed = 0.0;
+  double speed_start_cur = 0.0;
+  std::uint32_t speed_start_ms = 0;
+  static constexpr int SPEED_WINDOW = 100;
   double velocity_zero_secondary = 0.075;
   int i = 0, j = 0, k = 0, l = 0, m = 0;
   int arm_timer = 0;
