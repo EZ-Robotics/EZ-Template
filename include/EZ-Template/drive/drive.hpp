@@ -2900,7 +2900,8 @@ public:
   /**
    * Lock the code in a while loop until the robot has settled.
    *
-   * Returns when the motion's small, big, velocity or mA exit fires.  `interfered` is set when the velocity or mA exit ended the motion.
+   * Returns when the motion's small, big, velocity or mA exit fires.  `interfered` is set when the velocity or mA exit ended the motion with the error outside
+   * `big_error`.
    */
   void pid_wait();
 
