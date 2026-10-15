@@ -19,10 +19,10 @@ void exit_times_warn(int velocity_exit_time, int mA_timeout, bool& warned) {
   warned = warned || (velocity_exit_time == 0 && mA_timeout == 0);
 }
 
-// An mA or velocity exit means the robot was interfered with, unless it ended the wait inside big_error and stopped: then the robot got where it
-// was going and stayed there.  A big_error of 0 is off, so nothing is inside it.
+// An mA or velocity exit means the robot was interfered with, unless it ended the wait inside big_error: then the robot got where it was going.
+// A big_error of 0 is off, so nothing is inside it.
 bool exit_interferes(exit_output exit, PID& pid) {
-  bool arrived = std::fabs(pid.error) < pid.exit.big_error && pid.speed_get() <= pid.stop_speed_get();
+  bool arrived = std::fabs(pid.error) < pid.exit.big_error;
   return (exit == mA_EXIT || exit == VELOCITY_EXIT) && !arrived;
 }
 }  // namespace
