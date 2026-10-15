@@ -1,16 +1,17 @@
-// pid_wait()'s DRIVE branch already snapshots leftPID/rightPID's target at wait start and returns
-// interfered=true the instant it notices a second task retargeting them mid-wait (a concurrent
-// pid_drive_set() from another task) instead of silently finishing on whatever motion happens to be
-// live when its exit condition next fires. Every sibling wait shares the exact same hazard -- none of
-// them lock leftPID/rightPID/turnPID/swingPID/xyPID across their own pros::delay() -- but only the
-// DRIVE branch had the guard. These tests script a real second pid_turn_set()/pid_swing_set()/
-// pid_drive_set()/pid_odom_*_set() call partway through an otherwise healthy, steadily-closing wait
-// (the same on_delay-hook idiom test_jc1_non_odom_stuck.cpp uses) and check the wait ends early with
-// interfered=true instead of continuing to poll -- and eventually cleanly succeed on -- the new motion.
+// Every wait follows a new motion set from another task mid-wait: a second pid_turn_set()/pid_swing_set()/pid_drive_set()/pid_odom_*_set()
+// starts the wait over on the new motion, and the wait returns when that motion's own exits fire, with the verdict it earns.  These tests
+// script a real second setter call partway through an otherwise healthy, steadily-closing wait (the on_delay-hook idiom) and check the
+// wait doesn't end at the retarget, doesn't hang, and returns on the new motion's exit.
+//
+// The scripts write each PID's error directly, so speed reads 0 (stopped) and the small exit counts as soon as the error is inside
+// small_error.  They keep closing the same error ramp after the retarget, so for most cases here the end pass is the same whether the wait
+// restarted or not: those cases pin that the wait carries on through the retarget and returns on the small exit, clean.  The pure pursuit
+// case and the frozen turn case do tell the two apart, and say how.
 #include <functional>
 
 #include "doctest.h"
 #include "drive_test_access.hpp"
+#include "stdout_capture.hpp"
 
 using namespace ez;
 
@@ -56,31 +57,35 @@ Outcome run(Drive& chassis, void (*script)(Drive&, int), int max_passes, std::fu
   return o;
 }
 
-// The pass a concurrent retarget lands on -- early enough that a healthy, steadily-closing error
-// (chosen so it takes 100+ passes to reach 0 on its own) is nowhere near exiting yet.
+// The pass a concurrent retarget lands on: early enough that the healthy, steadily-closing error (100+ passes to reach 0) is nowhere
+// near exiting yet.
 constexpr int RETARGET_AT = 10;
-// How many extra passes the guard is allowed to notice the retarget and return -- generous relative
-// to a single pros::delay() cycle, tight relative to the 100+ passes a silent, uninterrupted finish
-// would take.
-constexpr int GUARD_SLACK = 5;
+// Polls for a small exit once the error is inside small_error: 90 ms, a strict > at 10 ms per poll.
+constexpr int SMALL_POLLS = 10;
 
 // ---- TURN / TURN_TO_POINT (pid_wait(), shared branch) ----
+// Inside the turn's small_error (3) from pass 115 on: 60 - 0.5 * 115 = 2.5.
 void turn_healthy_then_retargeted(Drive& c, int n) {
   double e = std::fmax(0.0, 60.0 - 0.5 * n);
   c.turnPID.error = e;
   c.turnPID.derivative = e > 0.0 ? -0.5 : 0.0;
   if (n == RETARGET_AT) c.pid_turn_set(150, 100);  // a real second turn, different target, mid-wait
 }
+constexpr int TURN_IN_SMALL_AT = 115;
 
 // ---- SWING (pid_wait()) ----
+// Inside the swing's small_error (3) from pass 106 on: 45 - 0.4 * 106 = 2.6.
 void swing_healthy_then_retargeted(Drive& c, int n) {
   double e = std::fmax(0.0, 45.0 - 0.4 * n);
   c.swingPID.error = e;
   c.swingPID.derivative = e > 0.0 ? -0.4 : 0.0;
   if (n == RETARGET_AT) c.pid_swing_set(ez::RIGHT_SWING, 120, 100);
 }
+constexpr int SWING_IN_SMALL_AT = 106;
 
 // ---- wait_until_drive(), DRIVE mode ----
+// Inside the drive's small_error (1) from pass 127 on: 20 - 0.15 * 127 = 0.95.  The drive sensors never move, so the 12 in checkpoint is
+// never passed and the wait ends on the drive's exit (its failsafe).
 void drive_healthy_then_retargeted(Drive& c, int n) {
   double e = std::fmax(0.0, 20.0 - 0.15 * n);
   c.leftPID.error = e;
@@ -89,6 +94,7 @@ void drive_healthy_then_retargeted(Drive& c, int n) {
   c.rightPID.derivative = e > 0.0 ? -0.15 : 0.0;
   if (n == RETARGET_AT) c.pid_drive_set(200, 100);  // a real second drive, different target, mid-wait
 }
+constexpr int DRIVE_IN_SMALL_AT = 127;
 
 // ---- wait_until_drive(), odom (POINT_TO_POINT) mode ----
 void odom_wud_healthy_then_retargeted(Drive& c, int n) {
@@ -114,7 +120,7 @@ void odom_ptp_healthy_then_retargeted(Drive& c, int n) {
 
 // ---- pid_wait(), odom PURE_PURSUIT branch (the pre-last-point loop) ----
 void odom_pp_healthy_then_retargeted(Drive& c, int n) {
-  double e = 7.3 - 0.15 * (n % 3);  // same shape as test_pp_wait_stuck.cpp's cruising(), never exits on its own
+  double e = 7.3 - 0.15 * (n % 3);  // never inside small_error or big_error, never exits on its own
   c.xyPID.error = e;
   c.xyPID.derivative = 0.3;
   c.current_a_odomPID.error = 0.0;
@@ -126,7 +132,7 @@ void odom_pp_healthy_then_retargeted(Drive& c, int n) {
   }
 }
 
-// ---- TURN / TURN_TO_POINT (wait_until_turn_swing_internal(), via pid_wait_until(angle)) ----
+// ---- TURN / TURN_TO_POINT (wait_until_turn_swing(), via pid_wait_until(angle)) ----
 void turn_wait_until_healthy_then_retargeted(Drive& c, int n) {
   double e = std::fmax(0.0, 60.0 - 0.5 * n);
   c.turnPID.error = e;
@@ -134,7 +140,7 @@ void turn_wait_until_healthy_then_retargeted(Drive& c, int n) {
   if (n == RETARGET_AT) c.pid_turn_set(150, 100);  // a real second turn, different target, mid-wait
 }
 
-// ---- SWING (wait_until_turn_swing_internal(), via pid_wait_until(angle)) ----
+// ---- SWING (wait_until_turn_swing(), via pid_wait_until(angle)) ----
 void swing_wait_until_healthy_then_retargeted(Drive& c, int n) {
   double e = std::fmax(0.0, 45.0 - 0.4 * n);
   c.swingPID.error = e;
@@ -152,10 +158,8 @@ void point_wait_healthy_then_retargeted(Drive& c, int n) {
   if (n == RETARGET_AT) c.pid_odom_ptp_set({{0.0, 90.0, ANGLE_NOT_SET}, fwd, 100});  // a real second odom motion, mid-wait
 }
 
-// ---- Fix #2 regression: a concurrent retarget from a DIFFERENT mode doesn't touch this wait's own
-// PID target at all, so a target-only guard misses it entirely -- turnPID.error freezes at whatever
-// it was, and if that frozen value happens to land inside small_error, the wait would eventually
-// report a clean SMALL_EXIT (interfered=false) for a motion nothing is running anymore.
+// ---- A concurrent setter from a DIFFERENT mode: turnPID's error freezes where it was (inside small_error), and the wait moves onto
+// the swing.
 void turn_frozen_in_tolerance_then_mode_changed(Drive& c, int n) {
   if (n < RETARGET_AT) {
     c.turnPID.error = 60.0 - 0.5 * n;
@@ -169,37 +173,41 @@ void turn_frozen_in_tolerance_then_mode_changed(Drive& c, int n) {
 }
 }  // namespace
 
-TEST_CASE("pid_wait() TURN: a concurrent pid_turn_set() mid-wait ends the wait instead of finishing on the new target") {
+// Each expected end pass is the first pass inside small_error plus the rest of the small exit's polls.  pid_wait(), wait_until_drive()
+// and wait_until_turn_swing() take one more delay after the poll that latches the exit; pid_wait_until_point() and wait_until_drive()'s
+// odom xy check return from that poll.
+
+TEST_CASE("pid_wait() TURN: a concurrent pid_turn_set() mid-wait is followed, and the wait returns on the new turn's exit") {
   Drive chassis = make_chassis();
   chassis.pid_print_toggle(false);
   chassis.pid_turn_set(90, 100);
   Outcome o = run(chassis, turn_healthy_then_retargeted, 300, [&] { chassis.pid_wait(); });
   CHECK(o.returned);
-  CHECK(o.interfered);
-  CHECK(o.passes <= RETARGET_AT + GUARD_SLACK);
+  CHECK_FALSE(o.interfered);
+  CHECK(o.passes == TURN_IN_SMALL_AT + SMALL_POLLS - 1 + 1);
 }
 
-TEST_CASE("pid_wait() SWING: a concurrent pid_swing_set() mid-wait ends the wait instead of finishing on the new target") {
+TEST_CASE("pid_wait() SWING: a concurrent pid_swing_set() mid-wait is followed, and the wait returns on the new swing's exit") {
   Drive chassis = make_chassis();
   chassis.pid_print_toggle(false);
   chassis.pid_swing_set(ez::LEFT_SWING, 45, 100);
   Outcome o = run(chassis, swing_healthy_then_retargeted, 300, [&] { chassis.pid_wait(); });
   CHECK(o.returned);
-  CHECK(o.interfered);
-  CHECK(o.passes <= RETARGET_AT + GUARD_SLACK);
+  CHECK_FALSE(o.interfered);
+  CHECK(o.passes == SWING_IN_SMALL_AT + SMALL_POLLS - 1 + 1);
 }
 
-TEST_CASE("wait_until_drive() DRIVE: a concurrent pid_drive_set() mid-wait ends the wait instead of finishing on the new target") {
+TEST_CASE("wait_until_drive() DRIVE: a concurrent pid_drive_set() mid-wait is followed, and the wait returns on the new drive's exit") {
   Drive chassis = make_chassis();
   chassis.pid_print_toggle(false);
   chassis.pid_drive_set(24, 100);
   Outcome o = run(chassis, drive_healthy_then_retargeted, 300, [&] { chassis.pid_wait_until(12.0); });
   CHECK(o.returned);
-  CHECK(o.interfered);
-  CHECK(o.passes <= RETARGET_AT + GUARD_SLACK);
+  CHECK_FALSE(o.interfered);
+  CHECK(o.passes == DRIVE_IN_SMALL_AT + SMALL_POLLS - 1 + 1);
 }
 
-TEST_CASE("wait_until_drive() odom: a concurrent pid_odom_ptp_set() mid-wait ends the wait instead of finishing on the new target") {
+TEST_CASE("wait_until_drive() odom: a concurrent pid_odom_ptp_set() mid-wait is followed, and the wait returns on the new motion's xy exit") {
   Drive chassis = make_chassis();
   DriveTestAccess::imu_calibration_complete(chassis) = true;
   chassis.pid_print_toggle(false);
@@ -207,11 +215,11 @@ TEST_CASE("wait_until_drive() odom: a concurrent pid_odom_ptp_set() mid-wait end
   chassis.pid_odom_ptp_set({{0.0, 24.0, ANGLE_NOT_SET}, fwd, 100});
   Outcome o = run(chassis, odom_wud_healthy_then_retargeted, 300, [&] { chassis.pid_wait_until(12.0); });
   CHECK(o.returned);
-  CHECK(o.interfered);
-  CHECK(o.passes <= RETARGET_AT + GUARD_SLACK);
+  CHECK_FALSE(o.interfered);
+  CHECK(o.passes == DRIVE_IN_SMALL_AT + SMALL_POLLS - 1);
 }
 
-TEST_CASE("pid_wait() odom POINT_TO_POINT: a concurrent pid_odom_ptp_set() mid-wait ends the wait instead of finishing on the new target") {
+TEST_CASE("pid_wait() odom POINT_TO_POINT: a concurrent pid_odom_ptp_set() mid-wait is followed, and the wait returns on the new motion's exits") {
   Drive chassis = make_chassis();
   DriveTestAccess::imu_calibration_complete(chassis) = true;
   chassis.pid_print_toggle(false);
@@ -220,11 +228,11 @@ TEST_CASE("pid_wait() odom POINT_TO_POINT: a concurrent pid_odom_ptp_set() mid-w
   chassis.pid_odom_ptp_set({{0.0, 24.0, ANGLE_NOT_SET}, fwd, 100});
   Outcome o = run(chassis, odom_ptp_healthy_then_retargeted, 300, [&] { chassis.pid_wait(); });
   CHECK(o.returned);
-  CHECK(o.interfered);
-  CHECK(o.passes <= RETARGET_AT + GUARD_SLACK);
+  CHECK_FALSE(o.interfered);
+  CHECK(o.passes == DRIVE_IN_SMALL_AT + SMALL_POLLS - 1 + 1);
 }
 
-TEST_CASE("pid_wait() odom PURE_PURSUIT: a concurrent pid_odom_pp_set() mid-wait (before the last point) ends the wait instead of continuing on the new path") {
+TEST_CASE("pid_wait() odom PURE_PURSUIT: a concurrent pid_odom_pp_set() mid-wait (before the last point) is followed onto the new path") {
   Drive chassis = make_chassis();
   DriveTestAccess::imu_calibration_complete(chassis) = true;
   chassis.pid_print_toggle(false);
@@ -235,89 +243,78 @@ TEST_CASE("pid_wait() odom PURE_PURSUIT: a concurrent pid_odom_pp_set() mid-wait
   chassis.pid_odom_pp_set(path);
   Outcome o = run(chassis, odom_pp_healthy_then_retargeted, 300, [&] { chassis.pid_wait(); });
   CHECK(o.returned);
+  // Nothing advances pp_index, so the new path is pinned before its last point too and ends on the mid-path stall check: speed reads 0,
+  // the check counts after 1000 ms with no movement and ends the wait once it passes the 500 ms velocity exit time, 151 polls.  It starts
+  // over with the wait on the new path, whose first poll comes after the restart's leading delay on pass RETARGET_AT + 1.  Without the
+  // restart it would have ended on pass 151.
   CHECK(o.interfered);
-  CHECK(o.passes <= RETARGET_AT + GUARD_SLACK);
+  CHECK(o.passes == RETARGET_AT + 151);
 }
 
-// ---- wait_until_turn_swing_internal() had ZERO guard prior to this fix -- unlike every other wait,
-// including its own sibling pid_wait() TURN/SWING branches above. ----
-TEST_CASE("wait_until_turn_swing_internal() TURN: a concurrent pid_turn_set() mid-wait ends the wait instead of finishing on the new target") {
+TEST_CASE("wait_until_turn_swing() TURN: a concurrent pid_turn_set() mid-wait is followed, and the wait returns on the new turn's exit") {
   Drive chassis = make_chassis();
   chassis.pid_print_toggle(false);
   chassis.pid_turn_set(90, 100);
   Outcome o = run(chassis, turn_wait_until_healthy_then_retargeted, 300, [&] { chassis.pid_wait_until(45.0); });
   CHECK(o.returned);
-  CHECK(o.interfered);
-  CHECK(o.passes <= RETARGET_AT + GUARD_SLACK);
+  CHECK_FALSE(o.interfered);
+  // The IMU never moves, so the 45 degree checkpoint is never passed and the wait ends on the turn's exit (its failsafe)
+  CHECK(o.passes == TURN_IN_SMALL_AT + SMALL_POLLS - 1 + 1);
 }
 
-TEST_CASE("wait_until_turn_swing_internal() SWING: a concurrent pid_swing_set() mid-wait ends the wait instead of finishing on the new target") {
+TEST_CASE("wait_until_turn_swing() SWING: a concurrent pid_swing_set() mid-wait is followed, and the wait returns on the new swing's exit") {
   Drive chassis = make_chassis();
   chassis.pid_print_toggle(false);
   chassis.pid_swing_set(ez::LEFT_SWING, 60, 100);
   Outcome o = run(chassis, swing_wait_until_healthy_then_retargeted, 300, [&] { chassis.pid_wait_until(30.0); });
   CHECK(o.returned);
-  CHECK(o.interfered);
-  CHECK(o.passes <= RETARGET_AT + GUARD_SLACK);
+  CHECK_FALSE(o.interfered);
+  CHECK(o.passes == SWING_IN_SMALL_AT + SMALL_POLLS - 1 + 1);
 }
 
-// ---- Round-4 regression: wait_until_turn_swing_internal() now runs one pros::delay() (to seed
-// SingleStuckWatch from a real first error instead of a leftover/zero one -- see that delay's own
-// comment) BEFORE mode_snapshot/turn_target/swing_target are captured -- this function used to take
-// its snapshot immediately, with no delay ahead of it at all. A retarget landing in this new first
-// delay (pass 1, not the RETARGET_AT=10 the tests above use) would have been captured as this call's
-// own baseline instead of being noticed as a retarget, the same "snapshot after the first settle
-// delay" shape pid_wait() DRIVE, wait_until_drive(), and pid_wait_until_point() also had -- the first
-// two are now fixed for it (see test_retarget_caught_before_first_settle_delay.cpp), and
-// pid_wait_until_point() has since been fixed too (see
-// test_wait_until_point_retarget_before_first_delay.cpp). pid_wait()'s own odom/TURN/SWING branches
-// still take their target snapshot after their shared leading delay, so a same-mode retarget there
-// is still unfixed.
+// ---- A retarget landing in the wait's first delay.  wait_until_turn_swing() takes no delay before its first poll, so pass 1 is the
+// delay after that poll, the earliest a second task can land. ----
 constexpr int FIRST_DELAY_RETARGET_AT = 1;
 
 void turn_wait_until_retargeted_in_first_delay(Drive& c, int n) {
   double e = std::fmax(0.0, 60.0 - 0.5 * n);
   c.turnPID.error = e;
   c.turnPID.derivative = e > 0.0 ? -0.5 : 0.0;
-  if (n == FIRST_DELAY_RETARGET_AT) c.pid_turn_set(150, 100);  // lands in the delay before the snapshot
+  if (n == FIRST_DELAY_RETARGET_AT) c.pid_turn_set(150, 100);
 }
 
 void swing_wait_until_retargeted_in_first_delay(Drive& c, int n) {
   double e = std::fmax(0.0, 45.0 - 0.4 * n);
   c.swingPID.error = e;
   c.swingPID.derivative = e > 0.0 ? -0.4 : 0.0;
-  if (n == FIRST_DELAY_RETARGET_AT) c.pid_swing_set(ez::RIGHT_SWING, 120, 100);  // lands in the delay before the snapshot
+  if (n == FIRST_DELAY_RETARGET_AT) c.pid_swing_set(ez::RIGHT_SWING, 120, 100);
 }
 
-// Control: TURN_TO_POINT recomputes its own aim point every pass without ever touching turnPID's
-// stored target (see the matching comment on pid_wait()'s TURN/TURN_TO_POINT branch above), so
-// moving the snapshot earlier must not make an ordinary, un-retargeted turn-to-point wait
-// false-fire interfered just because nothing ever touched turnPID.target_get() to begin with.
+// Control: TURN_TO_POINT works out its aim point every pass without touching turnPID's stored target, so an ordinary, un-retargeted
+// turn-to-point wait must not be read as retargeted.
 void turn_to_point_never_retargeted(Drive&, int) {}
 
-TEST_CASE(
-    "wait_until_turn_swing_internal() TURN: a concurrent pid_turn_set() landing in the function's own first settle delay ends the wait instead of finishing on the new target") {
+TEST_CASE("wait_until_turn_swing() TURN: a concurrent pid_turn_set() landing in the wait's first delay is followed onto the new turn") {
   Drive chassis = make_chassis();
   chassis.pid_print_toggle(false);
   chassis.pid_turn_set(90, 100);
   Outcome o = run(chassis, turn_wait_until_retargeted_in_first_delay, 300, [&] { chassis.pid_wait_until(45.0); });
   CHECK(o.returned);
-  CHECK(o.interfered);
-  CHECK(o.passes <= FIRST_DELAY_RETARGET_AT + GUARD_SLACK);
+  CHECK_FALSE(o.interfered);
+  CHECK(o.passes == TURN_IN_SMALL_AT + SMALL_POLLS - 1 + 1);
 }
 
-TEST_CASE(
-    "wait_until_turn_swing_internal() SWING: a concurrent pid_swing_set() landing in the function's own first settle delay ends the wait instead of finishing on the new target") {
+TEST_CASE("wait_until_turn_swing() SWING: a concurrent pid_swing_set() landing in the wait's first delay is followed onto the new swing") {
   Drive chassis = make_chassis();
   chassis.pid_print_toggle(false);
   chassis.pid_swing_set(ez::LEFT_SWING, 60, 100);
   Outcome o = run(chassis, swing_wait_until_retargeted_in_first_delay, 300, [&] { chassis.pid_wait_until(30.0); });
   CHECK(o.returned);
-  CHECK(o.interfered);
-  CHECK(o.passes <= FIRST_DELAY_RETARGET_AT + GUARD_SLACK);
+  CHECK_FALSE(o.interfered);
+  CHECK(o.passes == SWING_IN_SMALL_AT + SMALL_POLLS - 1 + 1);
 }
 
-TEST_CASE("wait_until_turn_swing_internal() TURN_TO_POINT: an ordinary, un-retargeted wait never false-fires interfered") {
+TEST_CASE("wait_until_turn_swing() TURN_TO_POINT: an ordinary, un-retargeted wait never false-fires interfered") {
   Drive chassis = make_chassis();
   DriveTestAccess::imu_calibration_complete(chassis) = true;
   chassis.pid_print_toggle(false);
@@ -328,8 +325,7 @@ TEST_CASE("wait_until_turn_swing_internal() TURN_TO_POINT: an ordinary, un-retar
   CHECK_FALSE(o.interfered);
 }
 
-// ---- pid_wait_until_point() had the identical total gap. ----
-TEST_CASE("pid_wait_until_point(): a concurrent pid_odom_ptp_set() mid-wait ends the wait instead of finishing on the new target") {
+TEST_CASE("pid_wait_until_point(): a concurrent pid_odom_ptp_set() mid-wait is followed, and the wait returns on the new motion's exits") {
   Drive chassis = make_chassis();
   DriveTestAccess::imu_calibration_complete(chassis) = true;
   chassis.pid_print_toggle(false);
@@ -338,20 +334,26 @@ TEST_CASE("pid_wait_until_point(): a concurrent pid_odom_ptp_set() mid-wait ends
   chassis.pid_odom_ptp_set({{0.0, 24.0, ANGLE_NOT_SET}, fwd, 100});
   Outcome o = run(chassis, point_wait_healthy_then_retargeted, 300, [&] { chassis.pid_wait_until_point({0.0, 24.0, ANGLE_NOT_SET}); });
   CHECK(o.returned);
-  CHECK(o.interfered);
-  CHECK(o.passes <= RETARGET_AT + GUARD_SLACK);
+  CHECK_FALSE(o.interfered);
+  CHECK(o.passes == DRIVE_IN_SMALL_AT + SMALL_POLLS - 1);
 }
 
-// ---- Every guard above only watched its OWN family's target -- a concurrent setter from a DIFFERENT
-// mode changes `mode` unnoticed, freezing the old PID's error.  If that frozen value happens to land
-// inside its own exit window, the wait reports a clean, uninterfered "success" for an abandoned motion.
-TEST_CASE("pid_wait() TURN: a concurrent pid_swing_set() mid-wait is caught via the mode change even though it never retargets turnPID itself") {
+// ---- A concurrent setter from a DIFFERENT mode changes `mode` without touching turnPID's target.  The wait follows it onto the swing
+// instead of finishing on turnPID's frozen error. ----
+TEST_CASE("pid_wait() TURN: a concurrent pid_swing_set() mid-wait is followed onto the swing even though it never retargets turnPID") {
   Drive chassis = make_chassis();
-  chassis.pid_print_toggle(false);
   chassis.pid_turn_exit_condition_set(100, 2.0, 0, 0.0, 0, 0);  // small exit only, ~10 passes to fire once in tolerance
   chassis.pid_turn_set(90, 100);
-  Outcome o = run(chassis, turn_frozen_in_tolerance_then_mode_changed, 300, [&] { chassis.pid_wait(); });
+  chassis.pid_print_toggle(true);  // the exit print names the PID the wait ended on
+  Outcome o{};
+  std::string printed = test_stub::capture_stdout([&] { o = run(chassis, turn_frozen_in_tolerance_then_mode_changed, 300, [&] { chassis.pid_wait(); }); });
   CHECK(o.returned);
-  CHECK(o.interfered);
-  CHECK(o.passes <= RETARGET_AT + GUARD_SLACK);
+  // swingPID is never computed here, so its error is 0 and the swing small-exits cleanly (90 ms) after the restart's leading delay on pass
+  // RETARGET_AT + 1, with one more delay after.  The frozen turn would have small-exited on the same pass (100 ms from pass RETARGET_AT),
+  // so the exit print is what shows the wait ended on the swing.
+  CHECK_FALSE(o.interfered);
+  CHECK(o.passes == RETARGET_AT + 1 + SMALL_POLLS - 1 + 1);
+  CHECK(chassis.mode == SWING);
+  CHECK(printed.find("  Swing: Small Exit") != std::string::npos);
+  CHECK(printed.find("  Turn:") == std::string::npos);
 }
