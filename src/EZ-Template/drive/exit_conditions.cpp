@@ -141,7 +141,13 @@ void Drive::pid_wait() {
 
     // Wait until pure pursuit is on the last point, then continue as normal
     if (mode == PURE_PURSUIT) {
+      // The angle exit belongs to the point it latched at, so it starts over on every new point
+      int a_exit_index = pp_index;
       while (pp_index != (int)pp_movements.size() - 1) {
+        if (pp_index != a_exit_index) {
+          a_exit_index = pp_index;
+          a_exit = RUNNING;
+        }
         xyPID.velocity_sensor_secondary_set(drive_imu_accel_get());
         current_a_odomPID.velocity_sensor_secondary_set(drive_imu_accel_get());
         xy_exit = xy_exit != RUNNING ? xy_exit : xyPID.exit_condition({left_motors[0], right_motors[0]});
@@ -156,6 +162,7 @@ void Drive::pid_wait() {
 
         pros::delay(util::DELAY_TIME);
       }
+      if (pp_index != a_exit_index) a_exit = RUNNING;  // the move onto the last point never re-enters the loop above
     }
 
     // When we're at the last point in PP / we're just going to point
