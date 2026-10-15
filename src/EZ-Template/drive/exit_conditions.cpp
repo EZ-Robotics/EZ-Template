@@ -250,6 +250,9 @@ void Drive::pid_wait() {
 }
 
 void Drive::wait_until_drive(double target) {
+  // In an odom move leftPID and rightPID are aimed at a look-ahead point that never moves, so being near it says nothing about this checkpoint.
+  // Only their velocity and mA exits count there: how far the robot has driven is what the checkpoint is judged on.
+  auto drive_wait_exit = [this](exit_output exit) { return mode != DRIVE && (exit == SMALL_EXIT || exit == BIG_EXIT) ? RUNNING : exit; };
   WaitSnapshot wait_for(*this);
   pros::delay(10);
 
@@ -294,8 +297,8 @@ void Drive::wait_until_drive(double target) {
       if (left_exit == RUNNING || right_exit == RUNNING) {
         leftPID.velocity_sensor_secondary_set(drive_imu_accel_get());
         rightPID.velocity_sensor_secondary_set(drive_imu_accel_get());
-        left_exit = left_exit != RUNNING ? left_exit : leftPID.exit_condition(left_motors[0]);
-        right_exit = right_exit != RUNNING ? right_exit : rightPID.exit_condition(right_motors[0]);
+        left_exit = left_exit != RUNNING ? left_exit : drive_wait_exit(leftPID.exit_condition(left_motors[0]));
+        right_exit = right_exit != RUNNING ? right_exit : drive_wait_exit(rightPID.exit_condition(right_motors[0]));
       } else {
         if (print_toggle) {
           std::cout << "  Left: " << exit_to_string(left_exit) << " Wait Until Exit Failsafe, triggered at " << drive_sensor_left() - l_start << " instead of "
