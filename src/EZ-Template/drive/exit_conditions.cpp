@@ -110,6 +110,14 @@ void Drive::pid_odom_turn_exit_condition_set(ez::QTime p_small_exit_time, ez::QA
   pid_odom_turn_exit_condition_set(set, se, bet, be, vet, mAt, use_imu);
 }
 
+// xyPID's exit condition, except its velocity exit doesn't count while the robot pivots in place.  A point beside or behind the robot makes turn bias
+// zero translation until the heading is close, and xyPID reads that as stopped.  A pinned robot is stopped in heading too, so that still counts.
+exit_output Drive::xy_exit_condition() {
+  exit_output xy_exit = xyPID.exit_condition({left_motors[0], right_motors[0]});
+  bool pivoting = xy_translation_bias_gated && std::fabs(current_a_odomPID.derivative) > current_a_odomPID.velocity_sensor_main_exit_get();
+  return xy_exit == VELOCITY_EXIT && pivoting ? RUNNING : xy_exit;
+}
+
 // User wrapper for exit condition
 void Drive::pid_wait() {
   // A new motion set from another task mid-wait means this wait starts over on it
@@ -160,7 +168,7 @@ void Drive::pid_wait() {
         }
         xyPID.velocity_sensor_secondary_set(drive_imu_accel_get());
         current_a_odomPID.velocity_sensor_secondary_set(drive_imu_accel_get());
-        xy_exit = xy_exit != RUNNING ? xy_exit : xyPID.exit_condition({left_motors[0], right_motors[0]});
+        xy_exit = xy_exit != RUNNING ? xy_exit : xy_exit_condition();
         a_exit = a_exit != RUNNING ? a_exit : current_a_odomPID.exit_condition({left_motors[0], right_motors[0]});
 
         bool still = std::fabs(xyPID.derivative) <= xyPID.velocity_sensor_main_exit_get() &&
@@ -192,7 +200,7 @@ void Drive::pid_wait() {
       if (wait_for.changed()) return pid_wait();
       xyPID.velocity_sensor_secondary_set(drive_imu_accel_get());
       current_a_odomPID.velocity_sensor_secondary_set(drive_imu_accel_get());
-      xy_exit = xy_exit != RUNNING ? xy_exit : xyPID.exit_condition({left_motors[0], right_motors[0]});
+      xy_exit = xy_exit != RUNNING ? xy_exit : xy_exit_condition();
       a_exit = a_exit != RUNNING ? a_exit : current_a_odomPID.exit_condition({left_motors[0], right_motors[0]});
       pros::delay(util::DELAY_TIME);
     }
@@ -275,7 +283,7 @@ void Drive::wait_until_drive(double target) {
       bool on_last_point = mode == POINT_TO_POINT || (mode == PURE_PURSUIT && pp_index == (int)pp_movements.size() - 1);
       if (on_last_point) {
         xyPID.velocity_sensor_secondary_set(drive_imu_accel_get());
-        exit_output xy_exit = xyPID.exit_condition({left_motors[0], right_motors[0]});
+        exit_output xy_exit = xy_exit_condition();
         if (xy_exit != RUNNING) {
           if (print_toggle) std::cout << "  XY: " << exit_to_string(xy_exit) << " Wait Until Exit Failsafe, the move ended before reaching " << target << "\n";
           if (xy_exit == mA_EXIT || xy_exit == VELOCITY_EXIT) interfered = true;
@@ -449,7 +457,7 @@ void Drive::pid_wait_until_point(pose target) {
     if (wait_for.changed()) return pid_wait_until_point(target);
     xyPID.velocity_sensor_secondary_set(drive_imu_accel_get());
     current_a_odomPID.velocity_sensor_secondary_set(drive_imu_accel_get());
-    xy_exit = xy_exit != RUNNING ? xy_exit : xyPID.exit_condition({left_motors[0], right_motors[0]});
+    xy_exit = xy_exit != RUNNING ? xy_exit : xy_exit_condition();
     a_exit = a_exit != RUNNING ? a_exit : current_a_odomPID.exit_condition({left_motors[0], right_motors[0]});
 
     if (xy_exit != RUNNING && a_exit != RUNNING) {
@@ -502,7 +510,7 @@ void Drive::pid_wait_until_index_started(int index) {
   while (!wait_for.changed() && pp_index < injected_pp_index[index]) {
     xyPID.velocity_sensor_secondary_set(drive_imu_accel_get());
     current_a_odomPID.velocity_sensor_secondary_set(drive_imu_accel_get());
-    xy_exit = xy_exit != RUNNING ? xy_exit : xyPID.exit_condition({left_motors[0], right_motors[0]});
+    xy_exit = xy_exit != RUNNING ? xy_exit : xy_exit_condition();
     a_exit = a_exit != RUNNING ? a_exit : current_a_odomPID.exit_condition({left_motors[0], right_motors[0]});
 
     if (xy_exit != RUNNING && a_exit != RUNNING) {

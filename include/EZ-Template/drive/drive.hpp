@@ -3990,6 +3990,7 @@ private:
   double turn_long(double target, double current, bool print = false);
   double new_turn_target_compute(double target, double current, ez::e_angle_behavior behavior);
   void odom_heading_target_resolve();
+  ez::exit_output xy_exit_condition();
   double turn_left(double target, double current, bool print = false);
   double turn_right(double target, double current, bool print = false);
   bool imu_calibration_complete = false;
