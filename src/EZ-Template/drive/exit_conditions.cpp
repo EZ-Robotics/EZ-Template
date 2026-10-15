@@ -296,12 +296,15 @@ void Drive::wait_until_turn_swing(double target) {
     return;
   }
 
-  // Create new target that is the shortest from current
-  target = new_turn_target_compute(target, drive_imu_get(), shortest);
+  // Use the heading, plus or minus whole revolutions, closest to the middle of the motion's own path (set once by the setter).  Resolving it
+  // against the live heading puts a checkpoint on a cw, ccw or longest motion, or one the robot already passed, a revolution off its path.
+  // raw is absolute and left as given.
+  if (current_angle_behavior != raw) target += 360.0 * std::round(((chain_sensor_start + chain_target_start) / 2.0 - target) / 360.0);
 
-  // Calculate error between current and target (target needs to be an in between position)
+  // Calculate error between current and target (target needs to be an in between position).  The side it starts on comes from the motion's
+  // start, not a live read, which the robot may already be past.
   double g_error = target - drive_imu_get();
-  int g_sgn = util::sgn(g_error);
+  int g_sgn = util::sgn(target - chain_sensor_start);
 
   exit_output turn_exit = RUNNING;
   exit_output swing_exit = RUNNING;
