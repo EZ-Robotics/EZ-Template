@@ -396,6 +396,7 @@ void Drive::pid_wait_until_point(pose target) {
         xyPID.timers_reset();
         current_a_odomPID.timers_reset();
       }
+      if (xy_exit == mA_EXIT || xy_exit == VELOCITY_EXIT || a_exit == mA_EXIT || a_exit == VELOCITY_EXIT) interfered = true;
       return;
     }
 
@@ -437,10 +438,11 @@ void Drive::pid_wait_until_index_started(int index) {
     if (xy_exit != RUNNING && a_exit != RUNNING) {
       if (print_toggle) {
         std::cout << "  XY: " << exit_to_string(xy_exit) << " Wait Until Exit Failsafe, triggered at (" << odom_x_get() << ", " << odom_y_get()
-                  << ") instead of (" << pp_movements[index].target.x << ", " << pp_movements[index].target.y << ")\n";
+                  << ") instead of (" << pp_movements[injected_pp_index[index]].target.x << ", " << pp_movements[injected_pp_index[index]].target.y << ")\n";
         xyPID.timers_reset();
         current_a_odomPID.timers_reset();
       }
+      if (xy_exit == mA_EXIT || xy_exit == VELOCITY_EXIT || a_exit == mA_EXIT || a_exit == VELOCITY_EXIT) interfered = true;
       break;
     }
 
