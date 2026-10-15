@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question about using EZ-Template
+    url: https://discord.gg/EHjXBcK2Gy
+    about: Ask in the Discord. Issues are for bugs and feature ideas.
