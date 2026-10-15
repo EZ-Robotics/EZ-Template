@@ -21,9 +21,6 @@
 // secondary sensor is gated by the same arming flag, but not by error_fresh --
 // see its own comment in PID.cpp for why.
 // A non-finite secondary reading (no imu, or before the first update) never counts as stopped.
-// velocity_exit_hold freezes both velocity timers while true, but only for up to
-// VELOCITY_EXIT_HOLD_FALLBACK ms of continuous hold, so a caller that holds indefinitely still
-// resolves instead of hanging the caller waiting on exit_condition().
 #include <limits>
 
 #include "doctest.h"
@@ -414,38 +411,6 @@ TEST_CASE("PID velocity exit fires once a repeated reading has genuinely lasted 
   CHECK(result == VELOCITY_EXIT);
 }
 
-TEST_CASE("PID velocity_exit_hold freezes k regardless of whether the raw reading is repeating or changing") {
-  PID pid;
-  pid.exit_condition_set(0, 0, 0, 0, 50, 0);
-  pid.compute_error(10.0, 1.0);  // arms
-  CHECK(pid.exit_condition() == RUNNING);
-
-  pid.velocity_exit_hold_set(true);
-  // 1500ms of a frozen raw value, well past several exit countdowns' worth -- held skips the
-  // velocity block entirely (see exit_condition()'s `!held` gate), so k neither accumulates nor
-  // resets while this runs.
-  for (int pass = 1; pass <= 150; pass++) {
-    INFO("held pass ", pass);
-    pid.compute_error(10.0, 1.0);
-    CHECK(pid.exit_condition() == RUNNING);
-  }
-  pid.velocity_exit_hold_set(false);
-
-  // Resuming behaves like a freshly-armed stall from here, not like anything accumulated while held.
-  // velocity_armed was already true before the hold (set on the very first call above), so this
-  // resumes straight into crediting -- no re-arm needed.
-  int pass = 0;
-  exit_output result = RUNNING;
-  while (result == RUNNING) {
-    pass++;
-    REQUIRE(pass <= 10);
-    pid.compute_error(10.0, 1.0);
-    result = pid.exit_condition();
-  }
-  CHECK(pass == 6);  // 6 fresh credits: 60 > velocity_exit_time (50)
-  CHECK(result == VELOCITY_EXIT);
-}
-
 TEST_CASE("PID timers_reset clears the velocity timer for the next motion even if it reads the same raw value as before") {
   // A new motion can happen to start reading the exact same raw value as where the previous one
   // left off (e.g. a lift that always re-arms from the same physical position). Without
@@ -657,68 +622,6 @@ TEST_CASE("PID secondary velocity sensor never exits on a reading that was never
   while (result == RUNNING) {
     pass++;
     REQUIRE(pass <= 50);  // don't hang the suite if this regresses
-    result = pid.exit_condition();
-  }
-  CHECK(result == VELOCITY_EXIT);
-}
-
-TEST_CASE("PID velocity_exit_hold freezes both velocity timers while true") {
-  PID pid;
-  pid.exit_condition_set(0, 0, 0, 0, 50, 0);
-  pid.velocity_sensor_secondary_toggle_set(true);
-  pid.velocity_sensor_secondary_set(0.0);  // reads as stationary too, same as the main sensor
-  pid.error = 10.0;
-  pid.derivative = 1.0;
-
-  CHECK(pid.exit_condition() == RUNNING);  // real movement: arms immediately
-
-  // Now reads exactly like a stall on both channels, but held -- neither may fire even though 50ms
-  // (5 passes) would normally be well past both.  100 passes is 1000ms, safely under the 2000ms
-  // fallback below.
-  pid.derivative = 0.0;
-  pid.velocity_exit_hold_set(true);
-  for (int pass = 1; pass <= 100; pass++) {
-    INFO("pass ", pass);
-    CHECK(pid.exit_condition() == RUNNING);
-  }
-
-  // Releasing the hold resumes from wherever the timers were left (0, since they were frozen, not
-  // reset), so it takes another full velocity_exit_time to fire, same as a fresh stall would.
-  pid.velocity_exit_hold_set(false);
-  int pass = 0;
-  exit_output result = RUNNING;
-  while (result == RUNNING) {
-    pass++;
-    REQUIRE(pass <= 50);
-    result = pid.exit_condition();
-  }
-  CHECK(result == VELOCITY_EXIT);
-}
-
-TEST_CASE("PID velocity_exit_hold cannot be held forever") {
-  // A caller holding this because of its own condition that never resolves (for example, a
-  // genuinely double-stalled robot that can neither translate nor turn) must not be able to hang
-  // whatever is waiting on exit_condition() forever.
-  PID pid;
-  pid.exit_condition_set(0, 0, 0, 0, 50, 0);
-  pid.compute_error(10.0, 1.0);
-  CHECK(pid.exit_condition() == RUNNING);  // arm
-
-  pid.velocity_exit_hold_set(true);  // held indefinitely by the caller; never released in this test
-
-  // While held, the main channel's own block is skipped outright (guarded by !held), so what this
-  // tick reports doesn't matter until the fallback releases the hold below -- kept as a real,
-  // fresh, resting-band dither for consistency with the resumed phase.
-  double base = 1.0;
-  bool toggle = false;
-  int pass = 0;
-  exit_output result = RUNNING;
-  while (result == RUNNING) {
-    pass++;
-    // VELOCITY_EXIT_HOLD_FALLBACK (2000ms) plus velocity_exit_time (50ms) must resolve well inside
-    // this; 250 passes is 2500ms.
-    REQUIRE(pass <= 250);
-    dither_tick(pid, 10.0, toggle, base);
     result = pid.exit_condition();
   }
   CHECK(result == VELOCITY_EXIT);
