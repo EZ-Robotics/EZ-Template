@@ -49,7 +49,7 @@ const config = {
 
         pages: {
           editUrl: ({ pagesPath }) =>
-            `https://github.com/ez-robotics/EZ-Template/tree/website/src/pages/${pagesPath}`,
+            `https://github.com/ez-robotics/EZ-Template/tree/website-dev/src/pages/${pagesPath}`,
           showLastUpdateTime: true,
           showLastUpdateAuthor: true,
           
@@ -81,7 +81,7 @@ const config = {
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl: ({ versionDocsDirPath, docPath }) =>
-            `https://github.com/ez-robotics/EZ-Template/tree/website/${versionDocsDirPath}/${docPath}`,
+            `https://github.com/ez-robotics/EZ-Template/tree/website-dev/${versionDocsDirPath}/${docPath}`,
           // showLastUpdateTime: true,
           // showLastUpdateAuthor: true,
         },
@@ -106,7 +106,7 @@ const config = {
         routeBasePath: 'community', // url
         sidebarPath: './sidebarsCommunity.js',
         editUrl: ({ docPath }) =>
-          `https://github.com/ez-robotics/EZ-Template/tree/website/community/${docPath}`,
+          `https://github.com/ez-robotics/EZ-Template/tree/website-dev/community/${docPath}`,
         showLastUpdateTime: true,
         showLastUpdateAuthor: true,
         // ... other options
