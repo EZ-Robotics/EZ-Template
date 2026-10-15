@@ -4165,6 +4165,7 @@ private:
 
   bool drive_toggle = true;
   bool print_toggle = true;
+  bool no_pinned_exit_warned = false;
   int swing_min = 0;
   int turn_min = 0;
   bool practice_mode_is_on = false;

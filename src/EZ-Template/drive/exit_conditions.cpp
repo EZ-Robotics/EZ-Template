@@ -14,6 +14,10 @@ using namespace ez;
 namespace {
 // The speed under which a PID's velocity exit counts the robot as stopped, in units per second
 double velocity_exit_speed(PID& pid) { return pid.velocity_sensor_main_exit_get() * 1000.0 / util::DELAY_TIME; }
+void exit_times_warn(int velocity_exit_time, int mA_timeout, bool& warned) {
+  if (velocity_exit_time == 0 && mA_timeout == 0 && !warned) printf("Warning: velocity and mA exit times of 0 can't end a wait on a pinned robot\n");
+  warned = warned || (velocity_exit_time == 0 && mA_timeout == 0);
+}
 
 // An mA or velocity exit means the robot was interfered with, unless it ended the wait inside big_error and stopped: then the robot got where it
 // was going and stayed there.  A big_error of 0 is off, so nothing is inside it.
@@ -25,6 +29,7 @@ bool exit_interferes(exit_output exit, PID& pid) {
 
 void Drive::pid_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time,
                                          int p_mA_timeout, bool use_imu) {
+  exit_times_warn(p_velocity_exit_time, p_mA_timeout, no_pinned_exit_warned);
   leftPID.exit_condition_set(p_small_exit_time, p_small_error, p_big_exit_time, p_big_error, p_velocity_exit_time, p_mA_timeout);
   rightPID.exit_condition_set(p_small_exit_time, p_small_error, p_big_exit_time, p_big_error, p_velocity_exit_time, p_mA_timeout);
   leftPID.velocity_sensor_secondary_toggle_set(use_imu);
@@ -48,6 +53,7 @@ void Drive::pid_drive_exit_condition_set(ez::QTime p_small_exit_time, ez::QLengt
 
 void Drive::pid_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time,
                                         int p_mA_timeout, bool use_imu) {
+  exit_times_warn(p_velocity_exit_time, p_mA_timeout, no_pinned_exit_warned);
   turnPID.exit_condition_set(p_small_exit_time, p_small_error, p_big_exit_time, p_big_error, p_velocity_exit_time, p_mA_timeout);
   turnPID.velocity_sensor_secondary_toggle_set(use_imu);
 }
@@ -67,6 +73,7 @@ void Drive::pid_turn_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle 
 
 void Drive::pid_swing_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time,
                                          int p_mA_timeout, bool use_imu) {
+  exit_times_warn(p_velocity_exit_time, p_mA_timeout, no_pinned_exit_warned);
   swingPID.exit_condition_set(p_small_exit_time, p_small_error, p_big_exit_time, p_big_error, p_velocity_exit_time, p_mA_timeout);
   swingPID.velocity_sensor_secondary_toggle_set(use_imu);
 }
@@ -86,6 +93,7 @@ void Drive::pid_swing_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle
 
 void Drive::pid_odom_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time,
                                               int p_mA_timeout, bool use_imu) {
+  exit_times_warn(p_velocity_exit_time, p_mA_timeout, no_pinned_exit_warned);
   xyPID.exit_condition_set(p_small_exit_time, p_small_error, p_big_exit_time, p_big_error, p_velocity_exit_time, p_mA_timeout);
   xyPID.velocity_sensor_secondary_toggle_set(use_imu);
 }
@@ -105,6 +113,7 @@ void Drive::pid_odom_drive_exit_condition_set(ez::QTime p_small_exit_time, ez::Q
 
 void Drive::pid_odom_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time,
                                              int p_mA_timeout, bool use_imu) {
+  exit_times_warn(p_velocity_exit_time, p_mA_timeout, no_pinned_exit_warned);
   current_a_odomPID.exit_condition_set(p_small_exit_time, p_small_error, p_big_exit_time, p_big_error, p_velocity_exit_time, p_mA_timeout);
   current_a_odomPID.velocity_sensor_secondary_toggle_set(use_imu);
 }
