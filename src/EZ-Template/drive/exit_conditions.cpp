@@ -378,6 +378,12 @@ void Drive::pid_wait_until(double target) {
 void Drive::pid_wait_until_point(pose target) {
   pros::delay(10);
 
+  // Make sure mode is correct
+  if (mode != POINT_TO_POINT && mode != PURE_PURSUIT) {
+    printf("Mode needs to be an odom mode (point to point or pure pursuit)!\n");
+    return;
+  }
+
   int xy_sgn = util::sgn(is_past_target(target, odom_pose_get()));
 
   exit_output xy_exit = RUNNING;
@@ -420,6 +426,12 @@ void Drive::pid_wait_until(united_pose target) { pid_wait_until_point(target); }
 void Drive::pid_wait_until_index_started(int index) {
   // Let the PID run at least 1 iteration
   pros::delay(util::DELAY_TIME);
+
+  // Make sure mode is correct
+  if (mode != PURE_PURSUIT) {
+    printf("Mode needs to be pure pursuit!\n");
+    return;
+  }
 
   if (index < 0 || index > (int)injected_pp_index.size() - 2) {
     printf("  Wait Until PP Error!  Index %i is not within range!  %i is max!\n", index, (int)injected_pp_index.size() - 2);
