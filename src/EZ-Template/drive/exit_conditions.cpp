@@ -14,6 +14,13 @@ using namespace ez;
 namespace {
 // The speed under which a PID's velocity exit counts the robot as stopped, in units per second
 double velocity_exit_speed(PID& pid) { return pid.velocity_sensor_main_exit_get() * 1000.0 / util::DELAY_TIME; }
+
+// An mA or velocity exit means the robot was interfered with, unless it ended the wait inside big_error and stopped: then the robot got where it
+// was going and stayed there.  A big_error of 0 is off, so nothing is inside it.
+bool exit_interferes(exit_output exit, PID& pid) {
+  bool arrived = std::fabs(pid.error) < pid.exit.big_error && pid.speed_get() <= pid.stop_speed_get();
+  return (exit == mA_EXIT || exit == VELOCITY_EXIT) && !arrived;
+}
 }  // namespace
 
 void Drive::pid_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time,
@@ -168,9 +175,7 @@ void Drive::pid_wait() {
       std::cout << "  Left: " << exit_to_string(left_exit) << " Exit, error: " << leftPID.error << "   Right: " << exit_to_string(right_exit)
                 << " Exit, error: " << rightPID.error << "\n";
 
-    if (left_exit == mA_EXIT || left_exit == VELOCITY_EXIT || right_exit == mA_EXIT || right_exit == VELOCITY_EXIT) {
-      interfered = true;
-    }
+    if (exit_interferes(left_exit, leftPID) || exit_interferes(right_exit, rightPID)) interfered = true;
   }
 
   // Odom Exits
@@ -234,9 +239,7 @@ void Drive::pid_wait() {
       std::cout << "  XY: " << exit_to_string(xy_exit) << " Exit, error: " << xyPID.error << ".   Angle: " << exit_to_string(a_exit)
                 << " Exit, error: " << current_a_odomPID.error << ".\n";
 
-    if (xy_exit == mA_EXIT || xy_exit == VELOCITY_EXIT || a_exit == mA_EXIT || a_exit == VELOCITY_EXIT) {
-      interfered = true;
-    }
+    if (exit_interferes(xy_exit, xyPID) || exit_interferes(a_exit, current_a_odomPID)) interfered = true;
 
     odom_heading_target_resolve();
   }
@@ -252,9 +255,7 @@ void Drive::pid_wait() {
     }
     if (print_toggle) std::cout << "  Turn: " << exit_to_string(turn_exit) << " Exit, error: " << turnPID.error << "\n";
 
-    if (turn_exit == mA_EXIT || turn_exit == VELOCITY_EXIT) {
-      interfered = true;
-    }
+    if (exit_interferes(turn_exit, turnPID)) interfered = true;
   }
 
   // Swing Exit
@@ -269,9 +270,7 @@ void Drive::pid_wait() {
     }
     if (print_toggle) std::cout << "  Swing: " << exit_to_string(swing_exit) << " Exit, error: " << swingPID.error << "\n";
 
-    if (swing_exit == mA_EXIT || swing_exit == VELOCITY_EXIT) {
-      interfered = true;
-    }
+    if (exit_interferes(swing_exit, swingPID)) interfered = true;
   }
 }
 
@@ -315,7 +314,7 @@ void Drive::wait_until_drive(double target) {
         exit_output xy_exit = xy_exit_condition();
         if (xy_exit != RUNNING) {
           if (print_toggle) std::cout << "  XY: " << exit_to_string(xy_exit) << " Wait Until Exit Failsafe, the move ended before reaching " << target << "\n";
-          if (xy_exit == mA_EXIT || xy_exit == VELOCITY_EXIT) interfered = true;
+          if (exit_interferes(xy_exit, xyPID)) interfered = true;
           return;
         }
       }
@@ -332,9 +331,8 @@ void Drive::wait_until_drive(double target) {
           std::cout << "  Right: " << exit_to_string(right_exit) << " Wait Until Exit Failsafe, triggered at " << drive_sensor_right() - r_start
                     << " instead of " << target << "\n";
         }
-        if (left_exit == mA_EXIT || left_exit == VELOCITY_EXIT || right_exit == mA_EXIT || right_exit == VELOCITY_EXIT) {
-          interfered = true;
-        }
+        // In an odom move leftPID and rightPID are aimed at the look-ahead, so how close the robot is to its point is the xy error
+        if (exit_interferes(left_exit, mode == DRIVE ? leftPID : xyPID) || exit_interferes(right_exit, mode == DRIVE ? rightPID : xyPID)) interfered = true;
         return;
       }
     }
@@ -392,9 +390,7 @@ void Drive::wait_until_turn_swing(double target) {
             std::cout << "  Turn: " << exit_to_string(turn_exit) << " Wait Until Exit Failsafe, triggered at " << drive_imu_get() << " instead of " << target
                       << "\n";
 
-          if (turn_exit == mA_EXIT || turn_exit == VELOCITY_EXIT) {
-            interfered = true;
-          }
+          if (exit_interferes(turn_exit, turnPID)) interfered = true;
           return;
         }
       }
@@ -418,9 +414,7 @@ void Drive::wait_until_turn_swing(double target) {
             std::cout << "  Swing: " << exit_to_string(swing_exit) << " Wait Until Exit Failsafe, triggered at " << drive_imu_get() << " instead of " << target
                       << "\n";
 
-          if (swing_exit == mA_EXIT || swing_exit == VELOCITY_EXIT) {
-            interfered = true;
-          }
+          if (exit_interferes(swing_exit, swingPID)) interfered = true;
           return;
         }
       }
@@ -496,7 +490,7 @@ void Drive::pid_wait_until_point(pose target) {
         xyPID.timers_reset();
         current_a_odomPID.timers_reset();
       }
-      if (xy_exit == mA_EXIT || xy_exit == VELOCITY_EXIT || a_exit == mA_EXIT || a_exit == VELOCITY_EXIT) interfered = true;
+      if (exit_interferes(xy_exit, xyPID) || exit_interferes(a_exit, current_a_odomPID)) interfered = true;
       return;
     }
 
@@ -549,7 +543,7 @@ void Drive::pid_wait_until_index_started(int index) {
         xyPID.timers_reset();
         current_a_odomPID.timers_reset();
       }
-      if (xy_exit == mA_EXIT || xy_exit == VELOCITY_EXIT || a_exit == mA_EXIT || a_exit == VELOCITY_EXIT) interfered = true;
+      if (exit_interferes(xy_exit, xyPID) || exit_interferes(a_exit, current_a_odomPID)) interfered = true;
       break;
     }
 
