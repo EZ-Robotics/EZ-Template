@@ -4,6 +4,7 @@ License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
+#include <algorithm>
 #include <cmath>
 
 #include "EZ-Template/api.hpp"
@@ -101,6 +102,7 @@ void PID::timers_reset() {
   arm_timer = 0;
   velocity_armed = false;
   is_mA = false;
+  have_last_exit_ms = false;
 }
 
 void PID::motion_reset(double current) {
@@ -138,7 +140,21 @@ double PID::velocity_sensor_main_exit_get() { return velocity_zero_main; }
 void PID::velocity_sensor_secondary_exit_set(double zero) { velocity_zero_secondary = zero; }
 double PID::velocity_sensor_secondary_exit_get() { return velocity_zero_secondary; }
 
-exit_output PID::exit_condition(bool print) {
+// The exit timers count real milliseconds since the last call, so a team's own PID loop at 20 ms gets the configured exit times too.  The first
+// call after a reset counts one DELAY_TIME instead of the gap since the last motion, and a gap is capped so a task that stopped polling can't
+// fire an exit in one call.
+int PID::exit_elapsed_ms() {
+  std::uint32_t now = pros::millis();
+  int elapsed = util::DELAY_TIME;
+  if (have_last_exit_ms) elapsed = std::min<std::uint32_t>(now - last_exit_ms, 10 * util::DELAY_TIME);
+  last_exit_ms = now;
+  have_last_exit_ms = true;
+  return elapsed;
+}
+
+exit_output PID::exit_condition(bool print) { return exit_condition_core(exit_elapsed_ms(), print); }
+
+exit_output PID::exit_condition_core(int elapsed, bool print) {
   // If this function is called while all exit constants are 0, print an error
   if (exit.small_error == 0 && exit.small_exit_time == 0 && exit.big_error == 0 && exit.big_exit_time == 0 && exit.velocity_exit_time == 0 &&
       exit.mA_timeout == 0) {
@@ -149,7 +165,7 @@ exit_output PID::exit_condition(bool print) {
   // If the robot gets within the target, make sure it's there for small_timeout amount of time
   if (exit.small_error != 0) {
     if (std::fabs(error) < exit.small_error) {
-      j += util::DELAY_TIME;
+      j += elapsed;
       i = 0;  // While this is running, don't run big thresh
       if (j > exit.small_exit_time) {
         timers_reset();
@@ -165,7 +181,7 @@ exit_output PID::exit_condition(bool print) {
   // a certain amount of time, exit and continue.  This does not run while small_timeout is running
   if (exit.big_error != 0 && exit.big_exit_time != 0) {  // Check if this condition is enabled
     if (std::fabs(error) < exit.big_error) {
-      i += util::DELAY_TIME;
+      i += elapsed;
       if (i > exit.big_exit_time) {
         timers_reset();
         if (print) exit_condition_print(BIG_EXIT);
@@ -180,14 +196,14 @@ exit_output PID::exit_condition(bool print) {
   // velocity_exit_time can run out while the robot is still sitting at the start of the motion.
   // If it never moves (pinned, stalled) arm anyway after a fallback window so pid_wait can't hang.
   if (exit.velocity_exit_time != 0 && !velocity_armed) {
-    arm_timer += util::DELAY_TIME;
+    arm_timer += elapsed;
     if (std::fabs(derivative) > velocity_zero_main || arm_timer > VELOCITY_ARM_FALLBACK) velocity_armed = true;
   }
 
   // If the motor velocity is 0, the code will timeout and set interfered to true.
   if (exit.velocity_exit_time != 0 && velocity_armed) {  // Check if this condition is enabled
     if (std::fabs(derivative) <= velocity_zero_main) {
-      k += util::DELAY_TIME;
+      k += elapsed;
       if (k > exit.velocity_exit_time) {
         timers_reset();
         if (print) exit_condition_print(VELOCITY_EXIT);
@@ -203,7 +219,7 @@ exit_output PID::exit_condition(bool print) {
   // If the secondary sensors velocity is 0, the code will timeout and set interfered to true.
   if (exit.velocity_exit_time != 0 && velocity_armed) {  // Check if this condition is enabled
     if (std::fabs(second_sensor) <= velocity_zero_secondary) {
-      m += util::DELAY_TIME;
+      m += elapsed;
       if (m > exit.velocity_exit_time) {
         timers_reset();
         if (print) exit_condition_print(VELOCITY_EXIT);
@@ -218,10 +234,11 @@ exit_output PID::exit_condition(bool print) {
 }
 
 exit_output PID::exit_condition(pros::Motor sensor, bool print) {
+  int elapsed = exit_elapsed_ms();
   // If the motors are pulling too many mA, the code will timeout and set interfered to true.
   if (exit.mA_timeout != 0) {  // Check if this condition is enabled
     if (sensor.is_over_current()) {
-      l += util::DELAY_TIME;
+      l += elapsed;
       if (l > exit.mA_timeout) {
         timers_reset();
         if (print) exit_condition_print(mA_EXIT);
@@ -232,10 +249,11 @@ exit_output PID::exit_condition(pros::Motor sensor, bool print) {
     }
   }
 
-  return exit_condition(print);
+  return exit_condition_core(elapsed, print);
 }
 
 exit_output PID::exit_condition(const std::vector<pros::Motor>& sensor, bool print) {
+  int elapsed = exit_elapsed_ms();
   // If the motors are pulling too many mA, the code will timeout and set interfered to true.
   if (exit.mA_timeout != 0) {  // Check if this condition is enabled
     for (auto i : sensor) {
@@ -250,7 +268,7 @@ exit_output PID::exit_condition(const std::vector<pros::Motor>& sensor, bool pri
       }
     }
     if (is_mA) {
-      l += util::DELAY_TIME;
+      l += elapsed;
       if (l > exit.mA_timeout) {
         timers_reset();
         if (print) exit_condition_print(mA_EXIT);
@@ -261,7 +279,7 @@ exit_output PID::exit_condition(const std::vector<pros::Motor>& sensor, bool pri
     }
   }
 
-  return exit_condition(print);
+  return exit_condition_core(elapsed, print);
 }
 
 exit_output PID::exit_condition(const pros::MotorGroup& sensor, bool print) {

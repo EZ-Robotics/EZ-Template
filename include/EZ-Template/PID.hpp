@@ -311,6 +311,10 @@ private:
   int arm_timer = 0;
   bool velocity_armed = false;
   static constexpr int VELOCITY_ARM_FALLBACK = 1000;
+  std::uint32_t last_exit_ms = 0;
+  bool have_last_exit_ms = false;
+  int exit_elapsed_ms();
+  ez::exit_output exit_condition_core(int elapsed, bool print);
   bool is_mA = false;
   // NaN, not 0.0: 0.0 would read as "not accelerating" and falsely satisfy the secondary velocity
   // exit before anyone has ever called velocity_sensor_secondary_set().  exit_condition() only treats
