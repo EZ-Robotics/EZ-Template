@@ -1,19 +1,8 @@
-// GitHub issue #531: pid_wait_until_index_started()'s concurrent-retarget guard only runs INSIDE
-// the while loop's own body. The loop's own condition (`pp_index < injected_pp_index_snapshot[index]`)
-// is evaluated first, every time control returns from pros::delay(), using the live, unsnapshotted
-// pp_index -- not anything captured under drive_mutex.
-//
-// test_pp_index_wait_retarget_guard.cpp already covers a retarget where the new path's pp_index
-// climbs back up to the old threshold gradually, one step per pass -- the in-body guard at the top
-// of the very next iteration catches that long before pp_index gets anywhere close. That does not
-// reproduce this issue: it needs the waiting task itself to be rescheduled late relative to the
-// path-following task, so that in a SINGLE reschedule (one pros::delay() return), a concurrent
-// retarget has already landed AND the new path's own follower task has already advanced pp_index up
-// to (or past) the OLD motion's threshold -- all before this wait's loop condition is re-evaluated.
-// When that happens, the while condition goes false on the very next check and the loop exits
-// without its own retarget guard ever running again for that iteration, silently leaving
-// `interfered` however the new motion's own setter left it (false) instead of true for a motion
-// that no longer exists.
+// GitHub issue #531: the waiting task can be rescheduled late relative to the path-following task, so that in a SINGLE reschedule (one
+// pros::delay() return) a concurrent pid_odom_pp_set() has already landed AND the new path's follower has already advanced pp_index up to
+// the old path's threshold.  pid_wait_until_index_started()'s loop condition checks for a new motion before it reads pp_index, so the
+// wait still sees the retarget, starts over on the new path, and returns because the new path has already started the requested index.
+// test_pp_index_wait_retarget_guard.cpp covers the gradual version, one pp_index step per pass.
 #include "doctest.h"
 #include "drive_test_access.hpp"
 
@@ -60,7 +49,7 @@ void script_retarget_and_race_pp_index_past_threshold_in_one_step() {
 }
 }  // namespace
 
-TEST_CASE("pid_wait_until_index_started() catches a retarget even when it also races pp_index past the old threshold in the same reschedule") {
+TEST_CASE("pid_wait_until_index_started() follows a retarget even when it also races pp_index to the threshold in the same reschedule") {
   Drive chassis = make_chassis();
   start_path(chassis, path_of(40, 7.0));
   int target_index = 3;
@@ -84,10 +73,11 @@ TEST_CASE("pid_wait_until_index_started() catches a retarget even when it also r
   test_stub::g_clock.on_delay = nullptr;
   MESSAGE("returned=", returned, " passes=", g_pass, " interfered=", chassis.interfered);
 
-  // The bug: the loop's own `while` condition goes false on the very reschedule that raced
-  // pp_index past the threshold, before the in-body guard gets a chance to run again -- the
-  // function falls out and returns with interfered left however the new motion's setter left it
-  // (false), silently reporting a clean result for a motion that no longer exists.
+  // The wait starts over on the new path: one leading delay (pass 6), then the new path's pp_index is already at its own threshold for
+  // index 3, so it returns.  Returning on pass 5 instead would mean it ended on the old path's loop without starting over.  The new path
+  // started the index, so the verdict is clean.
   REQUIRE(returned);
-  CHECK(chassis.interfered);
+  CHECK_FALSE(chassis.interfered);
+  CHECK(g_pass == g_retarget_at + 1);
+  CHECK(DriveTestAccess::pp_index(chassis) >= DriveTestAccess::injected_pp_index(chassis)[target_index + 1]);
 }
