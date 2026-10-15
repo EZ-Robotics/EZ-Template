@@ -1,10 +1,9 @@
-// A shove during an odom point move is recovered from, and the odom stuck watch is not called stuck while it lands.
+// A shove during an odom point move: what the wait reports depends on where the shove holds the robot.
 //
-// test_shove_recovery.cpp covers the same thing for pid_drive_set. The odom wait has its own stuck watch, with its own
-// channel for the distance to the point, and it needs both halves of the fix separately: a shove restarts its
-// no-progress clock (when it latches and again when it peaks), and its window is floored at 350 ms so a team's 100 ms
-// velocity_exit_time is not read as "stuck" while a shove is still landing. Either one missing ended these moves
-// interfered, with the robot driving again and the next motion starting from the wrong place.
+// test_shove_recovery.cpp covers the same thing for pid_drive_set. The xy velocity exit fires once the robot's speed (its
+// movement over the last 100 ms) has stayed at or under 5 in/s for the team's velocity_exit_time. A shove that holds the
+// robot still outside big_error for longer than that is a velocity exit by design, and ends the wait interfered. A shove
+// the robot drives through, or one that leaves it stopped inside big_error, ends the wait clean at the point.
 //
 // 2550R's 90/1/200/3/100/100 exits, light_fast. Forces stay under the ~150 N where the shove leaves the motors over
 // current longer than the team's own mA_timeout, which is a different exit and ends the wait on purpose.
@@ -68,27 +67,37 @@ Outcome shoved(double newtons, double duration_ms, bool as_path) {
 }
 }  // namespace
 
-// A shove that is short next to the floored window but a good deal of it: with a 100 ms window the wait gives up while
-// the shove is still landing.
-TEST_CASE("an odom point move on 90/1/200/3/100/100 exits recovers from a 60 to 90 N shove of 250 to 350 ms") {
+// 60 N, and 90 N for 250 ms, the robot drives through and arrives. 90 N for 300 ms or more stops the robot about 5.5 in
+// short of the point, outside the 3 in big_error, and holds it there for more than the 100 ms velocity_exit_time: the
+// velocity exit ends the wait interfered while the robot is still held. Promptly: by the end of the shove, one 100 ms speed
+// window for the speed to read the stop, the velocity exit time, and a pass or two.
+TEST_CASE("an odom point move on 90/1/200/3/100/100 exits recovers from a 60 to 90 N shove of 250 to 350 ms unless it is held outside big_error") {
   for (bool as_path : {false, true}) {
     for (double newtons : {60.0, 90.0}) {
       for (double ms : {250.0, 300.0, 350.0}) {
         Outcome o = shoved(newtons, ms, as_path);
+        bool held_outside = newtons == 90.0 && ms >= 300.0;
         CAPTURE(as_path);
         CAPTURE(newtons);
         CAPTURE(ms);
         CAPTURE(o.y);
+        CAPTURE(o.ms);
         REQUIRE(o.returned);
-        CHECK_FALSE(o.interfered);
-        CHECK(std::fabs(o.y - 27.0) < 3.0);
+        if (held_outside) {
+          CHECK(o.interfered);
+          CHECK(std::fabs(o.y - 27.0) > 3.0);  // held outside the team's big_error
+          CHECK(o.ms <= 400 + ms + 100 + 100 + 20);
+        } else {
+          CHECK_FALSE(o.interfered);
+          CHECK(std::fabs(o.y - 27.0) < 3.0);
+        }
       }
     }
   }
 }
 
-// A shove that outlasts the floored window before the robot has recovered a step: only the clock restarting when the
-// shove latches and peaks keeps the wait from calling it stuck while the robot is on its way back.
+// 120 N pushes the robot back without holding it still outside big_error for the velocity exit time, and it drives back to
+// the point.
 TEST_CASE("an odom point move on 90/1/200/3/100/100 exits recovers from a 120 N shove of 350 and 450 ms") {
   for (bool as_path : {false, true}) {
     for (double ms : {350.0, 450.0}) {
@@ -103,8 +112,8 @@ TEST_CASE("an odom point move on 90/1/200/3/100/100 exits recovers from a 120 N 
   }
 }
 
-// Controls that must not move: a robot that is held, not shoved, is still called stuck, and promptly.
-TEST_CASE("control: an odom point move pinned mid-move ends interfered within a window of the pin plus the start allowance") {
+// Controls that must not move: a robot that is held, not shoved, still ends the wait interfered, and promptly.
+TEST_CASE("control: an odom point move pinned mid-move ends interfered within 1550 ms of the pin") {
   Rig r(sim::archetype_light_fast());
   r.chassis.pid_odom_set({{0_in, 60_in}, fwd, 60});
   std::uint32_t t0 = pros::millis();
@@ -112,14 +121,18 @@ TEST_CASE("control: an odom point move pinned mid-move ends interfered within a 
   bool returned = run_capped([&] { r.chassis.pid_wait(); }, 3000);
   REQUIRE(returned);
   CHECK(r.chassis.interfered);
-  CHECK(pros::millis() - t0 <= 400 + 1000 + 350 + 100);
+  CHECK(pros::millis() - t0 <= 400 + 1550);  // pinned at 400 ms
 }
 
-TEST_CASE("control: an odom point move held back by a steady force ends interfered within 5 s") {
+// A steady 100 N against the motion drags the robot back until it meets a wall, which holds it, and the wait ends there. The
+// sim's walls only stop forward travel, so the move is driven in reverse and the force pushes the robot forward, back to the
+// wall at its starting line (about 16 in of drag).
+TEST_CASE("control: an odom point move held back by a steady force into a wall ends interfered within 5 s") {
   Rig r(sim::archetype_light_fast());
-  r.chassis.pid_odom_set({{0_in, 60_in}, fwd, 60});
+  r.sim.wall(0.0);
+  r.chassis.pid_odom_set({{0_in, -60_in}, rev, 60});
   std::uint32_t t0 = pros::millis();
-  r.sim.push(-100.0, r.sim.now_ms() + 400, 60000);
+  r.sim.push(100.0, r.sim.now_ms() + 400, 60000);
   bool returned = run_capped([&] { r.chassis.pid_wait(); }, 3000);
   REQUIRE(returned);
   CHECK(r.chassis.interfered);
