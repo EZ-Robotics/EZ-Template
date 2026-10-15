@@ -238,7 +238,6 @@ void Drive::wait_until_drive(double target) {
         rightPID.velocity_sensor_secondary_set(drive_imu_accel_get());
         left_exit = left_exit != RUNNING ? left_exit : leftPID.exit_condition(left_motors[0]);
         right_exit = right_exit != RUNNING ? right_exit : rightPID.exit_condition(right_motors[0]);
-        pros::delay(util::DELAY_TIME);
       } else {
         if (print_toggle) {
           std::cout << "  Left: " << exit_to_string(left_exit) << " Wait Until Exit Failsafe, triggered at " << drive_sensor_left() - l_start << " instead of "
@@ -296,7 +295,6 @@ void Drive::wait_until_turn_swing(double target) {
         if (turn_exit == RUNNING) {
           turnPID.velocity_sensor_secondary_set(drive_imu_accel_get());
           turn_exit = turn_exit != RUNNING ? turn_exit : turnPID.exit_condition({left_motors[0], right_motors[0]});
-          pros::delay(util::DELAY_TIME);
         } else {
           if (print_toggle)
             std::cout << "  Turn: " << exit_to_string(turn_exit) << " Wait Until Exit Failsafe, triggered at " << drive_imu_get() << " instead of " << target
@@ -323,7 +321,6 @@ void Drive::wait_until_turn_swing(double target) {
         if (swing_exit == RUNNING) {
           swingPID.velocity_sensor_secondary_set(drive_imu_accel_get());
           swing_exit = swing_exit != RUNNING ? swing_exit : swingPID.exit_condition(sensor);
-          pros::delay(util::DELAY_TIME);
         } else {
           if (print_toggle)
             std::cout << "  Swing: " << exit_to_string(swing_exit) << " Wait Until Exit Failsafe, triggered at " << drive_imu_get() << " instead of " << target
