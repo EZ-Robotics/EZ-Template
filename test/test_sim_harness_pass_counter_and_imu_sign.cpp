@@ -3,12 +3,8 @@
 // caveats"), now ported into sim_physics.hpp on this branch:
 //
 // 1. SimRobot::run_auto_task_pass() never called ez::detail::stats.auto_task_passes.fetch_add(1),
-//    the same bookkeeping the real ez_auto_task() does every pass (pid_tasks.cpp:22). StuckWatch/
-//    SingleStuckWatch's stuck() (exit_conditions.cpp) reads that counter through stuck_passes() to
-//    tell "ez_auto_task genuinely kept running for window_" from "wall-clock time passed while it's
-//    starved or dead", and falls back to a 4x-window wall-clock-only bound (STUCK_STARVED_WINDOWS)
-//    when it can't. With the counter frozen, every sim-backed stuck check silently ran on that 4x
-//    fallback instead of the real configured window.
+//    the same bookkeeping the real ez_auto_task() does every pass (pid_tasks.cpp), so anything that
+//    reads that counter saw the auto task as never running in the sim.
 //
 // 2. sim_physics.hpp reported heading_deg_ to the fake IMU unchanged. heading_deg_ is integrated
 //    from a yaw torque signed (right_force - left_force) -- positive when the right side pushes
@@ -92,76 +88,6 @@ TEST_CASE("sim harness bug 1: SimRobot ticks advance the real ez::detail::stats.
   CHECK(delta == (std::uint32_t)(n_ticks + 1));
 }
 
-TEST_CASE("sim harness bug 1: a TURN that never progresses trips SingleStuckWatch near the real window, not the 4x wall-clock fallback") {
-  // An archetype with rolling_resistance_nm set far above any torque the motor curve can produce:
-  // step_physics()'s resistive torque is clamped to min(|torque_available|, resistive), so net
-  // torque is exactly 0 at every duty -- the robot never turns at all, deterministically (the same
-  // "stalls outright, never moves" shape test_n5_stuck_floor.cpp documents for speed=8 on
-  // sticky_high_friction, made extreme here for a reliable trip instead of a bracketed one).
-  sim::SimArchetype a = sim::archetype_light_fast();
-  a.rolling_resistance_nm = 1.0e6;
-  Drive chassis = make_chassis(a);
-  DriveTestAccess::imu_calibration_complete(chassis) = true;
-  sim::NoiseConfig no_noise{/*enabled=*/false, /*seed=*/1};
-  sim::SimRobot sim(chassis, a, no_noise);
-
-  // Isolate SingleStuckWatch from the two OTHER exit paths that could otherwise also end this wait
-  // around the same tick and hide what's being tested:
-  //  - The velocity exit (and its mA-timeout twin) only run once `exit.velocity_exit_time != 0`
-  //    (PID.cpp's exit_condition(), guarding both the derivative-based and the current-based
-  //    checks) -- with a never-moving robot, PID's own arm_timer fallback (VELOCITY_ARM_FALLBACK,
-  //    1000ms) would arm it anyway and it would fire ~500ms later, the same ~1500ms/150 passes
-  //    this test expects from the fix, masking a still-broken StuckWatch behind a correct-looking
-  //    result. Setting velocity_exit_time to 0 disables both, leaving mA_timeout (kept at the
-  //    library default 500ms) as window_'s source instead (StuckWatch's own window_ picks whichever
-  //    of the two is nonzero).
-  //  - The mA-timeout exit is otherwise independent and current-gated (is_over_current() >= 2.5A).
-  //    torque_available -- and so current_a -- scales with commanded duty even while net torque
-  //    clamps to 0 from the resistive load above, so a low speed cap (10, vs turn's usual ~100-110)
-  //    keeps current around 10% * 2.5A + free_current_a =~ 0.35A, safely under the 2.5A threshold,
-  //    so this exit never fires either.
-  chassis.pid_turn_exit_condition_set(90, 3, 250, 7, /*velocity_exit_time=*/0, /*mA_timeout=*/500);
-  chassis.pid_turn_set(90, 10);
-
-  std::uint32_t baseline = ez::detail::stats.auto_task_passes.load(std::memory_order_relaxed);
-  bool returned = false;
-  std::uint32_t elapsed_ms = 0;
-  std::string out = test_stub::capture_stdout([&] {
-    chassis.pid_print_toggle(true);
-    auto r = run_capped([&] { chassis.pid_wait(); }, /*max_ticks=*/1000 /* 10s cap, generous */);
-    returned = r.first;
-    elapsed_ms = r.second;
-  });
-  std::uint32_t after = ez::detail::stats.auto_task_passes.load(std::memory_order_relaxed);
-  std::uint32_t trip_passes = after - baseline;
-
-  // Expected math for the fixed harness: SingleStuckWatch's own start allowance
-  // (STUCK_START_ALLOWANCE_MS=1000ms, since this robot never moves so moved_ stays false the whole
-  // time) is 1000/DELAY_TIME=100 passes, plus window_/DELAY_TIME = 500/10 = 50 more once the window
-  // itself starts being checked -- a trip around 150 passes (~1.5s wall-clock, plus pid_wait()'s
-  // own opening 10ms delay) after pid_wait() is called. The old bug's frozen counter meant the
-  // pass-based check could never fire at all, leaving only the wall-clock-only
-  // STUCK_STARVED_WINDOWS fallback (4x window): 100 + 4*50 = 300 passes, ~3s.
-  //
-  // elapsed_ms, not trip_passes, is this test's real evidence: trip_passes is read from
-  // ez::detail::stats.auto_task_passes -- the exact counter bug 1 is about -- so under the
-  // unfixed bug it would itself stay frozen at 0, and `trip_passes < 220` would pass vacuously
-  // (0 < 220) while telling us nothing. elapsed_ms comes from the fake clock's own now_ms, which
-  // advances on every delay() call independent of that counter, so it distinguishes a genuine
-  // ~1.5s (real window governed) trip from an unfixed ~3s (4x fallback) one either way. Kept as a
-  // secondary, informational check once the counter itself is confirmed live (bug 1's other test
-  // above already covers that directly).
-  MESSAGE("sim harness bug1 (stuck timing): returned=" << returned << " elapsed_ms=" << elapsed_ms << " trip_passes=" << trip_passes
-                                                       << " interfered=" << chassis.interfered << " stdout=[" << out << "]");
-
-  REQUIRE(returned);                                    // a real exit_condition fired, not the tick cap
-  CHECK(chassis.interfered);                            // the stuck failsafe, not a normal exit
-  CHECK(out.find("Turn: Stuck") != std::string::npos);  // specifically SingleStuckWatch's TURN path, not velocity/mA
-  CHECK(elapsed_ms > 1000);                             // at least the start allowance elapsed
-  CHECK(elapsed_ms < 2200);                             // well short of the 4x-fallback's ~3000ms -- the real window governed
-  CHECK(trip_passes > 100);                             // secondary: the pass counter is live and moving with elapsed_ms
-}
-
 TEST_CASE("sim harness bug 2: an open-loop left-forward/right-reverse command increases the reported IMU heading (real V5 clockwise-positive)") {
   // Bypasses the turn PID entirely -- drive_set() calls private_drive_set() directly (drive.cpp),
   // the exact same left=+/right=- convention turn_pid_task() uses for a positive (increasing-
@@ -205,7 +131,7 @@ TEST_CASE("sim harness bug 2: a closed-loop TURN converges toward its target ins
   // through the exit window with nothing to slow it down. See
   // test_turn_control_no_fault.cpp for the now-passing 90-degree case across all three
   // archetypes. Left here at the original target-120/tight-constants case since it's already
-  // known-good and this test's job is the IMU sign, not tuning or StuckWatch's rebound behavior.
+  // known-good and this test's job is the IMU sign, not tuning.
   sim::SimArchetype a = sim::archetype_light_fast();
   Drive chassis = make_chassis(a);
   DriveTestAccess::imu_calibration_complete(chassis) = true;
