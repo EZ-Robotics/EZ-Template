@@ -241,9 +241,9 @@ void Drive::wait_until_drive(double target) {
       } else {
         if (print_toggle) {
           std::cout << "  Left: " << exit_to_string(left_exit) << " Wait Until Exit Failsafe, triggered at " << drive_sensor_left() - l_start << " instead of "
-                    << l_tar << "\n";
+                    << target << "\n";
           std::cout << "  Right: " << exit_to_string(right_exit) << " Wait Until Exit Failsafe, triggered at " << drive_sensor_right() - r_start
-                    << " instead of " << r_tar << "\n";
+                    << " instead of " << target << "\n";
         }
         if (left_exit == mA_EXIT || left_exit == VELOCITY_EXIT || right_exit == mA_EXIT || right_exit == VELOCITY_EXIT) {
           interfered = true;
@@ -255,7 +255,7 @@ void Drive::wait_until_drive(double target) {
     else if (util::sgn(l_error) != l_sgn || util::sgn(r_error) != r_sgn) {
       if (print_toggle)
         printf("  Drive Wait Until Exit Success. Triggered at: L,R(%.2f, %.2f)  Target: L,R(%.2f, %.2f)\n", drive_sensor_left() - l_start,
-               drive_sensor_right() - r_start, l_tar, r_tar);
+               drive_sensor_right() - r_start, target, target);
       leftPID.timers_reset();
       rightPID.timers_reset();
       return;
