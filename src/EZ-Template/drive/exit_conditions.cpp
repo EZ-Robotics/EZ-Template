@@ -309,6 +309,8 @@ void Drive::wait_until_drive(double target) {
 
   exit_output left_exit = RUNNING;
   exit_output right_exit = RUNNING;
+  int stalled = 0, waited = 0;
+  bool moved = false;
 
   while (true) {
     if (wait_for.changed()) return wait_until_drive(target);
@@ -327,6 +329,21 @@ void Drive::wait_until_drive(double target) {
         if (xy_exit != RUNNING) {
           if (print_toggle) std::cout << "  XY: " << exit_to_string(xy_exit) << " Wait Until Exit Failsafe, the move ended before reaching " << target << "\n";
           if (exit_interferes(xy_exit, xyPID)) interfered = true;
+          return;
+        }
+      }
+
+      // On the way to the last point leftPID and rightPID are aimed at the look-ahead and their small and big exits are thrown away, which
+      // restarts their velocity and mA timers every time.  A robot pinned near the look-ahead is caught on xy's speed instead, like pid_wait() does.
+      if (mode != DRIVE && !on_last_point) {
+        bool still = xyPID.speed_get() <= velocity_exit_speed(xyPID);
+        int window = xyPID.exit.velocity_exit_time != 0 ? xyPID.exit.velocity_exit_time : xyPID.exit.mA_timeout;
+        waited += util::DELAY_TIME;
+        moved = moved || !still;
+        stalled = still && (moved || waited > 1000) ? stalled + util::DELAY_TIME : 0;
+        if (window != 0 && stalled > window) {
+          if (print_toggle) std::cout << "  XY stopped partway through the path, the move ended before reaching " << target << "\n";
+          interfered = true;
           return;
         }
       }
