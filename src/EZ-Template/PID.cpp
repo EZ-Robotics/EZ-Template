@@ -77,6 +77,7 @@ double PID::raw_compute() {
   std::uint32_t now = pros::millis();
   if (now - speed_start_ms >= SPEED_WINDOW) {
     speed = now - speed_start_ms > 2 * SPEED_WINDOW ? 0.0 : std::fabs(cur - speed_start_cur) * 1000.0 / (now - speed_start_ms);
+    if (!std::isfinite(speed)) speed = 0.0;  // a failed read (NaN, PROS_ERR_F) reads as stopped, not as a speed nothing can ever be under
     speed_start_cur = cur;
     speed_start_ms = now;
   }
