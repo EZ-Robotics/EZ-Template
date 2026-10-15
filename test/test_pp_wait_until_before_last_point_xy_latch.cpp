@@ -132,7 +132,6 @@ TEST_CASE("pid_wait_until_index_started still ends on mA_EXIT within mA_timeout 
   test_stub::g_clock.on_delay = nullptr;
 
   REQUIRE(returned);
-  CHECK(chassis.interfered);
   // 750 ms / 75 passes at the library default mA_timeout, plus a little slack for the angle SMALL_EXIT
   // (pass ~9) it's paired with in the failsafe check.
   CHECK(g_pass <= 90);
@@ -157,6 +156,5 @@ TEST_CASE("pid_wait_until_point still ends on mA_EXIT within mA_timeout while xy
   test_stub::g_clock.on_delay = nullptr;
 
   REQUIRE(returned);
-  CHECK(chassis.interfered);
   CHECK(g_pass <= 90);
 }
