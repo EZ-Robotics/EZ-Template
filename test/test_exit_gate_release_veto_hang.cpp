@@ -1,9 +1,6 @@
-// pid_wait() must not loop for ever on a robot whose exit the gate releases on one pass and the recheck of the latched exit vetoes
-// on the next. The gate hands the wait SMALL_EXIT / BIG_EXIT on a pass where the robot reads stopped; the recheck right after reads the
-// window one pass later, finds the robot not stopped, and puts the side back to RUNNING. A side that is released on the same pass the
-// stuck watch would be consulted is never fed to it (the watch is only called for a side that is still RUNNING), so a robot that
-// alternates between the two readings is ended by nothing. The rule: every pass of a wait that does not return consults the watch for
-// each side that was RUNNING when the pass began, and that includes the pass its exit is released.
+// pid_wait() and pid_wait_until() must return on a robot whose readings say "stopped" on one pass and "moving" on the next: a buzzing
+// drive, or a pinned robot whose sensor is made to jump up and back down every few passes. Exits that latch once and are never rechecked
+// end each of these.
 //
 // Every wait is capped in sim time here, so "no return by T" is a failure, not a hung suite.
 #include <cmath>
@@ -66,14 +63,9 @@ TEST_CASE("pid_wait() DRIVE on the classroom robot with a 50 ms small exit time 
 
 namespace {
 
-// A reading that alternates between "stopped" and "moving" on consecutive passes, which is what makes the gate release an exit
-// on one pass and the recheck veto it on the next. The tracker counts the path length over a window of 9 passes (90 ms); a jump up
-// on one pass and back down two passes later puts 4 or 5 jumps in that window on alternate passes, and with the jump sized so 4 are
-// under the floor (4 deg/s * 90 ms = 0.36 deg) and 5 are over, the window reads stopped, moving, stopped, moving. The robot is pinned
-// for the whole run so that only the scripted jumps move it.
+// A pinned heading that jumps up by ALT_JUMP_DEG and back down 20 ms later, every 40 ms: a reading that flickers between moving and
+// stopped on consecutive passes. The robot is pinned for the whole run so that only the scripted jumps move it.
 constexpr int ALT_WINDOW_MS = 90;
-// Each jump counts as 0.08 deg of travel after the tracker's one-count backlash band of 0.01 deg is taken off both ends: 4 * 0.08 is
-// under 0.36 and 5 * 0.08 is over it.
 constexpr double ALT_JUMP_DEG = 0.10;
 
 void alternate_heading(Rig& r, int from_ms, int to_ms) {
@@ -110,10 +102,8 @@ TEST_CASE("pid_wait() SWING returns within 4 s on a heading that alternates betw
 
 namespace {
 
-// The same for the odom pose, on the classroom robot, whose sensor count is 0.011 in. The xy axis counts path length over the window
-// against 1.5 in/s: over 70 ms that is 0.105 in, and a jump the sensor reads as five counts is worth 0.034 in of travel (the one-count
-// backlash band is taken off both ends), so a window of 7 passes holds 3 of them (0.102 in, stopped) or 4 (0.136 in, moving) on
-// alternate passes. The heading never moves.
+// The same for the odom pose and the drive sensors, on the classroom robot: a jump the sensor reads as a few counts, up and back down.
+// The heading never moves.
 constexpr int ALT_XY_WINDOW_MS = 70;
 
 void alternate_position(Rig& r, int from_ms, int to_ms) {
@@ -139,7 +129,7 @@ TEST_CASE("pid_wait() odom point returns within 4 s on a pose that alternates be
   CHECK_MESSAGE(ms < 4000.0, "returned after " << ms << " ms");
 }
 
-// The pid_wait_until() loops have the same shape: the gate releases on one pass, the next pass's recheck of the latched exit vetoes it.
+// The pid_wait_until() loops on the same flickering readings
 TEST_CASE("pid_wait_until(distance) on a plain drive returns within 4 s on a pose that alternates between stopped and moving") {
   Rig r(archetype_classroom(), 1, false, 1);
   r.chassis.pid_drive_exit_condition_set(ALT_XY_WINDOW_MS, 1, 250, 3, ALT_XY_WINDOW_MS, 500);
@@ -173,10 +163,11 @@ TEST_CASE("pid_wait_until(angle) on a swing returns within 4 s on a heading that
   CHECK_MESSAGE(ms < 4000.0, "returned after " << ms << " ms");
 }
 
-// What could go wrong with consulting the watch on the release pass: a robot released and judged stuck on that same pass takes the
-// stuck verdict instead of the window exit. On a healthy motion that is the same settle: not interfered, no later than the window exit
-// (490 ms before), and the robot is stopped by the library's own floor when it returns.
-TEST_CASE("a healthy 6 in drive at the 2550R exits settles on the release pass: not interfered, no later than the window exit, stopped") {
+// A healthy 6 in drive at 2550R's exits ends on the velocity exit (100 ms, at 5 in/s) once the robot is inside big_error, and the robot is
+// under the stop speed by then, so it is clean. The velocity exit reads the library's speed over 100 ms windows, so it can only start
+// counting at the end of the first window the robot spent under 5 in/s, up to two windows after the robot really got under it. The bound
+// is that, plus the velocity exit time, plus two passes.
+TEST_CASE("a healthy 6 in drive at the 2550R exits ends clean once the robot is under 5 in/s: no later than the velocity exit allows, stopped") {
   Rig r(sim::archetype_light_fast(), 1, false, 1);
   r.chassis.pid_drive_exit_condition_set(90, 1, 200, 3, 100, 100);
   double ms = 0;
@@ -184,7 +175,20 @@ TEST_CASE("a healthy 6 in drive at the 2550R exits settles on the release pass: 
   bool ok = r.wait([&] { r.chassis.pid_wait(); }, CAP_TICKS, &ms);
   REQUIRE(ok);
   CHECK_FALSE(r.chassis.interfered);
-  CHECK_MESSAGE(ms <= 490.0, "returned after " << ms << " ms");
+  // When the robot's true speed first got under the velocity exit's 5 in/s and stayed there
+  double slow_at = -1;
+  for (size_t i = 1; i < r.trace.size(); i++) {
+    double v = std::fabs(r.trace[i].avg - r.trace[i - 1].avg) / ((r.trace[i].t_ms - r.trace[i - 1].t_ms) / 1000.0);
+    if (v > 5.0)
+      slow_at = -1;
+    else if (slow_at < 0)
+      slow_at = r.trace[i].t_ms;
+  }
+  REQUIRE(slow_at >= 0);
+  // The trace ends on the pass the wait returned on, in the sim's own time
+  double returned_at = r.trace.back().t_ms;
+  double bound = slow_at + 2 * 100 + 100 + 2 * util::DELAY_TIME;
+  CHECK_MESSAGE(returned_at <= bound, "returned at " << returned_at << " ms, the robot was under 5 in/s from " << slow_at << " ms");
   CHECK_MESSAGE(r.drive_speed_over(100) < r.drive_floor(100), "still moving at " << r.drive_speed_over(100) << " in/s");
   auto after = r.run_on(500);
   CHECK_MESSAGE(after.distance < 0.3, "moved " << after.distance << " in in the 500 ms after it returned");
