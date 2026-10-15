@@ -256,8 +256,8 @@ exit_output PID::exit_condition(const std::vector<pros::Motor>& sensor, bool pri
 
 exit_output PID::exit_condition(const pros::MotorGroup& sensor, bool print) {
   std::vector<pros::Motor> vector_sensor;
-  for (i = 0; i < sensor.size(); i++) {
-    vector_sensor.push_back(pros::Motor(sensor.get_port(i)));
+  for (int n = 0; n < sensor.size(); n++) {
+    vector_sensor.push_back(pros::Motor(sensor.get_port(n)));
   }
   return exit_condition(vector_sensor, print);
 }
