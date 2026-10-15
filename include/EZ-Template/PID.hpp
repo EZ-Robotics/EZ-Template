@@ -84,8 +84,8 @@ public:
    * \param p_big_error
    *        sets big_error, timer will start when error is within this
    * \param p_velocity_exit_time
-   *        sets velocity_exit_time, timer will start when the sensor is under the stop speed after the robot has moved.
-   *        If the robot never moves, it starts after 1 second.
+   *        sets velocity_exit_time, timer will start when the sensor is moving slower than the velocity exit speed (5 units per second unless
+   *        velocity_sensor_main_exit_set() changed it) after the robot has moved.  If the robot never moves, it starts after 1 second.
    * \param p_mA_timeout
    *        sets mA_timeout, time the motor can be over its current limit before exiting.  Only checked by the exit_condition overloads that take a motor or
    *        motors.
@@ -181,8 +181,9 @@ public:
   bool velocity_sensor_secondary_toggle_get();
 
   /**
-   * Sets the stop speed: how slow the sensor has to be moving to count as stopped, as the distance it moves in one 10 ms tick.  The same
-   * number as stop_speed_set(), 100 times smaller.
+   * Sets the velocity exit's speed: how slow the sensor has to be moving for the velocity exit's timer to run, as the distance it moves in one
+   * 10 ms tick.  The speed is measured over the last 100 ms.  The default is 0.05, which is 5 units per second.  This is not the stop speed (see
+   * stop_speed_set()), which only the small and big exits use.
    *
    * \param zero
    *        a small double
@@ -190,14 +191,13 @@ public:
   void velocity_sensor_main_exit_set(double zero);
 
   /**
-   * Returns the stop speed as the distance the sensor moves in one 10 ms tick.
+   * Returns the velocity exit's speed as the distance the sensor moves in one 10 ms tick.
    */
   double velocity_sensor_main_exit_get();
 
   /**
    * Sets the stop speed: how slow the sensor has to be moving to count as stopped, in sensor units per second.  The small and big exits only
-   * count time while the sensor is under it, and the velocity exit waits for it.  The speed is measured from the sensor over the last 100 ms.
-   * The default is 5.
+   * count time while the sensor is under it.  The speed is measured from the sensor over the last 100 ms.  The default is 5.
    *
    * \param units_per_s
    *        sensor units per second
@@ -326,7 +326,8 @@ public:
   double derivative = 0.0;
 
 private:
-  double stop_speed = 5.0;  // units per second
+  double stop_speed = 5.0;          // units per second, gates the small and big exits
+  double velocity_zero_main = 5.0;  // units per second, the velocity exit's speed
   // The sensor's speed over the last SPEED_WINDOW ms, in units per second, and where that window started
   double speed = 0.0;
   double speed_start_cur = 0.0;

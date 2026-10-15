@@ -132,27 +132,24 @@ TEST_CASE("the small exit's timer pauses while the robot is moving and picks up 
   CHECK(took < 500);
 }
 
-TEST_CASE("the velocity exit uses the stop speed") {
+TEST_CASE("the velocity exit does not use the stop speed") {
   test_stub::reset_all();
   PID pid(1, 0, 0, 0, "test");
   pid.exit_condition_set(0, 0.0, 0, 0.0, 100, 0);
   pid.stop_speed_set(20.0);
-  // Moves first, then creeps along at 10 units/s: under a 20 units/s stop speed that is stopped
+  // Moves first, then creeps along at 10 units/s: under a 20 units/s stop speed, but over the velocity exit's own 5 units/s
   double cur = 0.0;
   for (int i = 0; i < 30; i++) {
     cur += 1.0;
     pass(pid, 50.0, cur);
   }
-  int took = 0;
   exit_output out = RUNNING;
   std::uint32_t start = pros::millis();
   while (out == RUNNING && pros::millis() - start < 1000) {
     cur += 0.1;
     out = pass(pid, 50.0, cur);
   }
-  took = (int)(pros::millis() - start);
-  CHECK(out == VELOCITY_EXIT);
-  CHECK(took < 600);
+  CHECK(out == RUNNING);
 }
 
 TEST_CASE("the drive's stop speeds have defaults, units overloads and getters, and refuse a speed that can't be one") {

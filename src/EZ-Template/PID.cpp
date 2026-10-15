@@ -142,8 +142,8 @@ bool PID::velocity_sensor_secondary_toggle_get() { return use_second_sensor; }
 void PID::velocity_sensor_secondary_set(double secondary_sensor) { second_sensor = secondary_sensor; }
 double PID::velocity_sensor_secondary_get() { return second_sensor; }
 
-void PID::velocity_sensor_main_exit_set(double zero) { stop_speed_set(zero * 1000.0 / util::DELAY_TIME); }
-double PID::velocity_sensor_main_exit_get() { return stop_speed_get() * util::DELAY_TIME / 1000.0; }
+void PID::velocity_sensor_main_exit_set(double zero) { velocity_zero_main = zero * 1000.0 / util::DELAY_TIME; }
+double PID::velocity_sensor_main_exit_get() { return velocity_zero_main * util::DELAY_TIME / 1000.0; }
 void PID::stop_speed_set(double units_per_s) { stop_speed = units_per_s; }
 double PID::stop_speed_get() { return stop_speed; }
 double PID::speed_get() { return speed; }
@@ -208,12 +208,12 @@ exit_output PID::exit_condition_core(int elapsed, bool print) {
   // If it never moves (pinned, stalled) arm anyway after a fallback window so pid_wait can't hang.
   if (exit.velocity_exit_time != 0 && !velocity_armed) {
     arm_timer += elapsed;
-    if (speed > stop_speed || arm_timer > VELOCITY_ARM_FALLBACK) velocity_armed = true;
+    if (speed > velocity_zero_main || arm_timer > VELOCITY_ARM_FALLBACK) velocity_armed = true;
   }
 
   // If the motor velocity is 0, the code will timeout and set interfered to true.
   if (exit.velocity_exit_time != 0 && velocity_armed) {  // Check if this condition is enabled
-    if (speed <= stop_speed) {
+    if (speed <= velocity_zero_main) {
       k += elapsed;
       if (k > exit.velocity_exit_time) {
         timers_reset();

@@ -3694,7 +3694,8 @@ public:
    * motor speed.  The default is 1.5.
    *
    * The robot's speed is how far it moved over the last 100 ms.  The small and big exits only count time while the robot is under this speed (the
-   * timer pauses while it is moving, it does not start over), and the velocity exit waits for it.  A higher speed ends motions sooner, with the
+   * timer pauses while it is moving, it does not start over).  The velocity exit does not use it: it ends a wait when the robot has been under 5
+   * inches per second (5 degrees per second for turns) for the velocity exit time.  A higher speed ends motions sooner, with the
    * robot still moving a little.  A lower one waits for the robot to be stiller.  A speed of 0 or less, or one that isn't a number, is refused with
    * a printed warning and the old speed is kept.
    *
@@ -3723,7 +3724,7 @@ public:
    * 0 to 127 motor speed.  The default is 4.
    *
    * Works the same as pid_distance_exit_stop_speed_set(): measured over the last 100 ms, the small and big exits pause their timers while the
-   * robot is above it, and the velocity exit waits for it.  Applies to turns, swings, and the heading of odom moves.  The default is a
+   * robot is above it, and the velocity exit does not use it.  Applies to turns, swings, and the heading of odom moves.  The default is a
    * placeholder until it is tuned from a robot log.
    *
    * \param deg_per_s

@@ -11,6 +11,11 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 using namespace ez;
 
+namespace {
+// The speed under which a PID's velocity exit counts the robot as stopped, in units per second
+double velocity_exit_speed(PID& pid) { return pid.velocity_sensor_main_exit_get() * 1000.0 / util::DELAY_TIME; }
+}  // namespace
+
 void Drive::pid_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time,
                                          int p_mA_timeout, bool use_imu) {
   leftPID.exit_condition_set(p_small_exit_time, p_small_error, p_big_exit_time, p_big_error, p_velocity_exit_time, p_mA_timeout);
@@ -136,7 +141,7 @@ double Drive::pid_angle_exit_stop_speed_get() { return turnPID.stop_speed_get();
 // zero translation until the heading is close, and xyPID reads that as stopped.  A pinned robot is stopped in heading too, so that still counts.
 exit_output Drive::xy_exit_condition() {
   exit_output xy_exit = xyPID.exit_condition({left_motors[0], right_motors[0]});
-  bool pivoting = xy_translation_bias_gated && current_a_odomPID.speed_get() > current_a_odomPID.stop_speed_get();
+  bool pivoting = xy_translation_bias_gated && current_a_odomPID.speed_get() > velocity_exit_speed(current_a_odomPID);
   return xy_exit == VELOCITY_EXIT && pivoting ? RUNNING : xy_exit;
 }
 
@@ -193,7 +198,7 @@ void Drive::pid_wait() {
         xy_exit = xy_exit != RUNNING ? xy_exit : xy_exit_condition();
         a_exit = a_exit != RUNNING ? a_exit : current_a_odomPID.exit_condition({left_motors[0], right_motors[0]});
 
-        bool still = xyPID.speed_get() <= xyPID.stop_speed_get() && current_a_odomPID.speed_get() <= current_a_odomPID.stop_speed_get();
+        bool still = xyPID.speed_get() <= velocity_exit_speed(xyPID) && current_a_odomPID.speed_get() <= velocity_exit_speed(current_a_odomPID);
         waited += util::DELAY_TIME;
         moved = moved || !still;
         stalled = still && (moved || waited > 1000) ? stalled + util::DELAY_TIME : 0;
