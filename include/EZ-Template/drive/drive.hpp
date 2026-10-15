@@ -3931,6 +3931,20 @@ private:
    */
   ez::Lock<pros::RecursiveMutex> drive_mutex;
 
+  // What motion a wait is waiting on.  A wait is for the motion that was set when it started, so when another task starts a new one (a
+  // different mode, or a different target) the wait starts over on the new one.
+  struct WaitSnapshot {
+    explicit WaitSnapshot(Drive& drive) : d(drive), mode(drive.mode), chain_target(drive.chain_target_start), odom_target(drive.odom_target_start) {}
+    bool changed() const {
+      return d.mode != mode || d.chain_target_start != chain_target || d.odom_target_start.x != odom_target.x || d.odom_target_start.y != odom_target.y ||
+             d.odom_target_start.theta != odom_target.theta;
+    }
+    Drive& d;
+    e_mode mode;
+    double chain_target;
+    pose odom_target;
+  };
+
   std::function<void(void)> tracking;
   void opcontrol_drive_activebrake_targets_set();
   double odom_smooth_weight_smooth = 0.0;

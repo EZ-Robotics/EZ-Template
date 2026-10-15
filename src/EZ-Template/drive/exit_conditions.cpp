@@ -112,6 +112,9 @@ void Drive::pid_odom_turn_exit_condition_set(ez::QTime p_small_exit_time, ez::QA
 
 // User wrapper for exit condition
 void Drive::pid_wait() {
+  // A new motion set from another task mid-wait means this wait starts over on it
+  WaitSnapshot wait_for(*this);
+
   // Let the PID run at least 1 iteration
   pros::delay(util::DELAY_TIME);
 
@@ -119,6 +122,7 @@ void Drive::pid_wait() {
     exit_output left_exit = RUNNING;
     exit_output right_exit = RUNNING;
     while (left_exit == RUNNING || right_exit == RUNNING) {
+      if (wait_for.changed()) return pid_wait();
       leftPID.velocity_sensor_secondary_set(drive_imu_accel_get());
       rightPID.velocity_sensor_secondary_set(drive_imu_accel_get());
       left_exit = left_exit != RUNNING ? left_exit : leftPID.exit_condition(left_motors[0]);
@@ -144,6 +148,7 @@ void Drive::pid_wait() {
       // The angle exit belongs to the point it latched at, so it starts over on every new point
       int a_exit_index = pp_index;
       while (pp_index != (int)pp_movements.size() - 1) {
+        if (wait_for.changed()) return pid_wait();
         if (pp_index != a_exit_index) {
           a_exit_index = pp_index;
           a_exit = RUNNING;
@@ -167,6 +172,7 @@ void Drive::pid_wait() {
 
     // When we're at the last point in PP / we're just going to point
     while (xy_exit == RUNNING || a_exit == RUNNING) {
+      if (wait_for.changed()) return pid_wait();
       xyPID.velocity_sensor_secondary_set(drive_imu_accel_get());
       current_a_odomPID.velocity_sensor_secondary_set(drive_imu_accel_get());
       xy_exit = xy_exit != RUNNING ? xy_exit : xyPID.exit_condition({left_motors[0], right_motors[0]});
@@ -188,6 +194,7 @@ void Drive::pid_wait() {
   else if (mode == TURN || mode == TURN_TO_POINT) {
     exit_output turn_exit = RUNNING;
     while (turn_exit == RUNNING) {
+      if (wait_for.changed()) return pid_wait();
       turnPID.velocity_sensor_secondary_set(drive_imu_accel_get());
       turn_exit = turn_exit != RUNNING ? turn_exit : turnPID.exit_condition({left_motors[0], right_motors[0]});
       pros::delay(util::DELAY_TIME);
@@ -204,6 +211,7 @@ void Drive::pid_wait() {
     exit_output swing_exit = RUNNING;
     pros::Motor& sensor = current_swing == ez::LEFT_SWING ? left_motors[0] : right_motors[0];
     while (swing_exit == RUNNING) {
+      if (wait_for.changed()) return pid_wait();
       swingPID.velocity_sensor_secondary_set(drive_imu_accel_get());
       swing_exit = swing_exit != RUNNING ? swing_exit : swingPID.exit_condition(sensor);
       pros::delay(util::DELAY_TIME);
@@ -217,6 +225,7 @@ void Drive::pid_wait() {
 }
 
 void Drive::wait_until_drive(double target) {
+  WaitSnapshot wait_for(*this);
   pros::delay(10);
 
   // Make sure mode is correct
@@ -237,6 +246,7 @@ void Drive::wait_until_drive(double target) {
   exit_output right_exit = RUNNING;
 
   while (true) {
+    if (wait_for.changed()) return wait_until_drive(target);
     l_error = l_tar - drive_sensor_left();
     r_error = r_tar - drive_sensor_right();
 
@@ -290,6 +300,7 @@ void Drive::wait_until_drive(double target) {
 
 // Function to wait until a certain position is reached.  Wrapper for exit condition.
 void Drive::wait_until_turn_swing(double target) {
+  WaitSnapshot wait_for(*this);
   // Make sure mode is correct
   if (!(mode == TURN || mode == SWING || mode == TURN_TO_POINT)) {
     printf("Mode needs to be swing or turn!\n");
@@ -312,6 +323,7 @@ void Drive::wait_until_turn_swing(double target) {
   pros::Motor& sensor = current_swing == ez::LEFT_SWING ? left_motors[0] : right_motors[0];
 
   while (true) {
+    if (wait_for.changed()) return wait_until_turn_swing(target);
     g_error = target - drive_imu_get();
 
     // If turning...
@@ -402,6 +414,7 @@ void Drive::pid_wait_until(double target) {
 }
 
 void Drive::pid_wait_until_point(pose target) {
+  WaitSnapshot wait_for(*this);
   pros::delay(10);
 
   // Make sure mode is correct
@@ -416,6 +429,7 @@ void Drive::pid_wait_until_point(pose target) {
   exit_output a_exit = RUNNING;
 
   while (true) {
+    if (wait_for.changed()) return pid_wait_until_point(target);
     xyPID.velocity_sensor_secondary_set(drive_imu_accel_get());
     current_a_odomPID.velocity_sensor_secondary_set(drive_imu_accel_get());
     xy_exit = xy_exit != RUNNING ? xy_exit : xyPID.exit_condition({left_motors[0], right_motors[0]});
@@ -450,6 +464,7 @@ void Drive::pid_wait_until(united_pose target) { pid_wait_until_point(target); }
 
 // wait for pp
 void Drive::pid_wait_until_index_started(int index) {
+  WaitSnapshot wait_for(*this);
   // Let the PID run at least 1 iteration
   pros::delay(util::DELAY_TIME);
 
@@ -467,7 +482,7 @@ void Drive::pid_wait_until_index_started(int index) {
 
   exit_output xy_exit = RUNNING;
   exit_output a_exit = RUNNING;
-  while (pp_index < injected_pp_index[index]) {
+  while (!wait_for.changed() && pp_index < injected_pp_index[index]) {
     xyPID.velocity_sensor_secondary_set(drive_imu_accel_get());
     current_a_odomPID.velocity_sensor_secondary_set(drive_imu_accel_get());
     xy_exit = xy_exit != RUNNING ? xy_exit : xyPID.exit_condition({left_motors[0], right_motors[0]});
@@ -486,6 +501,7 @@ void Drive::pid_wait_until_index_started(int index) {
 
     pros::delay(util::DELAY_TIME);
   }
+  if (wait_for.changed()) pid_wait_until_index_started(index - 1);
 }
 
 void Drive::pid_wait_until_index(int index) {
