@@ -3023,7 +3023,7 @@ public:
    *
    * Returns true when interfered, and false when nothing happened.
    *
-   * A wait that ended on the velocity or mA exit sets this.
+   * A wait that ended on the velocity or mA exit with the error outside `big_error` sets this.
    */
   bool interfered = false;
 
