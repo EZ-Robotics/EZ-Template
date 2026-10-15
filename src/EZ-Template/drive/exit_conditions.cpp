@@ -180,6 +180,8 @@ void Drive::pid_wait() {
     if (xy_exit == mA_EXIT || xy_exit == VELOCITY_EXIT || a_exit == mA_EXIT || a_exit == VELOCITY_EXIT) {
       interfered = true;
     }
+
+    odom_heading_target_resolve();
   }
 
   // Turn Exit
@@ -477,13 +479,22 @@ void Drive::pid_wait_until_index(int index) {
   pid_wait_until_point(target);
 }
 
+// An odom motion with a final heading leaves headingPID aimed at the equivalent angle nearest the IMU.  The raw target can be a full turn
+// away from it (IMU at 270, target -90), which the next drive or relative turn would read as a 360 degree error.
+void Drive::odom_heading_target_resolve() {
+  ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+  if (odom_target_start.theta != ANGLE_NOT_SET) headingPID.target_set(new_turn_target_compute(odom_target_start.theta, drive_angle_get(), shortest));
+}
+
 // Pid wait, but quickly :)
 void Drive::pid_wait_quick() {
   if (mode == PURE_PURSUIT) {
     pid_wait_until_index(injected_pp_index.size() - 2);
+    odom_heading_target_resolve();
     return;
   } else if (mode == POINT_TO_POINT) {
     pid_wait_until_point(odom_target_start);
+    odom_heading_target_resolve();
     return;
   } else if (!(mode == DRIVE || mode == TURN || mode == SWING || mode == TURN_TO_POINT)) {
     printf("Not in a valid drive mode!\n");
