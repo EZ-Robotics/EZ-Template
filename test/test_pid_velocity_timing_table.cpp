@@ -1,10 +1,7 @@
 // Regression table for the bare ez::PID velocity/mA-exit channel, covering stall, twitch, creep,
 // disconnected-motor and compute/poll-cadence-mismatch shapes a lift/claw/catapult (a mechanism with
-// no StuckWatch/SingleStuckWatch backstop the way Drive's own waits have) can be in. Every scenario
-// here also ran clean against this library's own immediate parent commit, from before the velocity
-// channel's raw-value staleness/debounce mechanism was removed in favor of gating on the same
-// freshness signal the small/big timers use (see PID.cpp's exit_condition() and its own comments),
-// and before a disconnected motor's non-finite position started counting toward the mA timer.
+// no Drive-level backstop) can be in.  The velocity exit measures the sensor's net movement over 100 ms windows (so it only changes at the window
+// boundaries, every 100 ms of the virtual clock) and counts real milliseconds while that speed is at or under 5 units/s.
 //
 // Each scenario drives a bare PID (no Drive, no chassis) through a virtual 1ms timeline: `pos(t)` is
 // the sensor reading the mechanism would report at time t, and a schedule decides which of those
@@ -69,7 +66,7 @@ struct Cfg {
   bool over_current = false, disconnected = false;
   int max_ms = 8000;
   int over_current_from = -1;           // when >= 0, motor reads over current from this time on
-  std::function<void(PID&, int)> hook;  // optional per-ms hook (velocity_exit_hold etc.)
+  std::function<void(PID&, int)> hook;  // optional per-ms hook
 };
 
 Result run(const Cfg& c) {
@@ -180,11 +177,13 @@ TEST_CASE("bare PID velocity/mA timing table: full sweep (diagnostic; see the CH
 
 // ---- Hard-asserted cases, matching this channel's stated guarantees --------------
 
-TEST_CASE("bare PID: a claw at a bit-identical hard stop, velocity-only, exits within one poll of velocity_exit_time after the stop") {
+TEST_CASE("bare PID: a claw at a bit-identical hard stop, velocity-only, exits within one poll of velocity_exit_time after the speed window sees the stop") {
   Result r = report({"claw hard stop, velocity-only (0,0,0,0,500,0)", stall_400, 200, sched_periodic(10, 10), 0, 0, 500, 0, 0, 0});
   CHECK(r.e == VELOCITY_EXIT);
-  CHECK(r.t_exit >= 200 + 500);
-  CHECK(r.t_exit <= 200 + 520);
+  // The mechanism stops at t=200, the last window that saw it move closes on t=200 and the first one that reads it as still closes on t=300, where the
+  // timer holds 10 ms; it passes 500 ms on the 51st poll, t=800.
+  CHECK(r.t_exit >= 200 + 100 + 500);
+  CHECK(r.t_exit <= 200 + 100 + 520);
 }
 
 TEST_CASE("bare PID: a lift stalled mid-travel, docs constants, single motor overload, still exits (not a hang)") {
@@ -221,7 +220,7 @@ TEST_CASE("bare PID: a genuinely disconnected motor exits via mA, not by hanging
   CHECK(r3.t_exit <= 520);
 }
 
-TEST_CASE("bare PID: a disconnected motor with no motor-overload check still exits via the sanitized velocity channel") {
+TEST_CASE("bare PID: a disconnected motor with no motor-overload check still exits via the velocity channel") {
   // No MotorMode set (NONE): only PID::exit_condition() (no motor argument) runs, so the mA channel
   // is never reached at all -- this exercises the velocity channel's own derivative sanitization in
   // isolation, not the motor-argument overloads' mA handling.
@@ -229,8 +228,9 @@ TEST_CASE("bare PID: a disconnected motor with no motor-overload check still exi
   c.disconnected = true;
   Result r = report(c);
   CHECK(r.e == VELOCITY_EXIT);
-  CHECK(r.t_exit >= 500);
-  CHECK(r.t_exit <= 520);
+  // The sensor never moves, so the velocity exit arms on its 1000 ms fallback, then waits the 500 ms velocity exit time
+  CHECK(r.t_exit >= 1500);
+  CHECK(r.t_exit <= 1520);
 }
 
 TEST_CASE("bare PID: a legitimately over-current motor (not disconnected) still mA_EXITs normally") {
@@ -241,8 +241,11 @@ TEST_CASE("bare PID: a legitimately over-current motor (not disconnected) still 
   CHECK(r.t_exit <= 520);
 }
 
-TEST_CASE("bare PID: a stall with a repeating blip at or above 530ms still eventually exits, matching the parent commit") {
-  for (int P : {530, 600, 800, 1000, 1200, 1500, 1520, 1600, 2000}) {
+TEST_CASE("bare PID: a stall with a repeating blip spaced past velocity_exit_time plus two speed windows still eventually exits") {
+  // A blip sampled on a window boundary reads as movement on that window and the next one (when the sensor drops back), so the timer restarts 200 ms
+  // after it and passes 500 ms on t_blip + 700.  A blip period over 700 ms therefore always leaves room to exit, wherever the blip lands.  (A blip
+  // every 600 ms landing on every boundary keeps the timer from ever getting there, as the sweep above shows.)
+  for (int P : {800, 1000, 1200, 1500, 1520, 1600, 2000}) {
     Cfg c{"stall at 400, blip every " + std::to_string(P) + "ms, vel-only", stall_400_blip_period(P), 200, sched_periodic(10, 10), 0, 0, 500, 0, 0, 0};
     Result r = run(c);
     INFO("period ", P, "ms: ", ename(r.e), " at t=", r.t_exit);
