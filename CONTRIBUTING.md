@@ -1,84 +1,107 @@
 # Contributing to EZ-Template
 
-- Code PRs target `dev`.
-- Branch names: `<type>/<short-description>` (`bug/`, `feature/`, `docs/`, `test/`, `build/`, `cleanup/`, `safety/`).
-- `src/main.cpp` and `src/autons.cpp` are the dev robot config, excluded from the packaged library.
-- The example project lives on the `example-project` branch, which never merges into `dev` or `main`. PRs that change it target `example-project`, not `dev`.
+You don't need to write code to contribute. If you report a bug or test a fix on your robot, you get the Contributor role in the [Discord](https://discord.gg/EHjXBcK2Gy) and get added to the contributors list. GitHub and the Discord both require you to be 13 or older.
 
-## Commits & PR titles
+Questions go in the Discord. Bugs and ideas go in a GitHub issue.
 
-Lead with a gitmoji from [gitmoji.dev](https://gitmoji.dev), which is the standard. The table below is the common ones; if none fits, pick the closest from the site instead of stretching a row.
+## Report a bug
 
-| | |
+1. Check the robot first. Charge the battery, let hot motors cool down, unplug and replug every cable at both ends, and make sure the ports in your code match the robot.
+2. Try a fresh example project from the [releases page](https://github.com/EZ-Robotics/EZ-Template/releases). Change only your ports, wheel size and rpm. If the problem goes away, it's in your setup or code, and the Discord can help.
+3. Open an issue with the Bug report form. Tell us what you expected, what the robot did, and the shortest code that shows it. A video or the terminal output helps the most.
+
+If an AI tool found the bug, try it on a real robot before you report it. AI tools often find bugs that never happen on a robot.
+
+Bugs in PROS go to [PROS's GitHub](https://github.com/purduesigbots/pros/issues). VEXos and hardware problems go to VEX support.
+
+## Test a fix
+
+We can't test on every robot, so this helps a lot.
+
+1. Find a fix to try in the issue for a bug you've had, or ask in the Discord what needs testing.
+2. Install it on a copy of your project, not your competition code. The issue or PR says how. If it doesn't, ask there.
+3. Try what the bug report describes, then run your normal auton to make sure nothing else changed.
+4. Comment what happened, even if it didn't work or broke something else. Include your motors, wheel size, rpm, and whether you have tracking wheels. A video helps.
+
+## Fix it yourself
+
+Typos, docs, the example project, and small bug fixes outside `src/EZ-Template/drive/` can go straight to a PR.
+
+Everything else starts with an issue, and waits for a maintainer to OK it. That means anything in `src/EZ-Template/drive/` (the code that drives the robot), a new function teams can call, or more than 30 changed lines in the library.
+
+[FIRST-PR.md](FIRST-PR.md) walks through your first PR with [GitHub Desktop](https://desktop.github.com/). In short
+1. Fork the repo to your own GitHub account. Uncheck **Copy the main branch only**.
+2. Make a branch from `dev`. Use `website-dev` for the docs site and `example-project` for the example project.
+3. Make your change. Turn on Format On Save in VS Code so it gets formatted.
+4. Open the PR into the branch you started from. GitHub picks `main` for you, so change it.
+5. Fill in the PR form.
+
+Before you start on an issue, comment "I'd like to work on this" so two people don't make the same fix. Look for issues labeled `good first issue`.
+
+To fix a typo on the docs site, click **Edit this page** at the bottom of the page and GitHub walks you through it.
+
+## If AI helped
+
+Any AI tool is fine if you follow its age rules. You're responsible for what you send, same as if you typed it.
+
+- Ask it to explain errors and code instead of writing the fix for you. In [one study](https://doi.org/10.1073/pnas.2422633122), high school students who used a chatbot for answers did worse once it was gone. Students who only got hints didn't.
+- Say which tool you used and what it did.
+- You should be able to explain every line you send.
+- Don't paste names, passwords, or another team's private code into an AI tool.
+
+Your competition has its own AI rules, and they change during the season. Read the current [GRSF Student-Centered Policy](https://library.globalrobotics.org/hc/en-us/articles/51372675292820-Student-Centered-Policy) for V5RC, or the [RECF Student-Centered Policy](https://kb.roboticseducation.org/hc/en-us/articles/5449868745367) for Achieve.
+
+If you run an AI agent on this repo, point it at [AGENTS.md](AGENTS.md).
+
+## After you open a PR
+
+A maintainer reviews it and leaves comments, usually a lot on a first PR. Reply to each one by changing the code or saying why you didn't.
+
+If nobody replies in 7 days, comment on the PR. After 14, ask in the Discord.
+
+Your change reaches teams in the next release.
+
+## More details
+
+You don't need anything below here for your first issue or PR.
+
+<details>
+<summary>Branches</summary>
+
+| Branch | What goes there |
 | --- | --- |
-| 🐛 | Bug fix |
-| ✨ | New feature |
-| 💥 | Breaking change |
-| ♻️ | Refactor |
-| 🔥 | Remove code |
-| 🚨 | Fix warnings |
-| 🧪 | Tests |
-| 📝 | Docs |
-| 👷 | CI/build |
-| 🔧 | Config |
-| 🔖 | Version bump / release |
-| ⬆️ | Upgrade dependency |
-| ⏪️ | Revert |
+| `dev` | The library, tests and tools. Pre-releases are tagged here |
+| `main` | Stable releases, through a release PR from `dev`. Also the process docs and `.github/`, because GitHub reads them from `main` |
+| `website-dev` | Docs site changes |
+| `website` | The live docs site. Updated from `website-dev` |
+| `example-project` | The project teams download. Never merged into `dev` or `main` |
+| `release/X.Y` | Fixes for an older stable release, like `release/3.2` |
 
-## Locking
+If your team is on an older release like 3.2.2 and needs a fix there, say so in the PR. Fixes go to `dev` first, and a maintainer decides whether they also go to the older release.
 
-PROS deletes the running competition task on every mode change, wherever it happens to be, and deleting a task does
-not release a mutex it was holding. A task that dies inside a chassis setter leaves the chassis lock taken for good,
-and the background drive task, and with it odometry and every PID motion, waits forever. So every lock in the library
-follows two rules (`include/EZ-Template/lock.hpp`):
+</details>
 
-- Take every lock with an `ez::KillSafeGuard`. It raises the task above the PROS system daemon for as long as it holds
-  the lock, and the daemon cannot preempt a higher priority task, so it cannot delete the task while it holds the lock.
-  The two places PROS never deletes the task (`ez_auto_task` and the display's LVGL callback) use an `ez::PlainGuard`,
-  which locks the same way without changing the priority. Never use a bare `pros::Mutex`, `pros::RecursiveMutex`,
-  `std::lock_guard`, or `take()`/`give()`.
-- Nothing inside a guard may block: no `printf`, `std::cout`, `pros::delay`, `pros::screen`, screen printing, or another
-  lock. A task that blocks lets the daemon run, and the daemon may then delete it while it holds the lock. To print from
-  inside a guard, use `drive_mutex.print_after_unlock(...)`: the text is printed once the outermost guard has released.
+<details>
+<summary>When releases happen</summary>
 
-`make -C test` fails if either rule is broken (`test/test_locking_rule.cpp`). It reads the source, so it cannot see a slow
-call made by a function that a locked function calls. If you write a helper that only ever runs with the lock held and
-prints or waits, add it to `kLockedHelpers` at the top of that test.
+As the season goes on, fewer risky changes get merged, and releases avoid the 7 days before a major event like States or Worlds.
 
-What this cannot do:
+</details>
 
-- It depends on the PROS system daemon staying below the priority a guard raises to. `ez_auto_task` prints a warning at
-  startup if it does not.
-- A task that is running on an inherited priority cannot be shielded, because `task_set_priority` only changes the
-  priority a task is using when it is not inheriting one. The guard notices, puts the priority back, counts it
-  (`ez::detail::stats.unshielded_raises`), and takes the lock anyway. The public API cannot read a task's base priority,
-  so putting it back leaves the task with the inherited priority afterwards. This happens when a task calls a chassis
-  function while holding its own mutex that a higher priority task is waiting for. Do not do that.
-- Reading a sensor inside a guard can block on that sensor's port mutex, and the daemon takes every port mutex each time
-  it runs. A setter that blocks there during the same 2 ms as a mode change is still exposed.
-- PROS's own `printf` and `pros::screen` mutexes can be orphaned by a mode change. No library can fix that.
+<details>
+<summary>Your team's code</summary>
 
-## Formatting
+The [EZ-Template-Corpus](https://github.com/EZ-Robotics/EZ-Template-Corpus) is a public list of links to public projects that use EZ-Template. Its README says how to take your project off.
 
-- Formatting is checked by CI. Turn on Format On Save in VS Code (clangd or the Microsoft C/C++ extension both read `.clang-format`), or run `sh tools/format.sh` before pushing (Git Bash on Windows).
-- If CI's `format` job fails, run `sh tools/format.sh` and push again.
-- Lines are capped at 160 columns.
-- Put long comments on the line above the code, not after it.
-- To keep a list one item per line (like a list of odom points), put a comma after the last item. Without it, a list that fits in 160 columns goes on one line.
-- `// clang-format off` / `// clang-format on` is a last resort.
-- Don't format files in `include/pros`, `include/liblvgl` or `include/EZ-Units`. They're vendored, and their folders disable formatting.
-- `git blame` skips pure formatting commits listed in `.git-blame-ignore-revs`. Run `git config blame.ignoreRevsFile .git-blame-ignore-revs` once so your local blame does too. If a future PR is only a reformat, add its squash commit hash to that file after it merges.
+</details>
 
-## Before opening a PR
+<details>
+<summary>How we decide what gets fixed, and how code is written</summary>
 
-- `pros make` builds the full project.
-- `make -C test` runs the host-only unit tests (no PROS toolchain needed).
-- `sh tools/format.sh --check` passes (see Formatting above).
-- CI runs `Build`, `warnings-clean` (`-Werror`), `host-tests`, and `format` on every PR.
+See [WHAT-IS-A-BUG.md](WHAT-IS-A-BUG.md) and [CODING-STYLE.md](CODING-STYLE.md).
 
-## Merging
+</details>
 
-- Regular `dev` PRs: use **Squash and merge**, so `dev`'s history stays one
-  gitmoji-prefixed commit per PR.
-- The `dev` → `main` release PR: use a regular merge, to keep `dev`'s full
-  commit history intact on `main`.
+## License
+
+By contributing, you agree your code is released under EZ-Template's [MPL 2.0](LICENSE.md) license.
