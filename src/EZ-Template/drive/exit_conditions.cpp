@@ -158,7 +158,7 @@ double Drive::pid_angle_exit_stop_speed_get() { return turnPID.stop_speed_get();
 exit_output Drive::xy_exit_condition() {
   exit_output xy_exit = xyPID.exit_condition({left_motors[0], right_motors[0]});
   bool pivoting = xy_translation_bias_gated && current_a_odomPID.speed_get() > velocity_exit_speed(current_a_odomPID);
-  return xy_exit == VELOCITY_EXIT && pivoting ? RUNNING : xy_exit;
+  return xy_exit == VELOCITY_EXIT && (pivoting || xy_movement_unknown) ? RUNNING : xy_exit;
 }
 
 // User wrapper for exit condition
