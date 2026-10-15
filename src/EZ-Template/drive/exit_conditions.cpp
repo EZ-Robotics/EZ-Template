@@ -489,7 +489,13 @@ void Drive::pid_wait_until_index_started(int index) {
 }
 
 void Drive::pid_wait_until_index(int index) {
+  bool interfered_before = interfered;
   pid_wait_until_index_started(index);
+
+  // The first stage ended because the robot is blocked.  A second stage would restart the exit timers and report it up to twice as late
+  // as pid_wait() does.
+  if (interfered && !interfered_before) return;
+
   index += 1;
   if (index < 0 || index >= (int)injected_pp_index.size()) return;
   pose target = pp_movements[injected_pp_index[index]].target;
