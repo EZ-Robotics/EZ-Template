@@ -3498,7 +3498,7 @@ public:
    *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
    */
   void pid_odom_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time,
-                                         int p_mA_timeout, bool use_imu = true);
+                                         int p_mA_timeout, bool use_imu = false);
 
   /**
    * Set's constants for odom turning exit conditions.
@@ -3519,7 +3519,7 @@ public:
    *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
    */
   void pid_odom_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time,
-                                        int p_mA_timeout, bool use_imu = true);
+                                        int p_mA_timeout, bool use_imu = false);
 
   /**
    * Set's constants for odom turning exit conditions.
@@ -3540,7 +3540,7 @@ public:
    *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
    */
   void pid_odom_turn_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error,
-                                        ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = true);
+                                        ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = false);
 
   /**
    * Set's constants for odom driving exit conditions.
@@ -3561,7 +3561,7 @@ public:
    *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
    */
   void pid_odom_drive_exit_condition_set(ez::QTime p_small_exit_time, ez::QLength p_small_error, ez::QTime p_big_exit_time, ez::QLength p_big_error,
-                                         ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = true);
+                                         ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = false);
 
   /**
    * Set's constants for drive exit conditions.
@@ -3582,7 +3582,7 @@ public:
    *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
    */
   void pid_drive_exit_condition_set(ez::QTime p_small_exit_time, ez::QLength p_small_error, ez::QTime p_big_exit_time, ez::QLength p_big_error,
-                                    ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = true);
+                                    ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = false);
 
   /**
    * Set's constants for turn exit conditions.
@@ -3603,7 +3603,7 @@ public:
    *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
    */
   void pid_turn_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error,
-                                   ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = true);
+                                   ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = false);
 
   /**
    * Set's constants for swing exit conditions.
@@ -3624,7 +3624,7 @@ public:
    *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
    */
   void pid_swing_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error,
-                                    ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = true);
+                                    ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = false);
 
   /**
    * Set's constants for drive exit conditions.
@@ -3645,7 +3645,7 @@ public:
    *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
    */
   void pid_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time,
-                                    int p_mA_timeout, bool use_imu = true);
+                                    int p_mA_timeout, bool use_imu = false);
 
   /**
    * Set's constants for turn exit conditions.
@@ -3666,7 +3666,7 @@ public:
    *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
    */
   void pid_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time,
-                                   int p_mA_timeout, bool use_imu = true);
+                                   int p_mA_timeout, bool use_imu = false);
 
   /**
    * Set's constants for swing exit conditions.
@@ -3687,7 +3687,7 @@ public:
    *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
    */
   void pid_swing_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time,
-                                    int p_mA_timeout, bool use_imu = true);
+                                    int p_mA_timeout, bool use_imu = false);
 
   /**
    * Returns current TICK_PER_INCH.
