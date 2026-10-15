@@ -84,7 +84,8 @@ public:
    * \param p_big_error
    *        sets big_error, timer will start when error is within this
    * \param p_velocity_exit_time
-   *        sets velocity_exit_time, timer will start when velocity is 0
+   *        sets velocity_exit_time, timer will start when velocity is 0 after the robot has moved.
+   *        If the robot never moves, it starts after 1 second.
    * \param p_mA_timeout
    *        sets mA_timeout, time the motor can be over its current limit before exiting.  Only checked by the exit_condition overloads that take a motor or
    *        motors.
@@ -307,6 +308,9 @@ private:
   double velocity_zero_main = 0.05;
   double velocity_zero_secondary = 0.075;
   int i = 0, j = 0, k = 0, l = 0, m = 0;
+  int arm_timer = 0;
+  bool velocity_armed = false;
+  static constexpr int VELOCITY_ARM_FALLBACK = 1000;
   bool is_mA = false;
   // NaN, not 0.0: 0.0 would read as "not accelerating" and falsely satisfy the secondary velocity
   // exit before anyone has ever called velocity_sensor_secondary_set().  exit_condition() only treats

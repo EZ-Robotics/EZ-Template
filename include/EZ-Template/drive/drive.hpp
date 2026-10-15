@@ -3491,7 +3491,7 @@ public:
    * \param p_big_error
    *        big timer will start when error is within this, in inches
    * \param p_velocity_exit_time
-   *        velocity timer will start when velocity is 0, in ms
+   *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), in ms
    * \param p_mA_timeout
    *        mA timer will start when the first motor on the side(s) being driven is over its current limit, in ms
    * \param use_imu
@@ -3512,7 +3512,7 @@ public:
    * \param p_big_error
    *        big timer will start when error is within this, in degrees
    * \param p_velocity_exit_time
-   *        velocity timer will start when velocity is 0, in ms
+   *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), in ms
    * \param p_mA_timeout
    *        mA timer will start when the first motor on the side(s) being driven is over its current limit, in ms
    * \param use_imu
@@ -3533,7 +3533,7 @@ public:
    * \param p_big_error
    *        big timer will start when error is within this, unit
    * \param p_velocity_exit_time
-   *        velocity timer will start when velocity is 0, unit
+   *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), unit
    * \param p_mA_timeout
    *        mA timer will start when the first motor on the side(s) being driven is over its current limit, unit
    * \param use_imu
@@ -3554,7 +3554,7 @@ public:
    * \param p_big_error
    *        big timer will start when error is within this, unit
    * \param p_velocity_exit_time
-   *        velocity timer will start when velocity is 0, unit
+   *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), unit
    * \param p_mA_timeout
    *        mA timer will start when the first motor on the side(s) being driven is over its current limit, unit
    * \param use_imu
@@ -3575,7 +3575,7 @@ public:
    * \param p_big_error
    *        big timer will start when error is within this, unit
    * \param p_velocity_exit_time
-   *        velocity timer will start when velocity is 0, unit
+   *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), unit
    * \param p_mA_timeout
    *        mA timer will start when the first motor on the side(s) being driven is over its current limit, unit
    * \param use_imu
@@ -3596,7 +3596,7 @@ public:
    * \param p_big_error
    *        big timer will start when error is within this, unit
    * \param p_velocity_exit_time
-   *        velocity timer will start when velocity is 0, unit
+   *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), unit
    * \param p_mA_timeout
    *        mA timer will start when the first motor on the side(s) being driven is over its current limit, unit
    * \param use_imu
@@ -3617,7 +3617,7 @@ public:
    * \param p_big_error
    *        big timer will start when error is within this, unit
    * \param p_velocity_exit_time
-   *        velocity timer will start when velocity is 0, unit
+   *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), unit
    * \param p_mA_timeout
    *        mA timer will start when the first motor on the side(s) being driven is over its current limit, unit
    * \param use_imu
@@ -3638,7 +3638,7 @@ public:
    * \param p_big_error
    *        big timer will start when error is within this, in inches
    * \param p_velocity_exit_time
-   *        velocity timer will start when velocity is 0, in ms
+   *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), in ms
    * \param p_mA_timeout
    *        mA timer will start when the first motor on the side(s) being driven is over its current limit, in ms
    * \param use_imu
@@ -3659,7 +3659,7 @@ public:
    * \param p_big_error
    *        big timer will start when error is within this, in degrees
    * \param p_velocity_exit_time
-   *        velocity timer will start when velocity is 0, in ms
+   *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), in ms
    * \param p_mA_timeout
    *        mA timer will start when the first motor on the side(s) being driven is over its current limit, in ms
    * \param use_imu
@@ -3680,7 +3680,7 @@ public:
    * \param p_big_error
    *        big timer will start when error is within this, in degrees
    * \param p_velocity_exit_time
-   *        velocity timer will start when velocity is 0, in ms
+   *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), in ms
    * \param p_mA_timeout
    *        mA timer will start when the first motor on the side(s) being driven is over its current limit, in ms
    * \param use_imu
