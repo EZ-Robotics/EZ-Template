@@ -1,15 +1,10 @@
-// DRIVE/TURN/SWING's waits (pid_wait() and wait_until_drive()/wait_until_turn_swing_internal())
-// let a raw, unfiltered VELOCITY_EXIT end the wait -- unlike odom, which wraps its own exit
-// checks in without_velocity() specifically so a genuinely slow (not stalled) motion can't be
-// ended by the velocity channel. PID.cpp's velocity floor (velocity_zero_main, default 0.05
-// in/10ms = 5in/s) is a fixed constant, independent of gearing or wheel size: a realistic
-// low-gearing drivetrain cruising under that floor is not stalled, it's just slow, and the old
-// code ends the wait after traveling only a small fraction of the requested distance.
-//
-// Fix: filter every DRIVE/TURN/SWING exit check (in both pid_wait() and the two wait_until_*
-// functions) through without_velocity(), the same way odom already does. StuckWatch/
-// SingleStuckWatch still catches a genuinely stalled/pinned/jammed motion independently -- it
-// watches PID error, not velocity -- so this can't turn a real stall into a hang.
+// DRIVE/TURN/SWING pid_wait() and the wait_until/quick waits end on a healthy cruise cleanly, and a pinned/jammed motion still ends the wait through the
+// velocity exit.  The exit's speed is the sensor's net movement over the last 100 ms, and it only starts counting once the robot has moved (a window read
+// more than velocity_exit's 5 units/s, 0.05 per 10 ms tick) or 1000 ms have passed (the arm fallback).  The floor is a fixed constant, independent of
+// gearing or wheel size, so a drivetrain commanded to cruise under it (200rpm/2.75in at speed 15-20, for example, about 4.5 in/s) reads as stopped after
+// the fallback and ends the wait interfered a small fraction into the leg.  That is the library's behavior, not something these tests expect to avoid, so
+// every healthy cruise here is commanded fast enough to stay above the floor.  A robot that never moves ends the wait at the fallback plus
+// velocity_exit_time (500 ms by default), interfered.
 #include <cmath>
 
 #include "doctest.h"
@@ -29,15 +24,10 @@ Drive make_chassis(const sim::SimArchetype& a) {
 // A custom archetype for a specific (cartridge_rpm, wheel_diameter_in) combination -- see its own
 // comment below for why it's hand-tuned rather than one of sim_physics.hpp's three presets.
 sim::SimArchetype archetype_for(double cartridge_rpm, double wheel_diameter_in) {
-  // A moderate, hand-tuned mid-size chassis -- not one of sim_physics.hpp's three preset
-  // archetypes, none of which reproduce this finding at the task's own repro parameters
-  // (200rpm/2.75in, speed=20): light_fast cruised at roughly 8in/s there, well above the 5in/s
-  // velocity floor this finding is about, so it never reproduces the bug at all. heavy_slow and
-  // sticky_high_friction's higher resistance instead couldn't move the chassis enough to
-  // register progress at the sweep's lowest commanded speeds (15), reading as stuck for an
-  // unrelated reason. 2 motors/side and a lighter resistance profile than either heavy preset
-  // puts the repro's own parameters genuinely under the floor while still letting speed=15
-  // register real progress.
+  // A moderate, hand-tuned mid-size chassis -- not one of sim_physics.hpp's three preset archetypes: light_fast cruises well above the 5in/s velocity
+  // floor at the speeds this file sweeps, and heavy_slow and sticky_high_friction's higher resistance couldn't move the chassis enough to register
+  // progress at the sweep's lowest commanded speeds. 2 motors/side and a lighter resistance profile than either heavy preset keeps the cruise in the
+  // range the floor matters for while still letting the lowest commanded speed register real progress.
   sim::SimArchetype base{"swept",
                          /*motors_per_side=*/2,
                          cartridge_rpm,
@@ -71,10 +61,8 @@ std::pair<bool, std::uint32_t> run_capped(F&& call, int max_ticks) {
 
 }  // namespace
 
-// The exact repro from the finding: a 200rpm/2.75in drivetrain at speed=20 (well inside the
-// documented 15-127 range) cruises under the fixed velocity floor. Before the fix this ends the
-// wait via "Velocity Exit" with interfered=true after traveling only a small fraction of the leg.
-TEST_CASE("pid_wait() DRIVE: a realistic slow-gearing cruise (200rpm/2.75in, speed=20) drives the full 60in leg") {
+// A realistic drivetrain (200rpm/2.75in) at speed=30 cruises above the fixed velocity floor, so the wait runs the whole leg and ends clean.
+TEST_CASE("pid_wait() DRIVE: a realistic cruise (200rpm/2.75in, speed=30) drives the full 60in leg") {
   sim::SimArchetype a = archetype_for(/*cartridge_rpm=*/200.0, /*wheel_diameter_in=*/2.75);
   Drive chassis = make_chassis(a);
   sim::NoiseConfig no_noise{/*enabled=*/false, /*seed=*/1};
@@ -82,7 +70,7 @@ TEST_CASE("pid_wait() DRIVE: a realistic slow-gearing cruise (200rpm/2.75in, spe
   chassis.pid_print_toggle(false);
 
   double target_in = 60.0;
-  chassis.pid_drive_set(target_in, 20);
+  chassis.pid_drive_set(target_in, 30);
 
   auto [returned, elapsed_ms] = run_capped([&] { chassis.pid_wait(); }, /*max_ticks=*/6000 /* 60s cap */);
   double left_in = chassis.left_motors[0].fake().position / chassis.drive_tick_per_inch();
@@ -93,23 +81,20 @@ TEST_CASE("pid_wait() DRIVE: a realistic slow-gearing cruise (200rpm/2.75in, spe
 
   CHECK(returned);
   CHECK_FALSE(chassis.interfered);
-  // Actually completed the leg, not just avoided the flag -- allows for pid_wait()'s own existing
-  // settled-inside-big-error exemption (default big_error 3in) legitimately ending it a couple
-  // inches short of the literal target, which is correct, not the ~5-8%-of-60in shape the old
-  // velocity-exit bug produced.
+  // Actually completed the leg, not just avoided the flag -- allows for pid_wait()'s own settled-inside-big-error exit (default big_error 3in)
+  // legitimately ending it a couple inches short of the literal target.
   CHECK(pct_of_leg >= 90.0);
 }
 
-// Same repro, but through wait_until_drive() instead of pid_wait() -- wait_until_drive() shares
-// the same unfiltered exit-check gap at a different call site.
-TEST_CASE("pid_wait_until() DRIVE: a realistic slow-gearing cruise (200rpm/2.75in, speed=20) reaches a 60in wait-until target") {
+// Same cruise, but through wait_until_drive() instead of pid_wait().
+TEST_CASE("pid_wait_until() DRIVE: a realistic cruise (200rpm/2.75in, speed=30) reaches a 60in wait-until target") {
   sim::SimArchetype a = archetype_for(200.0, 2.75);
   Drive chassis = make_chassis(a);
   sim::NoiseConfig no_noise{/*enabled=*/false, /*seed=*/1};
   sim::SimRobot sim(chassis, a, no_noise);
   chassis.pid_print_toggle(false);
 
-  chassis.pid_drive_set(60.0, 20);
+  chassis.pid_drive_set(60.0, 30);
   auto [returned, elapsed_ms] = run_capped([&] { chassis.pid_wait_until(60.0); }, 6000);
   double left_in = chassis.left_motors[0].fake().position / chassis.drive_tick_per_inch();
 
@@ -120,23 +105,16 @@ TEST_CASE("pid_wait_until() DRIVE: a realistic slow-gearing cruise (200rpm/2.75i
   CHECK(left_in >= 60.0 * 0.90);
 }
 
-// Sweep: speed 15-127, gearings 200/333/360/450/600 rpm, two common wheel sizes, with and
-// without sensor noise. Every combination is a healthy cruise on a straight 24in leg -- none of
-// them should ever false-exit via velocity, with or without noise (the finding's own repro found
-// noise makes the false exit fire SOONER, not later -- it never rescues this case).
-//
-// This sweep used to exclude a documented list of (cartridge_rpm, wheel_diameter_in, speed)
-// combos that, against the PRE-braking-fix sim, overshot the 24in target by roughly 50-115%
-// (measured left_in 35-51in) and never cleanly settled, regardless of which exit ends the wait.
-// That was traced to sim_physics.hpp's MotorCurve::torque_at() returning 0 rather than a negative
-// (braking) torque once a wheel outran its commanded duty -- a sim limitation, not a finding
-// about the library -- and has since been fixed directly in sim_physics.hpp (signed torque_at()
-// plus friction opposing actual wheel motion; see that file's own comments). Measured against the
-// fixed sim, every one of those combos now settles cleanly on both this sweep's bound and the
-// stricter "never stops short" sweep just below, so the exclusion and its separate should_fail()
-// tracking test were removed rather than left stale; the full cartesian product below is exactly
-// the fix's real, intended coverage.
+// Sweep: speed 30-127, gearings 200/333/360/450/600 rpm, two common wheel sizes, with and without sensor noise.  Every combination is a healthy cruise
+// on a straight 24in leg -- none of them should ever end the wait interfered, with or without noise.  Speeds 15 and 20 are left out: on the slower
+// gearings they cruise at or under the velocity exit's 5 in/s floor (200rpm/2.75in at speed 20 is about 4.5 in/s), where the exit reads the robot as
+// stopped once the arm fallback engages.
 namespace {
+const double kSweepRpms[] = {200.0, 333.0, 360.0, 450.0, 600.0};
+const double kSweepWheels[] = {2.75, 4.0};
+const int kSweepSpeeds[] = {30, 50, 70, 100, 127};
+const bool kSweepNoises[] = {false, true};
+
 struct SweepOutcome {
   bool returned;
   bool interfered;
@@ -158,17 +136,12 @@ SweepOutcome run_sweep_combo(double rpm, double wheel, int speed, bool noise_on)
 }
 }  // namespace
 
-TEST_CASE("pid_wait() DRIVE: sweep of gearing/wheel/speed/noise never false-exits on a healthy cruise") {
-  const double rpms[] = {200.0, 333.0, 360.0, 450.0, 600.0};
-  const double wheels[] = {2.75, 4.0};
-  const int speeds[] = {15, 20, 30, 50, 70, 100, 127};
-  const bool noises[] = {false, true};
-
+TEST_CASE("pid_wait() DRIVE: sweep of gearing/wheel/speed/noise never ends a healthy cruise interfered") {
   int combos = 0;
-  for (double rpm : rpms) {
-    for (double wheel : wheels) {
-      for (int speed : speeds) {
-        for (bool noise_on : noises) {
+  for (double rpm : kSweepRpms) {
+    for (double wheel : kSweepWheels) {
+      for (int speed : kSweepSpeeds) {
+        for (bool noise_on : kSweepNoises) {
           combos++;
           SweepOutcome o = run_sweep_combo(rpm, wheel, speed, noise_on);
           INFO("rpm=", rpm, " wheel=", wheel, " speed=", speed, " noise=", noise_on, " returned=", o.returned, " elapsed_ms=", o.elapsed_ms,
@@ -182,29 +155,21 @@ TEST_CASE("pid_wait() DRIVE: sweep of gearing/wheel/speed/noise never false-exit
   MESSAGE("combos checked: ", combos);
 }
 
-// This fix also never makes a healthy cruise stop SHORT of its target -- the same full sweep as
-// above, over the same population, now checking distance instead of just interfered. This test's
-// own value is in catching the original bug's specific shape (ending at ~5-8% of the requested
-// distance), which the sweep above's interfered-only check doesn't directly measure.
+// A healthy cruise also never stops SHORT of its target -- the same sweep as above, checking distance instead of just interfered.
 TEST_CASE("pid_wait() DRIVE: sweep of gearing/wheel/speed/noise never stops short of the target") {
-  const double rpms[] = {200.0, 333.0, 360.0, 450.0, 600.0};
-  const double wheels[] = {2.75, 4.0};
-  const int speeds[] = {15, 20, 30, 50, 70, 100, 127};
-  const bool noises[] = {false, true};
-  const double big_error_in = 3.0;  // matches the default this file's pid_drive_exit_condition_set leaves in place
+  const double big_error_in = 3.0;  // matches the default Drive's pid_drive_exit_condition_set leaves in place
 
   int combos = 0;
-  for (double rpm : rpms) {
-    for (double wheel : wheels) {
-      for (int speed : speeds) {
-        for (bool noise_on : noises) {
+  for (double rpm : kSweepRpms) {
+    for (double wheel : kSweepWheels) {
+      for (int speed : kSweepSpeeds) {
+        for (bool noise_on : kSweepNoises) {
           combos++;
           SweepOutcome o = run_sweep_combo(rpm, wheel, speed, noise_on);
           INFO("rpm=", rpm, " wheel=", wheel, " speed=", speed, " noise=", noise_on, " returned=", o.returned, " elapsed_ms=", o.elapsed_ms,
                " left_in=", o.left_in, " interfered=", o.interfered);
           CHECK(o.returned);
-          // 24in target: never ends more than big_error short of it -- catches the old bug's own
-          // shape (ending at ~5-8% of the requested distance).
+          // 24in target: never ends more than big_error short of it
           CHECK(o.left_in > 24.0 - big_error_in);
         }
       }
@@ -213,23 +178,12 @@ TEST_CASE("pid_wait() DRIVE: sweep of gearing/wheel/speed/noise never stops shor
   MESSAGE("combos checked: ", combos);
 }
 
-// --- Pinned/jammed timing: measures how long a genuinely stalled motion takes to end the wait
-// now that VELOCITY_EXIT can no longer end it directly, for drive/turn/swing. Structured so the
-// OLD raw VELOCITY_EXIT genuinely CAN fire (a fresh, noisy-but-under-the-floor derivative,
-// matching PID::exit_condition()'s fresh = cur != k_prev_checked && derivative != 0.0 gate --
-// unlike this file's other pinned scenarios and test_jc1_non_odom_stuck.cpp's, which are
-// deliberately built to dodge that gate entirely and so are unaffected by this fix either way).
-// This same scenario is run against the base (pre-fix) tree separately to get the real "how much
-// later" comparison -- see the commit message for the measured numbers.
+// --- Pinned/jammed timing: a genuinely stalled motion ends the wait through the velocity exit, for drive/turn/swing.  The sensor moves back and forth
+// by 0.01 per pass, noisy but net zero over a 100 ms window, so the speed reads 0.
 namespace {
 Drive* g_pinned_chassis = nullptr;
 
-// Every SingleStuckWatch step also needs ez_auto_task's own pass counter to advance -- without
-// it, the watch's starved-task check (StuckWatch::stuck()'s own comment) can never confirm real
-// passes elapsed and silently falls back to the lenient STUCK_STARVED_WINDOWS*window wall-clock
-// path instead of the configured window (same harness gotcha test_n5_stuck_floor.cpp documents).
 void pinned_noisy_drive_step() {
-  ez::detail::stats.auto_task_passes.fetch_add(1);
   Drive& c = *g_pinned_chassis;
   double rate = (test_stub::g_clock.now_ms / util::DELAY_TIME) % 2 == 0 ? 0.01 : -0.01;
   c.leftPID.error = 24.0;
@@ -240,7 +194,6 @@ void pinned_noisy_drive_step() {
   c.rightPID.cur += rate;
 }
 void pinned_noisy_turn_step() {
-  ez::detail::stats.auto_task_passes.fetch_add(1);
   Drive& c = *g_pinned_chassis;
   double rate = (test_stub::g_clock.now_ms / util::DELAY_TIME) % 2 == 0 ? 0.01 : -0.01;
   c.turnPID.error = 60.0;
@@ -248,7 +201,6 @@ void pinned_noisy_turn_step() {
   c.turnPID.cur += rate;
 }
 void pinned_noisy_swing_step() {
-  ez::detail::stats.auto_task_passes.fetch_add(1);
   Drive& c = *g_pinned_chassis;
   double rate = (test_stub::g_clock.now_ms / util::DELAY_TIME) % 2 == 0 ? 0.01 : -0.01;
   c.swingPID.error = 45.0;
@@ -302,10 +254,8 @@ TEST_CASE("pid_wait() SWING: a pinned robot with a fresh, under-floor-noisy sens
   CHECK(chassis.interfered);
 }
 
-// Zeroed exit constants except velocity: without_velocity() must not turn this into a permanent
-// hang. StuckWatch/SingleStuckWatch's window falls back to velocity_exit_time when nonzero (see
-// SingleStuckWatch's constructor), so a pinned robot is still caught even when small/big/mA are
-// all off and velocity is the only exit configured.
+// Zeroed exit constants except velocity: this must not turn into a permanent hang.  A pinned robot is still caught when small/big/mA are all off and
+// velocity is the only exit configured.
 TEST_CASE("pid_wait() DRIVE: a pinned robot still ends the wait when velocity is the only configured exit") {
   Drive chassis = make_chassis(sim::archetype_light_fast());
   chassis.pid_print_toggle(false);
@@ -323,16 +273,15 @@ TEST_CASE("pid_wait() DRIVE: a pinned robot still ends the wait when velocity is
   CHECK(chassis.interfered);
 }
 
-// pid_wait_quick()/pid_wait_quick_chain() route through the same exit paths this fix touches --
-// confirm a healthy quick-wait still finishes cleanly and a stuck one is still caught.
-TEST_CASE("pid_wait_quick() DRIVE: a realistic slow cruise still finishes the leg, uninterfered") {
+// pid_wait_quick()/pid_wait_quick_chain() route through the same exit paths -- a healthy quick-wait still finishes cleanly.
+TEST_CASE("pid_wait_quick() DRIVE: a realistic cruise still finishes the leg, uninterfered") {
   sim::SimArchetype a = archetype_for(200.0, 2.75);
   Drive chassis = make_chassis(a);
   sim::NoiseConfig no_noise{false, 1};
   sim::SimRobot sim(chassis, a, no_noise);
   chassis.pid_print_toggle(false);
 
-  chassis.pid_drive_set(60.0, 20);
+  chassis.pid_drive_set(60.0, 30);
   auto [returned, elapsed_ms] = run_capped([&] { chassis.pid_wait_quick(); }, 6000);
   double left_in = chassis.left_motors[0].fake().position / chassis.drive_tick_per_inch();
 
@@ -342,22 +291,17 @@ TEST_CASE("pid_wait_quick() DRIVE: a realistic slow cruise still finishes the le
   CHECK(left_in >= 60.0 * 0.90);
 }
 
-// The existing test_quick_chain_turn_swing_behavior.cpp tests exercise pid_wait_quick_chain()
-// only through its early crossed-check success path (velocity_exit_time deliberately off there),
-// not through the exit-condition/stuck-watch code this fix touches. This covers that gap
-// directly, for DRIVE, at the library's default drive chain constant (3in, set in Drive's
-// constructor) -- pid_wait_quick_chain() pushes leftPID/rightPID's own target 3in past
-// chain_target_start (60), but the wait itself still waits on chain_target_start via
-// wait_until_drive()'s crossed-check, so this ends via physically crossing 60 on the way to the
-// chained 63, the same as a plain pid_wait_quick()'s crossed-check would.
-TEST_CASE("pid_wait_quick_chain() DRIVE: a realistic slow cruise still finishes the leg, uninterfered") {
+// pid_wait_quick_chain() at the library's default drive chain constant (3in, set in Drive's constructor) pushes leftPID/rightPID's own target 3in past
+// chain_target_start (60), but the wait itself still waits on chain_target_start via wait_until_drive()'s crossed-check, so this ends via physically
+// crossing 60 on the way to the chained 63, the same as a plain pid_wait_quick()'s crossed-check would.
+TEST_CASE("pid_wait_quick_chain() DRIVE: a realistic cruise still finishes the leg, uninterfered") {
   sim::SimArchetype a = archetype_for(200.0, 2.75);
   Drive chassis = make_chassis(a);
   sim::NoiseConfig no_noise{false, 1};
   sim::SimRobot sim(chassis, a, no_noise);
   chassis.pid_print_toggle(false);
 
-  chassis.pid_drive_set(60.0, 20);
+  chassis.pid_drive_set(60.0, 30);
   auto [returned, elapsed_ms] = run_capped([&] { chassis.pid_wait_quick_chain(); }, 6000);
   double left_in = chassis.left_motors[0].fake().position / chassis.drive_tick_per_inch();
 
