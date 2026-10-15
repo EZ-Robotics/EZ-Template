@@ -116,7 +116,6 @@ void Drive::pid_odom_set(double target, int speed, bool slew_on) {
   ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
 
   interfered = false;
-  interfered_generation = ++motion_generation;
   injected_pp_index = std::move(new_injected_pp_index);
 
   xyPID.timers_reset();
@@ -250,7 +249,6 @@ void Drive::pid_odom_injected_pp_set(std::vector<ez::odom> imovements, bool slew
   ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
 
   interfered = false;
-  interfered_generation = ++motion_generation;
   injected_pp_index = std::move(new_injected_pp_index);
 
   xyPID.timers_reset();
@@ -319,7 +317,6 @@ void Drive::pid_odom_smooth_pp_set(std::vector<odom> imovements, bool slew_on) {
   ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
 
   interfered = false;
-  interfered_generation = ++motion_generation;
   injected_pp_index = std::move(new_injected_pp_index);
 
   xyPID.timers_reset();
@@ -386,7 +383,6 @@ void Drive::pid_odom_pp_set(std::vector<odom> imovements, bool slew_on) {
   ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
 
   interfered = false;
-  interfered_generation = ++motion_generation;
 
   xyPID.timers_reset();
   current_a_odomPID.timers_reset();
@@ -452,7 +448,6 @@ void Drive::pid_odom_ptp_set(odom imovement, bool slew_on) {
   ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
 
   interfered = false;
-  interfered_generation = ++motion_generation;
 
   odom_second_to_last = odom_pose_get();
   odom_target_start = imovement.target;
