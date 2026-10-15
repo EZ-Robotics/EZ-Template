@@ -147,6 +147,11 @@ void Drive::pid_wait() {
     if (mode == PURE_PURSUIT) {
       // The angle exit belongs to the point it latched at, so it starts over on every new point
       int a_exit_index = pp_index;
+      // A robot pinned mid-path has stopped in xy and heading, but its exits can't all say so: the angle exit latches SMALL when the heading is
+      // right.  So both speeds are checked live every pass, and the wait ends once they have both stayed stopped for the velocity exit time.
+      // Like the velocity exit, it waits for the robot to move first, or for a second.
+      int stalled = 0, waited = 0;
+      bool moved = false;
       while (pp_index != (int)pp_movements.size() - 1) {
         if (wait_for.changed()) return pid_wait();
         if (pp_index != a_exit_index) {
@@ -157,6 +162,18 @@ void Drive::pid_wait() {
         current_a_odomPID.velocity_sensor_secondary_set(drive_imu_accel_get());
         xy_exit = xy_exit != RUNNING ? xy_exit : xyPID.exit_condition({left_motors[0], right_motors[0]});
         a_exit = a_exit != RUNNING ? a_exit : current_a_odomPID.exit_condition({left_motors[0], right_motors[0]});
+
+        bool still = std::fabs(xyPID.derivative) <= xyPID.velocity_sensor_main_exit_get() &&
+                     std::fabs(current_a_odomPID.derivative) <= current_a_odomPID.velocity_sensor_main_exit_get();
+        waited += util::DELAY_TIME;
+        moved = moved || !still;
+        stalled = still && (moved || waited > 1000) ? stalled + util::DELAY_TIME : 0;
+        if (xyPID.exit.velocity_exit_time != 0 && stalled > xyPID.exit.velocity_exit_time) {
+          if (print_toggle)
+            std::cout << "  XY and angle stopped partway through the path, xy error: " << xyPID.error << ", angle error: " << current_a_odomPID.error << "\n";
+          interfered = true;
+          return;
+        }
 
         if ((xy_exit == mA_EXIT || xy_exit == VELOCITY_EXIT) && (a_exit == mA_EXIT || a_exit == VELOCITY_EXIT)) {
           if (print_toggle)
