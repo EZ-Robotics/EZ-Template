@@ -1,6 +1,5 @@
-// A velocity or mA exit that ends a wait inside big_error, with the robot under the stop speed, is a clean finish: the robot got where it was
-// going and stopped there.  Outside big_error, or still moving over the stop speed, it still reads interfered.  Only the verdict changes, not
-// when the wait returns.
+// A velocity or mA exit that ends a wait inside big_error is a clean finish, at any speed: the robot got where it was going.  Outside
+// big_error it reads interfered.  Only the verdict changes, not when the wait returns.
 #include <cmath>
 #include <functional>
 
@@ -73,7 +72,7 @@ TEST_CASE("a drive that stops outside big_error on the velocity exit is interfer
   CHECK(chassis.interfered);
 }
 
-TEST_CASE("a drive that ends on the velocity exit inside big_error but still creeping over the stop speed is interfered") {
+TEST_CASE("a drive that ends on the velocity exit inside big_error but still creeping over the stop speed is not interfered") {
   Drive chassis = make_chassis();
   ready(chassis);
   chassis.pid_drive_set(24.0, 100);
@@ -85,7 +84,7 @@ TEST_CASE("a drive that ends on the velocity exit inside big_error but still cre
                            },
                            300);
   REQUIRE(returned);
-  CHECK(chassis.interfered);
+  CHECK_FALSE(chassis.interfered);
 }
 
 TEST_CASE("a turn that stops inside big_error on the velocity exit is not interfered, and outside it is") {

@@ -2,8 +2,8 @@
 //
 // The velocity exit fires once the robot's speed (its movement over the last 100 ms) has stayed at or under 5 in/s for the
 // team's velocity_exit_time. A shove that holds the robot still outside big_error for longer than that is a velocity exit by
-// design, and ends the wait interfered while the robot is held. A velocity or mA exit that ends the wait inside big_error with
-// the robot under the stop speed has arrived, and is clean. A shove the robot drives through ends on its small or big exit.
+// design, and ends the wait interfered while the robot is held. A velocity or mA exit that ends the wait inside big_error
+// has arrived, and is clean, whatever its speed. A shove the robot drives through ends on its small or big exit.
 //
 // light_fast and sticky_high_friction only: heavy_slow is numerically unstable when the auto task runs exactly once per poll.
 #include <cmath>
@@ -94,7 +94,7 @@ Outcome shoved_drive(const sim::SimArchetype& a, double newtons, double duration
 //
 // sticky_high_friction (every force) and the classroom robot (40 and 90 N) recover but crawl the last inch in at 2 to 7 in/s.
 // The small and big exit timers pause while the robot is over the 1.5 in/s stop speed, so even inside the 1 in small_error
-// they do not run, and the velocity exit (at 5 in/s) ends the wait inside big_error but above the stop speed: interfered. By
+// they do not run, and the velocity exit (at 5 in/s) ends the wait inside big_error but above the stop speed: clean. By
 // the time traced in the sim (sticky 1520 to 1620 ms, classroom 1820 and 2020 ms), plus two passes.
 //
 // Every other shove is recovered from, and the robot ends within big_error, clean.
@@ -102,7 +102,7 @@ namespace {
 enum class Shove {
   recovered,     // ends clean within big_error
   held_outside,  // the velocity exit ends it interfered while the shove holds the robot outside big_error
-  crawled_in     // the velocity exit ends it interfered within big_error while the robot crawls in
+  crawled_in     // the velocity exit ends it clean within big_error while the robot crawls in
 };
 
 void check_pin2_shove(const sim::SimArchetype& a, double newtons, Shove expect, int crawl_ends_by_ms = 0) {
@@ -117,7 +117,7 @@ void check_pin2_shove(const sim::SimArchetype& a, double newtons, Shove expect, 
     CHECK(std::fabs(o.pos - 27.0) > 3.0);  // held outside the team's own big_error
     CHECK(o.ms <= 400 + 300 + 100 + 100 + 20);
   } else {
-    CHECK(o.interfered == (expect == Shove::crawled_in));
+    CHECK_FALSE(o.interfered);
     CHECK(std::fabs(o.pos - 27.0) < 3.0);  // within the team's own big_error
     if (expect == Shove::crawled_in) CHECK(o.ms <= crawl_ends_by_ms + 20);
   }

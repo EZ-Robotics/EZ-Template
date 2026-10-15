@@ -1,7 +1,7 @@
 // The velocity exit on its own: the position exits get a 5 s time here so they never fire, and the velocity exit (3.2.2's, at or under
 // 5 units/s for velocity_exit_time) is what ends each wait. A 50 or 100 ms velocity exit time lets the robot go while it still crawls in
-// under 5 in/s. It is clean when it ends the wait inside big_error and under the stop speed (1.5 in/s, 4 deg/s), and interfered
-// otherwise. The same motions with the position exits on are in test_exit_gate_small_big_stopped.cpp.
+// under 5 in/s. It is clean when it ends the wait inside big_error, and interfered otherwise. The same motions with the position exits on are in
+// test_exit_gate_small_big_stopped.cpp.
 //
 // Every speed here is the sim's own.
 #include <cmath>
@@ -24,14 +24,14 @@ void make_hunter(Drive& c) { c.pid_drive_constants_set(3000.0, 0.0, 0.0); }
 double velocity_exit_floor(Rig& r) { return 5.0 + (1.0 / r.chassis.drive_tick_per_inch()) / 0.1; }
 }  // namespace
 
-// The velocity exit lets the classroom robot go at about 5 in/s by the library's speed, 0.6 in short: over the stop speed, so interfered.
+// The velocity exit lets the classroom robot go at about 5 in/s by the library's speed, 0.6 in short: over the stop speed, but inside big_error, so clean.
 // The drive keeps running after the wait returns, so the robot finishes the error it was let go at.
-TEST_CASE("classroom robot, 50 ms velocity exit only: pid_wait() on a 24 in drive returns under the velocity exit's 5 in/s, interfered") {
+TEST_CASE("classroom robot, 50 ms velocity exit only: pid_wait() on a 24 in drive returns under the velocity exit's 5 in/s, clean") {
   Rig r(archetype_classroom(), 1);
   r.chassis.pid_drive_exit_condition_set(5000_ms, 1_in, 5000_ms, 3_in, 50_ms, 500_ms);
   r.chassis.pid_drive_set(24_in, 110, true);
   REQUIRE(r.wait([&] { r.chassis.pid_wait(); }, 3000));
-  CHECK(r.chassis.interfered);
+  CHECK_FALSE(r.chassis.interfered);
   CHECK(r.drive_speed_now() < 3.0);
   CHECK(r.drive_speed_over(100) < velocity_exit_floor(r));
   double left = std::fabs(24.0 - r.trace.back().avg);
@@ -40,21 +40,20 @@ TEST_CASE("classroom robot, 50 ms velocity exit only: pid_wait() on a 24 in driv
 }
 
 // light_fast is nearly stopped when the velocity exit ends it, but the library's 100 ms speed still reads about 1.7 in/s, over the stop
-// speed, so it is interfered
-TEST_CASE("light_fast, 50 ms velocity exit only: pid_wait() on a 24 in drive returns nearly stopped, interfered") {
+// speed, but inside big_error, so it is clean
+TEST_CASE("light_fast, 50 ms velocity exit only: pid_wait() on a 24 in drive returns nearly stopped, clean") {
   Rig r(sim::archetype_light_fast(), 1);
   r.chassis.pid_drive_exit_condition_set(5000_ms, 1_in, 5000_ms, 3_in, 50_ms, 500_ms);
   r.chassis.pid_drive_set(24_in, 110, true);
   REQUIRE(r.wait([&] { r.chassis.pid_wait(); }, 3000));
-  CHECK(r.chassis.interfered);
+  CHECK_FALSE(r.chassis.interfered);
   CHECK(r.drive_speed_now() < 3.0);
   CHECK(r.drive_speed_over(50) < r.drive_floor(50));
   CHECK(r.run_on(500).distance < 0.3);
 }
 
-// The turn and light_fast's swing end on the velocity exit inside big_error and under the stop speed, so they are clean. The classroom
-// robot's swing is still turning at about 4.7 deg/s by the library's speed when its velocity exit ends it, over the 4 deg/s stop speed,
-// so it is interfered.
+// The turn and both swings end on the velocity exit inside big_error, so they are clean. The classroom robot's swing is still turning at
+// about 4.7 deg/s by the library's speed when its velocity exit ends it, over the 4 deg/s stop speed, and is clean all the same.
 TEST_CASE("light_fast, 50 ms velocity exit only: a 90 degree turn and a 90 degree left swing are done turning when they return") {
   {
     Rig r(sim::archetype_light_fast(), 1);
@@ -71,7 +70,7 @@ TEST_CASE("light_fast, 50 ms velocity exit only: a 90 degree turn and a 90 degre
     r.chassis.pid_swing_exit_condition_set(5000_ms, 1_deg, 5000_ms, 3_deg, 50_ms, 500_ms);
     r.chassis.pid_swing_set(ez::LEFT_SWING, 90_deg, 110, 0);
     REQUIRE(r.wait([&] { r.chassis.pid_wait(); }, 3000));
-    CHECK(r.chassis.interfered);
+    CHECK_FALSE(r.chassis.interfered);
     CHECK(r.angle_speed_now() < 8.0);
     CHECK(r.angle_speed_over(50) < r.angle_floor(50));
     CHECK(r.run_on(500).angle < 1.0);
@@ -89,13 +88,13 @@ TEST_CASE("light_fast, 50 ms velocity exit only: a 90 degree turn and a 90 degre
 }
 
 // The sticky robot crawls the last inch at 2 to 3 in/s, under the velocity exit's 5 in/s, so the velocity exit lets it go with the library's
-// speed at about 2.5 in/s: over the stop speed, so interfered
-TEST_CASE("a sticky robot, 100 ms velocity exit only: pid_wait() on a 24 in drive returns under the velocity exit's 5 in/s, interfered") {
+// speed at about 2.5 in/s: over the stop speed, but inside big_error, so clean
+TEST_CASE("a sticky robot, 100 ms velocity exit only: pid_wait() on a 24 in drive returns under the velocity exit's 5 in/s, clean") {
   Rig r(sim::archetype_sticky_high_friction(), 1);
   r.chassis.pid_drive_exit_condition_set(5000_ms, 1_in, 5000_ms, 3_in, 100_ms, 500_ms);
   r.chassis.pid_drive_set(24_in, 110, true);
   REQUIRE(r.wait([&] { r.chassis.pid_wait(); }, 3000));
-  CHECK(r.chassis.interfered);
+  CHECK_FALSE(r.chassis.interfered);
   CHECK(r.drive_speed_now() < 3.0);
   CHECK(r.drive_speed_over(100) < velocity_exit_floor(r));
   double left = std::fabs(24.0 - r.trace.back().avg);
