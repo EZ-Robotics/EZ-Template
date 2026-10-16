@@ -3747,7 +3747,7 @@ public:
   double pid_angle_exit_stop_speed_get();
 
   /**
-   * Returns current TICK_PER_INCH.
+   * Returns the current ticks per inch.
    */
   double drive_tick_per_inch();
 
@@ -4245,17 +4245,7 @@ private:
    * Tick per inch calculation.
    */
   double TICK_PER_REV = 0.0;
-  double TICK_PER_INCH = 0.0;
   double CIRCUMFERENCE = 0.0;
-
-  /**
-   * Recomputes TICK_PER_REV/CIRCUMFERENCE/TICK_PER_INCH from WHEEL_DIAMETER,
-   * CARTRIDGE and is_tracker. Called from every constructor and from
-   * drive_rpm_set(), the only places those inputs change;
-   * drive_tick_per_inch() just returns the cached TICK_PER_INCH so it's
-   * cheap to call from drive_sensor_left()/_right() every sensor read.
-   */
-  void drive_tick_per_inch_compute();
 
   double CARTRIDGE = 0.0;
   double WHEEL_DIAMETER = 0.0;
