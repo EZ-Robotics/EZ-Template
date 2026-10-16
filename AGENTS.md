@@ -30,6 +30,7 @@ Evidence:  E1 | E2 | E3, with the issue, file and line, or test | maintainers' c
 Scope:     every function that will change, with its file, and nothing else
 Cost:      expected changed lines
 New state: every new timer, latch, flag, counter, mode or member the fix adds, or none
+Caused by: the commit that added the bug, from git blame or git log -L, or unknown
 ```
 
 For example, the card for #538.
@@ -43,6 +44,7 @@ Scope:     pid_speed_max_set() in set_pid/set_pid.cpp; the speed setup in pid_dr
            pid_swing_set() and raw_pid_odom_ptp_set(); drive.hpp; the new test
 Cost:      54 changed lines, so it needed a maintainer's OK and a robot run
 New state: none
+Caused by: 03541578f272 ("More generic odom functions, slew reenables in pure pursuits #154 #170")
 ```
 
 Before you call a card waiting for evidence, check E3. Wrong math you can quote is evidence.
@@ -98,6 +100,7 @@ The first needs the PROS ARM toolchain, the third clang-format 18.1.8. Also conf
 - Target the branch CONTRIBUTING.md's "Branches" table gives. Name your branch like `bug/odom-speed-max-mid-motion`.
 - Commit only the files in the card's Scope plus your new test. No notes, reports or scratch files.
 - Commit titles are a gitmoji, a space, then an imperative summary, 72 characters or fewer.
+- If the card's Caused by is a commit, add `Fixes: <12-character hash> ("<its title>")` to the end of the commit message.
 - End every commit with `Assisted-by: <tool>`, like `Assisted-by: Claude Code`. Name the tool, never the model. Replace any `Co-Authored-By:` or session trailer your tool adds. Add no trailer saying a person reviewed or tested it.
 - Never put a session link anywhere.
 - If your user hasn't said they read the whole diff, start the PR description with `Not yet reviewed by a human.`
