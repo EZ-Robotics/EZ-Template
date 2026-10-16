@@ -1,12 +1,10 @@
-// Small exit and big exit only end a wait once the robot has also stopped.
+// Small exit and big exit only end a wait once the robot has also stopped: their timers count only while the library's speed (net
+// movement over the last 100 ms) is under the stop speed (1.5 in/s, 4 deg/s), so a heavy robot crawling in is not cut off short and a
+// light robot crossing the small band at speed is not called done.
 //
-// Both exits used to look at position only: the robot has been inside the band for small_exit_time / big_exit_time. A heavy robot
-// crawling in at 3 to 5 in/s was cut off 1 to 1.5 in short when the big exit's timer ran out, and a light robot spending
-// small_exit_time crossing the small band at speed was called done. Now each exit also needs the robot to have travelled less
-// than the stop speed (1.5 in/s, 4 deg/s) times that exit's own time over that time.
-//
-// Timing: the position timer keeps counting exactly as it did. Once it has met its time the exit fires on the first pass the robot
-// is also stopped, provided it has stayed inside the band; it does not start a fresh timer. Leaving the band resets it.
+// The velocity exit is 3.2.2's: it fires once the speed has been at or under 5 units/s for velocity_exit_time. When that time is short
+// next to the small and big exit times it can end a wait while the robot still crawls in under 5 in/s, before small can count. It is
+// clean when it ends the wait inside big_error, and interfered otherwise.
 //
 // Every speed here is the sim's own.
 #include <cmath>
@@ -15,10 +13,14 @@
 
 #include "doctest.h"
 #include "exit_gate_rig.hpp"
-#include "stdout_capture.hpp"
 
 using namespace ez;
 using namespace gate;
+
+namespace {
+// The velocity exit's own threshold, 5 in/s, plus one sensor count over the library's 100 ms speed window
+double velocity_exit_floor(Rig& r) { return 5.0 + (1.0 / r.chassis.drive_tick_per_inch()) / 0.1; }
+}  // namespace
 
 TEST_CASE("a heavy robot crawling in is not cut off by the big exit: it returns stopped, and closer than before (24 in, shipped exits)") {
   for (int passes : {2, 3}) {
@@ -29,9 +31,9 @@ TEST_CASE("a heavy robot crawling in is not cut off by the big exit: it returns 
     CAPTURE(passes);
     CHECK_FALSE(r.chassis.interfered);
     CHECK(r.drive_speed_over(90) < r.drive_floor(90));  // over the shortest exit window: the small exit is what ends it
-    // The start commit returns at 1.25 in short, moving 3.8 in/s, at 1470 ms
+    // A big exit that only looks at position lets this robot go 1.25 in short, moving 3.8 in/s, at 1470 ms
     double err = std::fabs(24.0 - r.trace.back().avg);
-    std::printf("  [heavy/%d] returned at %.0f ms, %.2f in short (start commit: 1470 ms, 1.25 in)\n", passes, elapsed, err);
+    std::printf("  [heavy/%d] returned at %.0f ms, %.2f in short (position-only big exit: 1470 ms, 1.25 in)\n", passes, elapsed, err);
     CHECK(err <= 1.25 - 0.5);
   }
 }
@@ -47,21 +49,6 @@ TEST_CASE("a light robot crossing the small band at speed does not return from i
   CHECK_FALSE(r.chassis.interfered);
   CHECK(r.drive_speed_over(50) < r.drive_floor(50));
   CHECK(r.drive_speed_now() < 3.0);
-}
-
-TEST_CASE("a robot hunting about its target is not let go by the small or big exit while it oscillates above the floor") {
-  Rig r(sim::archetype_light_fast(), 1);
-  r.chassis.pid_drive_constants_set(3000.0, 0.0, 0.0);  // 0.43 in peak to peak at about 25 Hz, see test_exit_gate_stuck_watch_speed.cpp
-  r.chassis.pid_print_toggle(true);
-  r.chassis.pid_drive_set(24_in, 110);
-  double elapsed = 0;
-  bool returned = false;
-  std::string out = test_stub::capture_stdout([&] { returned = r.wait([&] { r.chassis.pid_wait(); }, 3000, &elapsed); });
-  REQUIRE(returned);
-  CHECK(out.find("Small Exit") == std::string::npos);
-  CHECK(out.find("Big Exit") == std::string::npos);
-  CHECK(out.find("counted as settled") != std::string::npos);
-  CHECK(elapsed < 3000);
 }
 
 TEST_CASE("a bump inside the band after the robot stopped delays the exit by the bump, not by a second full timer") {
@@ -93,9 +80,12 @@ TEST_CASE("a bump inside the band after the robot stopped delays the exit by the
   CHECK(bumped.returned_at <= bumped.bump_end + 90.0 + 150.0);
 }
 
-// The motions from test_exit_gate_stuck_watch_speed.cpp with every exit on: here the small and big exits are what could end them
-// while the robot is still moving.
-TEST_CASE("every exit on, 50 ms velocity window: pid_wait() does not return while the robot is still moving (24 in drive)") {
+// The motions from test_exit_gate_stuck_watch_speed.cpp with every exit on. The 50 ms velocity exit time is shorter than the 90 ms small
+// exit time, so the velocity exit ends these while the robot still crawls in under 5 in/s: the library's speed is then over the stop
+// speed on both robots (about 5 in/s on classroom, 1.7 in/s on light_fast), inside big_error, so both read clean. light_fast is nearly stopped by
+// then; the classroom robot is still crawling under 5 in/s, and the drive keeps running after the wait returns, so it finishes the error
+// it was let go at.
+TEST_CASE("every exit on, 50 ms velocity window: pid_wait() on a 24 in drive returns under the velocity exit's 5 in/s, clean") {
   for (auto arch : {archetype_classroom(), sim::archetype_light_fast()}) {
     Rig r(arch, 1);
     r.chassis.pid_drive_exit_condition_set(90_ms, 1_in, 250_ms, 3_in, 50_ms, 500_ms);
@@ -104,12 +94,20 @@ TEST_CASE("every exit on, 50 ms velocity window: pid_wait() does not return whil
     CAPTURE(std::string(arch.name));
     CHECK_FALSE(r.chassis.interfered);
     CHECK(r.drive_speed_now() < 3.0);
-    CHECK(r.drive_speed_over(50) < r.drive_floor(50));
-    CHECK(std::fabs(24.0 - r.trace.back().avg) < 1.0);
-    CHECK(r.run_on(500).distance < 0.3);
+    double left = std::fabs(24.0 - r.trace.back().avg);
+    CHECK(left < 1.0);
+    if (std::string(arch.name) == "classroom") {
+      CHECK(r.drive_speed_over(100) < velocity_exit_floor(r));
+      CHECK(r.run_on(500).distance < left + 0.3);
+    } else {
+      CHECK(r.drive_speed_over(50) < r.drive_floor(50));
+      CHECK(r.run_on(500).distance < 0.3);
+    }
   }
 }
 
+// The turns and swings end on the velocity exit inside big_error, so they are clean. The classroom robot's swing is still turning at
+// about 4.7 deg/s by the library's speed when its velocity exit ends it, over the 4 deg/s stop speed, and is clean all the same.
 TEST_CASE("every exit on, 50 ms velocity window: a 90 degree turn and a 90 degree left swing are done turning when they return") {
   for (auto arch : {archetype_classroom(), sim::archetype_light_fast()}) {
     {
@@ -137,13 +135,17 @@ TEST_CASE("every exit on, 50 ms velocity window: a 90 degree turn and a 90 degre
   }
 }
 
-TEST_CASE("2550R's exits (90/1/200/3/100/100) on a sticky robot: pid_wait() on a 24 in drive does not return while it is still moving") {
+// The sticky robot crawls the last inch at 2 to 3 in/s: over the stop speed, so the small and big timers can't count, but under the
+// velocity exit's 5 in/s, so the 100 ms velocity exit ends the wait (its time is shorter than the 200 ms big exit time) while the
+// library's speed is about 2.5 in/s. That is over the stop speed, and inside big_error, so it is clean.
+TEST_CASE("2550R's exits (90/1/200/3/100/100) on a sticky robot: pid_wait() on a 24 in drive returns under the velocity exit's 5 in/s, clean") {
   Rig r(sim::archetype_sticky_high_friction(), 1);
   r.chassis.pid_drive_exit_condition_set(90_ms, 1_in, 200_ms, 3_in, 100_ms, 100_ms);
   r.chassis.pid_drive_set(24_in, 110, true);
   REQUIRE(r.wait([&] { r.chassis.pid_wait(); }, 3000));
   CHECK_FALSE(r.chassis.interfered);
   CHECK(r.drive_speed_now() < 3.0);
-  CHECK(r.drive_speed_over(100) < r.drive_floor(100));
-  CHECK(r.run_on(500).distance < 0.3);
+  CHECK(r.drive_speed_over(100) < velocity_exit_floor(r));
+  double left = std::fabs(24.0 - r.trace.back().avg);
+  CHECK(r.run_on(500).distance < left + 0.3);
 }

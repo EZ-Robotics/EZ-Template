@@ -1,8 +1,10 @@
-// A chain wait on a point to point move that is held short of its point must read interfered, whatever angle the point carries.
-// pid_wait_quick_chain() pushes the move's target a few inches along the point's own angle, and a point to point move does not steer
-// by that angle. With the angle pointing back toward where the move started, the pushed target lands between the robot and the
-// checkpoint, so a robot held up to big_error + 3 in short of the checkpoint sat within big_error of the pushed target and the
-// settle check called it settled.
+// A chain wait on a point to point move that is held short of its point, whatever angle the point carries. pid_wait_quick_chain() pushes
+// the move's target by the chain constant along the point's own angle, and a point to point move does not steer by that angle. Every exit
+// is judged against that pushed target: small and big exits are clean, and a velocity or mA exit is clean when it ends the wait inside
+// big_error of the pushed target and under the stop speed. A held robot is stopped, so the wait is clean exactly when the robot rests
+// inside big_error of the pushed target in xy (and inside the heading's big_error), and interfered otherwise. With the angle pointing back
+// toward where the move started, the pushed target lands between the robot and the checkpoint, so a robot a few inches short of the
+// checkpoint can read clean.
 #include <cmath>
 #include <functional>
 #include <string>
@@ -27,9 +29,29 @@ pose point_for(bool rev_move, double theta) {
   return p;
 }
 
+constexpr double HEADING_BIG_ERROR = 6.0;
+
 void set_exits(Drive& c, double small, double big) {
   c.pid_odom_drive_exit_condition_set(90, small, 250, big, 200, 500);
-  c.pid_odom_turn_exit_condition_set(0, 0.0, 250, 6.0, 200, 500);
+  c.pid_odom_turn_exit_condition_set(0, 0.0, 250, HEADING_BIG_ERROR, 200, 500);
+}
+
+// Where pid_wait_quick_chain() moves a point to point target: the chain constant along the point's own angle
+pose pushed_target(Drive& c, pose p, bool rev_move) {
+  double scale = rev_move ? c.pid_drive_chain_backward_constant_get() : c.pid_drive_chain_forward_constant_get();
+  return util::vector_off_point(scale, p);
+}
+
+// What the rule says for a robot held still: clean when it rests inside big_error of the pushed target and of the heading. xyPID's error
+// is the distance left to the pushed target along the robot's line to it, so it can be no more than the straight-line distance there.
+void check_verdict(Rig& r, pose p, bool rev_move, double big) {
+  pose q = r.chassis.odom_pose_get();
+  pose pushed = pushed_target(r.chassis, p, rev_move);
+  double xy_error = std::fabs(r.chassis.xyPID.error);
+  CHECK(xy_error <= std::hypot(pushed.x - q.x, pushed.y - q.y) + 0.05);
+  bool inside = xy_error < big && std::fabs(r.chassis.current_a_odomPID.error) < HEADING_BIG_ERROR;
+  CAPTURE(xy_error);
+  CHECK(r.chassis.interfered == !inside);
 }
 
 // When the free move has travelled `distance - short_by` inches: the instant a pin there holds the robot short_by short
@@ -46,14 +68,14 @@ double pin_time(bool rev_move, double theta, double short_by) {
 
 }  // namespace
 
-TEST_CASE("point to point with an end angle: a robot held short of the checkpoint reads interfered on a chain wait") {
+TEST_CASE("point to point with an end angle: a robot held short of the checkpoint on a chain wait is judged against the pushed target") {
   for (bool rev_move : {false, true})
     for (double theta : {0.0, 30.0, 90.0, 150.0, 180.0})
       for (double short_by : {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 8.0})
         for (double small : {0.0, 1.0})
           for (double big : {2.8, 3.0})
             for (int late : {0, 1}) {
-              // A robot within the exits' bands of the checkpoint is settled by design: only judge the ones clearly outside them
+              // A robot within the exits' bands of the checkpoint is not what this is about: only judge the ones clearly outside them
               if (short_by < std::fmax(small, big) + 0.4) continue;
               double pin_at = pin_time(rev_move, theta, short_by);
               Rig r(sim::archetype_light_fast(), 1, false, 1);
@@ -73,18 +95,15 @@ TEST_CASE("point to point with an end angle: a robot held short of the checkpoin
               INFO("rev " << rev_move << " theta " << theta << " held " << short_by << " short (" << missed << " from the point) small " << small << " big "
                           << big << " late " << late);
               REQUIRE(returned);
-              if (missed > std::fmax(small, big) + 0.3) CHECK(r.chassis.interfered);
+              if (missed > std::fmax(small, big) + 0.3) check_verdict(r, p, rev_move, big);
             }
 }
 
-TEST_CASE("point to point with an end angle: a robot held short of the checkpoint reads interfered on a chain wait (wall)") {
+TEST_CASE("point to point with an end angle: a robot held short of the checkpoint on a chain wait is judged against the pushed target (wall)") {
   for (double theta : {0.0, 30.0, 90.0, 150.0, 180.0})
     for (double short_by : {4.0, 5.0, 6.0, 8.0})
       for (double small : {0.0, 1.0})
         for (double big : {2.8, 3.0}) {
-          // Against a wall the PID's own exit fires once the robot is within big_error of the pushed target, on every version of the
-          // library: with the target pushed back toward the robot that is a robot up to big_error + 3 in short, and not the wait's call
-          if (theta >= 150.0 && short_by < 6.0) continue;
           Rig r(sim::archetype_light_fast(), 1, false, 1);
           set_exits(r.chassis, small, big);
           pose p = point_for(false, theta);
@@ -98,6 +117,6 @@ TEST_CASE("point to point with an end angle: a robot held short of the checkpoin
           double missed = std::hypot(p.x - q.x, p.y - q.y);
           INFO("theta " << theta << " wall " << short_by << " short (" << missed << " from the point) small " << small << " big " << big);
           REQUIRE(returned);
-          if (missed > std::fmax(small, big) + 0.3) CHECK(r.chassis.interfered);
+          if (missed > std::fmax(small, big) + 0.3) check_verdict(r, p, false, big);
         }
 }

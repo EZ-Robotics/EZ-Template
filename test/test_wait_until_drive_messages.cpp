@@ -41,12 +41,10 @@ std::string two_places(double value) {
   return text;
 }
 
-// The single line printed when the DRIVE-level progress backstop (SingleStuckWatch) ends a wait
-// instead -- what a raw reading that never changes (see below) now falls back to: PID's own
-// velocity exit still arms, but k never accumulates from a reading that never changes
-// (test_pid.cpp's never-changes test).
-std::string stuck_failsafe_line(double left_driven, const std::string& target) {
-  return "  Drive: Stuck Wait Until Exit Failsafe, triggered at " + two_places(left_driven) + " instead of " + target + "\n";
+// The two lines printed when both sides' velocity exits end a wait short of its target.
+std::string velocity_failsafe_lines(double left_driven, double right_driven, const std::string& target) {
+  return "  Left: Velocity Wait Until Exit Failsafe, triggered at " + two_places(left_driven) + " instead of " + target + "\n" +
+         "  Right: Velocity Wait Until Exit Failsafe, triggered at " + two_places(right_driven) + " instead of " + target + "\n";
 }
 
 std::string success_line(double left_driven, double right_driven, const std::string& target) {
@@ -90,18 +88,17 @@ TEST_CASE("pid_wait_until failsafe message compares distance driven to the dista
   velocity_exits_only(chassis);
   set_sensors(chassis, 100.0);
   double left_start = chassis.drive_sensor_left();
+  double right_start = chassis.drive_sensor_right();
 
   chassis.pid_drive_set(48.0, 110);
   set_sensors(chassis, 106.0);  // Blocked six inches in, and never gets to 24
   double left_driven = chassis.drive_sensor_left() - left_start;
+  double right_driven = chassis.drive_sensor_right() - right_start;
 
   std::string printed = wait_until_printed(chassis, 24.0);
 
-  // The scripted reading never changes again after this (nothing steps the drive task), so PID's
-  // own velocity exit still arms (via the fallback) but k never accumulates from it
-  // (test_pid.cpp's never-changes test) -- this now ends via the DRIVE-level progress backstop
-  // instead, with its own message.
-  CHECK(printed == stuck_failsafe_line(left_driven, "24.00"));
+  // The robot never moves, so both velocity exits arm after their 1000 ms and run out 100 ms later
+  CHECK(printed == velocity_failsafe_lines(left_driven, right_driven, "24.00"));
   CHECK(printed.find(two_places(left_start + 24.0)) == std::string::npos);  // The encoder reading 24 inches on is not printed
 }
 
@@ -110,15 +107,16 @@ TEST_CASE("pid_wait_until failsafe message on a reverse drive compares distance 
   velocity_exits_only(chassis);
   set_sensors(chassis, 100.0);
   double left_start = chassis.drive_sensor_left();
+  double right_start = chassis.drive_sensor_right();
 
   chassis.pid_drive_set(-48.0, 110);
   set_sensors(chassis, 94.0);
   double left_driven = chassis.drive_sensor_left() - left_start;
+  double right_driven = chassis.drive_sensor_right() - right_start;
 
   std::string printed = wait_until_printed(chassis, -24.0);
 
-  // Same shift as the forward case above: this now ends via the DRIVE-level progress backstop.
-  CHECK(printed == stuck_failsafe_line(left_driven, "-24.00"));
+  CHECK(printed == velocity_failsafe_lines(left_driven, right_driven, "-24.00"));
   CHECK(printed.find(two_places(left_start - 24.0)) == std::string::npos);
 }
 
@@ -156,27 +154,30 @@ TEST_CASE("pid_wait_until success message on a reverse drive compares distance d
   CHECK(printed.find(two_places(left_start - 24.0)) == std::string::npos);
 }
 
-// The direction wait_until_drive() expects to close from has to come from the distance it was asked to wait
-// for, not from a live sensor read taken after its own first pass -- otherwise a robot already on the far side
-// of a short target by the time that first read happens would latch the "already past it" sign as the starting
-// one, and never see it flip again. Here the robot is already 30 inches in (6 past the 24 it is asked to wait
-// for, on a much longer 48 inch drive) before the wait is even called.
-TEST_CASE("pid_wait_until succeeds immediately when the robot is already past a short target") {
+// wait_until_drive() takes the direction it expects to close from from a live sensor read after its own first pass, as 3.2.2 does.  A robot already on
+// the far side of a short target by then never sees the "already past it" sign flip, so the wait ends on the drive's own exits instead.  Here the robot is
+// already 30 inches in (6 past the 24 it is asked to wait for, on a much longer 48 inch drive) and not moving, so the velocity exit arms on its 1000 ms
+// fallback and gives up 100 ms later: the wait returns through its failsafe, interfered, and does not hang.
+TEST_CASE("pid_wait_until on a robot already past a short target ends on the drive's own exits") {
   Drive chassis = make_chassis();
   velocity_exits_only(chassis);
   set_sensors(chassis, 100.0);
-  double left_start = chassis.drive_sensor_left();
-  double right_start = chassis.drive_sensor_right();
 
   chassis.pid_drive_set(48.0, 110);
   set_sensors(chassis, 130.0);  // Already 30 in from the start, well past the 24 asked for below
-  double left_driven = chassis.drive_sensor_left() - left_start;
-  double right_driven = chassis.drive_sensor_right() - right_start;
 
-  test_stub::g_clock.delay_calls_until_stop = 5;  // Would need ~110 passes to reach a velocity failsafe -- a hang if wrongly latched
-  std::string printed = test_stub::capture_stdout([&] { chassis.pid_wait_until(24.0); });
+  test_stub::g_clock.delay_calls_until_stop = 200;  // 1000 ms to arm plus 100 ms is about 111 passes
+  bool returned = true;
+  std::string printed = test_stub::capture_stdout([&] {
+    try {
+      chassis.pid_wait_until(24.0);
+    } catch (test_stub::StopLoop&) {
+      returned = false;
+    }
+  });
   test_stub::g_clock.delay_calls_until_stop = -1;
 
-  CHECK(printed == success_line(left_driven, right_driven, "24.00"));
-  CHECK_FALSE(chassis.interfered);
+  CHECK(returned);
+  CHECK(printed.find("Wait Until Exit Failsafe") != std::string::npos);
+  CHECK(chassis.interfered);
 }

@@ -175,6 +175,10 @@ void Drive::drive_defaults_set() {
   pid_odom_turn_exit_condition_set(90_ms, 3_deg, 250_ms, 7_deg, 500_ms, 750_ms);
   pid_odom_drive_exit_condition_set(90_ms, 1_in, 250_ms, 3_in, 500_ms, 750_ms);
 
+  // How slow the robot has to be to count as stopped.  Placeholders until a robot log sets them
+  pid_distance_exit_stop_speed_set(1.5);
+  pid_angle_exit_stop_speed_set(4.0);
+
   pid_odom_behavior_set(ez::shortest);  // Default odom turning to shortest
 
   // Motion chaining
@@ -326,7 +330,6 @@ void Drive::drive_sensor_reset() {
   if (odom_tracker_right_enabled) odom_tracker_right->reset();
   if (odom_tracker_front_enabled) odom_tracker_front->reset();
   if (odom_tracker_back_enabled) odom_tracker_back->reset();
-  travel_sides_valid_ = false;  // the drive sides jumping back to 0 is not the robot moving (travel_sample())
 
   // Reset odom stuff to the freshly-zeroed sensor values
   tracking_prime();

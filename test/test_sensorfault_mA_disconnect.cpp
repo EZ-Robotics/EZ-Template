@@ -1,16 +1,7 @@
-// pros::Motor::is_over_current() returns PROS_ERR, not a genuine 0/1, when the read itself fails
-// (e.g. the motor is unplugged). An earlier fix made sure that alone couldn't force a false
-// mA_EXIT (a transient read failure is not the same as genuine overcurrent). But a motor that has
-// truly gone away -- unplugged, a cable pulled mid-wait -- fails every read, not just one: its
-// get_position() comes back non-finite too. Treating THAT combination as "still running normally"
-// left a bare (non-Drive) PID mechanism (a lift, claw, catapult -- Drive's own waits have
-// StuckWatch/SingleStuckWatch as an independent backstop; a bare ez::PID does not) hanging
-// forever the moment its motor disconnected, since neither the velocity channel (fed a
-// non-finite derivative, sanitized to 0 -- reads as perfectly still, not stopped-and-exiting) nor
-// the mA channel (PROS_ERR ignored outright) could ever end the wait. Fixed: PROS_ERR paired with
-// a non-finite get_position() is a dead motor and counts toward the mA timer, same as genuine
-// overcurrent. A PROS_ERR with a still-finite position -- a one-off read glitch, not the motor
-// disappearing -- stays ignored, exactly as before.
+// pros::Motor::is_over_current() returns PROS_ERR (a nonzero value), not a genuine 0/1, when the read itself fails (e.g. the motor is unplugged).  A
+// motor that has truly gone away -- unplugged, a cable pulled mid-wait -- fails every read, so the mA timer sees it as over current for as long as it is
+// gone and ends the wait after mA_timeout, same as genuine overcurrent.  That keeps a bare (non-Drive) PID mechanism (a lift, claw, catapult) from
+// hanging forever when its motor disconnects.  A Drive's own waits only look at the first motor of each side.
 #include "doctest.h"
 
 #include "EZ-Template/api.hpp"
@@ -18,8 +9,18 @@
 
 using namespace ez;
 
+namespace {
+// One 10 ms pass of the wait loop: the clock moves on, then the PID polls the motor.
+template <typename M>
+exit_output poll(PID& pid, M& motor) {
+  test_stub::g_clock.now_ms += util::DELAY_TIME;
+  return pid.exit_condition(motor);
+}
+}  // namespace
+
 TEST_CASE("PID exit_condition(Motor): a genuinely disconnected motor (every read fails) mA_EXITs, same timing as real overcurrent") {
   test_stub::reset_all();  // motor fake state is a global port-keyed registry, shared across TEST_CASEs
+  test_stub::g_clock.now_ms = 0;
   PID pid;
   pid.exit_condition_set(90, 1.0, 250, 3.0, 0, 500);  // mA_timeout=500ms
   pid.error = 10.0;                                   // outside both small_error(1) and big_error(3) the whole test
@@ -28,27 +29,14 @@ TEST_CASE("PID exit_condition(Motor): a genuinely disconnected motor (every read
 
   for (int pass = 1; pass < 51; pass++) {
     INFO("pass ", pass);
-    CHECK(pid.exit_condition(m) == RUNNING);
+    CHECK(poll(pid, m) == RUNNING);
   }
-  CHECK(pid.exit_condition(m) == mA_EXIT);
-}
-
-TEST_CASE("PID exit_condition(Motor): a transient current-read failure with a still-finite position does not force mA_EXIT") {
-  test_stub::reset_all();
-  PID pid;
-  pid.exit_condition_set(90, 1.0, 250, 3.0, 0, 500);
-  pid.error = 10.0;
-  pros::Motor m(1);
-  m.fake().current_read_failed = true;  // is_over_current() -> PROS_ERR, but get_position() still reads fine
-
-  for (int pass = 1; pass <= 80; pass++) {
-    INFO("pass ", pass);
-    CHECK(pid.exit_condition(m) == RUNNING);
-  }
+  CHECK(poll(pid, m) == mA_EXIT);  // 510 ms is the first value over mA_timeout
 }
 
 TEST_CASE("PID exit_condition(Motor): a genuinely over-current motor still mA_EXITs normally") {
   test_stub::reset_all();
+  test_stub::g_clock.now_ms = 0;
   PID pid;
   pid.exit_condition_set(90, 1.0, 250, 3.0, 0, 500);
   pid.error = 10.0;
@@ -57,13 +45,14 @@ TEST_CASE("PID exit_condition(Motor): a genuinely over-current motor still mA_EX
 
   for (int pass = 1; pass < 51; pass++) {
     INFO("pass ", pass);
-    CHECK(pid.exit_condition(m) == RUNNING);
+    CHECK(poll(pid, m) == RUNNING);
   }
-  CHECK(pid.exit_condition(m) == mA_EXIT);
+  CHECK(poll(pid, m) == mA_EXIT);
 }
 
 TEST_CASE("PID exit_condition(vector<Motor>): one genuinely disconnected motor in the group mA_EXITs") {
   test_stub::reset_all();
+  test_stub::g_clock.now_ms = 0;
   PID pid;
   pid.exit_condition_set(90, 1.0, 250, 3.0, 0, 500);
   pid.error = 10.0;
@@ -74,29 +63,14 @@ TEST_CASE("PID exit_condition(vector<Motor>): one genuinely disconnected motor i
 
   for (int pass = 1; pass < 51; pass++) {
     INFO("pass ", pass);
-    CHECK(pid.exit_condition(group) == RUNNING);
+    CHECK(poll(pid, group) == RUNNING);
   }
-  CHECK(pid.exit_condition(group) == mA_EXIT);
-}
-
-TEST_CASE("PID exit_condition(vector<Motor>): one motor with a transient current-read failure does not force mA_EXIT") {
-  test_stub::reset_all();
-  PID pid;
-  pid.exit_condition_set(90, 1.0, 250, 3.0, 0, 500);
-  pid.error = 10.0;
-  pros::Motor healthy(1);
-  pros::Motor glitchy(2);
-  glitchy.fake().current_read_failed = true;
-  std::vector<pros::Motor> group{healthy, glitchy};
-
-  for (int pass = 1; pass <= 80; pass++) {
-    INFO("pass ", pass);
-    CHECK(pid.exit_condition(group) == RUNNING);
-  }
+  CHECK(poll(pid, group) == mA_EXIT);
 }
 
 TEST_CASE("PID exit_condition(vector<Motor>): one genuinely over-current motor in the group still mA_EXITs") {
   test_stub::reset_all();
+  test_stub::g_clock.now_ms = 0;
   PID pid;
   pid.exit_condition_set(90, 1.0, 250, 3.0, 0, 500);
   pid.error = 10.0;
@@ -107,7 +81,7 @@ TEST_CASE("PID exit_condition(vector<Motor>): one genuinely over-current motor i
 
   for (int pass = 1; pass < 51; pass++) {
     INFO("pass ", pass);
-    CHECK(pid.exit_condition(group) == RUNNING);
+    CHECK(poll(pid, group) == RUNNING);
   }
-  CHECK(pid.exit_condition(group) == mA_EXIT);
+  CHECK(poll(pid, group) == mA_EXIT);
 }

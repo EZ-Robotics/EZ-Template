@@ -1,13 +1,9 @@
-// One rule for "finished": every wait reaches the same verdict for the same motion at the same instant.
+// The verdict each wait reaches. Small and big exits are clean. A velocity or mA exit is interfered, unless it ends the wait inside
+// big_error: then the robot got where it was going. A pid_wait_until() that crosses its checkpoint is clean.
 //
-// Before, "settled", "reached the checkpoint" and "interfered" were decided in six places by five slightly different rules, so
-// one motion could be clean in pid_wait() and interfered in pid_wait_until() or the odom quick waits. Now:
-//   1. Nothing but "stopped" (Fix B / Fix C) ends a wait as settled.
-//   2. The mA exit inside big_error of the motion's final target is a settle, not an interference. Outside it, interfered.
-//   3. A checkpoint counts as reached when the robot crossed it, is within the motion's small_error of it, or settled inside
-//      big_error of the final target with the checkpoint between where it rested and the final target, or it can never be
-//      reached (printed, not interfered).
-//   4. An odom point wait on the path's last point follows the same rules with xy and heading.
+// With 2550R's exits (velocity 100 ms, under the 200 ms big exit time) a robot that crawls in at 2 to 3 in/s is over the stop speed, so
+// small and big can't count, and under the velocity exit's 5 in/s, so the velocity exit ends the wait while the library's speed is still
+// over the stop speed, but inside big_error: clean. The sticky and classroom robots crawl in like that, light_fast does not.
 #include <cmath>
 #include <cstdio>
 #include <string>
@@ -41,7 +37,7 @@ double time_at_heading(const sim::SimArchetype& a, double target, double heading
 
 // ---- the odom quick waits on a finished move -------------------------------------------------------------
 
-TEST_CASE("2550R's exits: pid_odom_set + pid_wait_quick() on a finished move is clean, on every robot") {
+TEST_CASE("2550R's exits: pid_odom_set + pid_wait_quick() on a finished move is clean, also on robots that crawl in") {
   for (auto arch : {sim::archetype_light_fast(), sim::archetype_sticky_high_friction(), archetype_classroom()}) {
     Rig r(arch, 1);
     exits_2550R(r.chassis);
@@ -53,7 +49,7 @@ TEST_CASE("2550R's exits: pid_odom_set + pid_wait_quick() on a finished move is 
   }
 }
 
-TEST_CASE("2550R's exits: pid_wait_until_index(last) on a 3 point path is clean, on every robot") {
+TEST_CASE("2550R's exits: pid_wait_until_index(last) on a 3 point path is clean, also on robots that crawl in") {
   for (auto arch : {sim::archetype_light_fast(), sim::archetype_sticky_high_friction(), archetype_classroom()}) {
     Rig r(arch, 1);
     exits_2550R(r.chassis);
@@ -84,7 +80,7 @@ TEST_CASE("controls: a mid-path wait_until a wall blocks, and a quick wait pinne
   }
 }
 
-// ---- wait_until's stuck path ignored the within-small_error rule --------------------------------------------
+// ---- chained waits and checkpoints --------------------------------------------------------------------------
 
 TEST_CASE("a sticky robot's fast-exit chained swing is clean when it settles inside small_error of the checkpoint") {
   Rig r(sim::archetype_sticky_high_friction(), 1);
@@ -94,6 +90,7 @@ TEST_CASE("a sticky robot's fast-exit chained swing is clean when it settles ins
   CHECK_FALSE(r.chassis.interfered);
 }
 
+// It crawls in at about 2.5 in/s and the velocity exit ends the wait at 23.1 in, before it crosses the checkpoint: clean, as it is inside big_error
 TEST_CASE("2550R's exits on a sticky robot: pid_wait_until(23.5 in) on a 24 in drive returns near the checkpoint, clean") {
   Rig r(sim::archetype_sticky_high_friction(), 1);
   exits_2550R(r.chassis);
@@ -141,7 +138,7 @@ TEST_CASE("control: a chained drive, turn, swing and drive on light_fast at the 
   CHECK_FALSE(r.chassis.interfered);
 }
 
-// ---- a near-final checkpoint was interfered while pid_wait() on the same motion was clean --------------------
+// ---- near-final checkpoints ----------------------------------------------------------------------------------
 
 TEST_CASE("a sticky robot's left swing to 90 at the shipped exits: pid_wait_until(89) is clean, and so is pid_wait_until(89) then pid_wait()") {
   {
@@ -161,7 +158,7 @@ TEST_CASE("a sticky robot's left swing to 90 at the shipped exits: pid_wait_unti
 
 TEST_CASE("a sticky robot's 24 in drive: pid_wait_until(23 in) is clean when it parks short of the checkpoint") {
   Rig r(sim::archetype_sticky_high_friction(), 1);
-  // The start commit's big exit parks this robot at about 21.5 in. A wall there holds it to that whatever the exits do to where it
+  // A big exit that only looks at position parks this robot at about 21.5 in. A wall there holds it to that whatever the exits do to where it
   // parks: 2.5 in short of the target (inside big_error), 1.5 in short of the checkpoint (outside small_error)
   r.chassis.pid_drive_set(24_in, 110);
   r.sim.wall(21.5);
@@ -169,7 +166,7 @@ TEST_CASE("a sticky robot's 24 in drive: pid_wait_until(23 in) is clean when it 
   CHECK_FALSE(r.chassis.interfered);
 }
 
-TEST_CASE("controls: pinned by a wall at 80 degrees on a swing to 90, pid_wait_until(85) is still interfered; an unreachable checkpoint prints and is not") {
+TEST_CASE("controls: pinned by a wall at 80 degrees on a swing to 90, pid_wait_until(85) is still interfered; an unreachable checkpoint is not") {
   {
     const auto arch = sim::archetype_sticky_high_friction();
     double t80 = time_at_heading(arch, 90.0, 80.0);
@@ -185,7 +182,6 @@ TEST_CASE("controls: pinned by a wall at 80 degrees on a swing to 90, pid_wait_u
     r.chassis.pid_print_toggle(false);
     r.chassis.pid_drive_set(24_in, 110);
     std::string out = test_stub::capture_stdout([&] { REQUIRE(r.wait([&] { r.chassis.pid_wait_until(30_in); }, 3000)); });
-    CHECK(out.find("can't be reached") != std::string::npos);
     CHECK_FALSE(r.chassis.interfered);
   }
 }
@@ -206,7 +202,9 @@ TEST_CASE("2550R's pin2: an mA exit against a wall inside big_error of the targe
   }
 }
 
-TEST_CASE("a finished 90 degree turn on a heavy robot with a short mA timeout is clean (250/1/250/3/0/100)") {
+// The 100 ms mA timeout is shorter than the 250 ms small and big exit times, and the heavy robot is still turning at about 9 deg/s by the
+// library's speed when the mA exit ends the wait inside big_error: over the 4 deg/s stop speed, but inside big_error, so clean
+TEST_CASE("a 90 degree turn on a heavy robot with a short mA timeout ends on mA while still turning, clean (250/1/250/3/0/100)") {
   for (int passes : {2, 3}) {
     Rig r(sim::archetype_heavy_slow(), passes);
     r.chassis.pid_turn_exit_condition_set(250_ms, 1_deg, 250_ms, 3_deg, 0_ms, 100_ms);

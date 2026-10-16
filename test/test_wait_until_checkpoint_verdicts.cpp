@@ -1,17 +1,12 @@
 // What a pid_wait_until() checkpoint that the motion never crosses means for `interfered`.
 //
-// Unreachable checkpoint. When a motion settles cleanly (window exit, or stuck-but-settled inside big_error at the
-// real target) without crossing the checkpoint, the wait_until failsafe marked `interfered` whenever the checkpoint was
-// not the motion's final target, and InterferedScope keeps that mark for the rest of the motion, so the following
-// pid_wait() reported it too, even when the robot settled exactly on target. That is right for a reachable checkpoint
-// the robot stopped short of. It is wrong when the checkpoint can never be reached because of a programming mistake: past
-// the motion's target, or on the wrong side of where it started (banthab0mb High Stakes `pid_drive_set(-34_in, 60,
-// true); pid_wait_until(30_in);`, 1723A's `pid_turn_set(0_deg)` then `pid_wait_until(2_deg)`).
+// Unreachable checkpoint. A SMALL or BIG exit never marks interfered, so a motion that settles cleanly without crossing its checkpoint, because the
+// checkpoint is past the motion's target or on the wrong side of where it started (banthab0mb High Stakes `pid_drive_set(-34_in, 60, true);
+// pid_wait_until(30_in);`, 1723A's `pid_turn_set(0_deg)` then `pid_wait_until(2_deg)`), returns clean, and so does the pid_wait() after it.
 //
-// Chained motion. With pid_wait_quick_chain() the motion's target is pushed past the checkpoint by the chain
-// constant, so the checkpoint is never the final target, and a turn or drive that latches BIG_EXIT on the pushed target
-// while sitting a fraction short of the checkpoint was marked interfered (1723A rightRush: "triggered at 270.04
-// instead of 270.00"). Within the motion PID's own small_error of the checkpoint is "arrived".
+// Chained motion. With pid_wait_quick_chain() the motion's target is pushed past the checkpoint by the chain constant, so the checkpoint is never
+// the final target.  A turn or drive that latches its SMALL or BIG exit on the pushed target while sitting a fraction short of the checkpoint
+// returns clean (1723A rightRush: "triggered at 270.04 instead of 270.00").
 #include <cmath>
 #include <string>
 
@@ -23,12 +18,6 @@
 using namespace ez;
 
 namespace {
-int count_of(const std::string& text, const std::string& needle) {
-  int n = 0;
-  for (std::size_t at = text.find(needle); at != std::string::npos; at = text.find(needle, at + needle.size())) n++;
-  return n;
-}
-
 template <typename F>
 bool run_capped(F&& wait, int max_ticks) {
   test_stub::g_clock.delay_calls_until_stop = max_ticks;
@@ -47,7 +36,6 @@ Drive make_sim_chassis(const sim::SimArchetype& a) {
   return Drive({1, -2}, {-3, 4}, 5, a.wheel_diameter_in, a.cartridge_rpm);
 }
 
-constexpr const char* kUnreachable = "can't be reached";
 constexpr std::uint32_t GOLDEN_T0 = 370, GOLDEN_T1 = 960, GOLDEN_T2 = 1330;  // captured on a107ac8
 }  // namespace
 
@@ -55,7 +43,7 @@ constexpr std::uint32_t GOLDEN_T0 = 370, GOLDEN_T1 = 960, GOLDEN_T2 = 1330;  // 
 // Unreachable checkpoints, physics sim (light_fast, no noise)
 // ---------------------------------------------------------------------------------------------------------------------
 
-TEST_CASE("sim: banthab0mb's pid_drive_set(-34_in, 60, true); pid_wait_until(30_in); pid_wait(); is not interfered, and says why once") {
+TEST_CASE("sim: banthab0mb's pid_drive_set(-34_in, 60, true); pid_wait_until(30_in); pid_wait(); is not interfered") {
   auto a = sim::archetype_light_fast();
   Drive chassis = make_sim_chassis(a);
   DriveTestAccess::imu_calibration_complete(chassis) = true;
@@ -76,11 +64,10 @@ TEST_CASE("sim: banthab0mb's pid_drive_set(-34_in, 60, true); pid_wait_until(30_
   REQUIRE(second);
   CHECK_FALSE(chassis.interfered);
   CHECK(std::fabs(sim.left().position_in - -34.0) < 1.0);
-  CHECK(count_of(out, kUnreachable) == 1);
   CHECK(t_second - t_first <= 500);
 }
 
-TEST_CASE("sim: a turn to 0 from -30 with pid_wait_until(2_deg) is not interfered, and says why once") {
+TEST_CASE("sim: a turn to 0 from -30 with pid_wait_until(2_deg) is not interfered") {
   auto a = sim::archetype_light_fast();
   Drive chassis = make_sim_chassis(a);
   DriveTestAccess::imu_calibration_complete(chassis) = true;
@@ -99,10 +86,9 @@ TEST_CASE("sim: a turn to 0 from -30 with pid_wait_until(2_deg) is not interfere
   REQUIRE(second);
   CHECK_FALSE(chassis.interfered);
   CHECK(std::fabs(chassis.drive_angle_get()) < 3.0);
-  CHECK(count_of(out, kUnreachable) == 1);
 }
 
-TEST_CASE("sim: pid_wait_until(30_in) beyond a 24 in drive's target is not interfered, and says why once") {
+TEST_CASE("sim: pid_wait_until(30_in) beyond a 24 in drive's target is not interfered") {
   auto a = sim::archetype_light_fast();
   Drive chassis = make_sim_chassis(a);
   DriveTestAccess::imu_calibration_complete(chassis) = true;
@@ -120,10 +106,9 @@ TEST_CASE("sim: pid_wait_until(30_in) beyond a 24 in drive's target is not inter
   REQUIRE(second);
   CHECK_FALSE(chassis.interfered);
   CHECK(std::fabs(sim.left().position_in - 24.0) < 1.0);
-  CHECK(count_of(out, kUnreachable) == 1);
 }
 
-TEST_CASE("sim: pid_wait_until(-6_in) on a forward 24 in drive (the wrong side of the start) is not interfered, and says why once") {
+TEST_CASE("sim: pid_wait_until(-6_in) on a forward 24 in drive (the wrong side of the start) is not interfered") {
   auto a = sim::archetype_light_fast();
   Drive chassis = make_sim_chassis(a);
   DriveTestAccess::imu_calibration_complete(chassis) = true;
@@ -141,10 +126,9 @@ TEST_CASE("sim: pid_wait_until(-6_in) on a forward 24 in drive (the wrong side o
   REQUIRE(second);
   CHECK_FALSE(chassis.interfered);
   CHECK(std::fabs(sim.left().position_in - 24.0) < 1.0);
-  CHECK(count_of(out, kUnreachable) == 1);
 }
 
-TEST_CASE("sim: a swing to 0 from -30 with pid_wait_until(2_deg) is not interfered, and says why once") {
+TEST_CASE("sim: a swing to 0 from -30 with pid_wait_until(2_deg) is not interfered") {
   auto a = sim::archetype_light_fast();
   Drive chassis = make_sim_chassis(a);
   DriveTestAccess::imu_calibration_complete(chassis) = true;
@@ -163,7 +147,6 @@ TEST_CASE("sim: a swing to 0 from -30 with pid_wait_until(2_deg) is not interfer
   REQUIRE(second);
   CHECK_FALSE(chassis.interfered);
   CHECK(std::fabs(chassis.drive_angle_get()) < 3.0);
-  CHECK(count_of(out, kUnreachable) == 1);
 }
 
 TEST_CASE("control: a reachable checkpoint the robot is blocked short of by a sim wall is still interfered") {
@@ -182,7 +165,6 @@ TEST_CASE("control: a reachable checkpoint the robot is blocked short of by a si
   CAPTURE(out);
   REQUIRE(returned);
   CHECK(chassis.interfered);
-  CHECK(count_of(out, kUnreachable) == 0);
 }
 
 TEST_CASE("control: a reachable checkpoint with an mA stall is still interfered") {
@@ -258,13 +240,11 @@ TEST_CASE("a chained turn that latches BIG_EXIT 0.04 degrees short of its checkp
 
 TEST_CASE("a chained drive that latches BIG_EXIT 0.3 in short of its checkpoint is not interfered") { CHECK_FALSE(chained_drive_interfered(0.3)); }
 
-TEST_CASE(
-    "a chained turn 4 degrees short of its checkpoint with small_error 3, settled inside big_error of its target, is clean (it was interfered before the one rule for finished)") {
+TEST_CASE("a chained turn 4 degrees short of its checkpoint with small_error 3, settled inside big_error of its target, is clean") {
   CHECK_FALSE(chained_turn_interfered(4.0, 12.0));
 }
 
-TEST_CASE(
-    "a chained drive 1.5 in short of its checkpoint with small_error 1, settled inside big_error of its target, is clean (it was interfered before the one rule for finished)") {
+TEST_CASE("a chained drive 1.5 in short of its checkpoint with small_error 1, settled inside big_error of its target, is clean") {
   CHECK_FALSE(chained_drive_interfered(1.5));
 }
 

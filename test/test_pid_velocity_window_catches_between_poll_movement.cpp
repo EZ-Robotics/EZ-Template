@@ -1,12 +1,9 @@
-// The velocity-exit channel used to look only at the single most recent compute's derivative on each
-// poll. A mechanism whose compute() cadence is a multiple of its sensor's own refresh cadence produces
-// derivative == 0 on most computes, with the real jump landing on whichever compute happens to follow
-// a refresh -- which need not be the specific compute immediately before a given poll -- even while
-// genuinely moving continuously the whole time. This is a real, deterministic hardware pattern (V5
-// sensors update on a fixed bus cadence), not a contrived one. The velocity channel now tracks the
-// largest sanitized |derivative| seen across every real compute since the last poll, so a real jump
-// anywhere in that window is caught even when the last compute before the poll happened to land on a
-// stale-relative-to-refresh reading.
+// A mechanism whose compute() cadence is a multiple of its sensor's own refresh cadence produces repeated raw values on most computes, with the real jump
+// landing on whichever compute happens to follow a refresh -- which need not be the specific compute immediately before a given poll -- even while
+// genuinely moving continuously the whole time. This is a real, deterministic hardware pattern (V5 sensors update on a fixed bus cadence), not a
+// contrived one. The velocity channel judges the sensor's net movement over the last 100 ms, not the last compute, so a real jump anywhere in that
+// window is caught even when the last compute before the poll happened to land on a repeated reading. The speed only changes when a window closes, so a
+// real stall is noticed one window late.
 #include "doctest.h"
 
 #include "EZ-Template/api.hpp"
@@ -43,7 +40,7 @@ TEST_CASE("VELOCITY_EXIT still fires promptly on a genuine stall at matched comp
   pid.target_set(10000);
 
   test_stub::g_clock.now_ms = 0;
-  pid.compute(0);  // arm: one real movement so velocity_armed flips true below
+  pid.compute(0);  // the window starts here; the move to 50 below makes the first window arm
 
   bool exited = false;
   int t_exit = -1;
@@ -57,6 +54,7 @@ TEST_CASE("VELOCITY_EXIT still fires promptly on a genuine stall at matched comp
     }
   }
   CHECK(exited);
-  // ~300ms configured + at most one extra poll for the inconclusive first-sample check.
-  CHECK(t_exit <= 330);
+  // The jump on t=10 lands in the first speed window (closes t=100, arms), the first fully still window closes on t=200 where the timer holds 10 ms, and
+  // it passes the configured 300 ms on t=500; one extra poll of slack.
+  CHECK(t_exit <= 510);
 }

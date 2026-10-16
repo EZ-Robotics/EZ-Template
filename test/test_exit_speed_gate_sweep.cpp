@@ -1,10 +1,11 @@
 // The undisturbed sweep: every kind of motion a team runs, on every kind of robot, with every set of exits teams use, ended by
-// every kind of wait, with nothing touching the robot. What a healthy auton does, and so what must never break.
+// every kind of wait, with nothing touching the robot. It is a harness for comparing commits as much as a test.
 //
-// Every row must return, must not be reported interfered, and (for a return that settles, as opposed to one that crosses a
-// checkpoint on purpose) must not settle while the robot is still moving at or above the stop speed over the window of the exit
-// that ended it. After a pid_wait() the robot must also have stopped: it may travel at most 0.75 in (2 degrees) in the next
-// 500 ms, which is the floor times 500 ms, rounded.
+// Every row must return, and after a pid_wait() the robot must have stopped: it may travel at most 0.75 in (2 degrees) in the next
+// 500 ms, which is the stop speed times 500 ms, rounded. How many rows read interfered, and how many ended on an exit while the robot
+// still moved at or above the stop speed over that exit's time, are printed per exit set, not asserted: small and big can't count
+// while the library's speed is over the stop speed, and the velocity exit counts at or under 5 units/s, so a robot that crawls in
+// between those two speeds for longer than velocity_exit_time (or stays over current for mA_timeout) ends on that exit, interfered.
 //
 // The speed of the robot is the sim's own, never the library's. Set EZ_SWEEP_CSV=<path> to write one line per row (used to
 // compare against another commit); the rows are the same on every commit.
@@ -98,6 +99,8 @@ const Wait WAITS[] = {{"wait", false, 0},    {"quick", true, 1},          {"chai
                       {"until50%", true, 3}, {"until-half-big", true, 4}, {"until-target", true, 5}};
 
 // What ended a wait, from what it printed
+// The values are written to the CSV, so they stay the same on every commit. StuckSettled is a print other commits make, kept so mA and
+// Other keep their numbers.
 enum class End {
   Crossing,
   Small,
@@ -126,7 +129,7 @@ struct Row {
   double speed_at_end = 0;  // over the ending exit's window, in/s or deg/s
   double speed_limit = 0;
   double slack = 0;      // what the one-count deadband lets through over the window: band / window
-  bool hunting = false;  // the sim left the robot chattering about its target, which only the no-progress backstop can end
+  bool hunting = false;  // the sim left the robot chattering about its target
   double after = 0;      // travel in the next 500 ms, in or deg
   bool angular = false;
 };
@@ -292,20 +295,25 @@ void run_sweep(const sim::SimArchetype& arch, int passes, const std::string& lab
     std::sort(fe.begin(), fe.end());
     auto pct = [](const std::vector<double>& v, double p) { return v.empty() ? 0.0 : v[std::min(v.size() - 1, (size_t)(p * v.size()))]; };
     std::printf(
-        "  [sweep] %-22s %-9s rows=%d no_return=%zu interfered=%zu fast_settle=%zu after_big=%zu after>tight=%d/%d hunting=%d  return ms med/p95/max=%.0f/%.0f/%.0f  final err med/p95=%.2f/%.2f\n",
+        "  [sweep] %-22s %-9s rows=%d no_return=%zu interfered=%zu fast_settle=%zu after_big=%zu after>tight=%d/%d hunting=%d  "
+        "return ms med/p95/max=%.0f/%.0f/%.0f  final err med/p95=%.2f/%.2f\n",
         label.c_str(), es.name, t.rows, t.not_returned.size(), t.interfered.size(), t.fast_settle.size(), t.after_big.size(), t.after_over_tight, t.after_rows,
         t.hunting, pct(e, 0.5), pct(e, 0.95), e.empty() ? 0.0 : e.back(), pct(fe, 0.5), pct(fe, 0.95));
-    auto report = [&](const char* what, const std::vector<std::string>& v) {
+    auto report = [&](const char* what, const std::vector<std::string>& v, bool assert_empty) {
       std::string text;
       for (size_t i = 0; i < v.size() && i < 8; i++) text += "\n    " + v[i];
       std::string message = label + " " + std::string(es.name) + ": " + std::string(what) + " (" + std::to_string(v.size()) + ")" + text;
+      if (!assert_empty) {
+        if (!v.empty()) std::printf("  %s\n", message.c_str());
+        return;
+      }
       INFO(message);
       CHECK(v.empty());
     };
-    report("a wait did not return", t.not_returned);
-    report("interfered on an undisturbed run", t.interfered);
-    report("settled while still moving at or above the stop speed", t.fast_settle);
-    report("moved more than 0.75 in (2 deg) in the 500 ms after pid_wait() returned", t.after_big);
+    report("a wait did not return", t.not_returned, true);
+    report("interfered on an undisturbed run", t.interfered, false);
+    report("ended while still moving at or above the stop speed", t.fast_settle, false);
+    report("moved more than 0.75 in (2 deg) in the 500 ms after pid_wait() returned", t.after_big, true);
   }
 }
 

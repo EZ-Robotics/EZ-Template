@@ -1,15 +1,9 @@
-// A short shove ends a drive as Stuck (issue: a robot shoved by another robot recovers, and the wait must not give up on it).
+// A robot shoved by another robot: what the wait reports depends on where the shove leaves it.
 //
-// A stuck watch needs a full `step` of new progress within one `window` (the team's own velocity_exit_time, falling back to
-// mA_timeout). When another robot shoves yours, Channel::made() correctly latches the shove as a disturbance (one-shot
-// rebound leniency), but the no-progress clock kept counting from the last progress BEFORE the shove, so the shove
-// plus the time to recover a full step below its peak had to fit inside one window. At short windows or low cruise speed
-// they do not, so the wait ended Stuck with interfered = true while the robot was driving again and the next motion started
-// from the wrong place. v3.2.2 recovered and arrived in every one of these.
-//
-// Decided fix: a shove restarts the clock, once when it latches and once when it peaks (never for a pin, which is not a
-// shove), and the stuck window is floored at 350 ms. The pure pursuit path-travel credit that was also asked for is NOT
-// done; see the 29295D case below for why.
+// The velocity exit fires once the robot's speed (its movement over the last 100 ms) has stayed at or under 5 in/s for the
+// team's velocity_exit_time. A shove that holds the robot still outside big_error for longer than that is a velocity exit by
+// design, and ends the wait interfered while the robot is held. A velocity or mA exit that ends the wait inside big_error
+// has arrived, and is clean, whatever its speed. A shove the robot drives through ends on its small or big exit.
 //
 // light_fast and sticky_high_friction only: heavy_slow is numerically unstable when the auto task runs exactly once per poll.
 #include <cmath>
@@ -64,7 +58,7 @@ struct Outcome {
 const sim::SimArchetype kArchetypes[] = {sim::archetype_light_fast(), sim::archetype_sticky_high_friction()};
 
 // A classroom-style robot: one green motor a side and 6 kg, so a shove wins against it more easily than against the
-// two archetypes above. 2550R's pin2 and a plain pid_drive_set(24_in, 30) fail on it on a107ac8 at 40 and 60 N.
+// two archetypes above.
 sim::SimArchetype classroom_1_motor() {
   sim::SimArchetype a = sim::archetype_light_fast();
   a.name = "classroom_1_motor";
@@ -89,32 +83,57 @@ Outcome shoved_drive(const sim::SimArchetype& a, double newtons, double duration
 }
 }  // namespace
 
-// Forces are the ones the drive can be shoved with and still recover from. Past them the shove leaves the motors over
-// current for longer than the team's own mA_timeout (100 ms here), and the mA exit ends the wait, which is what it is
-// for; that is a different exit and is unchanged. That is 120 N and up on the classroom robot, and 150 N on light_fast.
-TEST_CASE("2550R pin2 (pid_drive_set(27, 80, true); pid_wait_quick(); on 90/1/200/3/100/100 exits): a 300 ms shove is recovered from") {
-  for (const auto& a : kArchetypes) {
-    for (double newtons : {40.0, 60.0, 90.0, 120.0}) {
-      Outcome o = shoved_drive(a, newtons, 300, /*pin2=*/true, 27.0, 80, /*quick=*/true);
-      CAPTURE(a.name);
-      CAPTURE(newtons);
-      CAPTURE(o.pos);
-      CAPTURE(o.ms);
-      REQUIRE(o.returned);
-      CHECK_FALSE(o.interfered);
-      CHECK(std::fabs(o.pos - 27.0) < 3.0);  // within the team's own big_error
-    }
-  }
-  const sim::SimArchetype classroom = classroom_1_motor();
-  for (double newtons : {40.0, 60.0, 90.0}) {
-    Outcome o = shoved_drive(classroom, newtons, 300, /*pin2=*/true, 27.0, 80, /*quick=*/true);
-    CAPTURE(newtons);
-    CAPTURE(o.pos);
-    CAPTURE(o.ms);
-    REQUIRE(o.returned);
+// Forces stay at or under the ones that don't leave the motors over current for longer than the team's own mA_timeout
+// (100 ms here); past them the mA exit ends the wait, which is what it is for. That is 120 N and up on the classroom robot,
+// and 150 N on light_fast.
+//
+// Two of these shoves hold the robot still outside the 3 in big_error for longer than the 100 ms velocity_exit_time, and the
+// velocity exit ends the wait interfered while the shove still holds it: 90 N on light_fast (about 4.2 in short) and 60 N on
+// the classroom robot (about 18 in short). Promptly: by the end of the shove at 700 ms, one 100 ms speed window for the
+// speed to read the stop, the velocity exit time, and a pass or two.
+//
+// sticky_high_friction (every force) and the classroom robot (40 and 90 N) recover but crawl the last inch in at 2 to 7 in/s.
+// The small and big exit timers pause while the robot is over the 1.5 in/s stop speed, so even inside the 1 in small_error
+// they do not run, and the velocity exit (at 5 in/s) ends the wait inside big_error but above the stop speed: clean. By
+// the time traced in the sim (sticky 1520 to 1620 ms, classroom 1820 and 2020 ms), plus two passes.
+//
+// Every other shove is recovered from, and the robot ends within big_error, clean.
+namespace {
+enum class Shove {
+  recovered,     // ends clean within big_error
+  held_outside,  // the velocity exit ends it interfered while the shove holds the robot outside big_error
+  crawled_in     // the velocity exit ends it clean within big_error while the robot crawls in
+};
+
+void check_pin2_shove(const sim::SimArchetype& a, double newtons, Shove expect, int crawl_ends_by_ms = 0) {
+  Outcome o = shoved_drive(a, newtons, 300, /*pin2=*/true, 27.0, 80, /*quick=*/true);
+  CAPTURE(a.name);
+  CAPTURE(newtons);
+  CAPTURE(o.pos);
+  CAPTURE(o.ms);
+  REQUIRE(o.returned);
+  if (expect == Shove::held_outside) {
+    CHECK(o.interfered);
+    CHECK(std::fabs(o.pos - 27.0) > 3.0);  // held outside the team's own big_error
+    CHECK(o.ms <= 400 + 300 + 100 + 100 + 20);
+  } else {
     CHECK_FALSE(o.interfered);
-    CHECK(std::fabs(o.pos - 27.0) < 3.0);
+    CHECK(std::fabs(o.pos - 27.0) < 3.0);  // within the team's own big_error
+    if (expect == Shove::crawled_in) CHECK(o.ms <= crawl_ends_by_ms + 20);
   }
+}
+}  // namespace
+
+TEST_CASE("2550R pin2 (pid_drive_set(27, 80, true); pid_wait_quick(); on 90/1/200/3/100/100 exits): a 300 ms shove is recovered from unless held outside") {
+  for (double newtons : {40.0, 60.0, 90.0, 120.0})
+    check_pin2_shove(sim::archetype_light_fast(), newtons, newtons == 90.0 ? Shove::held_outside : Shove::recovered);
+  check_pin2_shove(sim::archetype_sticky_high_friction(), 40.0, Shove::crawled_in, 1520);
+  check_pin2_shove(sim::archetype_sticky_high_friction(), 60.0, Shove::crawled_in, 1520);
+  check_pin2_shove(sim::archetype_sticky_high_friction(), 90.0, Shove::crawled_in, 1620);
+  check_pin2_shove(sim::archetype_sticky_high_friction(), 120.0, Shove::crawled_in, 1620);
+  check_pin2_shove(classroom_1_motor(), 40.0, Shove::crawled_in, 1820);
+  check_pin2_shove(classroom_1_motor(), 60.0, Shove::held_outside);
+  check_pin2_shove(classroom_1_motor(), 90.0, Shove::crawled_in, 2020);
 }
 
 TEST_CASE("pid_drive_set(24_in, 30) at default exits: a 300 ms shove is recovered from") {
@@ -135,14 +154,13 @@ TEST_CASE("pid_drive_set(24_in, 30) at default exits: a 300 ms shove is recovere
 
 // ---------------------------------------------------------------------------------------------------------------------
 // 29295D's slow pure pursuit corner, 20 seeds. Their constants, on a 450 rpm, 3.25 in drive: the robot crawls through the
-// first boomerang corner and used to be called stuck there and abandon the path about 23 in from the end. The corner
-// reproduces on sticky_high_friction with a 450 rpm cartridge; light_fast never crawls, and is the control.
+// first boomerang corner. The corner reproduces on sticky_high_friction with a 450 rpm cartridge; light_fast never crawls
+// there, and is the control: it gets through the corner onto the path's last point and ends inside xy big_error. It crawls
+// the last few inches in under 5 in/s and outside the 1 in small_error, so the xy velocity exit ends it interfered, as
+// 3.2.2's velocity exit did.
 //
-// OPEN, and marked may_fail on purpose: the fix that was asked for, crediting pure pursuit progress by the distance the robot's
-// own odom track has moved since the last credit, does not pass this corner, and was left out by decision. The corner crawls at
-// about 1.2 in/s and a window covers 0.4 to 0.6 in against a 1 in step, so no rule that credits a whole step per window can
-// pass it; accumulating the pose delta only helps through simulated encoder noise (3 to 17 of 20 seeds at a faster crawl with
-// noise on, no change with noise off). The shove restart and the window floor do not touch it either.
+// OPEN, and marked may_fail on purpose: the crawl is under the 5 in/s velocity exit speed, so on most seeds the xy velocity
+// exit fires there once the angle exit has latched, and the path ends interfered at the first point, about 19 in from the end.
 // ---------------------------------------------------------------------------------------------------------------------
 
 namespace {
@@ -150,6 +168,8 @@ struct PathResult {
   bool returned;
   bool interfered;
   double dist_to_end;
+  bool on_last_point;
+  double xy_error;
 };
 
 PathResult run_29295d(const sim::SimArchetype& base, std::uint32_t seed) {
@@ -167,7 +187,8 @@ PathResult run_29295d(const sim::SimArchetype& base, std::uint32_t seed) {
   c.odom_boomerang_dlead_set(0.625);
   c.pid_odom_set({{{-12_in, 24_in, -90_deg}, fwd, 90}, {{12_in, 48_in, 90_deg}, fwd, 90}, {{0_in, 0_in, 180_deg}, fwd, 90}}, true);
   bool returned = run_capped([&] { c.pid_wait(); }, 3000);
-  return {returned, c.interfered, std::hypot(c.odom_x_get(), c.odom_y_get())};
+  bool on_last_point = DriveTestAccess::pp_index(c) == DriveTestAccess::injected_pp_index(c).back();
+  return {returned, c.interfered, std::hypot(c.odom_x_get(), c.odom_y_get()), on_last_point, c.xyPID.error};
 }
 }  // namespace
 
@@ -186,20 +207,21 @@ TEST_CASE("29295D's slow corner path completes on all 20 seeds (sticky_high_fric
   CHECK(complete == 20);
 }
 
-TEST_CASE("control: 29295D's path on light_fast at 450 rpm completes on all 20 seeds") {
+TEST_CASE("control: 29295D's path on light_fast at 450 rpm gets through the corner and ends on its last point on all 20 seeds") {
   for (std::uint32_t seed = 1; seed <= 20; seed++) {
     PathResult p = run_29295d(sim::archetype_light_fast(), seed);
     CAPTURE(seed);
+    CAPTURE(p.xy_error);
     REQUIRE(p.returned);
-    CHECK((p.dist_to_end < 3.0 || !p.interfered));
+    CHECK(p.on_last_point);
+    CHECK(std::fabs(p.xy_error) < 3.0);  // inside the team's xy big_error
   }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
-// Controls that must not move: a robot that is genuinely held still, or held back, is still reported stuck, promptly and
-// never forever. Times are sim milliseconds from the motion starting. The default drive window is 400 ms (velocity_exit_time; the
-// floor is 350) and a drive that has not moved yet also gets the 1000 ms start allowance, so a drive pinned from the very start
-// ends by 1000 + 400 (+ a pass).
+// Controls that must not move: a robot that is genuinely held still, or held back, still ends the wait interfered, promptly
+// and never forever. Times are sim milliseconds from the motion starting. The default drive velocity_exit_time is 500 ms, and
+// a velocity exit only arms once the robot has moved faster than 5 in/s or 1000 ms have gone by.
 // ---------------------------------------------------------------------------------------------------------------------
 
 namespace {
@@ -212,7 +234,7 @@ Outcome run_held(const sim::SimArchetype& a, void (*setup)(Rig&), int budget_tic
 }
 }  // namespace
 
-TEST_CASE("control: a drive pinned from the start still ends interfered within the start allowance plus one window") {
+TEST_CASE("control: a drive pinned from the start still ends interfered within the velocity exit's 1000 ms arm fallback plus its velocity_exit_time") {
   for (const auto& a : kArchetypes) {
     Outcome o = run_held(a, [](Rig& r) {
       r.sim.pin(0, 60000);
@@ -246,7 +268,7 @@ TEST_CASE("control: a turn or swing pinned from the start still ends interfered 
   }
 }
 
-TEST_CASE("control: a drive that is pinned mid-drive for longer than the window still reports interfered") {
+TEST_CASE("control: a drive that is pinned mid-drive for longer than its velocity_exit_time still reports interfered") {
   for (const auto& a : kArchetypes) {
     Outcome o = run_held(a, [](Rig& r) {
       r.chassis.pid_drive_set(72_in, 60);
@@ -256,11 +278,11 @@ TEST_CASE("control: a drive that is pinned mid-drive for longer than the window 
     CAPTURE(o.ms);
     REQUIRE(o.returned);
     CHECK(o.interfered);
-    CHECK(o.ms <= 300 + 1600);  // pinned at 300 ms: allowance/window as for a start pin
+    CHECK(o.ms <= 300 + 1600);  // pinned at 300 ms: the same bound as for a start pin
   }
 }
 
-TEST_CASE("control: a drive pinned by a sim wall still ends interfered within a window + 1000 ms of contact") {
+TEST_CASE("control: a drive pinned by a sim wall still ends interfered within 1500 ms of contact") {
   for (const auto& a : kArchetypes) {
     Rig r(a);
     r.sim.wall(20.0);
@@ -273,7 +295,7 @@ TEST_CASE("control: a drive pinned by a sim wall still ends interfered within a 
     CAPTURE(pros::millis() - contact);
     REQUIRE(returned);
     CHECK(r.chassis.interfered);
-    CHECK(pros::millis() - contact <= 400 + 1000 + 100);  // the default 400 ms window, and a pass or two
+    CHECK(pros::millis() - contact <= 400 + 1000 + 100);  // a speed window and the default 500 ms velocity_exit_time fit well inside
   }
 }
 
@@ -291,7 +313,7 @@ TEST_CASE("control: a drive held back by a steady force ends interfered within 5
   }
 }
 
-TEST_CASE("control: a 3 s continuous push ends the wait, interfered, no later than the push plus one window") {
+TEST_CASE("control: a 3 s continuous push ends the wait, interfered, no later than 500 ms after the push") {
   for (const auto& a : kArchetypes) {
     Outcome o = run_held(a, [](Rig& r) {
       r.chassis.pid_drive_set(36_in, 60);
@@ -306,11 +328,12 @@ TEST_CASE("control: a 3 s continuous push ends the wait, interfered, no later th
 }
 
 // A robot shoved back and forth 20 times at 2 Hz (100 ms, 40 N, alternating direction: about 2 in each way, so it ends where it
-// started) while pinned between the shoves. Only the
-// first disturbance of a point is credited (accepted): the shove restarts the clock when it latches and once more when it peaks,
-// then the window runs. Bound: the first shove at 400 ms, its 100 ms, the 1000 ms start allowance a drive that has barely
-// moved still has, one 400 ms window, and a few passes -- and nothing scales with the number of shoves.
-TEST_CASE("control: 20 shoves at 2 Hz while pinned between them end the wait, interfered, within a bounded time") {
+// started) while pinned between the shoves. On light_fast each shove moves the robot faster than 5 in/s, which restarts the
+// velocity exit's timer, and the 400 ms pins are shorter than the 500 ms velocity_exit_time, so the wait ends after the last
+// shove: it ends at 400 + 19 * 500 + 100 ms, then one 100 ms speed window, the velocity exit time and a few passes. On
+// sticky_high_friction the shoves never move the robot that fast, so the velocity exit arms at 1000 ms and ends the wait
+// 500 ms later, well inside the same bound.
+TEST_CASE("control: 20 shoves at 2 Hz while pinned between them end the wait, interfered, by the last shove plus the velocity exit") {
   for (const auto& a : kArchetypes) {
     Outcome o = run_held(a, [](Rig& r) {
       r.chassis.pid_drive_set(36_in, 5);  // speed 5: the drive's own thrust is small next to a 40 N shove, so the robot ends each pair of shoves where it began
@@ -325,48 +348,48 @@ TEST_CASE("control: 20 shoves at 2 Hz while pinned between them end the wait, in
     CAPTURE(o.ms);
     REQUIRE(o.returned);
     CHECK(o.interfered);
-    CHECK(o.ms <= 400 + 100 + 1000 + 400 + 100);
+    CHECK(o.ms <= 400 + 19 * 500 + 100 + 100 + 500 + 50);
   }
 }
 
 // 2550R's own pin2 (their 100 ms exits) pushed into a wall. It does NOT end on the mA exit in the sim: at speed 80 a stalled
-// drive draws about 63% of stall current, under the over-current flag (the sim sets it at 100% duty), so it is the stuck
-// watch that ends it, on the team's own 100 ms window on a107ac8 and on the 350 ms floor now. That is the floor's cost: a robot in
-// a wall ends 250 ms later than it did for a team that shortened velocity_exit_time to 100 ms (a wall at 20 in: light_fast 500 ->
-// 750 ms, sticky_high_friction 980 -> 1230 ms; at 12 in 360 -> 610 and 630 -> 880; a wall at 25 in, inside the 3 in big_error,
-// ends on the big exit and moves 590 -> 840 on light_fast, not at all on sticky). Bounded, and never later than the floor's
-// extra 250 ms (+ a few passes) over what it was. A full power drive into a wall does end on mA, see below.
-TEST_CASE("2550R's pin2 pushed into a wall ends no later than before plus the window floor's extra 250 ms (+ a few passes)") {
+// drive draws about 63% of stall current, under the over-current flag (the sim sets it at 100% duty), so it is the velocity
+// exit that ends it. The speed is the movement over the last 100 ms, refreshed once per 100 ms, so the window in progress at
+// contact still holds the approach and the next full one reads the stop: up to two speed windows after contact, then the
+// team's 100 ms velocity_exit_time, and a few passes. A wall at 20 or 12 in holds the robot outside the 3 in big_error, so the wait ends
+// interfered; a wall at 25 in stops it inside big_error, so the robot has arrived and the wait is clean. A full power drive
+// into a wall does end on mA, see below.
+TEST_CASE("2550R's pin2 pushed into a wall ends on the velocity exit within two speed windows plus the team's velocity_exit_time of contact") {
   struct Case {
     double wall_in;
-    int before_ms[2];
     bool interfered;
   };
-  // {light_fast, sticky_high_friction} on a107ac8
-  const Case cases[] = {{20.0, {500, 980}, true}, {12.0, {360, 630}, true}, {25.0, {590, 1310}, false}};
+  const Case cases[] = {{20.0, true}, {12.0, true}, {25.0, false}};
   for (const auto& c : cases) {
-    int i = 0;
     for (const auto& a : kArchetypes) {
       Rig r(a);
       r.sim.wall(c.wall_in);
       pin2_exits(r.chassis);
       r.chassis.pid_drive_set(27_in, 80, true);
-      std::uint32_t t0 = pros::millis();
+      std::uint32_t contact = 0;
+      r.sim.after_pass = [&](int) {
+        if (contact == 0 && r.sim.left().position_in >= c.wall_in - 0.01) contact = pros::millis();
+      };
       bool returned = run_capped([&] { r.chassis.pid_wait_quick(); }, 3000);
       CAPTURE(a.name);
       CAPTURE(c.wall_in);
-      CAPTURE(pros::millis() - t0);
+      CAPTURE(pros::millis() - contact);
       REQUIRE(returned);
+      REQUIRE(contact != 0);
       CHECK(r.chassis.interfered == c.interfered);
-      CHECK(pros::millis() - t0 <= (std::uint32_t)(c.before_ms[i] + 250 + 30));
-      i++;
+      CHECK(pros::millis() - contact <= 100 + 100 + 100 + 30);
     }
   }
 }
 
-// The mA exit is unchanged and still ends a wall push as fast as the team tuned it. Needs full power: a stalled drive draws
-// its duty's share of the 2.5 A stall current, and the over-current flag sets at 2.5 A, so at speed 80 (63%) the sim never
-// reports over-current and it is the stuck watch that ends a wall push (see the pin2 wall test above).
+// The mA exit still ends a wall push as fast as the team tuned it. Needs full power: a stalled drive draws its duty's share
+// of the 2.5 A stall current, and the over-current flag sets at 2.5 A, so at speed 80 (63%) the sim never reports
+// over-current and it is the velocity exit that ends a wall push (see the pin2 wall test above).
 TEST_CASE("control: a full power drive into a wall ends on the mA exit within the team's mA_timeout of contact") {
   for (const auto& a : kArchetypes) {
     Rig r(a);

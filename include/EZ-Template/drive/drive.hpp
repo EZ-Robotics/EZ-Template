@@ -17,7 +17,6 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include "EZ-Template/lock.hpp"
 #include "EZ-Template/slew.hpp"
 #include "EZ-Template/tracking_wheel.hpp"
-#include "EZ-Template/travel.hpp"
 #include "EZ-Template/util.hpp"
 #include "EZ-Units/units.hpp"
 #include "pros/motor_group.hpp"
@@ -2901,17 +2900,8 @@ public:
   /**
    * Lock the code in a while loop until the robot has settled.
    *
-   * Settled means the robot is inside the motion's small or big error for that exit's time AND has stopped: it travelled less than
-   * the stop speed (1.5 in/s, 4 deg/s for a turn or swing, unless you set it, see pid_drive_exit_stop_speed_set()) times that time over
-   * that time, never a speed measured in one tick. The same stop speed is used everywhere the library calls a robot stopped, and no exit
-   * condition moves it. With the default stop speeds a wait never reports a robot settled while it is moving faster than 1.5 in/s
-   * (4 deg/s) on average over its exit window (a higher stop speed ends waits sooner, with the robot still moving up to that fast),
-   * except a robot oscillating at its target, which ends after it stops making progress (no new low in its error for
-   * max(velocity_exit_time, 1 in / stop speed, or 3 deg / stop speed): 0.67 s and 0.75 s at the defaults).
-   *
-   * Inside big_error, a robot that stopped, or is pinned or jammed there so that the mA exit fires (mA_timeout), is a finished
-   * motion: the wait returns and `interfered` stays false. Outside big_error, a robot stopped by something returns with `interfered`
-   * true.
+   * Returns when the motion's small, big, velocity or mA exit fires.  `interfered` is set when the velocity or mA exit ended the motion with the error outside
+   * `big_error`.
    */
   void pid_wait();
 
@@ -2920,9 +2910,6 @@ public:
    *
    * The target is an absolute heading, the same as the heading you gave the turn or swing.
    * `pid_turn_set(90_deg, 90); pid_wait_until(45_deg);` returns when the robot faces 45 degrees, with 45 degrees still to go.
-   *
-   * If the checkpoint can't be reached (past the heading the motion goes to, or on the other side of where it started), the wait
-   * returns when the motion finishes and prints why.  `interfered` is only set when something actually stopped the robot.
    *
    * \param target
    *        absolute heading for a turn or swing, using units
@@ -2935,9 +2922,6 @@ public:
    * The target is how far the robot has driven since THIS motion started, with the same sign as the drive.  It is not measured from
    * the end of the drive.  `pid_drive_set(24_in, 110); pid_wait_until(6_in);` returns after 6 inches, with 18 inches still to go.
    * Backward drives use negative numbers: `pid_drive_set(-24_in, 110); pid_wait_until(-6_in);`.
-   *
-   * If the checkpoint can't be reached (past the distance the drive goes, or the wrong sign), the wait returns when the motion
-   * finishes and prints why.  `interfered` is only set when something actually stopped the robot.
    *
    * \param target
    *        distance driven since this motion started, using units, the same sign as the drive
@@ -2953,10 +2937,6 @@ public:
    *
    * For turns and swings the target is an absolute heading in degrees, the same as the turn target.
    * `pid_turn_set(90_deg, 90); pid_wait_until(45);` returns when the robot faces 45 degrees.
-   *
-   * If the checkpoint can't be reached (past the target, or the wrong sign), the wait returns when the motion finishes and prints
-   * why.  `interfered` is only set when something actually stopped the robot.  This check is for drives, turns and swings; an odom
-   * motion returns when it finishes without a message.
    *
    * \param target
    *        for driving, inches driven since this motion started (same sign as the drive).  for turns/swings, an absolute heading in degrees
@@ -3043,12 +3023,7 @@ public:
    *
    * Returns true when interfered, and false when nothing happened.
    *
-   * Every wait (pid_wait(), pid_wait_until(), pid_wait_quick(), pid_wait_quick_chain() and the odom waits) decides this with one rule.
-   * A motion that settled, or whose mA exit fired, inside big_error of its final target is finished and not interfered. A
-   * pid_wait_until() checkpoint it did not cross counts as reached when it is that final target, when the robot is within the
-   * motion's small_error of it, or when the robot settled inside big_error of the final target with the checkpoint between where it
-   * rested and that target; a checkpoint that can never be reached (past the target, or behind the start) is printed, not interfered.
-   * A reachable checkpoint a robot was stopped short of outside big_error is interfered.
+   * A wait that ended on the velocity or mA exit with the error outside `big_error` sets this.
    */
   bool interfered = false;
 
@@ -3521,11 +3496,7 @@ public:
    * \param p_mA_timeout
    *        mA timer will start when the first motor on the side(s) being driven is over its current limit, in ms
    * \param use_imu
-   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for
-   *        p_velocity_exit_time).  Off by default: acceleration reads
-   *        near 0 during an ordinary constant-speed cruise too, so this can't tell cruising from stalled and used to cause exits mid-motion.  It's the only
-   *        exit that can catch wheels spinning free (lifted or
-   *        high-centered), which the main sensor and mA_timeout both miss -- turn it on if that case matters more to you than early exits on a slow cruise.
+   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
    */
   void pid_odom_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time,
                                          int p_mA_timeout, bool use_imu = false);
@@ -3546,11 +3517,7 @@ public:
    * \param p_mA_timeout
    *        mA timer will start when the first motor on the side(s) being driven is over its current limit, in ms
    * \param use_imu
-   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for
-   *        p_velocity_exit_time).  Off by default: acceleration reads
-   *        near 0 during an ordinary constant-speed cruise too, so this can't tell cruising from stalled and used to cause exits mid-motion.  It's the only
-   *        exit that can catch wheels spinning free (lifted or
-   *        high-centered), which the main sensor and mA_timeout both miss -- turn it on if that case matters more to you than early exits on a slow cruise.
+   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
    */
   void pid_odom_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time,
                                         int p_mA_timeout, bool use_imu = false);
@@ -3571,11 +3538,7 @@ public:
    * \param p_mA_timeout
    *        mA timer will start when the first motor on the side(s) being driven is over its current limit, unit
    * \param use_imu
-   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for
-   *        p_velocity_exit_time).  Off by default: acceleration reads
-   *        near 0 during an ordinary constant-speed cruise too, so this can't tell cruising from stalled and used to cause exits mid-motion.  It's the only
-   *        exit that can catch wheels spinning free (lifted or
-   *        high-centered), which the main sensor and mA_timeout both miss -- turn it on if that case matters more to you than early exits on a slow cruise.
+   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
    */
   void pid_odom_turn_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error,
                                         ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = false);
@@ -3596,11 +3559,7 @@ public:
    * \param p_mA_timeout
    *        mA timer will start when the first motor on the side(s) being driven is over its current limit, unit
    * \param use_imu
-   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for
-   *        p_velocity_exit_time).  Off by default: acceleration reads
-   *        near 0 during an ordinary constant-speed cruise too, so this can't tell cruising from stalled and used to cause exits mid-motion.  It's the only
-   *        exit that can catch wheels spinning free (lifted or
-   *        high-centered), which the main sensor and mA_timeout both miss -- turn it on if that case matters more to you than early exits on a slow cruise.
+   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
    */
   void pid_odom_drive_exit_condition_set(ez::QTime p_small_exit_time, ez::QLength p_small_error, ez::QTime p_big_exit_time, ez::QLength p_big_error,
                                          ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = false);
@@ -3621,11 +3580,7 @@ public:
    * \param p_mA_timeout
    *        mA timer will start when the first motor on the side(s) being driven is over its current limit, unit
    * \param use_imu
-   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for
-   *        p_velocity_exit_time).  Off by default: acceleration reads
-   *        near 0 during an ordinary constant-speed cruise too, so this can't tell cruising from stalled and used to cause exits mid-motion.  It's the only
-   *        exit that can catch wheels spinning free (lifted or
-   *        high-centered), which the main sensor and mA_timeout both miss -- turn it on if that case matters more to you than early exits on a slow cruise.
+   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
    */
   void pid_drive_exit_condition_set(ez::QTime p_small_exit_time, ez::QLength p_small_error, ez::QTime p_big_exit_time, ez::QLength p_big_error,
                                     ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = false);
@@ -3646,11 +3601,7 @@ public:
    * \param p_mA_timeout
    *        mA timer will start when the first motor on the side(s) being driven is over its current limit, unit
    * \param use_imu
-   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for
-   *        p_velocity_exit_time).  Off by default: acceleration reads
-   *        near 0 during an ordinary constant-speed cruise too, so this can't tell cruising from stalled and used to cause exits mid-motion.  It's the only
-   *        exit that can catch wheels spinning free (lifted or
-   *        high-centered), which the main sensor and mA_timeout both miss -- turn it on if that case matters more to you than early exits on a slow cruise.
+   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
    */
   void pid_turn_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error,
                                    ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = false);
@@ -3671,11 +3622,7 @@ public:
    * \param p_mA_timeout
    *        mA timer will start when the first motor on the side(s) being driven is over its current limit, unit
    * \param use_imu
-   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for
-   *        p_velocity_exit_time).  Off by default: acceleration reads
-   *        near 0 during an ordinary constant-speed cruise too, so this can't tell cruising from stalled and used to cause exits mid-motion.  It's the only
-   *        exit that can catch wheels spinning free (lifted or
-   *        high-centered), which the main sensor and mA_timeout both miss -- turn it on if that case matters more to you than early exits on a slow cruise.
+   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
    */
   void pid_swing_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error,
                                     ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = false);
@@ -3683,16 +3630,12 @@ public:
   /**
    * Set's constants for drive exit conditions.
    *
-   * The small and big exits also need the robot to have stopped: it travelled less than the stop speed (by default 1.5 in/s, 4 deg/s for a
-   * turn or swing, see pid_drive_exit_stop_speed_set()) times the exit's time over that time (see pid_wait()). When the timer has run out and the robot is
-   * still moving, the exit comes the moment it stops, as long as it stayed inside the error.
-   *
    * \param p_small_exit_time
-   *        time to exit when within small_error (and stopped), in ms
+   *        time to exit when within small_error, in ms
    * \param p_small_error
    *        small timer will start when error is within this, in inches
    * \param p_big_exit_time
-   *        time to exit when within big_error (and stopped), in ms
+   *        time to exit when within big_error, in ms
    * \param p_big_error
    *        big timer will start when error is within this, in inches
    * \param p_velocity_exit_time
@@ -3700,11 +3643,7 @@ public:
    * \param p_mA_timeout
    *        mA timer will start when the first motor on the side(s) being driven is over its current limit, in ms
    * \param use_imu
-   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for
-   *        p_velocity_exit_time).  Off by default: acceleration reads
-   *        near 0 during an ordinary constant-speed cruise too, so this can't tell cruising from stalled and used to cause exits mid-motion.  It's the only
-   *        exit that can catch wheels spinning free (lifted or
-   *        high-centered), which the main sensor and mA_timeout both miss -- turn it on if that case matters more to you than early exits on a slow cruise.
+   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
    */
   void pid_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time,
                                     int p_mA_timeout, bool use_imu = false);
@@ -3725,11 +3664,7 @@ public:
    * \param p_mA_timeout
    *        mA timer will start when the first motor on the side(s) being driven is over its current limit, in ms
    * \param use_imu
-   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for
-   *        p_velocity_exit_time).  Off by default: acceleration reads
-   *        near 0 during an ordinary constant-speed cruise too, so this can't tell cruising from stalled and used to cause exits mid-motion.  It's the only
-   *        exit that can catch wheels spinning free (lifted or
-   *        high-centered), which the main sensor and mA_timeout both miss -- turn it on if that case matters more to you than early exits on a slow cruise.
+   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
    */
   void pid_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time,
                                    int p_mA_timeout, bool use_imu = false);
@@ -3750,269 +3685,66 @@ public:
    * \param p_mA_timeout
    *        mA timer will start when the first motor on the side(s) being driven is over its current limit, in ms
    * \param use_imu
-   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for
-   *        p_velocity_exit_time).  Off by default: acceleration reads
-   *        near 0 during an ordinary constant-speed cruise too, so this can't tell cruising from stalled and used to cause exits mid-motion.  It's the only
-   *        exit that can catch wheels spinning free (lifted or
-   *        high-centered), which the main sensor and mA_timeout both miss -- turn it on if that case matters more to you than early exits on a slow cruise.
+   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
    */
   void pid_swing_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time,
                                     int p_mA_timeout, bool use_imu = false);
 
-  // The speed a robot has to be under to count as "stopped", per kind of motion. Small exit, big exit, mA exit and the stuck watch inside
-  // big_error all ask the same question: did the robot travel less than this speed times W over the last W milliseconds, W being the
-  // window of the exit in question (its exit time). See pid_wait().
-  //
-  // These are real speeds, in inches per second or degrees per second. They are not the 0 to 127 motor speed that pid_drive_set() and
-  // pid_speed_max_set() take.
-  //
-  // The defaults are 1.5 in/s and 4 deg/s, and a robot that never calls these behaves exactly as it always has. Raising a speed makes
-  // that kind of motion end sooner, with more momentum: a robot still moving a little under the new speed is called stopped. Lowering it
-  // makes the motion end later, because the robot has to be stiller first. Zero, a negative number, NaN and infinity are refused: a
-  // warning is printed and the previous value stays, because a robot can never be under them (or, for NaN, anything is). Every other
-  // number is yours to choose, with no minimum and no maximum, and the timeouts built from it follow it: the stuck watch's backstop is a
-  // step divided by this speed, so a very small one makes a robot that hunts about its target wait very long (0.1 deg/s: about 30 s for
-  // a turn, against 0.75 s at the default), and a very large one makes the motion end while the robot is still moving fast.
-  //
-  // A stop speed is read on every poll, so calling a setter in the middle of a motion changes the answer on the very next poll and does not
-  // restart a timer, window or latch of the wait that is running. That is not how everything a wait uses from pid_*_exit_condition_set()
-  // behaves: a wait copies the windows and progress steps of its stuck watch from them once, when it starts. The backstop built from a stop
-  // speed is still live, because only the step is copied.
-
-  /// What the stop speed is until it is set, for a drive (or odom xy), in in/s
-  static constexpr double STOP_SPEED_DISTANCE_DEFAULT = 1.5;
-  /// What the stop speed is until it is set, for a turn, swing or odom angle, in deg/s
-  static constexpr double STOP_SPEED_ANGLE_DEFAULT = 4.0;
-
   /**
-   * Sets the speed a drive (pid_drive_set()) has to be under to count as stopped, in inches per second.
+   * Sets how slow the robot has to be moving to count as stopped when it drives, in inches per second.  This is a real speed, not the 0 to 127
+   * motor speed.  The default is 1.5.
    *
-   * Small exit, big exit, the mA exit and the stuck watch inside big_error wait for the robot to travel less than this speed times W over
-   * the last W milliseconds, W being the window of that exit (its exit time). See pid_wait().
+   * The robot's speed is how far it moved over the last 100 ms.  The small and big exits only count time while the robot is under this speed (the
+   * timer pauses while it is moving, it does not start over).  The velocity exit does not use it: it ends a wait when the robot has been under 5
+   * inches per second (5 degrees per second for turns) for the velocity exit time.  A higher speed ends motions sooner, with the
+   * robot still moving a little.  A lower one waits for the robot to be stiller.  A speed of 0 or less, or one that isn't a number, is refused with
+   * a printed warning and the old speed is kept.
    *
-   * Plain numbers are in in/s, not the 0 to 127 motor speed. Default is 1.5. A higher speed ends drives sooner, with the robot still
-   * moving up to that fast. A lower one waits until the robot is stiller, and a robot that hunts about its target and never gets that
-   * still waits for the stuck watch's backstop, which is 1 in divided by this speed (1 in at 0.1 in/s is 10 s, 0.67 s at the default). Zero, a negative number,
-   * NaN and infinity are refused with a printed warning and the previous value is kept; any other number is accepted. It is read on every poll, so it takes
-   * effect on the next poll, even in the middle of a motion, and restarts no timer, window or latch.
+   * Applies to drives and odom moves.  The default is a placeholder until it is tuned from a robot log.
    *
    * \param in_per_s
-   *        in/s, not the 0 to 127 motor speed
-   *
-   * \code
-   * chassis.pid_drive_exit_stop_speed_set(2.0);          // in/s
-   * chassis.pid_drive_exit_stop_speed_set(2_in / 1_s);   // the same, with units
-   * \endcode
+   *        inches per second
    */
-  void pid_drive_exit_stop_speed_set(double in_per_s);
+  void pid_distance_exit_stop_speed_set(double in_per_s);
 
   /**
-   * Same as pid_drive_exit_stop_speed_set(double), with a speed that has units: 2_in / 1_s is the same speed written with
-   * EZ-Units, and any other unit of speed works too.
-   *
-   * Zero, a negative number, NaN and infinity are refused with a printed warning and the previous value is kept.
+   * Same as pid_distance_exit_stop_speed_set(double), with a speed that has units: `2_in / 1_s`.
    *
    * \param speed
-   *        the stop speed, with units
-   *
-   * \code
-   * chassis.pid_drive_exit_stop_speed_set(2_in / 1_s);   // the same, with units
-   * \endcode
+   *        speed with units
    */
-  void pid_drive_exit_stop_speed_set(ez::QSpeed speed);
+  void pid_distance_exit_stop_speed_set(ez::QSpeed speed);
 
   /**
-   * Returns the stop speed of a drive (pid_drive_set()), in in/s. It is 1.5 until it is set.
-   *
-   * \code
-   * double stop_speed = chassis.pid_drive_exit_stop_speed_get();
-   * \endcode
+   * Returns how slow a drive has to be moving to count as stopped, in inches per second.
    */
-  double pid_drive_exit_stop_speed_get();
+  double pid_distance_exit_stop_speed_get();
 
   /**
-   * Sets the speed a turn (pid_turn_set(), including a turn to a point) has to be under to count as stopped, in degrees per second.
+   * Sets how slow the robot has to be turning to count as stopped when it turns or swings, in degrees per second.  This is a real speed, not the
+   * 0 to 127 motor speed.  The default is 4.
    *
-   * Small exit, big exit, the mA exit and the stuck watch inside big_error wait for the robot to travel less than this speed times W over
-   * the last W milliseconds, W being the window of that exit (its exit time). See pid_wait().
-   *
-   * Plain numbers are in deg/s, not the 0 to 127 motor speed. Default is 4. A higher speed ends turns sooner, with the robot still
-   * moving up to that fast. A lower one waits until the robot is stiller, and a robot that hunts about its target and never gets that
-   * still waits for the stuck watch's backstop, which is 3 deg divided by this speed (3 deg at 0.1 deg/s is 30 s, 0.75 s at the default). Zero, a negative
-   * number, NaN and infinity are refused with a printed warning and the previous value is kept; any other number is accepted. It is read on every poll, so it
-   * takes effect on the next poll, even in the middle of a motion, and restarts no timer, window or latch.
+   * Works the same as pid_distance_exit_stop_speed_set(): measured over the last 100 ms, the small and big exits pause their timers while the
+   * robot is above it, and the velocity exit does not use it.  Applies to turns, swings, and the heading of odom moves.  The default is a
+   * placeholder until it is tuned from a robot log.
    *
    * \param deg_per_s
-   *        deg/s, not the 0 to 127 motor speed
-   *
-   * \code
-   * chassis.pid_turn_exit_stop_speed_set(6.0);           // deg/s
-   * chassis.pid_turn_exit_stop_speed_set(6_deg / 1_s);   // the same, with units
-   * \endcode
+   *        degrees per second
    */
-  void pid_turn_exit_stop_speed_set(double deg_per_s);
+  void pid_angle_exit_stop_speed_set(double deg_per_s);
 
   /**
-   * Same as pid_turn_exit_stop_speed_set(double), with a speed that has units: 6_deg / 1_s is the same speed written with
-   * EZ-Units, and any other unit of speed works too.
-   *
-   * Zero, a negative number, NaN and infinity are refused with a printed warning and the previous value is kept.
+   * Same as pid_angle_exit_stop_speed_set(double), with a speed that has units: `6_deg / 1_s`.
    *
    * \param speed
-   *        the stop speed, with units
-   *
-   * \code
-   * chassis.pid_turn_exit_stop_speed_set(6_deg / 1_s);   // the same, with units
-   * \endcode
+   *        speed with units
    */
-  void pid_turn_exit_stop_speed_set(ez::QAngularSpeed speed);
+  void pid_angle_exit_stop_speed_set(ez::QAngularSpeed speed);
 
   /**
-   * Returns the stop speed of a turn (pid_turn_set(), including a turn to a point), in deg/s. It is 4 until it is set.
-   *
-   * \code
-   * double stop_speed = chassis.pid_turn_exit_stop_speed_get();
-   * \endcode
+   * Returns how slow a turn or swing has to be moving to count as stopped, in degrees per second.
    */
-  double pid_turn_exit_stop_speed_get();
-
-  /**
-   * Sets the speed a swing (pid_swing_set()) has to be under to count as stopped, in degrees per second.
-   *
-   * Small exit, big exit, the mA exit and the stuck watch inside big_error wait for the robot to travel less than this speed times W over
-   * the last W milliseconds, W being the window of that exit (its exit time). See pid_wait().
-   *
-   * Plain numbers are in deg/s, not the 0 to 127 motor speed. Default is 4. A higher speed ends swings sooner, with the robot still
-   * moving up to that fast. A lower one waits until the robot is stiller, and a robot that hunts about its target and never gets that
-   * still waits for the stuck watch's backstop, which is 3 deg divided by this speed (3 deg at 0.1 deg/s is 30 s, 0.75 s at the default). Zero, a negative
-   * number, NaN and infinity are refused with a printed warning and the previous value is kept; any other number is accepted. It is read on every poll, so it
-   * takes effect on the next poll, even in the middle of a motion, and restarts no timer, window or latch.
-   *
-   * \param deg_per_s
-   *        deg/s, not the 0 to 127 motor speed
-   *
-   * \code
-   * chassis.pid_swing_exit_stop_speed_set(6.0);          // deg/s
-   * chassis.pid_swing_exit_stop_speed_set(6_deg / 1_s);  // the same, with units
-   * \endcode
-   */
-  void pid_swing_exit_stop_speed_set(double deg_per_s);
-
-  /**
-   * Same as pid_swing_exit_stop_speed_set(double), with a speed that has units: 6_deg / 1_s is the same speed written with
-   * EZ-Units, and any other unit of speed works too.
-   *
-   * Zero, a negative number, NaN and infinity are refused with a printed warning and the previous value is kept.
-   *
-   * \param speed
-   *        the stop speed, with units
-   *
-   * \code
-   * chassis.pid_swing_exit_stop_speed_set(6_deg / 1_s);  // the same, with units
-   * \endcode
-   */
-  void pid_swing_exit_stop_speed_set(ez::QAngularSpeed speed);
-
-  /**
-   * Returns the stop speed of a swing (pid_swing_set()), in deg/s. It is 4 until it is set.
-   *
-   * \code
-   * double stop_speed = chassis.pid_swing_exit_stop_speed_get();
-   * \endcode
-   */
-  double pid_swing_exit_stop_speed_get();
-
-  /**
-   * Sets the speed an odom motion's xy (pid_odom_set() moves) has to be under to count as stopped, in inches per second.
-   *
-   * Small exit, big exit, the mA exit and the stuck watch inside big_error wait for the robot to travel less than this speed times W over
-   * the last W milliseconds, W being the window of that exit (its exit time). See pid_wait().
-   *
-   * Plain numbers are in in/s, not the 0 to 127 motor speed. Default is 1.5. A higher speed ends odom moves sooner, with the robot still
-   * moving up to that fast. A lower one waits until the robot is stiller, and a robot that hunts about its target and never gets that
-   * still waits for the stuck watch's backstop, which is 1 in divided by this speed (1 in at 0.1 in/s is 10 s, 0.67 s at the default). Zero, a negative number,
-   * NaN and infinity are refused with a printed warning and the previous value is kept; any other number is accepted. It is read on every poll, so it takes
-   * effect on the next poll, even in the middle of a motion, and restarts no timer, window or latch.
-   *
-   * \param in_per_s
-   *        in/s, not the 0 to 127 motor speed
-   *
-   * \code
-   * chassis.pid_odom_drive_exit_stop_speed_set(2.0);          // in/s
-   * chassis.pid_odom_drive_exit_stop_speed_set(2_in / 1_s);   // the same, with units
-   * \endcode
-   */
-  void pid_odom_drive_exit_stop_speed_set(double in_per_s);
-
-  /**
-   * Same as pid_odom_drive_exit_stop_speed_set(double), with a speed that has units: 2_in / 1_s is the same speed written with
-   * EZ-Units, and any other unit of speed works too.
-   *
-   * Zero, a negative number, NaN and infinity are refused with a printed warning and the previous value is kept.
-   *
-   * \param speed
-   *        the stop speed, with units
-   *
-   * \code
-   * chassis.pid_odom_drive_exit_stop_speed_set(2_in / 1_s);   // the same, with units
-   * \endcode
-   */
-  void pid_odom_drive_exit_stop_speed_set(ez::QSpeed speed);
-
-  /**
-   * Returns the stop speed of an odom motion's xy (pid_odom_set() moves), in in/s. It is 1.5 until it is set.
-   *
-   * \code
-   * double stop_speed = chassis.pid_odom_drive_exit_stop_speed_get();
-   * \endcode
-   */
-  double pid_odom_drive_exit_stop_speed_get();
-
-  /**
-   * Sets the speed an odom motion's heading (pid_odom_set() moves) has to be under to count as stopped, in degrees per second.
-   *
-   * Small exit, big exit, the mA exit and the stuck watch inside big_error wait for the robot to travel less than this speed times W over
-   * the last W milliseconds, W being the window of that exit (its exit time). See pid_wait().
-   *
-   * Plain numbers are in deg/s, not the 0 to 127 motor speed. Default is 4. A higher speed ends odom moves sooner, with the robot still
-   * moving up to that fast. A lower one waits until the robot is stiller, and a robot that hunts about its target and never gets that
-   * still waits for the stuck watch's backstop, which is 3 deg divided by this speed (3 deg at 0.1 deg/s is 30 s, 0.75 s at the default). Zero, a negative
-   * number, NaN and infinity are refused with a printed warning and the previous value is kept; any other number is accepted. It is read on every poll, so it
-   * takes effect on the next poll, even in the middle of a motion, and restarts no timer, window or latch.
-   *
-   * \param deg_per_s
-   *        deg/s, not the 0 to 127 motor speed
-   *
-   * \code
-   * chassis.pid_odom_turn_exit_stop_speed_set(6.0);          // deg/s
-   * chassis.pid_odom_turn_exit_stop_speed_set(6_deg / 1_s);  // the same, with units
-   * \endcode
-   */
-  void pid_odom_turn_exit_stop_speed_set(double deg_per_s);
-
-  /**
-   * Same as pid_odom_turn_exit_stop_speed_set(double), with a speed that has units: 6_deg / 1_s is the same speed written with
-   * EZ-Units, and any other unit of speed works too.
-   *
-   * Zero, a negative number, NaN and infinity are refused with a printed warning and the previous value is kept.
-   *
-   * \param speed
-   *        the stop speed, with units
-   *
-   * \code
-   * chassis.pid_odom_turn_exit_stop_speed_set(6_deg / 1_s);  // the same, with units
-   * \endcode
-   */
-  void pid_odom_turn_exit_stop_speed_set(ez::QAngularSpeed speed);
-
-  /**
-   * Returns the stop speed of an odom motion's heading (pid_odom_set() moves), in deg/s. It is 4 until it is set.
-   *
-   * \code
-   * double stop_speed = chassis.pid_odom_turn_exit_stop_speed_get();
-   * \endcode
-   */
-  double pid_odom_turn_exit_stop_speed_get();
+  double pid_angle_exit_stop_speed_get();
 
   /**
    * Returns current TICK_PER_INCH.
@@ -4256,82 +3988,18 @@ private:
    */
   ez::Lock<pros::RecursiveMutex> drive_mutex;
 
-  // What the waits mean by "stopped": how far each measured thing has travelled over a recent window, sampled once per auto task
-  // pass and cleared by every new motion. See travel_sample() in exit_conditions.cpp, which also owns the speed floors.
-  enum class Travel {
-    Left,
-    Right,
-    Heading,
-    OdomHeading,
-    OdomXY
-  };
-  // Which stop speed a question about "stopped" is asked with: the one of the motion whose exit conditions govern the wait. A turn to a
-  // point is a turn (turnPID's exits) even though it is measured on the odom heading, and the drive side watches of an odom move
-  // follow xy's exits, so they use the odom xy speed.
-  enum class StopSpeed {
-    Drive,
-    Turn,
-    Swing,
-    OdomXY,
-    OdomAngle
-  };
-  double stop_speed_[5] = {STOP_SPEED_DISTANCE_DEFAULT, STOP_SPEED_ANGLE_DEFAULT, STOP_SPEED_ANGLE_DEFAULT, STOP_SPEED_DISTANCE_DEFAULT,
-                           STOP_SPEED_ANGLE_DEFAULT};
-  double stop_speed_get(StopSpeed which);
-  void stop_speed_set(StopSpeed which, double value, const char* setter);
-  std::function<double()> stop_speed_fn(StopSpeed which);  // stop_speed_get(which) as a callable, for the watches and gates
-  bool odom_travel_stopped(int window_ms);
-  ez::detail::PathTracker travel_[5];
-  std::uint32_t travel_generation_ = 0;
-  double travel_xy_x_ = 0.0, travel_xy_y_ = 0.0;             // odom xy as the sum of what odom moved, so a pose set is not travel
-  double travel_last_left_ = 0.0, travel_last_right_ = 0.0;  // the drive sides at the last sample
-  bool travel_sides_valid_ = false;                          // travel_last_left_/right_ hold finite readings
-  void travel_sample(bool odom_tracked);
-  bool tracking_pass();
-  // True only when the thing is known to have travelled less than the stop speed allows over the last window_ms. Not knowing (no
-  // sample covers the window, the auto task has gone quiet) is false: nothing settles a robot on a guess.
-  bool travel_stopped(Travel channel, int window_ms, StopSpeed which);
-  // Whether anything has been sampled for the current motion at all. When nothing has, the auto task has not run since the motion
-  // started, so no exit can have fired on it either and there is no movement to veto one with.
-  bool travel_tracked(Travel channel);
-  // pid.exit_condition(motors) with SMALL_EXIT / BIG_EXIT held until the robot is also stopped. Gate is exit_conditions.cpp's own
-  // ExitGate; defined there, where it is used.
-  template <class Gate>
-  exit_output gated_exit(Gate& gate, PID& pid, std::vector<pros::Motor> motors, double live_error);
-
-  // The drive motors an mA exit should watch: every motor on the wanted sides that is not handed to the PTO.
-  // Rebuilt on every call; see its definition in exit_conditions.cpp.
-  std::vector<pros::Motor> mA_exit_motors(bool include_left = true, bool include_right = true);
-
-  // Bumped once by every top-level pid_*_set() (see set_drive_pid.cpp/set_turn_pid.cpp/set_swing_pid.cpp/
-  // set_odom_pid.cpp), never anywhere else. Lets a wait tell whether a write to `interfered` -- its own, or
-  // one already sitting there when it starts -- belongs to the motion that wait was actually started for, or
-  // to some other, unrelated one. `interfered_generation` is which motion the CURRENT value of `interfered`
-  // is attributed to. See InterferedScope below, and its uses in exit_conditions.cpp, for why a single shared
-  // bool needs this.
-  std::uint32_t motion_generation = 0;
-  std::uint32_t interfered_generation = 0;
-
-  // The RAII scope a top-level wait opens for as long as it's evaluating one motion's outcome, so `interfered`
-  // only ever ends up attributed to the motion that wait was started for. mark() records a write of
-  // interfered=true as belonging to this scope's motion. On destruction (every return path a wait can take,
-  // including a plain fall-through) -- but ONLY if that motion is still the current one AND nothing has
-  // already spoken for it under its own name -- the destructor asserts interfered=false as this wait's own
-  // clean result, overwriting whatever an unrelated, already-finished stale wait for an OLDER motion left
-  // behind. A write already attributed to THIS motion (this wait's own mark(), or an earlier wait for the same
-  // motion, e.g. a chained call's own phase 1) is never touched, so a real stuck/interfered result for this
-  // motion survives a later, clean phase of the very same wait.
-  class InterferedScope {
-  public:
-    explicit InterferedScope(Drive& d);
-    ~InterferedScope();
-    InterferedScope(const InterferedScope&) = delete;
-    InterferedScope& operator=(const InterferedScope&) = delete;
-    void mark();
-
-  private:
-    Drive& d_;
-    std::uint32_t generation_;
+  // What motion a wait is waiting on.  A wait is for the motion that was set when it started, so when another task starts a new one (a
+  // different mode, or a different target) the wait starts over on the new one.
+  struct WaitSnapshot {
+    explicit WaitSnapshot(Drive& drive) : d(drive), mode(drive.mode), chain_target(drive.chain_target_start), odom_target(drive.odom_target_start) {}
+    bool changed() const {
+      return d.mode != mode || d.chain_target_start != chain_target || d.odom_target_start.x != odom_target.x || d.odom_target_start.y != odom_target.y ||
+             d.odom_target_start.theta != odom_target.theta;
+    }
+    Drive& d;
+    e_mode mode;
+    double chain_target;
+    pose odom_target;
   };
 
   std::function<void(void)> tracking;
@@ -4359,10 +4027,6 @@ private:
   void pid_speed_max_set_internal(int speed);
   std::vector<odom> smooth_path(std::vector<odom> ipath, double weight_smooth, double weight_data, double tolerance);
   double is_past_target(pose target, pose current);
-  // Feeds a PID's secondary velocity-exit channel from the imu, but only when that channel is
-  // turned on (off by default -- see pid_drive_exit_condition_set and friends).  Skips the imu
-  // entirely when it's off, instead of polling it every loop just to be discarded.
-  void secondary_velocity_sensor_update(PID& pid);
   void raw_pid_odom_pp_set(std::vector<odom> imovements, bool slew_on);
   bool ptf1_running = false;
   std::vector<pose> find_point_to_face(pose current, pose target, drive_directions dir, bool set_global);
@@ -4382,6 +4046,8 @@ private:
   double turn_short(double target, double current, bool print = false);
   double turn_long(double target, double current, bool print = false);
   double new_turn_target_compute(double target, double current, ez::e_angle_behavior behavior);
+  void odom_heading_target_resolve();
+  ez::exit_output xy_exit_condition();
   double turn_left(double target, double current, bool print = false);
   double turn_right(double target, double current, bool print = false);
   bool imu_calibration_complete = false;
@@ -4428,11 +4094,9 @@ private:
   bool odom_turn_bias_enabled();
   void odom_turn_bias_enable(bool set);
   // Set every tick by ptp_task() (pid_tasks.cpp) right after it computes turn bias's xy_out scale.
-  // True exactly when turn bias has fully zeroed xy_out to prioritize turning: xy_delta_fake reads
-  // ~0 then because the robot genuinely isn't translating, not because it's stalled, and xyPID's
-  // velocity exit can't tell those apart on its own. See xy_velocity_exit_hold_update().
+  // True exactly when turn bias has fully zeroed xy_out to prioritize turning: the robot is not
+  // translating then, but it isn't stalled either.
   bool xy_translation_bias_gated = false;
-  void xy_velocity_exit_hold_update();
   double angle_rad = 0.0;
   double global_track_width = 0.0;
   bool odometry_enabled = true;
@@ -4502,6 +4166,7 @@ private:
 
   bool drive_toggle = true;
   bool print_toggle = true;
+  bool no_pinned_exit_warned = false;
   int swing_min = 0;
   int turn_min = 0;
   bool practice_mode_is_on = false;

@@ -1,6 +1,5 @@
-// What must not move when the exit speed gate lands: a robot something is really stopping still reads interfered, on time, and the
-// waits a team already relies on (the checks from issue 513) still behave. Shove recovery is test_shove_recovery.cpp, 2550R's pin2
-// is in test_exit_gate_verdicts.cpp. Every case here passes on the start commit as well.
+// Controls for the waits: a robot something is really stopping reads interfered, on time, and the waits a team already relies on
+// (the checks from issue 513) behave. Shove recovery is test_shove_recovery.cpp, 2550R's pin2 is in test_exit_gate_verdicts.cpp.
 #include <cmath>
 #include <string>
 
@@ -17,7 +16,7 @@ TEST_CASE("controls: a drive pinned outside big_error is interfered within one f
   double elapsed = 0;
   REQUIRE(r.wait([&] { r.chassis.pid_wait(); }, 3000, &elapsed));
   CHECK(r.chassis.interfered);
-  // pinned at 400 ms; the velocity exit's 500 ms window (above the 350 ms floor), plus a little for the pass it is noticed on
+  // pinned at 400 ms; the velocity exit's 500 ms time, plus a little for the pass it is noticed on
   CHECK(elapsed <= 400 + 500 + 150);
 }
 
@@ -80,7 +79,7 @@ TEST_CASE("controls (issue 513): pid_wait_until(24) then pid_wait() on a 24 in d
   CHECK(second <= 500);
 }
 
-TEST_CASE("controls (issue 513): a competition disable mid-wait ends the wait on the next pass with interfered true") {
+TEST_CASE("controls (issue 513): a competition disable mid-wait ends the wait on the next pass, not interfered") {
   Rig r(sim::archetype_light_fast(), 1);
   r.sim.use_real_auto_task(true);
   test_stub::g_competition.autonomous = true;
@@ -90,6 +89,7 @@ TEST_CASE("controls (issue 513): a competition disable mid-wait ends the wait on
   };
   double elapsed = 0;
   REQUIRE(r.wait([&] { r.chassis.pid_wait(); }, 1000, &elapsed));
-  CHECK(r.chassis.interfered);
+  // The disable leaves the drive mode, so the wait ends without an exit firing, as it does in 3.2.2
+  CHECK_FALSE(r.chassis.interfered);
   CHECK(elapsed <= 30 * 10 + 50);
 }

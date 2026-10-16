@@ -1,8 +1,6 @@
-// A motor handed to the PTO is not the drive's motor, so its current must not count toward the drive's mA exit. Since
-// the mA exits started polling every motor on both sides (so a jam on any drive motor is caught, not just the
-// front one) the list also included motors currently running an intake or lift, and an intake that stalls ended
-// every turn and swing at about 520 ms with `mA Exit` and interfered. 3.2.2 only checked left_motors[0] /
-// right_motors[0], which can never be PTO'd.
+// A motor handed to the PTO is not the drive's motor, so its current must not count toward the drive's mA exit.  The mA exits poll only the first
+// motor of each side (left_motors[0] / right_motors[0], 3.2.2's behavior), which can never be PTO'd, so an intake or lift that stalls on a PTO'd motor
+// cannot end a turn or swing with `mA Exit` and interfered.  The other motors of a side do not count either, PTO'd or not.
 #include <cmath>
 #include <functional>
 
@@ -39,8 +37,7 @@ bool returns_within(int passes, const std::function<void()>& wait) {
   return returned;
 }
 
-// mA is the only exit configured (100 ms), so only over-current can end a wait quickly. Each SingleStuckWatch /
-// StuckWatch is still live, but only after its own 1000 ms start allowance plus its window.
+// mA is the only exit configured (100 ms), so only over-current can end a wait quickly.
 void ma_only(Drive& chassis) {
   chassis.pid_print_toggle(false);
   chassis.pid_drive_exit_condition_set(0, 0.0, 0, 0.0, 0, 100);
@@ -121,13 +118,13 @@ TEST_CASE("PTO'd motors over current do not end the drive, swing, turn or odom w
   }
 }
 
-TEST_CASE("control: a non-PTO'd drive motor over current still ends every wait on mA_EXIT at mA_timeout") {
+TEST_CASE("control: the first drive motor of each side over current still ends every wait on mA_EXIT at mA_timeout") {
   for (Wait w : {Wait::Drive, Wait::DriveUntil, Wait::Turn, Wait::TurnUntil, Wait::Swing, Wait::Odom}) {
     Drive chassis = make_chassis();
     DriveTestAccess::imu_calibration_complete(chassis) = true;
     ma_only(chassis);
     pto_on(chassis);
-    over_current(chassis, 1, true);  // a real drive motor jams
+    over_current(chassis, 0, true);  // the first motor of each side jams: it can never be PTO'd
     CAPTURE(name(w));
     bool returned = returns_within(30, [&] { start_and_wait(chassis, w); });
     CHECK(returned);
@@ -135,61 +132,15 @@ TEST_CASE("control: a non-PTO'd drive motor over current still ends every wait o
   }
 }
 
-TEST_CASE("control: after pto_toggle(false) the motor counts toward the mA exit again") {
-  Drive chassis = make_chassis();
-  DriveTestAccess::imu_calibration_complete(chassis) = true;
-  ma_only(chassis);
-  pto_on(chassis);
-  over_current(chassis, 2, true);
-  chassis.pto_toggle({chassis.left_motors[2], chassis.right_motors[2]}, false);
-  bool returned = returns_within(30, [&] { start_and_wait(chassis, Wait::Turn); });
-  CHECK(returned);
-  CHECK(chassis.interfered);
-}
-
-namespace {
-Drive* g_toggle_chassis = nullptr;
-int g_toggle_pass = 0;
-int g_toggle_at = 0;
-bool g_toggle_to = false;
-void toggle_hook() {
-  if (++g_toggle_pass == g_toggle_at) g_toggle_chassis->pto_toggle({g_toggle_chassis->left_motors[2], g_toggle_chassis->right_motors[2]}, g_toggle_to);
-}
-}  // namespace
-
-TEST_CASE("a PTO toggled in the middle of a turn changes the mA list on the next pass") {
-  // Toggled on at pass 5 while the motor is already over current: the list is rebuilt, so the motor stops
-  // counting, the mA timer stops accumulating and the turn is no longer ended by it.
-  {
+TEST_CASE("control: only the first motor of each side counts toward the mA exit, a jam on another drive motor does not end the waits") {
+  for (Wait w : {Wait::Drive, Wait::DriveUntil, Wait::Turn, Wait::TurnUntil, Wait::Swing, Wait::Odom}) {
     Drive chassis = make_chassis();
     DriveTestAccess::imu_calibration_complete(chassis) = true;
     ma_only(chassis);
-    over_current(chassis, 2, true);
-    g_toggle_chassis = &chassis;
-    g_toggle_pass = 0;
-    g_toggle_at = 5;
-    g_toggle_to = true;
-    test_stub::g_clock.on_delay = &toggle_hook;
-    bool returned = returns_within(50, [&] { start_and_wait(chassis, Wait::Turn); });
-    test_stub::g_clock.on_delay = nullptr;
+    over_current(chassis, 1, true);  // a middle drive motor, not PTO'd, is over current
+    CAPTURE(name(w));
+    bool returned = returns_within(50, [&] { start_and_wait(chassis, w); });
     CHECK_FALSE(returned);
-  }
-  // Toggled off at pass 5: the motor counts again from then on and the turn ends on mA about mA_timeout later.
-  {
-    Drive chassis = make_chassis();
-    DriveTestAccess::imu_calibration_complete(chassis) = true;
-    ma_only(chassis);
-    pto_on(chassis);
-    over_current(chassis, 2, true);
-    g_toggle_chassis = &chassis;
-    g_toggle_pass = 0;
-    g_toggle_at = 5;
-    g_toggle_to = false;
-    test_stub::g_clock.on_delay = &toggle_hook;
-    bool returned = returns_within(30, [&] { start_and_wait(chassis, Wait::Turn); });
-    test_stub::g_clock.on_delay = nullptr;
-    CHECK(returned);
-    CHECK(chassis.interfered);
   }
 }
 

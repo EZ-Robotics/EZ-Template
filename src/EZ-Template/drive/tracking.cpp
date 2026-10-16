@@ -272,17 +272,11 @@ void Drive::tracking_wheels_tracking() {
 }
 
 void Drive::ez_tracking_task() {
-  bool tracked = tracking_pass();
-  travel_sample(tracked);
-}
-
-// Returns whether tracking ran, false when it was held off
-bool Drive::tracking_pass() {
   // Don't let this function run if odom is disabled
   // and prime the "lasts" to the current sensor values
   if (!imu_calibration_complete || !odometry_enabled) {
     tracking_prime();
-    return false;
+    return;
   }
 
   // EZ-Template's own tracking was just put back after a custom tracking function (drive_defaults_set()).  Its own poses
@@ -308,14 +302,13 @@ bool Drive::tracking_pass() {
   // Use ez's tracking or a custom tracking function made by the user
   tracking();
 
-  // How far the robot moved this pass, from its own pose.  ptp_task() turns this into xyPID's sensor, and travel_sample()
-  // into the odom xy "stopped" check the waits use.
+  // How far the robot moved this pass, from its own pose.  ptp_task() turns this into xyPID's sensor.
   // odom_x_set() and odom_y_set() move xy_last_pose along with the pose, so a pose set (odom_xyt_set(), a
   // relocalization every pass, ...) never counts as movement, while what the robot really moved since then still does.
   // A heading set changes no x or y, so the same holds for drive_angle_set().
   // A custom tracking function may write its own pose over a pose set (a GPS, for example), and then the jump back
   // would look like movement.  So with custom tracking, the pass after a pose set from the team's code counts as no
-  // movement instead, and the odom xy "stopped" check takes that pass's movement from the drive sides (travel_sample()).
+  // movement instead.
   // A custom tracking function that writes its pose with the setters is measured the same as one that writes odom_current:
   // `last` was taken before it ran, so its own setter calls moving xy_last_pose do not hide what it tracked.
   pose now = odom_pose_get();
@@ -330,6 +323,5 @@ bool Drive::tracking_pass() {
   xy_last_pose = now;
   xy_last_pose_valid = finite;
   if (finite) xy_last_finite_pose = now;
-  return true;
 }
 }  // namespace ez

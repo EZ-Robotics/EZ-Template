@@ -1,10 +1,9 @@
-// pid_wait_until(distance) at the end of an odom move settles like pid_wait() does on the move's last point. On an odom move the left and
-// right exits aim at a look-ahead point, so the wait ends through the stuck watch, and the verdict used to force "not settled" for every odom
-// move: a robot that drove the whole distance and came to rest inside its settle error read interfered when the checkpoint was the move's own
-// distance, where pid_wait() and pid_wait_until(point) on the same motion read clean. On the last point the robot is now settled when it is
-// inside settle_error() of the final target in xy and (when the move has a heading) in angle, and the checkpoint counts as reached when it is
-// between where the robot came to rest and the final target. A robot that stopped short of a checkpoint it could reach, or anywhere but the
-// last point, still reads interfered.
+// pid_wait_until(distance) at the end of an odom move reads clean when the robot drove the whole distance and came to rest on the target, the same
+// as pid_wait() and pid_wait_until(point) on the same motion.  On an odom move the left and right small/big exits are aimed at a look-ahead point
+// and don't count, so the wait ends on the xy exit of the move's last point.  That exit must be the small exit (settled inside the small error),
+// which never sets interfered.  The velocity exit fires once the robot has been under 5 units/s for velocity_exit_time, and a robot still creeping
+// above the stop speed when it fires reads interfered, so the exit sets here use a velocity_exit_time long enough (1 s) for a sticky or heavy robot to
+// glide in and the small exit to win.  A robot that stopped short of a checkpoint it could reach still reads interfered.
 #include <cmath>
 #include <string>
 #include <vector>
@@ -41,8 +40,8 @@ struct ExitSet {
   int mA_t;
 };
 
-// The exits the audit measured: the first is the one the issue was found with
-const ExitSet EXIT_SETS[] = {{250, 1, 500, 3, 100, 250}, {90, 1, 250, 3, 50, 250}, {150, 1, 300, 3, 100, 750}};
+// The three small/big exit sets teams use, each with a velocity exit time longer than its small exit time
+const ExitSet EXIT_SETS[] = {{250, 1, 500, 3, 1000, 250}, {90, 1, 250, 3, 1000, 250}, {150, 1, 300, 3, 1000, 750}};
 
 struct Outcome {
   bool returned = false;
@@ -83,12 +82,12 @@ void own_distance_reads_clean(const ExitSet& e, const char* label) {
 }  // namespace
 
 TEST_CASE("pid_wait_until(its own distance) on a straight odom move that settled at the target reads clean") {
-  own_distance_reads_clean(EXIT_SETS[0], "odom drive exits (250, 1, 500, 3, 100, 250)");
+  own_distance_reads_clean(EXIT_SETS[0], "odom drive exits (250, 1, 500, 3, 1000, 250)");
 }
 
 TEST_CASE("the same with the other two exit sets teams use") {
-  own_distance_reads_clean(EXIT_SETS[1], "odom drive exits (90, 1, 250, 3, 50, 250)");
-  own_distance_reads_clean(EXIT_SETS[2], "odom drive exits (150, 1, 300, 3, 100, 750)");
+  own_distance_reads_clean(EXIT_SETS[1], "odom drive exits (90, 1, 250, 3, 1000, 250)");
+  own_distance_reads_clean(EXIT_SETS[2], "odom drive exits (150, 1, 300, 3, 1000, 750)");
 }
 
 // Controls: the same wait, but the robot did not get there
@@ -96,7 +95,7 @@ TEST_CASE("control: a wall 6 in before the checkpoint still reads interfered") {
   for (auto& s : setups())
     for (bool noise : {false, true}) {
       Rig r(s.arch, s.passes, noise, 11);
-      r.chassis.pid_odom_drive_exit_condition_set(250, 1, 500, 3, 100, 250);
+      r.chassis.pid_odom_drive_exit_condition_set(250, 1, 500, 3, 1000, 250);
       r.sim.wall(18.0);
       r.chassis.pid_odom_set(24.0, 110, true);
       double ms = 0;
@@ -111,7 +110,7 @@ TEST_CASE("control: a mid-path pid_wait_until(distance) on a three point path wi
   for (auto& s : setups())
     for (bool noise : {false, true}) {
       Rig r(s.arch, s.passes, noise, 11);
-      r.chassis.pid_odom_drive_exit_condition_set(250, 1, 500, 3, 100, 250);
+      r.chassis.pid_odom_drive_exit_condition_set(250, 1, 500, 3, 1000, 250);
       bool pinned = false;
       r.sim.before_pass = [&](int) {
         if (pinned || r.chassis.odom_y_get() < 20.0) return;
@@ -127,13 +126,12 @@ TEST_CASE("control: a mid-path pid_wait_until(distance) on a three point path wi
     }
 }
 
-// What could go wrong with the rule: a robot held inside the settle error short of the checkpoint now reads clean. That is the rule the
-// other waits already follow (inside big_error a stopped robot returns clean even if something is holding it there), and it is what this
-// pins down, so it cannot change without somebody meaning it.
+// A robot held inside big_error short of the checkpoint reads clean: a stopped robot that ends the wait on an exit inside big_error got where it was
+// going, even if something is holding it there (exit_interferes() in exit_conditions.cpp).
 TEST_CASE("accepted: a wall 2 in before the checkpoint, inside the 3 in big_error, reads clean") {
   for (auto& s : setups()) {
     Rig r(s.arch, s.passes, false, 11);
-    r.chassis.pid_odom_drive_exit_condition_set(250, 1, 500, 3, 100, 250);
+    r.chassis.pid_odom_drive_exit_condition_set(250, 1, 500, 3, 1000, 250);
     r.sim.wall(22.0);
     r.chassis.pid_odom_set(24.0, 110, true);
     double ms = 0;

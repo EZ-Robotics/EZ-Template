@@ -1,15 +1,11 @@
-// Sim-backed repro of an early clean return from pure pursuit's mid-path waits on a high-friction
-// robot. With a tight look ahead (2.5 in) and xy's big_error widened to 5 in, the robot on the
-// sticky_high_friction archetype creeps into xy's big window well before the first waypoint; on
-// 82391ba the window's exit latched on the moving look-ahead point, so pid_wait_until_index(0),
-// pid_wait_until_point({0, 24}) and pid_wait_quick() returned around y = 21.5 (and ~21.9 for the
-// quick wait on the 40 in path's end) with interfered == false, i.e. reported a clean arrival that
-// never happened. The branch discards those exits until the real checkpoint / last point.
+// Pure pursuit's mid-path waits on a high-friction robot must not return clean short of their checkpoint.  With a tight look ahead
+// (2.5 in) and xy's big_error widened to 5 in, the robot on the sticky_high_friction archetype creeps into xy's big window, aimed at the
+// moving look-ahead point, well before the first waypoint.  The small and big exit timers pause while the robot moves faster than the
+// stop speed, so pid_wait_until_index(0) and pid_wait_until_point({0, 24}) wait for the real checkpoint instead of latching that window.
 //
-// This file was added after the fix commits; red-on-82391ba was verified by running it on that commit.
-// The light_fast case, the stock 7 in look ahead case, and the pid_wait_quick case are no-regression
-// controls, not repros: pid_wait_quick returns at y ~45.5 (big_error 5) / ~43.5 (big_error 7) on 82391ba
-// too in this setup, so it does not reproduce there.
+// At speed 20 the sticky robot crawls under the velocity exit's 5 in/s, so the velocity exit ends that wait early, interfered.
+//
+// The light_fast case, the stock 7 in look ahead case, and the pid_wait_quick case are controls.
 #include <cmath>
 #include <vector>
 
@@ -104,8 +100,10 @@ TEST_CASE("sticky_high_friction: speed 20 with big_error 3.5 does not return cle
   Result r = run(sim::archetype_sticky_high_friction(), 2.5, 3.5, Wait::Index0, /*speed=*/20);
   CAPTURE(r.y);
   REQUIRE(r.returned);
-  CHECK_FALSE(r.interfered);
-  CHECK(std::fabs(24.0 - r.y) < 1.0);
+  // At speed 20 this robot crawls at about 3 in/s, under the velocity exit's 5 in/s.  The velocity exit arms after 1000 ms without
+  // moving faster than that and ends the wait 500 ms later, about 4.5 in along: interfered, not a clean arrival short of the point.
+  CHECK(r.interfered);
+  CHECK(r.y < 6.0);
 }
 
 TEST_CASE("control: sticky_high_friction pid_wait_quick returns past the path's end (not a repro)") {
