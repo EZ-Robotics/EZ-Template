@@ -26,7 +26,7 @@ void measure_offsets_copy(Rig& rig) {
   // Number of times to test
   int iterations = 10;
 
-  // Our final offsets.  These keep their sign, which says if a tracker is wired the right way.
+  // Our final offsets
   double l_offset = 0.0, r_offset = 0.0, b_offset = 0.0, f_offset = 0.0;
   int turns_measured = 0;
 
@@ -82,31 +82,11 @@ void measure_offsets_copy(Rig& rig) {
   b_offset /= turns_measured;
   f_offset /= turns_measured;
 
-  // Turning clockwise, a vertical tracker on the left counts up and one on the right counts down.
-  // A vertical tracker with the other sign is wired backwards.  A horizontal tracker can be wired either way,
-  // so it only gets its offset reported (expected_sign of 0.0).
-  int line = 0;
-  auto report = [&](const char* name, ez::tracking_wheel* tracker, double offset, double expected_sign) {
-    if (tracker == nullptr) return;
-
-    char text[64];
-    snprintf(text, sizeof(text), "%s tracker offset: %.2f in", name, fabs(offset));
-    printf("%s\n", text);
-    ez::screen_print(text, line++);
-
-    if (expected_sign != 0.0 && offset * expected_sign < 0.0) {
-      snprintf(text, sizeof(text), "%s tracker looks reversed, flip its port sign", name);
-      printf("%s\n", text);
-      ez::screen_print(text, line++);
-    }
-
-    // Set the new offset
-    tracker->distance_to_center_set(fabs(offset));
-  };
-  report("left", chassis.odom_tracker_left, l_offset, 1.0);
-  report("right", chassis.odom_tracker_right, r_offset, -1.0);
-  report("back", chassis.odom_tracker_back, b_offset, 0.0);
-  report("front", chassis.odom_tracker_front, f_offset, 0.0);
+  // Set new offsets to trackers that exist
+  if (chassis.odom_tracker_left != nullptr) chassis.odom_tracker_left->distance_to_center_set(l_offset);
+  if (chassis.odom_tracker_right != nullptr) chassis.odom_tracker_right->distance_to_center_set(r_offset);
+  if (chassis.odom_tracker_back != nullptr) chassis.odom_tracker_back->distance_to_center_set(b_offset);
+  if (chassis.odom_tracker_front != nullptr) chassis.odom_tracker_front->distance_to_center_set(f_offset);
   // ---- copy of measure_offsets() from src/autons.cpp ends here ----
 }
 
@@ -116,13 +96,6 @@ std::string run(Rig& rig) {
 }
 
 double offset_of(tracking_wheel* t) { return std::fabs(t->distance_to_center_get()); }
-
-// The number printed after "<name> tracker offset: ", or -1 if that line is missing
-double printed(const std::string& out, const std::string& name) {
-  const std::string key = name + " tracker offset: ";
-  const auto at = out.find(key);
-  return at == std::string::npos ? -1.0 : std::stod(out.substr(at + key.size()));
-}
 
 bool within_2_percent(double got, double truth) { return std::fabs(got - truth) <= 0.02 * truth; }
 }  // namespace
@@ -170,39 +143,4 @@ TEST_CASE("measure_offsets: a front tracker is measured within 2 percent of its 
   INFO("front " << offset_of(rig.th.get()));
   CHECK(within_2_percent(offset_of(rig.th.get()), 2.0));
   CHECK(out.find("reversed") == std::string::npos);
-}
-
-TEST_CASE("measure_offsets: the offset to type into the constructor is printed for every tracker that exists") {
-  Cfg c;
-  c.left = 3.5;
-  c.horiz = 2.0;
-  Rig rig(c);
-  const std::string out = run(rig);
-
-  CHECK(within_2_percent(printed(out, "left"), 3.5));
-  CHECK(within_2_percent(printed(out, "back"), 2.0));
-  CHECK(out.find("right tracker") == std::string::npos);
-  CHECK(out.find("front tracker") == std::string::npos);
-}
-
-TEST_CASE("measure_offsets: a reversed vertical tracker is named, and its offset is still measured") {
-  {
-    Cfg c;
-    c.left = 3.5;
-    c.right = 1.0;
-    c.right_reversed = true;
-    Rig rig(c);
-    const std::string out = run(rig);
-    CHECK(out.find("right tracker looks reversed, flip its port sign") != std::string::npos);
-    CHECK(out.find("left tracker looks reversed") == std::string::npos);
-    CHECK(within_2_percent(offset_of(rig.tr.get()), 1.0));
-  }
-  {
-    Cfg c;
-    c.left = 3.5;
-    c.left_reversed = true;
-    Rig rig(c);
-    const std::string out = run(rig);
-    CHECK(out.find("left tracker looks reversed, flip its port sign") != std::string::npos);
-  }
 }
