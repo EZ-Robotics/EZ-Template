@@ -9,23 +9,22 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "EZ-Template/drive/drive.hpp"
 
-namespace ez {
 bool Drive::pto_check(pros::Motor check_if_pto) {
   auto does_exist = std::find(pto_active.begin(), pto_active.end(), check_if_pto.get_port());
-  if (does_exist != pto_active.end()) return true;  // Motor is in the list
-  return false;                                     // Motor isn't in the list
+  if (does_exist != pto_active.end())
+    return true;  // Motor is in the list
+  return false;   // Motor isn't in the list
 }
 
 void Drive::pto_add(std::vector<pros::Motor> pto_list) {
-  ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
   for (auto i : pto_list) {
-    // Skip the motor if it's already in the list
-    if (pto_check(i)) continue;
+    // Return if the motor is already in the list
+    if (pto_check(i)) return;
 
-    // Skip the motor if it's the first index (this motor is used for velocity)
+    // Return if the first index was used (this motor is used for velocity)
     if (i.get_port() == left_motors[0].get_port() || i.get_port() == right_motors[0].get_port()) {
-      drive_mutex.print_after_unlock("You cannot PTO the first index!\n");
-      continue;
+      printf("You cannot PTO the first index!\n");
+      return;
     }
 
     pto_active.push_back(i.get_port());
@@ -33,11 +32,10 @@ void Drive::pto_add(std::vector<pros::Motor> pto_list) {
 }
 
 void Drive::pto_remove(std::vector<pros::Motor> pto_list) {
-  ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
   for (auto i : pto_list) {
     auto does_exist = std::find(pto_active.begin(), pto_active.end(), i.get_port());
-    // Skip the motor if it isn't in the list
-    if (does_exist == pto_active.end()) continue;
+    // Return if the motor isn't in the list
+    if (does_exist == pto_active.end()) return;
 
     // Find index of motor
     int index = std::distance(pto_active.begin(), does_exist);
@@ -53,4 +51,3 @@ void Drive::pto_toggle(std::vector<pros::Motor> pto_list, bool toggle) {
   else
     pto_remove(pto_list);
 }
-}  // namespace ez

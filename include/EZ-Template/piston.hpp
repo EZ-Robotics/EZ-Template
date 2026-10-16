@@ -7,11 +7,10 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #pragma once
 
 #include "api.h"
-#include "pros/misc.h"
 
 namespace ez {
 class Piston {
-public:
+ public:
   /**
    * Piston used throughout.
    */
@@ -23,10 +22,9 @@ public:
    * The starting position of your piston defaults to false.
    *
    * \param input_port
-   *        the ADI port of your piston
+   *        the ports of your pistons
    * \param default_state
-   *        level the solenoid's pin starts at.  get() and set() are relative to it: get() is false at startup,
-   *        and set(true) moves the piston to the opposite of default_state
+   *        starting state of your piston
    */
   Piston(int input_port, bool default_state = false);
 
@@ -35,13 +33,10 @@ public:
    *
    * The starting position of your piston defaults to false.
    *
-   * \param input_port
-   *        the ADI port of your piston on the expander
-   * \param expander_smart_port
-   *        the smart port the 3 wire expander is plugged into
+   * \param input_ports
+   *        the ports of your pistons
    * \param default_state
-   *        level the solenoid's pin starts at.  get() and set() are relative to it: get() is false at startup,
-   *        and set(true) moves the piston to the opposite of default_state
+   *        starting state of your piston
    */
   Piston(int input_port, int expander_smart_port, bool default_state = false);
 
@@ -67,34 +62,16 @@ public:
   void button_toggle(int toggle);
 
   /**
-   * One button toggle for the piston.
-   *
-   * \param toggle
-   *        an input button
-   */
-  void button_toggle(pros::controller_digital_e_t toggle);
-
-  /**
    * Two buttons trigger the piston.  Active is enabled, deactive is disabled.
    *
    * \param active
    *        sets piston to true
-   * \param deactive
+   * \param active
    *        sets piston to false
    */
   void buttons(int active, int deactive);
 
-  /**
-   * Two buttons trigger the piston. Active is enabled, deactive is disabled.
-   *
-   * \param active
-   *        sets piston to true
-   * \param deactive
-   *        sets piston to false
-   */
-  void buttons(pros::controller_digital_e_t active, pros::controller_digital_e_t deactive);
-
-private:
+ private:
   bool reversed = false;
   bool current = false;
   int last_press = 0;

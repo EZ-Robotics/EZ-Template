@@ -11,7 +11,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 namespace ez {
 class tracking_wheel {
-public:
+ public:
   pros::adi::Encoder adi_encoder;
   pros::Rotation smart_encoder;
 
@@ -66,20 +66,8 @@ public:
 
   /**
    * Returns the raw sensor value.
-   *
-   * Falls back to the last successfully-read raw value when the underlying sensor read fails
-   * (PROS_ERR / PROS_ERR_F / a non-finite reading), instead of handing that sentinel to
-   * whatever math consumes this value.
    */
   double get_raw();
-
-  /**
-   * Returns whether the most recent get_raw() call's underlying sensor read actually
-   * succeeded. False means get_raw() just returned a remembered last-good value instead of a
-   * fresh reading -- use this to detect a dead sensor rather than comparing get_raw()'s
-   * return value to a sentinel, since get_raw() itself never returns one.
-   */
-  bool last_read_ok();
 
   /**
    * Sets the distance to the center of the robot.
@@ -118,8 +106,8 @@ public:
   double ticks_per_inch();
 
   /**
-   * Sets the amount of ticks per revolution of your sensor.
-   *
+   * Sets the amount of ticks per revolution of your sensor. 
+   * 
    * This is useful for custom encoders.
    *
    * \param input
@@ -158,7 +146,7 @@ public:
    */
   double wheel_diameter_get();
 
-private:
+ private:
 #define DRIVE_ADI_ENCODER 2
 #define DRIVE_ROTATION 3
   int IS_TRACKER = 0;
@@ -170,10 +158,5 @@ private:
   double RATIO = 1.0;
   double ENCODER_TICKS_PER_REV = 0.0;
   double WHEEL_TICK_PER_REV = 0.0;
-
-  // The last raw value get_raw() successfully read, and whether its most recent call got a
-  // fresh reading or fell back to this one. See get_raw()/last_read_ok().
-  double last_good_raw = 0.0;
-  bool last_read_ok_ = true;
 };
 };  // namespace ez

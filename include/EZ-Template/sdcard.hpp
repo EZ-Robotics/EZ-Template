@@ -14,8 +14,7 @@ namespace as {
 extern AutonSelector auton_selector;
 
 /**
- * Sets the current page to what's saved on the SD card.  Creates the save file if it isn't there,
- * and goes to page 0 if the saved page doesn't exist.
+ * Sets sd card to current page.
  */
 void auton_selector_initialize();
 
@@ -59,22 +58,15 @@ extern pros::adi::DigitalIn* limit_switch_right;
 /**
  * Initialize two limit switches to change pages on the lcd.
  *
- * The library never takes ownership of the pointers passed in and will not
- * delete them.  The switches must outlive this call, the library keeps polling the pointers.
- *
- * Calling this with both pointers null disables the limit switches, this works any time it is called.
- * The library stops polling the old pointers.
- *
- * @param right_limit
- *        limit switch that goes forward a page
- * @param left_limit
- *        limit switch that goes back a page, defaults to nullptr
+ * @param left_limit_port
+ *        port for the left limit switch
+ * @param right_limit_port
+ *        port for the right limit switch
  */
 void limit_switch_lcd_initialize(pros::adi::DigitalIn* right_limit, pros::adi::DigitalIn* left_limit = nullptr);
 
 /**
- * Task that polls the limit switches and changes pages on a new press.  Runs as an internal task,
- * it is not meant to be called.
+ * pre_auto_task
  */
 void limitSwitchTask();
 
@@ -85,17 +77,11 @@ int page_blank_current();
 
 /**
  * Checks if this blank page is open.  If this page doesn't exist, this will create it.
- *
- * @param page
- *        blank page to check, starting at 0
  */
 bool page_blank_is_on(int page);
 
 /**
  * Removes the blank page if it exists, and previous ones.
- *
- * @param page
- *        blank page to remove, starting at 0.  The blank pages before it are removed too
  */
 void page_blank_remove(int page);
 
@@ -105,7 +91,7 @@ void page_blank_remove(int page);
 void page_blank_remove_all();
 
 /**
- * Returns the current amount of blank pages.
+ * Removes the current amount of blank pages.
  */
 int page_blank_amount();
 
