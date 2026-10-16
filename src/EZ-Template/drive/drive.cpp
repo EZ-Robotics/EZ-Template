@@ -524,7 +524,6 @@ bool Drive::drive_imu_calibrate(bool run_loading_animation) {
     // Reset the IMU watchdog for this calibration
     ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
     imu_stuck_passes.clear();
-    imu_healthy_passes.clear();
     imu_only_imu_warning_shown = false;
     good_imus = all_imus;
   }

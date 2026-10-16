@@ -93,23 +93,13 @@ TEST_CASE("check_imu_task warns once when the only IMU looks unhealthy") {
   CHECK(printed_by([&] { DriveTestAccess::check_imu_task(chassis); }).empty());
 }
 
-TEST_CASE("check_imu_task says when the primary IMU changes, and when an ejected one recovers") {
+TEST_CASE("check_imu_task says when the primary IMU changes") {
   test_stub::reset_all();
   Drive chassis({1, -2}, {-3, 4}, {5, 6}, 3.25, 360);
   DriveTestAccess::imu_calibration_complete(chassis) = true;
   pros::Imu* first = chassis.good_imus[0];  // ejected below, so hold on to it
   first->fake_installed = false;
   CHECK(printed_by([&] { DriveTestAccess::check_imu_task(chassis); }) == "EZ-Template: switching primary IMU to port 6\n");
-
-  // Back on the bus with a reading that changes every pass. After enough healthy passes in a row it is trusted again.
-  first->fake_installed = true;
-  std::string all = printed_by([&] {
-    for (int pass = 0; pass < 100; pass++) {
-      first->fake_rotation += 1.0;
-      DriveTestAccess::check_imu_task(chassis);
-    }
-  });
-  CHECK(all == "EZ-Template: IMU on port 5 recovered\n");
 }
 
 // The point of moving the prints: none of them may run while the chassis lock is held. Each action below is

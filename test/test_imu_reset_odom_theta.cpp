@@ -122,27 +122,6 @@ TEST_CASE("control: the next tracking pass after the reset moves the pose only b
   CHECK(std::fabs(chassis.odom_y_get() - y) < 0.05);
 }
 
-TEST_CASE("control: a redundant IMU recovering (check_imu_task) does not change the pose heading") {
-  test_stub::reset_all();
-  Drive chassis({1, -2}, {-3, 4}, {5, 6}, 3.25, 360);
-  DriveTestAccess::imu_calibration_complete(chassis) = true;
-  chassis.drive_imu_reset(30.0);
-  chassis.good_imus[0]->fake_rotation = 30.0;
-  chassis.good_imus[1]->fake_rotation = 30.0;
-  double before = DriveTestAccess::odom_current(chassis).theta;
-
-  // Eject the second IMU, then let it read as healthy (changing values) until it is re-added
-  pros::Imu* ejected = chassis.good_imus[1];
-  chassis.good_imus.erase(chassis.good_imus.begin() + 1);
-  for (int i = 0; i < 200; i++) {
-    ejected->fake_rotation += 0.01;
-    DriveTestAccess::check_imu_task(chassis);
-  }
-  CHECK(chassis.good_imus.size() == 2);  // it really did go through set_rotation and get re-added
-  CHECK(DriveTestAccess::odom_current(chassis).theta == doctest::Approx(before));
-  CHECK(chassis.drive_angle_get() == doctest::Approx(30.0));
-}
-
 TEST_CASE("attack: scaled IMU, the pose heading is what the IMU reads back after the reset") {
   test_stub::reset_all();
   Drive chassis({1, -2}, {-3, 4}, {5, 6}, 3.25, 360);

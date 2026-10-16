@@ -4059,7 +4059,6 @@ private:
   // per-port health tracking used by check_imu_task() to eject/re-add IMUs.
   std::deque<pros::Imu*> all_imus;
   std::map<int, int> imu_stuck_passes;
-  std::map<int, int> imu_healthy_passes;
   double last_good_angle = 0.0;
   double watchdog_l_last = 0.0, watchdog_r_last = 0.0;
 
