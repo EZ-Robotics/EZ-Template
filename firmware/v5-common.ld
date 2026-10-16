@@ -132,12 +132,6 @@ SECTIONS
    *(.gcc_except_table)
 } > RAM
 
-.mmu_tbl (ALIGN(16384)) : {
-   __mmu_tbl_start = .;
-   *(.mmu_tbl)
-   __mmu_tbl_end = .;
-} > RAM
-
 .ARM.exidx : {
    __exidx_start = .;
    *(.ARM.exidx*)
@@ -166,11 +160,9 @@ SECTIONS
    __fini_array_end = .;
 } > RAM
 
-.ARM.attributes : {
-   __ARM.attributes_start = .;
-   *(.ARM.attributes)
-   __ARM.attributes_end = .;
-} > RAM
+/DISCARD/ : {
+  *(.ARM.attributes*)
+}
 
 .sdata : {
    __sdata_start = .;
@@ -228,7 +220,11 @@ _SDA2_BASE_ = __sdata2_start + ((__sbss2_end - __sdata2_start) / 2 );
    _heap_end = .;
    HeapLimit = .;
 } > HEAP
-
+/* vexMain in libpros still switches SP to __stack before running system
+   initialization. Without a reserved region, __stack degrades to a 4-byte
+   COMMON symbol at the end of .bss and the boot stack tramples the last
+   globals in the cold package. Reserve dedicated stack space like the
+   4.1.x scripts did. */
 .stack (NOLOAD) : {
    . = ALIGN(16);
    _stack_end = .;

@@ -13,19 +13,18 @@ extern "C" {
 /*********************
  *      INCLUDES
  *********************/
-#include "liblvgl/lv_conf_internal.h"
-#include <stdint.h>
-#include <stddef.h>
-#include <stdbool.h>
+#include "../lv_conf_internal.h"
+#include "../misc/lv_types.h"
 
 #include "lv_symbol_def.h"
-#include "liblvgl/misc/lv_area.h"
+#include "../draw/lv_draw_buf.h"
+#include "../misc/lv_area.h"
+#include "../misc/cache/lv_cache.h"
 
 /*********************
  *      DEFINES
  *********************/
 
-/* imgfont identifier */
 #define LV_IMGFONT_BPP 9
 
 /**********************
@@ -36,52 +35,81 @@ extern "C" {
  * General types
  *-----------------*/
 
-struct _lv_font_t;
+/** The font format.*/
+typedef enum {
+    LV_FONT_GLYPH_FORMAT_NONE   = 0, /**< Maybe not visible*/
+
+    /**< Legacy simple formats*/
+    LV_FONT_GLYPH_FORMAT_A1     = 0x01, /**< 1 bit per pixel*/
+    LV_FONT_GLYPH_FORMAT_A2     = 0x02, /**< 2 bit per pixel*/
+    LV_FONT_GLYPH_FORMAT_A4     = 0x04, /**< 4 bit per pixel*/
+    LV_FONT_GLYPH_FORMAT_A8     = 0x08, /**< 8 bit per pixel*/
+
+    LV_FONT_GLYPH_FORMAT_IMAGE  = 0x09, /**< Image format*/
+
+    /**< Advanced formats*/
+    LV_FONT_GLYPH_FORMAT_VECTOR = 0x0A, /**< Vectorial format*/
+    LV_FONT_GLYPH_FORMAT_SVG    = 0x0B, /**< SVG format*/
+    LV_FONT_GLYPH_FORMAT_CUSTOM = 0xFF, /**< Custom format*/
+} lv_font_glyph_format_t;
+
 /** Describes the properties of a glyph.*/
 typedef struct {
-    const struct _lv_font_t *
-        resolved_font; /**< Pointer to a font where the glyph was actually found after handling fallbacks*/
+    const lv_font_t *
+    resolved_font;  /**< Pointer to a font where the glyph was actually found after handling fallbacks*/
     uint16_t adv_w; /**< The glyph needs this space. Draw the next glyph after this width.*/
     uint16_t box_w; /**< Width of the glyph's bounding box*/
     uint16_t box_h; /**< Height of the glyph's bounding box*/
     int16_t ofs_x;  /**< x offset of the bounding box*/
     int16_t ofs_y;  /**< y offset of the bounding box*/
-    uint8_t bpp: 4;  /**< Bit-per-pixel: 1, 2, 4, 8*/
-    uint8_t is_placeholder: 1; /** Glyph is missing. But placeholder will still be displayed */
+    lv_font_glyph_format_t format;  /**< Font format of the glyph see lv_font_glyph_format_t */
+    uint8_t is_placeholder: 1;      /**< Glyph is missing. But placeholder will still be displayed*/
+
+    union {
+        uint32_t index;       /**< Unicode code point*/
+        const void * src;     /**< Pointer to the source data used by image fonts*/
+    } gid;                    /**< The index of the glyph in the font file. Used by the font cache*/
+    lv_cache_entry_t * entry; /**< The cache entry of the glyph draw data. Used by the font cache*/
 } lv_font_glyph_dsc_t;
 
 /** The bitmaps might be upscaled by 3 to achieve subpixel rendering.*/
-enum {
+typedef enum {
     LV_FONT_SUBPX_NONE,
     LV_FONT_SUBPX_HOR,
     LV_FONT_SUBPX_VER,
     LV_FONT_SUBPX_BOTH,
-};
+} lv_font_subpx_t;
 
-typedef uint8_t lv_font_subpx_t;
+/** Adjust letter spacing for specific character pairs.*/
+typedef enum {
+    LV_FONT_KERNING_NORMAL,
+    LV_FONT_KERNING_NONE,
+} lv_font_kerning_t;
 
 /** Describe the properties of a font*/
-typedef struct _lv_font_t {
+struct _lv_font_t {
     /** Get a glyph's descriptor from a font*/
-    bool (*get_glyph_dsc)(const struct _lv_font_t *, lv_font_glyph_dsc_t *, uint32_t letter, uint32_t letter_next);
+    bool (*get_glyph_dsc)(const lv_font_t *, lv_font_glyph_dsc_t *, uint32_t letter, uint32_t letter_next);
 
     /** Get a glyph's bitmap from a font*/
-    const uint8_t * (*get_glyph_bitmap)(const struct _lv_font_t *, uint32_t);
+    const void * (*get_glyph_bitmap)(lv_font_glyph_dsc_t *, lv_draw_buf_t *);
+
+    /** Release a glyph*/
+    void (*release_glyph)(const lv_font_t *, lv_font_glyph_dsc_t *);
 
     /*Pointer to the font in a font pack (must have the same line height)*/
-    lv_coord_t line_height;         /**< The real line height where any text fits*/
-    lv_coord_t base_line;           /**< Base line measured from the top of the line_height*/
-    uint8_t subpx  : 2;             /**< An element of `lv_font_subpx_t`*/
+    int32_t line_height;         /**< The real line height where any text fits*/
+    int32_t base_line;           /**< Base line measured from the bottom of the line_height*/
+    uint8_t subpx   : 2;            /**< An element of `lv_font_subpx_t`*/
+    uint8_t kerning : 1;            /**< An element of `lv_font_kerning_t`*/
 
     int8_t underline_position;      /**< Distance between the top of the underline and base line (< 0 means below the base line)*/
     int8_t underline_thickness;     /**< Thickness of the underline*/
 
     const void * dsc;               /**< Store implementation specific or run_time data or caching here*/
-    const struct _lv_font_t * fallback;   /**< Fallback font for missing glyph. Resolved recursively */
-#if LV_USE_USER_DATA
+    const lv_font_t * fallback;   /**< Fallback font for missing glyph. Resolved recursively */
     void * user_data;               /**< Custom user data for font.*/
-#endif
-} lv_font_t;
+};
 
 /**********************
  * GLOBAL PROTOTYPES
@@ -89,48 +117,60 @@ typedef struct _lv_font_t {
 
 /**
  * Return with the bitmap of a font.
- * @param font_p pointer to a font
- * @param letter a UNICODE character code
- * @return pointer to the bitmap of the letter
+ * @note You must call lv_font_get_glyph_dsc() to get `g_dsc` (lv_font_glyph_dsc_t) before you can call this function.
+ * @param g_dsc         the glyph descriptor including which font to use, which supply the glyph_index and the format.
+ * @param draw_buf      a draw buffer that can be used to store the bitmap of the glyph, it's OK not to use it.
+ * @return pointer to the glyph's data. It can be a draw buffer for bitmap fonts or an image source for imgfonts.
  */
-const uint8_t * lv_font_get_glyph_bitmap(const lv_font_t * font_p, uint32_t letter);
+const void * lv_font_get_glyph_bitmap(lv_font_glyph_dsc_t * g_dsc, lv_draw_buf_t * draw_buf);
 
 /**
  * Get the descriptor of a glyph
- * @param font_p pointer to font
- * @param dsc_out store the result descriptor here
- * @param letter a UNICODE letter code
- * @param letter_next the next letter after `letter`. Used for kerning
+ * @param font          pointer to font
+ * @param dsc_out       store the result descriptor here
+ * @param letter        a UNICODE letter code
+ * @param letter_next   the next letter after `letter`. Used for kerning
  * @return true: descriptor is successfully loaded into `dsc_out`.
  *         false: the letter was not found, no data is loaded to `dsc_out`
  */
-bool lv_font_get_glyph_dsc(const lv_font_t * font_p, lv_font_glyph_dsc_t * dsc_out, uint32_t letter,
+bool lv_font_get_glyph_dsc(const lv_font_t * font, lv_font_glyph_dsc_t * dsc_out, uint32_t letter,
                            uint32_t letter_next);
 
 /**
+ * Release the bitmap of a font.
+ * @note You must call lv_font_get_glyph_dsc() to get `g_dsc` (lv_font_glyph_dsc_t) before you can call this function.
+ * @param g_dsc         the glyph descriptor including which font to use, which supply the glyph_index and the format.
+ */
+void lv_font_glyph_release_draw_data(lv_font_glyph_dsc_t * g_dsc);
+
+/**
  * Get the width of a glyph with kerning
- * @param font pointer to a font
- * @param letter a UNICODE letter
- * @param letter_next the next letter after `letter`. Used for kerning
+ * @param font          pointer to a font
+ * @param letter        a UNICODE letter
+ * @param letter_next   the next letter after `letter`. Used for kerning
  * @return the width of the glyph
  */
 uint16_t lv_font_get_glyph_width(const lv_font_t * font, uint32_t letter, uint32_t letter_next);
 
 /**
  * Get the line height of a font. All characters fit into this height
- * @param font_p pointer to a font
+ * @param font      pointer to a font
  * @return the height of a font
  */
-static inline lv_coord_t lv_font_get_line_height(const lv_font_t * font_p)
-{
-    return font_p->line_height;
-}
+int32_t lv_font_get_line_height(const lv_font_t * font);
+
+/**
+ * Configure the use of kerning information stored in a font
+ * @param font    pointer to a font
+ * @param kerning `LV_FONT_KERNING_NORMAL` (default) or `LV_FONT_KERNING_NONE`
+ */
+void lv_font_set_kerning(lv_font_t * font, lv_font_kerning_t kerning);
 
 /**********************
  *      MACROS
  **********************/
 
-#define LV_FONT_DECLARE(font_name) extern const lv_font_t font_name;
+#define LV_FONT_DECLARE(font_name) LV_ATTRIBUTE_EXTERN_DATA extern const lv_font_t font_name;
 
 #if LV_FONT_MONTSERRAT_8
 LV_FONT_DECLARE(lv_font_montserrat_8)
@@ -216,16 +256,16 @@ LV_FONT_DECLARE(lv_font_montserrat_46)
 LV_FONT_DECLARE(lv_font_montserrat_48)
 #endif
 
-#if LV_FONT_MONTSERRAT_12_SUBPX
-LV_FONT_DECLARE(lv_font_montserrat_12_subpx)
-#endif
-
 #if LV_FONT_MONTSERRAT_28_COMPRESSED
 LV_FONT_DECLARE(lv_font_montserrat_28_compressed)
 #endif
 
 #if LV_FONT_DEJAVU_16_PERSIAN_HEBREW
 LV_FONT_DECLARE(lv_font_dejavu_16_persian_hebrew)
+#endif
+
+#if LV_FONT_SIMSUN_14_CJK
+LV_FONT_DECLARE(lv_font_simsun_14_cjk)
 #endif
 
 #if LV_FONT_SIMSUN_16_CJK
@@ -275,10 +315,7 @@ LV_FONT_DECLARE(pros_font_dejavu_mono_40_latin_sup);
  * Just a wrapper around LV_FONT_DEFAULT because it might be more convenient to use a function in some cases
  * @return  pointer to LV_FONT_DEFAULT
  */
-static inline const lv_font_t * lv_font_default(void)
-{
-    return LV_FONT_DEFAULT;
-}
+const lv_font_t * lv_font_default(void);
 
 #ifdef __cplusplus
 } /*extern "C"*/

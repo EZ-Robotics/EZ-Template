@@ -8,7 +8,7 @@
  * This file should not be modified by users, since it gets replaced whenever
  * a kernel upgrade occurs.
  *
- * \copyright Copyright (c) 2017-2023, Purdue University ACM SIGBots.
+ * \copyright Copyright (c) 2017-2024, Purdue University ACM SIGBots.
  * All rights reserved.
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -22,7 +22,6 @@
 #ifdef __cplusplus
 #include <cerrno>
 #include <cmath>
-#include <cstdbool>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
@@ -39,14 +38,9 @@
 #include <unistd.h>
 #endif /* __cplusplus */
 
-#define PROS_VERSION_MAJOR 4
-#define PROS_VERSION_MINOR 1
-#define PROS_VERSION_PATCH 1
-#define PROS_VERSION_STRING "4.1.1"
-
-
+#include "pros/version.h"
 #include "pros/adi.h"
-#include "pros/colors.h"
+#include "pros/ai_vision.h"
 #include "pros/device.h"
 #include "pros/distance.h"
 #include "pros/error.h"
@@ -65,6 +59,7 @@
 
 #ifdef __cplusplus
 #include "pros/adi.hpp"
+#include "pros/ai_vision.hpp"
 #include "pros/colors.hpp"
 #include "pros/device.hpp"
 #include "pros/distance.hpp"

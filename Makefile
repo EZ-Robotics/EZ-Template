@@ -12,7 +12,7 @@ BINDIR=$(ROOT)/bin
 SRCDIR=$(ROOT)/src
 INCDIR=$(ROOT)/include
 
-WARNFLAGS+=
+WARNFLAGS+=-Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers
 EXTRA_CFLAGS=
 EXTRA_CXXFLAGS=-Wno-deprecated-enum-enum-conversion
 
@@ -27,7 +27,10 @@ EXCLUDE_COLD_LIBRARIES:=
 IS_LIBRARY:=1
 # TODO: CHANGE THIS!
 LIBNAME:=EZ-Template
-VERSION:=3.2.2
+VERSION:=4.0.0-beta.4
+# include/EZ-Template/version.hpp and the root version file follow VERSION, see tools/gen-version.sh
+EZ_VERSION_ERROR:=$(shell sh tools/gen-version.sh $(VERSION))
+$(if $(EZ_VERSION_ERROR),$(error $(EZ_VERSION_ERROR)))
 # EXCLUDE_SRC_FROM_LIB= $(SRCDIR)/unpublishedfile.c
 # this line excludes opcontrol.c and similar files
 EXCLUDE_SRC_FROM_LIB+=$(foreach file, $(SRCDIR)/autons $(SRCDIR)/main,$(foreach cext,$(CEXTS),$(file).$(cext)) $(foreach cxxext,$(CXXEXTS),$(file).$(cxxext)))
@@ -35,7 +38,7 @@ EXCLUDE_SRC_FROM_LIB+=$(foreach file, $(SRCDIR)/autons $(SRCDIR)/main,$(foreach 
 # files that get distributed to every user (beyond your source archive) - add
 # whatever files you want here. This line is configured to add all header files
 # that are in the the include directory get exported
-TEMPLATE_FILES=$(INCDIR)/EZ-Template/*.hpp $(INCDIR)/EZ-Template/drive/*.hpp
+TEMPLATE_FILES=$(INCDIR)/EZ-Template/*.hpp $(INCDIR)/EZ-Template/drive/*.hpp $(INCDIR)/EZ-Units/*.hpp
 
 .DEFAULT_GOAL=quick
 

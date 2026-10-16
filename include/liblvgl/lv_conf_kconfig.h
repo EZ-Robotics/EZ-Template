@@ -18,6 +18,16 @@ extern "C" {
 
 #  ifdef __NuttX__
 #    include <nuttx/config.h>
+/*
+ * Make sure version number in Kconfig file is correctly set.
+ * Mismatch can happen when user manually copy lvgl/Kconfig file to their project, like what NuttX does.
+ */
+#    include "../lv_version.h"
+
+#    if CONFIG_LVGL_VERSION_MAJOR != LVGL_VERSION_MAJOR || CONFIG_LVGL_VERSION_MINOR != LVGL_VERSION_MINOR \
+        || CONFIG_LVGL_VERSION_PATCH != LVGL_VERSION_PATCH
+#        warning "Version mismatch between Kconfig and lvgl/lv_version.h"
+#    endif
 #  elif defined(__RTTHREAD__)
 #    define LV_CONF_INCLUDE_SIMPLE
 #    include <lv_rt_thread_conf.h>
@@ -26,11 +36,51 @@ extern "C" {
 #endif /*LV_CONF_KCONFIG_EXTERNAL_INCLUDE*/
 
 /*******************
- * LV COLOR CHROMA KEY
+ * LV_USE_STDLIB_MALLOC
  *******************/
 
-#ifdef CONFIG_LV_COLOR_CHROMA_KEY_HEX
-#  define CONFIG_LV_COLOR_CHROMA_KEY lv_color_hex(CONFIG_LV_COLOR_CHROMA_KEY_HEX)
+#ifdef CONFIG_LV_USE_BUILTIN_MALLOC
+#  define CONFIG_LV_USE_STDLIB_MALLOC LV_STDLIB_BUILTIN
+#elif defined(CONFIG_LV_USE_CLIB_MALLOC)
+#  define CONFIG_LV_USE_STDLIB_MALLOC LV_STDLIB_CLIB
+#elif defined(CONFIG_LV_USE_MICROPYTHON_MALLOC)
+#  define CONFIG_LV_USE_STDLIB_MALLOC LV_STDLIB_MICROPYTHON
+#elif defined(CONFIG_LV_USE_RTTHREAD_MALLOC)
+#  define CONFIG_LV_USE_STDLIB_MALLOC LV_STDLIB_RTTHREAD
+#elif defined (CONFIG_LV_USE_CUSTOM_MALLOC)
+#  define CONFIG_LV_USE_STDLIB_MALLOC LV_STDLIB_CUSTOM
+#endif
+
+/*******************
+ * LV_USE_STDLIB_STRING
+ *******************/
+
+#ifdef CONFIG_LV_USE_BUILTIN_STRING
+#  define CONFIG_LV_USE_STDLIB_STRING LV_STDLIB_BUILTIN
+#elif defined(CONFIG_LV_USE_CLIB_STRING)
+#  define CONFIG_LV_USE_STDLIB_STRING LV_STDLIB_CLIB
+#elif defined(CONFIG_LV_USE_MICROPYTHON_STRING)
+#  define CONFIG_LV_USE_STDLIB_STRING LV_STDLIB_MICROPYTHON
+#elif defined(CONFIG_LV_USE_RTTHREAD_STRING)
+#  define CONFIG_LV_USE_STDLIB_STRING LV_STDLIB_RTTHREAD
+#elif defined (CONFIG_LV_USE_CUSTOM_STRING)
+#  define CONFIG_LV_USE_STDLIB_STRING LV_STDLIB_CUSTOM
+#endif
+
+/*******************
+ * LV_USE_STDLIB_SPRINTF
+ *******************/
+
+#ifdef CONFIG_LV_USE_BUILTIN_SPRINTF
+#  define CONFIG_LV_USE_STDLIB_SPRINTF LV_STDLIB_BUILTIN
+#elif defined(CONFIG_LV_USE_CLIB_SPRINTF)
+#  define CONFIG_LV_USE_STDLIB_SPRINTF LV_STDLIB_CLIB
+#elif defined(CONFIG_LV_USE_MICROPYTHON_SPRINTF)
+#  define CONFIG_LV_USE_STDLIB_SPRINTF LV_STDLIB_MICROPYTHON
+#elif defined(CONFIG_LV_USE_RTTHREAD_SPRINTF)
+#  define CONFIG_LV_USE_STDLIB_SPRINTF LV_STDLIB_RTTHREAD
+#elif defined (CONFIG_LV_USE_CUSTOM_SPRINTF)
+#  define CONFIG_LV_USE_STDLIB_SPRINTF LV_STDLIB_CUSTOM
 #endif
 
 /*******************
@@ -38,7 +88,15 @@ extern "C" {
  *******************/
 
 #ifdef CONFIG_LV_MEM_SIZE_KILOBYTES
+#  if(CONFIG_LV_MEM_SIZE_KILOBYTES < 2)
+#    error "LV_MEM_SIZE >= 2kB is required"
+#  endif
+
 #  define CONFIG_LV_MEM_SIZE (CONFIG_LV_MEM_SIZE_KILOBYTES * 1024U)
+#endif
+
+#ifdef CONFIG_LV_MEM_POOL_EXPAND_SIZE_KILOBYTES
+#  define CONFIG_LV_MEM_POOL_EXPAND_SIZE (CONFIG_LV_MEM_POOL_EXPAND_SIZE_KILOBYTES * 1024U)
 #endif
 
 /*------------------
@@ -146,6 +204,8 @@ extern "C" {
 #  define CONFIG_LV_FONT_DEFAULT &lv_font_montserrat_28_compressed
 #elif defined(CONFIG_LV_FONT_DEFAULT_DEJAVU_16_PERSIAN_HEBREW)
 #  define CONFIG_LV_FONT_DEFAULT &lv_font_dejavu_16_persian_hebrew
+#elif defined(CONFIG_LV_FONT_DEFAULT_SIMSUN_14_CJK)
+#  define CONFIG_LV_FONT_DEFAULT &lv_font_simsun_14_cjk
 #elif defined(CONFIG_LV_FONT_DEFAULT_SIMSUN_16_CJK)
 #  define CONFIG_LV_FONT_DEFAULT &lv_font_simsun_16_cjk
 #elif defined(CONFIG_LV_FONT_DEFAULT_UNSCII_8)
@@ -173,6 +233,30 @@ extern "C" {
 #  define CONFIG_LV_BIDI_BASE_DIR_DEF LV_BASE_DIR_RTL
 #elif defined(CONFIG_LV_BASE_DIR_AUTO)
 #  define CONFIG_LV_BIDI_BASE_DIR_DEF LV_BASE_DIR_AUTO
+#endif
+
+/*------------------
+ * SDL
+ *-----------------*/
+
+#ifdef CONFIG_LV_SDL_RENDER_MODE_PARTIAL
+#  define CONFIG_LV_SDL_RENDER_MODE LV_DISPLAY_RENDER_MODE_PARTIAL
+#elif defined(CONFIG_LV_SDL_RENDER_MODE_DIRECT)
+#  define CONFIG_LV_SDL_RENDER_MODE LV_DISPLAY_RENDER_MODE_DIRECT
+#elif defined(CONFIG_LV_SDL_RENDER_MODE_FULL)
+#  define CONFIG_LV_SDL_RENDER_MODE LV_DISPLAY_RENDER_MODE_FULL
+#endif
+
+/*------------------
+ * LINUX FBDEV
+ *-----------------*/
+
+#ifdef CONFIG_LV_LINUX_FBDEV_RENDER_MODE_PARTIAL
+#  define CONFIG_LV_LINUX_FBDEV_RENDER_MODE LV_DISPLAY_RENDER_MODE_PARTIAL
+#elif defined(CONFIG_LV_LINUX_FBDEV_RENDER_MODE_DIRECT)
+#  define CONFIG_LV_LINUX_FBDEV_RENDER_MODE LV_DISPLAY_RENDER_MODE_DIRECT
+#elif defined(CONFIG_LV_LINUX_FBDEV_RENDER_MODE_FULL)
+#  define CONFIG_LV_LINUX_FBDEV_RENDER_MODE LV_DISPLAY_RENDER_MODE_FULL
 #endif
 
 #ifdef __cplusplus

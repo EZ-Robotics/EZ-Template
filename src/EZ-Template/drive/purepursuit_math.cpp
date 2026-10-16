@@ -4,8 +4,16 @@ License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
+#include <array>
+#include <cmath>
+#include <vector>
+
 #include "EZ-Template/api.hpp"
 #include "EZ-Template/util.hpp"
+
+namespace ez {
+// How close the robot has to be to a target, in inches, to count as already standing on it
+static constexpr double ON_TARGET_RADIUS = 0.1;
 
 // Returns a distance that the robot is away from target, but this keeps sign.
 double Drive::is_past_target(pose target, pose current) {
@@ -21,8 +29,7 @@ double Drive::is_past_target(pose target, pose current) {
   double fake_angle = util::to_rad((util::absolute_angle_to_point(ptf, {fakek_x, fakek_y})) + add);
 
   // Rotate around origin
-  double fake_x = (fakek_x * cos(fake_angle)) - (fakek_y * sin(fake_angle));
-  double fake_y = (fakek_y * cos(fake_angle)) + (fakek_x * sin(fake_angle));
+  double fake_y = (fakek_y * std::cos(fake_angle)) + (fakek_x * std::sin(fake_angle));
 
   return fake_y;
 }
@@ -52,15 +59,21 @@ std::vector<pose> Drive::find_point_to_face(pose current, pose target, drive_dir
   double angle = 0.0;
   if (tx_cx != 0) {
     m = (target.y - current.y) / tx_cx;
-    angle = 90.0 - util::to_deg(atan(m));
+    angle = 90.0 - util::to_deg(std::atan(m));
   }
+
+  // The target is on top of the robot, so there is no line from the robot to the target to face along, and both
+  // points are the same distance away.  Use the robot's own heading for the line and face the point ahead of it,
+  // otherwise the tie picks the point behind the robot and it turns around.
+  bool on_target = util::distance_to_point(target, current) < ON_TARGET_RADIUS;
+  if (on_target) angle = current.theta;
   pose ptf1 = util::vector_off_point(odom_look_ahead_get(), {target.x, target.y, angle});
   pose ptf2 = util::vector_off_point(-odom_look_ahead_get(), {target.x, target.y, angle});
 
   if (set_global) {
     double ptf1_dist = util::distance_to_point(ptf1, current);
     double ptf2_dist = util::distance_to_point(ptf2, current);
-    if (ptf1_dist > ptf2_dist) {
+    if (on_target || ptf1_dist > ptf2_dist) {
       ptf1_running = true;
     } else {
       ptf1_running = false;
@@ -69,14 +82,20 @@ std::vector<pose> Drive::find_point_to_face(pose current, pose target, drive_dir
   // printf("\n");
   point_to_face = {ptf1, ptf2};
 
-  // printf("pft1(%.2f, %.2f, %.2f)   ptf2(%.2f, %.2f, %.2f)      angle: %.2f   y2-y1: %.2f   x2-x1: %.2f\n", point_to_face[0].x, point_to_face[0].y, point_to_face[0].theta, point_to_face[1].x, point_to_face[1].y, point_to_face[1].theta, angle, (target.y - current.y), tx_cx);
+  // printf("pft1(%.2f, %.2f, %.2f)   ptf2(%.2f, %.2f, %.2f)      angle: %.2f   y2-y1: %.2f   x2-x1: %.2f\n", point_to_face[0].x, point_to_face[0].y,
+  // point_to_face[0].theta, point_to_face[1].x, point_to_face[1].y, point_to_face[1].theta, angle, (target.y - current.y), tx_cx);
 
   return {ptf1, ptf2};
 }
 
 // Inject point based on https://www.chiefdelphi.com/t/paper-implementation-of-the-adaptive-pure-pursuit-controller/166552
-std::vector<odom> Drive::inject_points(std::vector<ez::odom> imovements) {
-  injected_pp_index.clear();
+std::vector<odom> Drive::inject_points(std::vector<ez::odom> imovements, std::vector<int>* out_injected_pp_index) {
+  // Built into a local vector and published under drive_mutex in one swap at the end, not
+  // written to the member in place unlocked: a concurrent pid_wait_until_index_started() read
+  // (exit_conditions.cpp) could otherwise observe a partially-rebuilt vector mid-function. See
+  // the same fix and its full rationale in set_odom_pid.cpp's pid_odom_pp_set() (finding #16,
+  // Step 3 audit).
+  std::vector<int> new_injected_pp_index;
   bool first_point_added = false;
 
   // Create new vector that includes the starting point
@@ -85,7 +104,7 @@ std::vector<odom> Drive::inject_points(std::vector<ez::odom> imovements) {
 
   // Inject new parent points for boomerang
   int t = 0;
-  for (int i = 0; i < input.size() - 1; i++) {
+  for (std::size_t i = 0; i < input.size() - 1; i++) {
     int j = i + t;
     j = i;
     if (input[j].target.theta != ANGLE_NOT_SET) {
@@ -102,33 +121,30 @@ std::vector<odom> Drive::inject_points(std::vector<ez::odom> imovements) {
   }
 
   // Shift all the turn behaviors 1 parent point down
-  for (int i = 0; i < input.size() - 1; i++) {
+  for (std::size_t i = 0; i < input.size() - 1; i++) {
     input[i].turn_behavior = input[i + 1].turn_behavior;
   }
   input.back().turn_behavior = raw;
 
   std::vector<odom> output;  // Output vector
   int output_index = -1;     // Keeps track of current index
-  injected_pp_index.push_back(0);
+  new_injected_pp_index.push_back(0);
 
   bool allow_injecting = false;  // Flag to disable injecting for the first few points
 
   // This for loop runs for how many points there are minus one because there is one less vector then points
-  for (int i = 0; i < input.size() - 1; i++) {
+  for (std::size_t i = 0; i < input.size() - 1; i++) {
     // Figure out how many points fit in the vector
     int num_of_points_that_fit = (util::distance_to_point(input[i + 1].target, input[i].target)) / SPACING;
 
     // Add parent point
     // Make sure the robot is looking at next point
-    output.push_back({{input[i].target.x, input[i].target.y, input[i].target.theta},
-                      input[i].drive_direction,
-                      input[i].max_xy_speed,
-                      input[i].turn_behavior});
+    output.push_back({{input[i].target.x, input[i].target.y, input[i].target.theta}, input[i].drive_direction, input[i].max_xy_speed, input[i].turn_behavior});
     output_index++;
 
     // don't let the injected point after boomerang in
     if (i != 0 && input[i - 1].target.theta == ANGLE_NOT_SET) {
-      injected_pp_index.push_back(output_index);
+      new_injected_pp_index.push_back(output_index);
     }
 
     // Add the injected points
@@ -140,8 +156,7 @@ std::vector<odom> Drive::inject_points(std::vector<ez::odom> imovements) {
 
         // A one time flag to stop points from being injected for LOOK_AHEAD from current
         // https://github.com/EZ-Robotics/EZ-Template/issues/152
-        if (util::distance_to_point(new_point, input[0].target) >= odom_look_ahead_get())
-          allow_injecting = true;
+        if (util::distance_to_point(new_point, input[0].target) >= odom_look_ahead_get()) allow_injecting = true;
 
         // If the new point is basically the same as the parent point, remove it to save 10ms delay
         if (util::distance_to_point(new_point, input[i + 1].target) >= SPACING && allow_injecting) {
@@ -153,10 +168,11 @@ std::vector<odom> Drive::inject_points(std::vector<ez::odom> imovements) {
           }
 
           // Push new point to vector
-          output.push_back({{new_point.x, new_point.y, ANGLE_NOT_SET},
-                            input[i + 1].drive_direction,
-                            input[i + 1].max_xy_speed,
-                            new_turn_behavior});  // Setting this to raw will maintain the parent points turn behavior
+          output.push_back(
+              {{new_point.x, new_point.y, ANGLE_NOT_SET}, input[i + 1].drive_direction, input[i + 1].max_xy_speed, new_turn_behavior});  // Setting this to raw
+                                                                                                                                         // will maintain the
+                                                                                                                                         // parent points turn
+                                                                                                                                         // behavior
           output_index++;
         }
       } else {
@@ -167,7 +183,16 @@ std::vector<odom> Drive::inject_points(std::vector<ez::odom> imovements) {
   output.push_back(input.back());
   output_index++;
 
-  injected_pp_index.push_back(output_index);
+  new_injected_pp_index.push_back(output_index);
+
+  // See this function's doc in drive.hpp for why out_injected_pp_index changes what gets published,
+  // and when.
+  if (out_injected_pp_index) {
+    *out_injected_pp_index = std::move(new_injected_pp_index);
+  } else {
+    ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
+    injected_pp_index = std::move(new_injected_pp_index);
+  }
 
   // Return final vector
   return output;
@@ -175,15 +200,17 @@ std::vector<odom> Drive::inject_points(std::vector<ez::odom> imovements) {
 
 // Path smoothing based on https://medium.com/@jaems33/understanding-robot-motion-path-smoothing-5970c8363bc4
 std::vector<odom> Drive::smooth_path(std::vector<odom> ipath, double weight_smooth, double weight_data, double tolerance) {
-  double path[500][3];
-  double new_path[500][3];
+  if (ipath.size() < 3) return ipath;
+
+  std::vector<std::array<double, 3>> path(ipath.size());
+  std::vector<std::array<double, 3>> new_path(ipath.size());
   std::vector<bool> dont_touch;
   int t = 0;
   bool allow_injecting = false;
   bool boomerang_after_not_done = false;
 
   // Convert odom to array
-  for (int i = 0; i < ipath.size(); i++) {
+  for (std::size_t i = 0; i < ipath.size(); i++) {
     path[i][0] = new_path[i][0] = ipath[i].target.x;
     path[i][1] = new_path[i][1] = ipath[i].target.y;
     path[i][2] = new_path[i][2] = ipath[i].target.theta;
@@ -192,8 +219,7 @@ std::vector<odom> Drive::smooth_path(std::vector<odom> ipath, double weight_smoo
 
     // A one time flag to stop points from being smoothed for LOOK_AHEAD from current
     // https://github.com/EZ-Robotics/EZ-Template/issues/152
-    if (util::distance_to_point(ipath[i].target, ipath[0].target) > odom_look_ahead_get() && !allow_injecting)
-      allow_injecting = true;
+    if (util::distance_to_point(ipath[i].target, ipath[0].target) > odom_look_ahead_get() && !allow_injecting) allow_injecting = true;
 
     // if (t <= odom_look_ahead_get() / SPACING && (prev_point_angle_not_set || t != 0)))
     if (boomerang_after_not_done) {
@@ -218,11 +244,15 @@ std::vector<odom> Drive::smooth_path(std::vector<odom> ipath, double weight_smoo
     }
   }
 
+  // Constants that are valid but close to the limit settle very slowly, this keeps them from stalling the caller
+  constexpr int MAX_PASSES = 5000;
+  int passes = 0;
   double change = tolerance;
 
-  while (change >= tolerance) {
+  while (change >= tolerance && passes < MAX_PASSES) {
+    passes++;
     change = 0.0;
-    for (int i = 1; i < ipath.size() - 2; i++) {
+    for (std::size_t i = 1; i < ipath.size() - 2; i++) {
       // if (path[i][2] == ANGLE_NOT_SET) {
       if (!dont_touch[i]) {
         for (int j = 0; j < 2; j++) {
@@ -235,16 +265,24 @@ std::vector<odom> Drive::smooth_path(std::vector<odom> ipath, double weight_smoo
           y_i += weight_data * (x_i - y_i) + weight_smooth * (y_next + y_prev - (2.0 * y_i));
           new_path[i][j] = y_i;
 
-          change += abs(y_i - y_i_saved);
+          change += std::fabs(y_i - y_i_saved);
         }
       }
     }
   }
 
+  // print_after_unlock, not printf: some callers of this function still run it while holding
+  // drive_mutex (kLockedHelpers, test_locking_rule.cpp treats it as always-potentially-locked), and
+  // printf is a blocking call locking rule 2 forbids making while a guard is held. print_after_unlock
+  // is correct either way -- it prints at once when nothing is held (see lock.hpp).
+  if (passes >= MAX_PASSES && change >= tolerance)
+    drive_mutex.print_after_unlock(
+        "EZ-Template: path smoothing stopped at %d passes before it settled, so the path is less smooth than the constants ask for\n", MAX_PASSES);
+
   // Convert array to odom
   std::vector<odom> output = ipath;  // Set output to input so target angles, turn types and speed hold
   // Overwrite x and y
-  for (int i = 0; i < ipath.size(); i++) {
+  for (std::size_t i = 0; i < ipath.size(); i++) {
     output[i].target.x = new_path[i][0];
     output[i].target.y = new_path[i][1];
   }
@@ -281,11 +319,9 @@ double Drive::turn_is_toleranced(double target, double current, double input, do
   double long_error = longest - current;
   double short_error = shortest - current;
 
-  if (fabs(long_error) - fabs(short_error) >= turn_tolerance * 2.0)
-    return output;
+  if (fabs(long_error) - fabs(short_error) >= turn_tolerance * 2.0) return output;
 
   int long_error_sgn = util::sgn(long_error);
-  int short_error_sgn = util::sgn(short_error);
 
   if (turn_biased_left)
     output = long_error_sgn == -1 ? longest : shortest;
@@ -303,6 +339,7 @@ double Drive::turn_left(double target, double current, bool print) {
   if (util::sgn(shortest - current) == -1) {
     output = shortest;
 
+    if (print) printf("%.2f\n", output);
     return output;
   }
 
@@ -315,12 +352,13 @@ double Drive::turn_left(double target, double current, bool print) {
 
 // Always turn right
 double Drive::turn_right(double target, double current, bool print) {
-  if (print) printf("LEFT   Target: %.2f   Current: %.2f      New Target: ", target, current);
+  if (print) printf("RIGHT  Target: %.2f   Current: %.2f      New Target: ", target, current);
   double shortest = util::turn_shortest(target, current, false);
   double output = shortest;
   if (util::sgn(shortest - current) == 1) {
     output = shortest;
 
+    if (print) printf("%.2f\n", output);
     return output;
   }
 
@@ -357,3 +395,4 @@ double Drive::new_turn_target_compute(double target, double current, ez::e_angle
   }
   return new_target;
 }
+}  // namespace ez

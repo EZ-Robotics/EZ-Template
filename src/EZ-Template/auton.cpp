@@ -6,11 +6,11 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "EZ-Template/api.hpp"
 
-Auton::Auton() {
+ez::Auton::Auton() {
   Name = "";
   auton_call = nullptr;
 }
-Auton::Auton(std::string name, std::function<void()> callback) {
+ez::Auton::Auton(std::string name, std::function<void()> callback) {
   Name = name;
   auton_call = callback;
 }

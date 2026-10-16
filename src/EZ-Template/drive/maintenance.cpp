@@ -1,0 +1,116 @@
+/*
+This Source Code Form is subject to the terms of the Mozilla Public
+License, v. 2.0. If a copy of the MPL was not distributed with this
+file, You can obtain one at http://mozilla.org/MPL/2.0/.
+*/
+
+#include <algorithm>
+#include <cmath>
+#include <limits>
+
+#include "EZ-Template/drive/drive.hpp"
+#include "EZ-Template/util.hpp"
+#include "api.h"
+
+using namespace ez;
+
+// Consecutive passes (at util::DELAY_TIME per pass) a rotating drive's IMU
+// reading can stay unchanged before it's considered stuck.
+constexpr int IMU_STUCK_PASSES_THRESHOLD = 50;  // 500 ms
+// Minimum drive sensor movement (in), or minimum left-vs-right divergence (in),
+// between passes to consider the robot moving/rotating.
+constexpr double IMU_DRIVE_MOTION_THRESHOLD_IN = 0.05;
+// Consecutive passes the good IMUs' spread must stay over the (tunable) drift
+// threshold before it's reported, same debounce window as the stuck check.
+constexpr int IMU_DRIFT_PASSES_THRESHOLD = 50;  // 500 ms
+
+void Drive::check_imu_task() {
+  // Don't let this function run if IMU calibration is incomplete
+  if (!imu_calibration_complete) return;
+
+  // Figure out if the drive is actually ROTATING since the last pass, using
+  // the same left/right drive sensors everything else here already reads.
+  // A straight leg moves both sides together with no rotation at all -- a
+  // healthy IMU correctly reports a flat heading the whole time, which is
+  // indistinguishable from a stuck sensor if this only looked at whether the
+  // drive moved. Gating on the sides *diverging* (left delta vs. right delta)
+  // instead means a plain straight leg, however long, never looks suspect,
+  // while an in-place turn or an arc still shows up as rotation.
+  double l_now = drive_sensor_left();
+  double r_now = drive_sensor_right();
+  double l_delta = l_now - watchdog_l_last;
+  double r_delta = r_now - watchdog_r_last;
+  bool rotating = std::fabs(l_delta - r_delta) > IMU_DRIVE_MOTION_THRESHOLD_IN;
+  watchdog_l_last = l_now;
+  watchdog_r_last = r_now;
+
+  // Update each currently-good IMU's stuck-pass counter
+  for (size_t i = 0; i < good_imus.size(); i++) {
+    pros::Imu* n = good_imus[i];
+    int port = n->get_port();
+    double reading = get_this_imu(n);
+
+    if (n->is_installed() && std::isfinite(reading)) {
+      bool unchanged = reading == prev_imu_values[port].first;
+      if (rotating && unchanged)
+        imu_stuck_passes[port] += 1;
+      else
+        imu_stuck_passes[port] = 0;
+    }
+
+    prev_imu_values[port].first = reading;
+  }
+
+  // An IMU is bad if it's unplugged, its reading isn't finite, or it's been
+  // stuck (unchanged while the drive was rotating) for too many passes in a row.
+  auto is_bad = [this](pros::Imu* n) {
+    int port = n->get_port();
+    return !n->is_installed() || !std::isfinite(prev_imu_values[port].first) || imu_stuck_passes[port] >= IMU_STUCK_PASSES_THRESHOLD;
+  };
+
+  good_imus.erase(std::remove_if(good_imus.begin(), good_imus.end(), is_bad), good_imus.end());
+
+  // Keep the primary IMU pointed at the front of the healthy deque
+  if (!good_imus.empty() && good_imus.front() != imu) {
+    imu = good_imus.front();
+    drive_mutex.print_after_unlock("EZ-Template: switching primary IMU to port %d\n", imu->get_port());
+  }
+
+  // Cross-check the currently-good IMUs against each other. A frozen sensor
+  // is already caught above; this catches one that's still moving but has
+  // quietly drifted away from the rest, e.g. from heat or a bump. It never
+  // ejects anything -- with only two IMUs there is no way to tell which one
+  // is actually wrong -- it only reports the disagreement.
+  if (good_imus.size() >= 2) {
+    double lo = std::numeric_limits<double>::infinity();
+    double hi = -std::numeric_limits<double>::infinity();
+    for (pros::Imu* n : good_imus) {
+      double reading = get_this_imu(n);
+      if (!std::isfinite(reading)) continue;
+      lo = std::min(lo, reading);
+      hi = std::max(hi, reading);
+    }
+    double spread = (std::isfinite(lo) && std::isfinite(hi)) ? hi - lo : 0.0;
+
+    if (spread > imu_drift_threshold_deg)
+      imu_drift_passes++;
+    else
+      imu_drift_passes = 0;
+
+    bool was_diverged = imu_drift_deg > 0.0;
+    imu_drift_deg = imu_drift_passes >= IMU_DRIFT_PASSES_THRESHOLD ? spread : 0.0;
+    if (imu_drift_deg > 0.0 && !was_diverged) {
+      drive_mutex.print_after_unlock("EZ-Template: good IMUs disagree by %.0f deg (threshold %.0f)\n", imu_drift_deg, imu_drift_threshold_deg);
+    }
+  } else {
+    imu_drift_passes = 0;
+    imu_drift_deg = 0.0;
+  }
+}
+
+void Drive::imu_drift_threshold_set(double degrees) {
+  if (degrees <= 0.0) return;
+  imu_drift_threshold_deg = degrees;
+}
+
+double Drive::imu_drift_threshold_get() { return imu_drift_threshold_deg; }

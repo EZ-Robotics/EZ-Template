@@ -6,14 +6,17 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "EZ-Template/tracking_wheel.hpp"
 
+#include <cmath>
+
 #include "EZ-Template/util.hpp"
 
-using namespace ez;
+// using namespace ez;
+
+namespace ez {
 
 // ADI Encoder
 tracking_wheel::tracking_wheel(std::vector<int> ports, double wheel_diameter, double distance_to_center, double ratio)
-    : adi_encoder(abs(ports[0]), abs(ports[1]), util::reversed_active(ports[0])),
-      smart_encoder(-1) {
+    : adi_encoder(std::abs(ports[0]), std::abs(ports[1]), util::reversed_active(ports[0])), smart_encoder(-1) {
   IS_TRACKER = DRIVE_ADI_ENCODER;
 
   distance_to_center_set(distance_to_center);
@@ -24,8 +27,7 @@ tracking_wheel::tracking_wheel(std::vector<int> ports, double wheel_diameter, do
 
 // ADI Encoder in 3-wire expander
 tracking_wheel::tracking_wheel(int smart_port, std::vector<int> ports, double wheel_diameter, double distance_to_center, double ratio)
-    : adi_encoder({abs(smart_port), abs(ports[0]), abs(ports[1])}, util::reversed_active(ports[0])),
-      smart_encoder(-1) {
+    : adi_encoder({std::abs(smart_port), std::abs(ports[0]), std::abs(ports[1])}, util::reversed_active(ports[0])), smart_encoder(-1) {
   IS_TRACKER = DRIVE_ADI_ENCODER;
 
   distance_to_center_set(distance_to_center);
@@ -36,8 +38,7 @@ tracking_wheel::tracking_wheel(int smart_port, std::vector<int> ports, double wh
 
 // Rotation Sensor
 tracking_wheel::tracking_wheel(int port, double wheel_diameter, double distance_to_center, double ratio)
-    : adi_encoder(-1, -1, false),
-      smart_encoder(abs(port)) {
+    : adi_encoder(-1, -1, false), smart_encoder(std::abs(port)) {
   IS_TRACKER = DRIVE_ROTATION;
   smart_encoder.set_reversed(util::reversed_active(port));
 
@@ -71,20 +72,31 @@ double tracking_wheel::ticks_per_inch() {
 }
 
 double tracking_wheel::get_raw() {
-  if (IS_TRACKER == DRIVE_ROTATION) {
-    return smart_encoder.get_position();
-  }
-  return adi_encoder.get_value();
+  // Both get_position() and get_value() return their signed 32-bit reading as an int32_t,
+  // widened here to double before it's checked -- so PROS_ERR (a real, finite value,
+  // INT32_MAX) and PROS_ERR_F (a real device could hand back a non-finite double on other
+  // read paths) are both caught the same way, instead of ever being handed to tracking math.
+  double raw = (IS_TRACKER == DRIVE_ROTATION) ? (double)smart_encoder.get_position() : (double)adi_encoder.get_value();
+
+  last_read_ok_ = std::isfinite(raw) && raw != PROS_ERR && raw != PROS_ERR_F;
+  if (last_read_ok_) last_good_raw = raw;
+  return last_good_raw;
 }
+bool tracking_wheel::last_read_ok() { return last_read_ok_; }
+
 double tracking_wheel::get() {
   double tpi = ticks_per_inch();
   double raw = get_raw();
-  if (tpi != 0)
-    return raw / tpi;
+  if (tpi != 0) return raw / tpi;
   return raw;
 }
 
 void tracking_wheel::reset() {
+  // Otherwise a fault hitting right after a reset would fall back to a stale pre-reset
+  // reading instead of the sensor's freshly-zeroed value.
+  last_good_raw = 0.0;
+  last_read_ok_ = true;
+
   if (IS_TRACKER == DRIVE_ADI_ENCODER) {
     adi_encoder.reset();
     return;
@@ -93,3 +105,5 @@ void tracking_wheel::reset() {
     return;
   }
 }
+}  // namespace ez
+// namespace ez

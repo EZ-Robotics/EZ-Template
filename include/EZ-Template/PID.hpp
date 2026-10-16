@@ -6,12 +6,15 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #pragma once
 
+#include <cstdint>
+#include <limits>
+
 #include "EZ-Template/util.hpp"
 #include "api.h"
 
 namespace ez {
 class PID {
- public:
+public:
   /**
    * Default constructor.
    */
@@ -26,7 +29,7 @@ class PID {
    *        ki
    * \param d
    *        kD
-   * \param p_start_i
+   * \param start_i
    *        error value that i starts within
    * \param name
    *        std::string of name that prints
@@ -73,22 +76,27 @@ class PID {
    * Set's constants for exit conditions.
    *
    * \param p_small_exit_time
-   *        sets small_exit_time, timer for to exit within smalL_error
+   *        sets small_exit_time, timer for to exit within small_error
    * \param p_small_error
-   *        sets smalL_error, timer will start when error is within this
+   *        sets small_error, timer will start when error is within this
    * \param p_big_exit_time
    *        sets big_exit_time, timer for to exit within big_error
    * \param p_big_error
    *        sets big_error, timer will start when error is within this
    * \param p_velocity_exit_time
-   *        sets velocity_exit_time, timer will start when velocity is 0
+   *        sets velocity_exit_time, timer will start when the sensor is moving slower than the velocity exit speed (5 units per second unless
+   *        velocity_sensor_main_exit_set() changed it) after the robot has moved.  If the robot never moves, it starts after 1 second.
+   * \param p_mA_timeout
+   *        sets mA_timeout, time the motor can be over its current limit before exiting.  Only checked by the exit_condition overloads that take a motor or
+   *        motors.
    */
-  void exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time = 0, double p_big_error = 0, int p_velocity_exit_time = 0, int p_mA_timeout = 0);
+  void exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time = 0, double p_big_error = 0, int p_velocity_exit_time = 0,
+                          int p_mA_timeout = 0);
 
   /**
    * Sets PID target.
    *
-   * \param target
+   * \param input
    *        new target for PID
    */
   void target_set(double input);
@@ -129,7 +137,8 @@ class PID {
   bool constants_set_check();
 
   /**
-   * Resets all variables to 0.  This does not reset constants.
+   * Resets output, target, error, previous error and the integral to 0.  This does not reset constants, exit
+   * condition timers, or the previous sensor value used for the derivative (see motion_reset() and timers_reset()).
    */
   void variables_reset();
 
@@ -147,7 +156,9 @@ class PID {
    * Updates a secondary sensor for velocity exiting.  Ideal use is IMU during normal drive motions.
    *
    * \param secondary_sensor
-   *        secondary sensor value
+   *        the secondary sensor's current velocity or acceleration reading, not its position.  It counts as
+   *        stopped while the absolute value of this is at or below velocity_sensor_secondary_exit_get().
+   *        EZ-Template passes the IMU acceleration magnitude.
    */
   void velocity_sensor_secondary_set(double secondary_sensor);
 
@@ -170,7 +181,9 @@ class PID {
   bool velocity_sensor_secondary_toggle_get();
 
   /**
-   * Sets the threshold that the main sensor will return 0 velocity within.
+   * Sets the velocity exit's speed: how slow the sensor has to be moving for the velocity exit's timer to run, as the distance it moves in one
+   * 10 ms tick.  The speed is measured over the last 100 ms.  The default is 0.05, which is 5 units per second.  This is not the stop speed (see
+   * stop_speed_set()), which only the small and big exits use.
    *
    * \param zero
    *        a small double
@@ -178,12 +191,34 @@ class PID {
   void velocity_sensor_main_exit_set(double zero);
 
   /**
-   * Returns the threshold that the main sensor will return 0 velocity within.
+   * Returns the velocity exit's speed as the distance the sensor moves in one 10 ms tick.
    */
   double velocity_sensor_main_exit_get();
 
   /**
-   * Sets the threshold that the secondary sensor will return 0 velocity within.
+   * Sets the stop speed: how slow the sensor has to be moving to count as stopped, in sensor units per second.  The small and big exits only
+   * count time while the sensor is under it.  The speed is measured from the sensor over the last 100 ms.  The default is 5.
+   *
+   * \param units_per_s
+   *        sensor units per second
+   */
+  void stop_speed_set(double units_per_s);
+
+  /**
+   * Returns the stop speed, in sensor units per second.
+   */
+  double stop_speed_get();
+
+  /**
+   * Returns how fast the sensor has been moving over the last 100 ms, in sensor units per second.  It updates on every compute()/compute_error().
+   */
+  double speed_get();
+
+  /**
+   * Sets the threshold that the secondary sensor will read as stopped within.  Despite the name, EZ-Template
+   * feeds this sensor an acceleration (the imu's), not a velocity: a steady cruise also reads near 0
+   * acceleration, so this can't tell cruising from actually stalled.  That's why the secondary sensor is off
+   * by default (see Drive::pid_drive_exit_condition_set and friends).
    *
    * \param zero
    *        a small double
@@ -221,7 +256,7 @@ class PID {
    * \param print = false
    *        if true, prints when complete
    */
-  ez::exit_output exit_condition(std::vector<pros::Motor> sensor, bool print = false);
+  ez::exit_output exit_condition(const std::vector<pros::Motor>& sensor, bool print = false);
 
   /**
    * Iterative exit condition for PID.
@@ -231,7 +266,7 @@ class PID {
    * \param print = false
    *        if true, prints when complete
    */
-  ez::exit_output exit_condition(pros::MotorGroup sensor, bool print = false);
+  ez::exit_output exit_condition(const pros::MotorGroup& sensor, bool print = false);
 
   /**
    * Sets the name of the PID that prints during exit conditions.
@@ -269,6 +304,16 @@ class PID {
   void timers_reset();
 
   /**
+   * Resets the parts of the PID that must not carry over from one motion to the next.
+   * Clears the integral and primes the derivative so the first iteration of a new motion
+   * does not see a spike from the previous motion's final position.
+   *
+   * \param current
+   *        the sensor value the next compute() will be given
+   */
+  void motion_reset(double current);
+
+  /**
    * PID variables.
    */
   double output = 0.0;
@@ -279,15 +324,29 @@ class PID {
   double prev_current = 0.0;
   double integral = 0.0;
   double derivative = 0.0;
-  long time = 0;
-  long prev_time = 0;
 
- private:
-  double velocity_zero_main = 0.05;
+private:
+  double stop_speed = 5.0;          // units per second, gates the small and big exits
+  double velocity_zero_main = 5.0;  // units per second, the velocity exit's speed
+  // The sensor's speed over the last SPEED_WINDOW ms, in units per second, and where that window started
+  double speed = 0.0;
+  double speed_start_cur = 0.0;
+  std::uint32_t speed_start_ms = 0;
+  static constexpr int SPEED_WINDOW = 100;
   double velocity_zero_secondary = 0.075;
   int i = 0, j = 0, k = 0, l = 0, m = 0;
+  int arm_timer = 0;
+  bool velocity_armed = false;
+  static constexpr int VELOCITY_ARM_FALLBACK = 1000;
+  std::uint32_t last_exit_ms = 0;
+  bool have_last_exit_ms = false;
+  int exit_elapsed_ms();
+  ez::exit_output exit_condition_core(int elapsed, bool print);
   bool is_mA = false;
-  double second_sensor = 0.0;
+  // NaN, not 0.0: 0.0 would read as "not accelerating" and falsely satisfy the secondary velocity
+  // exit before anyone has ever called velocity_sensor_secondary_set().  exit_condition() only treats
+  // this as stopped when it's finite.
+  double second_sensor = std::numeric_limits<double>::quiet_NaN();
 
   std::string name;
   bool name_active = false;

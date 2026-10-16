@@ -11,12 +11,14 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include <string.h>
 
 #include "api.h"
-#include "okapi/api/units/QAngle.hpp"
-#include "okapi/api/units/QLength.hpp"
-#include "okapi/api/units/QTime.hpp"
-#include "util.hpp"
+#include "EZ-Units/units.hpp"
 
-using namespace okapi::literals;
+// include/EZ-Units/units.hpp is vendored from EZ-Units, and a standalone EZ-Units install ships the
+// same file at the same path. Refuse to build against a different major version.
+static_assert(EZ_UNITS_VERSION_MAJOR == 1, "EZ-Template needs EZ-Units 1.x, check include/EZ-Units/units.hpp");
+
+// Puts the unit literals (24_in, 90_deg, 100_ms, ...) in scope for user code.
+using namespace ez::literals;
 
 /**
  * Controller.
@@ -33,7 +35,7 @@ void ez_template_print();
 /**
  * Prints to the brain screen in one string.
  *
- * Splits input between lines with '\n' or when text longer then 32 characters.
+ * Splits input between lines with '\n' or when text is longer than 38 characters.
  *
  * \param text
  *        input string
@@ -51,65 +53,77 @@ void screen_print(std::string text, int line = 0);
 /**
  * Enum for split and single stick arcade.
  */
-enum e_type { SINGLE = 0,
-              SPLIT = 1 };
+enum e_type {
+  SINGLE = 0,
+  SPLIT = 1
+};
 
 /**
- * Enum for split and single stick arcade.
+ * Enum for which side of the drive a swing is run on (LEFT_SWING or RIGHT_SWING).
  */
-enum e_swing { LEFT_SWING = 0,
-               RIGHT_SWING = 1 };
+enum e_swing {
+  LEFT_SWING = 0,
+  RIGHT_SWING = 1
+};
 
 /**
  * Enum for PID::exit_condition outputs.
  */
-enum exit_output { RUNNING = 1,
-                   SMALL_EXIT = 2,
-                   BIG_EXIT = 3,
-                   VELOCITY_EXIT = 4,
-                   mA_EXIT = 5,
-                   ERROR_NO_CONSTANTS = 6 };
+enum exit_output {
+  RUNNING = 1,
+  SMALL_EXIT = 2,
+  BIG_EXIT = 3,
+  VELOCITY_EXIT = 4,
+  mA_EXIT = 5,
+  ERROR_NO_CONSTANTS = 6
+};
 
 /**
- * Enum for split and single stick arcade.
+ * Enum for the drive's current mode: which movement, if any, is running.
  */
-enum e_mode { DISABLE = 0,
-              SWING = 1,
-              TURN = 2,
-              TURN_TO_POINT = 3,
-              DRIVE = 4,
-              POINT_TO_POINT = 5,
-              PURE_PURSUIT = 6 };
+enum e_mode {
+  DISABLE = 0,
+  SWING = 1,
+  TURN = 2,
+  TURN_TO_POINT = 3,
+  DRIVE = 4,
+  POINT_TO_POINT = 5,
+  PURE_PURSUIT = 6
+};
 
 /**
  * Enum for drive directions.
  */
-enum drive_directions { FWD = 0,
-                        FORWARD = FWD,
-                        fwd = FWD,
-                        forward = FWD,
-                        REV = 1,
-                        REVERSE = REV,
-                        rev = REV,
-                        reverse = REV };
+enum drive_directions {
+  FWD = 0,
+  FORWARD = FWD,
+  fwd = FWD,
+  forward = FWD,
+  REV = 1,
+  REVERSE = REV,
+  rev = REV,
+  reverse = REV
+};
 
 /**
  * Enum for turn types.
  */
-enum e_angle_behavior { raw = 0,
-                        left_turn = 1,
-                        LEFT_TURN = 1,
-                        counterclockwise = 1,
-                        ccw = 1,
-                        right_turn = 2,
-                        RIGHT_TURN = 2,
-                        clockwise = 2,
-                        cw = 2,
-                        shortest = 3,
-                        longest = 4 };
+enum e_angle_behavior {
+  raw = 0,
+  left_turn = 1,
+  LEFT_TURN = 1,
+  counterclockwise = 1,
+  ccw = 1,
+  right_turn = 2,
+  RIGHT_TURN = 2,
+  clockwise = 2,
+  cw = 2,
+  shortest = 3,
+  longest = 4
+};
 
 const double ANGLE_NOT_SET = 0.0000000000000000000001;
-const okapi::QAngle p_ANGLE_NOT_SET = 0.0000000000000000000001_deg;
+const ez::QAngle p_ANGLE_NOT_SET = 0.0000000000000000000001_deg;
 
 /**
  * Struct for coordinates.
@@ -124,9 +138,9 @@ typedef struct pose {
  * Struct for united coordinates.
  */
 typedef struct united_pose {
-  okapi::QLength x;
-  okapi::QLength y;
-  okapi::QAngle theta = p_ANGLE_NOT_SET;
+  ez::QLength x;
+  ez::QLength y;
+  ez::QAngle theta = p_ANGLE_NOT_SET;
 } united_pose;
 
 /**
@@ -151,6 +165,9 @@ typedef struct united_odom {
 
 /**
  * Outputs string for exit_condition enum.
+ *
+ * \param input
+ *        exit condition output to convert to a string
  */
 std::string exit_to_string(exit_output input);
 
@@ -178,7 +195,7 @@ int places_after_decimal(double input, int min = 0);
 std::string to_string_with_precision(double input, int n = 2);
 
 /**
- * Returns 1 if input is positive and -1 if input is negative.
+ * Returns 1 if input is positive, -1 if input is negative, and 0 if input is 0.
  *
  * \param input
  *        your input value
@@ -216,6 +233,43 @@ double clamp(double input, double max, double min);
  *        the absolute value maximum input can be
  */
 double clamp(double input, double max);
+
+/**
+ * The largest joystick curve scale the library will hold.  Past this, a stick at three quarters
+ * already drives the wheels at only about 13%, so there is nothing useful above it.
+ */
+const double MAX_CURVE_SCALE = 20.0;
+
+/**
+ * Returns a joystick curve scale restricted to 0 - MAX_CURVE_SCALE.  A negative scale would
+ * amplify small stick inputs instead of softening them, so it is treated as no curve.  NaN
+ * becomes 0.
+ *
+ * \param scale
+ *        your curve scale
+ */
+double curve_scale_clamp(double scale);
+
+/**
+ * Mixes a forward and turn joystick value into left and right outputs using curvature drive.
+ *
+ * The turn value is scaled by the forward speed, so the robot follows the same arc no matter how fast it is
+ * driving.  A turn value scaled by forward speed can't turn on a point, so the scale never drops below
+ * point_turn_gain.  Below that speed this behaves like arcade with turning scaled by point_turn_gain.
+ *
+ * If either side goes past 127, both are divided by the larger one.  This keeps the ratio between the sides,
+ * which keeps the arc, at the cost of top speed.
+ *
+ * \param fwd
+ *        forward joystick value, -127 to 127
+ * \param turn
+ *        turn joystick value, -127 to 127
+ * \param point_turn_gain
+ *        0 to 1.  0 is pure curvature, 1 is pure arcade
+ * \return
+ *        {left, right}, both within -127 to 127
+ */
+std::pair<double, double> curvature_mix(double fwd, double turn, double point_turn_gain);
 
 /**
  * Is the SD card plugged in?
@@ -306,7 +360,7 @@ double turn_shortest(double target, double current, bool print = false);
 double turn_longest(double target, double current, bool print = false);
 
 /**
- * Converts pose with okapi units to a pose without okapi units.
+ * Converts pose with units to a pose without units.
  *
  * \param input
  *        a pose with units
@@ -314,10 +368,10 @@ double turn_longest(double target, double current, bool print = false);
 pose united_pose_to_pose(united_pose input);
 
 /**
- * Converts vector of poses with okapi units to a vector of poses without okapi units.
+ * Converts vector of odom movements with units to a vector of odom movements without units.
  *
  * \param inputs
- *        poses with units
+ *        odom movements with units
  */
 std::vector<odom> united_odoms_to_odoms(std::vector<united_odom> inputs);
 

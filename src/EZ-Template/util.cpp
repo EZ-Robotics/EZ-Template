@@ -43,7 +43,7 @@ std::string get_last_word(std::string text) {
 }
 std::string get_rest_of_the_word(std::string text, int position) {
   std::string word = "";
-  for (int i = position; i < text.length(); i++) {
+  for (int i = position; i < (int)text.length(); i++) {
     if (text[i] != ' ' && text[i] != '\n') {
       word += text[i];
     } else {
@@ -55,15 +55,25 @@ std::string get_rest_of_the_word(std::string text, int position) {
 
 void screen_print(std::string text, int line) {
   int CurrAutoLine = line;
-  std::vector<string> texts = {};
+
+  if (CurrAutoLine < 0 || CurrAutoLine > 7) return;
+
+  if (text.empty()) {
+    screen_line_clear(CurrAutoLine);
+    return;
+  }
+
+  std::vector<std::string> texts = {};
   std::string temp = "";
 
-  for (int i = 0; i < text.length(); i++) {
+  for (int i = 0; i < (int)text.length(); i++) {
     if (text[i] != '\n' && temp.length() + 1 > 38) {
       auto last_word = get_last_word(temp);
       if (last_word == temp) {
+        // One word fills the whole line, so hard wrap it.  The character that
+        // didn't fit is added to the new line below, don't add it here too.
         texts.push_back(temp);
-        temp = text[i];
+        temp = "";
       } else {
         int size = last_word.length();
 
@@ -73,14 +83,15 @@ void screen_print(std::string text, int line) {
         last_word += rest_of_word;
         i += rest_of_word.length();
         temp = last_word;
-        if (i >= text.length() - 1) {
+        if (i >= (int)text.length() - 1) {
           texts.push_back(temp);
           break;
         }
       }
     }
-    if (i >= text.length() - 1) {
-      temp += text[i];
+    if (i >= (int)text.length() - 1) {
+      // A trailing newline ends the last line, it isn't a character to draw.
+      if (text[i] != '\n') temp += text[i];
       texts.push_back(temp);
       temp = "";
       break;
@@ -91,14 +102,21 @@ void screen_print(std::string text, int line) {
       temp += text[i];
     }
   }
+  std::string last_line = "";
   for (auto i : texts) {
     if (CurrAutoLine > 7) {
-      pros::lcd::clear();
-      pros::lcd::set_text(line, "Out of Bounds. Print Line is too far down");
+      // Too many wrapped lines to fit on screen. Mark the last line that did
+      // fit with an ellipsis instead of wiping every line already printed.
+      std::string truncated = last_line;
+      if (truncated.length() + 3 > 38) truncated = truncated.substr(0, 35);
+      truncated += "...";
+      screen_line_clear(7);
+      screen_line_set(7, truncated);
       return;
     }
-    pros::lcd::clear_line(CurrAutoLine);
-    pros::lcd::set_text(CurrAutoLine, i);
+    screen_line_clear(CurrAutoLine);
+    screen_line_set(CurrAutoLine, i);
+    last_line = i;
     CurrAutoLine++;
   }
 }
@@ -130,8 +148,7 @@ int places_after_decimal(double input, int min) {
   std::string in = std::to_string(input);
   int places_after_decimal = 6;
   for (int i = in.length() - 1; i > 0; i--) {
-    if (in[i] == '.')
-      break;
+    if (in[i] == '.') break;
 
     if (in[i] == '0')
       places_after_decimal--;
@@ -170,6 +187,25 @@ double clamp(double input, double max, double min) {
 
 double clamp(double input, double max) { return clamp(input, fabs(max), -fabs(max)); }
 
+double curve_scale_clamp(double scale) {
+  if (std::isnan(scale)) return 0;
+  return clamp(scale, MAX_CURVE_SCALE, 0.0);
+}
+
+std::pair<double, double> curvature_mix(double fwd, double turn, double point_turn_gain) {
+  double gain = fmax(fabs(fwd) / 127.0, clamp(point_turn_gain, 1.0, 0.0));
+  double l = fwd + turn * gain;
+  double r = fwd - turn * gain;
+
+  // Divide instead of clamp, so the ratio between sides (the curvature) is kept
+  double faster_side = fmax(fabs(l), fabs(r));
+  if (faster_side > 127.0) {
+    l *= 127.0 / faster_side;
+    r *= 127.0 / faster_side;
+  }
+  return {l, r};
+}
+
 // Conversions from deg to rad and rad to deg
 double to_deg(double input) { return input * (180 / M_PI); }
 double to_rad(double input) { return input * (M_PI / 180); }
@@ -181,7 +217,7 @@ double absolute_angle_to_point(pose itarget, pose icurrent) {
   double y_error = itarget.y - icurrent.y;
 
   // Displacement of error
-  double error = to_deg(atan2(x_error, y_error));
+  double error = to_deg(std::atan2(x_error, y_error));
   return error;
 }
 
@@ -240,15 +276,15 @@ double distance_to_point(pose itarget, pose icurrent) {
   double y_error = (itarget.y - icurrent.y);
 
   // Hypotenuse of triangle
-  double distance = hypot(x_error, y_error);
+  double distance = std::hypot(x_error, y_error);
 
   return distance;
 }
 
 // Uses input as hypot to find the new xy
 pose vector_off_point(double added, pose icurrent) {
-  double x_error = sin(to_rad(icurrent.theta)) * added;
-  double y_error = cos(to_rad(icurrent.theta)) * added;
+  double x_error = std::sin(to_rad(icurrent.theta)) * added;
+  double y_error = std::cos(to_rad(icurrent.theta)) * added;
 
   pose output;
   output.x = x_error + icurrent.x;
@@ -259,27 +295,25 @@ pose vector_off_point(double added, pose icurrent) {
 
 pose united_pose_to_pose(united_pose input) {
   pose output = {0, 0, 0};
-  output.x = input.x.convert(okapi::inch);
-  output.y = input.y.convert(okapi::inch);
+  output.x = input.x.convert(ez::inch);
+  output.y = input.y.convert(ez::inch);
   if (input.theta == p_ANGLE_NOT_SET)
     output.theta = ANGLE_NOT_SET;
   else
-    output.theta = input.theta.convert(okapi::degree);
+    output.theta = input.theta.convert(ez::degree);
   return output;
 }
 
 std::vector<odom> united_odoms_to_odoms(std::vector<united_odom> inputs) {
   std::vector<odom> output;
-  for (int i = 0; i < inputs.size(); i++) {
+  for (std::size_t i = 0; i < inputs.size(); i++) {
     pose new_pose = united_pose_to_pose(inputs[i].target);
     output.push_back({{new_pose}, inputs[i].drive_direction, inputs[i].max_xy_speed, inputs[i].turn_behavior});
   }
   return output;
 }
 
-odom united_odom_to_odom(united_odom input) {
-  return united_odoms_to_odoms({input})[0];
-}
+odom united_odom_to_odom(united_odom input) { return united_odoms_to_odoms({input})[0]; }
 
 }  // namespace util
 }  // namespace ez

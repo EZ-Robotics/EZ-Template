@@ -15,7 +15,7 @@ const int SWING_SPEED = 110;
 ///
 void default_constants() {
   // P, I, D, and Start I
-  chassis.pid_drive_constants_set(20.0, 0.0, 100.0);         // Fwd/rev constants, used for odom and non odom motions
+  chassis.pid_drive_constants_set(20.0, 0.0, 100.0);         // fwd/rev constants, used for odom and non odom motions
   chassis.pid_heading_constants_set(11.0, 0.0, 20.0);        // Holds the robot straight while going forward without odom
   chassis.pid_turn_constants_set(3.0, 0.05, 20.0, 15.0);     // Turn in place constants
   chassis.pid_swing_constants_set(6.0, 0.0, 65.0);           // Swing constants
@@ -28,6 +28,7 @@ void default_constants() {
   chassis.pid_drive_exit_condition_set(90_ms, 1_in, 250_ms, 3_in, 500_ms, 500_ms);
   chassis.pid_odom_turn_exit_condition_set(90_ms, 3_deg, 250_ms, 7_deg, 500_ms, 750_ms);
   chassis.pid_odom_drive_exit_condition_set(90_ms, 1_in, 250_ms, 3_in, 500_ms, 750_ms);
+
   chassis.pid_turn_chain_constant_set(3_deg);
   chassis.pid_swing_chain_constant_set(5_deg);
   chassis.pid_drive_chain_constant_set(3_in);
@@ -109,8 +110,10 @@ void drive_and_turn() {
 ///
 void wait_until_change_speed() {
   // pid_wait_until will wait until the robot gets to a desired position
+  // For drives the number is how far the robot has driven since this motion started, with the same sign as the drive
+  // (it is not measured from the end of the drive), and for turns and swings it is a heading, like the turn target
 
-  // When the robot gets to 6 inches slowly, the robot will travel the remaining distance at full speed
+  // When the robot has driven 6 inches slowly, the robot will travel the remaining 18 inches at full speed
   chassis.pid_drive_set(24_in, 30, true);
   chassis.pid_wait_until(6_in);
   chassis.pid_speed_max_set(DRIVE_SPEED);  // After driving 6 inches at 30 speed, the robot will go the remaining distance at DRIVE_SPEED
@@ -125,7 +128,8 @@ void wait_until_change_speed() {
   chassis.pid_turn_set(0_deg, TURN_SPEED);
   chassis.pid_wait();
 
-  // When the robot gets to -6 inches slowly, the robot will travel the remaining distance at full speed
+  // When the robot has driven 6 inches backwards slowly, the robot will travel the remaining 18 inches at full speed
+  // Backward drives use negative numbers
   chassis.pid_drive_set(-24_in, 30, true);
   chassis.pid_wait_until(-6_in);
   chassis.pid_speed_max_set(DRIVE_SPEED);  // After driving 6 inches at 30 speed, the robot will go the remaining distance at DRIVE_SPEED
@@ -259,15 +263,17 @@ void odom_drive_example() {
 ///
 void odom_pure_pursuit_example() {
   // Drive to 0, 30 and pass through 6, 10 and 0, 20 on the way, with slew
-  chassis.pid_odom_set({{{6_in, 10_in}, fwd, DRIVE_SPEED},
-                        {{0_in, 20_in}, fwd, DRIVE_SPEED},
-                        {{0_in, 30_in}, fwd, DRIVE_SPEED}},
-                       true);
+  chassis.pid_odom_set(
+      {
+          {{6_in, 10_in}, ez::fwd, DRIVE_SPEED},
+          {{0_in, 20_in}, ez::fwd, DRIVE_SPEED},
+          {{0_in, 30_in}, ez::fwd, DRIVE_SPEED},
+      },
+      true);
   chassis.pid_wait();
 
   // Drive to 0, 0 backwards
-  chassis.pid_odom_set({{0_in, 0_in}, rev, DRIVE_SPEED},
-                       true);
+  chassis.pid_odom_set({{0_in, 0_in}, ez::rev, DRIVE_SPEED}, true);
   chassis.pid_wait();
 }
 
@@ -275,10 +281,13 @@ void odom_pure_pursuit_example() {
 // Odom Pure Pursuit Wait Until
 ///
 void odom_pure_pursuit_wait_until_example() {
-  chassis.pid_odom_set({{{0_in, 24_in}, fwd, DRIVE_SPEED},
-                        {{12_in, 24_in}, fwd, DRIVE_SPEED},
-                        {{24_in, 24_in}, fwd, DRIVE_SPEED}},
-                       true);
+  chassis.pid_odom_set(
+      {
+          {{0_in, 24_in}, ez::fwd, DRIVE_SPEED},
+          {{12_in, 24_in}, ez::fwd, DRIVE_SPEED},
+          {{24_in, 24_in}, ez::fwd, DRIVE_SPEED},
+      },
+      true);
   chassis.pid_wait_until_index(1);  // Waits until the robot passes 12, 24
   // Intake.move(127);  // Set your intake to start moving once it passes through the second point in the index
   chassis.pid_wait();
@@ -289,12 +298,10 @@ void odom_pure_pursuit_wait_until_example() {
 // Odom Boomerang
 ///
 void odom_boomerang_example() {
-  chassis.pid_odom_set({{0_in, 24_in, 45_deg}, fwd, DRIVE_SPEED},
-                       true);
+  chassis.pid_odom_set({{0_in, 24_in, 45_deg}, ez::fwd, DRIVE_SPEED}, true);
   chassis.pid_wait();
 
-  chassis.pid_odom_set({{0_in, 0_in, 0_deg}, rev, DRIVE_SPEED},
-                       true);
+  chassis.pid_odom_set({{0_in, 0_in, 0_deg}, ez::rev, DRIVE_SPEED}, true);
   chassis.pid_wait();
 }
 
@@ -302,14 +309,16 @@ void odom_boomerang_example() {
 // Odom Boomerang Injected Pure Pursuit
 ///
 void odom_boomerang_injected_pure_pursuit_example() {
-  chassis.pid_odom_set({{{0_in, 24_in, 45_deg}, fwd, DRIVE_SPEED},
-                        {{12_in, 24_in}, fwd, DRIVE_SPEED},
-                        {{24_in, 24_in}, fwd, DRIVE_SPEED}},
-                       true);
+  chassis.pid_odom_set(
+      {
+          {{0_in, 24_in, 45_deg}, ez::fwd, DRIVE_SPEED},
+          {{12_in, 24_in}, ez::fwd, DRIVE_SPEED},
+          {{24_in, 24_in}, ez::fwd, DRIVE_SPEED},
+      },
+      true);
   chassis.pid_wait();
 
-  chassis.pid_odom_set({{0_in, 0_in, 0_deg}, rev, DRIVE_SPEED},
-                       true);
+  chassis.pid_odom_set({{0_in, 0_in, 0_deg}, ez::rev, DRIVE_SPEED}, true);
   chassis.pid_wait();
 }
 
@@ -322,13 +331,14 @@ void measure_offsets() {
 
   // Our final offsets
   double l_offset = 0.0, r_offset = 0.0, b_offset = 0.0, f_offset = 0.0;
+  int turns_measured = 0;
 
   // Reset all trackers if they exist
   if (chassis.odom_tracker_left != nullptr) chassis.odom_tracker_left->reset();
   if (chassis.odom_tracker_right != nullptr) chassis.odom_tracker_right->reset();
   if (chassis.odom_tracker_back != nullptr) chassis.odom_tracker_back->reset();
   if (chassis.odom_tracker_front != nullptr) chassis.odom_tracker_front->reset();
-  
+
   for (int i = 0; i < iterations; i++) {
     // Reset pid targets and get ready for running an auton
     chassis.pid_targets_reset();
@@ -336,16 +346,19 @@ void measure_offsets() {
     chassis.drive_sensor_reset();
     chassis.drive_brake_set(MOTOR_BRAKE_HOLD);
     chassis.odom_xyt_set(0_in, 0_in, 0_deg);
-    double imu_start = chassis.odom_theta_get();
-    double target = i % 2 == 0 ? 90 : 270;  // Switch the turn target every run from 270 to 90
+    double imu_start = chassis.drive_angle_get();
+    double target = i % 2 == 0 ? 90 : -90;  // Switch the turn direction every run
 
     // Turn to target at half power
     chassis.pid_turn_set(target, 63, ez::raw);
     chassis.pid_wait();
     pros::delay(250);
 
-    // Calculate delta in angle
-    double t_delta = util::to_rad(fabs(util::wrap_angle(chassis.odom_theta_get() - imu_start)));
+    // Calculate delta in angle.  This is signed (clockwise is positive) and is not wrapped, because the
+    // trackers saw the whole turn, not the angle it wraps to.  It is read from the imu, so it is not wrapped to
+    // odom_theta_get()'s range.
+    double t_delta = ez::util::to_rad(chassis.drive_angle_get() - imu_start);
+    if (fabs(t_delta) < ez::util::to_rad(10.0)) continue;  // The robot did not turn, nothing to measure
 
     // Calculate delta in sensor values that exist
     double l_delta = chassis.odom_tracker_left != nullptr ? chassis.odom_tracker_left->get() : 0.0;
@@ -358,13 +371,20 @@ void measure_offsets() {
     r_offset += r_delta / t_delta;
     b_offset += b_delta / t_delta;
     f_offset += f_delta / t_delta;
+    turns_measured++;
+  }
+
+  if (turns_measured == 0) {
+    printf("measure_offsets: the robot never turned, nothing was measured\n");
+    ez::screen_print("The robot never turned", 0);
+    return;
   }
 
   // Average all offsets
-  l_offset /= iterations;
-  r_offset /= iterations;
-  b_offset /= iterations;
-  f_offset /= iterations;
+  l_offset /= turns_measured;
+  r_offset /= turns_measured;
+  b_offset /= turns_measured;
+  f_offset /= turns_measured;
 
   // Set new offsets to trackers that exist
   if (chassis.odom_tracker_left != nullptr) chassis.odom_tracker_left->distance_to_center_set(l_offset);
