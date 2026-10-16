@@ -163,11 +163,11 @@ TEST_CASE("pid_wait_until(angle) on a swing returns within 4 s on a heading that
   CHECK_MESSAGE(ms < 4000.0, "returned after " << ms << " ms");
 }
 
-// A healthy 6 in drive at 2550R's exits ends on the velocity exit (100 ms, at 5 in/s) once the robot is inside big_error, and the robot is
-// under the stop speed by then, so it is clean. The velocity exit reads the library's speed over 100 ms windows, so it can only start
-// counting at the end of the first window the robot spent under 5 in/s, up to two windows after the robot really got under it. The bound
-// is that, plus the velocity exit time, plus two passes.
-TEST_CASE("a healthy 6 in drive at the 2550R exits ends clean once the robot is under 5 in/s: no later than the velocity exit allows, stopped") {
+// A healthy 6 in drive at the corpus exits (90/1/200/3/100/100) ends on the velocity exit (100 ms, at 5 in/s) once the robot is inside big_error, and the robot
+// is under the stop speed by then, so it is clean. The velocity exit reads the library's speed over 100 ms windows, so it can only start counting at the end of
+// the first window the robot spent under 5 in/s, up to two windows after the robot really got under it. The bound is that, plus the velocity exit time, plus
+// two passes.
+TEST_CASE("a healthy 6 in drive at the corpus exits ends clean once the robot is under 5 in/s: no later than the velocity exit allows, stopped") {
   Rig r(sim::archetype_light_fast(), 1, false, 1);
   r.chassis.pid_drive_exit_condition_set(90, 1, 200, 3, 100, 100);
   double ms = 0;

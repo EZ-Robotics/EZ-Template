@@ -36,7 +36,7 @@ struct ExitSet {
 };
 
 const ExitSet EXIT_SETS[] = {
-    {"defaults", true, 0, 0, 0, 0, 0, 0},   {"2550R", false, 90, 1, 200, 3, 100, 100},  {"fast", false, 40, 3, 150, 7, 150, 300},
+    {"defaults", true, 0, 0, 0, 0, 0, 0},   {"corpus", false, 90, 1, 200, 3, 100, 100}, {"fast", false, 40, 3, 150, 7, 150, 300},
     {"v50", false, 90, 1, 250, 3, 50, 500}, {"mA-only", false, 250, 1, 250, 3, 0, 100}, {"loose", false, 150, 3, 400, 6, 500, 750},
 };
 

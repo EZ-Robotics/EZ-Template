@@ -138,7 +138,7 @@ TEST_CASE("every exit on, 50 ms velocity window: a 90 degree turn and a 90 degre
 // The sticky robot crawls the last inch at 2 to 3 in/s: over the stop speed, so the small and big timers can't count, but under the
 // velocity exit's 5 in/s, so the 100 ms velocity exit ends the wait (its time is shorter than the 200 ms big exit time) while the
 // library's speed is about 2.5 in/s. That is over the stop speed, and inside big_error, so it is clean.
-TEST_CASE("2550R's exits (90/1/200/3/100/100) on a sticky robot: pid_wait() on a 24 in drive returns under the velocity exit's 5 in/s, clean") {
+TEST_CASE("The corpus exits (90/1/200/3/100/100) on a sticky robot: pid_wait() on a 24 in drive returns under the velocity exit's 5 in/s, clean") {
   Rig r(sim::archetype_sticky_high_friction(), 1);
   r.chassis.pid_drive_exit_condition_set(90_ms, 1_in, 200_ms, 3_in, 100_ms, 100_ms);
   r.chassis.pid_drive_set(24_in, 110, true);

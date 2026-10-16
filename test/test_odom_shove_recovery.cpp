@@ -5,7 +5,7 @@
 // robot still outside big_error for longer than that is a velocity exit by design, and ends the wait interfered. A shove
 // the robot drives through, or one that leaves it stopped inside big_error, ends the wait clean at the point.
 //
-// 2550R's 90/1/200/3/100/100 exits, light_fast. Forces stay under the ~150 N where the shove leaves the motors over
+// The corpus 90/1/200/3/100/100 exits, light_fast. Forces stay under the ~150 N where the shove leaves the motors over
 // current longer than the team's own mA_timeout, which is a different exit and ends the wait on purpose.
 #include <cmath>
 
