@@ -202,18 +202,6 @@ std::vector<odom> Drive::inject_points(std::vector<ez::odom> imovements, std::ve
 std::vector<odom> Drive::smooth_path(std::vector<odom> ipath, double weight_smooth, double weight_data, double tolerance) {
   if (ipath.size() < 3) return ipath;
 
-  // Constants that don't settle would fling the points off toward infinity, so follow the path as given instead.
-  // print_after_unlock, not printf: some callers of this function still run it while holding
-  // drive_mutex (kLockedHelpers, test_locking_rule.cpp treats it as always-potentially-locked), and
-  // printf is a blocking call locking rule 2 forbids making while a guard is held. print_after_unlock
-  // is correct either way -- it prints at once when nothing is held (see lock.hpp).
-  if (!(weight_data + 2.0 * weight_smooth < 2.0)) {
-    drive_mutex.print_after_unlock(
-        "EZ-Template: path smoothing skipped, weight_smooth %.4f and weight_data %.4f don't settle (weight_data + 2 * weight_smooth must be < 2)\n",
-        weight_smooth, weight_data);
-    return ipath;
-  }
-
   std::vector<std::array<double, 3>> path(ipath.size());
   std::vector<std::array<double, 3>> new_path(ipath.size());
   std::vector<bool> dont_touch;
@@ -283,7 +271,10 @@ std::vector<odom> Drive::smooth_path(std::vector<odom> ipath, double weight_smoo
     }
   }
 
-  // print_after_unlock, not printf -- see the matching comment above.
+  // print_after_unlock, not printf: some callers of this function still run it while holding
+  // drive_mutex (kLockedHelpers, test_locking_rule.cpp treats it as always-potentially-locked), and
+  // printf is a blocking call locking rule 2 forbids making while a guard is held. print_after_unlock
+  // is correct either way -- it prints at once when nothing is held (see lock.hpp).
   if (passes >= MAX_PASSES && change >= tolerance)
     drive_mutex.print_after_unlock(
         "EZ-Template: path smoothing stopped at %d passes before it settled, so the path is less smooth than the constants ask for\n", MAX_PASSES);

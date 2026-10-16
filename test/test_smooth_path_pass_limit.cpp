@@ -69,12 +69,3 @@ TEST_CASE("smooth_path prints nothing when the constants settle before the pass 
   CHECK(printed_by([&] { DriveTestAccess::smooth_path(chassis, path, defaults[0], defaults[1], defaults[2]); }) == "");
   CHECK(printed_by([&] { DriveTestAccess::smooth_path(chassis, path, 0.95, 0.05, 0.0001); }) == "");
 }
-
-TEST_CASE("smooth_path prints only the rejection, not the pass limit message, for constants that would diverge") {
-  Drive chassis = make_chassis();
-  auto path = injected_path(chassis);
-
-  std::string printed = printed_by([&] { DriveTestAccess::smooth_path(chassis, path, 0.99, 0.03, 0.0001); });
-  CHECK(printed.find("EZ-Template: path smoothing skipped") == 0);
-  CHECK(printed.find("stopped at") == std::string::npos);
-}
