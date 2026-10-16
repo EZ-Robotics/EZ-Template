@@ -20,7 +20,7 @@ New maintainers are invited by the current maintainers.
 
 Check each PR against these, in order, and say on the PR which one failed.
 
-1. **Issue.** The PR follows CONTRIBUTING.md's "Sending a change" rules. A first-timer who skipped an issue MAY have the PR thread treated as the issue.
+1. **Issue.** The PR follows CONTRIBUTING.md's "Fix it yourself" rules. A first-timer who skipped an issue MAY have the PR thread treated as the issue.
 2. **Evidence.** A bug fix has E1, E2, E3, or a maintainers' call. If it doesn't, label it `parked` or `waiting-for-evidence` and say kindly what's missing. Ask a first-timer for the evidence before closing anything.
 3. **Size.** Be wary of very large PRs, especially AI-written ones. You MAY ask for one to be split, cut to what its issue asked for, or closed if the author can't explain it.
 4. **New moving parts.** Count any timer, latch, flag, counter or mode the PR adds to controller code. Each one can make a wait end early or hang, and students have to learn it. Ask whether 3.2.2 needed it. One added for a case only a test or sim shows is parked, however small. If a fix needs a second fix for a case the first one created, rethink the first one.
