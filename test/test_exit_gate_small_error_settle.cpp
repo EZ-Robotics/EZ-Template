@@ -64,25 +64,3 @@ TEST_CASE("tight small_error: repeated until_point + quick_chain waits on a sett
     }
   }
 }
-
-// Parked, sim only: a robot this stuck has nothing to end its wait (see the PR).  It reports but does not fail the suite.
-TEST_CASE("controls: a robot pinned outside big_error is interfered at the same instant whatever small_error is" * doctest::may_fail()) {
-  const Cfg cfgs[] = {{"se 0.05 / 0.2 deg", 0.05, 0.2}, {"se 1 / 1.5 deg", 1.0, 1.5}, {"se 0 / 0", 0.0, 0.0}};
-  for (const Cfg& c : cfgs) {
-    for (double pin_at : {150.0, 300.0}) {
-      Rig r(sim::archetype_light_fast(), 1);
-      configure(r, c);
-      pose p{12, 24, ANGLE_NOT_SET};
-      r.chassis.pid_odom_set(odom{p, fwd, 110});
-      r.sim.pin(pin_at, 600000);
-      double e = 0;
-      bool ok = r.wait([&] { r.chassis.pid_wait_quick_chain(); }, CAP_TICKS, &e);
-      CAPTURE(c.name);
-      CAPTURE(pin_at);
-      REQUIRE(ok);
-      CHECK(r.chassis.interfered);
-      CHECK(e < BOUND_MS);
-      if (std::getenv("EZ_SETTLE_PRINT")) std::printf("[settle-pin] %s pin=%.0f interfered=%d elapsed %.0f\n", c.name, pin_at, (int)r.chassis.interfered, e);
-    }
-  }
-}

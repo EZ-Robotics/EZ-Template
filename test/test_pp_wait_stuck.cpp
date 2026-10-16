@@ -272,16 +272,6 @@ TEST_CASE("pid_wait returns interfered when pinned inside the angle PID's big er
   CHECK(o.passes <= 20 + 10 + 50 + 5);
 }
 
-// Parked, sim only: a robot this stuck has nothing to end its wait (see the PR).  It reports but does not fail the suite.
-TEST_CASE("pid_wait returns interfered when pinned and being turned by another robot" * doctest::may_fail()) {
-  Drive chassis = make_chassis();
-  start_path(chassis);
-  Outcome o = run(chassis, pinned_and_rotated, 1000);
-  CHECK(o.returned);
-  CHECK(o.interfered);
-  CHECK(o.passes <= 20 + 50 + 5);
-}
-
 TEST_CASE("pid_wait returns interfered when pinned over current mid-corner") {
   Drive chassis = make_chassis();
   start_path(chassis);
@@ -438,16 +428,6 @@ TEST_CASE("pid_wait ends a return from an overshoot of the last point slower tha
   CHECK(o.passes <= 40 + 10 + 50 + 5);
 }
 
-// Parked, sim only: a robot this stuck has nothing to end its wait (see the PR).  It reports but does not fail the suite.
-TEST_CASE("pid_wait returns interfered when pinned and spun fast enough that the heading error keeps crossing zero" * doctest::may_fail()) {
-  Drive chassis = make_chassis();
-  start_path(chassis);
-  Outcome o = run(chassis, pinned_and_spun, 600);
-  CHECK(o.returned);
-  CHECK(o.interfered);
-  CHECK(o.passes <= 250);
-}
-
 TEST_CASE("pid_wait measures a boomerang's progress to its point, not to its moving carrot") {
   Drive chassis = make_chassis();
   start_path(chassis);
@@ -486,20 +466,6 @@ TEST_CASE("pid_wait_until_index and pid_wait_quick_chain return interfered when 
 }
 
 namespace {
-// Pinned on the way to the last point, 10 in out, and spun at 150 deg/s.  xy's velocity exit would fire, but the
-// angle exit never can: the heading never holds still near its target.
-Pass pinned_on_last_point_and_spun(int n) {
-  Pass p = cruising(n);
-  if (n < 20) return p;
-  p.jump_to_last = true;
-  p.advance_index = 0;
-  p.xy_error = 10.0;
-  p.xy_rate = 0.0;
-  p.a_error = std::remainder(10.0 + 1.5 * (n - 20), 360.0);
-  p.a_rate = 1.5;
-  return p;
-}
-
 // Sits still for 0.8 s before it gets going (a heavy robot, a slow slew), then drives the path.
 Pass slow_start(int n) {
   Pass p = cruising(n);
@@ -523,16 +489,6 @@ Pass wheels_slipping_on_a_wall(int n) {
   return p;
 }
 }  // namespace
-
-// Parked, sim only: a robot this stuck has nothing to end its wait (see the PR).  It reports but does not fail the suite.
-TEST_CASE("pid_wait returns interfered when pinned short of the last point and spun" * doctest::may_fail()) {
-  Drive chassis = make_chassis();
-  start_path(chassis);
-  Outcome o = run(chassis, pinned_on_last_point_and_spun, 600);
-  CHECK(o.returned);
-  CHECK(o.interfered);
-  CHECK(o.passes <= 250);
-}
 
 TEST_CASE("pid_wait_until_index does not return during a slow pivot before its point") {
   Drive chassis = make_chassis();

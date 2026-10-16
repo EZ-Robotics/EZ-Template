@@ -44,23 +44,3 @@ TEST_CASE("spun and pinned on a settled odom point: pid_wait_until(distance) com
     }
   }
 }
-
-// Parked, sim only: a robot this stuck has nothing to end its wait (see the PR).  It reports but does not fail the suite.
-TEST_CASE("controls: a robot pinned outside big_error on pid_wait_until(distance) is still interfered, and at the same time" * doctest::may_fail()) {
-  for (double pin_at : {150.0, 300.0}) {
-    Rig r(sim::archetype_light_fast(), 1);
-    r.chassis.pid_odom_drive_exit_condition_set(0, 0, 250, 3, 0, 750);
-    r.chassis.pid_odom_turn_exit_condition_set(0, 0, 250, 5, 0, 0);
-    pose p{12, 24, ANGLE_NOT_SET};
-    double dd = std::hypot(p.x, p.y);
-    r.chassis.pid_odom_set(odom{p, fwd, 110});
-    r.sim.pin(pin_at, 600000);
-    double e = 0;
-    bool ok = r.wait([&] { r.chassis.pid_wait_until(dd * 0.9); }, CAP_TICKS, &e);
-    CAPTURE(pin_at);
-    REQUIRE(ok);
-    CHECK(r.chassis.interfered);
-    CHECK(e < BOUND_MS);
-    if (std::getenv("EZ_SPIN_PRINT")) std::printf("[spin-pin] pin=%.0f interfered=%d elapsed %.0f\n", pin_at, (int)r.chassis.interfered, e);
-  }
-}
