@@ -11,7 +11,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 namespace ez {
 class slew {
-public:
+ public:
   slew();
 
   /**
@@ -27,8 +27,7 @@ public:
    * Sets constants for slew.  Slew ramps up the speed of the robot until the set distance is traveled.
    *
    * \param distance
-   *        the distance the robot travels to ramp from minimum_speed up to full speed (127).  A movement with a lower maximum speed is capped at that speed, so
-   *        it reaches that speed before this distance has been traveled
+   *        the distance the robot travels before reaching max speed
    * \param minimum_speed
    *        the starting speed for the movement
    */
@@ -38,8 +37,7 @@ public:
    * Sets constants for slew.  Slew ramps up the speed of the robot until the set distance is traveled.
    *
    * \param distance
-   *        the distance the robot travels to ramp from minimum_speed up to full speed (127).  A movement with a lower maximum speed is capped at that speed, so
-   *        it reaches that speed before this distance has been traveled
+   *        the distance the robot travels before reaching max speed
    * \param minimum_speed
    *        the starting speed for the movement
    */
@@ -52,7 +50,7 @@ public:
    * \param enabled
    *        true enables slew, false disables slew
    * \param maximum_speed
-   *        the most speed slew is allowed to output for this movement.  This caps the output, it does not change how fast slew ramps up
+   *        the target speed the robot will ramp up too
    * \param target
    *        the target position for the motion
    * \param current
@@ -91,7 +89,7 @@ public:
    */
   double speed_max_get();
 
-private:
+ private:
   int sign = 0;
   double error = 0;
   double x_intercept = 0;

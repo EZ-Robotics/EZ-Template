@@ -6,14 +6,10 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "sdcard.hpp"
 
-#include <cstdlib>
 #include <filesystem>
 
-#include "auton_pages.hpp"
 #include "auton_selector.hpp"
-#include "display.hpp"
 #include "liblvgl/llemu.hpp"
-#include "lock.hpp"
 #include "pros/llemu.hpp"
 #include "util.hpp"
 
@@ -25,7 +21,6 @@ void auto_sd_update() {
   if (!ez::util::SD_CARD_ACTIVE) return;
 
   FILE* usd_file_write = fopen("/usd/auto.txt", "w");
-  if (usd_file_write == nullptr) return;
   std::string cp_str = std::to_string(auton_selector.auton_page_current);
   char const* cp_c = cp_str.c_str();
   fputs(cp_c, usd_file_write);
@@ -39,14 +34,10 @@ void auton_selector_initialize() {
   FILE* as_usd_file_read;
   // If file exists...
   if ((as_usd_file_read = fopen("/usd/auto.txt", "r"))) {
-    char buf[32] = {0};
-    fread(buf, 1, sizeof(buf) - 1, as_usd_file_read);
+    char a_buf[10];
+    fread(a_buf, 1, 10, as_usd_file_read);
+    ez::as::auton_selector.auton_page_current = std::stof(a_buf);
     fclose(as_usd_file_read);
-    int saved_page = 0;
-    if (internal::saved_page_parse(buf, saved_page))
-      ez::as::auton_selector.auton_page_current = saved_page;
-    else
-      printf("EZ-Template: /usd/auto.txt doesn't hold a valid auton page, keeping current auton page\n");
   }
   // If file doesn't exist, create file
   else {
@@ -65,29 +56,35 @@ void print_page() {
     auto_sd_update();
     auton_selector.selected_auton_print();
   } else {
-    for (int i = 0; i < 8; i++) ez::screen_line_clear(i);
+    for (int i = 0; i < 8; i++)
+      pros::lcd::clear_line(i);
     screen_print("Page " + std::to_string(auton_selector.auton_page_current + 1) + " - Blank page " + std::to_string(page_blank_current() + 1));
   }
-  if (page_blank_current() < 0) auton_selector.last_auton_page_current = auton_selector.auton_page_current;
+  if (page_blank_current() < 0)
+    auton_selector.last_auton_page_current = auton_selector.auton_page_current;
 }
 
 void page_up() {
-  int page = auton_selector.auton_page_current;
-  if (!internal::page_move(page, auton_selector.auton_count, 1)) return;  // no pages to go through
   if (util::sgn(page_blank_current()) == -1) auton_selector.last_auton_page_current = auton_selector.auton_page_current;
-  auton_selector.auton_page_current = page;
+  if (auton_selector.auton_page_current == auton_selector.auton_count - 1)
+    auton_selector.auton_page_current = 0;
+  else
+    auton_selector.auton_page_current++;
   print_page();
 }
 
 void page_down() {
-  int page = auton_selector.auton_page_current;
-  if (!internal::page_move(page, auton_selector.auton_count, -1)) return;  // no pages to go through
   if (util::sgn(page_blank_current()) == -1) auton_selector.last_auton_page_current = auton_selector.auton_page_current;
-  auton_selector.auton_page_current = page;
+  if (auton_selector.auton_page_current == 0)
+    auton_selector.auton_page_current = auton_selector.auton_count - 1;
+  else
+    auton_selector.auton_page_current--;
   print_page();
 }
 
-int page_blank_current() { return (auton_selector.auton_count - amount_of_blank_pages - auton_selector.auton_page_current) * -1; }
+int page_blank_current() {
+  return (auton_selector.auton_count - amount_of_blank_pages - auton_selector.auton_page_current) * -1;
+}
 
 int amount_of_blank_pages = 0;
 bool page_blank_is_on(int page) {
@@ -96,7 +93,8 @@ bool page_blank_is_on(int page) {
     amount_of_blank_pages = page + 1;
     auton_selector.auton_count += amount_of_blank_pages;
   }
-  if (page_blank_current() == page) return true;
+  if (page_blank_current() == page)
+    return true;
   return false;
 }
 
@@ -110,9 +108,13 @@ void page_blank_remove(int page) {
   print_page();
 }
 
-void page_blank_remove_all() { page_blank_remove(amount_of_blank_pages - 1); }
+void page_blank_remove_all() {
+  page_blank_remove(amount_of_blank_pages - 1);
+}
 
-int page_blank_amount() { return amount_of_blank_pages; }
+int page_blank_amount() {
+  return amount_of_blank_pages;
+}
 
 void initialize() {
   // Initialize auto selector and LLEMU
@@ -145,10 +147,10 @@ pros::adi::DigitalIn* limit_switch_right = nullptr;
 pros::Task limit_switch_task(ez::as::limitSwitchTask);
 void limit_switch_lcd_initialize(pros::adi::DigitalIn* right_limit, pros::adi::DigitalIn* left_limit) {
   if (!left_limit && !right_limit) {
-    // Disable at any time, not just during startup.  Forget the switches so the task stops polling them.
-    limit_switch_right = nullptr;
-    limit_switch_left = nullptr;
-    turn_off = true;
+    delete limit_switch_left;
+    delete limit_switch_right;
+    if (pros::millis() <= 100)
+      turn_off = true;
     return;
   }
   turn_off = false;
@@ -158,17 +160,14 @@ void limit_switch_lcd_initialize(pros::adi::DigitalIn* right_limit, pros::adi::D
 }
 
 void limitSwitchTask() {
-  ez::detail::mark_scheduler_running();
   while (true) {
-    // Copy the pointers, they can be cleared by limit_switch_lcd_initialize() between the check and the use
-    pros::adi::DigitalIn* right = limit_switch_right;
-    pros::adi::DigitalIn* left = limit_switch_left;
-    if (right && right->get_new_press())
+    if (limit_switch_right && limit_switch_right->get_new_press())
       ez::as::page_up();
-    else if (left && left->get_new_press())
+    else if (limit_switch_left && limit_switch_left->get_new_press())
       ez::as::page_down();
 
-    if (pros::millis() >= 500 && turn_off) limit_switch_task.suspend();
+    if (pros::millis() >= 500 && turn_off)
+      limit_switch_task.suspend();
 
     pros::delay(50);
   }

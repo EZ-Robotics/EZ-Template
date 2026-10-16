@@ -4,144 +4,153 @@ License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-#include <algorithm>
-#include <cmath>
 #include <list>
 
 #include "EZ-Template/api.hpp"
-#include "EZ-Units/units.hpp"
+#include "okapi/api/units/QAngle.hpp"
 #include "pros/llemu.hpp"
 #include "pros/screen.hpp"
 
 using namespace ez;
 
-// Constructor for driver control only, no IMU configured
-Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports)
-    // 22 is outside the V5's 21 smart ports, so this never collides with a real device.
-    // The IMU is left permanently uncalibrated; drive_imu_calibrate() reports it missing
-    // and driver control works normally without it.
-    : Drive(left_motor_ports, right_motor_ports, 22, 4.0, 200.0) {}
-
 // Constructor for integrated encoders
-Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks)
-    : imu(new pros::Imu(imu_port)), ez_auto([this] { this->ez_auto_task(); }) {
+Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports,
+             int imu_port, double wheel_diameter, double ticks, double ratio)
+    : imu(imu_port),
+      left_tracker(-1, -1, false),   // Default value
+      right_tracker(-1, -1, false),  // Default value
+      left_rotation(-1),
+      right_rotation(-1),
+      ez_auto([this] { this->ez_auto_task(); }) {
   is_tracker = DRIVE_INTEGRATED;
-  last_was_autonomous = pros::competition::is_autonomous();
-  last_was_disabled = pros::competition::is_disabled();
 
   // Set ports to a global vector
   for (auto i : left_motor_ports) {
-    pros::Motor temp((std::int8_t)std::abs(i));
+    pros::Motor temp((std::int8_t)abs(i));
     temp.set_reversed(util::reversed_active(i));
-    temp.set_encoder_units(pros::MotorUnits::counts);  // drive_tick_per_inch() assumes counts
     left_motors.push_back(temp);
   }
   for (auto i : right_motor_ports) {
-    pros::Motor temp((std::int8_t)std::abs(i));
+    pros::Motor temp((std::int8_t)abs(i));
     temp.set_reversed(util::reversed_active(i));
-    temp.set_encoder_units(pros::MotorUnits::counts);  // drive_tick_per_inch() assumes counts
     right_motors.push_back(temp);
-  }
-
-  good_imus.push_back(imu);
-  all_imus.push_back(imu);
-  imu_scale_map[imu->get_port()] = 1.0;
-  // Set constants for tick_per_inch calculation
-  WHEEL_DIAMETER = wheel_diameter;
-  CARTRIDGE = ticks;
-
-  drive_defaults_set();
-}
-
-// Constructor for integrated encoders with redundant imu support
-Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, std::vector<int> imu_ports, double wheel_diameter, double ticks)
-    : imu(new pros::Imu(imu_ports[0])), ez_auto([this] { this->ez_auto_task(); }) {
-  is_tracker = DRIVE_INTEGRATED;
-  last_was_autonomous = pros::competition::is_autonomous();
-  last_was_disabled = pros::competition::is_disabled();
-
-  // Set ports to a global vector
-  for (auto i : left_motor_ports) {
-    pros::Motor temp((std::int8_t)std::abs(i));
-    temp.set_reversed(util::reversed_active(i));
-    temp.set_encoder_units(pros::MotorUnits::counts);  // drive_tick_per_inch() assumes counts
-    left_motors.push_back(temp);
-  }
-  for (auto i : right_motor_ports) {
-    pros::Motor temp((std::int8_t)std::abs(i));
-    temp.set_reversed(util::reversed_active(i));
-    temp.set_encoder_units(pros::MotorUnits::counts);  // drive_tick_per_inch() assumes counts
-    right_motors.push_back(temp);
-  }
-
-  // Set all IMUs
-  good_imus.push_back(imu);
-  all_imus.push_back(imu);
-  imu_scale_map[imu->get_port()] = 1.0;
-  for (std::size_t i = 1; i < imu_ports.size(); i++) {
-    pros::Imu* temp = new pros::Imu(imu_ports[i]);
-    good_imus.push_back(temp);
-    all_imus.push_back(temp);
-    imu_scale_map[temp->get_port()] = 1.0;
   }
 
   // Set constants for tick_per_inch calculation
   WHEEL_DIAMETER = wheel_diameter;
+  RATIO = ratio;
   CARTRIDGE = ticks;
+  TICK_PER_INCH = drive_tick_per_inch();
 
   drive_defaults_set();
 }
 
-// Compatibility constructors for projects written before ratio was removed (see drive.hpp). Both hand the folded ticks to the
-// five-argument constructor, so there is one way the numbers get into the Drive.
-Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks, double ratio)
-    : Drive(std::move(left_motor_ports), std::move(right_motor_ports), imu_port, wheel_diameter, ticks / ratio) {}
+// Constructor for tracking wheels plugged into the brain
+Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports,
+             int imu_port, double wheel_diameter, double ticks, double ratio,
+             std::vector<int> left_tracker_ports, std::vector<int> right_tracker_ports)
+    : imu(imu_port),
+      left_tracker(abs(left_tracker_ports[0]), abs(left_tracker_ports[1]), util::reversed_active(left_tracker_ports[0])),
+      right_tracker(abs(right_tracker_ports[0]), abs(right_tracker_ports[1]), util::reversed_active(right_tracker_ports[0])),
+      left_rotation(-1),
+      right_rotation(-1),
+      ez_auto([this] { this->ez_auto_task(); }) {
+  is_tracker = DRIVE_ADI_ENCODER;
 
-Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, std::vector<int> imu_ports, double wheel_diameter, double ticks,
-             double ratio)
-    : Drive(std::move(left_motor_ports), std::move(right_motor_ports), std::move(imu_ports), wheel_diameter, ticks / ratio) {}
-
-Drive::~Drive() {
-  // pros::v5::Imu has virtual member functions but a non-virtual destructor.
-  // Every pointer in all_imus was allocated as exactly `new pros::Imu(...)`
-  // (never a derived type), so this delete is safe; the diagnostic can't be
-  // fixed at the source since pros::Imu is a vendored header.
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdelete-non-virtual-dtor"
-  for (pros::Imu* n : all_imus) {
-    delete n;
+  // Set ports to a global vector
+  for (auto i : left_motor_ports) {
+    pros::Motor temp(abs(i));
+    temp.set_reversed(util::reversed_active(i));
+    left_motors.push_back(temp);
   }
-#pragma GCC diagnostic pop
-  good_imus.clear();
-  all_imus.clear();
+  for (auto i : right_motor_ports) {
+    pros::Motor temp(abs(i));
+    temp.set_reversed(util::reversed_active(i));
+    right_motors.push_back(temp);
+  }
+
+  // Set constants for tick_per_inch calculation
+  WHEEL_DIAMETER = wheel_diameter;
+  RATIO = ratio;
+  CARTRIDGE = ticks;
+  TICK_PER_INCH = drive_tick_per_inch();
+
+  drive_defaults_set();
 }
 
-// set defaults
+// Constructor for tracking wheels plugged into a 3 wire expander
+Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports,
+             int imu_port, double wheel_diameter, double ticks, double ratio,
+             std::vector<int> left_tracker_ports, std::vector<int> right_tracker_ports, int expander_smart_port)
+    : imu(imu_port),
+      left_tracker({expander_smart_port, abs(left_tracker_ports[0]), abs(left_tracker_ports[1])}, util::reversed_active(left_tracker_ports[0])),
+      right_tracker({expander_smart_port, abs(right_tracker_ports[0]), abs(right_tracker_ports[1])}, util::reversed_active(right_tracker_ports[0])),
+      left_rotation(-1),
+      right_rotation(-1),
+      ez_auto([this] { this->ez_auto_task(); }) {
+  is_tracker = DRIVE_ADI_ENCODER;
+
+  // Set ports to a global vector
+  for (auto i : left_motor_ports) {
+    pros::Motor temp(abs(i));
+    temp.set_reversed(util::reversed_active(i));
+    left_motors.push_back(temp);
+  }
+  for (auto i : right_motor_ports) {
+    pros::Motor temp(abs(i));
+    temp.set_reversed(util::reversed_active(i));
+    right_motors.push_back(temp);
+  }
+
+  // Set constants for tick_per_inch calculation
+  WHEEL_DIAMETER = wheel_diameter;
+  RATIO = ratio;
+  CARTRIDGE = ticks;
+  TICK_PER_INCH = drive_tick_per_inch();
+
+  drive_defaults_set();
+}
+
+// Constructor for rotation sensors
+Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports,
+             int imu_port, double wheel_diameter, double ratio,
+             int left_rotation_port, int right_rotation_port)
+    : imu(imu_port),
+      left_tracker(-1, -1, false),   // Default value
+      right_tracker(-1, -1, false),  // Default value
+      left_rotation(abs(left_rotation_port)),
+      right_rotation(abs(right_rotation_port)),
+      ez_auto([this] { this->ez_auto_task(); }) {
+  is_tracker = DRIVE_ROTATION;
+  left_rotation.set_reversed(util::reversed_active(left_rotation_port));
+  right_rotation.set_reversed(util::reversed_active(right_rotation_port));
+
+  // Set ports to a global vector
+  for (auto i : left_motor_ports) {
+    pros::Motor temp(abs(i));
+    temp.set_reversed(util::reversed_active(i));
+    left_motors.push_back(temp);
+  }
+  for (auto i : right_motor_ports) {
+    pros::Motor temp(abs(i));
+    temp.set_reversed(util::reversed_active(i));
+    right_motors.push_back(temp);
+  }
+
+  // Set constants for tick_per_inch calculation
+  WHEEL_DIAMETER = wheel_diameter;
+  RATIO = ratio;
+  CARTRIDGE = 36000;
+  TICK_PER_INCH = drive_tick_per_inch();
+
+  drive_defaults_set();
+}
+
 void Drive::drive_defaults_set() {
-  for (std::size_t i = 0; i < good_imus.size(); i++) {
-    good_imus[i]->set_data_rate(5);
-  }
+  imu.set_data_rate(5);
 
   std::cout << std::fixed;
   std::cout << std::setprecision(2);
-
-  // Set tracking task, user can override this if they want
-  // (one lock for all of it, so the auto task never sees the new tracking function without the flags that go with it)
-  {
-    ez::KillSafeGuard<pros::RecursiveMutex> tracking_lock(drive_mutex);
-    bool resync = tracking_is_custom || tracking_resync_pending;  // a second call before the next pass must not lose the first
-    bool xy_was_measurable = xy_last_pose_valid;
-    odom_tracking_set(std::bind(&ez::Drive::tracking_wheels_tracking, this));
-    tracking_is_custom = false;
-
-    // EZ-Template's own poses and last sensor readings are from before the custom tracker ran, so the next tracking pass
-    // has to pick up from where that tracker left odom_current (see ez_tracking_task()).  Only flagged here: this function
-    // also runs from the constructors, at global scope, where no device can be read yet, and there is nothing to pick up from.
-    if (resync)
-      tracking_resync_pending = true;
-    else
-      xy_last_pose_valid = xy_was_measurable;  // EZ-Template's own tracking was already running: nothing about the pose changed
-  }
 
   // PID Constants
   pid_drive_constants_set(20.0, 0.0, 100.0);
@@ -173,10 +182,6 @@ void Drive::drive_defaults_set() {
   pid_odom_turn_exit_condition_set(90_ms, 3_deg, 250_ms, 7_deg, 500_ms, 750_ms);
   pid_odom_drive_exit_condition_set(90_ms, 1_in, 250_ms, 3_in, 500_ms, 750_ms);
 
-  // How slow the robot has to be to count as stopped.  Placeholders until a robot log sets them
-  pid_distance_exit_stop_speed_set(1.5);
-  pid_angle_exit_stop_speed_set(4.0);
-
   pid_odom_behavior_set(ez::shortest);  // Default odom turning to shortest
 
   // Motion chaining
@@ -184,75 +189,39 @@ void Drive::drive_defaults_set() {
   pid_swing_chain_constant_set(5_deg);
   pid_drive_chain_constant_set(3_in);
 
-  // Modifying the joystick curve with the controller buttons is disabled by default, the user turns it on with
-  // opcontrol_curve_buttons_toggle(true).  The default lives in disable_controller, calling the toggle here would
-  // write to the controller screen while globals are still being constructed.
+  // Modify joystick curve on controller (defaults to disabled)
+  opcontrol_curve_buttons_toggle(true);
 
   // Left / Right modify buttons
   opcontrol_curve_buttons_left_set(pros::E_CONTROLLER_DIGITAL_LEFT, pros::E_CONTROLLER_DIGITAL_RIGHT);
   opcontrol_curve_buttons_right_set(pros::E_CONTROLLER_DIGITAL_Y, pros::E_CONTROLLER_DIGITAL_A);
 
-  // Default PID Tuner buttons
-  pid_tuner_button_increment_set(pros::E_CONTROLLER_DIGITAL_A);
-  pid_tuner_button_decrement_set(pros::E_CONTROLLER_DIGITAL_Y);
-  pid_tuner_button_up_set(pros::E_CONTROLLER_DIGITAL_UP);
-  pid_tuner_button_down_set(pros::E_CONTROLLER_DIGITAL_DOWN);
-  pid_tuner_button_left_set(pros::E_CONTROLLER_DIGITAL_LEFT);
-  pid_tuner_button_right_set(pros::E_CONTROLLER_DIGITAL_RIGHT);
-
   // Enable auto printing and drive motors moving
   pid_drive_toggle(true);
   pid_print_toggle(true);
 
-  // Disables limit switch for auto selector, unless the user has already turned it on
-  if (!as::limit_switch_right && !as::limit_switch_left) as::limit_switch_lcd_initialize(nullptr, nullptr);
+  // Disables limit switch for auto selector
+  as::limit_switch_lcd_initialize(nullptr, nullptr);
 }
 
-double Drive::drive_angle_get() { return drive_imu_get(); }
-
 double Drive::drive_tick_per_inch() {
-  if (is_tracker == ODOM_TRACKER) return odom_tracker_right->ticks_per_inch();
+  if (is_tracker == ODOM_TRACKER)
+    return odom_tracker_right->ticks_per_inch();
 
   CIRCUMFERENCE = WHEEL_DIAMETER * M_PI;
 
-  if (is_tracker == DRIVE_INTEGRATED) TICK_PER_REV = (50.0 * (3600.0 / CARTRIDGE));  // with no cart, the encoder reads 50 counts per rotation
+  if (is_tracker == DRIVE_ADI_ENCODER || is_tracker == DRIVE_ROTATION)
+    TICK_PER_REV = CARTRIDGE * RATIO;
+  else if (is_tracker == DRIVE_INTEGRATED)
+    TICK_PER_REV = (50.0 * (3600.0 / CARTRIDGE)) * RATIO;  // with no cart, the encoder reads 50 counts per rotation
 
-  return TICK_PER_REV / CIRCUMFERENCE;
+  TICK_PER_INCH = (TICK_PER_REV / CIRCUMFERENCE);
+  return TICK_PER_INCH;
 }
 
-void Drive::drive_rpm_set(double rpm) {
-  ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
-
-  if (is_tracker != DRIVE_INTEGRATED) {
-    // Two tracking wheels read in inches on their own and never use CARTRIDGE
-    CARTRIDGE = rpm;
-    return;
-  }
-
-  // Everything that can block (the encoder reads) happens first. What follows changes the scale without blocking, at the
-  // guard's raised priority, so no other task can read the scale half changed.
-  int raw_left = drive_sensor_left_raw();  // a failed read gives the last good one, so it cannot poison the offset
-  int raw_right = drive_sensor_right_raw();
-  double old_tick_per_inch = drive_tick_per_inch();
-  double in_left = sensor_offset_in_left + (raw_left - sensor_offset_raw_left) / old_tick_per_inch;
-  double in_right = sensor_offset_in_right + (raw_right - sensor_offset_raw_right) / old_tick_per_inch;
-
-  CARTRIDGE = rpm;
-
-  // The raw counts did not move, so the robot did not either: carry the inches it had across. Only when the scale really
-  // changed, so setting a value that is already set leaves every reading exactly as it was. And only when the old scale gave
-  // real inches: after an rpm of 0 (ticks per inch infinite) or infinity (ticks per inch 0) the inches above are 0 / 0 or
-  // raw / 0, and storing them would leave both sensors at NaN after the next good value, where without the offsets that
-  // sequence recovers. Then the older offsets stay, and the reading carries on from them at the new scale.
-  bool carried_inches_are_real = std::isfinite(old_tick_per_inch) && old_tick_per_inch != 0.0 && std::isfinite(in_left) && std::isfinite(in_right);
-  if (drive_tick_per_inch() != old_tick_per_inch && carried_inches_are_real) {
-    sensor_offset_in_left = in_left;
-    sensor_offset_in_right = in_right;
-    sensor_offset_raw_left = raw_left;
-    sensor_offset_raw_right = raw_right;
-  }
-}
-
+void Drive::drive_ratio_set(double ratio) { RATIO = ratio; }
+double Drive::drive_ratio_get() { return RATIO; }
+void Drive::drive_rpm_set(double rpm) { CARTRIDGE = rpm; }
 double Drive::drive_rpm_get() { return CARTRIDGE; }
 
 void Drive::private_drive_set(int left, int right) {
@@ -269,11 +238,6 @@ void Drive::private_drive_set(int left, int right) {
 void Drive::drive_set(int left, int right) {
   drive_mode_set(DISABLE, false);
   private_drive_set(left, right);
-  // Something other than the brake and the sticks is moving the robot, so the brake's target is about to go stale: have the
-  // next driver control re-aim it once. Driver control's own output does not come through here (see user_input.cpp), or
-  // every loop would re-aim it and the brake would never pull a shoved robot back. A zero command does not move the robot,
-  // so a defensive drive_set(0, 0) in a driver loop must not do the same.
-  if (left != 0 || right != 0) util::AUTON_RAN = true;
 }
 
 std::vector<int> Drive::drive_get() {
@@ -283,194 +247,98 @@ std::vector<int> Drive::drive_get() {
 }
 
 void Drive::drive_current_limit_set(int mA) {
-  if (std::abs(mA) > 2500) {
+  if (abs(mA) > 2500) {
     mA = 2500;
   }
   CURRENT_MA = mA;
   for (auto i : left_motors) {
-    if (!pto_check(i)) i.set_current_limit(std::abs(mA));  // If the motor is in the pto list, don't do anything to the motor.
+    if (!pto_check(i)) i.set_current_limit(abs(mA));  // If the motor is in the pto list, don't do anything to the motor.
   }
   for (auto i : right_motors) {
-    if (!pto_check(i)) i.set_current_limit(std::abs(mA));  // If the motor is in the pto list, don't do anything to the motor.
+    if (!pto_check(i)) i.set_current_limit(abs(mA));  // If the motor is in the pto list, don't do anything to the motor.
   }
 }
 
-int Drive::drive_current_limit_get() { return CURRENT_MA; }
+int Drive::drive_current_limit_get() {
+  return CURRENT_MA;
+}
 
 // Motor telemetry
 void Drive::drive_sensor_reset() {
-  ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
-
   // Update active brake constants
   left_activebrakePID.target_set(0.0);
   right_activebrakePID.target_set(0.0);
-  // The brake target is 0 against freshly zeroed sensors, and goes stale the moment the robot moves. Have the next
-  // driver control re-aim it; this is also what covers a practice run, where autonomous() is called from opcontrol and
-  // the field status never says autonomous.
-  util::AUTON_RAN = true;
+
+  // Reset odom stuff
+  h_last = 0.0;
+  l_last = 0.0;
+  r_last = 0.0;
+  t_last = 0.0;
 
   // Reset sensors
-  last_good_raw_left = 0;
-  last_good_raw_right = 0;
-  sensor_offset_in_left = 0.0;
-  sensor_offset_in_right = 0.0;
-  sensor_offset_raw_left = 0;
-  sensor_offset_raw_right = 0;
   left_motors.front().tare_position();
   right_motors.front().tare_position();
   if (odom_tracker_left_enabled) odom_tracker_left->reset();
   if (odom_tracker_right_enabled) odom_tracker_right->reset();
   if (odom_tracker_front_enabled) odom_tracker_front->reset();
   if (odom_tracker_back_enabled) odom_tracker_back->reset();
-
-  // Reset odom stuff to the freshly-zeroed sensor values
-  tracking_prime();
+  if (is_tracker == DRIVE_ADI_ENCODER) {
+    left_tracker.reset();
+    right_tracker.reset();
+    return;
+  } else if (is_tracker == DRIVE_ROTATION) {
+    left_rotation.reset_position();
+    right_rotation.reset_position();
+    return;
+  }
 }
 
 int Drive::drive_sensor_right_raw() {
-  // Read as a double and check it before ever converting to int: right_motors' get_position()
-  // returns PROS_ERR_F (infinity) on a failed read, and converting a non-finite double to int
-  // is undefined behavior, not just a wrong number.  Same fallback pattern as
-  // drive_imu_get()'s last_good_angle -- a failed read doesn't get fed into tracking math at
-  // all, it's replaced with the last reading that was actually good.
-  double raw;
-  if (is_tracker == ODOM_TRACKER)
-    raw = odom_tracker_right->get_raw();
-  else
-    raw = right_motors.front().get_position();
-
-  if (std::isfinite(raw) && raw != PROS_ERR && raw != PROS_ERR_F) last_good_raw_right = (int)raw;
-  return last_good_raw_right;
+  if (is_tracker == DRIVE_ADI_ENCODER)
+    return right_tracker.get_value();
+  else if (is_tracker == DRIVE_ROTATION)
+    return right_rotation.get_position();
+  else if (is_tracker == ODOM_TRACKER)
+    return odom_tracker_right->get_raw();
+  return right_motors.front().get_position();
 }
 double Drive::drive_sensor_right() {
-  if (is_tracker == ODOM_TRACKER) return odom_tracker_right->get();
-  // The raw read comes first and outside the lock (it can block, and nothing inside a guard may). The offsets and the scale
-  // are then taken together under it, so a shift from another task lands before or after the whole reading, never between
-  // its parts. drive_mutex is recursive: the tracking and auto passes already hold it when they call this.
-  int raw = drive_sensor_right_raw();
-  ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
-  return sensor_offset_in_right + (raw - sensor_offset_raw_right) / drive_tick_per_inch();
+  if (is_tracker == ODOM_TRACKER)
+    return odom_tracker_right->get();
+  return drive_sensor_right_raw() / drive_tick_per_inch();
 }
 int Drive::drive_velocity_right() { return right_motors.front().get_actual_velocity(); }
 double Drive::drive_mA_right() { return right_motors.front().get_current_draw(); }
 bool Drive::drive_current_right_over() { return right_motors.front().is_over_current(); }
 
 int Drive::drive_sensor_left_raw() {
-  double raw;
-  if (is_tracker == ODOM_TRACKER)
-    raw = odom_tracker_left->get_raw();
-  else
-    raw = left_motors.front().get_position();
-
-  if (std::isfinite(raw) && raw != PROS_ERR && raw != PROS_ERR_F) last_good_raw_left = (int)raw;
-  return last_good_raw_left;
+  if (is_tracker == DRIVE_ADI_ENCODER)
+    return left_tracker.get_value();
+  else if (is_tracker == DRIVE_ROTATION)
+    return left_rotation.get_position();
+  else if (is_tracker == ODOM_TRACKER)
+    return odom_tracker_left->get_raw();
+  return left_motors.front().get_position();
 }
 double Drive::drive_sensor_left() {
-  if (is_tracker == ODOM_TRACKER) return odom_tracker_left->get();
-  // Same as drive_sensor_right(): raw read outside the lock, offsets and scale as one snapshot under it.
-  int raw = drive_sensor_left_raw();
-  ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
-  return sensor_offset_in_left + (raw - sensor_offset_raw_left) / drive_tick_per_inch();
+  if (is_tracker == ODOM_TRACKER)
+    return odom_tracker_left->get();
+  return drive_sensor_left_raw() / drive_tick_per_inch();
 }
 int Drive::drive_velocity_left() { return left_motors.front().get_actual_velocity(); }
 double Drive::drive_mA_left() { return left_motors.front().get_current_draw(); }
 bool Drive::drive_current_left_over() { return left_motors.front().is_over_current(); }
 
 void Drive::drive_imu_reset(double new_heading) {
-  ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
-
-  for (std::size_t i = 0; i < all_imus.size(); i++) {
-    // Reads go through get_this_imu(), which multiplies by the scaler, so the
-    // value written here has to be divided by it to read back as new_heading
-    auto scaler = imu_scale_map.find(all_imus[i]->get_port());
-    double scale = (scaler != imu_scale_map.end() && scaler->second != 0.0) ? scaler->second : 1.0;
-    all_imus[i]->set_rotation(new_heading / scale);
-  }
+  imu.set_rotation(new_heading);
   angle_rad = util::to_rad(new_heading);
-  t_last = -angle_rad;
-  last_good_angle = new_heading;
-
-  // Also the pose odom_theta_get() reports: odom_current.theta is otherwise only refreshed on the next tracking
-  // pass, and every odom motion seeds its angle PID from odom_theta_get(). The maintenance task's set_rotation() of a
-  // recovering IMU is not a heading reset and does not come through here.
-  odom_current.theta = new_heading;
-  central_pose.theta = new_heading;
-  l_pose.theta = new_heading;
-  r_pose.theta = new_heading;
+  t_last = angle_rad;
 }
-double Drive::get_this_imu(pros::Imu* imu) { return imu->get_rotation() * imu_scale_map[imu->get_port()]; }
+double Drive::drive_imu_get() { return imu.get_rotation() * IMU_SCALER; }
+double Drive::drive_imu_accel_get() { return imu.get_accel().x + imu.get_accel().y; }
 
-double Drive::drive_imu_get() {
-  if (imu == nullptr) return last_good_angle;
-
-  double reading = get_this_imu(imu);
-  if (std::isfinite(reading)) {
-    last_good_angle = reading;
-    return reading;
-  }
-  return last_good_angle;
-}
-double Drive::drive_imu_accel_get() {
-  // NaN, not 0.0.  0.0 means "not accelerating", which is exactly what the secondary velocity exit
-  // channel treats as stopped -- returning it with no imu would make that channel fire on every
-  // motion for anyone who turns it on without one.  NaN says "no reading" instead.
-  if (imu == nullptr) return std::nan("");
-
-  auto accel = imu->get_accel();
-  return std::hypot(accel.x, accel.y);
-}
-
-// A physical 3600 degree turn reads in the thousands.  Anything under 100 (0, or a
-// leftover 3.2.x style 1.007) would turn into a wildly wrong scale, so refuse it.  That
-// includes a negative reading: 3600 / -3597 is a scale of -1.0008, which would negate every heading.
-static bool imu_3600_reading_valid(double imu_value_after_3600) { return imu_value_after_3600 >= 100.0; }
-
-void Drive::drive_imu_scaler_3600_set(double imu_value_after_3600) {
-  if (!imu_3600_reading_valid(imu_value_after_3600)) {
-    printf("EZ-Template: drive_imu_scaler_3600_set rejected %g, value must be the imu's reading after physically turning the robot 3600 degrees (about 3600)\n",
-           imu_value_after_3600);
-    return;
-  }
-  double multiplier = 3600.0 / imu_value_after_3600;
-
-  ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
-  if (imu == nullptr) {
-    if (all_imus.empty()) return;
-    imu_scale_map[all_imus.front()->get_port()] = multiplier;
-    return;
-  }
-  imu_scale_map[imu->get_port()] = multiplier;
-}
-double Drive::drive_imu_scaler_3600_get() {
-  double multiplier = 1.0;
-  if (imu == nullptr) {
-    if (!all_imus.empty()) multiplier = imu_scale_map[all_imus.front()->get_port()];
-  } else {
-    multiplier = imu_scale_map[imu->get_port()];
-  }
-  return multiplier != 0.0 ? 3600.0 / multiplier : 0.0;
-}
-
-void Drive::drive_imus_scalers_3600_set(std::vector<double> imu_values_after_3600) {
-  ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
-
-  for (std::size_t i = 0; i < std::min(all_imus.size(), imu_values_after_3600.size()); i++) {
-    if (!imu_3600_reading_valid(imu_values_after_3600[i])) {
-      drive_mutex.print_after_unlock(
-          "EZ-Template: drive_imus_scalers_3600_set rejected %g for imu on port %i, value must be the imu's reading after physically turning the robot 3600 degrees (about 3600)\n",
-          imu_values_after_3600[i], all_imus[i]->get_port());
-      continue;
-    }
-    imu_scale_map[all_imus[i]->get_port()] = 3600.0 / imu_values_after_3600[i];
-  }
-}
-std::map<int, double> Drive::drive_imus_scalers_3600_get() {
-  std::map<int, double> output;
-  for (auto const& pair : imu_scale_map) {
-    output[pair.first] = pair.second != 0.0 ? 3600.0 / pair.second : 0.0;
-  }
-  return output;
-}
+void Drive::drive_imu_scaler_set(double scaler) { IMU_SCALER = scaler; }
+double Drive::drive_imu_scaler_get() { return IMU_SCALER; }
 
 void Drive::drive_imu_display_loading(int iter) {
   // If the lcd is already initialized, don't run this function
@@ -487,116 +355,61 @@ void Drive::drive_imu_display_loading(int iter) {
 
   // While IMU is loading
   if (iter < 2000) {
+    static int last_x1 = border;
     pros::screen::set_pen(0x00FF6EC7);  // EZ Pink
     int x1 = (iter * ((480 - (border * 2)) / 2000.0)) + border;
-    pros::screen::fill_rect(loading_bar_last_x, border, x1, 240 - border);
-    loading_bar_last_x = x1;
+    pros::screen::fill_rect(last_x1, border, x1, 240 - border);
+    last_x1 = x1;
   }
   // Failsafe time
   else {
-    // loading_bar_last_x is still at the pink phase's fully-filled end
-    // position here; reset it so the red bar animates in from empty
-    // instead of drawing itself fully filled on the first red frame.
-    if (iter == 2000) loading_bar_last_x = border;
-
+    static int last_x1 = border;
     pros::screen::set_pen(pros::c::COLOR_RED);
     int x1 = ((iter - 2000) * ((480 - (border * 2)) / 1000.0)) + border;
-    pros::screen::fill_rect(loading_bar_last_x, border, x1, 240 - border);
-    loading_bar_last_x = x1;
+    pros::screen::fill_rect(last_x1, border, x1, 240 - border);
+    last_x1 = x1;
   }
 }
 
 bool Drive::drive_imu_calibrate(bool run_loading_animation) {
-  loading_bar_last_x = 50;
   imu_calibration_complete = false;
-  imu_calibrate_took_too_long = false;
-  bool one_calibrated = false;
-
-  {
-    // Reset the IMU watchdog for this calibration
-    ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
-    imu_stuck_passes.clear();
-    good_imus = all_imus;
-  }
-
-  // No IMUs are calibrated yet, set them all to false
-  std::map<int, bool> imus_status, imus_done, imus_last_status;
-  for (std::size_t i = 0; i < good_imus.size(); i++) {
-    good_imus[i]->reset();
-    int port = good_imus[i]->get_port();
-    imus_status[port] = good_imus[i]->is_calibrating();
-    imus_last_status[port] = imus_status[port];
-    imus_done[port] = false;
-  }
-
-  bool successful = false;
+  imu.reset();
   int iter = 0;
+  bool current_status = imu.is_calibrating();
+  bool last_status = current_status;
+  bool successful = false;
   while (true) {
     iter += util::DELAY_TIME;
 
-    if (!successful) {
-      // Check if each IMU is done calibrating
-      for (std::size_t i = 0; i < good_imus.size(); i++) {
-        int port = good_imus[i]->get_port();
-        imus_last_status[port] = imus_status[port];
-        imus_status[port] = good_imus[i]->is_calibrating();
-        if (!imus_done[port]) imus_done[port] = !imus_status[port] && imus_last_status[port] ? true : false;
-      }
-    }
+    if (run_loading_animation) drive_imu_display_loading(iter);
 
-    // Check if all IMUs have calibrated
-    successful = true;
-    for (std::size_t i = 0; i < good_imus.size(); i++) {
-      if (!imus_done[good_imus[i]->get_port()]) {
-        successful = false;
-      } else {
-        one_calibrated = true;  // Remember that at least 1 IMU has calibrated
-      }
+    if (!successful) {
+      last_status = current_status;
+      current_status = imu.is_calibrating();
+      successful = !current_status && last_status ? true : false;
     }
 
     if (iter >= 2000) {
       if (successful) {
-        printf("IMU is done calibrating (took %d ms)\n", iter);
         break;
       }
       if (iter >= 3000) {
-        if (!one_calibrated) {
-          printf("No IMU plugged in");
-        } else {
-          printf("Only IMUs in ports {");
-          for (std::size_t i = 0; i < good_imus.size(); i++) {
-            int port = good_imus[i]->get_port();
-            if (imus_done[port]) printf(" %i", port);
-          }
-          printf(" } calibrated");
-        }
-        printf(", (took %d ms to realize that)\n", iter);
+        printf("No IMU plugged in, (took %d ms to realize that)\n", iter);
         imu_calibrate_took_too_long = true;
-        break;
+        return false;
       }
     }
-
-    if (run_loading_animation) drive_imu_display_loading(iter);
-
     pros::delay(util::DELAY_TIME);
   }
-
-  // Run through all of the IMUs and remove any IMUs that didn't calibrate successfully
-  {
-    ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
-
-    good_imus.erase(std::remove_if(good_imus.begin(), good_imus.end(), [&](pros::Imu* n) { return !imus_done[n->get_port()]; }), good_imus.end());
-
-    imu = good_imus.empty() ? nullptr : good_imus.front();
-
-    if (one_calibrated && !good_imus.empty()) imu_calibration_complete = true;
-  }
-
-  return imu_calibration_complete;
+  printf("IMU is done calibrating (took %d ms)\n", iter);
+  imu_calibration_complete = true;
+  imu_calibrate_took_too_long = iter > 2000 ? true : false;
+  return true;
 }
 
 bool Drive::drive_imu_calibrated() {
-  if (imu_calibration_complete && !imu_calibrate_took_too_long) return true;
+  if (imu_calibration_complete && !imu_calibrate_took_too_long)
+    return true;
   return false;
 }
 
@@ -612,17 +425,17 @@ void Drive::drive_brake_set(pros::motor_brake_mode_e_t brake_type) {
 }
 
 // Get brake
-pros::motor_brake_mode_e_t Drive::drive_brake_get() { return CURRENT_BRAKE; }
+pros::motor_brake_mode_e_t Drive::drive_brake_get() {
+  return CURRENT_BRAKE;
+}
 
-void Drive::initialize(bool run_loading_animation) {
+void Drive::initialize() {
   opcontrol_curve_sd_initialize();
-  drive_imu_calibrate(run_loading_animation);
+  drive_imu_calibrate();
   drive_sensor_reset();
 }
 
 void Drive::odom_tracker_left_set(tracking_wheel* input) {
-  ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
-
   if (input == nullptr) return;
 
   odom_tracker_left = input;
@@ -633,11 +446,10 @@ void Drive::odom_tracker_left_set(tracking_wheel* input) {
 
   // If the user has input a left and right tracking wheel,
   // the tracking wheels become the new sensors always
-  if (odom_tracker_right_enabled) is_tracker = ODOM_TRACKER;
+  if (odom_tracker_right_enabled)
+    is_tracker = ODOM_TRACKER;
 }
 void Drive::odom_tracker_right_set(tracking_wheel* input) {
-  ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
-
   if (input == nullptr) return;
 
   odom_tracker_right = input;
@@ -645,19 +457,16 @@ void Drive::odom_tracker_right_set(tracking_wheel* input) {
 
   // If the user has input a left and right tracking wheel,
   // the tracking wheels become the new sensors always
-  if (odom_tracker_left_enabled) is_tracker = ODOM_TRACKER;
+  if (odom_tracker_left_enabled)
+    is_tracker = ODOM_TRACKER;
 }
 void Drive::odom_tracker_front_set(tracking_wheel* input) {
-  ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
-
   if (input == nullptr) return;
 
   odom_tracker_front = input;
   odom_tracker_front_enabled = true;
 }
 void Drive::odom_tracker_back_set(tracking_wheel* input) {
-  ez::KillSafeGuard<pros::RecursiveMutex> lock(drive_mutex);
-
   if (input == nullptr) return;
 
   odom_tracker_back = input;
