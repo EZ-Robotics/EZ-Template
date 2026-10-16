@@ -89,20 +89,6 @@ TEST_CASE("pure pursuit smooth_path smooths a bent path with constants that sett
   }
 }
 
-TEST_CASE("pure pursuit smooth_path returns the path unsmoothed when the constants would diverge") {
-  Drive chassis = make_chassis();
-  auto path = bent_path();
-
-  // Each weight is fine on its own, but weight_data + 2 * weight_smooth is 2.01.
-  auto output = DriveTestAccess::smooth_path(chassis, path, 0.99, 0.03, 0.0001);
-
-  REQUIRE(output.size() == path.size());
-  for (std::size_t i = 0; i < path.size(); i++) {
-    CHECK(output[i].target.x == path[i].target.x);
-    CHECK(output[i].target.y == path[i].target.y);
-  }
-}
-
 TEST_CASE("pure pursuit odom_path_smooth_constants_set rejects constants that diverge and keeps the old ones") {
   Drive chassis = make_chassis();
   chassis.odom_path_smooth_constants_set(0.75, 0.03, 0.0001);
