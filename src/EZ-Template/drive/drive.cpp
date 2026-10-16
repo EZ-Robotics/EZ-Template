@@ -49,7 +49,6 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
   // Set constants for tick_per_inch calculation
   WHEEL_DIAMETER = wheel_diameter;
   CARTRIDGE = ticks;
-  drive_tick_per_inch_compute();
 
   drive_defaults_set();
 }
@@ -89,7 +88,6 @@ Drive::Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_por
   // Set constants for tick_per_inch calculation
   WHEEL_DIAMETER = wheel_diameter;
   CARTRIDGE = ticks;
-  drive_tick_per_inch_compute();
 
   drive_defaults_set();
 }
@@ -215,15 +213,11 @@ double Drive::drive_angle_get() { return drive_imu_get(); }
 double Drive::drive_tick_per_inch() {
   if (is_tracker == ODOM_TRACKER) return odom_tracker_right->ticks_per_inch();
 
-  return TICK_PER_INCH;
-}
-
-void Drive::drive_tick_per_inch_compute() {
   CIRCUMFERENCE = WHEEL_DIAMETER * M_PI;
 
   if (is_tracker == DRIVE_INTEGRATED) TICK_PER_REV = (50.0 * (3600.0 / CARTRIDGE));  // with no cart, the encoder reads 50 counts per rotation
 
-  TICK_PER_INCH = (TICK_PER_REV / CIRCUMFERENCE);
+  return TICK_PER_REV / CIRCUMFERENCE;
 }
 
 void Drive::drive_rpm_set(double rpm) {
@@ -232,7 +226,6 @@ void Drive::drive_rpm_set(double rpm) {
   if (is_tracker != DRIVE_INTEGRATED) {
     // Two tracking wheels read in inches on their own and never use CARTRIDGE
     CARTRIDGE = rpm;
-    drive_tick_per_inch_compute();
     return;
   }
 
@@ -240,12 +233,11 @@ void Drive::drive_rpm_set(double rpm) {
   // guard's raised priority, so no other task can read the scale half changed.
   int raw_left = drive_sensor_left_raw();  // a failed read gives the last good one, so it cannot poison the offset
   int raw_right = drive_sensor_right_raw();
-  double old_tick_per_inch = TICK_PER_INCH;
+  double old_tick_per_inch = drive_tick_per_inch();
   double in_left = sensor_offset_in_left + (raw_left - sensor_offset_raw_left) / old_tick_per_inch;
   double in_right = sensor_offset_in_right + (raw_right - sensor_offset_raw_right) / old_tick_per_inch;
 
   CARTRIDGE = rpm;
-  drive_tick_per_inch_compute();
 
   // The raw counts did not move, so the robot did not either: carry the inches it had across. Only when the scale really
   // changed, so setting a value that is already set leaves every reading exactly as it was. And only when the old scale gave
@@ -253,7 +245,7 @@ void Drive::drive_rpm_set(double rpm) {
   // raw / 0, and storing them would leave both sensors at NaN after the next good value, where without the offsets that
   // sequence recovers. Then the older offsets stay, and the reading carries on from them at the new scale.
   bool carried_inches_are_real = std::isfinite(old_tick_per_inch) && old_tick_per_inch != 0.0 && std::isfinite(in_left) && std::isfinite(in_right);
-  if (TICK_PER_INCH != old_tick_per_inch && carried_inches_are_real) {
+  if (drive_tick_per_inch() != old_tick_per_inch && carried_inches_are_real) {
     sensor_offset_in_left = in_left;
     sensor_offset_in_right = in_right;
     sensor_offset_raw_left = raw_left;
