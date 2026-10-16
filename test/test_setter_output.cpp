@@ -85,14 +85,6 @@ TEST_CASE("nothing is printed when print_toggle is off") {
 }
 
 // check_imu_task runs inside ez_auto_task's lock every 10 ms. It prints only when an IMU's health changes.
-TEST_CASE("check_imu_task warns once when the only IMU looks unhealthy") {
-  Drive chassis = make_chassis();
-  DriveTestAccess::imu_calibration_complete(chassis) = true;
-  chassis.good_imus[0]->fake_installed = false;
-  CHECK(printed_by([&] { DriveTestAccess::check_imu_task(chassis); }) == "EZ-Template: IMU on port 5 looks unhealthy but it is the only IMU, keeping it\n");
-  CHECK(printed_by([&] { DriveTestAccess::check_imu_task(chassis); }).empty());
-}
-
 TEST_CASE("check_imu_task says when the primary IMU changes") {
   test_stub::reset_all();
   Drive chassis({1, -2}, {-3, 4}, {5, 6}, 3.25, 360);
@@ -150,20 +142,6 @@ TEST_CASE("the setters print only after the chassis lock is released") {
 }
 
 TEST_CASE("the imu message ez_auto_task's pass prints comes out after its lock is released") {
-  Drive chassis = make_chassis();
-  DriveTestAccess::imu_calibration_complete(chassis) = true;
-  chassis.good_imus[0]->fake_installed = false;
-  expect_printed_after_unlock(
-      chassis,
-      [&] {
-        test_stub::g_clock.delay_calls_until_stop = 0;
-        try {
-          DriveTestAccess::ez_auto_task(chassis);
-        } catch (test_stub::StopLoop&) {}
-        test_stub::g_clock.delay_calls_until_stop = -1;
-      },
-      "EZ-Template: IMU on port 5 looks unhealthy but it is the only IMU, keeping it\n");
-
   test_stub::reset_all();
   Drive two_imus({1, -2}, {-3, 4}, {5, 6}, 3.25, 360);
   DriveTestAccess::imu_calibration_complete(two_imus) = true;

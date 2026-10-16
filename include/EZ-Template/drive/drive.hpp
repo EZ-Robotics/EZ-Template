@@ -4075,7 +4075,6 @@ private:
   double sensor_offset_in_right = 0.0;
   int sensor_offset_raw_left = 0;
   int sensor_offset_raw_right = 0;
-  bool imu_only_imu_warning_shown = false;
 
   // Cross-check state for imu_drift_deg, kept separate from the stuck/eject
   // tracking above -- disagreement between good IMUs is a different failure

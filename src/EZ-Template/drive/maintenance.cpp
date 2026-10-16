@@ -68,28 +68,7 @@ void Drive::check_imu_task() {
     return !n->is_installed() || !std::isfinite(prev_imu_values[port].first) || imu_stuck_passes[port] >= IMU_STUCK_PASSES_THRESHOLD;
   };
 
-  // Never eject the last remaining good IMU, even if it looks unhealthy.
-  int bad_count = 0;
-  for (auto* n : good_imus) {
-    if (is_bad(n)) bad_count++;
-  }
-  bool keep_front = bad_count > 0 && bad_count == static_cast<int>(good_imus.size());
-  if (keep_front && !imu_only_imu_warning_shown) {
-    drive_mutex.print_after_unlock("EZ-Template: IMU on port %d looks unhealthy but it is the only IMU, keeping it\n", good_imus.front()->get_port());
-    imu_only_imu_warning_shown = true;
-  }
-
-  bool skipped_front = false;
-  good_imus.erase(std::remove_if(good_imus.begin(), good_imus.end(),
-                                 [&](pros::Imu* n) {
-                                   if (!is_bad(n)) return false;
-                                   if (keep_front && !skipped_front) {
-                                     skipped_front = true;
-                                     return false;
-                                   }
-                                   return true;
-                                 }),
-                  good_imus.end());
+  good_imus.erase(std::remove_if(good_imus.begin(), good_imus.end(), is_bad), good_imus.end());
 
   // Keep the primary IMU pointed at the front of the healthy deque
   if (!good_imus.empty() && good_imus.front() != imu) {
