@@ -1,12 +1,12 @@
 // What a pid_wait_until() checkpoint that the motion never crosses means for `interfered`.
 //
 // Unreachable checkpoint. A SMALL or BIG exit never marks interfered, so a motion that settles cleanly without crossing its checkpoint, because the
-// checkpoint is past the motion's target or on the wrong side of where it started (banthab0mb High Stakes `pid_drive_set(-34_in, 60, true);
-// pid_wait_until(30_in);`, 1723A's `pid_turn_set(0_deg)` then `pid_wait_until(2_deg)`), returns clean, and so does the pid_wait() after it.
+// checkpoint is past the motion's target or on the wrong side of where it started (found in the EZ-Template-Corpus: `pid_drive_set(-34_in, 60, true);
+// pid_wait_until(30_in);`, and `pid_turn_set(0_deg)` then `pid_wait_until(2_deg)`), returns clean, and so does the pid_wait() after it.
 //
 // Chained motion. With pid_wait_quick_chain() the motion's target is pushed past the checkpoint by the chain constant, so the checkpoint is never
 // the final target.  A turn or drive that latches its SMALL or BIG exit on the pushed target while sitting a fraction short of the checkpoint
-// returns clean (1723A rightRush: "triggered at 270.04 instead of 270.00").
+// returns clean (found in the EZ-Template-Corpus: "triggered at 270.04 instead of 270.00").
 #include <cmath>
 #include <string>
 
@@ -43,7 +43,7 @@ constexpr std::uint32_t GOLDEN_T0 = 370, GOLDEN_T1 = 960, GOLDEN_T2 = 1330;  // 
 // Unreachable checkpoints, physics sim (light_fast, no noise)
 // ---------------------------------------------------------------------------------------------------------------------
 
-TEST_CASE("sim: banthab0mb's pid_drive_set(-34_in, 60, true); pid_wait_until(30_in); pid_wait(); is not interfered") {
+TEST_CASE("sim: a corpus pid_drive_set(-34_in, 60, true); pid_wait_until(30_in); pid_wait(); is not interfered") {
   auto a = sim::archetype_light_fast();
   Drive chassis = make_sim_chassis(a);
   DriveTestAccess::imu_calibration_complete(chassis) = true;

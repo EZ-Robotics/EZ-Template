@@ -1,5 +1,5 @@
 // Controls for the waits: a robot something is really stopping reads interfered, on time, and the waits a team already relies on
-// (the checks from issue 513) behave. Shove recovery is test_shove_recovery.cpp, 2550R's pin2 is in test_exit_gate_verdicts.cpp.
+// (the checks from issue 513) behave. Shove recovery is test_shove_recovery.cpp, the corpus drive into a wall is in test_exit_gate_verdicts.cpp.
 #include <cmath>
 #include <string>
 

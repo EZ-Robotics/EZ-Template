@@ -1,9 +1,9 @@
 // The verdict each wait reaches. Small and big exits are clean. A velocity or mA exit is interfered, unless it ends the wait inside
 // big_error: then the robot got where it was going. A pid_wait_until() that crosses its checkpoint is clean.
 //
-// With 2550R's exits (velocity 100 ms, under the 200 ms big exit time) a robot that crawls in at 2 to 3 in/s is over the stop speed, so
-// small and big can't count, and under the velocity exit's 5 in/s, so the velocity exit ends the wait while the library's speed is still
-// over the stop speed, but inside big_error: clean. The sticky and classroom robots crawl in like that, light_fast does not.
+// With the corpus exits, found in the EZ-Template-Corpus (velocity 100 ms, under the 200 ms big exit time) a robot that crawls in at 2 to 3 in/s is over the
+// stop speed, so small and big can't count, and under the velocity exit's 5 in/s, so the velocity exit ends the wait while the library's speed is still over
+// the stop speed, but inside big_error: clean. The sticky and classroom robots crawl in like that, light_fast does not.
 #include <cmath>
 #include <cstdio>
 #include <string>
@@ -16,7 +16,7 @@ using namespace ez;
 using namespace gate;
 
 namespace {
-void exits_2550R(Drive& c) {
+void exits_from_corpus(Drive& c) {
   c.pid_drive_exit_condition_set(90_ms, 1_in, 200_ms, 3_in, 100_ms, 100_ms);
   c.pid_turn_exit_condition_set(90_ms, 1_deg, 200_ms, 3_deg, 100_ms, 100_ms);
   c.pid_swing_exit_condition_set(90_ms, 1_deg, 200_ms, 3_deg, 100_ms, 100_ms);
@@ -37,10 +37,10 @@ double time_at_heading(const sim::SimArchetype& a, double target, double heading
 
 // ---- the odom quick waits on a finished move -------------------------------------------------------------
 
-TEST_CASE("2550R's exits: pid_odom_set + pid_wait_quick() on a finished move is clean, also on robots that crawl in") {
+TEST_CASE("the corpus exits: pid_odom_set + pid_wait_quick() on a finished move is clean, also on robots that crawl in") {
   for (auto arch : {sim::archetype_light_fast(), sim::archetype_sticky_high_friction(), archetype_classroom()}) {
     Rig r(arch, 1);
-    exits_2550R(r.chassis);
+    exits_from_corpus(r.chassis);
     r.chassis.pid_odom_set({{12_in, 24_in}, fwd, 110}, true);
     REQUIRE(r.wait([&] { r.chassis.pid_wait_quick(); }, 3000));
     CAPTURE(std::string(arch.name));
@@ -49,10 +49,10 @@ TEST_CASE("2550R's exits: pid_odom_set + pid_wait_quick() on a finished move is 
   }
 }
 
-TEST_CASE("2550R's exits: pid_wait_until_index(last) on a 3 point path is clean, also on robots that crawl in") {
+TEST_CASE("the corpus exits: pid_wait_until_index(last) on a 3 point path is clean, also on robots that crawl in") {
   for (auto arch : {sim::archetype_light_fast(), sim::archetype_sticky_high_friction(), archetype_classroom()}) {
     Rig r(arch, 1);
-    exits_2550R(r.chassis);
+    exits_from_corpus(r.chassis);
     r.chassis.pid_odom_set({{{0_in, 12_in}, fwd, 110}, {{12_in, 24_in}, fwd, 110}, {{24_in, 24_in}, fwd, 110}}, true);
     REQUIRE(r.wait([&] { r.chassis.pid_wait_until_index(2); }, 3000));
     CAPTURE(std::string(arch.name));
@@ -64,7 +64,7 @@ TEST_CASE("2550R's exits: pid_wait_until_index(last) on a 3 point path is clean,
 TEST_CASE("controls: a mid-path wait_until a wall blocks, and a quick wait pinned 6 in short of the target, are still interfered") {
   {
     Rig r(sim::archetype_light_fast(), 1);
-    exits_2550R(r.chassis);
+    exits_from_corpus(r.chassis);
     r.chassis.pid_odom_set({{{0_in, 24_in}, fwd, 110}, {{0_in, 48_in}, fwd, 110}}, true);
     r.sim.wall(18.0);  // 6 in before the point the wait is for
     REQUIRE(r.wait([&] { r.chassis.pid_wait_until(pose{0, 24, 0}); }, 3000));
@@ -72,7 +72,7 @@ TEST_CASE("controls: a mid-path wait_until a wall blocks, and a quick wait pinne
   }
   {
     Rig r(sim::archetype_light_fast(), 1);
-    exits_2550R(r.chassis);
+    exits_from_corpus(r.chassis);
     r.chassis.pid_odom_set({{0_in, 24_in}, fwd, 110}, true);
     r.sim.wall(18.0);  // 6 in short of the target
     REQUIRE(r.wait([&] { r.chassis.pid_wait_quick(); }, 3000));
@@ -91,9 +91,9 @@ TEST_CASE("a sticky robot's fast-exit chained swing is clean when it settles ins
 }
 
 // It crawls in at about 2.5 in/s and the velocity exit ends the wait at 23.1 in, before it crosses the checkpoint: clean, as it is inside big_error
-TEST_CASE("2550R's exits on a sticky robot: pid_wait_until(23.5 in) on a 24 in drive returns near the checkpoint, clean") {
+TEST_CASE("the corpus exits on a sticky robot: pid_wait_until(23.5 in) on a 24 in drive returns near the checkpoint, clean") {
   Rig r(sim::archetype_sticky_high_friction(), 1);
-  exits_2550R(r.chassis);
+  exits_from_corpus(r.chassis);
   r.chassis.pid_drive_set(24_in, 110, true);
   REQUIRE(r.wait([&] { r.chassis.pid_wait_until(23.5_in); }, 3000));
   CHECK_FALSE(r.chassis.interfered);
@@ -188,10 +188,10 @@ TEST_CASE("controls: pinned by a wall at 80 degrees on a swing to 90, pid_wait_u
 
 // ---- The mA exit inside big_error ------------------------------------------------------------------------------------------
 
-TEST_CASE("2550R's pin2: an mA exit against a wall inside big_error of the target is clean, outside it is interfered") {
+TEST_CASE("the corpus drive into a wall: an mA exit against a wall inside big_error of the target is clean, outside it is interfered") {
   for (double wall : {25.0, 20.0}) {
     Rig r(sim::archetype_light_fast(), 1);
-    exits_2550R(r.chassis);
+    exits_from_corpus(r.chassis);
     r.chassis.pid_drive_set(27, 80, true);
     r.sim.wall(wall);
     double elapsed = 0;

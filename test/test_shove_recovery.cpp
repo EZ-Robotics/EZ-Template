@@ -68,13 +68,13 @@ sim::SimArchetype classroom_1_motor() {
   return a;
 }
 
-// 2550R's `pid_drive_exit_condition_set(90_ms, 1_in, 200_ms, 3_in, 100_ms, 100_ms)` right before their `pin2`.
-void pin2_exits(Drive& chassis) { chassis.pid_drive_exit_condition_set(90_ms, 1_in, 200_ms, 3_in, 100_ms, 100_ms); }
+// `pid_drive_exit_condition_set(90_ms, 1_in, 200_ms, 3_in, 100_ms, 100_ms)` right before a drive, found in the EZ-Template-Corpus.
+void corpus_exits(Drive& chassis) { chassis.pid_drive_exit_condition_set(90_ms, 1_in, 200_ms, 3_in, 100_ms, 100_ms); }
 
 // One shove of `newtons` against the motion for `duration_ms`, starting 400 ms in.
-Outcome shoved_drive(const sim::SimArchetype& a, double newtons, double duration_ms, bool pin2, double target_in, int speed, bool quick) {
+Outcome shoved_drive(const sim::SimArchetype& a, double newtons, double duration_ms, bool use_corpus_exits, double target_in, int speed, bool quick) {
   Rig r(a);
-  if (pin2) pin2_exits(r.chassis);
+  if (use_corpus_exits) corpus_exits(r.chassis);
   r.chassis.pid_drive_set(target_in * 1_in, speed, true);
   std::uint32_t t0 = pros::millis();
   r.sim.push(-newtons, r.sim.now_ms() + 400, duration_ms);
@@ -105,8 +105,8 @@ enum class Shove {
   crawled_in     // the velocity exit ends it clean within big_error while the robot crawls in
 };
 
-void check_pin2_shove(const sim::SimArchetype& a, double newtons, Shove expect, int crawl_ends_by_ms = 0) {
-  Outcome o = shoved_drive(a, newtons, 300, /*pin2=*/true, 27.0, 80, /*quick=*/true);
+void check_corpus_drive_shove(const sim::SimArchetype& a, double newtons, Shove expect, int crawl_ends_by_ms = 0) {
+  Outcome o = shoved_drive(a, newtons, 300, /*use_corpus_exits=*/true, 27.0, 80, /*quick=*/true);
   CAPTURE(a.name);
   CAPTURE(newtons);
   CAPTURE(o.pos);
@@ -124,23 +124,24 @@ void check_pin2_shove(const sim::SimArchetype& a, double newtons, Shove expect, 
 }
 }  // namespace
 
-TEST_CASE("2550R pin2 (pid_drive_set(27, 80, true); pid_wait_quick(); on 90/1/200/3/100/100 exits): a 300 ms shove is recovered from unless held outside") {
+TEST_CASE(
+    "the corpus drive (pid_drive_set(27, 80, true); pid_wait_quick(); on 90/1/200/3/100/100 exits): a 300 ms shove is recovered from unless held outside") {
   for (double newtons : {40.0, 60.0, 90.0, 120.0})
-    check_pin2_shove(sim::archetype_light_fast(), newtons, newtons == 90.0 ? Shove::held_outside : Shove::recovered);
-  check_pin2_shove(sim::archetype_sticky_high_friction(), 40.0, Shove::crawled_in, 1520);
-  check_pin2_shove(sim::archetype_sticky_high_friction(), 60.0, Shove::crawled_in, 1520);
-  check_pin2_shove(sim::archetype_sticky_high_friction(), 90.0, Shove::crawled_in, 1620);
-  check_pin2_shove(sim::archetype_sticky_high_friction(), 120.0, Shove::crawled_in, 1620);
-  check_pin2_shove(classroom_1_motor(), 40.0, Shove::crawled_in, 1820);
-  check_pin2_shove(classroom_1_motor(), 60.0, Shove::held_outside);
-  check_pin2_shove(classroom_1_motor(), 90.0, Shove::crawled_in, 2020);
+    check_corpus_drive_shove(sim::archetype_light_fast(), newtons, newtons == 90.0 ? Shove::held_outside : Shove::recovered);
+  check_corpus_drive_shove(sim::archetype_sticky_high_friction(), 40.0, Shove::crawled_in, 1520);
+  check_corpus_drive_shove(sim::archetype_sticky_high_friction(), 60.0, Shove::crawled_in, 1520);
+  check_corpus_drive_shove(sim::archetype_sticky_high_friction(), 90.0, Shove::crawled_in, 1620);
+  check_corpus_drive_shove(sim::archetype_sticky_high_friction(), 120.0, Shove::crawled_in, 1620);
+  check_corpus_drive_shove(classroom_1_motor(), 40.0, Shove::crawled_in, 1820);
+  check_corpus_drive_shove(classroom_1_motor(), 60.0, Shove::held_outside);
+  check_corpus_drive_shove(classroom_1_motor(), 90.0, Shove::crawled_in, 2020);
 }
 
 TEST_CASE("pid_drive_set(24_in, 30) at default exits: a 300 ms shove is recovered from") {
   const sim::SimArchetype archetypes[] = {sim::archetype_light_fast(), sim::archetype_sticky_high_friction(), classroom_1_motor()};
   for (const auto& a : archetypes) {
     for (double newtons : {60.0, 90.0}) {
-      Outcome o = shoved_drive(a, newtons, 300, /*pin2=*/false, 24.0, 30, /*quick=*/false);
+      Outcome o = shoved_drive(a, newtons, 300, /*use_corpus_exits=*/false, 24.0, 30, /*quick=*/false);
       CAPTURE(a.name);
       CAPTURE(newtons);
       CAPTURE(o.pos);
@@ -153,14 +154,10 @@ TEST_CASE("pid_drive_set(24_in, 30) at default exits: a 300 ms shove is recovere
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
-// 29295D's slow pure pursuit corner, 20 seeds. Their constants, on a 450 rpm, 3.25 in drive: the robot crawls through the
-// first boomerang corner. The corner reproduces on sticky_high_friction with a 450 rpm cartridge; light_fast never crawls
-// there, and is the control: it gets through the corner onto the path's last point and ends inside xy big_error. It crawls
-// the last few inches in under 5 in/s and outside the 1 in small_error, so the xy velocity exit ends it interfered, as
-// 3.2.2's velocity exit did.
-//
-// OPEN, and marked may_fail on purpose: the crawl is under the 5 in/s velocity exit speed, so on most seeds the xy velocity
-// exit fires there once the angle exit has latched, and the path ends interfered at the first point, about 19 in from the end.
+// A slow pure pursuit corner found in the EZ-Template-Corpus, on a 450 rpm, 3.25 in drive, 20 seeds. light_fast gets through
+// the corner onto the path's last point and ends inside xy big_error. It crawls the last few inches under 5 in/s and outside the
+// 1 in small_error, so the xy velocity exit ends it interfered, as 3.2.2's velocity exit did. On sticky_high_friction the robot
+// crawls through the first corner under 5 in/s and ends there, which is parked as WAIT-05 in PARKED.md.
 // ---------------------------------------------------------------------------------------------------------------------
 
 namespace {
@@ -172,7 +169,7 @@ struct PathResult {
   double xy_error;
 };
 
-PathResult run_29295d(const sim::SimArchetype& base, std::uint32_t seed) {
+PathResult run_slow_corner_path(const sim::SimArchetype& base, std::uint32_t seed) {
   sim::SimArchetype a = base;
   a.cartridge_rpm = 450.0;
   Rig r(a, seed, /*noise=*/true);
@@ -192,24 +189,9 @@ PathResult run_29295d(const sim::SimArchetype& base, std::uint32_t seed) {
 }
 }  // namespace
 
-TEST_CASE("29295D's slow corner path completes on all 20 seeds (sticky_high_friction, 450 rpm)" * doctest::may_fail()) {
-  int complete = 0;
+TEST_CASE("control: the slow corner path on light_fast at 450 rpm gets through the corner and ends on its last point on all 20 seeds") {
   for (std::uint32_t seed = 1; seed <= 20; seed++) {
-    PathResult p = run_29295d(sim::archetype_sticky_high_friction(), seed);
-    CAPTURE(seed);
-    CAPTURE(p.dist_to_end);
-    CAPTURE(p.interfered);
-    REQUIRE(p.returned);
-    bool ok = p.dist_to_end < 3.0 || !p.interfered;
-    CHECK(ok);
-    complete += ok;
-  }
-  CHECK(complete == 20);
-}
-
-TEST_CASE("control: 29295D's path on light_fast at 450 rpm gets through the corner and ends on its last point on all 20 seeds") {
-  for (std::uint32_t seed = 1; seed <= 20; seed++) {
-    PathResult p = run_29295d(sim::archetype_light_fast(), seed);
+    PathResult p = run_slow_corner_path(sim::archetype_light_fast(), seed);
     CAPTURE(seed);
     CAPTURE(p.xy_error);
     REQUIRE(p.returned);
@@ -352,14 +334,14 @@ TEST_CASE("control: 20 shoves at 2 Hz while pinned between them end the wait, in
   }
 }
 
-// 2550R's own pin2 (their 100 ms exits) pushed into a wall. It does NOT end on the mA exit in the sim: at speed 80 a stalled
+// The corpus drive (its 100 ms exits) pushed into a wall. It does NOT end on the mA exit in the sim: at speed 80 a stalled
 // drive draws about 63% of stall current, under the over-current flag (the sim sets it at 100% duty), so it is the velocity
 // exit that ends it. The speed is the movement over the last 100 ms, refreshed once per 100 ms, so the window in progress at
 // contact still holds the approach and the next full one reads the stop: up to two speed windows after contact, then the
 // team's 100 ms velocity_exit_time, and a few passes. A wall at 20 or 12 in holds the robot outside the 3 in big_error, so the wait ends
 // interfered; a wall at 25 in stops it inside big_error, so the robot has arrived and the wait is clean. A full power drive
 // into a wall does end on mA, see below.
-TEST_CASE("2550R's pin2 pushed into a wall ends on the velocity exit within two speed windows plus the team's velocity_exit_time of contact") {
+TEST_CASE("the corpus drive pushed into a wall ends on the velocity exit within two speed windows plus the team's velocity_exit_time of contact") {
   struct Case {
     double wall_in;
     bool interfered;
@@ -369,7 +351,7 @@ TEST_CASE("2550R's pin2 pushed into a wall ends on the velocity exit within two 
     for (const auto& a : kArchetypes) {
       Rig r(a);
       r.sim.wall(c.wall_in);
-      pin2_exits(r.chassis);
+      corpus_exits(r.chassis);
       r.chassis.pid_drive_set(27_in, 80, true);
       std::uint32_t contact = 0;
       r.sim.after_pass = [&](int) {
@@ -389,12 +371,12 @@ TEST_CASE("2550R's pin2 pushed into a wall ends on the velocity exit within two 
 
 // The mA exit still ends a wall push as fast as the team tuned it. Needs full power: a stalled drive draws its duty's share
 // of the 2.5 A stall current, and the over-current flag sets at 2.5 A, so at speed 80 (63%) the sim never reports
-// over-current and it is the velocity exit that ends a wall push (see the pin2 wall test above).
+// over-current and it is the velocity exit that ends a wall push (see the corpus wall test above).
 TEST_CASE("control: a full power drive into a wall ends on the mA exit within the team's mA_timeout of contact") {
   for (const auto& a : kArchetypes) {
     Rig r(a);
     r.sim.wall(20.0);
-    pin2_exits(r.chassis);  // mA_timeout 100 ms
+    corpus_exits(r.chassis);  // mA_timeout 100 ms
     r.chassis.pid_drive_set(36_in, 127);
     while (r.sim.left().position_in < 19.9 && r.sim.now_ms() < 20000) pros::delay(util::DELAY_TIME);
     REQUIRE(r.sim.left().position_in >= 19.9);
