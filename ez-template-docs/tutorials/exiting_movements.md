@@ -36,7 +36,7 @@ But when the robot enters the smaller exit zone, the big timer will not continue
 
 There are two more exit timers that you can add that are intended to be **failsafes** for when the previous two don't trigger.  One timer will start to increase when the velocity of the robot is 0, so if the robot is still for too long it'll exit.  This timer waits until the robot has started moving, so a robot that hasn't gotten going yet won't exit too early.  If the robot never moves, the timer starts counting after 1 second.  Another timer will start once the robot sees it's pulling on the motors too hard (ie, you're fighting your opponent for a mobile goal), and if it's doing this for too long it'll exit.  
 
-For odometry motions, these two failsafes work together as a single check for whether the robot is making real progress toward its target, rather than two separate timers watching velocity and current in isolation.  This means a robot that's still moving but stuck (wedged against a wall, defended on a multi-point path, or fighting a stall right at a pure pursuit corner) will still exit instead of hanging forever, even though it never technically hits 0 velocity or trips the current limit.  It also means a robot that's genuinely closing in on its target, however slowly, won't get cut off early just for moving under the velocity floor.
+The small and big timers also look at how fast the robot is moving.  They only count time while the robot is under the **stop speed**, and they pause (they do not start over) while it is above it.  The velocity timer does not use the stop speed, it counts while the robot is under 5 inches per second (5 degrees per second for turns, swings and odom heading).  If either failsafe ends the wait while the error is still outside `big_error`, `interfered` is set.  If it ends the wait inside `big_error`, it counts as a normal finish.
 
 `pid_wait()` will be your safest way to exit, but with that, it's also going to be the slowest way to exit.  
 
@@ -54,6 +54,29 @@ chassis.pid_odom_set({{0_in, 0_in}, ez::rev, 110});
 chassis.pid_wait();
 ```
 
+
+## Stop speed
+The stop speed is how slow the robot has to be moving to count as stopped for the small and big timers.  It is a real speed, measured over the last 100 ms, not the 0 to 127 motor speed.  The default is 1.5 inches per second for drives and odom position, and 4 degrees per second for turns, swings and odom heading.  A higher number lets motions exit sooner with the robot still moving a little, a lower number waits for the robot to be stiller.  A speed of 0 or less is refused with a printed warning.
+
+```cpp
+void initialize() {
+  chassis.pid_distance_exit_stop_speed_set(2_in / 1_s);  // Drives and odom position
+  chassis.pid_angle_exit_stop_speed_set(6_deg / 1_s);    // Turns, swings and odom heading
+
+  chassis.pid_distance_exit_stop_speed_set(2.0);  // The same, in in/s without units
+  chassis.pid_angle_exit_stop_speed_set(6.0);     // The same, in deg/s without units
+}
+```
+
+```cpp
+void pid_distance_exit_stop_speed_set(double in_per_s);
+void pid_distance_exit_stop_speed_set(ez::QSpeed speed);
+double pid_distance_exit_stop_speed_get();
+
+void pid_angle_exit_stop_speed_set(double deg_per_s);
+void pid_angle_exit_stop_speed_set(ez::QAngularSpeed speed);
+double pid_angle_exit_stop_speed_get();
+```
 
 ## pid_wait_quick()
 `pid_wait_quick()` is exactly the same as writing the code below.  It will `pid_wait_until(target)` but it'll replace `target` with wherever the last target you set was.  This way of exiting has a chance at being faster, because if the robot overshoots at all then the code will exit.  If you undershoot then it'll be as if you ran a normal `pid_wait()`.   
