@@ -410,8 +410,9 @@ public:
    * If your drivetrain has external gearing (a transmission, or a wheel gear that
    * differs from the motor gear), set `ticks` to your wheel's effective RPM
    * (cartridge RPM * (motor gear / wheel gear)) so tracking still reads distances
-   * correctly. If that ratio changes at runtime (a shifting transmission), use
-   * drive_ratio_set() instead of recomputing `ticks` by hand.
+   * correctly. If your gearing changes at runtime (a shifting transmission), call
+   * drive_rpm_set() with the new gear's wheel RPM whenever you shift. You can do that at any
+   * time, even in the middle of a motion: odom and the motion carry on from where the robot is.
    *
    * \param left_motor_ports
    *        input {1, -2...}. make ports negative if reversed
@@ -422,7 +423,9 @@ public:
    * \param wheel_diameter
    *        diameter of your drive wheels
    * \param ticks
-   *        motor cartridge RPM
+   *        the wheel's RPM: cartridge RPM * (motor gear / wheel gear). A 600 RPM cartridge with a 36 tooth motor
+   *        gear driving a 48 tooth wheel gear is 600 * (36 / 48) = 450. With no external gearing it is just the
+   *        cartridge RPM (100, 200 or 600).
    */
   Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks);
 
@@ -432,8 +435,9 @@ public:
    * If your drivetrain has external gearing (a transmission, or a wheel gear that
    * differs from the motor gear), set `ticks` to your wheel's effective RPM
    * (cartridge RPM * (motor gear / wheel gear)) so tracking still reads distances
-   * correctly. If that ratio changes at runtime (a shifting transmission), use
-   * drive_ratio_set() instead of recomputing `ticks` by hand.
+   * correctly. If your gearing changes at runtime (a shifting transmission), call
+   * drive_rpm_set() with the new gear's wheel RPM whenever you shift. You can do that at any
+   * time, even in the middle of a motion: odom and the motion carry on from where the robot is.
    *
    * \param left_motor_ports
    *        input {1, -2...}. make ports negative if reversed
@@ -444,9 +448,68 @@ public:
    * \param wheel_diameter
    *        diameter of your drive wheels
    * \param ticks
-   *        motor cartridge RPM
+   *        the wheel's RPM: cartridge RPM * (motor gear / wheel gear). A 600 RPM cartridge with a 36 tooth motor
+   *        gear driving a 48 tooth wheel gear is 600 * (36 / 48) = 450. With no external gearing it is just the
+   *        cartridge RPM (100, 200 or 600).
    */
   Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, std::vector<int> imu_ports, double wheel_diameter, double ticks);
+
+  // What the compiler says about either six-argument constructor. One string for both so they cannot drift apart.
+#define EZ_DRIVE_RATIO_ARG_DEPRECATED \
+  "Drive's 6th argument (ratio) was removed in 4.0. Pass the wheel RPM instead: cartridge_rpm / ratio. 600 and 1.667 becomes 360: (..., 3.25, 600, 1.667) -> (..., 3.25, 360)"
+  /**
+   * Compatibility only: the constructor 3.x and 4.0 beta.1 to beta.3 had, with a `ratio` as the sixth argument.
+   * It exists so those projects still compile, and it will be removed in a later major version.
+   *
+   * To migrate, fold the ratio into the wheel RPM and drop the last argument: `ticks = cartridge_rpm / ratio`. For example,
+   * 600 and 1.667 becomes 360: `Drive(left, right, 21, 3.25, 600, 1.667)` becomes `Drive(left, right, 21, 3.25, 360)`.
+   * Deleting the last argument without changing `ticks` makes every distance `ratio` times too long.
+   *
+   * It gives exactly the result of the migrated call: `ticks / ratio` goes to the five-argument constructor. Like that
+   * constructor, it does not check its numbers, so a `ratio` of 0 reads as infinite ticks (every distance reads 0) and a
+   * negative `ratio` reads distances backwards.
+   *
+   * \param left_motor_ports
+   *        input {1, -2...}. make ports negative if reversed
+   * \param right_motor_ports
+   *        input {-3, 4...}. make ports negative if reversed
+   * \param imu_port
+   *        port the IMU is plugged into
+   * \param wheel_diameter
+   *        diameter of your drive wheels
+   * \param ticks
+   *        motor cartridge RPM (it becomes `ticks / ratio`, the wheel RPM)
+   * \param ratio
+   *        wheel gear / motor gear, as in 3.x
+   */
+  [[deprecated(EZ_DRIVE_RATIO_ARG_DEPRECATED)]]
+  Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks, double ratio);
+
+  /**
+   * Compatibility only: the redundant IMU constructor 3.x and 4.0 beta.1 to beta.3 had, with a `ratio` as the sixth
+   * argument. It exists so those projects still compile, and it will be removed in a later major version.
+   *
+   * To migrate, fold the ratio into the wheel RPM and drop the last argument: `ticks = cartridge_rpm / ratio`. For example,
+   * 600 and 1.667 becomes 360: `Drive(left, right, {21, 20}, 3.25, 600, 1.667)` becomes `Drive(left, right, {21, 20}, 3.25, 360)`.
+   * It gives exactly the result of the migrated call, and like the five-argument constructor it does not check its numbers
+   * (a `ratio` of 0 reads as infinite ticks, a negative one reads distances backwards).
+   *
+   * \param left_motor_ports
+   *        input {1, -2...}. make ports negative if reversed
+   * \param right_motor_ports
+   *        input {-3, 4...}. make ports negative if reversed
+   * \param imu_ports
+   *        input {5, 6...}. multiple IMU ports
+   * \param wheel_diameter
+   *        diameter of your drive wheels
+   * \param ticks
+   *        motor cartridge RPM (it becomes `ticks / ratio`, the wheel RPM)
+   * \param ratio
+   *        wheel gear / motor gear, as in 3.x
+   */
+  [[deprecated(EZ_DRIVE_RATIO_ARG_DEPRECATED)]]
+  Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, std::vector<int> imu_ports, double wheel_diameter, double ticks, double ratio);
+#undef EZ_DRIVE_RATIO_ARG_DEPRECATED
 
   // Deconstructor
   ~Drive();
@@ -556,6 +619,10 @@ public:
   /**
    * Sets the current angle of the robot.
    *
+   * This sets the IMU's heading and moves the heading PID's target to it, so it is for setting the heading at a known
+   * moment (the start of a match, a reset against a wall).  Do not call it in a loop: every call overwrites the IMU's
+   * heading and the heading target of whatever motion is running.  To correct position in a loop, use odom_xy_set().
+   *
    * \param a
    *        new angle in degrees
    */
@@ -578,6 +645,7 @@ public:
    * Sets the current pose of the robot.
    *
    * If t is left out, only x and y are set and the heading is left as it is.
+   * Setting t is a heading set, see odom_theta_set(): do not do it in a loop.
    *
    * \param itarget
    *        {x, y, t} units in inches and degrees
@@ -596,6 +664,9 @@ public:
 
   /**
    * Sets the current X and Y coordinate for the robot.
+   *
+   * This leaves the heading alone, so it is the one to call repeatedly, for example to correct position from a GPS every
+   * pass.  A custom tracking function can also call it to write its pose.
    *
    * \param x
    *        new x value, in inches
@@ -616,6 +687,10 @@ public:
 
   /**
    * Sets the current X, Y, and Theta values for the robot.
+   *
+   * This sets the IMU's heading and moves the heading PID's target to it, so it is for setting the heading at a known
+   * moment (the start of a match, a reset against a wall).  Do not call it in a loop: every call overwrites the IMU's
+   * heading and the heading target of whatever motion is running.  To correct position in a loop, use odom_xy_set().
    *
    * \param x
    *        new x value, in inches
@@ -1359,6 +1434,9 @@ public:
    *
    * On a failed sensor read, returns the last successfully-read raw value instead of the
    * PROS_ERR/PROS_ERR_F sentinel the underlying read failed with.
+   *
+   * This is the raw count since the last reset, in encoder ticks. It does not change when drive_rpm_set()
+   * changes what a tick is worth, so after one of those it is no longer a fixed multiple of drive_sensor_right().
    */
   int drive_sensor_right_raw();
 
@@ -1391,6 +1469,9 @@ public:
    *
    * On a failed sensor read, returns the last successfully-read raw value instead of the
    * PROS_ERR/PROS_ERR_F sentinel the underlying read failed with.
+   *
+   * This is the raw count since the last reset, in encoder ticks. It does not change when drive_rpm_set()
+   * changes what a tick is worth, so after one of those it is no longer a fixed multiple of drive_sensor_left().
    */
   int drive_sensor_left_raw();
 
@@ -2818,6 +2899,9 @@ public:
 
   /**
    * Lock the code in a while loop until the robot has settled.
+   *
+   * Returns when the motion's small, big, velocity or mA exit fires.  `interfered` is set when the velocity or mA exit ended the motion with the error outside
+   * `big_error`.
    */
   void pid_wait();
 
@@ -2826,9 +2910,6 @@ public:
    *
    * The target is an absolute heading, the same as the heading you gave the turn or swing.
    * `pid_turn_set(90_deg, 90); pid_wait_until(45_deg);` returns when the robot faces 45 degrees, with 45 degrees still to go.
-   *
-   * If the checkpoint can't be reached (past the heading the motion goes to, or on the other side of where it started), the wait
-   * returns when the motion finishes and prints why.  `interfered` is only set when something actually stopped the robot.
    *
    * \param target
    *        absolute heading for a turn or swing, using units
@@ -2841,9 +2922,6 @@ public:
    * The target is how far the robot has driven since THIS motion started, with the same sign as the drive.  It is not measured from
    * the end of the drive.  `pid_drive_set(24_in, 110); pid_wait_until(6_in);` returns after 6 inches, with 18 inches still to go.
    * Backward drives use negative numbers: `pid_drive_set(-24_in, 110); pid_wait_until(-6_in);`.
-   *
-   * If the checkpoint can't be reached (past the distance the drive goes, or the wrong sign), the wait returns when the motion
-   * finishes and prints why.  `interfered` is only set when something actually stopped the robot.
    *
    * \param target
    *        distance driven since this motion started, using units, the same sign as the drive
@@ -2859,10 +2937,6 @@ public:
    *
    * For turns and swings the target is an absolute heading in degrees, the same as the turn target.
    * `pid_turn_set(90_deg, 90); pid_wait_until(45);` returns when the robot faces 45 degrees.
-   *
-   * If the checkpoint can't be reached (past the target, or the wrong sign), the wait returns when the motion finishes and prints
-   * why.  `interfered` is only set when something actually stopped the robot.  This check is for drives, turns and swings; an odom
-   * motion returns when it finishes without a message.
    *
    * \param target
    *        for driving, inches driven since this motion started (same sign as the drive).  for turns/swings, an absolute heading in degrees
@@ -2948,32 +3022,51 @@ public:
    * Autonomous interference detection.
    *
    * Returns true when interfered, and false when nothing happened.
+   *
+   * A wait that ended on the velocity or mA exit with the error outside `big_error` sets this.
    */
   bool interfered = false;
 
   /**
-   * Set the ratio of the robot.
+   * Removed in 4.0. Calling it is a compile error that says what to call instead. It is a template only so the error can carry that message
+   * on every compiler (`= delete("reason")` needs GCC 15, and the projects build with GCC 14): a project that never calls it compiles as if it were not there.
    *
-   * \param ratio
-   *        ratio of the gears
+   * To shift a transmission, call drive_rpm_set() with the wheel RPM of the new gear: cartridge RPM / ratio.
    */
-  void drive_ratio_set(double ratio);
+  template <bool Called = true>
+  void drive_ratio_set(double) {
+    static_assert(!Called,
+                  "drive_ratio_set() was removed in 4.0. To shift, call drive_rpm_set(wheel_rpm) with the wheel RPM of the new gear (cartridge_rpm / ratio).");
+  }
 
   /**
-   * Set the cartridge/wheel rpm of the robot.
+   * Sets the wheel's RPM: the same number as the constructor's `ticks`, cartridge RPM * (motor gear / wheel gear). It is the
+   * one number EZ-Template has for your gearing, and it is how a shifting transmission tells the drive about a gear
+   * change: call it with the wheel RPM of the new gear when you shift.
+   *
+   * You can call it at any time, even in the middle of a motion: odom, the running motion, the active
+   * brake and the waits carry on from where the robot is, and only the distance traveled after the change
+   * uses the new RPM.
+   *
+   * Has no effect if you have two tracking wheels.
    *
    * \param rpm
-   *        rpm of the cartridge or wheel
+   *        the wheel's RPM, as in the constructor's `ticks`
    */
   void drive_rpm_set(double rpm);
 
   /**
-   * Returns the ratio of the drive.
+   * Removed in 4.0, like drive_ratio_set(). Calling it is a compile error that says to use drive_rpm_get().
    */
-  double drive_ratio_get();
+  template <bool Called = true>
+  double drive_ratio_get() {
+    static_assert(!Called, "drive_ratio_get() was removed in 4.0. Use drive_rpm_get(), the wheel RPM.");
+    return 0.0;
+  }
 
   /**
-   * Returns the current cartridge / wheel rpm.
+   * Returns the wheel's RPM: the constructor's `ticks`, or the last value given to drive_rpm_set(). It is the one number
+   * the drive has for its gearing, and it is what a shifting transmission changes when it shifts.
    */
   double drive_rpm_get();
 
@@ -3403,11 +3496,7 @@ public:
    * \param p_mA_timeout
    *        mA timer will start when the first motor on the side(s) being driven is over its current limit, in ms
    * \param use_imu
-   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for
-   *        p_velocity_exit_time).  Off by default: acceleration reads
-   *        near 0 during an ordinary constant-speed cruise too, so this can't tell cruising from stalled and used to cause exits mid-motion.  It's the only
-   *        exit that can catch wheels spinning free (lifted or
-   *        high-centered), which the main sensor and mA_timeout both miss -- turn it on if that case matters more to you than early exits on a slow cruise.
+   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
    */
   void pid_odom_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time,
                                          int p_mA_timeout, bool use_imu = false);
@@ -3428,11 +3517,7 @@ public:
    * \param p_mA_timeout
    *        mA timer will start when the first motor on the side(s) being driven is over its current limit, in ms
    * \param use_imu
-   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for
-   *        p_velocity_exit_time).  Off by default: acceleration reads
-   *        near 0 during an ordinary constant-speed cruise too, so this can't tell cruising from stalled and used to cause exits mid-motion.  It's the only
-   *        exit that can catch wheels spinning free (lifted or
-   *        high-centered), which the main sensor and mA_timeout both miss -- turn it on if that case matters more to you than early exits on a slow cruise.
+   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
    */
   void pid_odom_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time,
                                         int p_mA_timeout, bool use_imu = false);
@@ -3453,11 +3538,7 @@ public:
    * \param p_mA_timeout
    *        mA timer will start when the first motor on the side(s) being driven is over its current limit, unit
    * \param use_imu
-   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for
-   *        p_velocity_exit_time).  Off by default: acceleration reads
-   *        near 0 during an ordinary constant-speed cruise too, so this can't tell cruising from stalled and used to cause exits mid-motion.  It's the only
-   *        exit that can catch wheels spinning free (lifted or
-   *        high-centered), which the main sensor and mA_timeout both miss -- turn it on if that case matters more to you than early exits on a slow cruise.
+   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
    */
   void pid_odom_turn_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error,
                                         ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = false);
@@ -3478,11 +3559,7 @@ public:
    * \param p_mA_timeout
    *        mA timer will start when the first motor on the side(s) being driven is over its current limit, unit
    * \param use_imu
-   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for
-   *        p_velocity_exit_time).  Off by default: acceleration reads
-   *        near 0 during an ordinary constant-speed cruise too, so this can't tell cruising from stalled and used to cause exits mid-motion.  It's the only
-   *        exit that can catch wheels spinning free (lifted or
-   *        high-centered), which the main sensor and mA_timeout both miss -- turn it on if that case matters more to you than early exits on a slow cruise.
+   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
    */
   void pid_odom_drive_exit_condition_set(ez::QTime p_small_exit_time, ez::QLength p_small_error, ez::QTime p_big_exit_time, ez::QLength p_big_error,
                                          ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = false);
@@ -3503,11 +3580,7 @@ public:
    * \param p_mA_timeout
    *        mA timer will start when the first motor on the side(s) being driven is over its current limit, unit
    * \param use_imu
-   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for
-   *        p_velocity_exit_time).  Off by default: acceleration reads
-   *        near 0 during an ordinary constant-speed cruise too, so this can't tell cruising from stalled and used to cause exits mid-motion.  It's the only
-   *        exit that can catch wheels spinning free (lifted or
-   *        high-centered), which the main sensor and mA_timeout both miss -- turn it on if that case matters more to you than early exits on a slow cruise.
+   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
    */
   void pid_drive_exit_condition_set(ez::QTime p_small_exit_time, ez::QLength p_small_error, ez::QTime p_big_exit_time, ez::QLength p_big_error,
                                     ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = false);
@@ -3528,11 +3601,7 @@ public:
    * \param p_mA_timeout
    *        mA timer will start when the first motor on the side(s) being driven is over its current limit, unit
    * \param use_imu
-   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for
-   *        p_velocity_exit_time).  Off by default: acceleration reads
-   *        near 0 during an ordinary constant-speed cruise too, so this can't tell cruising from stalled and used to cause exits mid-motion.  It's the only
-   *        exit that can catch wheels spinning free (lifted or
-   *        high-centered), which the main sensor and mA_timeout both miss -- turn it on if that case matters more to you than early exits on a slow cruise.
+   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
    */
   void pid_turn_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error,
                                    ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = false);
@@ -3553,11 +3622,7 @@ public:
    * \param p_mA_timeout
    *        mA timer will start when the first motor on the side(s) being driven is over its current limit, unit
    * \param use_imu
-   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for
-   *        p_velocity_exit_time).  Off by default: acceleration reads
-   *        near 0 during an ordinary constant-speed cruise too, so this can't tell cruising from stalled and used to cause exits mid-motion.  It's the only
-   *        exit that can catch wheels spinning free (lifted or
-   *        high-centered), which the main sensor and mA_timeout both miss -- turn it on if that case matters more to you than early exits on a slow cruise.
+   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
    */
   void pid_swing_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error,
                                     ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = false);
@@ -3578,11 +3643,7 @@ public:
    * \param p_mA_timeout
    *        mA timer will start when the first motor on the side(s) being driven is over its current limit, in ms
    * \param use_imu
-   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for
-   *        p_velocity_exit_time).  Off by default: acceleration reads
-   *        near 0 during an ordinary constant-speed cruise too, so this can't tell cruising from stalled and used to cause exits mid-motion.  It's the only
-   *        exit that can catch wheels spinning free (lifted or
-   *        high-centered), which the main sensor and mA_timeout both miss -- turn it on if that case matters more to you than early exits on a slow cruise.
+   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
    */
   void pid_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time,
                                     int p_mA_timeout, bool use_imu = false);
@@ -3603,11 +3664,7 @@ public:
    * \param p_mA_timeout
    *        mA timer will start when the first motor on the side(s) being driven is over its current limit, in ms
    * \param use_imu
-   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for
-   *        p_velocity_exit_time).  Off by default: acceleration reads
-   *        near 0 during an ordinary constant-speed cruise too, so this can't tell cruising from stalled and used to cause exits mid-motion.  It's the only
-   *        exit that can catch wheels spinning free (lifted or
-   *        high-centered), which the main sensor and mA_timeout both miss -- turn it on if that case matters more to you than early exits on a slow cruise.
+   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
    */
   void pid_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time,
                                    int p_mA_timeout, bool use_imu = false);
@@ -3628,17 +3685,69 @@ public:
    * \param p_mA_timeout
    *        mA timer will start when the first motor on the side(s) being driven is over its current limit, in ms
    * \param use_imu
-   *        true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for
-   *        p_velocity_exit_time).  Off by default: acceleration reads
-   *        near 0 during an ordinary constant-speed cruise too, so this can't tell cruising from stalled and used to cause exits mid-motion.  It's the only
-   *        exit that can catch wheels spinning free (lifted or
-   *        high-centered), which the main sensor and mA_timeout both miss -- turn it on if that case matters more to you than early exits on a slow cruise.
+   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
    */
   void pid_swing_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time,
                                     int p_mA_timeout, bool use_imu = false);
 
   /**
-   * Returns current TICK_PER_INCH.
+   * Sets how slow the robot has to be moving to count as stopped when it drives, in inches per second.  This is a real speed, not the 0 to 127
+   * motor speed.  The default is 1.5.
+   *
+   * The robot's speed is how far it moved over the last 100 ms.  The small and big exits only count time while the robot is under this speed (the
+   * timer pauses while it is moving, it does not start over).  The velocity exit does not use it: it ends a wait when the robot has been under 5
+   * inches per second (5 degrees per second for turns) for the velocity exit time.  A higher speed ends motions sooner, with the
+   * robot still moving a little.  A lower one waits for the robot to be stiller.  A speed of 0 or less, or one that isn't a number, is refused with
+   * a printed warning and the old speed is kept.
+   *
+   * Applies to drives and odom moves.  The default is a placeholder until it is tuned from a robot log.
+   *
+   * \param in_per_s
+   *        inches per second
+   */
+  void pid_distance_exit_stop_speed_set(double in_per_s);
+
+  /**
+   * Same as pid_distance_exit_stop_speed_set(double), with a speed that has units: `2_in / 1_s`.
+   *
+   * \param speed
+   *        speed with units
+   */
+  void pid_distance_exit_stop_speed_set(ez::QSpeed speed);
+
+  /**
+   * Returns how slow a drive has to be moving to count as stopped, in inches per second.
+   */
+  double pid_distance_exit_stop_speed_get();
+
+  /**
+   * Sets how slow the robot has to be turning to count as stopped when it turns or swings, in degrees per second.  This is a real speed, not the
+   * 0 to 127 motor speed.  The default is 4.
+   *
+   * Works the same as pid_distance_exit_stop_speed_set(): measured over the last 100 ms, the small and big exits pause their timers while the
+   * robot is above it, and the velocity exit does not use it.  Applies to turns, swings, and the heading of odom moves.  The default is a
+   * placeholder until it is tuned from a robot log.
+   *
+   * \param deg_per_s
+   *        degrees per second
+   */
+  void pid_angle_exit_stop_speed_set(double deg_per_s);
+
+  /**
+   * Same as pid_angle_exit_stop_speed_set(double), with a speed that has units: `6_deg / 1_s`.
+   *
+   * \param speed
+   *        speed with units
+   */
+  void pid_angle_exit_stop_speed_set(ez::QAngularSpeed speed);
+
+  /**
+   * Returns how slow a turn or swing has to be moving to count as stopped, in degrees per second.
+   */
+  double pid_angle_exit_stop_speed_get();
+
+  /**
+   * Returns the current ticks per inch.
    */
   double drive_tick_per_inch();
 
@@ -3844,18 +3953,18 @@ public:
   /**
    * Sets a new task to use for tracking.
    *
-   * In this function, you must write the pose directly:
+   * In this function, write the pose your tracking measured, either directly:
    *  - odom_current.x =
    *  - odom_current.y =
    *  - odom_current.theta =
    *
-   * Do not call odom_xyt_set(), odom_xy_set(), odom_x_set(), odom_y_set() or odom_pose_set() inside this
-   * function, those are for setting the pose from your own code.  A tracking function that calls them gets no xy D term (kD)
-   * in odom motions, because a pose that was set is not counted as the robot moving.
+   * or with odom_xyt_set(), odom_xy_set(), odom_x_set(), odom_y_set() or odom_pose_set().  Both work the same: however
+   * far your function moves the pose on a pass is how far the robot moved, for the xy D term (kD) and for knowing when the
+   * robot has stopped.  A correction your function makes (snapping to a wall, a GPS update) counts as movement on that pass.
    *
-   * When your own code sets the pose while a custom tracking function is running, the pass right after the set counts as no
-   * movement for the xy D term.  The library cannot tell if your tracking function kept the pose that was set or wrote its own
-   * over it, like a GPS does.  Setting the pose on every pass leaves the xy D term at 0.
+   * When your own code calls one of those setters outside this function while it is running, the pass right after counts as
+   * no movement for the xy D term.  The library cannot tell if your tracking function kept the pose that was set or wrote its
+   * own over it, like a GPS does.  Setting the pose from your own code on every pass leaves the xy D term at 0.
    *
    * This function does not need to loop, that is done for you in EZ-Template.
    *
@@ -3879,39 +3988,18 @@ private:
    */
   ez::Lock<pros::RecursiveMutex> drive_mutex;
 
-  // The drive motors an mA exit should watch: every motor on the wanted sides that is not handed to the PTO.
-  // Rebuilt on every call; see its definition in exit_conditions.cpp.
-  std::vector<pros::Motor> mA_exit_motors(bool include_left = true, bool include_right = true);
-
-  // Bumped once by every top-level pid_*_set() (see set_drive_pid.cpp/set_turn_pid.cpp/set_swing_pid.cpp/
-  // set_odom_pid.cpp), never anywhere else. Lets a wait tell whether a write to `interfered` -- its own, or
-  // one already sitting there when it starts -- belongs to the motion that wait was actually started for, or
-  // to some other, unrelated one. `interfered_generation` is which motion the CURRENT value of `interfered`
-  // is attributed to. See InterferedScope below, and its uses in exit_conditions.cpp, for why a single shared
-  // bool needs this.
-  std::uint32_t motion_generation = 0;
-  std::uint32_t interfered_generation = 0;
-
-  // The RAII scope a top-level wait opens for as long as it's evaluating one motion's outcome, so `interfered`
-  // only ever ends up attributed to the motion that wait was started for. mark() records a write of
-  // interfered=true as belonging to this scope's motion. On destruction (every return path a wait can take,
-  // including a plain fall-through) -- but ONLY if that motion is still the current one AND nothing has
-  // already spoken for it under its own name -- the destructor asserts interfered=false as this wait's own
-  // clean result, overwriting whatever an unrelated, already-finished stale wait for an OLDER motion left
-  // behind. A write already attributed to THIS motion (this wait's own mark(), or an earlier wait for the same
-  // motion, e.g. a chained call's own phase 1) is never touched, so a real stuck/interfered result for this
-  // motion survives a later, clean phase of the very same wait.
-  class InterferedScope {
-  public:
-    explicit InterferedScope(Drive& d);
-    ~InterferedScope();
-    InterferedScope(const InterferedScope&) = delete;
-    InterferedScope& operator=(const InterferedScope&) = delete;
-    void mark();
-
-  private:
-    Drive& d_;
-    std::uint32_t generation_;
+  // What motion a wait is waiting on.  A wait is for the motion that was set when it started, so when another task starts a new one (a
+  // different mode, or a different target) the wait starts over on the new one.
+  struct WaitSnapshot {
+    explicit WaitSnapshot(Drive& drive) : d(drive), mode(drive.mode), chain_target(drive.chain_target_start), odom_target(drive.odom_target_start) {}
+    bool changed() const {
+      return d.mode != mode || d.chain_target_start != chain_target || d.odom_target_start.x != odom_target.x || d.odom_target_start.y != odom_target.y ||
+             d.odom_target_start.theta != odom_target.theta;
+    }
+    Drive& d;
+    e_mode mode;
+    double chain_target;
+    pose odom_target;
   };
 
   std::function<void(void)> tracking;
@@ -3939,10 +4027,6 @@ private:
   void pid_speed_max_set_internal(int speed);
   std::vector<odom> smooth_path(std::vector<odom> ipath, double weight_smooth, double weight_data, double tolerance);
   double is_past_target(pose target, pose current);
-  // Feeds a PID's secondary velocity-exit channel from the imu, but only when that channel is
-  // turned on (off by default -- see pid_drive_exit_condition_set and friends).  Skips the imu
-  // entirely when it's off, instead of polling it every loop just to be discarded.
-  void secondary_velocity_sensor_update(PID& pid);
   void raw_pid_odom_pp_set(std::vector<odom> imovements, bool slew_on);
   bool ptf1_running = false;
   std::vector<pose> find_point_to_face(pose current, pose target, drive_directions dir, bool set_global);
@@ -3962,17 +4046,19 @@ private:
   double turn_short(double target, double current, bool print = false);
   double turn_long(double target, double current, bool print = false);
   double new_turn_target_compute(double target, double current, ez::e_angle_behavior behavior);
+  void odom_heading_target_resolve();
+  ez::exit_output xy_exit_condition();
   double turn_left(double target, double current, bool print = false);
   double turn_right(double target, double current, bool print = false);
   bool imu_calibration_complete = false;
   bool last_was_autonomous = false;
+  bool last_was_disabled = false;
   int loading_bar_last_x = 0;
 
   // IMU watchdog state: every IMU ever constructed (never shrinks), and
   // per-port health tracking used by check_imu_task() to eject/re-add IMUs.
   std::deque<pros::Imu*> all_imus;
   std::map<int, int> imu_stuck_passes;
-  std::map<int, int> imu_healthy_passes;
   double last_good_angle = 0.0;
   double watchdog_l_last = 0.0, watchdog_r_last = 0.0;
 
@@ -3980,7 +4066,15 @@ private:
   // last raw reading that wasn't a PROS_ERR/PROS_ERR_F/non-finite sensor-read failure.
   int last_good_raw_left = 0;
   int last_good_raw_right = 0;
-  bool imu_only_imu_warning_shown = false;
+
+  // Keeps drive_sensor_left()/right() continuous when ticks per inch changes (drive_rpm_set()): the inches
+  // the sensor read at the last change, and the raw count it was read at. The reading is
+  // offset_in + (raw - offset_raw) / ticks per inch, so a change in scale only applies to the distance traveled after it.
+  // All four are 0 until a change, and drive_sensor_reset() zeroes them with the sensors. Written under drive_mutex.
+  double sensor_offset_in_left = 0.0;
+  double sensor_offset_in_right = 0.0;
+  int sensor_offset_raw_left = 0;
+  int sensor_offset_raw_right = 0;
 
   // Cross-check state for imu_drift_deg, kept separate from the stuck/eject
   // tracking above -- disagreement between good IMUs is a different failure
@@ -3998,11 +4092,9 @@ private:
   bool odom_turn_bias_enabled();
   void odom_turn_bias_enable(bool set);
   // Set every tick by ptp_task() (pid_tasks.cpp) right after it computes turn bias's xy_out scale.
-  // True exactly when turn bias has fully zeroed xy_out to prioritize turning: xy_delta_fake reads
-  // ~0 then because the robot genuinely isn't translating, not because it's stalled, and xyPID's
-  // velocity exit can't tell those apart on its own. See xy_velocity_exit_hold_update().
+  // True exactly when turn bias has fully zeroed xy_out to prioritize turning: the robot is not
+  // translating then, but it isn't stalled either.
   bool xy_translation_bias_gated = false;
-  void xy_velocity_exit_hold_update();
   double angle_rad = 0.0;
   double global_track_width = 0.0;
   bool odometry_enabled = true;
@@ -4029,12 +4121,14 @@ private:
   double xy_delta_fake = 0.0;
   double new_current_fake = 0.0;
   pose xy_last_pose{0.0, 0.0, 0.0};  // odom pose at the end of the last tracking pass
-  // how far odom moved over the last tracking pass, not counting pose sets (0 on the pass after a pose set with custom tracking)
+  // how far odom moved over the last tracking pass, not counting pose sets from the team's code (0 on the pass after one with
+  // custom tracking).  A custom tracking function's own setter calls are tracking and do count.
   pose xy_pose_delta{0.0, 0.0, 0.0};
   bool xy_last_pose_valid = false;          // false until a tracking pass has run, after tracking was paused or reset, and after a non-finite pose
   bool was_odom_just_set = false;           // a pose set happened since the last tracking pass
   bool tracking_is_custom = false;          // odom_tracking_set() was called by the user (drive_defaults_set() clears it)
   pose xy_last_finite_pose{0.0, 0.0, 0.0};  // the last odom pose that was finite (a custom tracker may stop writing one)
+  bool xy_movement_unknown = false;         // the last tracking pass had custom tracking and a pose set from the team's code
   // EZ-Template's own tracking was put back after a custom one, pick up from odom_current on the next tracking pass
   bool tracking_resync_pending = false;
   std::pair<float, float> decide_vert_sensor(ez::tracking_wheel* tracker, bool is_tracker_enabled, float ime = 0.0, float ime_track = 0.0);
@@ -4070,6 +4164,7 @@ private:
 
   bool drive_toggle = true;
   bool print_toggle = true;
+  bool no_pinned_exit_warned = false;
   int swing_min = 0;
   int turn_min = 0;
   bool practice_mode_is_on = false;
@@ -4150,20 +4245,9 @@ private:
    * Tick per inch calculation.
    */
   double TICK_PER_REV = 0.0;
-  double TICK_PER_INCH = 0.0;
   double CIRCUMFERENCE = 0.0;
 
-  /**
-   * Recomputes TICK_PER_REV/CIRCUMFERENCE/TICK_PER_INCH from WHEEL_DIAMETER,
-   * CARTRIDGE, RATIO and is_tracker. Called from every constructor and from
-   * drive_ratio_set()/drive_rpm_set(), the only places those inputs change;
-   * drive_tick_per_inch() just returns the cached TICK_PER_INCH so it's
-   * cheap to call from drive_sensor_left()/_right() every sensor read.
-   */
-  void drive_tick_per_inch_compute();
-
   double CARTRIDGE = 0.0;
-  double RATIO = 1.0;
   double WHEEL_DIAMETER = 0.0;
 
   /**
