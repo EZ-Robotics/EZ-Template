@@ -436,10 +436,10 @@ atan2(const RQuantity<M, L, T, A> &lhs, const RQuantity<M, L, T, A> &rhs) {
 }
 
 inline namespace literals {
-constexpr long double operator"" _pi(long double x) {
+constexpr long double operator""_pi(long double x) {
   return static_cast<double>(x) * 3.1415926535897932384626433832795;
 }
-constexpr long double operator"" _pi(unsigned long long int x) {
+constexpr long double operator""_pi(unsigned long long int x) {
   return static_cast<double>(x) * 3.1415926535897932384626433832795;
 }
 }  // namespace literals
@@ -481,58 +481,58 @@ constexpr QLength mile = 5280 * foot;
 constexpr QLength tile = 24 * inch;
 
 inline namespace literals {
-constexpr QLength operator"" _mm(long double x) {
+constexpr QLength operator""_mm(long double x) {
   return static_cast<double>(x) * millimeter;
 }
-constexpr QLength operator"" _cm(long double x) {
+constexpr QLength operator""_cm(long double x) {
   return static_cast<double>(x) * centimeter;
 }
-constexpr QLength operator"" _m(long double x) {
+constexpr QLength operator""_m(long double x) {
   return static_cast<double>(x) * meter;
 }
-constexpr QLength operator"" _km(long double x) {
+constexpr QLength operator""_km(long double x) {
   return static_cast<double>(x) * kilometer;
 }
-constexpr QLength operator"" _mi(long double x) {
+constexpr QLength operator""_mi(long double x) {
   return static_cast<double>(x) * mile;
 }
-constexpr QLength operator"" _yd(long double x) {
+constexpr QLength operator""_yd(long double x) {
   return static_cast<double>(x) * yard;
 }
-constexpr QLength operator"" _ft(long double x) {
+constexpr QLength operator""_ft(long double x) {
   return static_cast<double>(x) * foot;
 }
-constexpr QLength operator"" _in(long double x) {
+constexpr QLength operator""_in(long double x) {
   return static_cast<double>(x) * inch;
 }
-constexpr QLength operator"" _tile(long double x) {
+constexpr QLength operator""_tile(long double x) {
   return static_cast<double>(x) * tile;
 }
-constexpr QLength operator"" _mm(unsigned long long int x) {
+constexpr QLength operator""_mm(unsigned long long int x) {
   return static_cast<double>(x) * millimeter;
 }
-constexpr QLength operator"" _cm(unsigned long long int x) {
+constexpr QLength operator""_cm(unsigned long long int x) {
   return static_cast<double>(x) * centimeter;
 }
-constexpr QLength operator"" _m(unsigned long long int x) {
+constexpr QLength operator""_m(unsigned long long int x) {
   return static_cast<double>(x) * meter;
 }
-constexpr QLength operator"" _km(unsigned long long int x) {
+constexpr QLength operator""_km(unsigned long long int x) {
   return static_cast<double>(x) * kilometer;
 }
-constexpr QLength operator"" _mi(unsigned long long int x) {
+constexpr QLength operator""_mi(unsigned long long int x) {
   return static_cast<double>(x) * mile;
 }
-constexpr QLength operator"" _yd(unsigned long long int x) {
+constexpr QLength operator""_yd(unsigned long long int x) {
   return static_cast<double>(x) * yard;
 }
-constexpr QLength operator"" _ft(unsigned long long int x) {
+constexpr QLength operator""_ft(unsigned long long int x) {
   return static_cast<double>(x) * foot;
 }
-constexpr QLength operator"" _in(unsigned long long int x) {
+constexpr QLength operator""_in(unsigned long long int x) {
   return static_cast<double>(x) * inch;
 }
-constexpr QLength operator"" _tile(unsigned long long int x) {
+constexpr QLength operator""_tile(unsigned long long int x) {
   return static_cast<double>(x) * tile;
 }
 }  // namespace literals
@@ -558,16 +558,16 @@ constexpr QAngle radian(1.0);
 constexpr QAngle degree = static_cast<double>(2_pi / 360.0) * radian;
 
 inline namespace literals {
-constexpr QAngle operator"" _rad(long double x) {
+constexpr QAngle operator""_rad(long double x) {
   return QAngle(x);
 }
-constexpr QAngle operator"" _rad(unsigned long long int x) {
+constexpr QAngle operator""_rad(unsigned long long int x) {
   return QAngle(static_cast<double>(x));
 }
-constexpr QAngle operator"" _deg(long double x) {
+constexpr QAngle operator""_deg(long double x) {
   return static_cast<double>(x) * degree;
 }
-constexpr QAngle operator"" _deg(unsigned long long int x) {
+constexpr QAngle operator""_deg(unsigned long long int x) {
   return static_cast<double>(x) * degree;
 }
 }  // namespace literals
@@ -596,34 +596,34 @@ constexpr QTime hour = 60 * minute;
 constexpr QTime day = 24 * hour;
 
 inline namespace literals {
-constexpr QTime operator"" _s(long double x) {
+constexpr QTime operator""_s(long double x) {
   return QTime(x);
 }
-constexpr QTime operator"" _ms(long double x) {
+constexpr QTime operator""_ms(long double x) {
   return static_cast<double>(x) * millisecond;
 }
-constexpr QTime operator"" _min(long double x) {
+constexpr QTime operator""_min(long double x) {
   return static_cast<double>(x) * minute;
 }
-constexpr QTime operator"" _h(long double x) {
+constexpr QTime operator""_h(long double x) {
   return static_cast<double>(x) * hour;
 }
-constexpr QTime operator"" _day(long double x) {
+constexpr QTime operator""_day(long double x) {
   return static_cast<double>(x) * day;
 }
-constexpr QTime operator"" _s(unsigned long long int x) {
+constexpr QTime operator""_s(unsigned long long int x) {
   return QTime(static_cast<double>(x));
 }
-constexpr QTime operator"" _ms(unsigned long long int x) {
+constexpr QTime operator""_ms(unsigned long long int x) {
   return static_cast<double>(x) * millisecond;
 }
-constexpr QTime operator"" _min(unsigned long long int x) {
+constexpr QTime operator""_min(unsigned long long int x) {
   return static_cast<double>(x) * minute;
 }
-constexpr QTime operator"" _h(unsigned long long int x) {
+constexpr QTime operator""_h(unsigned long long int x) {
   return static_cast<double>(x) * hour;
 }
-constexpr QTime operator"" _day(unsigned long long int x) {
+constexpr QTime operator""_day(unsigned long long int x) {
   return static_cast<double>(x) * day;
 }
 }  // namespace literals
@@ -650,22 +650,22 @@ constexpr QSpeed miph = mile / hour;
 constexpr QSpeed kmph = kilometer / hour;
 
 inline namespace literals {
-constexpr QSpeed operator"" _mps(long double x) {
+constexpr QSpeed operator""_mps(long double x) {
   return static_cast<double>(x) * mps;
 }
-constexpr QSpeed operator"" _miph(long double x) {
+constexpr QSpeed operator""_miph(long double x) {
   return static_cast<double>(x) * mile / hour;
 }
-constexpr QSpeed operator"" _kmph(long double x) {
+constexpr QSpeed operator""_kmph(long double x) {
   return static_cast<double>(x) * kilometer / hour;
 }
-constexpr QSpeed operator"" _mps(unsigned long long int x) {
+constexpr QSpeed operator""_mps(unsigned long long int x) {
   return static_cast<double>(x) * mps;
 }
-constexpr QSpeed operator"" _miph(unsigned long long int x) {
+constexpr QSpeed operator""_miph(unsigned long long int x) {
   return static_cast<double>(x) * mile / hour;
 }
-constexpr QSpeed operator"" _kmph(unsigned long long int x) {
+constexpr QSpeed operator""_kmph(unsigned long long int x) {
   return static_cast<double>(x) * kilometer / hour;
 }
 }  // namespace literals
@@ -691,16 +691,16 @@ constexpr QAcceleration mps2 = meter / (second * second);
 constexpr QAcceleration G = 9.80665 * mps2;
 
 inline namespace literals {
-constexpr QAcceleration operator"" _mps2(long double x) {
+constexpr QAcceleration operator""_mps2(long double x) {
   return QAcceleration(static_cast<double>(x));
 }
-constexpr QAcceleration operator"" _mps2(unsigned long long int x) {
+constexpr QAcceleration operator""_mps2(unsigned long long int x) {
   return QAcceleration(static_cast<double>(x));
 }
-constexpr QAcceleration operator"" _G(long double x) {
+constexpr QAcceleration operator""_G(long double x) {
   return static_cast<double>(x) * G;
 }
-constexpr QAcceleration operator"" _G(unsigned long long int x) {
+constexpr QAcceleration operator""_G(unsigned long long int x) {
   return static_cast<double>(x) * G;
 }
 }  // namespace literals
@@ -744,10 +744,10 @@ constexpr QAngularSpeed rpm = (360 * degree) / minute;
 constexpr QAngularSpeed cps = (0.01 * degree) / second;  // centidegree per second
 
 inline namespace literals {
-constexpr QAngularSpeed operator"" _rpm(long double x) {
+constexpr QAngularSpeed operator""_rpm(long double x) {
   return static_cast<double>(x) * rpm;
 }
-constexpr QAngularSpeed operator"" _rpm(unsigned long long int x) {
+constexpr QAngularSpeed operator""_rpm(unsigned long long int x) {
   return static_cast<double>(x) * rpm;
 }
 }  // namespace literals
@@ -807,10 +807,10 @@ class QFrequency : public RQuantity<std::ratio<0>, std::ratio<0>, std::ratio<-1>
 constexpr QFrequency Hz(1.0);
 
 inline namespace literals {
-constexpr QFrequency operator"" _Hz(long double x) {
+constexpr QFrequency operator""_Hz(long double x) {
   return QFrequency(static_cast<double>(x));
 }
-constexpr QFrequency operator"" _Hz(unsigned long long int x) {
+constexpr QFrequency operator""_Hz(unsigned long long int x) {
   return QFrequency(static_cast<double>(x));
 }
 }  // namespace literals
@@ -893,40 +893,40 @@ constexpr QMass pound = 16 * ounce;
 constexpr QMass stone = 14 * pound;
 
 inline namespace literals {
-constexpr QMass operator"" _kg(long double x) {
+constexpr QMass operator""_kg(long double x) {
   return QMass(static_cast<double>(x));
 }
-constexpr QMass operator"" _g(long double x) {
+constexpr QMass operator""_g(long double x) {
   return static_cast<double>(x) * gramme;
 }
-constexpr QMass operator"" _t(long double x) {
+constexpr QMass operator""_t(long double x) {
   return static_cast<double>(x) * tonne;
 }
-constexpr QMass operator"" _oz(long double x) {
+constexpr QMass operator""_oz(long double x) {
   return static_cast<double>(x) * ounce;
 }
-constexpr QMass operator"" _lb(long double x) {
+constexpr QMass operator""_lb(long double x) {
   return static_cast<double>(x) * pound;
 }
-constexpr QMass operator"" _st(long double x) {
+constexpr QMass operator""_st(long double x) {
   return static_cast<double>(x) * stone;
 }
-constexpr QMass operator"" _kg(unsigned long long int x) {
+constexpr QMass operator""_kg(unsigned long long int x) {
   return QMass(static_cast<double>(x));
 }
-constexpr QMass operator"" _g(unsigned long long int x) {
+constexpr QMass operator""_g(unsigned long long int x) {
   return static_cast<double>(x) * gramme;
 }
-constexpr QMass operator"" _t(unsigned long long int x) {
+constexpr QMass operator""_t(unsigned long long int x) {
   return static_cast<double>(x) * tonne;
 }
-constexpr QMass operator"" _oz(unsigned long long int x) {
+constexpr QMass operator""_oz(unsigned long long int x) {
   return static_cast<double>(x) * ounce;
 }
-constexpr QMass operator"" _lb(unsigned long long int x) {
+constexpr QMass operator""_lb(unsigned long long int x) {
   return static_cast<double>(x) * pound;
 }
-constexpr QMass operator"" _st(unsigned long long int x) {
+constexpr QMass operator""_st(unsigned long long int x) {
   return static_cast<double>(x) * stone;
 }
 }  // namespace literals
@@ -953,22 +953,22 @@ constexpr QForce poundforce = pound * G;
 constexpr QForce kilopond = kg * G;
 
 inline namespace literals {
-constexpr QForce operator"" _n(long double x) {
+constexpr QForce operator""_n(long double x) {
   return QForce(static_cast<double>(x));
 }
-constexpr QForce operator"" _n(unsigned long long int x) {
+constexpr QForce operator""_n(unsigned long long int x) {
   return QForce(static_cast<double>(x));
 }
-constexpr QForce operator"" _lbf(long double x) {
+constexpr QForce operator""_lbf(long double x) {
   return static_cast<double>(x) * poundforce;
 }
-constexpr QForce operator"" _lbf(unsigned long long int x) {
+constexpr QForce operator""_lbf(unsigned long long int x) {
   return static_cast<double>(x) * poundforce;
 }
-constexpr QForce operator"" _kp(long double x) {
+constexpr QForce operator""_kp(long double x) {
   return static_cast<double>(x) * kilopond;
 }
-constexpr QForce operator"" _kp(unsigned long long int x) {
+constexpr QForce operator""_kp(unsigned long long int x) {
   return static_cast<double>(x) * kilopond;
 }
 }  // namespace literals
@@ -1008,22 +1008,22 @@ constexpr QPressure psi = pound * G / inch2;
 #endif
 
 inline namespace literals {
-constexpr QPressure operator"" _Pa(long double x) {
+constexpr QPressure operator""_Pa(long double x) {
   return QPressure(static_cast<double>(x));
 }
-constexpr QPressure operator"" _Pa(unsigned long long int x) {
+constexpr QPressure operator""_Pa(unsigned long long int x) {
   return QPressure(static_cast<double>(x));
 }
-constexpr QPressure operator"" _bar(long double x) {
+constexpr QPressure operator""_bar(long double x) {
   return static_cast<double>(x) * bar;
 }
-constexpr QPressure operator"" _bar(unsigned long long int x) {
+constexpr QPressure operator""_bar(unsigned long long int x) {
   return static_cast<double>(x) * bar;
 }
-constexpr QPressure operator"" _psi(long double x) {
+constexpr QPressure operator""_psi(long double x) {
   return static_cast<double>(x) * psi;
 }
-constexpr QPressure operator"" _psi(unsigned long long int x) {
+constexpr QPressure operator""_psi(unsigned long long int x) {
   return static_cast<double>(x) * psi;
 }
 }  // namespace literals
@@ -1050,22 +1050,22 @@ constexpr QTorque footPound = 1.355817948 * newtonMeter;
 constexpr QTorque inchPound = 0.083333333 * footPound;
 
 inline namespace literals {
-constexpr QTorque operator"" _nM(long double x) {
+constexpr QTorque operator""_nM(long double x) {
   return QTorque(static_cast<double>(x));
 }
-constexpr QTorque operator"" _nM(unsigned long long int x) {
+constexpr QTorque operator""_nM(unsigned long long int x) {
   return QTorque(static_cast<double>(x));
 }
-constexpr QTorque operator"" _inLb(long double x) {
+constexpr QTorque operator""_inLb(long double x) {
   return static_cast<double>(x) * inchPound;
 }
-constexpr QTorque operator"" _inLb(unsigned long long int x) {
+constexpr QTorque operator""_inLb(unsigned long long int x) {
   return static_cast<double>(x) * inchPound;
 }
-constexpr QTorque operator"" _ftLb(long double x) {
+constexpr QTorque operator""_ftLb(long double x) {
   return static_cast<double>(x) * footPound;
 }
-constexpr QTorque operator"" _ftLb(unsigned long long int x) {
+constexpr QTorque operator""_ftLb(unsigned long long int x) {
   return static_cast<double>(x) * footPound;
 }
 }  // namespace literals
