@@ -482,6 +482,42 @@ void velocity_sensor_secondary_exit_set(double zero);
 
 
 
+### stop_speed_set()
+Sets the stop speed: how slow the sensor has to be moving to count as stopped, in sensor units per second.  The small and big exits only count time while the sensor is under it, and pause while it is above it.  The speed is measured from the sensor over the last 100 ms.  This is defaulted to `5`.  The velocity exit does not use it, see `velocity_sensor_main_exit_set()`.   
+
+`units_per_s` double, sensor units per second   
+<Tabs
+  groupId="stop_speed_set()"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+ez::PID liftPID;
+void initialize() {
+  liftPID.stop_speed_set(10.0);  // The lift counts as stopped under 10 units per second
+}
+```
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+void stop_speed_set(double units_per_s);
+```
+
+</TabItem>
+</Tabs>
+
+
+
 ### name_set()
 A string that prints when exit conditions are met.  When you have multiple mechanisms using exit conditions and you're debugging, seeing which exit condition is doing what can be useful.     
 
@@ -767,6 +803,74 @@ double velocity_sensor_secondary_get();
 
 
 
+
+
+
+### stop_speed_get()
+Returns the stop speed, in sensor units per second.   
+<Tabs
+  groupId="stop_speed_get()"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+ez::PID liftPID;
+void initialize() {
+  printf("Stop speed: %f\n", liftPID.stop_speed_get());
+}
+```
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+double stop_speed_get();
+```
+
+</TabItem>
+</Tabs>
+
+
+
+### speed_get()
+Returns how fast the sensor has been moving over the last 100 ms, in sensor units per second.  It updates on every `compute()` and `compute_error()`.   
+<Tabs
+  groupId="speed_get()"
+  defaultValue="proto"
+  values={[
+    { label: 'Prototype',  value: 'proto', },
+    { label: 'Example',  value: 'example', },
+  ]
+}>
+
+<TabItem value="example">
+
+```cpp
+ez::PID liftPID;
+void opcontrol() {
+  printf("Lift speed: %f\n", liftPID.speed_get());
+}
+```
+
+</TabItem>
+
+
+<TabItem value="proto">
+
+```cpp
+double speed_get();
+```
+
+</TabItem>
+</Tabs>
 
 
 
