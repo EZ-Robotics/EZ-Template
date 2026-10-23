@@ -70,9 +70,9 @@
 #define EZ_TEMPLATE_VERSION_MINOR 0
 #define EZ_TEMPLATE_VERSION_PATCH 0
 #define EZ_TEMPLATE_VERSION_STAGE EZ_TEMPLATE_STAGE_BETA
-#define EZ_TEMPLATE_VERSION_PRERELEASE_NUM 5  // 0 on a full release
-#define EZ_TEMPLATE_VERSION_PRERELEASE "beta.5"  // "" on a full release
-#define EZ_TEMPLATE_VERSION_STRING "4.0.0-beta.5"
+#define EZ_TEMPLATE_VERSION_PRERELEASE_NUM 6  // 0 on a full release
+#define EZ_TEMPLATE_VERSION_PRERELEASE "beta.6"  // "" on a full release
+#define EZ_TEMPLATE_VERSION_STRING "4.0.0-beta.6"
 
 // One integer that sorts correctly, alpha < beta < rc < release.
 #define EZ_TEMPLATE_VERSION_ENCODE(major, minor, patch, stage, num) \
