@@ -13,20 +13,8 @@ import TabItem from '@theme/TabItem';
 
 
 ### pid_drive_set()
-Sets the robot to move forward using PID with units, only using slew if globally enabled.  
 
-`p_target` target, in units 
-`speed` 0 to 127, max speed during motion   
-<Tabs
-  groupId="pid_driv09873214ze_set_okapi"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-
-<TabItem value="example">
+<ApiFunction name="pid_drive_set" args="ez::QLength, int">
 
 ```cpp
 void autonomous() {
@@ -41,17 +29,7 @@ void autonomous() {
 }
 ```
 
-</TabItem>
-
-
-<TabItem value="proto">
-
-```cpp
-void pid_drive_set(ez::QLength p_target, int speed);
-```
-
-</TabItem>
-</Tabs>
+</ApiFunction>
 
 
 
@@ -60,22 +38,8 @@ void pid_drive_set(ez::QLength p_target, int speed);
 
 
 ### pid_drive_set()
-Sets the robot to move forward using PID with units, using slew if enabled for this motion.  
 
-`p_target` target, in units 
-`speed` 0 to 127, max speed during motion  
-`slew_on` ramp up from a lower speed to your target speed   
-`toggle_heading` toggle for heading correction.  true enables, false disables   
-<Tabs
-  groupId="pid_dri987475zve_set_okapi"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-
-<TabItem value="example">
+<ApiFunction name="pid_drive_set" args="ez::QLength, int, bool, bool">
 
 ```cpp
 void autonomous() {
@@ -90,17 +54,7 @@ void autonomous() {
 }
 ```
 
-</TabItem>
-
-
-<TabItem value="proto">
-
-```cpp
-void pid_drive_set(ez::QLength p_target, int speed, bool slew_on, bool toggle_heading = true);
-```
-
-</TabItem>
-</Tabs>
+</ApiFunction>
 
 
 
@@ -483,20 +437,8 @@ void slew_drive_constants_backward_set(ez::QLength distance, int min_speed);
 
 
 ### pid_drive_set()
-Sets the robot to move forward using PID without units, only using slew if globally enabled.  
 
-`target` target in inches
-`speed` 0 to 127, max speed during motion   
-<Tabs
-  groupId="pid_d98709321874z5rive_set"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-
-<TabItem value="example">
+<ApiFunction name="pid_drive_set" args="double, int">
 
 ```cpp
 void autonomous() {
@@ -511,39 +453,15 @@ void autonomous() {
 }
 ```
 
-</TabItem>
-
-
-<TabItem value="proto">
-
-```cpp
-void pid_drive_set(double target, int speed);
-```
-
-</TabItem>
-</Tabs>
+</ApiFunction>
 
 
 
 
 
 ### pid_drive_set()
-Sets the robot to move forward using PID without units, using slew if enabled for this motion.  
 
-`target` target in inches
-`speed` 0 to 127, max speed during motion  
-`slew_on` ramp up from a lower speed to your target speed   
-`toggle_heading` toggle for heading correction.  true enables, false disables   
-<Tabs
-  groupId="987093214zpid_drive_set"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-
-<TabItem value="example">
+<ApiFunction name="pid_drive_set" args="double, int, bool, bool">
 
 ```cpp
 void autonomous() {
@@ -558,17 +476,7 @@ void autonomous() {
 }
 ```
 
-</TabItem>
-
-
-<TabItem value="proto">
-
-```cpp
-void pid_drive_set(double target, int speed, bool slew_on, bool toggle_heading = true);
-```
-
-</TabItem>
-</Tabs>
+</ApiFunction>
 
 
 
