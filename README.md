@@ -25,6 +25,26 @@ $ npm run build
 
 This command generates static content into the `build` directory and can be served using any static contents hosting service.
 
+### API reference from the headers
+
+Some entries take their text from the library's header comments. The text is saved in this repo as a snapshot (`api/data/`), so editing pages needs only `npm run start`, no Doxygen.
+
+**Place a function.** Keep the page's `### heading()`, then add a tag under it. Put the example inside the tag (a `\code` example in the header wins if there is one). `args` lists every parameter type, to pick an overload.
+
+```
+<ApiFunction name="pid_wait" />
+<ApiFunction name="pid_drive_set" args="double, int" />
+<ApiFunction name="Drive::initialize" />
+```
+
+A tag that does not match fails the build with the file, line and the candidates.
+
+**Preview header edits.** Install Doxygen (`brew install doxygen`, or `winget install DimitriVanHeesch.Doxygen`), then `npm run api:update -- ../EZ-Template --use` and `npm run start`. Before committing, delete `api/data/local.json` and undo the change to `api/config.json`.
+
+**Release day.** Run `npm run api:update -- vX.Y.Z --use`. It lists the functions added, removed or reworded and any placed tag that would break. Commit `api/`, open the PR into `website-dev`, and promote it as below. The live text only changes when a new snapshot is committed.
+
+**Cutting a docs version.** After `npm run docusaurus docs:version X.Y.Z`, add `"X.Y.Z": "vX.Y.Z"` under `versions` in `api/config.json`. A tag in a version that is not mapped fails the build.
+
 ### Branches and promoting docs
 
 | Branch | Role |
