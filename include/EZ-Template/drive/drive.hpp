@@ -259,6 +259,24 @@ public:
    *        the distance the robot travels to ramp up to full speed (127), a distance unit
    * \param min_speed
    *        the starting speed for the movement, 0 - 127
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   chassis.slew_drive_constants_set(5_in, 50);
+   *
+   *   chassis.pid_drive_set(12_in, 110, true);
+   *   chassis.pid_wait();
+   *
+   *   chassis.pid_drive_set(-12_in, 110, true);
+   *   chassis.pid_wait();
+   * }
+   * \endcode
    */
   void slew_drive_constants_set(ez::QLength distance, int min_speed);
 
@@ -267,6 +285,27 @@ public:
    *
    * \param slew_on
    *        true enables, false disables
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   // Set the default slew state to true
+   *   chassis.slew_drive_set(true);
+   *
+   *   // This will not use slew because we explicitly told the robot to not slew
+   *   chassis.pid_drive_set(24_in, 110, false);
+   *   chassis.pid_wait();
+   *
+   *   // This will slew because it's the default state
+   *   chassis.pid_drive_set(-24_in, 110);
+   *   chassis.pid_wait();
+   * }
+   * \endcode
    */
   void slew_drive_set(bool slew_on);
 
@@ -280,6 +319,33 @@ public:
 
   /**
    * Returns true if slew is enabled for all drive forward movements, false otherwise.
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   // Set the default slew state to true
+   *   chassis.slew_drive_forward_set(true);
+   *   if (chassis.slew_drive_forward_get())
+   *     printf("Slew Forward is Enabled!\n");
+   *
+   *   // This will not use slew because we explicitly told the robot to not slew
+   *   chassis.pid_drive_set(24_in, 110, false);
+   *   chassis.pid_wait();
+   *
+   *   // This will slew because it's the default state going forward
+   *   chassis.pid_drive_set(24_in, 110);
+   *   chassis.pid_wait();
+   *
+   *   // This will not slew because no default is set for going backward
+   *   chassis.pid_drive_set(-48_in, 110);
+   *   chassis.pid_wait();
+   * }
+   * \endcode
    */
   bool slew_drive_forward_get();
 
@@ -2028,6 +2094,22 @@ public:
    *        true ramps up from a lower speed to your target speed, false doesn't
    * \param toggle_heading
    *        toggle for heading correction.  true enables, false disables
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   chassis.pid_drive_set(24_in, 110);  // Uses the global slew setting
+   *   chassis.pid_wait();
+   *
+   *   chassis.pid_drive_set(24_in, 110, true);  // Slew on for this motion only
+   *   chassis.pid_wait();
+   * }
+   * \endcode
    */
   void pid_drive_set(ez::QLength p_target, int speed, bool slew_on, bool toggle_heading = true);
 
@@ -3282,11 +3364,27 @@ public:
    *        derivative term
    * \param p_start_i
    *        error threshold to start integral
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.pid_heading_constants_set(3, 0, 20);
+   * }
+   * \endcode
    */
   void pid_heading_constants_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
   /**
    * Returns the PID constants that correct the robot's heading during drive motions, as a `PID::Constants` with `kp`, `ki`, `kd` and `start_i`.
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.pid_heading_constants_set(11.0, 0.0, 20.0);
+   *   ez::PID::Constants c = chassis.pid_heading_constants_get();
+   *   // Prints kp 11.00  ki 0.00  kd 20.00  start_i 0.00
+   *   printf("kp %.2f  ki %.2f  kd %.2f  start_i %.2f\n", c.kp, c.ki, c.kd,
+   *          c.start_i);
+   * }
+   * \endcode
    */
   PID::Constants pid_heading_constants_get();
 
@@ -3301,6 +3399,12 @@ public:
    *        derivative term
    * \param p_start_i
    *        error threshold to start integral
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.pid_drive_constants_set(10, 0, 100);
+   * }
+   * \endcode
    */
   void pid_drive_constants_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
@@ -3312,6 +3416,16 @@ public:
    *
    * `pid_drive_constants_forward_get()` and `pid_drive_constants_backward_get()` return the constants a forward or backward drive will use.  If none
    * were set for that direction, they return the constants from `pid_drive_constants_set()`.
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.pid_drive_constants_set(20.0, 0.0, 100.0);
+   *   ez::PID::Constants c = chassis.pid_drive_constants_get();
+   *   // Prints kp 20.00  ki 0.00  kd 100.00  start_i 0.00
+   *   printf("kp %.2f  ki %.2f  kd %.2f  start_i %.2f\n", c.kp, c.ki, c.kd,
+   *          c.start_i);
+   * }
+   * \endcode
    */
   PID::Constants pid_drive_constants_get();
 
@@ -3364,6 +3478,12 @@ public:
    *
    * \param input
    *        length unit
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.pid_drive_chain_constant_set(3_in);
+   * }
+   * \endcode
    */
   void pid_drive_chain_constant_set(ez::QLength input);
 
@@ -3409,6 +3529,13 @@ public:
 
   /**
    * Returns the amount that the PID will overshoot target by to maintain momentum into the next motion for driving forward.
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.pid_drive_chain_constant_set(3_in);
+   *   printf("%.2f\n", chassis.pid_drive_chain_forward_constant_get());
+   * }
+   * \endcode
    */
   double pid_drive_chain_forward_constant_get();
 
@@ -3587,6 +3714,13 @@ public:
    * \param use_imu
    *        true adds a second velocity exit timer from the imu's acceleration.  Off by default: a steady cruise also reads near 0 acceleration,
    *        so it can exit early.
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.pid_drive_exit_condition_set(300_ms, 1_in, 500_ms, 3_in, 750_ms,
+   *                                        750_ms);
+   * }
+   * \endcode
    */
   void pid_drive_exit_condition_set(ez::QTime p_small_exit_time, ez::QLength p_small_error, ez::QTime p_big_exit_time, ez::QLength p_big_error,
                                     ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = false);
