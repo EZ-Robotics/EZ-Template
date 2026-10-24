@@ -226,8 +226,8 @@ public:
   /**
    * Sets constants for slew for driving forward.
    *
-   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set distance.  A movement with a lower max speed is capped at that speed,
-   * so it reaches that speed before the distance is traveled.
+   * Slew ramps up the speed of the robot from `min_speed` to full speed (127) over the set distance.  A movement with a lower max speed is capped at
+   * that speed, so it reaches that speed before the distance is traveled.
    *
    * \param distance
    *        the distance the robot travels to ramp up to full speed (127), a distance unit
@@ -239,8 +239,8 @@ public:
   /**
    * Sets constants for slew for driving backward.
    *
-   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set distance.  A movement with a lower max speed is capped at that speed,
-   * so it reaches that speed before the distance is traveled.
+   * Slew ramps up the speed of the robot from `min_speed` to full speed (127) over the set distance.  A movement with a lower max speed is capped at
+   * that speed, so it reaches that speed before the distance is traveled.
    *
    * \param distance
    *        the distance the robot travels to ramp up to full speed (127), a distance unit
@@ -252,8 +252,8 @@ public:
   /**
    * Sets constants for slew for driving.
    *
-   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set distance.  A movement with a lower max speed is capped at that speed,
-   * so it reaches that speed before the distance is traveled.
+   * Slew ramps up the speed of the robot from `min_speed` to full speed (127) over the set distance.  A movement with a lower max speed is capped at
+   * that speed, so it reaches that speed before the distance is traveled.
    *
    * \param distance
    *        the distance the robot travels to ramp up to full speed (127), a distance unit
@@ -2015,14 +2015,17 @@ public:
   void pid_drive_set(ez::QLength p_target, int speed);
 
   /**
-   * Sets the robot to move forward using PID with units, using slew if enabled for this motion.
+   * Sets the robot to move forward using PID with units.
+   *
+   * Leave out `slew_on` and `toggle_heading` to use the global slew setting for the direction you are driving (see `slew_drive_set()`), with heading
+   * correction on.  Pass `slew_on` to turn slew on or off for just this motion.
    *
    * \param p_target
    *        target unit
    * \param speed
    *        0 to 127, max speed during motion
    * \param slew_on
-   *        ramp up from a lower speed to your target speed
+   *        true ramps up from a lower speed to your target speed, false doesn't
    * \param toggle_heading
    *        toggle for heading correction.  true enables, false disables
    */
@@ -3269,7 +3272,7 @@ public:
   double pid_swing_chain_backward_constant_get();
 
   /**
-   * Set the heading pid constants object.
+   * Set PID constants for the heading correction during drive motions.
    *
    * \param p
    *        proportional term
@@ -3283,12 +3286,12 @@ public:
   void pid_heading_constants_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
   /**
-   * Returns PID constants with PID::Constants.
+   * Returns the PID constants that correct the robot's heading during drive motions, as a `PID::Constants` with `kp`, `ki`, `kd` and `start_i`.
    */
   PID::Constants pid_heading_constants_get();
 
   /**
-   * Set the drive pid constants object.
+   * Set PID drive constants for forwards and backwards.
    *
    * \param p
    *        proportional term
@@ -3302,14 +3305,18 @@ public:
   void pid_drive_constants_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
   /**
-   * Returns PID constants with PID::Constants.
+   * Returns the PID constants for driving, as a `PID::Constants` with `kp`, `ki`, `kd` and `start_i`.
    *
-   * Returns -1 if fwd and rev constants aren't the same!
+   * If the forward and backward constants were set to different values, this prints `Forward and Reverse constants are not the same!` and returns
+   * `{-1, -1, -1, -1}`.  Use the forward and backward getters when they differ.
+   *
+   * `pid_drive_constants_forward_get()` and `pid_drive_constants_backward_get()` return the constants a forward or backward drive will use.  If none
+   * were set for that direction, they return the constants from `pid_drive_constants_set()`.
    */
   PID::Constants pid_drive_constants_get();
 
   /**
-   * Set the forward pid constants object.
+   * Set PID drive constants for forwards movements.
    *
    * \param p
    *        proportional term
@@ -3323,15 +3330,14 @@ public:
   void pid_drive_constants_forward_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
   /**
-   * Returns PID constants with PID::Constants.
+   * Returns the PID constants for driving forward, as a `PID::Constants` with `kp`, `ki`, `kd` and `start_i`.
    *
-   * These are the constants a forward drive will use.  If no forward constants were set,
-   * this returns the constants from pid_drive_constants_set().
+   * These are the constants a forward drive will use.  If no forward constants were set, this returns the constants from `pid_drive_constants_set()`.
    */
   PID::Constants pid_drive_constants_forward_get();
 
   /**
-   * Set the backwards pid constants object.
+   * Set PID drive constants for backwards movements.
    *
    * \param p
    *        proportional term
@@ -3345,10 +3351,9 @@ public:
   void pid_drive_constants_backward_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
   /**
-   * Returns PID constants with PID::Constants.
+   * Returns the PID constants for driving backward, as a `PID::Constants` with `kp`, `ki`, `kd` and `start_i`.
    *
-   * These are the constants a backward drive will use.  If no backward constants were set,
-   * this returns the constants from pid_drive_constants_set().
+   * These are the constants a backward drive will use.  If no backward constants were set, this returns the constants from `pid_drive_constants_set()`.
    */
   PID::Constants pid_drive_constants_backward_get();
 
@@ -3565,22 +3570,23 @@ public:
                                          ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = false);
 
   /**
-   * Set's constants for drive exit conditions.
+   * Sets constants for drive exit conditions.
    *
    * \param p_small_exit_time
-   *        time to exit when within small_error, unit
+   *        time to exit when within small_error, in units
    * \param p_small_error
-   *        small timer will start when error is within this, unit
+   *        small timer will start when error is within this, in units
    * \param p_big_exit_time
-   *        time to exit when within big_error, unit
+   *        time to exit when within big_error, in units
    * \param p_big_error
-   *        big timer will start when error is within this, unit
+   *        big timer will start when error is within this, in units
    * \param p_velocity_exit_time
-   *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), unit
+   *        time, in units, for velocity to be 0 after the robot has moved (or after 1 second if it never moves)
    * \param p_mA_timeout
-   *        mA timer will start when the first motor on the side(s) being driven is over its current limit, unit
+   *        mA timer will start when the first motor on the side(s) being driven is over its current limit, in units
    * \param use_imu
-   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
+   *        true adds a second velocity exit timer from the imu's acceleration.  Off by default: a steady cruise also reads near 0 acceleration,
+   *        so it can exit early.
    */
   void pid_drive_exit_condition_set(ez::QTime p_small_exit_time, ez::QLength p_small_error, ez::QTime p_big_exit_time, ez::QLength p_big_error,
                                     ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = false);
@@ -3628,7 +3634,7 @@ public:
                                     ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = false);
 
   /**
-   * Set's constants for drive exit conditions.
+   * Sets constants for drive exit conditions.
    *
    * \param p_small_exit_time
    *        time to exit when within small_error, in ms
@@ -3643,7 +3649,8 @@ public:
    * \param p_mA_timeout
    *        mA timer will start when the first motor on the side(s) being driven is over its current limit, in ms
    * \param use_imu
-   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
+   *        true adds a second velocity exit timer from the imu's acceleration.  Off by default: a steady cruise also reads near 0 acceleration,
+   *        so it can exit early.
    */
   void pid_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time,
                                     int p_mA_timeout, bool use_imu = false);
