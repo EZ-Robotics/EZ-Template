@@ -1468,9 +1468,11 @@ public:
    * Sets the chassis to controller joysticks using standard curvature control, where left stick is fwd/rev.
    * Run in usercontrol.
    *
-   * Like arcade, but the turn stick sets the curvature of the arc the robot drives, not the turn rate.  The
-   * robot turns the same arc at any speed, like a steering wheel.  Turning on a point is scaled with
-   * opcontrol_curvature_point_turn_gain_set().
+   * Curvature is like arcade, but the turn stick sets the curvature of the arc the robot drives instead of how fast it turns.  The robot follows the
+   * same arc at any speed, like a steering wheel.
+   *
+   * Because the turn is scaled by how fast you're driving, the robot would not be able to turn while stopped.  opcontrol_curvature_point_turn_gain_set()
+   * controls how much the robot can turn on a point.
    *
    * This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.
    * The controller buttons that change the curves are disabled by default, use opcontrol_curve_buttons_toggle(true)
@@ -1485,9 +1487,11 @@ public:
    * Sets the chassis to controller joysticks using flipped curvature control, where right stick is fwd/rev.
    * Run in usercontrol.
    *
-   * Like arcade, but the turn stick sets the curvature of the arc the robot drives, not the turn rate.  The
-   * robot turns the same arc at any speed, like a steering wheel.  Turning on a point is scaled with
-   * opcontrol_curvature_point_turn_gain_set().
+   * Curvature is like arcade, but the turn stick sets the curvature of the arc the robot drives instead of how fast it turns.  The robot follows the
+   * same arc at any speed, like a steering wheel.
+   *
+   * Because the turn is scaled by how fast you're driving, the robot would not be able to turn while stopped.  opcontrol_curvature_point_turn_gain_set()
+   * controls how much the robot can turn on a point.
    *
    * This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.
    * The controller buttons that change the curves are disabled by default, use opcontrol_curve_buttons_toggle(true)
@@ -1499,34 +1503,42 @@ public:
   void opcontrol_arcade_curvature_flipped(e_type stick_type);
 
   /**
-   * Sets how much the robot turns when it is barely moving fwd/rev in curvature control.
+   * Sets how much the robot can turn when it is barely moving fwd/rev in curvature control.
    *
-   * Curvature turns less the slower you drive, so this is the least the turn stick is scaled by.  0 can't turn
-   * on a point, 1 is the same as arcade.  Defaults to 0.8.
+   * Curvature scales the turn stick by how fast you're driving, so at 0 fwd/rev speed the robot could not turn at all.  To fix this, the turn is scaled by
+   * whichever is larger; your fwd/rev speed (as a fraction of full speed) or this gain.  There is no jump between the two, and no button is needed to turn
+   * on a point.
+   *
+   * 0 is pure curvature, the robot cannot turn on a point.  1 is the same as arcade.  Anything in between turns on a point at a reduced sensitivity, and
+   * becomes true curvature once your fwd/rev speed is above `gain * 127`.
+   *
+   * This is defaulted to 0.8.  Values outside of 0 - 1 are clamped.
    *
    * \param gain
-   *        0 to 1
+   *        0 - 1
    */
   void opcontrol_curvature_point_turn_gain_set(double gain);
 
   /**
-   * Returns how much the robot turns when it is barely moving fwd/rev in curvature control.
+   * Returns how much the robot can turn when it is barely moving fwd/rev in curvature control.
    */
   double opcontrol_curvature_point_turn_gain_get();
 
   /**
    * Initializes left and right curves with the SD card, recommended to run in initialize().
+   *
+   * A value in left_curve.txt or right_curve.txt that is outside of 0 to 20 is changed to the nearest end of that range, and the terminal prints what it
+   * was changed to.  If a file can't be read as a number, the current curve is kept.
    */
   void opcontrol_curve_sd_initialize();
 
   /**
-   * Sets the default joystick curves.  Values are kept between 0 and 20, which is also the range
-   * the curve buttons and the SD card files are held to.
+   * Sets the default joystick curves.  Curves are kept between 0 and 20, a value outside of that is changed to the nearest end.  0 is no curve.
    *
    * \param left
    *        left default curve
    * \param right
-   *        right default curve
+   *        right default curve, defaults to 0
    */
   void opcontrol_curve_default_set(double left, double right = 0);
 
@@ -1575,7 +1587,7 @@ public:
   bool opcontrol_curve_buttons_toggle_get();
 
   /**
-   * Sets buttons for modifying the left joystick curve.
+   * Sets buttons for modifying the left joystick curve.  The curve stops at 0 and at 20 when you hold the buttons.
    *
    * \param decrease
    *        a pros button enumerator
@@ -1590,7 +1602,7 @@ public:
   std::vector<pros::controller_digital_e_t> opcontrol_curve_buttons_left_get();
 
   /**
-   * Sets buttons for modifying the right joystick curve.
+   * Sets buttons for modifying the right joystick curve.  The curve stops at 0 and at 20 when you hold the buttons.
    *
    * \param decrease
    *        a pros button enumerator
@@ -2344,7 +2356,7 @@ public:
   void opcontrol_drive_reverse_set(bool toggle);
 
   /**
-   * Gets current state of the toggle.
+   * Returns `true` if the drive is currently reversed, and `false` if it isn't.
    *
    * Reversal for drivetrain in opcontrol that flips the left and right side and the direction of the drive.
    */
@@ -5113,7 +5125,7 @@ public:
   double drive_tick_per_inch();
 
   /**
-   * Iterates modifying controller curves with the controller.
+   * Allows the user to modify the curve with the controller.
    */
   void opcontrol_curve_buttons_iterate();
 
