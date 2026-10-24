@@ -2012,6 +2012,24 @@ public:
    *        0 to 127, max speed during motion.  It's recommended to keep this at 110
    * \param slew_on
    *        ramp up from a lower speed to your target speed
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   // Uses the global slew setting
+   *   chassis.pid_odom_set(24_in, 110);
+   *   chassis.pid_wait();
+   *
+   *   // Slew on for this motion only
+   *   chassis.pid_odom_set(24_in, 110, true);
+   *   chassis.pid_wait();
+   * }
+   * \endcode
    */
   void pid_odom_set(ez::QLength p_target, int speed, bool slew_on);
 
@@ -2086,6 +2104,25 @@ public:
    *        united_odom, expecting `{{0_in, 0_in, 0_deg}, ez::fwd, 110}`
    * \param slew_on
    *        ramp up from a lower speed to your target speed
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   // Uses the global slew setting
+   *   chassis.pid_odom_boomerang_set({{24_in, 24_in, 0_deg}, ez::fwd, 110});
+   *   chassis.pid_wait();
+   *
+   *   // Slew on for this motion only
+   *   chassis.pid_odom_boomerang_set({{48_in, 24_in, 0_deg}, ez::fwd, 110},
+   *                                  true);
+   *   chassis.pid_wait();
+   * }
+   * \endcode
    */
   void pid_odom_boomerang_set(united_odom p_imovement, bool slew_on);
 
@@ -2106,6 +2143,24 @@ public:
    *        united_odom, expecting `{{0_in, 0_in}, ez::fwd, 110}`
    * \param slew_on
    *        ramp up from a lower speed to your target speed
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   // Uses the global slew setting
+   *   chassis.pid_odom_ptp_set({{24_in, 24_in}, ez::fwd, 110});
+   *   chassis.pid_wait();
+   *
+   *   // Slew on for this motion only
+   *   chassis.pid_odom_ptp_set({{48_in, 24_in}, ez::fwd, 110}, true);
+   *   chassis.pid_wait();
+   * }
+   * \endcode
    */
   void pid_odom_ptp_set(united_odom p_imovement, bool slew_on);
 
@@ -2126,6 +2181,24 @@ public:
    *        united_odom, expecting `{{0_in, 0_in}, ez::fwd, 110}`
    * \param slew_on
    *        ramp up from a lower speed to your target speed
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   // Uses the global slew setting
+   *   chassis.pid_odom_set({{24_in, 24_in}, ez::fwd, 110});
+   *   chassis.pid_wait();
+   *
+   *   // Slew on for this motion only
+   *   chassis.pid_odom_set({{48_in, 24_in}, ez::fwd, 110}, true);
+   *   chassis.pid_wait();
+   * }
+   * \endcode
    */
   void pid_odom_set(united_odom p_imovement, bool slew_on);
 
@@ -2224,6 +2297,27 @@ public:
    *        vector of united_odom
    * \param slew_on
    *        ramp up from a lower speed to your target speed
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   // Uses the global slew setting
+   *   chassis.pid_odom_smooth_pp_set({{{0_in, 24_in}, ez::fwd, 110},
+   *                                   {{24_in, 24_in}, ez::fwd, 110}});
+   *   chassis.pid_wait();
+   *
+   *   // Slew on for this motion only
+   *   chassis.pid_odom_smooth_pp_set({{{24_in, 48_in}, ez::fwd, 110},
+   *                                   {{48_in, 48_in}, ez::fwd, 110}},
+   *                                  true);
+   *   chassis.pid_wait();
+   * }
+   * \endcode
    */
   void pid_odom_smooth_pp_set(std::vector<united_odom> p_imovements, bool slew_on);
 
@@ -2244,6 +2338,27 @@ public:
    *        vector of united_odom
    * \param slew_on
    *        ramp up from a lower speed to your target speed
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   // Uses the global slew setting
+   *   chassis.pid_odom_injected_pp_set({{{0_in, 24_in}, ez::fwd, 110},
+   *                                     {{24_in, 24_in}, ez::fwd, 110}});
+   *   chassis.pid_wait();
+   *
+   *   // Slew on for this motion only
+   *   chassis.pid_odom_injected_pp_set({{{24_in, 48_in}, ez::fwd, 110},
+   *                                     {{48_in, 48_in}, ez::fwd, 110}},
+   *                                    true);
+   *   chassis.pid_wait();
+   * }
+   * \endcode
    */
   void pid_odom_injected_pp_set(std::vector<united_odom> p_imovements, bool slew_on);
 
@@ -2262,6 +2377,27 @@ public:
    *        vector of united_odom
    * \param slew_on
    *        ramp up from a lower speed to your target speed
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   // Uses the global slew setting
+   *   chassis.pid_odom_pp_set({{{0_in, 24_in}, ez::fwd, 110},
+   *                            {{24_in, 24_in}, ez::fwd, 110}});
+   *   chassis.pid_wait();
+   *
+   *   // Slew on for this motion only
+   *   chassis.pid_odom_pp_set({{{24_in, 48_in}, ez::fwd, 110},
+   *                            {{48_in, 48_in}, ez::fwd, 110}},
+   *                           true);
+   *   chassis.pid_wait();
+   * }
+   * \endcode
    */
   void pid_odom_pp_set(std::vector<united_odom> p_imovements, bool slew_on);
 
@@ -2282,6 +2418,27 @@ public:
    *        vector of united_odom
    * \param slew_on
    *        ramp up from a lower speed to your target speed
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   // Uses the global slew setting
+   *   chassis.pid_odom_set({{{0_in, 24_in}, ez::fwd, 110},
+   *                         {{24_in, 24_in}, ez::fwd, 110}});
+   *   chassis.pid_wait();
+   *
+   *   // Slew on for this motion only
+   *   chassis.pid_odom_set({{{24_in, 48_in}, ez::fwd, 110},
+   *                         {{48_in, 48_in}, ez::fwd, 110}},
+   *                        true);
+   *   chassis.pid_wait();
+   * }
+   * \endcode
    */
   void pid_odom_set(std::vector<united_odom> p_imovements, bool slew_on);
 
@@ -2461,6 +2618,32 @@ public:
    *        changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw
    * \param slew_on
    *        ramp up from a lower speed to your target speed
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   // Uses the default behavior and slew
+   *   chassis.pid_turn_set({12_in, 12_in}, ez::fwd, 110);
+   *   chassis.pid_wait();
+   *
+   *   // Take the long way around
+   *   chassis.pid_turn_set({12_in, 12_in}, ez::fwd, 110, ez::longest);
+   *   chassis.pid_wait();
+   *
+   *   // Slew on for this motion only
+   *   chassis.pid_turn_set({12_in, 12_in}, ez::fwd, 110, true);
+   *   chassis.pid_wait();
+   *
+   *   // Take the long way around, with slew
+   *   chassis.pid_turn_set({12_in, 12_in}, ez::fwd, 110, ez::longest, true);
+   *   chassis.pid_wait();
+   * }
+   * \endcode
    */
   void pid_turn_set(united_pose p_itarget, drive_directions dir, int speed, e_angle_behavior behavior, bool slew_on);
 
@@ -3367,6 +3550,25 @@ public:
    *
    * \param index
    *        index of your input points, 0 is the first point in the index
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   chassis.pid_odom_set({{{0_in, 24_in}, ez::fwd, 110},
+   *                         {{12_in, 24_in}, ez::rev, 110},
+   *                         {{24_in, 24_in}, ez::rev, 110}},
+   *                        true);
+   *   // Waits until the robot passes 12, 24
+   *   chassis.pid_wait_until_index(1);
+   *   Intake.move(127);
+   *   chassis.pid_wait();
+   * }
+   * \endcode
    */
   void pid_wait_until_index(int index);
 
@@ -3375,6 +3577,25 @@ public:
    *
    * \param index
    *        index of your input points, 0 is the first point in the index
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   chassis.pid_odom_set({{{0_in, 24_in}, ez::fwd, 110},
+   *                         {{12_in, 24_in}, ez::rev, 110},
+   *                         {{24_in, 24_in}, ez::rev, 110}},
+   *                        true);
+   *   // Waits until the target becomes 12, 24
+   *   chassis.pid_wait_until_index_started(1);
+   *   Intake.move(127);
+   *   chassis.pid_wait();
+   * }
+   * \endcode
    */
   void pid_wait_until_index_started(int index);
 
@@ -3395,6 +3616,25 @@ public:
    *
    * \param target
    *        {x, y} pose with units for the robot to pass through before the while loop is released
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   chassis.pid_odom_set({{{0_in, 24_in}, ez::fwd, 110},
+   *                         {{12_in, 24_in}, ez::rev, 110},
+   *                         {{24_in, 24_in}, ez::rev, 110}},
+   *                        true);
+   *   // Waits until the robot passes 12, 24
+   *   chassis.pid_wait_until_point({12_in, 24_in});
+   *   Intake.move(127);
+   *   chassis.pid_wait();
+   * }
+   * \endcode
    */
   void pid_wait_until_point(united_pose target);
 
