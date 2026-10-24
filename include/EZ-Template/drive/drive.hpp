@@ -142,6 +142,21 @@ public:
    *        the distance the robot travels to ramp up to full speed (127), a distance unit
    * \param min_speed
    *        the starting speed for the movement, 0 - 127
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   chassis.slew_swing_constants_set(5_in, 50);
+   *
+   *   chassis.pid_swing_set(ez::LEFT_SWING, 90_deg, 110, 0, true);
+   *   chassis.pid_wait();
+   * }
+   * \endcode
    */
   void slew_swing_constants_set(ez::QLength distance, int min_speed);
 
@@ -181,6 +196,21 @@ public:
    *        the distance the robot travels to ramp up to full speed (127), an angle unit
    * \param min_speed
    *        the starting speed for the movement, 0 - 127
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   chassis.slew_swing_constants_set(7_deg, 50);
+   *
+   *   chassis.pid_swing_set(ez::LEFT_SWING, 90_deg, 110, 0, true);
+   *   chassis.pid_wait();
+   * }
+   * \endcode
    */
   void slew_swing_constants_set(ez::QAngle distance, int min_speed);
 
@@ -382,6 +412,27 @@ public:
    *
    * \param slew_on
    *        true enables, false disables
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   // Set the default slew state to true
+   *   chassis.slew_swing_set(true);
+   *
+   *   // This will not use slew because we explicitly told the robot to not slew
+   *   chassis.pid_swing_set(ez::LEFT_SWING, 90_deg, 110, false);
+   *   chassis.pid_wait();
+   *
+   *   // This will slew because it's the default state
+   *   chassis.pid_swing_set(ez::LEFT_SWING, 0_deg, 110);
+   *   chassis.pid_wait();
+   * }
+   * \endcode
    */
   void slew_swing_set(bool slew_on);
 
@@ -395,6 +446,33 @@ public:
 
   /**
    * Returns true if slew is enabled for all swing forward motions, false otherwise.
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   // Set the default slew state to true
+   *   chassis.slew_swing_forward_set(true);
+   *   if (chassis.slew_swing_forward_get())
+   *     printf("Slew Forward is Enabled!\n");
+   *
+   *   // This will not use slew because we explicitly told the robot to not slew
+   *   chassis.pid_swing_set(ez::LEFT_SWING, 90_deg, 110, false);
+   *   chassis.pid_wait();
+   *
+   *   // This will slew because it's the default forward state
+   *   chassis.pid_swing_set(ez::LEFT_SWING, 180_deg, 110);
+   *   chassis.pid_wait();
+   *
+   *   // This will not slew because we haven't set the default backward state
+   *   chassis.pid_swing_set(ez::LEFT_SWING, 0_deg, 110);
+   *   chassis.pid_wait();
+   * }
+   * \endcode
    */
   bool slew_swing_forward_get();
 
@@ -1047,6 +1125,23 @@ public:
    *
    * \param behavior
    *        ez::shortest, ez::longest, ez::ccw, ez::cw, ez::raw
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   // Set the robot to take the longest path there
+   *   chassis.pid_swing_behavior_set(ez::longest);
+   *
+   *   // This will make the robot go the long way around to get to 90 degrees
+   *   chassis.pid_swing_set(ez::LEFT_SWING, 90_deg, 110);
+   *   chassis.pid_wait();
+   * }
+   * \endcode
    */
   void pid_swing_behavior_set(e_angle_behavior behavior);
 
@@ -1088,6 +1183,29 @@ public:
 
   /**
    * Returns the turn behavior for swings.
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   // Set the robot to take the longest path there
+   *   chassis.pid_swing_behavior_set(ez::longest);
+   *
+   *   if (chassis.pid_swing_behavior_get() == ez::longest) {
+   *     printf("Current behavior is ez::longest!\n");
+   *   } else {
+   *     printf("Current behavior is not ez::longest!\n");
+   *   }
+   *
+   *   // This will make the robot go the long way around to get to 90 degrees
+   *   chassis.pid_swing_set(ez::LEFT_SWING, 90_deg, 110);
+   *   chassis.pid_wait();
+   * }
+   * \endcode
    */
   e_angle_behavior pid_swing_behavior_get();
 
@@ -2839,6 +2957,37 @@ public:
    *        changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw
    * \param slew_on
    *        ramp up from a lower speed to your target speed
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   // Uses the default behavior and slew
+   *   chassis.pid_swing_set(ez::LEFT_SWING, 22.5_deg, 110);
+   *   chassis.pid_wait();
+   *
+   *   // Take the long way around
+   *   chassis.pid_swing_set(ez::LEFT_SWING, 22.5_deg, 110, ez::longest);
+   *   chassis.pid_wait();
+   *
+   *   // Slew on for this motion only
+   *   chassis.pid_swing_set(ez::LEFT_SWING, 22.5_deg, 110, true);
+   *   chassis.pid_wait();
+   *
+   *   // The opposite side drives at up to 30, for an arc
+   *   chassis.pid_swing_set(ez::LEFT_SWING, 22.5_deg, 110, 30);
+   *   chassis.pid_wait();
+   *
+   *   // An arc, taking the long way around, with slew
+   *   chassis.pid_swing_set(ez::LEFT_SWING, 22.5_deg, 110, 30, ez::longest,
+   *                         true);
+   *   chassis.pid_wait();
+   * }
+   * \endcode
    */
   void pid_swing_set(e_swing type, ez::QAngle p_target, int speed, int opposite_speed, e_angle_behavior behavior, bool slew_on);
 
@@ -2971,6 +3120,29 @@ public:
    *        changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw
    * \param slew_on
    *        ramp up from a lower speed to your target speed
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   // Swing to 90 deg
+   *   chassis.pid_swing_relative_set(ez::LEFT_SWING, 90_deg, 110);
+   *   chassis.pid_wait();
+   *
+   *   // Swing -45 from the previous target, to 45 deg
+   *   chassis.pid_swing_relative_set(ez::RIGHT_SWING, -45_deg, 110, true);
+   *   chassis.pid_wait();
+   *
+   *   // Swing 45 more from the previous target, to 90 deg, as an arc
+   *   chassis.pid_swing_relative_set(ez::LEFT_SWING, 45_deg, 110, 30,
+   *                                  ez::shortest, true);
+   *   chassis.pid_wait();
+   * }
+   * \endcode
    */
   void pid_swing_relative_set(e_swing type, ez::QAngle p_target, int speed, int opposite_speed, e_angle_behavior behavior, bool slew_on);
 
@@ -3403,6 +3575,12 @@ public:
    *        derivative term
    * \param p_start_i
    *        error threshold to start integral
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.pid_swing_constants_set(5, 0, 30);
+   * }
+   * \endcode
    */
   void pid_swing_constants_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
@@ -3411,6 +3589,16 @@ public:
    *
    * If the forward and backward constants were set to different values, this prints `Forward and Reverse constants are not the same!` and returns
    * {-1, -1, -1, -1}.  Use the forward and backward getters when they differ.
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.pid_swing_constants_set(6.0, 0.0, 65.0);
+   *   ez::PID::Constants c = chassis.pid_swing_constants_get();
+   *   // Prints kp 6.00  ki 0.00  kd 65.00  start_i 0.00
+   *   printf("kp %.2f  ki %.2f  kd %.2f  start_i %.2f\n", c.kp, c.ki, c.kd,
+   *          c.start_i);
+   * }
+   * \endcode
    */
   PID::Constants pid_swing_constants_get();
 
@@ -3465,6 +3653,12 @@ public:
    *
    * \param input
    *        angle unit
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.pid_swing_chain_constant_set(5_deg);
+   * }
+   * \endcode
    */
   void pid_swing_chain_constant_set(ez::QAngle input);
 
@@ -3510,6 +3704,13 @@ public:
 
   /**
    * Returns the amount that the PID will overshoot target by to maintain momentum into the next motion for swinging forward.
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.pid_swing_chain_constant_set(5_deg);
+   *   printf("%.2f\n", chassis.pid_swing_chain_forward_constant_get());
+   * }
+   * \endcode
    */
   double pid_swing_chain_forward_constant_get();
 
@@ -3736,6 +3937,21 @@ public:
    *
    * \param min
    *        new clipped speed
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   chassis.pid_swing_min_set(30);
+   *
+   *   chassis.pid_swing_set(ez::LEFT_SWING, 45_deg, 110);
+   *   chassis.pid_wait();
+   * }
+   * \endcode
    */
   void pid_swing_min_set(int min);
 
@@ -3767,6 +3983,20 @@ public:
   /**
    * Returns the maximum output allowed while error is inside startI, for swings larger than startI,
    * when kI and startI are enabled.  This is a cap on the output, not a floor.
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   chassis.pid_swing_min_set(30);
+   *
+   *   printf("Swing Min: %i", chassis.pid_swing_min_get());
+   * }
+   * \endcode
    */
   int pid_swing_min_get();
 
@@ -3978,6 +4208,13 @@ public:
    * \param use_imu
    *        true adds a second velocity exit timer from the imu's acceleration.  Off by default: a steady cruise also reads near 0 acceleration,
    *        so it can exit early.
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.pid_swing_exit_condition_set(300_ms, 3_deg, 500_ms, 7_deg, 750_ms,
+   *                                        750_ms);
+   * }
+   * \endcode
    */
   void pid_swing_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error,
                                     ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = false);
