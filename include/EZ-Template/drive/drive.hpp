@@ -576,6 +576,27 @@ public:
    *        the current task running for the drive.  one of ez::DISABLE, ez::SWING, ez::TURN, ez::TURN_TO_POINT, ez::DRIVE, ez::POINT_TO_POINT, ez::PURE_PURSUIT
    * \param stop_drive
    *        if the drive motors stop when p_mode is ez::DISABLE.  Defaults to true
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   chassis.pid_drive_set(12_in, DRIVE_SPEED);
+   *   chassis.pid_wait();
+   *
+   *   // Disable drive
+   *   chassis.drive_mode_set(ez::DISABLE);
+   *
+   *   // Run drive motors myself
+   *   chassis.drive_set(-127, -127);
+   *   pros::delay(2000);
+   *   chassis.drive_set(0, 0);
+   * }
+   * \endcode
    */
   void drive_mode_set(e_mode p_mode, bool stop_drive = true);
 
@@ -583,6 +604,28 @@ public:
    * Returns the current drive mode that the task is running.
    *
    * Returns ez::DISABLE, ez::SWING, ez::TURN, ez::TURN_TO_POINT, ez::DRIVE, ez::POINT_TO_POINT, or ez::PURE_PURSUIT.
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   chassis.pid_drive_set(12_in, DRIVE_SPEED);
+   *   chassis.pid_wait();
+   *
+   *   if (chassis.interfered) chassis.drive_mode_set(ez::DISABLE);
+   *
+   *   if (chassis.drive_mode_get() == ez::DISABLE) {
+   *     // Run drive motors myself
+   *     chassis.drive_set(-127, -127);
+   *     pros::delay(2000);
+   *     chassis.drive_set(0, 0);
+   *   }
+   * }
+   * \endcode
    */
   e_mode drive_mode_get();
 
@@ -1099,6 +1142,31 @@ public:
    *
    * \param behavior
    *        ez::shortest, ez::longest, ez::ccw, ez::cw, ez::raw
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   // Set the robot to take the longest path there
+   *   chassis.pid_angle_behavior_set(ez::longest);
+   *
+   *   // This will make the robot go the long way around to get to 90 degrees
+   *   chassis.pid_turn_set(90_deg, 110);
+   *   chassis.pid_wait();
+   *
+   *   // This will make the robot go the long way around to get to 0 degrees
+   *   chassis.pid_swing_set(ez::LEFT_SWING, 0_deg, 110);
+   *   chassis.pid_wait();
+   *
+   *   // This will make the robot go the long way around to get to 24, 0
+   *   chassis.pid_odom_set({{24_in, 0_in}, ez::fwd, 110});
+   *   chassis.pid_wait();
+   * }
+   * \endcode
    */
   void pid_angle_behavior_set(e_angle_behavior behavior);
 
@@ -1226,6 +1294,28 @@ public:
    *
    * \param p_tolerance
    *        angle wiggle room, a unit
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   // Set the behavior tolerance to 3 degrees
+   *   chassis.pid_angle_behavior_tolerance_set(3_deg);
+   *
+   *   // A turn within the tolerance above uses this behavior by default
+   *   chassis.pid_angle_behavior_bias_set(ez::cw);
+   *   chassis.odom_theta_set(-1_deg);
+   *
+   *   // Even though the fastest way here is to go counter clockwise,
+   *   // the robot will go clockwise
+   *   chassis.pid_turn_set(180_deg, 110);
+   *   chassis.pid_wait();
+   * }
+   * \endcode
    */
   void pid_angle_behavior_tolerance_set(ez::QAngle p_tolerance);
 
@@ -1239,6 +1329,29 @@ public:
 
   /**
    * Returns the wiggle room in shortest vs longest, so a 180.1 and 179.9 degree turns have consistent behavior.
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   // Set the behavior tolerance to 3 degrees
+   *   chassis.pid_angle_behavior_tolerance_set(3_deg);
+   *
+   *   // A turn within the tolerance above uses this behavior by default
+   *   chassis.pid_angle_behavior_bias_set(ez::cw);
+   *   printf("Tolerance is: %.2f\n", chassis.pid_angle_behavior_tolerance_get());
+   *   chassis.odom_theta_set(-1_deg);
+   *
+   *   // Even though the fastest way here is to go counter clockwise,
+   *   // the robot will go clockwise
+   *   chassis.pid_turn_set(180_deg, 110);
+   *   chassis.pid_wait();
+   * }
+   * \endcode
    */
   double pid_angle_behavior_tolerance_get();
 
@@ -1247,11 +1360,59 @@ public:
    *
    * \param behavior
    *        ez::ccw or ez::cw
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   // Set the behavior tolerance to 3 degrees
+   *   chassis.pid_angle_behavior_tolerance_set(3_deg);
+   *
+   *   // A turn within the tolerance above uses this behavior by default
+   *   chassis.pid_angle_behavior_bias_set(ez::cw);
+   *   chassis.odom_theta_set(-1_deg);
+   *
+   *   // Even though the fastest way here is to go counter clockwise,
+   *   // the robot will go clockwise
+   *   chassis.pid_turn_set(180_deg, 110);
+   *   chassis.pid_wait();
+   * }
+   * \endcode
    */
   void pid_angle_behavior_bias_set(e_angle_behavior behavior);
 
   /**
    * Returns the behavior when a turn is within its tolerance, you can have it bias left or right.
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   chassis.pid_angle_behavior_tolerance_set(3_deg);
+   *   chassis.pid_angle_behavior_bias_set(ez::cw);
+   *
+   *   if (chassis.pid_angle_behavior_bias_get() == ez::cw) {
+   *     printf("Behavior bias is cw!\n");
+   *   } else {
+   *     printf("Behavior bias is not cw!\n");
+   *   }
+   *
+   *   chassis.odom_theta_set(-1_deg);
+   *
+   *   // Even though the fastest way here is to go counter clockwise,
+   *   // the robot will go clockwise
+   *   chassis.pid_turn_set(180_deg, 110);
+   *   chassis.pid_wait();
+   * }
+   * \endcode
    */
   e_angle_behavior pid_angle_behavior_bias_get();
 
@@ -1657,6 +1818,28 @@ public:
    *
    * \param toggle
    *        true enables, false disables
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   chassis.pid_drive_set(12_in, DRIVE_SPEED);
+   *   chassis.pid_wait();
+   *
+   *   // Disable drive
+   *   chassis.pid_drive_toggle(false);
+   *   chassis.pid_drive_set(-12_in, DRIVE_SPEED);
+   *   while (true) {
+   *     printf(" Left Error: %f  Right Error: %f\n", chassis.leftPID.error,
+   *            chassis.rightPID.error);
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   void pid_drive_toggle(bool toggle);
 
@@ -1674,6 +1857,24 @@ public:
    *
    * \param toggle
    *        true enables, false disables
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   chassis.pid_drive_set(12_in, DRIVE_SPEED);  // This will print
+   *   chassis.pid_wait();                         // This will print
+   *
+   *   chassis.pid_print_toggle(false);  // Disable prints
+   *
+   *   chassis.pid_drive_set(-12_in, DRIVE_SPEED);  // This won't print
+   *   chassis.pid_wait();                          // This won't print
+   * }
+   * \endcode
    */
   void pid_print_toggle(bool toggle);
 
@@ -3527,6 +3728,19 @@ public:
 
   /**
    * Resets all PID targets to 0.
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   // Calls selected auton from autonomous selector
+   *   ez::as::auton_selector.selected_auton_call();
+   * }
+   * \endcode
    */
   void pid_targets_reset();
 
@@ -3536,6 +3750,20 @@ public:
    *
    * \param p_angle
    *        angle that the robot will think it is now facing, angle unit
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   chassis.drive_angle_set(45_deg);
+   *   chassis.pid_turn_set(0_deg, TURN_SPEED);
+   *   chassis.pid_wait();
+   * }
+   * \endcode
    */
   void drive_angle_set(ez::QAngle p_angle);
 
@@ -3553,6 +3781,22 @@ public:
    *
    * Returns when the motion's small, big, velocity or mA exit fires.  `interfered` is set when the velocity or mA exit ended the motion with the error outside
    * `big_error`.
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   chassis.pid_turn_set(90_deg, 110);
+   *   chassis.pid_wait();
+   *
+   *   chassis.pid_turn_set(0_deg, 110);
+   *   chassis.pid_wait();
+   * }
+   * \endcode
    */
   void pid_wait();
 
@@ -3567,6 +3811,21 @@ public:
    *
    * \param target
    *        absolute heading for a turn or swing, using units
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   chassis.pid_turn_set(90_deg, 110);
+   *   chassis.pid_wait_until(45_deg);
+   *   chassis.pid_speed_max_set(40);
+   *   chassis.pid_wait();
+   * }
+   * \endcode
    */
   void pid_wait_until(ez::QAngle target);
 
@@ -3583,6 +3842,21 @@ public:
    *
    * \param target
    *        distance driven since this motion started, using units, the same sign as the drive
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   chassis.pid_drive_set(48_in, 110);
+   *   chassis.pid_wait_until(24_in);
+   *   chassis.pid_speed_max_set(40);
+   *   chassis.pid_wait();
+   * }
+   * \endcode
    */
   void pid_wait_until(ez::QLength target);
 
@@ -3609,6 +3883,22 @@ public:
    * Lock the code in a while loop until the robot has passed its target (or an exit condition fires first).
    *
    * Wrapper for pid_wait_until(target), target is your previously input target.
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   chassis.pid_turn_set(90_deg, 110);
+   *   chassis.pid_wait_quick();
+   *
+   *   chassis.pid_turn_set(0_deg, 110);
+   *   chassis.pid_wait_quick();
+   * }
+   * \endcode
    */
   void pid_wait_quick();
 
@@ -3618,6 +3908,22 @@ public:
    * This also adds distance to target, and then exits with pid_wait_quick.
    *
    * This will exit the motion while carrying momentum into the next motion.
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   chassis.pid_turn_set(90_deg, 110);
+   *   chassis.pid_wait_quick_chain();
+   *
+   *   chassis.pid_turn_set(0_deg, 110);
+   *   chassis.pid_wait_quick();
+   * }
+   * \endcode
    */
   void pid_wait_quick_chain();
 
@@ -3800,6 +4106,21 @@ public:
    *
    * \param speed
    *        new clipped speed, between 0 and 127
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   chassis.pid_drive_set(48_in, 110);
+   *   chassis.pid_wait_until(24_in);
+   *   chassis.pid_speed_max_set(40);
+   *   chassis.pid_wait();
+   * }
+   * \endcode
    */
   void pid_speed_max_set(int speed);
 
@@ -4660,6 +4981,12 @@ public:
 
   /**
    * Returns the conversion between raw sensor value and inches.
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   printf("Tick Per Inch: %f\n", chassis.drive_tick_per_inch());
+   * }
+   * \endcode
    */
   double drive_tick_per_inch();
 
