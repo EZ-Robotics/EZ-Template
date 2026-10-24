@@ -112,6 +112,14 @@ function Blocks({blocks}: {blocks: Block[]}): ReactNode {
   );
 }
 
+// "{3,7}" for the example lines that call one of these functions, so the reader sees which line to copy.
+// Comment lines are skipped. Returns nothing when no line calls them.
+function highlightLines(code: string, names: string[]): string | undefined {
+  const call = new RegExp('\\b(?:' + [...new Set(names)].join('|') + ')\\s*\\(');
+  const lines = code.split('\n').flatMap((line, i) => (line.trimStart().startsWith('//') || !call.test(line) ? [] : [i + 1]));
+  return lines.length > 0 ? '{' + lines.join(',') + '}' : undefined;
+}
+
 export default function ApiFunction({name, args, also, summary, children}: Props): ReactNode {
   // Each docs version reads its own snapshot; prepare.mjs wrote just the functions its pages place.
   const version = useDocsVersion().version;
@@ -180,7 +188,7 @@ export default function ApiFunction({name, args, also, summary, children}: Props
           <TabItem value="example">
             {fn.examples.length > 0
               ? fn.examples.map((e, i) => (
-                  <CodeBlock key={i} language={e.lang}>
+                  <CodeBlock key={i} language={e.lang} metastring={highlightLines(e.code, [...shown, ...extras].map((f) => f.name))}>
                     {e.code}
                   </CodeBlock>
                 ))
