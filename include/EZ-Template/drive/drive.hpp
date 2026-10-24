@@ -220,6 +220,21 @@ public:
    *        the distance the robot travels to ramp up to full speed (127), an angle unit
    * \param min_speed
    *        the starting speed for the movement, 0 - 127
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   chassis.slew_turn_constants_set(5_deg, 50);
+   *
+   *   chassis.pid_turn_set(-90_deg, 110, true);
+   *   chassis.pid_wait();
+   * }
+   * \endcode
    */
   void slew_turn_constants_set(ez::QAngle distance, int min_speed);
 
@@ -401,11 +416,55 @@ public:
    *
    * \param slew_on
    *        true enables, false disables
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   // Set the default slew state to true
+   *   chassis.slew_turn_set(true);
+   *
+   *   // This will not use slew because we explicitly told the robot to not slew
+   *   chassis.pid_turn_set(90_deg, 90, false);
+   *   chassis.pid_wait();
+   *
+   *   // This will slew because it's the default state
+   *   chassis.pid_turn_set(0_deg, 90);
+   *   chassis.pid_wait();
+   * }
+   * \endcode
    */
   void slew_turn_set(bool slew_on);
 
   /**
    * Returns true if slew is enabled for all turn motions, false otherwise.
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   // Set the default slew state to true
+   *   chassis.slew_turn_set(true);
+   *   if (chassis.slew_turn_get())
+   *     printf("Turn Slew is Enabled!\n");
+   *
+   *   // This will not use slew because we explicitly told the robot to not slew
+   *   chassis.pid_turn_set(90_deg, 90, false);
+   *   chassis.pid_wait();
+   *
+   *   // This will slew because it's the default state
+   *   chassis.pid_turn_set(0_deg, 90);
+   *   chassis.pid_wait();
+   * }
+   * \endcode
    */
   bool slew_turn_get();
 
@@ -963,6 +1022,23 @@ public:
    *
    * \param behavior
    *        ez::shortest, ez::longest, ez::ccw, ez::cw, ez::raw
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   // Set the robot to take the longest path there
+   *   chassis.pid_turn_behavior_set(ez::longest);
+   *
+   *   // This will make the robot go the long way around to get to 90 degrees
+   *   chassis.pid_turn_set(90_deg, 110);
+   *   chassis.pid_wait();
+   * }
+   * \endcode
    */
   void pid_turn_behavior_set(e_angle_behavior behavior);
 
@@ -984,6 +1060,29 @@ public:
 
   /**
    * Returns the turn behavior for turns.
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   // Set the robot to take the longest path there
+   *   chassis.pid_turn_behavior_set(ez::longest);
+   *
+   *   if (chassis.pid_turn_behavior_get() == ez::longest) {
+   *     printf("Current behavior is ez::longest!\n");
+   *   } else {
+   *     printf("Current behavior is not ez::longest!\n");
+   *   }
+   *
+   *   // This will make the robot go the long way around to get to 90 degrees
+   *   chassis.pid_turn_set(90_deg, 110);
+   *   chassis.pid_wait();
+   * }
+   * \endcode
    */
   e_angle_behavior pid_turn_behavior_get();
 
@@ -2342,6 +2441,30 @@ public:
    *        changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw
    * \param slew_on
    *        ramp up from a lower speed to your target speed
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   chassis.pid_turn_set(24_deg, 110);  // Uses the default behavior and slew
+   *   chassis.pid_wait();
+   *
+   *   // Take the long way around
+   *   chassis.pid_turn_set(22.5_deg, 110, ez::longest);
+   *   chassis.pid_wait();
+   *
+   *   chassis.pid_turn_set(24_deg, 110, true);  // Slew on for this motion only
+   *   chassis.pid_wait();
+   *
+   *   // Take the long way around, with slew
+   *   chassis.pid_turn_set(22.5_deg, 110, ez::longest, true);
+   *   chassis.pid_wait();
+   * }
+   * \endcode
    */
   void pid_turn_set(ez::QAngle p_target, int speed, e_angle_behavior behavior, bool slew_on);
 
@@ -2394,6 +2517,28 @@ public:
    *        changes what direction the robot will turn.  can be ez::ccw, ez::cw, ez::shortest, ez::longest, ez::raw
    * \param slew_on
    *        ramp up from a lower speed to your target speed
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   // Turns to 90 deg
+   *   chassis.pid_turn_relative_set(90_deg, 110);
+   *   chassis.pid_wait();
+   *
+   *   // Turns backwards by 45 degrees
+   *   chassis.pid_turn_relative_set(-45_deg, 110, true);
+   *   chassis.pid_wait();
+   *
+   *   // Turns the long way around to go -45 from where it started
+   *   chassis.pid_turn_relative_set(-45_deg, 110, ez::longest, true);
+   *   chassis.pid_wait();
+   * }
+   * \endcode
    */
   void pid_turn_relative_set(ez::QAngle p_target, int speed, e_angle_behavior behavior, bool slew_on);
 
@@ -3185,11 +3330,27 @@ public:
    *        derivative term
    * \param p_start_i
    *        error threshold to start integral
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.pid_turn_constants_set(3, 0, 20);
+   * }
+   * \endcode
    */
   void pid_turn_constants_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
   /**
    * Returns the PID constants for turns, as a PID::Constants with kp, ki, kd and start_i.
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.pid_turn_constants_set(3.0, 0.05, 20.0, 15.0);
+   *   ez::PID::Constants c = chassis.pid_turn_constants_get();
+   *   // Prints kp 3.00  ki 0.05  kd 20.00  start_i 15.00
+   *   printf("kp %.2f  ki %.2f  kd %.2f  start_i %.2f\n", c.kp, c.ki, c.kd,
+   *          c.start_i);
+   * }
+   * \endcode
    */
   PID::Constants pid_turn_constants_get();
 
@@ -3200,6 +3361,12 @@ public:
    *
    * \param input
    *        angle unit
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.pid_turn_chain_constant_set(3_deg);
+   * }
+   * \endcode
    */
   void pid_turn_chain_constant_set(ez::QAngle input);
 
@@ -3215,6 +3382,13 @@ public:
 
   /**
    * Returns the amount that the PID will overshoot target by to maintain momentum into the next motion for turning.
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.pid_turn_chain_constant_set(3_deg);
+   *   printf("%.2f\n", chassis.pid_turn_chain_constant_get());
+   * }
+   * \endcode
    */
   double pid_turn_chain_constant_get();
 
@@ -3570,6 +3744,21 @@ public:
    *
    * \param min
    *        new clipped speed
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   chassis.pid_turn_min_set(30);
+   *
+   *   chassis.pid_turn_set(45_deg, 110);
+   *   chassis.pid_wait();
+   * }
+   * \endcode
    */
   void pid_turn_min_set(int min);
 
@@ -3582,6 +3771,20 @@ public:
   /**
    * Returns the maximum output allowed while error is inside startI, for turns larger than startI,
    * when kI and startI are enabled.  This is a cap on the output, not a floor.
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   chassis.pid_turn_min_set(30);
+   *
+   *   printf("Turn Min: %i", chassis.pid_turn_min_get());
+   * }
+   * \endcode
    */
   int pid_turn_min_get();
 
@@ -3744,6 +3947,13 @@ public:
    * \param use_imu
    *        true adds a second velocity exit timer from the imu's acceleration.  Off by default: a steady cruise also reads near 0 acceleration,
    *        so it can exit early.
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.pid_turn_exit_condition_set(300_ms, 3_deg, 500_ms, 7_deg, 750_ms,
+   *                                       750_ms);
+   * }
+   * \endcode
    */
   void pid_turn_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error,
                                    ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = false);
