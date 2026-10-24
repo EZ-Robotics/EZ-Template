@@ -2127,7 +2127,7 @@ public:
   bool pid_print_toggle_get();
 
   /**
-   * Sets the button to increment the PID constants.
+   * Sets the button to increment the focused PID constant.
    *
    * \param increase
    *        a pros controller button
@@ -2135,12 +2135,12 @@ public:
   void pid_tuner_button_increment_set(pros::controller_digital_e_t increase);
 
   /**
-   * Returns the pros button to increment the PID constants.
+   * Returns the pros button that increments the focused PID constant.
    */
   pros::controller_digital_e_t pid_tuner_button_increment_get();
 
   /**
-   * Sets the button to decrement the PID constants.
+   * Sets the button to decrement the focused PID constant.
    *
    * \param decrease
    *        a pros controller button
@@ -2148,12 +2148,12 @@ public:
   void pid_tuner_button_decrement_set(pros::controller_digital_e_t decrease);
 
   /**
-   * Returns the pros button to decrement the PID constants.
+   * Returns the pros button that decrements the focused PID constant.
    */
   pros::controller_digital_e_t pid_tuner_button_decrement_get();
 
   /**
-   * Sets the button to go up between the PID constants.
+   * Sets the button to move up between the PID constants.
    *
    * \param pageUp
    *        a pros controller button
@@ -2161,12 +2161,12 @@ public:
   void pid_tuner_button_up_set(pros::controller_digital_e_t pageUp);
 
   /**
-   * Returns the pros button to go up between the PID constants.
+   * Returns the pros button that moves up between the PID constants.
    */
   pros::controller_digital_e_t pid_tuner_button_up_get();
 
   /**
-   * Sets the button to go down between the PID constants.
+   * Sets the button to move down between the PID constants.
    *
    * \param pageDown
    *        a pros controller button
@@ -2174,7 +2174,7 @@ public:
   void pid_tuner_button_down_set(pros::controller_digital_e_t pageDown);
 
   /**
-   * Returns the pros button to go down between the PID constants.
+   * Returns the pros button that moves down between the PID constants.
    */
   pros::controller_digital_e_t pid_tuner_button_down_get();
 
@@ -2184,11 +2184,10 @@ public:
    * \param pageLeft
    *        a pros controller button
    */
-
   void pid_tuner_button_left_set(pros::controller_digital_e_t pageLeft);
 
   /**
-   * Returns the pros button to go left in the PID Tuner.
+   * Returns the pros button that goes left in the PID Tuner.
    */
   pros::controller_digital_e_t pid_tuner_button_left_get();
 
@@ -2201,7 +2200,7 @@ public:
   void pid_tuner_button_right_set(pros::controller_digital_e_t pageRight);
 
   /**
-   * Returns the pros button to go right in the PID Tuner.
+   * Returns the pros button that goes right in the PID Tuner.
    */
   pros::controller_digital_e_t pid_tuner_button_right_get();
 
@@ -5584,7 +5583,7 @@ public:
   };
 
   /**
-   * Adds PIDs to the PID Tuner.
+   * Adds a PID to the PID Tuner.
    *
    * This adds to both the default tuner and the full tuner.
    *
