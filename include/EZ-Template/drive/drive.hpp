@@ -1014,7 +1014,7 @@ public:
   void odom_boomerang_distance_set(ez::QLength p_distance);
 
   /**
-   * Returns how far away the carrot point can be from target.
+   * Returns the maximum distance the carrot point can be away from the target point.
    */
   double odom_boomerang_distance_get();
 
@@ -1024,7 +1024,7 @@ public:
    * Turning is prioritized so the robot "applies brakes" while turning.  Lower number means more braking.
    * Values below 1 make the robot stop driving once turning has gone past a certain angle error, and the
    * robot will never drive backwards to reach the point.  The internal scale factor is clamped to [0, 1].
-   * Non-positive values are rejected and the previous value is kept, since this is used as a divisor.
+   * Non-positive values are rejected, a message is printed to the terminal, and the previous value is kept, since this is used as a divisor.
    *
    * \param bias
    *        a positive number, default is 0.9
@@ -1040,7 +1040,7 @@ public:
    * Sets the spacing between points when points get injected into the path.
    *
    * \param spacing
-   *        a small number in inches
+   *        a small number in inches.  Must be greater than 0.  Otherwise it is rejected, a message is printed to the terminal, and the previous value is kept
    */
   void odom_path_spacing_set(double spacing);
 
@@ -1048,7 +1048,7 @@ public:
    * Sets the spacing between points when points get injected into the path.
    *
    * \param p_spacing
-   *        a small number in units
+   *        a small number in units.  Must be greater than 0.  Otherwise it is rejected, a message is printed to the terminal, and the previous value is kept
    */
   void odom_path_spacing_set(ez::QLength p_spacing);
 
@@ -1062,16 +1062,18 @@ public:
    *
    * Path smoothing based on https://medium.com/@jaems33/understanding-robot-motion-path-smoothing-5970c8363bc4
    *
-   * Values that would make the smoothing diverge instead of settle are rejected with a message in the terminal,
-   * and the previous constants stay in place.  weight_smooth must be in [0, 1), weight_data must be at least 0,
-   * tolerance must be above 0, and weight_data + 2 * weight_smooth must be below 2.
+   * weight_data + 2 * weight_smooth must also be less than 2.  Smoothing makes repeated passes over the points, and at 2 or more each pass moves them
+   * further from the path instead of settling, so it would never finish.  With the defaults that's 1.53.
+   *
+   * If any of these are out of range, all of the constants are rejected, a message is printed to the terminal naming the first one that is out of range,
+   * and the previous constants are kept.
    *
    * \param weight_smooth
-   *        how much weight to smooth the coordinates
+   *        how much weight to smooth the coordinates, 0 or more and less than 1
    * \param weight_data
-   *        how much weight to keep the coordinates near the original path
+   *        how much weight to keep the coordinates near the original path, 0 or more
    * \param tolerance
-   *        how much change per iteration is necessary to keep iterating
+   *        how much change per iteration is necessary to keep iterating, greater than 0
    */
   void odom_path_smooth_constants_set(double weight_smooth, double weight_data, double tolerance);
 
@@ -1094,7 +1096,8 @@ public:
    * Sets how far away the robot looks in the path during pure pursuits.
    *
    * \param distance
-   *        how long the "carrot on a stick" is, in inches
+   *        how long the "carrot on a stick" is, in inches.  Must be greater than 0.  Otherwise it is rejected, a message is printed to the
+   *        terminal, and the previous value is kept
    */
   void odom_look_ahead_set(double distance);
 
@@ -1102,7 +1105,8 @@ public:
    * Sets how far away the robot looks in the path during pure pursuits.
    *
    * \param p_distance
-   *        how long the "carrot on a stick" is, in units
+   *        how long the "carrot on a stick" is, in units.  Must be greater than 0.  Otherwise it is rejected, a message is printed to the
+   *        terminal, and the previous value is kept
    */
   void odom_look_ahead_set(ez::QLength p_distance);
 
@@ -5225,7 +5229,7 @@ public:
   void pid_odom_boomerang_constants_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
   /**
-   * Set's constants for odom driving exit conditions.
+   * Sets constants for odom driving exit conditions.
    *
    * \param p_small_exit_time
    *        time to exit when within small_error, in ms
@@ -5240,13 +5244,14 @@ public:
    * \param p_mA_timeout
    *        mA timer will start when the first motor on the side(s) being driven is over its current limit, in ms
    * \param use_imu
-   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
+   *        true adds a second velocity exit timer from the imu's acceleration.  Off by default: a steady cruise also reads near 0 acceleration,
+   *        so it can exit early.
    */
   void pid_odom_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time,
                                          int p_mA_timeout, bool use_imu = false);
 
   /**
-   * Set's constants for odom turning exit conditions.
+   * Sets constants for odom turning exit conditions.
    *
    * \param p_small_exit_time
    *        time to exit when within small_error, in ms
@@ -5261,49 +5266,52 @@ public:
    * \param p_mA_timeout
    *        mA timer will start when the first motor on the side(s) being driven is over its current limit, in ms
    * \param use_imu
-   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
+   *        true adds a second velocity exit timer from the imu's acceleration.  Off by default: a steady cruise also reads near 0 acceleration,
+   *        so it can exit early.
    */
   void pid_odom_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time,
                                         int p_mA_timeout, bool use_imu = false);
 
   /**
-   * Set's constants for odom turning exit conditions.
+   * Sets constants for odom turning exit conditions.
    *
    * \param p_small_exit_time
-   *        time to exit when within small_error, unit
+   *        time to exit when within small_error, in units
    * \param p_small_error
-   *        small timer will start when error is within this, unit
+   *        small timer will start when error is within this, in units
    * \param p_big_exit_time
-   *        time to exit when within big_error, unit
+   *        time to exit when within big_error, in units
    * \param p_big_error
-   *        big timer will start when error is within this, unit
+   *        big timer will start when error is within this, in units
    * \param p_velocity_exit_time
-   *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), unit
+   *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), in units
    * \param p_mA_timeout
-   *        mA timer will start when the first motor on the side(s) being driven is over its current limit, unit
+   *        mA timer will start when the first motor on the side(s) being driven is over its current limit, in units
    * \param use_imu
-   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
+   *        true adds a second velocity exit timer from the imu's acceleration.  Off by default: a steady cruise also reads near 0 acceleration,
+   *        so it can exit early.
    */
   void pid_odom_turn_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error,
                                         ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = false);
 
   /**
-   * Set's constants for odom driving exit conditions.
+   * Sets constants for odom driving exit conditions.
    *
    * \param p_small_exit_time
-   *        time to exit when within small_error, unit
+   *        time to exit when within small_error, in units
    * \param p_small_error
-   *        small timer will start when error is within this, unit
+   *        small timer will start when error is within this, in units
    * \param p_big_exit_time
-   *        time to exit when within big_error, unit
+   *        time to exit when within big_error, in units
    * \param p_big_error
-   *        big timer will start when error is within this, unit
+   *        big timer will start when error is within this, in units
    * \param p_velocity_exit_time
-   *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), unit
+   *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), in units
    * \param p_mA_timeout
-   *        mA timer will start when the first motor on the side(s) being driven is over its current limit, unit
+   *        mA timer will start when the first motor on the side(s) being driven is over its current limit, in units
    * \param use_imu
-   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
+   *        true adds a second velocity exit timer from the imu's acceleration.  Off by default: a steady cruise also reads near 0 acceleration,
+   *        so it can exit early.
    */
   void pid_odom_drive_exit_condition_set(ez::QTime p_small_exit_time, ez::QLength p_small_error, ez::QTime p_big_exit_time, ez::QLength p_big_error,
                                          ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = false);
@@ -5338,7 +5346,7 @@ public:
                                     ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = false);
 
   /**
-   * Set's constants for turn exit conditions.
+   * Sets constants for turn exit conditions.
    *
    * \param p_small_exit_time
    *        time to exit when within small_error, in units
@@ -5418,7 +5426,7 @@ public:
                                     int p_mA_timeout, bool use_imu = false);
 
   /**
-   * Set's constants for turn exit conditions.
+   * Sets constants for turn exit conditions.
    *
    * \param p_small_exit_time
    *        time to exit when within small_error, in ms
@@ -6307,7 +6315,7 @@ public:
   pose odom_current = {0.0, 0.0, 0.0};
 
   /**
-   * Tracking task that uses tracking wheels, this is used by default.
+   * The default tracking task, used unless odom_tracking_set() is called.  Documented here for reference - most users will never call this directly.
    */
   void tracking_wheels_tracking();
 
