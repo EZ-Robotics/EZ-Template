@@ -1435,6 +1435,16 @@ public:
    * This passes the controller through the joystick curves.  A curve of 0 is no curve, which is the default.
    * The controller buttons that change the curves are disabled by default, use opcontrol_curve_buttons_toggle(true)
    * to turn them on.
+   *
+   * \code{.cpp}
+   * void opcontrol() {
+   *   while (true) {
+   *     chassis.opcontrol_tank();
+   *
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   void opcontrol_tank();
 
@@ -1448,6 +1458,20 @@ public:
    *
    * \param stick_type
    *        ez::SINGLE or ez::SPLIT control
+   *
+   * \code{.cpp}
+   * void opcontrol() {
+   *   while (true) {
+   *     // For split arcade
+   *     chassis.opcontrol_arcade_standard(ez::SPLIT);
+   *
+   *     // For single arcade
+   *     // chassis.opcontrol_arcade_standard(ez::SINGLE);
+   *
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   void opcontrol_arcade_standard(e_type stick_type);
 
@@ -1461,6 +1485,20 @@ public:
    *
    * \param stick_type
    *        ez::SINGLE or ez::SPLIT control
+   *
+   * \code{.cpp}
+   * void opcontrol() {
+   *   while (true) {
+   *     // For split arcade
+   *     chassis.opcontrol_arcade_flipped(ez::SPLIT);
+   *
+   *     // For single arcade
+   *     // chassis.opcontrol_arcade_flipped(ez::SINGLE);
+   *
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   void opcontrol_arcade_flipped(e_type stick_type);
 
@@ -1480,6 +1518,20 @@ public:
    *
    * \param stick_type
    *        ez::SINGLE or ez::SPLIT control
+   *
+   * \code{.cpp}
+   * void opcontrol() {
+   *   while (true) {
+   *     // For split curvature
+   *     chassis.opcontrol_arcade_curvature_standard(ez::SPLIT);
+   *
+   *     // For single curvature
+   *     // chassis.opcontrol_arcade_curvature_standard(ez::SINGLE);
+   *
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   void opcontrol_arcade_curvature_standard(e_type stick_type);
 
@@ -1499,6 +1551,20 @@ public:
    *
    * \param stick_type
    *        ez::SINGLE or ez::SPLIT control
+   *
+   * \code{.cpp}
+   * void opcontrol() {
+   *   while (true) {
+   *     // For split curvature
+   *     chassis.opcontrol_arcade_curvature_flipped(ez::SPLIT);
+   *
+   *     // For single curvature
+   *     // chassis.opcontrol_arcade_curvature_flipped(ez::SINGLE);
+   *
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   void opcontrol_arcade_curvature_flipped(e_type stick_type);
 
@@ -1516,11 +1582,33 @@ public:
    *
    * \param gain
    *        0 - 1
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   // . . .
+   *
+   *   // Turn on a point at half sensitivity
+   *   chassis.opcontrol_curvature_point_turn_gain_set(0.5);
+   *
+   *   // . . .
+   * }
+   * \endcode
    */
   void opcontrol_curvature_point_turn_gain_set(double gain);
 
   /**
    * Returns how much the robot can turn when it is barely moving fwd/rev in curvature control.
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   // . . .
+   *
+   *   printf("Point turn gain: %.2f\n",
+   *          chassis.opcontrol_curvature_point_turn_gain_get());
+   *
+   *   // . . .
+   * }
+   * \endcode
    */
   double opcontrol_curvature_point_turn_gain_get();
 
@@ -1529,6 +1617,12 @@ public:
    *
    * A value in left_curve.txt or right_curve.txt that is outside of 0 to 20 is changed to the nearest end of that range, and the terminal prints what it
    * was changed to.  If a file can't be read as a number, the current curve is kept.
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.opcontrol_curve_sd_initialize();
+   * }
+   * \endcode
    */
   void opcontrol_curve_sd_initialize();
 
@@ -1539,6 +1633,12 @@ public:
    *        left default curve
    * \param right
    *        right default curve, defaults to 0
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.opcontrol_curve_default_set(2, 2);
+   * }
+   * \endcode
    */
   void opcontrol_curve_default_set(double left, double right = 0);
 
@@ -1558,16 +1658,40 @@ public:
    *        derivative term
    * \param start_i
    *        error threshold to start integral
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.opcontrol_drive_activebrake_set(2.0);
+   * }
+   * \endcode
    */
   void opcontrol_drive_activebrake_set(double kp, double ki = 0.0, double kd = 0.0, double start_i = 0.0);
 
   /**
    * Returns kP for active brake.
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.opcontrol_drive_activebrake_set(0.1);
+   *   printf("kP is: %f\n", chassis.opcontrol_drive_activebrake_get());
+   * }
+   * \endcode
    */
   double opcontrol_drive_activebrake_get();
 
   /**
    * Returns all PID constants for active brake.
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.opcontrol_drive_activebrake_set(0.1);
+   *
+   *   ez::PID::Constants consts =
+   *       chassis.opcontrol_drive_activebrake_constants_get();
+   *
+   *   printf("kP is: %f\n", consts.kp);
+   * }
+   * \endcode
    */
   PID::Constants opcontrol_drive_activebrake_constants_get();
 
@@ -1576,6 +1700,12 @@ public:
    *
    * \param toggle
    *        true enables, false disables
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.opcontrol_curve_buttons_toggle(true);
+   * }
+   * \endcode
    */
   void opcontrol_curve_buttons_toggle(bool toggle);
 
@@ -1583,6 +1713,18 @@ public:
    * Gets the current state of the toggle. Enables/disables modifying the joystick input curves with the controller.
    *
    * True enabled, false disabled.
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   // Returns false
+   *   printf("Enabled? %i\n", chassis.opcontrol_curve_buttons_toggle_get());
+   *
+   *   chassis.opcontrol_curve_buttons_toggle(true);
+   *
+   *   // Returns true
+   *   printf("Enabled? %i\n", chassis.opcontrol_curve_buttons_toggle_get());
+   * }
+   * \endcode
    */
   bool opcontrol_curve_buttons_toggle_get();
 
@@ -1593,6 +1735,13 @@ public:
    *        a pros button enumerator
    * \param increase
    *        a pros button enumerator
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.opcontrol_curve_buttons_left_set(pros::E_CONTROLLER_DIGITAL_LEFT,
+   *                                            pros::E_CONTROLLER_DIGITAL_RIGHT);
+   * }
+   * \endcode
    */
   void opcontrol_curve_buttons_left_set(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase);
 
@@ -1608,6 +1757,13 @@ public:
    *        a pros button enumerator
    * \param increase
    *        a pros button enumerator
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.opcontrol_curve_buttons_right_set(pros::E_CONTROLLER_DIGITAL_Y,
+   *                                             pros::E_CONTROLLER_DIGITAL_A);
+   * }
+   * \endcode
    */
   void opcontrol_curve_buttons_right_set(pros::controller_digital_e_t decrease, pros::controller_digital_e_t increase);
 
@@ -1623,6 +1779,21 @@ public:
    *
    * \param x
    *        joystick input
+   *
+   * \code{.cpp}
+   * void opcontrol() {
+   *   while (true) {
+   *     int l_stick =
+   *         chassis.opcontrol_curve_left(master.get_analog(ANALOG_LEFT_Y));
+   *     int r_stick =
+   *         chassis.opcontrol_curve_left(master.get_analog(ANALOG_RIGHT_Y));
+   *
+   *     chassis.drive_set(l_stick, r_stick);
+   *
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   double opcontrol_curve_left(double x);
 
@@ -1633,6 +1804,21 @@ public:
    *
    * \param x
    *        joystick input
+   *
+   * \code{.cpp}
+   * void opcontrol() {
+   *   while (true) {
+   *     int l_stick =
+   *         chassis.opcontrol_curve_left(master.get_analog(ANALOG_LEFT_Y));
+   *     int r_stick =
+   *         chassis.opcontrol_curve_right(master.get_analog(ANALOG_RIGHT_Y));
+   *
+   *     chassis.drive_set(l_stick, r_stick);
+   *
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   double opcontrol_curve_right(double x);
 
@@ -1647,6 +1833,12 @@ public:
    *
    * \param threshold
    *        new threshold
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.opcontrol_joystick_threshold_set(5);
+   * }
+   * \endcode
    */
   void opcontrol_joystick_threshold_set(int threshold);
 
@@ -1671,6 +1863,17 @@ public:
    *        left drive input, -127 to 127
    * \param r_stick
    *        right drive input, -127 to 127
+   *
+   * \code{.cpp}
+   * void opcontrol() {
+   *   while (true) {
+   *     chassis.opcontrol_joystick_threshold_iterate(
+   *         master.get_analog(ANALOG_LEFT_Y), master.get_analog(ANALOG_RIGHT_Y));
+   *
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   void opcontrol_joystick_threshold_iterate(int l_stick, int r_stick);
 
@@ -2303,6 +2506,23 @@ public:
    *
    * \param toggle
    *        true enables, false disables
+   *
+   * \code{.cpp}
+   * void opcontrol() {
+   *   while (true) {
+   *     chassis.opcontrol_tank();  // Tank control
+   *
+   *     // Toggle practice mode
+   *     if (master.get_digital_new_press(DIGITAL_L1)) {
+   *       chassis.opcontrol_joystick_practicemode_toggle(
+   *           !chassis.opcontrol_joystick_practicemode_toggle_get());
+   *     }
+   *
+   *     // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   void opcontrol_joystick_practicemode_toggle(bool toggle);
 
@@ -2310,6 +2530,23 @@ public:
    * Gets current state of the toggle.
    *
    * True is enabled, false is disabled.
+   *
+   * \code{.cpp}
+   * void opcontrol() {
+   *   while (true) {
+   *     chassis.opcontrol_tank();  // Tank control
+   *
+   *     // Toggle practice mode
+   *     if (master.get_digital_new_press(DIGITAL_L1)) {
+   *       chassis.opcontrol_joystick_practicemode_toggle(
+   *           !chassis.opcontrol_joystick_practicemode_toggle_get());
+   *     }
+   *
+   *     // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   bool opcontrol_joystick_practicemode_toggle_get();
 
@@ -2322,6 +2559,23 @@ public:
    *
    * \param toggle
    *        true enables, false disables
+   *
+   * \code{.cpp}
+   * void opcontrol() {
+   *   while (true) {
+   *     chassis.opcontrol_tank();  // Tank control
+   *
+   *     // Toggle slow mode
+   *     if (master.get_digital_new_press(DIGITAL_L1)) {
+   *       chassis.opcontrol_joystick_slowmode_toggle(
+   *           !chassis.opcontrol_joystick_slowmode_toggle_get());
+   *     }
+   *
+   *     // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   void opcontrol_joystick_slowmode_toggle(bool toggle);
 
@@ -2329,6 +2583,23 @@ public:
    * Gets current state of the toggle.
    *
    * True is enabled, false is disabled.
+   *
+   * \code{.cpp}
+   * void opcontrol() {
+   *   while (true) {
+   *     chassis.opcontrol_tank();  // Tank control
+   *
+   *     // Toggle slow mode
+   *     if (master.get_digital_new_press(DIGITAL_L1)) {
+   *       chassis.opcontrol_joystick_slowmode_toggle(
+   *           !chassis.opcontrol_joystick_slowmode_toggle_get());
+   *     }
+   *
+   *     // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   bool opcontrol_joystick_slowmode_toggle_get();
 
@@ -2339,11 +2610,27 @@ public:
    *
    * \param speed
    *        the speed limit, out of 127
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   // A gentler slow mode than the default of 64
+   *   chassis.opcontrol_joystick_slowmode_speed_set(90);
+   * }
+   * \endcode
    */
   void opcontrol_joystick_slowmode_speed_set(int speed);
 
   /**
    * Returns the speed used while opcontrol_joystick_slowmode_toggle() is enabled.
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.opcontrol_joystick_slowmode_speed_set(90);
+   *
+   *   // Prints 90
+   *   printf("%d\n", chassis.opcontrol_joystick_slowmode_speed_get());
+   * }
+   * \endcode
    */
   int opcontrol_joystick_slowmode_speed_get();
 
@@ -2352,6 +2639,20 @@ public:
    *
    * \param toggle
    *        true if you want your drivetrain reversed and false if you do not
+   *
+   * \code{.cpp}
+   * void opcontrol() {
+   *   while (true) {
+   *     if (master.get_digital_new_press(DIGITAL_B))
+   *       chassis.opcontrol_drive_reverse_set(
+   *           !chassis.opcontrol_drive_reverse_get());
+   *
+   *     chassis.opcontrol_tank();
+   *
+   *     pros::delay(10);
+   *   }
+   * }
+   * \endcode
    */
   void opcontrol_drive_reverse_set(bool toggle);
 
@@ -2359,6 +2660,20 @@ public:
    * Returns `true` if the drive is currently reversed, and `false` if it isn't.
    *
    * Reversal for drivetrain in opcontrol that flips the left and right side and the direction of the drive.
+   *
+   * \code{.cpp}
+   * void opcontrol() {
+   *   while (true) {
+   *     if (master.get_digital_new_press(DIGITAL_B))
+   *       chassis.opcontrol_drive_reverse_set(
+   *           !chassis.opcontrol_drive_reverse_get());
+   *
+   *     chassis.opcontrol_tank();
+   *
+   *     pros::delay(10);
+   *   }
+   * }
+   * \endcode
    */
   bool opcontrol_drive_reverse_get();
 
@@ -5126,6 +5441,19 @@ public:
 
   /**
    * Allows the user to modify the curve with the controller.
+   *
+   * \code{.cpp}
+   * void opcontrol() {
+   *   while (true) {
+   *     chassis.opcontrol_joystick_threshold_iterate(
+   *         master.get_analog(ANALOG_LEFT_Y), master.get_analog(ANALOG_RIGHT_Y));
+   *
+   *     chassis.opcontrol_curve_buttons_iterate();
+   *
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   void opcontrol_curve_buttons_iterate();
 
@@ -5292,11 +5620,27 @@ public:
    *
    * \param speed
    *        the speed limit, 0 - 127.  A value above 127 is set to 127 and a negative value is treated as its magnitude
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   // Caps user control output at 100
+   *   chassis.opcontrol_speed_max_set(100);
+   * }
+   * \endcode
    */
   void opcontrol_speed_max_set(int speed);
 
   /**
    * Returns the max speed for user control.
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.opcontrol_speed_max_set(100);
+   *
+   *   // Prints 100
+   *   printf("%d\n", chassis.opcontrol_speed_max_get());
+   * }
+   * \endcode
    */
   int opcontrol_speed_max_get();
 
