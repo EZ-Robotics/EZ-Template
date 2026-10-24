@@ -185,7 +185,7 @@ public:
   void slew_swing_constants_set(ez::QAngle distance, int min_speed);
 
   /**
-   * Sets constants for slew for swing forward movements.
+   * Sets constants for slew for forward swing movements.
    *
    * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set distance.  A movement with a lower max speed is capped at that speed,
    * so it reaches that speed before the distance is traveled.
@@ -198,7 +198,7 @@ public:
   void slew_swing_constants_forward_set(ez::QAngle distance, int min_speed);
 
   /**
-   * Sets constants for slew for swing backward movements.
+   * Sets constants for slew for backward swing movements.
    *
    * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set distance.  A movement with a lower max speed is capped at that speed,
    * so it reaches that speed before the distance is traveled.
@@ -3393,7 +3393,7 @@ public:
   double pid_turn_chain_constant_get();
 
   /**
-   * Set the swing pid constants object.
+   * Set PID constants for forward and backward swings.
    *
    * \param p
    *        proportional term
@@ -3407,14 +3407,15 @@ public:
   void pid_swing_constants_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
   /**
-   * Returns PID constants with PID::Constants.
+   * Returns the PID constants for swings, as a PID::Constants with kp, ki, kd and start_i.
    *
-   * Returns -1 if fwd and rev constants aren't the same!
+   * If the forward and backward constants were set to different values, this prints `Forward and Reverse constants are not the same!` and returns
+   * {-1, -1, -1, -1}.  Use the forward and backward getters when they differ.
    */
   PID::Constants pid_swing_constants_get();
 
   /**
-   * Set the forward swing pid constants object.
+   * Set PID constants for forward swings.
    *
    * \param p
    *        proportional term
@@ -3428,7 +3429,7 @@ public:
   void pid_swing_constants_forward_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
   /**
-   * Returns PID constants with PID::Constants.
+   * Returns the PID constants for forward swings, as a PID::Constants with kp, ki, kd and start_i.
    *
    * These are the constants a forward swing will use.  If no forward constants were set,
    * this returns the constants from pid_swing_constants_set().
@@ -3436,7 +3437,7 @@ public:
   PID::Constants pid_swing_constants_forward_get();
 
   /**
-   * Set the backward swing pid constants object.
+   * Set PID constants for backward swings.
    *
    * \param p
    *        proportional term
@@ -3450,7 +3451,7 @@ public:
   void pid_swing_constants_backward_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
   /**
-   * Returns PID constants with PID::Constants.
+   * Returns the PID constants for backward swings, as a PID::Constants with kp, ki, kd and start_i.
    *
    * These are the constants a backward swing will use.  If no backward constants were set,
    * this returns the constants from pid_swing_constants_set().
@@ -3500,7 +3501,7 @@ public:
   /**
    * Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.
    *
-   * This only sets forward constants.
+   * This only sets forward swing constants.
    *
    * \param input
    *        angle in degrees
@@ -3515,7 +3516,7 @@ public:
   /**
    * Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.
    *
-   * This only sets backwards swing constants.
+   * This only sets backward swing constants.
    *
    * \param input
    *        angle in degrees
@@ -3730,7 +3731,8 @@ public:
 
   /**
    * When kI and startI are enabled, sets the maximum output allowed while error is inside
-   * startI, for swings larger than startI. This lets I accumulate without overshoot.
+   * startI, for swings larger than startI. This lets I accumulate without overshoot.  Despite the name this is a cap on the output, not a floor.
+   * Defaults to 30.
    *
    * \param min
    *        new clipped speed
@@ -3764,7 +3766,7 @@ public:
 
   /**
    * Returns the maximum output allowed while error is inside startI, for swings larger than startI,
-   * when kI and startI are enabled.
+   * when kI and startI are enabled.  This is a cap on the output, not a floor.
    */
   int pid_swing_min_get();
 
@@ -3959,22 +3961,23 @@ public:
                                    ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = false);
 
   /**
-   * Set's constants for swing exit conditions.
+   * Sets constants for swing exit conditions.
    *
    * \param p_small_exit_time
-   *        time to exit when within small_error, unit
+   *        time to exit when within small_error, in units
    * \param p_small_error
-   *        small timer will start when error is within this, unit
+   *        small timer will start when error is within this, in units
    * \param p_big_exit_time
-   *        time to exit when within big_error, unit
+   *        time to exit when within big_error, in units
    * \param p_big_error
-   *        big timer will start when error is within this, unit
+   *        big timer will start when error is within this, in units
    * \param p_velocity_exit_time
-   *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), unit
+   *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), in units
    * \param p_mA_timeout
-   *        mA timer will start when the first motor on the side(s) being driven is over its current limit, unit
+   *        mA timer will start when the first motor on the side(s) being driven is over its current limit, in units
    * \param use_imu
-   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
+   *        true adds a second velocity exit timer from the imu's acceleration.  Off by default: a steady cruise also reads near 0 acceleration,
+   *        so it can exit early.
    */
   void pid_swing_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error,
                                     ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = false);
@@ -4024,7 +4027,7 @@ public:
                                    int p_mA_timeout, bool use_imu = false);
 
   /**
-   * Set's constants for swing exit conditions.
+   * Sets constants for swing exit conditions.
    *
    * \param p_small_exit_time
    *        time to exit when within small_error, in ms
@@ -4039,7 +4042,8 @@ public:
    * \param p_mA_timeout
    *        mA timer will start when the first motor on the side(s) being driven is over its current limit, in ms
    * \param use_imu
-   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
+   *        true adds a second velocity exit timer from the imu's acceleration.  Off by default: a steady cruise also reads near 0 acceleration,
+   *        so it can exit early.
    */
   void pid_swing_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time,
                                     int p_mA_timeout, bool use_imu = false);
