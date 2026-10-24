@@ -7,6 +7,8 @@
 //   <ApiFunction name="pid_wait" />
 //   <ApiFunction name="Drive::pid_wait" />                  when the name is in more than one class
 //   <ApiFunction name="pid_drive_set" args="double, int" /> to pick one overload
+//   <ApiFunction name="a" args="int | int, bool" />         one entry that shows several overloads of a
+//   <ApiFunction name="a" also="a_forward, a_backward" />  one entry that also covers its siblings
 
 export class ApiResolveError extends Error {
   constructor(message) {
@@ -83,6 +85,38 @@ function suggestNames(functions, wanted) {
 
 function listCandidates(cands) {
   return cands.map((f) => `    ${signatureOf(f)}`).join('\n');
+}
+
+// args may list several overloads separated by "|", like args="ez::QLength, int | ez::QLength, int, bool, bool".
+// The entry shows all of them, in the order listed. Its text comes from the one with the most parameters (the first
+// of those if they tie), which is the most complete form.
+export function resolveOverloads(functions, query) {
+  const parts = query.args === undefined ? [undefined] : query.args.split('|');
+  const shown = parts.map((args) => resolveFunction(functions, {name: query.name, args}));
+  if (shown.some((f, i) => shown.indexOf(f) !== i)) {
+    throw new ApiResolveError(`<ApiFunction name="${query.name}" args="${query.args}"> lists the same overload twice.`);
+  }
+  const primary = shown.reduce((best, f) => (f.params.length > best.params.length ? f : best), shown[0]);
+  return {primary, shown};
+}
+
+// The functions an entry also covers (also="a, b"). They must be in the same class as the primary, and when a name is
+// overloaded the one with the same parameter types as the primary is used.
+export function resolveAlso(functions, primary, also) {
+  const names = also.split(',').map((n) => n.trim()).filter(Boolean);
+  if (names.length === 0) throw new ApiResolveError(`also="${also}" lists no function names.`);
+  const key = argsKey(primary.params.map((p) => p.type));
+  return names.map((name) => {
+    const cands = functions.filter((f) => f.qualifier === primary.qualifier && f.name === name);
+    if (cands.length === 0) {
+      const hint = suggestNames(functions.filter((f) => f.qualifier === primary.qualifier), name);
+      throw new ApiResolveError(`also="${name}": no function named "${name}" in ${primary.qualifier}.` + (hint.length ? `\n  Did you mean: ${hint.join(', ')}?` : ''));
+    }
+    const same = cands.filter((f) => argsKey(f.params.map((p) => p.type)) === key);
+    if (same.length === 1) return same[0];
+    if (cands.length === 1) return cands[0];
+    throw new ApiResolveError(`also="${name}" is overloaded and no overload has the parameter types of ${signatureOf(primary)}. The overloads are:\n${listCandidates(cands)}`);
+  });
 }
 
 // query: { name: string, args?: string }. Returns the matching function record or throws ApiResolveError.

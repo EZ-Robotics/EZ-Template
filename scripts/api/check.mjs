@@ -7,7 +7,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {ApiResolveError, resolveFunction, signatureOf} from './resolve.mjs';
+import {ApiResolveError, resolveAlso, resolveOverloads, signatureOf} from './resolve.mjs';
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 export const CONFIG_PATH = path.join(ROOT, 'api', 'config.json');
@@ -90,7 +90,7 @@ function findTags(file) {
         }
         value = lit[2];
       }
-      if (key !== 'name' && key !== 'args') problems.push(`unknown attribute "${key}" (only name and args are used).`);
+      if (!['name', 'args', 'also', 'summary'].includes(key)) problems.push(`unknown attribute "${key}" (only name, args, also and summary are used).`);
       else attrs[key] = decode(value);
     }
     tags.push({line, attrs, problems});
@@ -127,10 +127,14 @@ export function checkPages(config, loadSnapshot = readSnapshot) {
         for (const p of problems) fail(file, line, `<ApiFunction> ${p}`);
         if (problems.length) continue;
         try {
-          const fn = resolveFunction(snapshot.functions, attrs);
-          if (seen.has(fn.anchor)) fail(file, line, `${signatureOf(fn)} is placed twice on this page; the anchor #${fn.anchor} would repeat.`);
-          seen.add(fn.anchor);
-          byAnchor.set(fn.anchor, fn);
+          const {primary: fn, shown} = resolveOverloads(snapshot.functions, attrs);
+          if (attrs.summary !== undefined && attrs.summary.trim() === '') throw new ApiResolveError('summary="" is empty. Write the summary, or leave the attribute out to use the header text.');
+          const covered = [...shown, ...(attrs.also !== undefined ? resolveAlso(snapshot.functions, fn, attrs.also) : [])];
+          for (const f of covered) {
+            if (seen.has(f.anchor)) fail(file, line, `${signatureOf(f)} is placed twice on this page; the anchor #${f.anchor} would repeat.`);
+            seen.add(f.anchor);
+            byAnchor.set(f.anchor, f);
+          }
         } catch (e) {
           if (!(e instanceof ApiResolveError)) throw e;
           fail(file, line, e.message);

@@ -23,7 +23,7 @@ import CodeBlock from '@theme/CodeBlock';
 import Admonition from '@theme/Admonition';
 import {useDocsVersion} from '@docusaurus/plugin-content-docs/client';
 import apiData from '@site/api/generated/data.json';
-import {resolveFunction} from '../../../scripts/api/resolve.mjs';
+import {resolveAlso, resolveOverloads} from '../../../scripts/api/resolve.mjs';
 
 type Inline = string | {t: 'code'; c: string} | {t: 'b' | 'i'; c: Inline[]} | {t: 'a'; href: string; c: Inline[]} | {t: 'br'};
 type Block =
@@ -34,6 +34,7 @@ type Block =
 
 interface ApiFn {
   anchor: string;
+  name: string;
   prototype: string;
   brief: Inline[] | null;
   details: Block[];
@@ -45,6 +46,10 @@ interface ApiFn {
 interface Props {
   readonly name: string;
   readonly args?: string;
+  /** Other functions this entry covers, like the forward and backward versions. Their prototypes are listed too. */
+  readonly also?: string;
+  /** Replaces the one-line summary from the header. */
+  readonly summary?: string;
   readonly children?: ReactNode;
 }
 
@@ -107,23 +112,33 @@ function Blocks({blocks}: {blocks: Block[]}): ReactNode {
   );
 }
 
-export default function ApiFunction({name, args, children}: Props): ReactNode {
+export default function ApiFunction({name, args, also, summary, children}: Props): ReactNode {
   // Each docs version reads its own snapshot; prepare.mjs wrote just the functions its pages place.
   const version = useDocsVersion().version;
   const functions = (apiData as Record<string, ApiFn[]>)[version];
   if (!functions) {
     throw new Error(`<ApiFunction name="${name}"> has no API data for docs version "${version}". Map that version to a snapshot in api/config.json.`);
   }
-  const fn = resolveFunction(functions, {name, args}) as ApiFn;
+  const {primary, shown} = resolveOverloads(functions, {name, args}) as {primary: ApiFn; shown: ApiFn[]};
+  const fn = primary;
+  const extras = (also === undefined ? [] : resolveAlso(functions, fn, also)) as ApiFn[];
   const hasExample = fn.examples.length > 0 || React.Children.count(children) > 0;
-  const prototype = <CodeBlock language="cpp">{fn.prototype}</CodeBlock>;
+  const prototype = <CodeBlock language="cpp">{[...shown, ...extras].map((f) => f.prototype).join('\n')}</CodeBlock>;
+  const direction = (f: ApiFn) => (/backward/.test(f.name) ? ' (backward only)' : /forward/.test(f.name) ? ' (forward only)' : '');
 
   return (
     <div id={fn.anchor}>
-      {fn.brief && (
-        <p>
-          <Inlines nodes={fn.brief} />
-        </p>
+      {[...shown.filter((f) => f !== fn), ...extras].map((f) => (
+        <span key={f.anchor} id={f.anchor} />
+      ))}
+      {summary !== undefined ? (
+        <p>{summary}</p>
+      ) : (
+        fn.brief && (
+          <p>
+            <Inlines nodes={fn.brief} />
+          </p>
+        )
       )}
       <Blocks blocks={fn.details} />
       {fn.paramDocs.length > 0 && (
@@ -136,6 +151,19 @@ export default function ApiFunction({name, args, children}: Props): ReactNode {
           ))}
         </p>
       )}
+      {extras.length > 0 && summary === undefined && (
+        <p>
+          Also comes as{' '}
+          {extras.map((f, i) => (
+            <React.Fragment key={f.anchor}>
+              {i > 0 && (i === extras.length - 1 ? ' and ' : ', ')}
+              <code>{f.name}</code>
+              {direction(f)}
+            </React.Fragment>
+          ))}
+          .
+        </p>
+      )}
       {fn.returns.length > 0 && (
         <p>
           <strong>Returns</strong> <Inlines nodes={flatText(fn.returns)} />
@@ -144,12 +172,11 @@ export default function ApiFunction({name, args, children}: Props): ReactNode {
       {hasExample ? (
         <Tabs
           groupId={fn.anchor}
-          defaultValue="proto"
+          defaultValue="example"
           values={[
-            {label: 'Prototype', value: 'proto'},
             {label: 'Example', value: 'example'},
+            {label: 'Prototype', value: 'proto'},
           ]}>
-          <TabItem value="proto">{prototype}</TabItem>
           <TabItem value="example">
             {fn.examples.length > 0
               ? fn.examples.map((e, i) => (
@@ -159,6 +186,7 @@ export default function ApiFunction({name, args, children}: Props): ReactNode {
                 ))
               : children}
           </TabItem>
+          <TabItem value="proto">{prototype}</TabItem>
         </Tabs>
       ) : (
         prototype
