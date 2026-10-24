@@ -914,17 +914,8 @@ e_angle_behavior pid_angle_behavior_bias_get();
 ## Misc.
 
 ### pid_wait()
-Lock the code in a while loop until the robot has settled.     
-<Tabs
-  groupId="examples21"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
 
-<TabItem value="example">
+<ApiFunction name="pid_wait">
 
 ```cpp
 void autonomous() {
@@ -940,19 +931,7 @@ void autonomous() {
 }
 ```
 
-
-</TabItem>
-
-
-<TabItem value="proto">
-
-```cpp
-void pid_wait();
-```
-
-
-</TabItem>
-</Tabs>
+</ApiFunction>
 
 
 ### pid_wait_quick()

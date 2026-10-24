@@ -1,0 +1,40 @@
+# Doxygen settings for the API reference on the docs site.
+#
+# XML only: scripts/api/generate.mjs turns the XML into api/generated/current.json,
+# and the <ApiFunction> component renders it. Nothing here builds HTML.
+#
+# The two paths come from the environment so the same file works for a fetched
+# checkout (.ez-template-src) and for a local folder (EZ_TEMPLATE_SRC):
+#   EZ_API_INPUT   root of an EZ-Template checkout
+#   EZ_API_OUTPUT  where doxygen writes xml/ and its warning log
+
+PROJECT_NAME           = "EZ-Template"
+OUTPUT_DIRECTORY       = "$(EZ_API_OUTPUT)"
+
+# Only the EZ-Template headers: not EZ-Units, liblvgl or the PROS headers that sit next to them.
+INPUT                  = "$(EZ_API_INPUT)/include/EZ-Template"
+STRIP_FROM_PATH        = "$(EZ_API_INPUT)"
+RECURSIVE              = YES
+FILE_PATTERNS          = *.hpp
+
+GENERATE_XML           = YES
+XML_PROGRAMLISTING     = NO
+GENERATE_HTML          = NO
+GENERATE_LATEX         = NO
+HAVE_DOT               = NO
+
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = NO
+INTERNAL_DOCS          = NO
+EXCLUDE_SYMBOLS        = detail detail::* *::detail *::detail::*
+
+# The first sentence of a comment is the summary shown above the details.
+JAVADOC_AUTOBRIEF      = YES
+MARKDOWN_SUPPORT       = YES
+
+# Do not turn words like PID or Lock into links to the class of the same name.
+AUTOLINK_SUPPORT       = NO
+
+QUIET                  = YES
+WARNINGS               = YES
+WARN_LOGFILE           = "$(EZ_API_OUTPUT)/doxygen-warnings.txt"

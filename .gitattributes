@@ -1,2 +1,5 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# API snapshots must be byte-identical on every OS, so they are always checked out with LF
+api/data/*.json text eol=lf

@@ -4,7 +4,10 @@
   "private": true,
   "scripts": {
     "docusaurus": "docusaurus",
+    "api:update": "node scripts/api/update.mjs",
+    "prestart": "node scripts/api/prepare.mjs",
     "start": "docusaurus start",
+    "prebuild": "node scripts/api/prepare.mjs",
     "build": "docusaurus build",
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy",
@@ -28,7 +31,8 @@
   },
   "devDependencies": {
     "@docusaurus/module-type-aliases": "^3.7.0",
-    "@docusaurus/types": "^3.7.0"
+    "@docusaurus/types": "^3.7.0",
+    "@xmldom/xmldom": "^0.9.12"
   },
   "browserslist": {
     "production": [
