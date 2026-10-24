@@ -17,8 +17,8 @@ void autonomous() {
   chassis.pid_targets_reset();                // Resets PID targets to 0
   chassis.drive_imu_reset();                  // Reset gyro position to 0
   chassis.drive_sensor_reset();               // Reset drive sensors to 0
-  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
-  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
 
   chassis.pid_drive_set(24_in, 110);  // Uses the global slew setting
   chassis.pid_wait();
@@ -36,7 +36,8 @@ void autonomous() {
 
 ```cpp
 void initialize() {
-  chassis.pid_drive_exit_condition_set(300_ms, 1_in, 500_ms, 3_in, 750_ms, 750_ms);
+  chassis.pid_drive_exit_condition_set(300_ms, 1_in, 500_ms, 3_in, 750_ms,
+                                       750_ms);
 }
 ```
 
@@ -65,8 +66,8 @@ void autonomous() {
   chassis.pid_targets_reset();                // Resets PID targets to 0
   chassis.drive_imu_reset();                  // Reset gyro position to 0
   chassis.drive_sensor_reset();               // Reset drive sensors to 0
-  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
-  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
 
   chassis.slew_drive_constants_set(5_in, 50);
 
@@ -89,8 +90,8 @@ void autonomous() {
   chassis.pid_targets_reset();                // Resets PID targets to 0
   chassis.drive_imu_reset();                  // Reset gyro position to 0
   chassis.drive_sensor_reset();               // Reset drive sensors to 0
-  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
-  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
 
   // Set the default slew state to true
   chassis.slew_drive_set(true);
@@ -143,7 +144,9 @@ void initialize() {
 void initialize() {
   chassis.pid_drive_constants_set(20.0, 0.0, 100.0);
   ez::PID::Constants c = chassis.pid_drive_constants_get();
-  printf("kp %.2f  ki %.2f  kd %.2f  start_i %.2f\n", c.kp, c.ki, c.kd, c.start_i);  // Prints kp 20.00  ki 0.00  kd 100.00  start_i 0.00
+  // Prints kp 20.00  ki 0.00  kd 100.00  start_i 0.00
+  printf("kp %.2f  ki %.2f  kd %.2f  start_i %.2f\n", c.kp, c.ki, c.kd,
+         c.start_i);
 }
 ```
 
@@ -157,7 +160,9 @@ void initialize() {
 void initialize() {
   chassis.pid_heading_constants_set(11.0, 0.0, 20.0);
   ez::PID::Constants c = chassis.pid_heading_constants_get();
-  printf("kp %.2f  ki %.2f  kd %.2f  start_i %.2f\n", c.kp, c.ki, c.kd, c.start_i);  // Prints kp 11.00  ki 0.00  kd 20.00  start_i 0.00
+  // Prints kp 11.00  ki 0.00  kd 20.00  start_i 0.00
+  printf("kp %.2f  ki %.2f  kd %.2f  start_i %.2f\n", c.kp, c.ki, c.kd,
+         c.start_i);
 }
 ```
 
@@ -185,8 +190,8 @@ void autonomous() {
   chassis.pid_targets_reset();                // Resets PID targets to 0
   chassis.drive_imu_reset();                  // Reset gyro position to 0
   chassis.drive_sensor_reset();               // Reset drive sensors to 0
-  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
-  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
 
   // Set the default slew state to true
   chassis.slew_drive_forward_set(true);
@@ -201,7 +206,7 @@ void autonomous() {
   chassis.pid_drive_set(24_in, 110);
   chassis.pid_wait();
 
-  // This will not slew because we haven't set a default state for going backward
+  // This will not slew because no default is set for going backward
   chassis.pid_drive_set(-48_in, 110);
   chassis.pid_wait();
 }
