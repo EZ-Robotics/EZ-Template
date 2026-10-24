@@ -1994,26 +1994,22 @@ public:
   void pid_odom_set(double target, int speed, bool slew_on);
 
   /**
-   * Sets the robot to move forward using PID with units, only using slew if globally enabled.
-   *
-   * This function is actually odom
+   * Sets the robot to go forward/backward the distance you give it, but it uses odometry, using slew only if it is enabled globally.
    *
    * \param p_target
-   *        target value in inches
+   *        distance to go, in a length unit
    * \param speed
-   *        0 to 127, max speed during motion
+   *        0 to 127, max speed during motion.  It's recommended to keep this at 110
    */
   void pid_odom_set(ez::QLength p_target, int speed);
 
   /**
-   * Sets the robot to move forward using PID with units, using slew if enabled for this motion.
-   *
-   * This function is actually odom
+   * Sets the robot to go forward/backward the distance you give it, but it uses odometry, using slew if enabled for this motion.
    *
    * \param p_target
-   *        target value in inches
+   *        distance to go, in a length unit
    * \param speed
-   *        0 to 127, max speed during motion
+   *        0 to 127, max speed during motion.  It's recommended to keep this at 110
    * \param slew_on
    *        ramp up from a lower speed to your target speed
    */
@@ -2079,7 +2075,7 @@ public:
    * Takes in an odom movement to go to a single point using boomerang.  If an angle is set, this will run boomerang.  Uses slew if globally enabled.
    *
    * \param p_imovement
-   *        {{x, y, t}, fwd/rev, 1-127}  an odom movement.  values are united here with units
+   *        united_odom, expecting `{{0_in, 0_in, 0_deg}, ez::fwd, 110}`
    */
   void pid_odom_boomerang_set(united_odom p_imovement);
 
@@ -2087,7 +2083,7 @@ public:
    * Takes in an odom movement to go to a single point using boomerang.  If an angle is set, this will run boomerang.  Uses slew if enabled for this motion.
    *
    * \param p_imovement
-   *        {{x, y, t}, fwd/rev, 1-127}  an odom movement.  values are united here with units
+   *        united_odom, expecting `{{0_in, 0_in, 0_deg}, ez::fwd, 110}`
    * \param slew_on
    *        ramp up from a lower speed to your target speed
    */
@@ -2098,7 +2094,7 @@ public:
    * that).  Uses slew if globally enabled.
    *
    * \param p_imovement
-   *        {{x, y, t}, fwd/rev, 1-127}  an odom movement.  values are united here with units
+   *        united_odom, expecting `{{0_in, 0_in}, ez::fwd, 110}`
    */
   void pid_odom_ptp_set(united_odom p_imovement);
 
@@ -2107,25 +2103,27 @@ public:
    * that).  Uses slew if enabled for this motion.
    *
    * \param p_imovement
-   *        {{x, y, t}, fwd/rev, 1-127}  an odom movement.  values are united here with units
+   *        united_odom, expecting `{{0_in, 0_in}, ez::fwd, 110}`
    * \param slew_on
    *        ramp up from a lower speed to your target speed
    */
   void pid_odom_ptp_set(united_odom p_imovement, bool slew_on);
 
   /**
-   * Takes in an odom movement to go to a single point.  If an angle is set, this will run boomerang.  Uses slew if globally enabled.
+   * Goes to an xy coordinate.  If the point has an angle this runs boomerang, otherwise it runs injected pure pursuit.  This is a wrapper for
+   * pid_odom_boomerang_set() and pid_odom_injected_pp_set().  Uses slew if globally enabled.
    *
    * \param p_imovement
-   *        {{x, y, t}, fwd/rev, 1-127}  an odom movement.  values are united here with units
+   *        united_odom, expecting `{{0_in, 0_in}, ez::fwd, 110}`
    */
   void pid_odom_set(united_odom p_imovement);
 
   /**
-   * Takes in an odom movement to go to a single point.  If an angle is set, this will run boomerang.  Uses slew if enabled for this motion.
+   * Goes to an xy coordinate.  If the point has an angle this runs boomerang, otherwise it runs injected pure pursuit.  This is a wrapper for
+   * pid_odom_boomerang_set() and pid_odom_injected_pp_set().  Uses slew if enabled for this motion.
    *
    * \param p_imovement
-   *        {{x, y, t}, fwd/rev, 1-127}  an odom movement.  values are united here with units
+   *        united_odom, expecting `{{0_in, 0_in}, ez::fwd, 110}`
    * \param slew_on
    *        ramp up from a lower speed to your target speed
    */
@@ -2214,7 +2212,7 @@ public:
    * slew if globally enabled.
    *
    * \param p_imovements
-   *        {{{x, y, t}, fwd/rev, 1-127}, {{x, y, t}, fwd/rev, 1-127}}  odom movements.  values are united here with units
+   *        vector of united_odom
    */
   void pid_odom_smooth_pp_set(std::vector<united_odom> p_imovements);
 
@@ -2223,7 +2221,7 @@ public:
    * slew if enabled for this motion.
    *
    * \param p_imovements
-   *        {{{x, y, t}, fwd/rev, 1-127}, {{x, y, t}, fwd/rev, 1-127}}  odom movements.  values are united here with units
+   *        vector of united_odom
    * \param slew_on
    *        ramp up from a lower speed to your target speed
    */
@@ -2234,7 +2232,7 @@ public:
    * if globally enabled.
    *
    * \param p_imovements
-   *        {{{x, y, t}, fwd/rev, 1-127}, {{x, y, t}, fwd/rev, 1-127}}  odom movements.  values are united here with units
+   *        vector of united_odom
    */
   void pid_odom_injected_pp_set(std::vector<united_odom> p_imovements);
 
@@ -2243,7 +2241,7 @@ public:
    * if enabled for this motion.
    *
    * \param p_imovements
-   *        {{{x, y, t}, fwd/rev, 1-127}, {{x, y, t}, fwd/rev, 1-127}}  odom movements.  values are united here with units
+   *        vector of united_odom
    * \param slew_on
    *        ramp up from a lower speed to your target speed
    */
@@ -2253,7 +2251,7 @@ public:
    * Takes in odom movements to go through multiple points.  If an angle is set, this will run boomerang for that point.  Uses slew if globally enabled.
    *
    * \param p_imovements
-   *        {{{x, y, t}, fwd/rev, 1-127}, {{x, y, t}, fwd/rev, 1-127}}  odom movements.  values are united here with units
+   *        vector of united_odom
    */
   void pid_odom_pp_set(std::vector<united_odom> p_imovements);
 
@@ -2261,27 +2259,27 @@ public:
    * Takes in odom movements to go through multiple points.  If an angle is set, this will run boomerang for that point.  Uses slew if enabled for this motion.
    *
    * \param p_imovements
-   *        {{{x, y, t}, fwd/rev, 1-127}, {{x, y, t}, fwd/rev, 1-127}}  odom movements.  values are united here with units
+   *        vector of united_odom
    * \param slew_on
    *        ramp up from a lower speed to your target speed
    */
   void pid_odom_pp_set(std::vector<united_odom> p_imovements, bool slew_on);
 
   /**
-   * Takes in odom movements to go through multiple points, will inject and smooth the path.  If an angle is set, this will run boomerang for that point.  Uses
-   * slew if globally enabled.
+   * Create and smooth out a path from the given points.  The path will switch to boomerang if an angle is specified for that point.  This is a
+   * wrapper for pid_odom_smooth_pp_set.  Uses slew if globally enabled.
    *
    * \param p_imovements
-   *        {{{x, y, t}, fwd/rev, 1-127}, {{x, y, t}, fwd/rev, 1-127}}  odom movements.  values are united here with units
+   *        vector of united_odom
    */
   void pid_odom_set(std::vector<united_odom> p_imovements);
 
   /**
-   * Takes in odom movements to go through multiple points, will inject and smooth the path.  If an angle is set, this will run boomerang for that point.  Uses
-   * slew if enabled for this motion.
+   * Create and smooth out a path from the given points.  The path will switch to boomerang if an angle is specified for that point.  This is a
+   * wrapper for pid_odom_smooth_pp_set.  Uses slew if enabled for this motion.
    *
    * \param p_imovements
-   *        {{{x, y, t}, fwd/rev, 1-127}, {{x, y, t}, fwd/rev, 1-127}}  odom movements.  values are united here with units
+   *        vector of united_odom
    * \param slew_on
    *        ramp up from a lower speed to your target speed
    */
