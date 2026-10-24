@@ -121,26 +121,8 @@ void autonomous() {
 
 
 ### pid_drive_exit_condition_set()
-Set's constants for drive exit conditions.     
- 
-`p_small_exit_time` time to exit when within small_error, in units     
-`p_small_error` small timer will start when error is within this, in units     
-`p_big_exit_time` time to exit when within big_error, in units             
-`p_big_error` big timer will start when error is within this, in units        
-`p_velocity_exit_time` time, in units, for velocity to be 0 after the robot has moved (or after 1 second if it never moves)          
-`p_mA_timeout` mA timer will start when the first motor on the side(s) being driven is over its current limit, in units     
-`use_imu` true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for `p_velocity_exit_time`). Off by default: acceleration reads near 0 during an ordinary constant-speed cruise too, so this can't tell cruising from stalled and used to cause exits mid-motion. It's the only exit that can catch wheels spinning free (lifted or high-centered), which the main sensor and mA_timeout both miss -- turn it on if that case matters more to you than early exits on a slow cruise.         
-<Tabs
-  groupId="pid_drive_Exit_set_okapi"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
 
-<TabItem value="example">
-
+<ApiFunction name="pid_drive_exit_condition_set" args="ez::QTime, ez::QLength, ez::QTime, ez::QLength, ez::QTime, ez::QTime, bool">
 
 ```cpp
 void initialize() {
@@ -148,18 +130,7 @@ void initialize() {
 }
 ```
 
-
-</TabItem>
-
-
-<TabItem value="proto">
-
-```cpp
-void pid_drive_exit_condition_set(ez::QTime p_small_exit_time, ez::QLength p_small_error, ez::QTime p_big_exit_time, ez::QLength p_big_error, ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = false);
-```
-
-</TabItem>
-</Tabs>
+</ApiFunction>
 
 
 
@@ -179,96 +150,42 @@ void pid_drive_exit_condition_set(ez::QTime p_small_exit_time, ez::QLength p_sma
 
 
 ### pid_drive_chain_constant_set()
-Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.   
 
-This sets forward and backwards driving constants.      
- 
-`input` length unit       
-<Tabs
-  groupId="pid_drive_chain_constant_set"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-<TabItem value="example">
+<ApiFunction name="pid_drive_chain_constant_set" args="ez::QLength">
 
 ```cpp
 void initialize() {
   chassis.pid_drive_chain_constant_set(3_in);
 }
 ```
-</TabItem>
-<TabItem value="proto">
 
-```cpp
-void pid_drive_chain_constant_set(ez::QLength input);
-```
-</TabItem>
-</Tabs>
+</ApiFunction>
 
 
 ### pid_drive_chain_forward_constant_set()
-Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.   
 
-This only sets forward driving constants.         
- 
-`input` length unit    
-<Tabs
-  groupId="pid_drive_chain_forward_constant_set"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-<TabItem value="example">
+<ApiFunction name="pid_drive_chain_forward_constant_set" args="ez::QLength">
 
 ```cpp
 void initialize() {
   chassis.pid_drive_chain_forward_constant_set(3_in);
 }
 ```
-</TabItem>
-<TabItem value="proto">
 
-```cpp
-void pid_drive_chain_forward_constant_set(ez::QLength input);
-```
-</TabItem>
-</Tabs>
+</ApiFunction>
 
 
 ### pid_drive_chain_backward_constant_set()
-Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.   
 
-This only sets backward driving constants.         
- 
-`input` length unit    
-<Tabs
-  groupId="pid_drive_chain_backward_constant_set"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-<TabItem value="example">
+<ApiFunction name="pid_drive_chain_backward_constant_set" args="ez::QLength">
 
 ```cpp
 void initialize() {
   chassis.pid_drive_chain_backward_constant_set(3_in);
 }
 ```
-</TabItem>
-<TabItem value="proto">
 
-```cpp
-void pid_drive_chain_backward_constant_set(ez::QLength input);
-```
-</TabItem>
-</Tabs>
+</ApiFunction>
 
 
 
@@ -279,22 +196,8 @@ void pid_drive_chain_backward_constant_set(ez::QLength input);
 
 
 ### slew_drive_constants_set()
-Sets constants for slew for driving.     
 
-Slew ramps up the speed of the robot from `min_speed` to full speed (127) over the set distance.  A motion with a lower max speed is capped at that speed, so it stops ramping sooner.     
-
-`distance` the distance the robot travels to ramp up to full speed (127), a distance unit   
-`min_speed` the starting speed for the movement, 0 - 127   
-<Tabs
-  groupId="slew_backward_constant_set"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-
-<TabItem value="example">
+<ApiFunction name="slew_drive_constants_set">
 
 ```cpp
 void autonomous() {
@@ -314,37 +217,14 @@ void autonomous() {
 }
 ```
 
-</TabItem>
-
-<TabItem value="proto">
-
-```cpp
-void slew_drive_constants_set(ez::QLength distance, int min_speed);
-```
-
-</TabItem>
-</Tabs>
+</ApiFunction>
 
 
 
 
 ### slew_drive_constants_forward_set()
-Sets constants for slew for driving forward.     
 
-Slew ramps up the speed of the robot from `min_speed` to full speed (127) over the set distance.  A motion with a lower max speed is capped at that speed, so it stops ramping sooner.     
-
-`distance` the distance the robot travels to ramp up to full speed (127), a distance unit   
-`min_speed` the starting speed for the movement, 0 - 127   
-<Tabs
-  groupId="slew_forward_constant_set"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-
-<TabItem value="example">
+<ApiFunction name="slew_drive_constants_forward_set">
 
 ```cpp
 void autonomous() {
@@ -361,37 +241,14 @@ void autonomous() {
 }
 ```
 
-</TabItem>
-
-<TabItem value="proto">
-
-```cpp
-void slew_drive_constants_forward_set(ez::QLength distance, int min_speed);
-```
-
-</TabItem>
-</Tabs>
+</ApiFunction>
 
 
 
 
 ### slew_drive_constants_backward_set()
-Sets constants for slew for driving backward.     
 
-Slew ramps up the speed of the robot from `min_speed` to full speed (127) over the set distance.  A motion with a lower max speed is capped at that speed, so it stops ramping sooner.     
-
-`distance` the distance the robot travels to ramp up to full speed (127), a distance unit   
-`min_speed` the starting speed for the movement, 0 - 127   
-<Tabs
-  groupId="slew_backward_constant_set"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-
-<TabItem value="example">
+<ApiFunction name="slew_drive_constants_backward_set">
 
 ```cpp
 void autonomous() {
@@ -408,16 +265,7 @@ void autonomous() {
 }
 ```
 
-</TabItem>
-
-<TabItem value="proto">
-
-```cpp
-void slew_drive_constants_backward_set(ez::QLength distance, int min_speed);
-```
-
-</TabItem>
-</Tabs>
+</ApiFunction>
 
 
 
@@ -497,26 +345,8 @@ void autonomous() {
 
 
 ### pid_drive_exit_condition_set()
-Set's constants for drive exit conditions.   
 
-`p_small_exit_time` time to exit when within small_error, in ms     
-`p_small_error` small timer will start when error is within this, in inches     
-`p_big_exit_time` time to exit when within big_error, in ms             
-`p_big_error` big timer will start when error is within this, in inches        
-`p_velocity_exit_time` velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), in ms   
-`p_mA_timeout` mA timer will start when the first motor on the side(s) being driven is over its current limit, in ms      
-`use_imu` true adds a second velocity exit timer based on the imu's acceleration (exits if either the main sensor or the imu reports no movement for `p_velocity_exit_time`). Off by default: acceleration reads near 0 during an ordinary constant-speed cruise too, so this can't tell cruising from stalled and used to cause exits mid-motion. It's the only exit that can catch wheels spinning free (lifted or high-centered), which the main sensor and mA_timeout both miss -- turn it on if that case matters more to you than early exits on a slow cruise.         
-<Tabs
-  groupId="pid_drive_exit_set_double"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-
-<TabItem value="example">
-
+<ApiFunction name="pid_drive_exit_condition_set" args="int, double, int, double, int, int, bool">
 
 ```cpp
 void initialize() {
@@ -524,18 +354,7 @@ void initialize() {
 }
 ```
 
-
-</TabItem>
-
-
-<TabItem value="proto">
-
-```cpp
-void pid_drive_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time, int p_mA_timeout, bool use_imu = false);
-```
-
-</TabItem>
-</Tabs>
+</ApiFunction>
 
 
 
@@ -553,23 +372,8 @@ void pid_drive_exit_condition_set(int p_small_exit_time, double p_small_error, i
 
 
 ### pid_drive_constants_set()
-Set PID drive constants for forwards and backwards.   
- 
-`p` proportional term   
-`i` integral term  
-`d` derivative term   
-`p_start_i` error threshold to start integral    
-<Tabs
-  groupId="pid_drive_constants_Set"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
 
-<TabItem value="example">
-
+<ApiFunction name="pid_drive_constants_set">
 
 ```cpp
 void initialize() {
@@ -577,40 +381,13 @@ void initialize() {
 }
 ```
 
-
-</TabItem>
-
-
-<TabItem value="proto">
-
-```cpp
-void pid_drive_constants_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
-```
-
-
-</TabItem>
-</Tabs>
+</ApiFunction>
 
 
 
 ### pid_drive_constants_forward_set()
-Set PID drive constants for forwards movements.   
- 
-`p` proportional term   
-`i` integral term  
-`d` derivative term   
-`p_start_i` error threshold to start integral  
-<Tabs
-  groupId="pid_drive_constants_forward_Set"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
 
-<TabItem value="example">
-
+<ApiFunction name="pid_drive_constants_forward_set">
 
 ```cpp
 void initialize() {
@@ -618,40 +395,13 @@ void initialize() {
 }
 ```
 
-
-</TabItem>
-
-
-<TabItem value="proto">
-
-```cpp
-void pid_drive_constants_forward_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
-```
-
-
-</TabItem>
-</Tabs>
+</ApiFunction>
 
 
 
 ### pid_drive_constants_backward_set()
-Set PID drive constants for backwards movements.   
- 
-`p` proportional term   
-`i` integral term  
-`d` derivative term   
-`p_start_i` error threshold to start integral  
-<Tabs
-  groupId="pid_drive_constants_backward_set"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
 
-<TabItem value="example">
-
+<ApiFunction name="pid_drive_constants_backward_set">
 
 ```cpp
 void initialize() {
@@ -659,40 +409,13 @@ void initialize() {
 }
 ```
 
-
-</TabItem>
-
-
-<TabItem value="proto">
-
-```cpp
-void pid_drive_constants_backward_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
-```
-
-
-</TabItem>
-</Tabs>
+</ApiFunction>
 
 
 
 ### pid_heading_constants_set()
-Set PID drive constants heading correction during drive motions.   
- 
-`p` proportion constant  
-`i` integral constant  
-`d` derivative constant  
-`p_start_i` error needs to be within this for i to start      
-<Tabs
-  groupId="pid_heading_constants_set"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
 
-<TabItem value="example">
-
+<ApiFunction name="pid_heading_constants_set">
 
 ```cpp
 void initialize() {
@@ -700,19 +423,7 @@ void initialize() {
 }
 ```
 
-
-</TabItem>
-
-
-<TabItem value="proto">
-
-```cpp
-void pid_heading_constants_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
-```
-
-
-</TabItem>
-</Tabs>
+</ApiFunction>
 
 
 
@@ -728,123 +439,49 @@ void pid_heading_constants_set(double p, double i = 0.0, double d = 0.0, double 
 
 
 ### pid_drive_chain_constant_set()
-Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.   
 
-This sets forward and backwards driving constants.          
- 
-`input` length in inches   
-<Tabs
-  groupId="pid_drive_chain_constant_set"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-<TabItem value="example">
+<ApiFunction name="pid_drive_chain_constant_set" args="double">
 
 ```cpp
 void initialize() {
   chassis.pid_drive_chain_constant_set(3);
 }
 ```
-</TabItem>
-<TabItem value="proto">
 
-```cpp
-void pid_drive_chain_constant_set(double input);
-```
-</TabItem>
-</Tabs>
+</ApiFunction>
 
 
 ### pid_drive_chain_forward_constant_set()
-Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.   
 
-This only sets forward driving constants.     
- 
-`input` length in inches   
-<Tabs
-  groupId="pid_drive_chain_forward_constant_set"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-<TabItem value="example">
+<ApiFunction name="pid_drive_chain_forward_constant_set" args="double">
 
 ```cpp
 void initialize() {
   chassis.pid_drive_chain_forward_constant_set(3);
 }
 ```
-</TabItem>
-<TabItem value="proto">
 
-```cpp
-void pid_drive_chain_forward_constant_set(double input);
-```
-</TabItem>
-</Tabs>
+</ApiFunction>
 
 
 ### pid_drive_chain_backward_constant_set()
-Sets the amount that the PID will overshoot target by to maintain momentum into the next motion.   
 
-This only sets backward driving constants.        
- 
-`input` length in inches   
-<Tabs
-  groupId="pid_drive_chain_backward_constant_set"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-
-<TabItem value="proto">
-
-```cpp
-void pid_drive_chain_backward_constant_set(double input);
-```
-</TabItem>
-
-<TabItem value="example">
+<ApiFunction name="pid_drive_chain_backward_constant_set" args="double">
 
 ```cpp
 void initialize() {
   chassis.pid_drive_chain_backward_constant_set(3);
 }
 ```
-</TabItem>
-</Tabs>
+
+</ApiFunction>
 
 
 
 
 ### slew_drive_set()
-Sets the default slew for drive forwards and backwards motions, can be overwritten in movement functions.      
- 
-`slew_on` true enables, false disables  
-<Tabs
-  groupId="slew_drive_set"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
 
-<TabItem value="proto">
-
-```cpp
-void slew_drive_set(bool slew_on);
-```
-</TabItem>
-
-<TabItem value="example">
+<ApiFunction name="slew_drive_set">
 
 ```cpp
 void autonomous() {
@@ -866,32 +503,14 @@ void autonomous() {
   chassis.pid_wait();
 }
 ```
-</TabItem>
-</Tabs>
+
+</ApiFunction>
 
 
 
 ### slew_drive_forward_set()
-Sets the default slew for drive forwards motions, can be overwritten in movement functions.      
- 
-`slew_on` true enables, false disables  
-<Tabs
-  groupId="slew_drive_forward_set"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
 
-<TabItem value="proto">
-
-```cpp
-void slew_drive_forward_set(bool slew_on);
-```
-</TabItem>
-
-<TabItem value="example">
+<ApiFunction name="slew_drive_forward_set">
 
 ```cpp
 void autonomous() {
@@ -917,31 +536,13 @@ void autonomous() {
   chassis.pid_wait();
 }
 ```
-</TabItem>
-</Tabs>
+
+</ApiFunction>
 
 
 ### slew_drive_backward_set()
-Sets the default slew for drive backward motions, can be overwritten in movement functions.      
- 
-`slew_on` true enables, false disables  
-<Tabs
-  groupId="slew_drive_backward_set"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
 
-<TabItem value="proto">
-
-```cpp
-void slew_drive_backward_set(bool slew_on);
-```
-</TabItem>
-
-<TabItem value="example">
+<ApiFunction name="slew_drive_backward_set">
 
 ```cpp
 void autonomous() {
@@ -967,8 +568,8 @@ void autonomous() {
   chassis.pid_wait();
 }
 ```
-</TabItem>
-</Tabs>
+
+</ApiFunction>
 
 
 
@@ -991,17 +592,8 @@ void autonomous() {
 ## Getter
 
 ### pid_drive_constants_get()
-Returns the PID constants for driving, as a `PID::Constants` with `kp`, `ki`, `kd` and `start_i`.  If the forward and backward constants were set to different values, this prints `Forward and Reverse constants are not the same!` and returns `{-1, -1, -1, -1}`.  Use the forward and backward getters when they differ.  
-<Tabs
-  groupId="pid_drive_constants_get"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
 
-<TabItem value="example">
+<ApiFunction name="pid_drive_constants_get">
 
 ```cpp
 void initialize() {
@@ -1011,29 +603,11 @@ void initialize() {
 }
 ```
 
-</TabItem>
-
-<TabItem value="proto">
-
-```cpp
-PID::Constants pid_drive_constants_get();
-```
-
-</TabItem>
-</Tabs>
+</ApiFunction>
 
 ### pid_drive_constants_forward_get()
-Returns the PID constants for driving forward, as a `PID::Constants` with `kp`, `ki`, `kd` and `start_i`. If no forward constants were set, this returns the constants from `pid_drive_constants_set()`.  
-<Tabs
-  groupId="pid_drive_constants_forward_get"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
 
-<TabItem value="example">
+<ApiFunction name="pid_drive_constants_forward_get">
 
 ```cpp
 void initialize() {
@@ -1043,29 +617,11 @@ void initialize() {
 }
 ```
 
-</TabItem>
-
-<TabItem value="proto">
-
-```cpp
-PID::Constants pid_drive_constants_forward_get();
-```
-
-</TabItem>
-</Tabs>
+</ApiFunction>
 
 ### pid_drive_constants_backward_get()
-Returns the PID constants for driving backward, as a `PID::Constants` with `kp`, `ki`, `kd` and `start_i`. If no backward constants were set, this returns the constants from `pid_drive_constants_set()`.  
-<Tabs
-  groupId="pid_drive_constants_backward_get"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
 
-<TabItem value="example">
+<ApiFunction name="pid_drive_constants_backward_get">
 
 ```cpp
 void initialize() {
@@ -1075,29 +631,11 @@ void initialize() {
 }
 ```
 
-</TabItem>
-
-<TabItem value="proto">
-
-```cpp
-PID::Constants pid_drive_constants_backward_get();
-```
-
-</TabItem>
-</Tabs>
+</ApiFunction>
 
 ### pid_heading_constants_get()
-Returns the PID constants that correct the robot's heading during drive motions, as a `PID::Constants` with `kp`, `ki`, `kd` and `start_i`.  
-<Tabs
-  groupId="pid_heading_constants_get"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
 
-<TabItem value="example">
+<ApiFunction name="pid_heading_constants_get">
 
 ```cpp
 void initialize() {
@@ -1107,16 +645,7 @@ void initialize() {
 }
 ```
 
-</TabItem>
-
-<TabItem value="proto">
-
-```cpp
-PID::Constants pid_heading_constants_get();
-```
-
-</TabItem>
-</Tabs>
+</ApiFunction>
 
 
 
@@ -1130,16 +659,8 @@ PID::Constants pid_heading_constants_get();
 
 
 ### pid_drive_chain_forward_constant_get()
-Returns the amount that the PID will overshoot target by to maintain momentum into the next motion for driving forward.         
-<Tabs
-  groupId="pid_drive_chain_forward_constant_get"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-<TabItem value="example">
+
+<ApiFunction name="pid_drive_chain_forward_constant_get">
 
 ```cpp
 void initialize() {
@@ -1147,27 +668,13 @@ void initialize() {
   printf("%.2f\n", chassis.pid_drive_chain_forward_constant_get());
 }
 ```
-</TabItem>
-<TabItem value="proto">
 
-```cpp
-double pid_drive_chain_forward_constant_get();
-```
-</TabItem>
-</Tabs>
+</ApiFunction>
 
 
 ### pid_drive_chain_backward_constant_get()
-Returns the amount that the PID will overshoot target by to maintain momentum into the next motion for driving backward.      
-<Tabs
-  groupId="pid_drive_chain_backward_constant_get"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-<TabItem value="example">
+
+<ApiFunction name="pid_drive_chain_backward_constant_get">
 
 ```cpp
 void initialize() {
@@ -1175,14 +682,8 @@ void initialize() {
   printf("%.2f\n", chassis.pid_drive_chain_backward_constant_get());
 }
 ```
-</TabItem>
-<TabItem value="proto">
 
-```cpp
-double pid_drive_chain_backward_constant_get();
-```
-</TabItem>
-</Tabs>
+</ApiFunction>
 
 
 
@@ -1208,23 +709,8 @@ double pid_drive_chain_backward_constant_get();
 
 
 ### slew_drive_forward_get()
-Returns true if slew is enabled for all drive forward movements, false otherwise.    
-<Tabs
-  groupId="slew_drive_forward_get"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
 
-<TabItem value="proto">
-
-```cpp
-bool slew_drive_forward_get();
-```
-</TabItem>
-<TabItem value="example">
+<ApiFunction name="slew_drive_forward_get">
 
 ```cpp
 void autonomous() {
@@ -1252,31 +738,15 @@ void autonomous() {
   chassis.pid_wait();
 }
 ```
-</TabItem>
-</Tabs>
+
+</ApiFunction>
 
 
 
 
 ### slew_drive_backward_get()
-Returns true if slew is enabled for all drive backward movements, false otherwise.    
-<Tabs
-  groupId="slew_drive_backward_get"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
 
-<TabItem value="proto">
-
-```cpp
-bool slew_drive_backward_get();
-```
-</TabItem>
-
-<TabItem value="example">
+<ApiFunction name="slew_drive_backward_get">
 
 ```cpp
 void autonomous() {
@@ -1304,5 +774,5 @@ void autonomous() {
   chassis.pid_wait();
 }
 ```
-</TabItem>
-</Tabs>
+
+</ApiFunction>
