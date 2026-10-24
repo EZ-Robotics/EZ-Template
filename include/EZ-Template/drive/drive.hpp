@@ -1501,6 +1501,20 @@ public:
    *
    * \param check_if_pto
    *        motor to check
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   pros::delay(500);
+   *
+   *   // This prints 0 0
+   *   printf("Check: %i %i\n", chassis.pto_check(chassis.left_motors[1]),
+   *          chassis.pto_check(chassis.right_motors[1]));
+   *   chassis.pto_add({chassis.left_motors[1], chassis.right_motors[1]});
+   *   // This prints 1 1
+   *   printf("Check: %i %i\n", chassis.pto_check(chassis.left_motors[1]),
+   *          chassis.pto_check(chassis.right_motors[1]));
+   * }
+   * \endcode
    */
   bool pto_check(pros::Motor check_if_pto);
 
@@ -1512,6 +1526,20 @@ public:
    *
    * \param pto_list
    *        list of motors to remove from the drive
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   pros::delay(500);
+   *
+   *   // This prints 0 0
+   *   printf("Check: %i %i\n", chassis.pto_check(chassis.left_motors[1]),
+   *          chassis.pto_check(chassis.right_motors[1]));
+   *   chassis.pto_add({chassis.left_motors[1], chassis.right_motors[1]});
+   *   // This prints 1 1
+   *   printf("Check: %i %i\n", chassis.pto_check(chassis.left_motors[1]),
+   *          chassis.pto_check(chassis.right_motors[1]));
+   * }
+   * \endcode
    */
   void pto_add(std::vector<pros::Motor> pto_list);
 
@@ -1522,6 +1550,24 @@ public:
    *
    * \param pto_list
    *        list of motors to add to the drive
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   pros::delay(500);
+   *
+   *   // This prints 0 0
+   *   printf("Check: %i %i\n", chassis.pto_check(chassis.left_motors[1]),
+   *          chassis.pto_check(chassis.right_motors[1]));
+   *   chassis.pto_add({chassis.left_motors[1], chassis.right_motors[1]});
+   *   // This prints 1 1
+   *   printf("Check: %i %i\n", chassis.pto_check(chassis.left_motors[1]),
+   *          chassis.pto_check(chassis.right_motors[1]));
+   *   chassis.pto_remove({chassis.left_motors[1], chassis.right_motors[1]});
+   *   // This prints 0 0
+   *   printf("Check: %i %i\n", chassis.pto_check(chassis.left_motors[1]),
+   *          chassis.pto_check(chassis.right_motors[1]));
+   * }
+   * \endcode
    */
   void pto_remove(std::vector<pros::Motor> pto_list);
 
@@ -1534,6 +1580,19 @@ public:
    *        list of motors to add/remove from the drive
    * \param toggle
    *        true removes the motors from the drive and adds them to the pto list, false removes them from the pto list and adds them back to the drive
+   *
+   * \code{.cpp}
+   * void pto_intake(bool toggle) {
+   *   pto_intake_enabled = toggle;
+   *   chassis.pto_toggle({chassis.left_motors[1], chassis.right_motors[1]},
+   *                      toggle);
+   *   pto_intake_piston.set_value(toggle);
+   *   if (toggle) {
+   *     chassis.left_motors[1].set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
+   *     chassis.right_motors[1].set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
+   *   }
+   * }
+   * \endcode
    */
   void pto_toggle(std::vector<pros::Motor> pto_list, bool toggle);
 
