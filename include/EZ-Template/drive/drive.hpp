@@ -2131,11 +2131,26 @@ public:
    *
    * \param increase
    *        a pros controller button
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.pid_tuner_button_increment_set(DIGITAL_UP);
+   * }
+   * \endcode
    */
   void pid_tuner_button_increment_set(pros::controller_digital_e_t increase);
 
   /**
    * Returns the pros button that increments the focused PID constant.
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.pid_tuner_button_increment_set(DIGITAL_UP);
+   *
+   *   // Prints DIGITAL_UP
+   *   printf("%i\n", chassis.pid_tuner_button_increment_get());
+   * }
+   * \endcode
    */
   pros::controller_digital_e_t pid_tuner_button_increment_get();
 
@@ -2144,11 +2159,26 @@ public:
    *
    * \param decrease
    *        a pros controller button
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.pid_tuner_button_decrement_set(DIGITAL_DOWN);
+   * }
+   * \endcode
    */
   void pid_tuner_button_decrement_set(pros::controller_digital_e_t decrease);
 
   /**
    * Returns the pros button that decrements the focused PID constant.
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.pid_tuner_button_decrement_set(DIGITAL_DOWN);
+   *
+   *   // Prints DIGITAL_DOWN
+   *   printf("%i\n", chassis.pid_tuner_button_decrement_get());
+   * }
+   * \endcode
    */
   pros::controller_digital_e_t pid_tuner_button_decrement_get();
 
@@ -2157,11 +2187,26 @@ public:
    *
    * \param pageUp
    *        a pros controller button
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.pid_tuner_button_up_set(DIGITAL_Y);
+   * }
+   * \endcode
    */
   void pid_tuner_button_up_set(pros::controller_digital_e_t pageUp);
 
   /**
    * Returns the pros button that moves up between the PID constants.
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.pid_tuner_button_up_set(DIGITAL_Y);
+   *
+   *   // Prints DIGITAL_Y
+   *   printf("%i\n", chassis.pid_tuner_button_up_get());
+   * }
+   * \endcode
    */
   pros::controller_digital_e_t pid_tuner_button_up_get();
 
@@ -2170,11 +2215,26 @@ public:
    *
    * \param pageDown
    *        a pros controller button
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.pid_tuner_button_down_set(DIGITAL_A);
+   * }
+   * \endcode
    */
   void pid_tuner_button_down_set(pros::controller_digital_e_t pageDown);
 
   /**
    * Returns the pros button that moves down between the PID constants.
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.pid_tuner_button_down_set(DIGITAL_A);
+   *
+   *   // Prints DIGITAL_A
+   *   printf("%i\n", chassis.pid_tuner_button_down_get());
+   * }
+   * \endcode
    */
   pros::controller_digital_e_t pid_tuner_button_down_get();
 
@@ -2183,11 +2243,26 @@ public:
    *
    * \param pageLeft
    *        a pros controller button
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.pid_tuner_button_left_set(DIGITAL_LEFT);
+   * }
+   * \endcode
    */
   void pid_tuner_button_left_set(pros::controller_digital_e_t pageLeft);
 
   /**
    * Returns the pros button that goes left in the PID Tuner.
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.pid_tuner_button_left_set(DIGITAL_LEFT);
+   *
+   *   // Prints DIGITAL_LEFT
+   *   printf("%i\n", chassis.pid_tuner_button_left_get());
+   * }
+   * \endcode
    */
   pros::controller_digital_e_t pid_tuner_button_left_get();
 
@@ -2196,11 +2271,26 @@ public:
    *
    * \param pageRight
    *        a pros controller button
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.pid_tuner_button_right_set(DIGITAL_RIGHT);
+   * }
+   * \endcode
    */
   void pid_tuner_button_right_set(pros::controller_digital_e_t pageRight);
 
   /**
    * Returns the pros button that goes right in the PID Tuner.
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.pid_tuner_button_right_set(DIGITAL_RIGHT);
+   *
+   *   // Prints DIGITAL_RIGHT
+   *   printf("%i\n", chassis.pid_tuner_button_right_get());
+   * }
+   * \endcode
    */
   pros::controller_digital_e_t pid_tuner_button_right_get();
 
@@ -5458,16 +5548,96 @@ public:
 
   /**
    * Enables PID Tuner.
+   *
+   * \code{.cpp}
+   * void opcontrol() {
+   *   // This is preference to what you like to drive on
+   *   chassis.drive_brake_set(MOTOR_BRAKE_COAST);
+   *   // Enable PID Tuner
+   *   chassis.pid_tuner_enable();
+   *   while (true) {
+   *     // Trigger the selected autonomous routine
+   *     if (master.get_digital_new_press(DIGITAL_B))
+   *       autonomous();
+   *
+   *     // Allow PID Tuner to iterate
+   *     chassis.pid_tuner_iterate();
+   *
+   *     // Tank control
+   *     chassis.opcontrol_tank();
+   *
+   *     // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   void pid_tuner_enable();
 
   /**
    * Disables PID Tuner.
+   *
+   * \code{.cpp}
+   * void opcontrol() {
+   *   // This is preference to what you like to drive on
+   *   chassis.drive_brake_set(MOTOR_BRAKE_COAST);
+   *   // Enable PID Tuner
+   *   chassis.pid_tuner_enable();
+   *   while (true) {
+   *     // Trigger the selected autonomous routine
+   *     if (master.get_digital_new_press(DIGITAL_B))
+   *       autonomous();
+   *
+   *     // Disable PID Tuner
+   *     if (master.get_digital_new_press(DIGITAL_X))
+   *       chassis.pid_tuner_disable();
+   *
+   *     // Allow PID Tuner to iterate
+   *     chassis.pid_tuner_iterate();
+   *
+   *     // Tank control
+   *     chassis.opcontrol_tank();
+   *
+   *     // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   void pid_tuner_disable();
 
   /**
    * Toggles PID tuner between enabled and disabled.
+   *
+   * \code{.cpp}
+   * void opcontrol() {
+   *   // This is preference to what you like to drive on
+   *   chassis.drive_brake_set(MOTOR_BRAKE_COAST);
+   *   while (true) {
+   *     // PID Tuner
+   *     // After you find values that you're happy with, you'll have to
+   *     // set them in auton.cpp
+   *     if (!pros::competition::is_connected()) {
+   *       // Enable / Disable PID Tuner
+   *       if (master.get_digital_new_press(DIGITAL_X))
+   *         chassis.pid_tuner_toggle();
+   *
+   *       // Trigger the selected autonomous routine
+   *       if (master.get_digital_new_press(DIGITAL_B))
+   *         autonomous();
+   *
+   *       // Allow PID Tuner to iterate
+   *       chassis.pid_tuner_iterate();
+   *     }
+   *
+   *     // Tank control
+   *     chassis.opcontrol_tank();
+   *
+   *     // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   void pid_tuner_toggle();
 
@@ -5475,11 +5645,75 @@ public:
    * Checks if PID Tuner is enabled.
    *
    * True is enabled, false is disabled.
+   *
+   * \code{.cpp}
+   * void opcontrol() {
+   *   // This is preference to what you like to drive on
+   *   chassis.drive_brake_set(MOTOR_BRAKE_COAST);
+   *   while (true) {
+   *     // PID Tuner
+   *     // After you find values that you're happy with, you'll have to
+   *     // set them in auton.cpp
+   *     if (!pros::competition::is_connected()) {
+   *       // Enable / Disable PID Tuner
+   *       if (master.get_digital_new_press(DIGITAL_X)) {
+   *         if (chassis.pid_tuner_enabled())
+   *           chassis.pid_tuner_disable();
+   *         else
+   *           chassis.pid_tuner_enable();
+   *       }
+   *
+   *       // Trigger the selected autonomous routine
+   *       if (master.get_digital_new_press(DIGITAL_B))
+   *         autonomous();
+   *
+   *       // Allow PID Tuner to iterate
+   *       chassis.pid_tuner_iterate();
+   *     }
+   *
+   *     // Tank control
+   *     chassis.opcontrol_tank();
+   *
+   *     // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   bool pid_tuner_enabled();
 
   /**
    * Iterates through controller inputs to modify PID constants.
+   *
+   * \code{.cpp}
+   * void opcontrol() {
+   *   // This is preference to what you like to drive on
+   *   chassis.drive_brake_set(MOTOR_BRAKE_COAST);
+   *   while (true) {
+   *     // PID Tuner
+   *     // After you find values that you're happy with, you'll have to
+   *     // set them in auton.cpp
+   *     if (!pros::competition::is_connected()) {
+   *       // Enable / Disable PID Tuner
+   *       if (master.get_digital_new_press(DIGITAL_X))
+   *         chassis.pid_tuner_toggle();
+   *
+   *       // Trigger the selected autonomous routine
+   *       if (master.get_digital_new_press(DIGITAL_B))
+   *         autonomous();
+   *
+   *       // Allow PID Tuner to iterate
+   *       chassis.pid_tuner_iterate();
+   *     }
+   *
+   *     // Tank control
+   *     chassis.opcontrol_tank();
+   *
+   *     // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   void pid_tuner_iterate();
 
@@ -5489,6 +5723,40 @@ public:
    *
    * \param input
    *        true prints to brain, false doesn't
+   *
+   * \code{.cpp}
+   * void opcontrol() {
+   *   // This is preference to what you like to drive on
+   *   chassis.drive_brake_set(MOTOR_BRAKE_COAST);
+   *
+   *   // Can be set before the PID Tuner is enabled
+   *   chassis.pid_tuner_print_brain_set(true);
+   *
+   *   while (true) {
+   *     // PID Tuner
+   *     // After you find values that you're happy with, you'll have to
+   *     // set them in auton.cpp
+   *     if (!pros::competition::is_connected()) {
+   *       // Enable / Disable PID Tuner
+   *       if (master.get_digital_new_press(DIGITAL_X))
+   *         chassis.pid_tuner_toggle();
+   *
+   *       // Trigger the selected autonomous routine
+   *       if (master.get_digital_new_press(DIGITAL_B))
+   *         autonomous();
+   *
+   *       // Allow PID Tuner to iterate
+   *       chassis.pid_tuner_iterate();
+   *     }
+   *
+   *     // Tank control
+   *     chassis.opcontrol_tank();
+   *
+   *     // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   void pid_tuner_print_brain_set(bool input);
 
@@ -5497,16 +5765,133 @@ public:
    *
    * \param input
    *        true prints to terminal, false doesn't
+   *
+   * \code{.cpp}
+   * void opcontrol() {
+   *   // This is preference to what you like to drive on
+   *   chassis.drive_brake_set(MOTOR_BRAKE_COAST);
+   *   chassis.pid_tuner_print_terminal_set(true);
+   *   while (true) {
+   *     // PID Tuner
+   *     // After you find values that you're happy with, you'll have to
+   *     // set them in auton.cpp
+   *     if (!pros::competition::is_connected()) {
+   *       // Enable / Disable PID Tuner
+   *       if (master.get_digital_new_press(DIGITAL_X))
+   *         chassis.pid_tuner_toggle();
+   *
+   *       // Trigger the selected autonomous routine
+   *       if (master.get_digital_new_press(DIGITAL_B))
+   *         autonomous();
+   *
+   *       // Allow PID Tuner to iterate
+   *       chassis.pid_tuner_iterate();
+   *     }
+   *
+   *     // Tank control
+   *     chassis.opcontrol_tank();
+   *
+   *     // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   void pid_tuner_print_terminal_set(bool input);
 
   /**
    * Returns true if printing to terminal is enabled.
+   *
+   * \code{.cpp}
+   * void opcontrol() {
+   *   // This is preference to what you like to drive on
+   *   chassis.drive_brake_set(MOTOR_BRAKE_COAST);
+   *   chassis.pid_tuner_print_terminal_set(true);
+   *
+   *   // Prints 1
+   *   printf("Printing to Terminal? %i\n",
+   *          chassis.pid_tuner_print_terminal_enabled());
+   *
+   *   chassis.pid_tuner_print_terminal_set(false);
+   *
+   *   // Prints 0
+   *   printf("Printing to Terminal? %i\n",
+   *          chassis.pid_tuner_print_terminal_enabled());
+   *
+   *   while (true) {
+   *     // PID Tuner
+   *     // After you find values that you're happy with, you'll have to
+   *     // set them in auton.cpp
+   *     if (!pros::competition::is_connected()) {
+   *       // Enable / Disable PID Tuner
+   *       if (master.get_digital_new_press(DIGITAL_X))
+   *         chassis.pid_tuner_toggle();
+   *
+   *       // Trigger the selected autonomous routine
+   *       if (master.get_digital_new_press(DIGITAL_B))
+   *         autonomous();
+   *
+   *       // Allow PID Tuner to iterate
+   *       chassis.pid_tuner_iterate();
+   *     }
+   *
+   *     // Tank control
+   *     chassis.opcontrol_tank();
+   *
+   *     // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   bool pid_tuner_print_terminal_enabled();
 
   /**
    * Returns true if printing to brain is enabled.
+   *
+   * \code{.cpp}
+   * void opcontrol() {
+   *   // This is preference to what you like to drive on
+   *   chassis.drive_brake_set(MOTOR_BRAKE_COAST);
+   *
+   *   // pid_tuner_print_brain_set() only does something while the PID Tuner
+   *   // is enabled
+   *   chassis.pid_tuner_enable();
+   *   chassis.pid_tuner_print_brain_set(false);
+   *
+   *   // Prints 0
+   *   printf("Printing to Brain? %i\n", chassis.pid_tuner_print_brain_enabled());
+   *
+   *   chassis.pid_tuner_print_brain_set(true);
+   *
+   *   // Prints 1
+   *   printf("Printing to Brain? %i\n", chassis.pid_tuner_print_brain_enabled());
+   *
+   *   while (true) {
+   *     // PID Tuner
+   *     // After you find values that you're happy with, you'll have to
+   *     // set them in auton.cpp
+   *     if (!pros::competition::is_connected()) {
+   *       // Enable / Disable PID Tuner
+   *       if (master.get_digital_new_press(DIGITAL_X))
+   *         chassis.pid_tuner_toggle();
+   *
+   *       // Trigger the selected autonomous routine
+   *       if (master.get_digital_new_press(DIGITAL_B))
+   *         autonomous();
+   *
+   *       // Allow PID Tuner to iterate
+   *       chassis.pid_tuner_iterate();
+   *     }
+   *
+   *     // Tank control
+   *     chassis.opcontrol_tank();
+   *
+   *     // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   bool pid_tuner_print_brain_enabled();
 
@@ -5515,6 +5900,37 @@ public:
    *
    * \param p
    *        p will increase by this
+   *
+   * \code{.cpp}
+   * void opcontrol() {
+   *   // This is preference to what you like to drive on
+   *   chassis.drive_brake_set(MOTOR_BRAKE_COAST);
+   *   chassis.pid_tuner_increment_p_set(0.25);
+   *   while (true) {
+   *     // PID Tuner
+   *     // After you find values that you're happy with, you'll have to
+   *     // set them in auton.cpp
+   *     if (!pros::competition::is_connected()) {
+   *       // Enable / Disable PID Tuner
+   *       if (master.get_digital_new_press(DIGITAL_X))
+   *         chassis.pid_tuner_toggle();
+   *
+   *       // Trigger the selected autonomous routine
+   *       if (master.get_digital_new_press(DIGITAL_B))
+   *         autonomous();
+   *
+   *       // Allow PID Tuner to iterate
+   *       chassis.pid_tuner_iterate();
+   *     }
+   *
+   *     // Tank control
+   *     chassis.opcontrol_tank();
+   *
+   *     // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   void pid_tuner_increment_p_set(double p);
 
@@ -5523,6 +5939,37 @@ public:
    *
    * \param i
    *        i will increase by this
+   *
+   * \code{.cpp}
+   * void opcontrol() {
+   *   // This is preference to what you like to drive on
+   *   chassis.drive_brake_set(MOTOR_BRAKE_COAST);
+   *   chassis.pid_tuner_increment_i_set(0.25);
+   *   while (true) {
+   *     // PID Tuner
+   *     // After you find values that you're happy with, you'll have to
+   *     // set them in auton.cpp
+   *     if (!pros::competition::is_connected()) {
+   *       // Enable / Disable PID Tuner
+   *       if (master.get_digital_new_press(DIGITAL_X))
+   *         chassis.pid_tuner_toggle();
+   *
+   *       // Trigger the selected autonomous routine
+   *       if (master.get_digital_new_press(DIGITAL_B))
+   *         autonomous();
+   *
+   *       // Allow PID Tuner to iterate
+   *       chassis.pid_tuner_iterate();
+   *     }
+   *
+   *     // Tank control
+   *     chassis.opcontrol_tank();
+   *
+   *     // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   void pid_tuner_increment_i_set(double i);
 
@@ -5531,6 +5978,37 @@ public:
    *
    * \param d
    *        d will increase by this
+   *
+   * \code{.cpp}
+   * void opcontrol() {
+   *   // This is preference to what you like to drive on
+   *   chassis.drive_brake_set(MOTOR_BRAKE_COAST);
+   *   chassis.pid_tuner_increment_d_set(1.0);
+   *   while (true) {
+   *     // PID Tuner
+   *     // After you find values that you're happy with, you'll have to
+   *     // set them in auton.cpp
+   *     if (!pros::competition::is_connected()) {
+   *       // Enable / Disable PID Tuner
+   *       if (master.get_digital_new_press(DIGITAL_X))
+   *         chassis.pid_tuner_toggle();
+   *
+   *       // Trigger the selected autonomous routine
+   *       if (master.get_digital_new_press(DIGITAL_B))
+   *         autonomous();
+   *
+   *       // Allow PID Tuner to iterate
+   *       chassis.pid_tuner_iterate();
+   *     }
+   *
+   *     // Tank control
+   *     chassis.opcontrol_tank();
+   *
+   *     // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   void pid_tuner_increment_d_set(double d);
 
@@ -5539,26 +6017,185 @@ public:
    *
    * \param start_i
    *        start i will increase by this
+   *
+   * \code{.cpp}
+   * void opcontrol() {
+   *   // This is preference to what you like to drive on
+   *   chassis.drive_brake_set(MOTOR_BRAKE_COAST);
+   *   chassis.pid_tuner_increment_start_i_set(5.0);
+   *   while (true) {
+   *     // PID Tuner
+   *     // After you find values that you're happy with, you'll have to
+   *     // set them in auton.cpp
+   *     if (!pros::competition::is_connected()) {
+   *       // Enable / Disable PID Tuner
+   *       if (master.get_digital_new_press(DIGITAL_X))
+   *         chassis.pid_tuner_toggle();
+   *
+   *       // Trigger the selected autonomous routine
+   *       if (master.get_digital_new_press(DIGITAL_B))
+   *         autonomous();
+   *
+   *       // Allow PID Tuner to iterate
+   *       chassis.pid_tuner_iterate();
+   *     }
+   *
+   *     // Tank control
+   *     chassis.opcontrol_tank();
+   *
+   *     // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   void pid_tuner_increment_start_i_set(double start_i);
 
   /**
    * Returns the value that PID Tuner increments P.
+   *
+   * \code{.cpp}
+   * void opcontrol() {
+   *   // This is preference to what you like to drive on
+   *   chassis.drive_brake_set(MOTOR_BRAKE_COAST);
+   *   chassis.pid_tuner_increment_p_set(0.25);
+   *   printf("%f\n", chassis.pid_tuner_increment_p_get());
+   *   while (true) {
+   *     // PID Tuner
+   *     // After you find values that you're happy with, you'll have to
+   *     // set them in auton.cpp
+   *     if (!pros::competition::is_connected()) {
+   *       // Enable / Disable PID Tuner
+   *       if (master.get_digital_new_press(DIGITAL_X))
+   *         chassis.pid_tuner_toggle();
+   *
+   *       // Trigger the selected autonomous routine
+   *       if (master.get_digital_new_press(DIGITAL_B))
+   *         autonomous();
+   *
+   *       // Allow PID Tuner to iterate
+   *       chassis.pid_tuner_iterate();
+   *     }
+   *
+   *     // Tank control
+   *     chassis.opcontrol_tank();
+   *
+   *     // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   double pid_tuner_increment_p_get();
 
   /**
    * Returns the value that PID Tuner increments I.
+   *
+   * \code{.cpp}
+   * void opcontrol() {
+   *   // This is preference to what you like to drive on
+   *   chassis.drive_brake_set(MOTOR_BRAKE_COAST);
+   *   chassis.pid_tuner_increment_i_set(0.25);
+   *   printf("%f\n", chassis.pid_tuner_increment_i_get());
+   *   while (true) {
+   *     // PID Tuner
+   *     // After you find values that you're happy with, you'll have to
+   *     // set them in auton.cpp
+   *     if (!pros::competition::is_connected()) {
+   *       // Enable / Disable PID Tuner
+   *       if (master.get_digital_new_press(DIGITAL_X))
+   *         chassis.pid_tuner_toggle();
+   *
+   *       // Trigger the selected autonomous routine
+   *       if (master.get_digital_new_press(DIGITAL_B))
+   *         autonomous();
+   *
+   *       // Allow PID Tuner to iterate
+   *       chassis.pid_tuner_iterate();
+   *     }
+   *
+   *     // Tank control
+   *     chassis.opcontrol_tank();
+   *
+   *     // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   double pid_tuner_increment_i_get();
 
   /**
    * Returns the value that PID Tuner increments D.
+   *
+   * \code{.cpp}
+   * void opcontrol() {
+   *   // This is preference to what you like to drive on
+   *   chassis.drive_brake_set(MOTOR_BRAKE_COAST);
+   *   chassis.pid_tuner_increment_d_set(1.0);
+   *   printf("%f\n", chassis.pid_tuner_increment_d_get());
+   *   while (true) {
+   *     // PID Tuner
+   *     // After you find values that you're happy with, you'll have to
+   *     // set them in auton.cpp
+   *     if (!pros::competition::is_connected()) {
+   *       // Enable / Disable PID Tuner
+   *       if (master.get_digital_new_press(DIGITAL_X))
+   *         chassis.pid_tuner_toggle();
+   *
+   *       // Trigger the selected autonomous routine
+   *       if (master.get_digital_new_press(DIGITAL_B))
+   *         autonomous();
+   *
+   *       // Allow PID Tuner to iterate
+   *       chassis.pid_tuner_iterate();
+   *     }
+   *
+   *     // Tank control
+   *     chassis.opcontrol_tank();
+   *
+   *     // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   double pid_tuner_increment_d_get();
 
   /**
    * Returns the value that PID Tuner increments Start I.
+   *
+   * \code{.cpp}
+   * void opcontrol() {
+   *   // This is preference to what you like to drive on
+   *   chassis.drive_brake_set(MOTOR_BRAKE_COAST);
+   *   chassis.pid_tuner_increment_start_i_set(5.0);
+   *   printf("%f\n", chassis.pid_tuner_increment_start_i_get());
+   *   while (true) {
+   *     // PID Tuner
+   *     // After you find values that you're happy with, you'll have to
+   *     // set them in auton.cpp
+   *     if (!pros::competition::is_connected()) {
+   *       // Enable / Disable PID Tuner
+   *       if (master.get_digital_new_press(DIGITAL_X))
+   *         chassis.pid_tuner_toggle();
+   *
+   *       // Trigger the selected autonomous routine
+   *       if (master.get_digital_new_press(DIGITAL_B))
+   *         autonomous();
+   *
+   *       // Allow PID Tuner to iterate
+   *       chassis.pid_tuner_iterate();
+   *     }
+   *
+   *     // Tank control
+   *     chassis.opcontrol_tank();
+   *
+   *     // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   double pid_tuner_increment_start_i_get();
 
@@ -5589,6 +6226,14 @@ public:
    *
    * \param new_pid_and_name
    *        {"name", &pid.constants}
+   *
+   * \code{.cpp}
+   * ez::PID lift_pid{20.0, 0.0, 100.0};
+   *
+   * void initialize() {
+   *   chassis.pid_tuner_add({"Lift", &lift_pid.constants});
+   * }
+   * \endcode
    */
   void pid_tuner_add(const_and_name new_pid_and_name);
 
