@@ -565,17 +565,24 @@ public:
   e_mode mode = DISABLE;
 
   /**
-   * Sets current mode of drive.
+   * Sets the current mode of the drive.
+   *
+   * When your brain is connected to a competition switch or field control, EZ-Template sets the drive mode to ez::DISABLE while the robot is disabled,
+   * and once when autonomous ends.  This stops a motion that field control cut off from resuming on its own when driver control starts.  It does not
+   * happen when entering autonomous, and it never happens without a competition switch, so testing at your desk or running autons from the brain menu is
+   * not affected.
    *
    * \param p_mode
-   *        the new drive mode
+   *        the current task running for the drive.  one of ez::DISABLE, ez::SWING, ez::TURN, ez::TURN_TO_POINT, ez::DRIVE, ez::POINT_TO_POINT, ez::PURE_PURSUIT
    * \param stop_drive
-   *        if the drive will stop when p_mode is ez::DISABLE
+   *        if the drive motors stop when p_mode is ez::DISABLE.  Defaults to true
    */
   void drive_mode_set(e_mode p_mode, bool stop_drive = true);
 
   /**
-   * Returns current mode of drive.
+   * Returns the current drive mode that the task is running.
+   *
+   * Returns ez::DISABLE, ez::SWING, ez::TURN, ez::TURN_TO_POINT, ez::DRIVE, ez::POINT_TO_POINT, or ez::PURE_PURSUIT.
    */
   e_mode drive_mode_get();
 
@@ -3524,7 +3531,8 @@ public:
   void pid_targets_reset();
 
   /**
-   * Sets heading of imu and target of PID, angle.
+   * Sets the angle of the robot.  This is useful when your robot is set up at an unconventional angle and you want 0 to be when you're square with the
+   * field.  It sets the heading of the imu and the target of the PID.
    *
    * \param p_angle
    *        angle that the robot will think it is now facing, angle unit
@@ -3532,7 +3540,8 @@ public:
   void drive_angle_set(ez::QAngle p_angle);
 
   /**
-   * Sets heading of imu and target of PID, takes double as an angle.
+   * Sets the angle of the robot.  This is useful when your robot is set up at an unconventional angle and you want 0 to be when you're square with the
+   * field.  It sets the heading of the imu and the target of the PID.
    *
    * \param angle
    *        angle that the robot will think it is now facing, in degrees
@@ -3553,6 +3562,9 @@ public:
    * The target is an absolute heading, the same as the heading you gave the turn or swing.
    * `pid_turn_set(90_deg, 90); pid_wait_until(45_deg);` returns when the robot faces 45 degrees, with 45 degrees still to go.
    *
+   * If the checkpoint can't be reached (past the heading the motion goes to, or on the other side of where it started), the wait returns when the
+   * motion finishes, and prints why when printing is on.  `interfered` is only set when something actually stopped the robot.
+   *
    * \param target
    *        absolute heading for a turn or swing, using units
    */
@@ -3564,6 +3576,10 @@ public:
    * The target is how far the robot has driven since THIS motion started, with the same sign as the drive.  It is not measured from
    * the end of the drive.  `pid_drive_set(24_in, 110); pid_wait_until(6_in);` returns after 6 inches, with 18 inches still to go.
    * Backward drives use negative numbers: `pid_drive_set(-24_in, 110); pid_wait_until(-6_in);`.
+   *
+   * If the checkpoint can't be reached (past the distance the drive goes, or the wrong sign), the wait returns when the motion finishes, and prints why
+   * when printing is on.  `interfered` is only set when something actually stopped the robot.  For example, an odom movement that ends before the robot
+   * has traveled `target`, like a 24 inch move waiting until 30 inches, releases the loop when the movement finishes.
    *
    * \param target
    *        distance driven since this motion started, using units, the same sign as the drive
@@ -3579,6 +3595,10 @@ public:
    *
    * For turns and swings the target is an absolute heading in degrees, the same as the turn target.
    * `pid_turn_set(90_deg, 90); pid_wait_until(45);` returns when the robot faces 45 degrees.
+   *
+   * If the checkpoint can't be reached (past the target, or the wrong sign), the wait returns when the motion finishes, and prints why when printing is
+   * on.  `interfered` is only set when something actually stopped the robot.  This check is for drives, turns and swings.  An odom motion returns when it
+   * finishes without a message, for example a 24 inch move waiting until 30 inches.
    *
    * \param target
    *        for driving, inches driven since this motion started (same sign as the drive).  for turns/swings, an absolute heading in degrees
@@ -4639,7 +4659,7 @@ public:
   double pid_angle_exit_stop_speed_get();
 
   /**
-   * Returns the current ticks per inch.
+   * Returns the conversion between raw sensor value and inches.
    */
   double drive_tick_per_inch();
 
