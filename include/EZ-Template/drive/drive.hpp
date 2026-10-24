@@ -634,6 +634,12 @@ public:
    *
    * \param run_loading_animation
    *        false skips the loading animation on the brain screen while the IMU calibrates
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.initialize();
+   * }
+   * \endcode
    */
   void initialize(bool run_loading_animation = true);
 
@@ -1779,6 +1785,14 @@ public:
    *        voltage for left side, -127 to 127
    * \param right
    *        voltage for right side, -127 to 127
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.drive_set(127, 127);
+   *   pros::delay(1000);  // Wait 1 second
+   *   chassis.drive_set(0, 0);
+   * }
+   * \endcode
    */
   void drive_set(int left, int right);
 
@@ -1792,6 +1806,12 @@ public:
    *
    * \param brake_type
    *        the 'brake mode' of the motor e.g. 'pros::E_MOTOR_BRAKE_COAST' 'pros::E_MOTOR_BRAKE_BRAKE' 'pros::E_MOTOR_BRAKE_HOLD'
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.drive_brake_set(MOTOR_BRAKE_COAST);
+   * }
+   * \endcode
    */
   void drive_brake_set(pros::motor_brake_mode_e_t brake_type);
 
@@ -1805,6 +1825,12 @@ public:
    *
    * \param mA
    *        input in milliamps
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.drive_current_limit_set(1000);
+   * }
+   * \endcode
    */
   void drive_current_limit_set(int mA);
 
@@ -2042,6 +2068,12 @@ public:
 
   /**
    * Reset all the chassis motors and tracking wheels, recommended to run at the start of your autonomous routine.
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.drive_sensor_reset();
+   * }
+   * \endcode
    */
   void drive_sensor_reset();
 
@@ -2052,6 +2084,12 @@ public:
    *
    * \param new_heading
    *        new heading value
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.drive_imu_reset();
+   * }
+   * \endcode
    */
   void drive_imu_reset(double new_heading = 0);
 
@@ -2077,11 +2115,31 @@ public:
    *
    * \param imu_value_after_3600
    *        what the imu reads after physically turning the robot 3600 degrees
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.initialize();
+   *
+   *   // After physically turning the robot 3600 degrees and reading what the
+   *   // imu reported, pass that value in here.
+   *   chassis.drive_imu_scaler_3600_set(3625.42);
+   * }
+   * \endcode
    */
   void drive_imu_scaler_3600_set(double imu_value_after_3600);
 
   /**
    * Returns the imu value after a 3600 degree turn that produces the imu's current scale.
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.initialize();
+   *   chassis.drive_imu_scaler_3600_set(3625.42);
+   *
+   *   // Prints 3625.42
+   *   printf("%.2f\n", chassis.drive_imu_scaler_3600_get());
+   * }
+   * \endcode
    */
   double drive_imu_scaler_3600_get();
 
@@ -2099,6 +2157,17 @@ public:
    * \param imu_values_after_3600
    *        what each imu reads after physically turning the robot 3600 degrees, in the same order as the IMU ports passed to the constructor, input {3550,
    *        3625...}
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.initialize();
+   *
+   *   // After physically turning the robot 3600 degrees and reading what each
+   *   // imu reported, pass those values in here, in the same order as the imu
+   *   // ports passed to the constructor.
+   *   chassis.drive_imus_scalers_3600_set({3550.0, 3625.0});
+   * }
+   * \endcode
    */
   void drive_imus_scalers_3600_set(std::vector<double> imu_values_after_3600);
 
@@ -2106,6 +2175,15 @@ public:
    * Returns the imu value after a 3600 degree turn that produces each imu's current scale, for drives built with the redundant IMU constructor.
    *
    * Returned as a map of imu port to value.
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.drive_imus_scalers_3600_set({3550.0, 3625.0});
+   *
+   *   for (auto& [port, value] : chassis.drive_imus_scalers_3600_get())
+   *     printf("port %i: %.2f\n", port, value);
+   * }
+   * \endcode
    */
   std::map<int, double> drive_imus_scalers_3600_get();
 
@@ -2119,11 +2197,24 @@ public:
    *
    * \param degrees
    *        disagreement threshold in degrees.  A non-positive value is rejected and the previous threshold is kept
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.initialize();
+   *   chassis.imu_drift_threshold_set(10.0);
+   * }
+   * \endcode
    */
   void imu_drift_threshold_set(double degrees);
 
   /**
    * Returns the current IMU disagreement threshold in degrees, see imu_drift_threshold_set().
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   printf("drift threshold: %.0f deg\n", chassis.imu_drift_threshold_get());
+   * }
+   * \endcode
    */
   double imu_drift_threshold_get();
 
@@ -2141,6 +2232,12 @@ public:
    *
    * \param run_loading_animation
    *        true runs the animation, false doesn't
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.drive_imu_calibrate();
+   * }
+   * \endcode
    */
   bool drive_imu_calibrate(bool run_loading_animation = true);
 
@@ -2148,6 +2245,22 @@ public:
    * Checks if the imu calibrated successfully or if it took longer than expected.
    *
    * Returns true if calibrated successfully, and false if unsuccessful.
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   // Print our branding over your terminal :D
+   *   ez::ez_template_print();
+   *
+   *   // Stop the user from doing anything while legacy ports configure
+   *   pros::delay(500);
+   *
+   *   // Initialize chassis and auton selector
+   *   chassis.initialize();
+   *   ez::as::initialize();
+   *
+   *   master.rumble(chassis.drive_imu_calibrated() ? "." : "---");
+   * }
+   * \endcode
    */
   bool drive_imu_calibrated();
 
@@ -2163,6 +2276,12 @@ public:
    * Returns the angle of the robot, from whichever IMU is currently focused.
    *
    * On a redundant IMU drive, this is the one to read instead of talking to an individual pros::Imu directly, since it stays correct across a failover.
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   printf("%.2f\n", chassis.drive_angle_get());
+   * }
+   * \endcode
    */
   double drive_angle_get();
 
