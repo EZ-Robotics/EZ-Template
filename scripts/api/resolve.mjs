@@ -100,21 +100,22 @@ export function resolveOverloads(functions, query) {
   return {primary, shown};
 }
 
-// The functions an entry also covers (also="a, b"). They must be in the same class as the primary, and when a name is
-// overloaded the one with the same parameter types as the primary is used.
-export function resolveAlso(functions, primary, also) {
+// The functions an entry also covers (also="a, b"). They must be in the same class as the primary. When a name is
+// overloaded, the overloads with the same parameter types as the ones the entry shows are used (all of them, so an
+// entry that shows a length and an angle form covers both forms of its siblings).
+export function resolveAlso(functions, primary, also, shown = [primary]) {
   const names = also.split(',').map((n) => n.trim()).filter(Boolean);
   if (names.length === 0) throw new ApiResolveError(`also="${also}" lists no function names.`);
-  const key = argsKey(primary.params.map((p) => p.type));
-  return names.map((name) => {
+  const keys = shown.map((f) => argsKey(f.params.map((p) => p.type)));
+  return names.flatMap((name) => {
     const cands = functions.filter((f) => f.qualifier === primary.qualifier && f.name === name);
     if (cands.length === 0) {
       const hint = suggestNames(functions.filter((f) => f.qualifier === primary.qualifier), name);
       throw new ApiResolveError(`also="${name}": no function named "${name}" in ${primary.qualifier}.` + (hint.length ? `\n  Did you mean: ${hint.join(', ')}?` : ''));
     }
-    const same = cands.filter((f) => argsKey(f.params.map((p) => p.type)) === key);
-    if (same.length === 1) return same[0];
-    if (cands.length === 1) return cands[0];
+    const same = keys.map((k) => cands.find((f) => argsKey(f.params.map((p) => p.type)) === k)).filter(Boolean);
+    if (same.length > 0) return same;
+    if (cands.length === 1) return cands;
     throw new ApiResolveError(`also="${name}" is overloaded and no overload has the parameter types of ${signatureOf(primary)}. The overloads are:\n${listCandidates(cands)}`);
   });
 }

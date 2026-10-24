@@ -32,7 +32,7 @@ Some entries take their text from the library's header comments. The text is sav
 **Place a function.** Keep the page's `### heading()`, then add a tag under it. Put the example inside the tag (a `\code` example in the header wins if there is one). `args` lists every parameter type, to pick an overload. Three more attributes are optional:
 
 - `args="a | b"` shows several overloads in one entry, like a short and a long form. The text comes from the one with the most parameters.
-- `also="x, y"` covers sibling functions, like the forward and backward versions. Their signatures are listed too, and each keeps its own link.
+- `also="x, y"` covers sibling functions, like the forward and backward versions. Their signatures are listed too, and each keeps its own link. When a sibling is overloaded, the overloads with the same parameter types as the ones the entry shows are listed (so `args="ez::QLength, int | ez::QAngle, int"` lists both forms of each sibling).
 - `summary="..."` replaces the header's one-line summary. Use it rarely, because that text then lives on the page and not in the header.
 
 ```

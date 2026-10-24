@@ -129,7 +129,7 @@ export function checkPages(config, loadSnapshot = readSnapshot) {
         try {
           const {primary: fn, shown} = resolveOverloads(snapshot.functions, attrs);
           if (attrs.summary !== undefined && attrs.summary.trim() === '') throw new ApiResolveError('summary="" is empty. Write the summary, or leave the attribute out to use the header text.');
-          const covered = [...shown, ...(attrs.also !== undefined ? resolveAlso(snapshot.functions, fn, attrs.also) : [])];
+          const covered = [...shown, ...(attrs.also !== undefined ? resolveAlso(snapshot.functions, fn, attrs.also, shown) : [])];
           for (const f of covered) {
             if (seen.has(f.anchor)) fail(file, line, `${signatureOf(f)} is placed twice on this page; the anchor #${f.anchor} would repeat.`);
             seen.add(f.anchor);

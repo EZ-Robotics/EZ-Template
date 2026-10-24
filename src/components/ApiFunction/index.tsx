@@ -129,7 +129,7 @@ export default function ApiFunction({name, args, also, summary, children}: Props
   }
   const {primary, shown} = resolveOverloads(functions, {name, args}) as {primary: ApiFn; shown: ApiFn[]};
   const fn = primary;
-  const extras = (also === undefined ? [] : resolveAlso(functions, fn, also)) as ApiFn[];
+  const extras = (also === undefined ? [] : resolveAlso(functions, fn, also, shown)) as ApiFn[];
   const hasExample = fn.examples.length > 0 || React.Children.count(children) > 0;
   const prototype = <CodeBlock language="cpp">{[...shown, ...extras].map((f) => f.prototype).join('\n')}</CodeBlock>;
   const direction = (f: ApiFn) => (/backward/.test(f.name) ? ' (backward only)' : /forward/.test(f.name) ? ' (forward only)' : '');
@@ -162,9 +162,9 @@ export default function ApiFunction({name, args, also, summary, children}: Props
       {extras.length > 0 && summary === undefined && (
         <p>
           Also comes as{' '}
-          {extras.map((f, i) => (
+          {extras.filter((f, i) => extras.findIndex((g) => g.name === f.name) === i).map((f, i, names) => (
             <React.Fragment key={f.anchor}>
-              {i > 0 && (i === extras.length - 1 ? ' and ' : ', ')}
+              {i > 0 && (i === names.length - 1 ? ' and ' : ', ')}
               <code>{f.name}</code>
               {direction(f)}
             </React.Fragment>
