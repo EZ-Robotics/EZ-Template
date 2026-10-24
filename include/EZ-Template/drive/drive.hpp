@@ -630,7 +630,7 @@ public:
   e_mode drive_mode_get();
 
   /**
-   * Calibrates imu and initializes sd card to curve.
+   * Runs opcontrol_curve_sd_initialize(), drive_imu_calibrate() and drive_sensor_reset().
    *
    * \param run_loading_animation
    *        false skips the loading animation on the brain screen while the IMU calibrates
@@ -2048,6 +2048,8 @@ public:
   /**
    * Resets the current imu value.  Defaults to 0, recommended to run at the start of your autonomous routine.
    *
+   * Also sets the heading odom_theta_get() reads, so an odom motion started right after a reset starts from the new heading.
+   *
    * \param new_heading
    *        new heading value
    */
@@ -2087,7 +2089,7 @@ public:
   std::map<int, std::pair<double, int>> prev_imu_values;
 
   /**
-   * Calibrates the scale of all IMUs using a physical turn.
+   * Calibrates the scale of all IMUs using a physical turn, for drives built with the redundant IMU constructor.
    *
    * Physically turn the robot 3600 degrees (10 full rotations) and pass in
    * what each imu reported for that turn.
@@ -2101,23 +2103,22 @@ public:
   void drive_imus_scalers_3600_set(std::vector<double> imu_values_after_3600);
 
   /**
-   * Returns the imu value after a 3600 degree turn that produces each imu's current scale.
+   * Returns the imu value after a 3600 degree turn that produces each imu's current scale, for drives built with the redundant IMU constructor.
    *
    * Returned as a map of imu port to value.
    */
   std::map<int, double> drive_imus_scalers_3600_get();
 
   /**
-   * Sets how many degrees apart the most and least agreeing good IMUs'
-   * scaled readings (see get_this_imu()) may spread, sustained for enough
-   * consecutive check_imu_task() passes to rule out a single noisy sample,
-   * before it's surfaced as disagreement in imu_drift_deg and
-   * ez::health::preflight(). This never ejects an IMU or changes which one
-   * drives the heading -- with only two IMUs there is no way to tell which
-   * one actually drifted -- it only reports.
+   * Sets how many degrees apart the most and least agreeing good IMUs' scaled readings may spread before it's reported as disagreement, for drives built with
+   * the redundant IMU constructor.
+   *
+   * The spread has to hold for about half a second to rule out a single noisy sample.  This only reports, in imu_drift_deg and in
+   * ez::health::preflight().  It never ejects an IMU or changes which one drives the heading, because with only two IMUs there is no way to tell which
+   * one drifted.  The default is 15 degrees.
    *
    * \param degrees
-   *        disagreement threshold in degrees; non-positive values are rejected and the previous threshold is kept
+   *        disagreement threshold in degrees.  A non-positive value is rejected and the previous threshold is kept
    */
   void imu_drift_threshold_set(double degrees);
 
@@ -2159,7 +2160,9 @@ public:
   void drive_imu_display_loading(int iter);
 
   /**
-   * Get angle of the robot, depending on focused sensor.
+   * Returns the angle of the robot, from whichever IMU is currently focused.
+   *
+   * On a redundant IMU drive, this is the one to read instead of talking to an individual pros::Imu directly, since it stays correct across a failover.
    */
   double drive_angle_get();
 
