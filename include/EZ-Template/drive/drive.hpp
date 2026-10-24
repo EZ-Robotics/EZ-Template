@@ -3175,7 +3175,7 @@ public:
   int pid_speed_max_get();
 
   /**
-   * Set the turn pid constants object.
+   * Set PID constants for turns.
    *
    * \param p
    *        proportional term
@@ -3189,7 +3189,7 @@ public:
   void pid_turn_constants_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
   /**
-   * Returns PID constants with PID::Constants.
+   * Returns the PID constants for turns, as a PID::Constants with kp, ki, kd and start_i.
    */
   PID::Constants pid_turn_constants_get();
 
@@ -3565,7 +3565,8 @@ public:
 
   /**
    * When kI and startI are enabled, sets the maximum output allowed while error is inside
-   * startI, for turns larger than startI. This lets I accumulate without overshoot.
+   * startI, for turns larger than startI. This lets I accumulate without overshoot.  Despite the name this is a cap on the output, not a floor.
+   * Defaults to 30.
    *
    * \param min
    *        new clipped speed
@@ -3580,7 +3581,7 @@ public:
 
   /**
    * Returns the maximum output allowed while error is inside startI, for turns larger than startI,
-   * when kI and startI are enabled.
+   * when kI and startI are enabled.  This is a cap on the output, not a floor.
    */
   int pid_turn_min_get();
 
@@ -3729,19 +3730,20 @@ public:
    * Set's constants for turn exit conditions.
    *
    * \param p_small_exit_time
-   *        time to exit when within small_error, unit
+   *        time to exit when within small_error, in units
    * \param p_small_error
-   *        small timer will start when error is within this, unit
+   *        small timer will start when error is within this, in units
    * \param p_big_exit_time
-   *        time to exit when within big_error, unit
+   *        time to exit when within big_error, in units
    * \param p_big_error
-   *        big timer will start when error is within this, unit
+   *        big timer will start when error is within this, in units
    * \param p_velocity_exit_time
-   *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), unit
+   *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), in units
    * \param p_mA_timeout
-   *        mA timer will start when the first motor on the side(s) being driven is over its current limit, unit
+   *        mA timer will start when the first motor on the side(s) being driven is over its current limit, in units
    * \param use_imu
-   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
+   *        true adds a second velocity exit timer from the imu's acceleration.  Off by default: a steady cruise also reads near 0 acceleration,
+   *        so it can exit early.
    */
   void pid_turn_exit_condition_set(ez::QTime p_small_exit_time, ez::QAngle p_small_error, ez::QTime p_big_exit_time, ez::QAngle p_big_error,
                                    ez::QTime p_velocity_exit_time, ez::QTime p_mA_timeout, bool use_imu = false);
@@ -3805,7 +3807,8 @@ public:
    * \param p_mA_timeout
    *        mA timer will start when the first motor on the side(s) being driven is over its current limit, in ms
    * \param use_imu
-   *        true adds the imu for velocity calculation in conjunction with the main sensor, false doesn't
+   *        true adds a second velocity exit timer from the imu's acceleration.  Off by default: a steady cruise also reads near 0 acceleration,
+   *        so it can exit early.
    */
   void pid_turn_exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time, double p_big_error, int p_velocity_exit_time,
                                    int p_mA_timeout, bool use_imu = false);
