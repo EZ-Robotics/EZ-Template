@@ -37,6 +37,16 @@ Most rules give a reason in italics, with a link to its source. If a reason does
 - **Example project.** A commented-out line MUST be an option a team can turn on, and the comment MUST start with `Option:`. Any other commented-out code MUST be deleted. *PROS deletes commented-out code ([PROS style guide](https://github.com/purduesigbots/pros/blob/develop/STYLEGUIDE.md)). In the example project those lines are choices for teams, so they stay, labeled so nobody mistakes them for dead code.*
 - A rule that code can check SHOULD be checked in code, with `static_assert`, a type, or a warning. The compiler won't skip it. People skip comments.
 
+## Doc comments
+
+Every public function's comment is an entry on the docs page, written for teams. Use short sentences and no jargon.
+
+- The first sentence is the summary. It MUST say what the function does.
+- Every parameter MUST have a `\param`.
+- An example goes in `\code ... \endcode`. It MUST compile on its own in a fresh example project, so declare anything it uses, like `DRIVE_SPEED`. It MUST be 100 columns or fewer and formatted with clang-format.
+- A doc comment MUST NOT hold maintainer-only notes, like a compiler workaround or the story of a fix. Put those in a normal `//` comment.
+- The doc example check in CI compiles the examples, once it's on `dev`.
+
 ## Function parameters
 
 - A new public function MUST NOT add a bare `bool` parameter. *`drive_set(true)` tells the reader nothing ([Fowler, FlagArgument](https://martinfowler.com/bliki/FlagArgument.html)).* What replaces bare bools and long lists of numbers in the public API will be decided as part of the renaming in issue 330.
