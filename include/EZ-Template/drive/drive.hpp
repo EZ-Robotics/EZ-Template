@@ -704,6 +704,13 @@ public:
    *        input {1, -2...}. make ports negative if reversed
    * \param right_motor_ports
    *        input {-3, 4...}. make ports negative if reversed
+   *
+   * \code{.cpp}
+   * ez::Drive chassis(
+   *     // These are your drive motors, the first motor is used for sensing!
+   *     {-5, -6, -7, -8},   // Left Chassis Ports (negative port will reverse it!)
+   *     {11, 15, 16, 17});  // Right Chassis Ports
+   * \endcode
    */
   Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports);
 
@@ -729,6 +736,25 @@ public:
    *        the wheel's RPM: cartridge RPM * (motor gear / wheel gear). A 600 RPM cartridge with a 36 tooth motor
    *        gear driving a 48 tooth wheel gear is 600 * (36 / 48) = 450. With no external gearing it is just the
    *        cartridge RPM (100, 200 or 600).  Get it wrong and every distance the robot reports is off by the same factor.
+   *
+   * \code{.cpp}
+   * ez::Drive chassis(
+   *     // These are your drive motors, the first motor is used for sensing!
+   *     {-5, -6, -7, -8},  // Left Chassis Ports (negative port will reverse it!)
+   *     {11, 15, 16, 17},  // Right Chassis Ports (negative port will reverse it!)
+   *     21,                // IMU Port
+   *
+   *     // Wheel Diameter (Remember, 4" wheels without screw holes are actually
+   *     // 4.125!)
+   *     4.125,
+   *
+   *     // Wheel RPM = cartridge RPM * (motor gear / wheel gear)
+   *     // eg. if your drive is 84:36 where the 36t is powered,
+   *     //     cartridge 600 * (84/36) = 1400
+   *     // eg. if your drive is 36:60 where the 60t is powered,
+   *     //     cartridge 600 * (36/60) = 360
+   *     420.0);
+   * \endcode
    */
   Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks);
 
@@ -754,6 +780,22 @@ public:
    *        the wheel's RPM: cartridge RPM * (motor gear / wheel gear). A 600 RPM cartridge with a 36 tooth motor
    *        gear driving a 48 tooth wheel gear is 600 * (36 / 48) = 450. With no external gearing it is just the
    *        cartridge RPM (100, 200 or 600).  Get it wrong and every distance the robot reports is off by the same factor.
+   *
+   * \code{.cpp}
+   * ez::Drive chassis(
+   *     // These are your drive motors, the first motor is used for sensing!
+   *     {-5, -6, -7, -8},  // Left Chassis Ports (negative port will reverse it!)
+   *     {11, 15, 16, 17},  // Right Chassis Ports (negative port will reverse it!)
+   *
+   *     {21, 12},  // IMU Ports, in order of preference
+   *
+   *     // Wheel Diameter (Remember, 4" wheels without screw holes are actually
+   *     // 4.125!)
+   *     4.125,
+   *
+   *     // Wheel RPM = cartridge RPM * (motor gear / wheel gear)
+   *     420.0);
+   * \endcode
    */
   Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, std::vector<int> imu_ports, double wheel_diameter, double ticks);
 
