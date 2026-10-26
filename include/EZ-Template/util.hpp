@@ -33,14 +33,16 @@ namespace ez {
 void ez_template_print();
 
 /**
- * Prints to the brain screen in one string.
+ * Prints to the LLEMU.  This function handles text that's too long for a line by finding the last word and starting it on a new line, and takes \\n to set a
+ * new line.
  *
- * Splits input between lines with '\n' or when text is longer than 38 characters.
+ * There are 8 lines, 0 through 7, and a line holds 38 characters.  If the text wraps past line 7, the last line is cut off and ends in "...", and the lines
+ * above it are left alone.  A line outside of 0 to 7 does nothing, and an empty string clears that line.
  *
  * \param text
  *        input string
  * \param line
- *        starting line to print on, defaults to 0
+ *        starting line, 0 through 7.  Defaults to 0
  */
 void screen_print(std::string text, int line = 0);
 
