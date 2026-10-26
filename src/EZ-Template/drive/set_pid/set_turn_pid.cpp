@@ -11,10 +11,8 @@ namespace ez {
 /////
 // Sets turn constants
 /////
-void Drive::slew_turn_constants_set(ez::QAngle distance, int min_speed) {
-  double dist = distance.convert(ez::degree);
-  slew_turn.constants_set(dist, min_speed);
-}
+void Drive::slew_turn_constants_set(double distance, int min_speed) { slew_turn.constants_set(distance, min_speed); }
+void Drive::slew_turn_constants_set(ez::QAngle distance, int min_speed) { slew_turn_constants_set(distance.convert(ez::degree), min_speed); }
 void Drive::pid_turn_constants_set(double p, double i, double d, double p_start_i) { turnPID.constants_set(p, i, d, p_start_i); }
 PID::Constants Drive::pid_turn_constants_get() { return turnPID.constants_get(); }
 void Drive::pid_turn_min_set(int min) { turn_min = std::abs(min); }

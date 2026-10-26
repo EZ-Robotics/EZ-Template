@@ -48,34 +48,17 @@ PID::Constants Drive::pid_swing_constants_get() {
 }
 
 // Slew Constants
-void Drive::slew_swing_constants_backward_set(ez::QLength distance, int min_speed) {
-  slew_swing_rev_using_angle = false;
-  double dist = distance.convert(ez::inch);
-  slew_swing_backward.constants_set(dist, min_speed);
-}
-void Drive::slew_swing_constants_forward_set(ez::QLength distance, int min_speed) {
-  slew_swing_fwd_using_angle = false;
-  double dist = distance.convert(ez::inch);
-  slew_swing_forward.constants_set(dist, min_speed);
-}
-void Drive::slew_swing_constants_set(ez::QLength distance, int min_speed) {
+void Drive::slew_swing_constants_backward_set(double distance, int min_speed) { slew_swing_backward.constants_set(distance, min_speed); }
+void Drive::slew_swing_constants_forward_set(double distance, int min_speed) { slew_swing_forward.constants_set(distance, min_speed); }
+void Drive::slew_swing_constants_set(double distance, int min_speed) {
   slew_swing_constants_forward_set(distance, min_speed);
   slew_swing_constants_backward_set(distance, min_speed);
 }
 void Drive::slew_swing_constants_backward_set(ez::QAngle distance, int min_speed) {
-  slew_swing_rev_using_angle = true;
-  double dist = distance.convert(ez::degree);
-  slew_swing_backward.constants_set(dist, min_speed);
+  slew_swing_constants_backward_set(distance.convert(ez::degree), min_speed);
 }
-void Drive::slew_swing_constants_forward_set(ez::QAngle distance, int min_speed) {
-  slew_swing_fwd_using_angle = true;
-  double dist = distance.convert(ez::degree);
-  slew_swing_forward.constants_set(dist, min_speed);
-}
-void Drive::slew_swing_constants_set(ez::QAngle distance, int min_speed) {
-  slew_swing_constants_forward_set(distance, min_speed);
-  slew_swing_constants_backward_set(distance, min_speed);
-}
+void Drive::slew_swing_constants_forward_set(ez::QAngle distance, int min_speed) { slew_swing_constants_forward_set(distance.convert(ez::degree), min_speed); }
+void Drive::slew_swing_constants_set(ez::QAngle distance, int min_speed) { slew_swing_constants_set(distance.convert(ez::degree), min_speed); }
 
 // Global enables for swing slew
 void Drive::slew_swing_set(bool slew_on) {
@@ -329,13 +312,11 @@ void Drive::swing_set_internal(e_swing type, double target, int speed, int oppos
     new_drive_pid = &backward_drivePID;
     new_swing_pid = &backward_swingPID;
     slew_consts = slew_swing_backward.constants_get();
-    slew_swing_using_angle = slew_swing_rev_using_angle;
     motion_chain_backward = true;
   } else {
     new_drive_pid = &forward_drivePID;
     new_swing_pid = &forward_swingPID;
     slew_consts = slew_swing_forward.constants_get();
-    slew_swing_using_angle = slew_swing_fwd_using_angle;
     motion_chain_backward = false;
   }
 
@@ -361,10 +342,7 @@ void Drive::swing_set_internal(e_swing type, double target, int speed, int oppos
   swing_opposite_speed = opposite_speed;
 
   // Initialize slew
-  double current = slew_swing_using_angle ? chain_sensor_start : (current_swing == LEFT_SWING ? drive_sensor_left() : drive_sensor_right());
-  double slew_tar = slew_swing_using_angle ? target : direction * 100;
-  if (!slew_swing_using_angle) slew_tar += current;
-  slew_swing.initialize(slew_on, max_speed, slew_tar, current);
+  slew_swing.initialize(slew_on, max_speed, target, chain_sensor_start);
   current_slew_on = slew_on;
 
   // Run task
