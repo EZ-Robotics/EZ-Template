@@ -547,7 +547,7 @@ public:
   bool slew_turn_get();
 
   /**
-   * Allows slew to reenable when the new input speed is larger than the current speed during pure pursuits.
+   * Allows slew to reenable when the new input speed is larger than the current speed during pure pursuits.  Defaults to true.
    *
    * \param reenable
    *        true enables, false disables
@@ -560,11 +560,11 @@ public:
    *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
    *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
    *
-   *   // Allow slew to reenable when speed dips too low
-   *   chassis.slew_odom_reenable(true);
+   *   // Turn off slew reenabling, it is on by default
+   *   chassis.slew_odom_reenable(false);
    *
    *   // This will slew from the start to 110,
-   *   // and once the speed dips down to 50 it'll slew again up to 90
+   *   // and once the speed dips down to 50 it won't slew again up to 90
    *   chassis.pid_odom_set({{{6_in, 10_in}, ez::fwd, 110},
    *                         {{0_in, 20_in}, ez::fwd, 50},
    *                         {{0_in, 30_in}, ez::fwd, 90}},
@@ -633,6 +633,7 @@ public:
    *   chassis.pid_wait();
    *
    *   // Disable drive
+   *   // drive_set() also sets ez::DISABLE, this line just makes the intent clear
    *   chassis.drive_mode_set(ez::DISABLE);
    *
    *   // Run drive motors myself
@@ -693,8 +694,8 @@ public:
   pros::Task ez_auto;
 
   /**
-   * Creates a Drive Controller for driver control only. No IMU is configured, so
-   * PID driving, turning, swinging, and odometry will not work correctly.
+   * Creates a Drive Controller for driver control only. No IMU is configured, so this will not work for autonomous routines:
+   * PID driving, turning, swinging, and odometry all need an IMU.
    *
    * Intended for brand new users and short-term setups (classrooms, camps) where getting
    * a drivetrain moving matters more than tuned autonomous routines. Switch to the
@@ -750,9 +751,9 @@ public:
    *
    *     // Wheel RPM = cartridge RPM * (motor gear / wheel gear)
    *     // eg. if your drive is 84:36 where the 36t is powered,
-   *     //     cartridge 600 * (84/36) = 1400
+   *     //     cartridge 600 * (36/84) = 257
    *     // eg. if your drive is 36:60 where the 60t is powered,
-   *     //     cartridge 600 * (36/60) = 360
+   *     //     cartridge 600 * (60/36) = 1000
    *     420.0);
    * \endcode
    */
@@ -876,7 +877,7 @@ public:
   void ez_tracking_task();
 
   /**
-   * Enables / disables tracking.
+   * Enables / disables tracking.  Tracking is enabled by default.
    *
    * \param input
    *        true enables tracking, false disables tracking
@@ -889,8 +890,8 @@ public:
    *   // Stop the user from doing anything while legacy ports configure
    *   pros::delay(500);
    *
-   *   // Enable tracking
-   *   chassis.odom_enable(true);
+   *   // Disable tracking
+   *   chassis.odom_enable(false);
    * }
    * \endcode
    */
@@ -1093,7 +1094,7 @@ public:
    *   // Set current theta to 0
    *   chassis.odom_theta_set(0_deg);
    *
-   *   // This will go back to the starting location
+   *   // This will turn back to the starting heading
    *   chassis.pid_turn_set(-90_deg, 110);
    *   chassis.pid_wait();
    * }
@@ -1152,7 +1153,8 @@ public:
    *   chassis.pid_odom_set({{24_in, 24_in, 45_deg}, ez::fwd, 110});
    *   chassis.pid_wait();
    *
-   *   ez::united_pose new_pose = {0_in, 0_in, -45_deg};
+   *   // Set the position to 0, 0 and keep the heading the robot is really at, so only x and y shift
+   *   ez::united_pose new_pose = {0_in, 0_in, 45_deg};
    *   chassis.odom_pose_set(new_pose);
    *
    *   // This will go back to the starting location
@@ -1243,7 +1245,8 @@ public:
    *   chassis.pid_odom_set({{24_in, 24_in, 45_deg}, ez::fwd, 110});
    *   chassis.pid_wait();
    *
-   *   chassis.odom_xyt_set(0_in, 0_in, -45_deg);
+   *   // Set the position to 0, 0 and keep the heading the robot is really at, so only x and y shift
+   *   chassis.odom_xyt_set(0_in, 0_in, 45_deg);
    *
    *   // This will go back to the starting location
    *   chassis.pid_odom_set({{-24_in, -24_in}, ez::rev, 110});
@@ -1331,7 +1334,7 @@ public:
   void odom_boomerang_distance_set(ez::QLength p_distance);
 
   /**
-   * Returns the maximum distance the carrot point can be away from the target point.
+   * Returns the maximum distance the carrot point can be away from the target point, in inches.
    *
    * \code{.cpp}
    * void initialize() {
@@ -1512,7 +1515,7 @@ public:
    *
    *   // Print default smooth constants
    *   std::vector<double> smooth_consts = chassis.odom_path_smooth_constants_get();
-   *   printf("Weight Smooth: %.2f   Weight Data: %.2f   Tolerance: %.2f\n",
+   *   printf("Weight Smooth: %.4f   Weight Data: %.4f   Tolerance: %.4f\n",
    *          smooth_consts[0], smooth_consts[1], smooth_consts[2]);
    *   chassis.pid_odom_set({{{0_in, 24_in}, ez::fwd, 110},
    *                         {{24_in, 24_in}, ez::fwd, 110}},
@@ -1524,7 +1527,7 @@ public:
    *   // Print updated smooth constants
    *   chassis.odom_path_smooth_constants_set(0.5, 0.003, 0.0001);
    *   smooth_consts = chassis.odom_path_smooth_constants_get();
-   *   printf("Weight Smooth: %.2f   Weight Data: %.2f   Tolerance: %.2f\n",
+   *   printf("Weight Smooth: %.4f   Weight Data: %.4f   Tolerance: %.4f\n",
    *          smooth_consts[0], smooth_consts[1], smooth_consts[2]);
    *   chassis.pid_odom_set({{{0_in, 24_in}, ez::fwd, 110},
    *                         {{24_in, 24_in}, ez::fwd, 110}},
@@ -1727,7 +1730,7 @@ public:
    * ez::tracking_wheel left_tracker(1, {'C', 'D'}, 2.75, 4.0);
    *
    * // Rotation sensors
-   * ez::tracking_wheel horiz_tracker(1, 2.75, 4.0);
+   * ez::tracking_wheel horiz_tracker(2, 2.75, 4.0);
    *
    * void initialize() {
    *   // Print our branding over your terminal :D
@@ -1760,7 +1763,7 @@ public:
    * ez::tracking_wheel left_tracker(1, {'C', 'D'}, 2.75, 4.0);
    *
    * // Rotation sensors
-   * ez::tracking_wheel horiz_tracker(1, 2.75, 4.0);
+   * ez::tracking_wheel horiz_tracker(2, 2.75, 4.0);
    *
    * void initialize() {
    *   // Print our branding over your terminal :D
@@ -1793,7 +1796,7 @@ public:
    * ez::tracking_wheel left_tracker(1, {'C', 'D'}, 2.75, 4.0);
    *
    * // Rotation sensors
-   * ez::tracking_wheel horiz_tracker(1, 2.75, 4.0);
+   * ez::tracking_wheel horiz_tracker(2, 2.75, 4.0);
    *
    * void initialize() {
    *   // Print our branding over your terminal :D
@@ -1826,7 +1829,7 @@ public:
    * ez::tracking_wheel left_tracker(1, {'C', 'D'}, 2.75, 4.0);
    *
    * // Rotation sensors
-   * ez::tracking_wheel horiz_tracker(1, 2.75, 4.0);
+   * ez::tracking_wheel horiz_tracker(2, 2.75, 4.0);
    *
    * void initialize() {
    *   // Print our branding over your terminal :D
@@ -2355,13 +2358,15 @@ public:
   double opcontrol_curvature_point_turn_gain_get();
 
   /**
-   * Initializes left and right curves with the SD card, recommended to run in initialize().
+   * Initializes left and right curves with the SD card.  chassis.initialize() runs this for you, call it yourself only if you skip chassis.initialize().
+   * Missing curve files are created.
    *
    * A value in left_curve.txt or right_curve.txt that is outside of 0 to 20 is changed to the nearest end of that range, and the terminal prints what it
    * was changed to.  If a file can't be read as a number, the current curve is kept.
    *
    * \code{.cpp}
    * void initialize() {
+   *   // Only needed when chassis.initialize() is not called
    *   chassis.opcontrol_curve_sd_initialize();
    * }
    * \endcode
@@ -2370,6 +2375,9 @@ public:
 
   /**
    * Sets the default joystick curves.  Curves are kept between 0 and 20, a value outside of that is changed to the nearest end.  0 is no curve.
+   *
+   * This also writes the curves to the SD card, so remove this line if you tune curves with the controller buttons and an SD card.  In tank only the
+   * left curve is used.
    *
    * \param left
    *        left default curve
@@ -2519,6 +2527,9 @@ public:
    *
    * This gives more control over the robot at lower speeds.
    *
+   * 5225A explained this curve here: https://www.vexforum.com/t/team-5225a-in-the-zone-code-release-yes-you-read-that-right/63199/10
+   * and here is a graph of it: https://www.desmos.com/calculator/7oyvwwpmed
+   *
    * \param x
    *        joystick input
    *
@@ -2530,7 +2541,7 @@ public:
    *     int r_stick =
    *         chassis.opcontrol_curve_left(master.get_analog(ANALOG_RIGHT_Y));
    *
-   *     chassis.drive_set(l_stick, r_stick);
+   *     chassis.opcontrol_joystick_threshold_iterate(l_stick, r_stick);
    *
    *     pros::delay(ez::util::DELAY_TIME);
    *   }
@@ -2544,6 +2555,9 @@ public:
    *
    * This gives more control over the robot at lower speeds.
    *
+   * 5225A explained this curve here: https://www.vexforum.com/t/team-5225a-in-the-zone-code-release-yes-you-read-that-right/63199/10
+   * and here is a graph of it: https://www.desmos.com/calculator/7oyvwwpmed
+   *
    * \param x
    *        joystick input
    *
@@ -2555,7 +2569,7 @@ public:
    *     int r_stick =
    *         chassis.opcontrol_curve_right(master.get_analog(ANALOG_RIGHT_Y));
    *
-   *     chassis.drive_set(l_stick, r_stick);
+   *     chassis.opcontrol_joystick_threshold_iterate(l_stick, r_stick);
    *
    *     pros::delay(ez::util::DELAY_TIME);
    *   }
@@ -2609,8 +2623,13 @@ public:
    * \code{.cpp}
    * void opcontrol() {
    *   while (true) {
-   *     chassis.opcontrol_joystick_threshold_iterate(
-   *         master.get_analog(ANALOG_LEFT_Y), master.get_analog(ANALOG_RIGHT_Y));
+   *     // Apply the joystick threshold first, so active brake can run when the sticks are at rest
+   *     int l_stick = master.get_analog(ANALOG_LEFT_Y);
+   *     if (abs(l_stick) < chassis.opcontrol_joystick_threshold_get()) l_stick = 0;
+   *     int r_stick = master.get_analog(ANALOG_RIGHT_Y);
+   *     if (abs(r_stick) < chassis.opcontrol_joystick_threshold_get()) r_stick = 0;
+   *
+   *     chassis.opcontrol_joystick_threshold_iterate(l_stick, r_stick);
    *
    *     pros::delay(ez::util::DELAY_TIME);
    *   }
@@ -2713,11 +2732,12 @@ public:
    *        true removes the motors from the drive and adds them to the pto list, false removes them from the pto list and adds them back to the drive
    *
    * \code{.cpp}
+   * ez::Piston pto_intake_piston('A');
+   *
    * void pto_intake(bool toggle) {
-   *   pto_intake_enabled = toggle;
    *   chassis.pto_toggle({chassis.left_motors[1], chassis.right_motors[1]},
    *                      toggle);
-   *   pto_intake_piston.set_value(toggle);
+   *   pto_intake_piston.set(toggle);
    *   if (toggle) {
    *     chassis.left_motors[1].set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
    *     chassis.right_motors[1].set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
@@ -2779,6 +2799,8 @@ public:
 
   /**
    * Sets the limit for the current on the drive.
+   *
+   * Values above 2500 mA are capped at 2500.  Motors in the pto list are not changed.
    *
    * \param mA
    *        input in milliamps
@@ -2876,7 +2898,7 @@ public:
    *
    * \code{.cpp}
    * void initialize() {
-   *   chassis.pid_tuner_button_increment_set(DIGITAL_UP);
+   *   chassis.pid_tuner_button_increment_set(DIGITAL_R1);
    * }
    * \endcode
    */
@@ -2889,7 +2911,7 @@ public:
    * void initialize() {
    *   chassis.pid_tuner_button_increment_set(DIGITAL_UP);
    *
-   *   // Prints DIGITAL_UP
+   *   // Prints 10 (DIGITAL_UP)
    *   printf("%i\n", chassis.pid_tuner_button_increment_get());
    * }
    * \endcode
@@ -2904,7 +2926,7 @@ public:
    *
    * \code{.cpp}
    * void initialize() {
-   *   chassis.pid_tuner_button_decrement_set(DIGITAL_DOWN);
+   *   chassis.pid_tuner_button_decrement_set(DIGITAL_R2);
    * }
    * \endcode
    */
@@ -2917,7 +2939,7 @@ public:
    * void initialize() {
    *   chassis.pid_tuner_button_decrement_set(DIGITAL_DOWN);
    *
-   *   // Prints DIGITAL_DOWN
+   *   // Prints 11 (DIGITAL_DOWN)
    *   printf("%i\n", chassis.pid_tuner_button_decrement_get());
    * }
    * \endcode
@@ -2932,7 +2954,7 @@ public:
    *
    * \code{.cpp}
    * void initialize() {
-   *   chassis.pid_tuner_button_up_set(DIGITAL_Y);
+   *   chassis.pid_tuner_button_up_set(DIGITAL_L1);
    * }
    * \endcode
    */
@@ -2945,7 +2967,7 @@ public:
    * void initialize() {
    *   chassis.pid_tuner_button_up_set(DIGITAL_Y);
    *
-   *   // Prints DIGITAL_Y
+   *   // Prints 16 (DIGITAL_Y)
    *   printf("%i\n", chassis.pid_tuner_button_up_get());
    * }
    * \endcode
@@ -2960,7 +2982,7 @@ public:
    *
    * \code{.cpp}
    * void initialize() {
-   *   chassis.pid_tuner_button_down_set(DIGITAL_A);
+   *   chassis.pid_tuner_button_down_set(DIGITAL_L2);
    * }
    * \endcode
    */
@@ -2973,7 +2995,7 @@ public:
    * void initialize() {
    *   chassis.pid_tuner_button_down_set(DIGITAL_A);
    *
-   *   // Prints DIGITAL_A
+   *   // Prints 17 (DIGITAL_A)
    *   printf("%i\n", chassis.pid_tuner_button_down_get());
    * }
    * \endcode
@@ -3001,7 +3023,7 @@ public:
    * void initialize() {
    *   chassis.pid_tuner_button_left_set(DIGITAL_LEFT);
    *
-   *   // Prints DIGITAL_LEFT
+   *   // Prints 12 (DIGITAL_LEFT)
    *   printf("%i\n", chassis.pid_tuner_button_left_get());
    * }
    * \endcode
@@ -3029,7 +3051,7 @@ public:
    * void initialize() {
    *   chassis.pid_tuner_button_right_set(DIGITAL_RIGHT);
    *
-   *   // Prints DIGITAL_RIGHT
+   *   // Prints 13 (DIGITAL_RIGHT)
    *   printf("%i\n", chassis.pid_tuner_button_right_get());
    * }
    * \endcode
@@ -3116,8 +3138,13 @@ public:
    * Reset all the chassis motors and tracking wheels, recommended to run at the start of your autonomous routine.
    *
    * \code{.cpp}
-   * void initialize() {
+   * void autonomous() {
+   *   // Reset drive sensors to 0
    *   chassis.drive_sensor_reset();
+   *
+   *   // Drive forward from the new 0
+   *   chassis.pid_drive_set(24_in, DRIVE_SPEED);
+   *   chassis.pid_wait();
    * }
    * \endcode
    */
@@ -3132,8 +3159,13 @@ public:
    *        new heading value
    *
    * \code{.cpp}
-   * void initialize() {
+   * void autonomous() {
+   *   // Reset gyro position to 0
    *   chassis.drive_imu_reset();
+   *
+   *   // Turn from the new 0
+   *   chassis.pid_turn_set(90_deg, TURN_SPEED);
+   *   chassis.pid_wait();
    * }
    * \endcode
    */
@@ -3193,7 +3225,7 @@ public:
   std::map<int, std::pair<double, int>> prev_imu_values;
 
   /**
-   * Calibrates the scale of all IMUs using a physical turn, for drives built with the redundant IMU constructor.
+   * Calibrates the scale of all IMUs using a physical turn.  Works with one or more IMUs.  Values past the number of IMUs are ignored.
    *
    * Physically turn the robot 3600 degrees (10 full rotations) and pass in
    * what each imu reported for that turn.
@@ -3218,7 +3250,7 @@ public:
   void drive_imus_scalers_3600_set(std::vector<double> imu_values_after_3600);
 
   /**
-   * Returns the imu value after a 3600 degree turn that produces each imu's current scale, for drives built with the redundant IMU constructor.
+   * Returns the imu value after a 3600 degree turn that produces each imu's current scale.  Works with one or more IMUs.
    *
    * Returned as a map of imu port to value.
    *
@@ -3274,14 +3306,26 @@ public:
   double imu_drift_deg = 0.0;
 
   /**
-   * Calibrates the IMU, recommended to run in initialize().
+   * Calibrates the IMU.  Returns true if at least one IMU calibrated.
+   *
+   * chassis.initialize() already calls this, only call it yourself to recalibrate.
    *
    * \param run_loading_animation
    *        true runs the animation, false doesn't
    *
    * \code{.cpp}
-   * void initialize() {
-   *   chassis.drive_imu_calibrate();
+   * void opcontrol() {
+   *   while (true) {
+   *     // Recalibrate the IMU while the robot is sitting still
+   *     if (master.get_digital_new_press(DIGITAL_A)) {
+   *       bool calibrated = chassis.drive_imu_calibrate();
+   *       master.rumble(calibrated ? "." : "---");
+   *     }
+   *
+   *     chassis.opcontrol_tank();
+   *
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
    * }
    * \endcode
    */
@@ -3480,7 +3524,7 @@ public:
    *
    *     chassis.opcontrol_tank();
    *
-   *     pros::delay(10);
+   *     pros::delay(ez::util::DELAY_TIME);
    *   }
    * }
    * \endcode
@@ -3501,7 +3545,7 @@ public:
    *
    *     chassis.opcontrol_tank();
    *
-   *     pros::delay(10);
+   *     pros::delay(ez::util::DELAY_TIME);
    *   }
    * }
    * \endcode
@@ -3640,7 +3684,7 @@ public:
    * Takes in an odom movement to go to a single point using boomerang.  If an angle is set, this will run boomerang.  Uses slew if globally enabled.
    *
    * \param p_imovement
-   *        united_odom, expecting `{{0_in, 0_in, 0_deg}, ez::fwd, 110}`
+   *        united_odom, `{{x, y, theta}, ez::fwd or ez::rev, speed 1-127}`, for example `{{24_in, 24_in, 90_deg}, ez::fwd, 110}`
    */
   void pid_odom_boomerang_set(united_odom p_imovement);
 
@@ -3648,7 +3692,7 @@ public:
    * Takes in an odom movement to go to a single point using boomerang.  If an angle is set, this will run boomerang.  Uses slew if enabled for this motion.
    *
    * \param p_imovement
-   *        united_odom, expecting `{{0_in, 0_in, 0_deg}, ez::fwd, 110}`
+   *        united_odom, `{{x, y, theta}, ez::fwd or ez::rev, speed 1-127}`, for example `{{24_in, 24_in, 90_deg}, ez::fwd, 110}`
    * \param slew_on
    *        ramp up from a lower speed to your target speed
    *
@@ -3678,7 +3722,7 @@ public:
    * that).  Uses slew if globally enabled.
    *
    * \param p_imovement
-   *        united_odom, expecting `{{0_in, 0_in}, ez::fwd, 110}`
+   *        united_odom, `{{x, y}, ez::fwd or ez::rev, speed 1-127}`, for example `{{24_in, 24_in}, ez::fwd, 110}`
    */
   void pid_odom_ptp_set(united_odom p_imovement);
 
@@ -3687,7 +3731,7 @@ public:
    * that).  Uses slew if enabled for this motion.
    *
    * \param p_imovement
-   *        united_odom, expecting `{{0_in, 0_in}, ez::fwd, 110}`
+   *        united_odom, `{{x, y}, ez::fwd or ez::rev, speed 1-127}`, for example `{{24_in, 24_in}, ez::fwd, 110}`
    * \param slew_on
    *        ramp up from a lower speed to your target speed
    *
@@ -3716,7 +3760,8 @@ public:
    * pid_odom_boomerang_set() and pid_odom_injected_pp_set().  Uses slew if globally enabled.
    *
    * \param p_imovement
-   *        united_odom, expecting `{{0_in, 0_in}, ez::fwd, 110}`
+   *        united_odom, `{{x, y}, ez::fwd or ez::rev, speed 1-127}`.  Add a theta, `{x, y, theta}`, to run boomerang.
+   *        For example `{{24_in, 24_in}, ez::fwd, 110}`
    */
   void pid_odom_set(united_odom p_imovement);
 
@@ -3725,7 +3770,8 @@ public:
    * pid_odom_boomerang_set() and pid_odom_injected_pp_set().  Uses slew if enabled for this motion.
    *
    * \param p_imovement
-   *        united_odom, expecting `{{0_in, 0_in}, ez::fwd, 110}`
+   *        united_odom, `{{x, y}, ez::fwd or ez::rev, speed 1-127}`.  Add a theta, `{x, y, theta}`, to run boomerang.
+   *        For example `{{24_in, 24_in}, ez::fwd, 110}`
    * \param slew_on
    *        ramp up from a lower speed to your target speed
    *
@@ -3832,7 +3878,7 @@ public:
    * slew if globally enabled.
    *
    * \param p_imovements
-   *        vector of united_odom
+   *        list of points, `{{{x, y}, ez::fwd, 110}, {{x, y, theta}, ez::rev, 90}}`.  theta is optional and makes that point boomerang, speed is 1-127
    */
   void pid_odom_smooth_pp_set(std::vector<united_odom> p_imovements);
 
@@ -3841,7 +3887,7 @@ public:
    * slew if enabled for this motion.
    *
    * \param p_imovements
-   *        vector of united_odom
+   *        list of points, `{{{x, y}, ez::fwd, 110}, {{x, y, theta}, ez::rev, 90}}`.  theta is optional and makes that point boomerang, speed is 1-127
    * \param slew_on
    *        ramp up from a lower speed to your target speed
    *
@@ -3873,7 +3919,7 @@ public:
    * if globally enabled.
    *
    * \param p_imovements
-   *        vector of united_odom
+   *        list of points, `{{{x, y}, ez::fwd, 110}, {{x, y, theta}, ez::rev, 90}}`.  theta is optional and makes that point boomerang, speed is 1-127
    */
   void pid_odom_injected_pp_set(std::vector<united_odom> p_imovements);
 
@@ -3882,7 +3928,7 @@ public:
    * if enabled for this motion.
    *
    * \param p_imovements
-   *        vector of united_odom
+   *        list of points, `{{{x, y}, ez::fwd, 110}, {{x, y, theta}, ez::rev, 90}}`.  theta is optional and makes that point boomerang, speed is 1-127
    * \param slew_on
    *        ramp up from a lower speed to your target speed
    *
@@ -3913,7 +3959,7 @@ public:
    * Takes in odom movements to go through multiple points.  If an angle is set, this will run boomerang for that point.  Uses slew if globally enabled.
    *
    * \param p_imovements
-   *        vector of united_odom
+   *        list of points, `{{{x, y}, ez::fwd, 110}, {{x, y, theta}, ez::rev, 90}}`.  theta is optional and makes that point boomerang, speed is 1-127
    */
   void pid_odom_pp_set(std::vector<united_odom> p_imovements);
 
@@ -3921,7 +3967,7 @@ public:
    * Takes in odom movements to go through multiple points.  If an angle is set, this will run boomerang for that point.  Uses slew if enabled for this motion.
    *
    * \param p_imovements
-   *        vector of united_odom
+   *        list of points, `{{{x, y}, ez::fwd, 110}, {{x, y, theta}, ez::rev, 90}}`.  theta is optional and makes that point boomerang, speed is 1-127
    * \param slew_on
    *        ramp up from a lower speed to your target speed
    *
@@ -3953,7 +3999,7 @@ public:
    * wrapper for pid_odom_smooth_pp_set.  Uses slew if globally enabled.
    *
    * \param p_imovements
-   *        vector of united_odom
+   *        list of points, `{{{x, y}, ez::fwd, 110}, {{x, y, theta}, ez::rev, 90}}`.  theta is optional and makes that point boomerang, speed is 1-127
    */
   void pid_odom_set(std::vector<united_odom> p_imovements);
 
@@ -3962,7 +4008,7 @@ public:
    * wrapper for pid_odom_smooth_pp_set.  Uses slew if enabled for this motion.
    *
    * \param p_imovements
-   *        vector of united_odom
+   *        list of points, `{{{x, y}, ez::fwd, 110}, {{x, y, theta}, ez::rev, 90}}`.  theta is optional and makes that point boomerang, speed is 1-127
    * \param slew_on
    *        ramp up from a lower speed to your target speed
    *
@@ -4000,10 +4046,10 @@ public:
   void pid_drive_set(ez::QLength p_target, int speed);
 
   /**
-   * Sets the robot to move forward using PID with units.
+   * Sets the robot to move forward using PID with units, using slew if slew_on is true.
    *
-   * Leave out `slew_on` and `toggle_heading` to use the global slew setting for the direction you are driving (see `slew_drive_set()`), with heading
-   * correction on.  Pass `slew_on` to turn slew on or off for just this motion.
+   * Pass `slew_on` to turn slew on or off for just this motion.  Use the 2-argument version to follow the global slew setting for the direction you
+   * are driving (see `slew_drive_set()`), with heading correction on.
    *
    * \param p_target
    *        target unit
@@ -4174,19 +4220,19 @@ public:
    *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
    *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
    *
-   *   // Uses the default behavior and slew
+   *   // Face 12, 12 with the default behavior and slew
    *   chassis.pid_turn_set({12_in, 12_in}, ez::fwd, 110);
    *   chassis.pid_wait();
    *
-   *   // Take the long way around
-   *   chassis.pid_turn_set({12_in, 12_in}, ez::fwd, 110, ez::longest);
+   *   // Face -12, 12 the long way around
+   *   chassis.pid_turn_set({-12_in, 12_in}, ez::fwd, 110, ez::longest);
    *   chassis.pid_wait();
    *
-   *   // Slew on for this motion only
-   *   chassis.pid_turn_set({12_in, 12_in}, ez::fwd, 110, true);
+   *   // Face 0, 24 with slew on for this motion only
+   *   chassis.pid_turn_set({0_in, 24_in}, ez::fwd, 110, true);
    *   chassis.pid_wait();
    *
-   *   // Take the long way around, with slew
+   *   // Face 12, 12 the long way around, with slew
    *   chassis.pid_turn_set({12_in, 12_in}, ez::fwd, 110, ez::longest, true);
    *   chassis.pid_wait();
    * }
@@ -4296,18 +4342,20 @@ public:
    *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
    *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
    *
-   *   chassis.pid_turn_set(24_deg, 110);  // Uses the default behavior and slew
+   *   // Turn to 90 degrees with the default behavior and slew
+   *   chassis.pid_turn_set(90_deg, 110);
    *   chassis.pid_wait();
    *
-   *   // Take the long way around
-   *   chassis.pid_turn_set(22.5_deg, 110, ez::longest);
+   *   // Turn to 0 degrees the long way around, this spins 270 the other way
+   *   chassis.pid_turn_set(0_deg, 110, ez::longest);
    *   chassis.pid_wait();
    *
-   *   chassis.pid_turn_set(24_deg, 110, true);  // Slew on for this motion only
+   *   // Turn to 90 degrees with slew on for this motion only
+   *   chassis.pid_turn_set(90_deg, 110, true);
    *   chassis.pid_wait();
    *
-   *   // Take the long way around, with slew
-   *   chassis.pid_turn_set(22.5_deg, 110, ez::longest, true);
+   *   // Turn to 0 degrees the long way around, with slew
+   *   chassis.pid_turn_set(0_deg, 110, ez::longest, true);
    *   chassis.pid_wait();
    * }
    * \endcode
@@ -4376,7 +4424,7 @@ public:
    *   chassis.pid_turn_relative_set(90_deg, 110);
    *   chassis.pid_wait();
    *
-   *   // Turns backwards by 45 degrees
+   *   // Turns 45 degrees counterclockwise, to 45 deg
    *   chassis.pid_turn_relative_set(-45_deg, 110, true);
    *   chassis.pid_wait();
    *
@@ -4694,24 +4742,24 @@ public:
    *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
    *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
    *
-   *   // Uses the default behavior and slew
-   *   chassis.pid_swing_set(ez::LEFT_SWING, 22.5_deg, 110);
+   *   // Swing to 45 degrees with the default behavior and slew
+   *   chassis.pid_swing_set(ez::LEFT_SWING, 45_deg, 110);
    *   chassis.pid_wait();
    *
-   *   // Take the long way around
-   *   chassis.pid_swing_set(ez::LEFT_SWING, 22.5_deg, 110, ez::longest);
+   *   // Swing to 0 degrees the long way around
+   *   chassis.pid_swing_set(ez::LEFT_SWING, 0_deg, 110, ez::longest);
    *   chassis.pid_wait();
    *
-   *   // Slew on for this motion only
-   *   chassis.pid_swing_set(ez::LEFT_SWING, 22.5_deg, 110, true);
+   *   // Swing to 45 degrees with slew on for this motion only
+   *   chassis.pid_swing_set(ez::LEFT_SWING, 45_deg, 110, true);
    *   chassis.pid_wait();
    *
-   *   // The opposite side drives at up to 30, for an arc
-   *   chassis.pid_swing_set(ez::LEFT_SWING, 22.5_deg, 110, 30);
+   *   // Swing to 0 degrees, the opposite side drives at up to 30 for an arc
+   *   chassis.pid_swing_set(ez::LEFT_SWING, 0_deg, 110, 30);
    *   chassis.pid_wait();
    *
-   *   // An arc, taking the long way around, with slew
-   *   chassis.pid_swing_set(ez::LEFT_SWING, 22.5_deg, 110, 30, ez::longest,
+   *   // Swing to 45 degrees in an arc, taking the long way around, with slew
+   *   chassis.pid_swing_set(ez::LEFT_SWING, 45_deg, 110, 30, ez::longest,
    *                         true);
    *   chassis.pid_wait();
    * }
@@ -5151,8 +5199,8 @@ public:
    * `pid_turn_set(90_deg, 90); pid_wait_until(45);` returns when the robot faces 45 degrees.
    *
    * If the checkpoint can't be reached (past the target, or the wrong sign), the wait returns when the motion finishes, and prints why when printing is
-   * on.  `interfered` is only set when something actually stopped the robot.  This check is for drives, turns and swings.  An odom motion returns when it
-   * finishes without a message, for example a 24 inch move waiting until 30 inches.
+   * on.  `interfered` is only set when something actually stopped the robot.  This includes odom motions, for example a 24 inch move waiting until 30
+   * inches.
    *
    * \param target
    *        for driving, inches driven since this motion started (same sign as the drive).  for turns/swings, an absolute heading in degrees
@@ -5217,6 +5265,8 @@ public:
    *        index of your input points, 0 is the first point in the index
    *
    * \code{.cpp}
+   * pros::Motor intake(9);
+   *
    * void autonomous() {
    *   chassis.pid_targets_reset();                // Resets PID targets to 0
    *   chassis.drive_imu_reset();                  // Reset gyro position to 0
@@ -5224,13 +5274,22 @@ public:
    *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
    *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
    *
-   *   chassis.pid_odom_set({{{0_in, 24_in}, ez::fwd, 110},
-   *                         {{12_in, 24_in}, ez::rev, 110},
-   *                         {{24_in, 24_in}, ez::rev, 110}},
-   *                        true);
-   *   // Waits until the robot passes 12, 24
+   *   // Drive through three points, with slew
+   *   chassis.pid_odom_set(
+   *       {
+   *           {{0_in, 24_in}, ez::fwd, 110},
+   *           {{12_in, 24_in}, ez::rev, 110},
+   *           {{24_in, 24_in}, ez::rev, 110},
+   *       },
+   *       true);
+   *
+   *   // Wait until the robot passes 12, 24
    *   chassis.pid_wait_until_index(1);
-   *   Intake.move(127);
+   *
+   *   // Run the intake
+   *   intake.move(127);
+   *
+   *   // Wait for the path to finish
    *   chassis.pid_wait();
    * }
    * \endcode
@@ -5244,6 +5303,8 @@ public:
    *        index of your input points, 0 is the first point in the index
    *
    * \code{.cpp}
+   * pros::Motor intake(9);
+   *
    * void autonomous() {
    *   chassis.pid_targets_reset();                // Resets PID targets to 0
    *   chassis.drive_imu_reset();                  // Reset gyro position to 0
@@ -5251,13 +5312,22 @@ public:
    *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
    *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
    *
-   *   chassis.pid_odom_set({{{0_in, 24_in}, ez::fwd, 110},
-   *                         {{12_in, 24_in}, ez::rev, 110},
-   *                         {{24_in, 24_in}, ez::rev, 110}},
-   *                        true);
-   *   // Waits until the target becomes 12, 24
+   *   // Drive through three points, with slew
+   *   chassis.pid_odom_set(
+   *       {
+   *           {{0_in, 24_in}, ez::fwd, 110},
+   *           {{12_in, 24_in}, ez::rev, 110},
+   *           {{24_in, 24_in}, ez::rev, 110},
+   *       },
+   *       true);
+   *
+   *   // Wait until the target becomes 12, 24
    *   chassis.pid_wait_until_index_started(1);
-   *   Intake.move(127);
+   *
+   *   // Run the intake
+   *   intake.move(127);
+   *
+   *   // Wait for the path to finish
    *   chassis.pid_wait();
    * }
    * \endcode
@@ -5279,10 +5349,14 @@ public:
    *
    * The target is a field position, not a distance: `pid_wait_until_point({24_in, 24_in});` returns when the robot passes (24, 24).
    *
+   * Use this on a single movement.  For a point on a multi-point path, use pid_wait_until_index().
+   *
    * \param target
    *        {x, y} pose with units for the robot to pass through before the while loop is released
    *
    * \code{.cpp}
+   * pros::Motor intake(9);
+   *
    * void autonomous() {
    *   chassis.pid_targets_reset();                // Resets PID targets to 0
    *   chassis.drive_imu_reset();                  // Reset gyro position to 0
@@ -5290,13 +5364,16 @@ public:
    *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
    *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
    *
-   *   chassis.pid_odom_set({{{0_in, 24_in}, ez::fwd, 110},
-   *                         {{12_in, 24_in}, ez::rev, 110},
-   *                         {{24_in, 24_in}, ez::rev, 110}},
-   *                        true);
-   *   // Waits until the robot passes 12, 24
-   *   chassis.pid_wait_until_point({12_in, 24_in});
-   *   Intake.move(127);
+   *   // Drive to 24, 24
+   *   chassis.pid_odom_set({{24_in, 24_in}, ez::fwd, 110});
+   *
+   *   // Wait until the robot passes 12, 12
+   *   chassis.pid_wait_until_point({12_in, 12_in});
+   *
+   *   // Run the intake
+   *   intake.move(127);
+   *
+   *   // Wait for the movement to finish
    *   chassis.pid_wait();
    * }
    * \endcode
@@ -5661,7 +5738,7 @@ public:
    *
    * \code{.cpp}
    * void initialize() {
-   *   chassis.pid_heading_constants_set(3, 0, 20);
+   *   chassis.pid_heading_constants_set(11, 0, 20);
    * }
    * \endcode
    */
@@ -5685,6 +5762,8 @@ public:
   /**
    * Set PID drive constants for forwards and backwards.
    *
+   * Calling this clears any constants set with pid_drive_constants_forward_set() or pid_drive_constants_backward_set(), so call it first.
+   *
    * \param p
    *        proportional term
    * \param i
@@ -5696,7 +5775,7 @@ public:
    *
    * \code{.cpp}
    * void initialize() {
-   *   chassis.pid_drive_constants_set(10, 0, 100);
+   *   chassis.pid_drive_constants_set(20, 0, 100);
    * }
    * \endcode
    */
@@ -5864,8 +5943,11 @@ public:
    *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
    *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
    *
-   *   chassis.pid_swing_min_set(30);
+   *   // The swing min only has an effect when kI and startI are set
+   *   chassis.pid_swing_constants_set(6, 0.05, 65, 15);
+   *   chassis.pid_swing_min_set(40);
    *
+   *   // Swing to 45 degrees
    *   chassis.pid_swing_set(ez::LEFT_SWING, 45_deg, 110);
    *   chassis.pid_wait();
    * }
@@ -5952,7 +6034,7 @@ public:
    *
    * \code{.cpp}
    * void initialize() {
-   *   chassis.pid_odom_angular_constants_set(5, 0, 50);
+   *   chassis.pid_odom_angular_constants_set(6.5, 0, 52.5);
    * }
    * \endcode
    */
@@ -5972,7 +6054,7 @@ public:
    *
    * \code{.cpp}
    * void initialize() {
-   *   chassis.pid_odom_boomerang_constants_set(5, 0, 50);
+   *   chassis.pid_odom_boomerang_constants_set(5.8, 0, 32.5);
    * }
    * \endcode
    */
@@ -6043,8 +6125,8 @@ public:
    *
    * \code{.cpp}
    * void initialize() {
-   *   chassis.pid_odom_turn_exit_condition_set(300_ms, 3_deg, 500_ms, 7_deg,
-   *                                            750_ms, 750_ms);
+   *   chassis.pid_odom_turn_exit_condition_set(90_ms, 3_deg, 250_ms, 7_deg,
+   *                                            500_ms, 750_ms);
    * }
    * \endcode
    */
@@ -6072,8 +6154,8 @@ public:
    *
    * \code{.cpp}
    * void initialize() {
-   *   chassis.pid_odom_drive_exit_condition_set(300_ms, 1_in, 500_ms, 3_in,
-   *                                             750_ms, 750_ms);
+   *   chassis.pid_odom_drive_exit_condition_set(90_ms, 1_in, 250_ms, 3_in,
+   *                                             500_ms, 750_ms);
    * }
    * \endcode
    */
@@ -6092,7 +6174,7 @@ public:
    * \param p_big_error
    *        big timer will start when error is within this, in units
    * \param p_velocity_exit_time
-   *        time, in units, for velocity to be 0 after the robot has moved (or after 1 second if it never moves)
+   *        velocity timer will start when velocity is 0 after the robot has moved (or after 1 second if it never moves), in units
    * \param p_mA_timeout
    *        mA timer will start when the first motor on the side(s) being driven is over its current limit, in units
    * \param use_imu
@@ -6101,8 +6183,8 @@ public:
    *
    * \code{.cpp}
    * void initialize() {
-   *   chassis.pid_drive_exit_condition_set(300_ms, 1_in, 500_ms, 3_in, 750_ms,
-   *                                        750_ms);
+   *   chassis.pid_drive_exit_condition_set(90_ms, 1_in, 250_ms, 3_in, 500_ms,
+   *                                        500_ms);
    * }
    * \endcode
    */
@@ -6130,8 +6212,8 @@ public:
    *
    * \code{.cpp}
    * void initialize() {
-   *   chassis.pid_turn_exit_condition_set(300_ms, 3_deg, 500_ms, 7_deg, 750_ms,
-   *                                       750_ms);
+   *   chassis.pid_turn_exit_condition_set(90_ms, 3_deg, 250_ms, 7_deg, 500_ms,
+   *                                       500_ms);
    * }
    * \endcode
    */
@@ -6159,8 +6241,8 @@ public:
    *
    * \code{.cpp}
    * void initialize() {
-   *   chassis.pid_swing_exit_condition_set(300_ms, 3_deg, 500_ms, 7_deg, 750_ms,
-   *                                        750_ms);
+   *   chassis.pid_swing_exit_condition_set(90_ms, 3_deg, 250_ms, 7_deg, 500_ms,
+   *                                        500_ms);
    * }
    * \endcode
    */
@@ -6303,13 +6385,26 @@ public:
   /**
    * Allows the user to modify the curve with the controller.
    *
+   * The curve buttons are off by default, turn them on with opcontrol_curve_buttons_toggle(true).
+   * opcontrol_tank() and the arcade functions already call this, so it is only needed in a custom drive loop
+   * that also applies opcontrol_curve_left() and opcontrol_curve_right().
+   *
    * \code{.cpp}
+   * void initialize() {
+   *   // The curve buttons are off by default
+   *   chassis.opcontrol_curve_buttons_toggle(true);
+   *   chassis.initialize();
+   * }
+   *
    * void opcontrol() {
    *   while (true) {
-   *     chassis.opcontrol_joystick_threshold_iterate(
-   *         master.get_analog(ANALOG_LEFT_Y), master.get_analog(ANALOG_RIGHT_Y));
-   *
+   *     // Change the curves with the controller buttons
    *     chassis.opcontrol_curve_buttons_iterate();
+   *
+   *     // Apply the curves to the joysticks and drive with them
+   *     int l_stick = chassis.opcontrol_curve_left(master.get_analog(ANALOG_LEFT_Y));
+   *     int r_stick = chassis.opcontrol_curve_left(master.get_analog(ANALOG_RIGHT_Y));
+   *     chassis.opcontrol_joystick_threshold_iterate(l_stick, r_stick);
    *
    *     pros::delay(ez::util::DELAY_TIME);
    *   }
@@ -6321,19 +6416,30 @@ public:
   /**
    * Enables PID Tuner.
    *
+   * Only use the PID Tuner when the robot is not connected to a competition switch.
+   *
    * \code{.cpp}
    * void opcontrol() {
    *   // This is preference to what you like to drive on
    *   chassis.drive_brake_set(MOTOR_BRAKE_COAST);
-   *   // Enable PID Tuner
-   *   chassis.pid_tuner_enable();
-   *   while (true) {
-   *     // Trigger the selected autonomous routine
-   *     if (master.get_digital_new_press(DIGITAL_B))
-   *       autonomous();
    *
-   *     // Allow PID Tuner to iterate
-   *     chassis.pid_tuner_iterate();
+   *   // Enable PID Tuner, only when not connected to a competition switch
+   *   if (!pros::competition::is_connected())
+   *     chassis.pid_tuner_enable();
+   *
+   *   while (true) {
+   *     if (!pros::competition::is_connected()) {
+   *       // Trigger the selected autonomous routine
+   *       if (master.get_digital_new_press(DIGITAL_B)) {
+   *         // Autonomous sets the brake to hold, so save the brake mode and restore it after
+   *         pros::motor_brake_mode_e_t preference = chassis.drive_brake_get();
+   *         autonomous();
+   *         chassis.drive_brake_set(preference);
+   *       }
+   *
+   *       // Allow PID Tuner to iterate
+   *       chassis.pid_tuner_iterate();
+   *     }
    *
    *     // Tank control
    *     chassis.opcontrol_tank();
@@ -6353,19 +6459,28 @@ public:
    * void opcontrol() {
    *   // This is preference to what you like to drive on
    *   chassis.drive_brake_set(MOTOR_BRAKE_COAST);
-   *   // Enable PID Tuner
-   *   chassis.pid_tuner_enable();
+   *
+   *   // Enable PID Tuner, only when not connected to a competition switch
+   *   if (!pros::competition::is_connected())
+   *     chassis.pid_tuner_enable();
+   *
    *   while (true) {
-   *     // Trigger the selected autonomous routine
-   *     if (master.get_digital_new_press(DIGITAL_B))
-   *       autonomous();
+   *     if (!pros::competition::is_connected()) {
+   *       // Trigger the selected autonomous routine
+   *       if (master.get_digital_new_press(DIGITAL_B)) {
+   *         // Autonomous sets the brake to hold, so save the brake mode and restore it after
+   *         pros::motor_brake_mode_e_t preference = chassis.drive_brake_get();
+   *         autonomous();
+   *         chassis.drive_brake_set(preference);
+   *       }
    *
-   *     // Disable PID Tuner
-   *     if (master.get_digital_new_press(DIGITAL_X))
-   *       chassis.pid_tuner_disable();
+   *       // Disable PID Tuner
+   *       if (master.get_digital_new_press(DIGITAL_X))
+   *         chassis.pid_tuner_disable();
    *
-   *     // Allow PID Tuner to iterate
-   *     chassis.pid_tuner_iterate();
+   *       // Allow PID Tuner to iterate
+   *       chassis.pid_tuner_iterate();
+   *     }
    *
    *     // Tank control
    *     chassis.opcontrol_tank();
@@ -6502,7 +6617,9 @@ public:
    *   chassis.drive_brake_set(MOTOR_BRAKE_COAST);
    *
    *   // Can be set before the PID Tuner is enabled
-   *   chassis.pid_tuner_print_brain_set(true);
+   *   // Keeps the auton selector on the brain, and prints the PID Tuner to the terminal instead
+   *   chassis.pid_tuner_print_brain_set(false);
+   *   chassis.pid_tuner_print_terminal_set(true);
    *
    *   while (true) {
    *     // PID Tuner
@@ -6626,9 +6743,6 @@ public:
    *   // This is preference to what you like to drive on
    *   chassis.drive_brake_set(MOTOR_BRAKE_COAST);
    *
-   *   // pid_tuner_print_brain_set() only does something while the PID Tuner
-   *   // is enabled
-   *   chassis.pid_tuner_enable();
    *   chassis.pid_tuner_print_brain_set(false);
    *
    *   // Prints 0
@@ -6716,7 +6830,7 @@ public:
    * void opcontrol() {
    *   // This is preference to what you like to drive on
    *   chassis.drive_brake_set(MOTOR_BRAKE_COAST);
-   *   chassis.pid_tuner_increment_i_set(0.25);
+   *   chassis.pid_tuner_increment_i_set(0.01);
    *   while (true) {
    *     // PID Tuner
    *     // After you find values that you're happy with, you'll have to
@@ -6867,7 +6981,7 @@ public:
    * void opcontrol() {
    *   // This is preference to what you like to drive on
    *   chassis.drive_brake_set(MOTOR_BRAKE_COAST);
-   *   chassis.pid_tuner_increment_i_set(0.25);
+   *   chassis.pid_tuner_increment_i_set(0.01);
    *   printf("%f\n", chassis.pid_tuner_increment_i_get());
    *   while (true) {
    *     // PID Tuner
@@ -7034,12 +7148,14 @@ public:
   /**
    * Sets the max speed for user control.
    *
+   * This scales the joystick output, it is not just a ceiling.  A full stick gives the speed limit, and a half stick gives half of it.
+   *
    * \param speed
    *        the speed limit, 0 - 127.  A value above 127 is set to 127 and a negative value is treated as its magnitude
    *
    * \code{.cpp}
    * void initialize() {
-   *   // Caps user control output at 100
+   *   // Scales user control so a full stick gives 100 instead of 127
    *   chassis.opcontrol_speed_max_set(100);
    * }
    * \endcode
@@ -7108,6 +7224,16 @@ public:
    *        new function for tracking
    *
    * \code{.cpp}
+   * // Would combine your sensors and return the robot's x position in inches
+   * double my_sensor_fusion_x() {
+   *   return 0.0;
+   * }
+   *
+   * // Would combine your sensors and return the robot's y position in inches
+   * double my_sensor_fusion_y() {
+   *   return 0.0;
+   * }
+   *
    * void custom_tracking() {
    *   chassis.odom_current.x = my_sensor_fusion_x();
    *   chassis.odom_current.y = my_sensor_fusion_y();
