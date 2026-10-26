@@ -13,18 +13,15 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 namespace ez {
 // Slew constants
-void Drive::slew_drive_constants_forward_set(ez::QLength distance, int min_speed) {
-  double dist = distance.convert(ez::inch);
-  slew_forward.constants_set(dist, min_speed);
-}
-void Drive::slew_drive_constants_backward_set(ez::QLength distance, int min_speed) {
-  double dist = distance.convert(ez::inch);
-  slew_backward.constants_set(dist, min_speed);
-}
-void Drive::slew_drive_constants_set(ez::QLength distance, int min_speed) {
+void Drive::slew_drive_constants_forward_set(double distance, int min_speed) { slew_forward.constants_set(distance, min_speed); }
+void Drive::slew_drive_constants_backward_set(double distance, int min_speed) { slew_backward.constants_set(distance, min_speed); }
+void Drive::slew_drive_constants_set(double distance, int min_speed) {
   slew_drive_constants_backward_set(distance, min_speed);
   slew_drive_constants_forward_set(distance, min_speed);
 }
+void Drive::slew_drive_constants_forward_set(ez::QLength distance, int min_speed) { slew_drive_constants_forward_set(distance.convert(ez::inch), min_speed); }
+void Drive::slew_drive_constants_backward_set(ez::QLength distance, int min_speed) { slew_drive_constants_backward_set(distance.convert(ez::inch), min_speed); }
+void Drive::slew_drive_constants_set(ez::QLength distance, int min_speed) { slew_drive_constants_set(distance.convert(ez::inch), min_speed); }
 // Global enables for drive slew
 void Drive::slew_drive_set(bool slew_on) {
   global_forward_drive_slew_enabled = slew_on;
