@@ -108,17 +108,9 @@ enum exit_output { RUNNING = 1,
                    ERROR_NO_CONSTANTS = 6 };
 ```
 
-### No Motor
+### exit_condition()
 
-<ApiFunction name="PID::exit_condition" args="bool" />
-
-### One Motor
-
-<ApiFunction name="PID::exit_condition" args="pros::Motor, bool" />
-
-### Multiple Motors
-
-<ApiFunction name="PID::exit_condition" args="const std::vector<pros::Motor>&, bool | const pros::MotorGroup&, bool" />
+<ApiFunction name="PID::exit_condition" args="bool | pros::Motor, bool | const std::vector<pros::Motor>&, bool | const pros::MotorGroup&, bool" />
 
 ### timers_reset()
 

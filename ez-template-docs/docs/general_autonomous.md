@@ -24,11 +24,7 @@ Most angles take units (`45_deg`) or a plain number in degrees. The distance `pi
 
 ### pid_wait_until()
 
-<ApiFunction name="pid_wait_until" args="ez::QLength" />
-
-### pid_wait_until()
-
-<ApiFunction name="pid_wait_until" args="ez::QAngle" />
+<ApiFunction name="pid_wait_until" args="ez::QLength | ez::QAngle" summary="Lock the code in a while loop until the robot has driven this far, or turned or swung past this heading." />
 
 ### interfered
 Boolean that returns true when `pid_wait()` or `pid_wait_until()` exit with velocity or is_over_current while the error is still outside `big_error`.  It goes back to false at the start of every new motion.  This can be used to detect unwanted motion and stop the drive motors from overheating during autonomous.     
