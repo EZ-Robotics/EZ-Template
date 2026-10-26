@@ -20,7 +20,7 @@ Most angles and times take units (`90_deg`, `300_ms`) or a plain number in degre
 
 ### slew_turn_constants_set()
 
-<ApiFunction name="slew_turn_constants_set" />
+<ApiFunction name="slew_turn_constants_set" args="ez::QAngle, int" />
 
 ### slew_turn_set()
 

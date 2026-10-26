@@ -24,7 +24,7 @@ Most distances and times take units (`24_in`, `300_ms`) or a plain number in inc
 
 ### slew_drive_constants_set()
 
-<ApiFunction name="slew_drive_constants_set" also="slew_drive_constants_forward_set, slew_drive_constants_backward_set" />
+<ApiFunction name="slew_drive_constants_set" args="ez::QLength, int" also="slew_drive_constants_forward_set, slew_drive_constants_backward_set" />
 
 ### slew_drive_set()
 
