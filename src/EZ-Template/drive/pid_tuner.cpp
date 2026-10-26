@@ -130,8 +130,7 @@ void Drive::pid_tuner_print() {
   if (!pid_tuner_on) return;
 
   // Ensure that the user column is within the size of the pid tuner
-  if (column > (int)used_pid_tuner_pids->size() - 1)
-    column = 0;
+  if (column > (int)used_pid_tuner_pids->size() - 1) column = 0;
 
   double kp = used_pid_tuner_pids->at(column).consts->kp;
   double ki = used_pid_tuner_pids->at(column).consts->ki;
@@ -172,23 +171,19 @@ void Drive::pid_tuner_value_modify(float p, float i, float d, float start) {
   switch (row) {
     case 0:
       used_pid_tuner_pids->at(column).consts->kp += p;
-      if (used_pid_tuner_pids->at(column).consts->kp < 0.0)
-        used_pid_tuner_pids->at(column).consts->kp = 0.0;
+      if (used_pid_tuner_pids->at(column).consts->kp < 0.0) used_pid_tuner_pids->at(column).consts->kp = 0.0;
       break;
     case 1:
       used_pid_tuner_pids->at(column).consts->ki += i;
-      if (used_pid_tuner_pids->at(column).consts->ki < 0.0)
-        used_pid_tuner_pids->at(column).consts->ki = 0.0;
+      if (used_pid_tuner_pids->at(column).consts->ki < 0.0) used_pid_tuner_pids->at(column).consts->ki = 0.0;
       break;
     case 2:
       used_pid_tuner_pids->at(column).consts->kd += d;
-      if (used_pid_tuner_pids->at(column).consts->kd < 0.0)
-        used_pid_tuner_pids->at(column).consts->kd = 0.0;
+      if (used_pid_tuner_pids->at(column).consts->kd < 0.0) used_pid_tuner_pids->at(column).consts->kd = 0.0;
       break;
     case 3:
       used_pid_tuner_pids->at(column).consts->start_i += start;
-      if (used_pid_tuner_pids->at(column).consts->start_i < 0.0)
-        used_pid_tuner_pids->at(column).consts->start_i = 0.0;
+      if (used_pid_tuner_pids->at(column).consts->start_i < 0.0) used_pid_tuner_pids->at(column).consts->start_i = 0.0;
       break;
     default:
       break;
@@ -221,26 +216,22 @@ void Drive::pid_tuner_iterate() {
   // Up / Down for Rows
   if (master.get_digital_new_press(pid_tuner_pageRight)) {
     column++;
-    if (column > (int)used_pid_tuner_pids->size() - 1)
-      column = 0;
+    if (column > (int)used_pid_tuner_pids->size() - 1) column = 0;
     pid_tuner_print();
   } else if (master.get_digital_new_press(pid_tuner_pageLeft)) {
     column--;
-    if (column < 0)
-      column = used_pid_tuner_pids->size() - 1;
+    if (column < 0) column = used_pid_tuner_pids->size() - 1;
     pid_tuner_print();
   }
 
   // Left / Right for Columns
   if (master.get_digital_new_press(pid_tuner_pageDown)) {
     row++;
-    if (row > 3)
-      row = 0;
+    if (row > 3) row = 0;
     pid_tuner_print();
   } else if (master.get_digital_new_press(pid_tuner_pageUp)) {
     row--;
-    if (row < 0)
-      row = 3;
+    if (row < 0) row = 3;
     pid_tuner_print();
   }
 

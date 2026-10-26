@@ -11,9 +11,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 namespace ez {
 // Constructor
 slew::slew() {}
-slew::slew(double distance, int minimum_speed) {
-  constants_set(distance, minimum_speed);
-}
+slew::slew(double distance, int minimum_speed) { constants_set(distance, minimum_speed); }
 
 // Set constants
 void slew::constants_set(double distance, int minimum_speed) {

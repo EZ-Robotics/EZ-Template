@@ -23,8 +23,7 @@ TEST_CASE("imu scaler: default-constructed imus are unscaled") {
   chassis.good_imus[1]->fake_rotation = 42.0;
   chassis.good_imus[2]->fake_rotation = 42.0;
 
-  for (auto* imu : chassis.good_imus)
-    CHECK(DriveTestAccess::get_this_imu(chassis, imu) == doctest::Approx(42.0));
+  for (auto* imu : chassis.good_imus) CHECK(DriveTestAccess::get_this_imu(chassis, imu) == doctest::Approx(42.0));
 }
 
 TEST_CASE("imu scaler: drive_imus_scalers_3600_set gives each imu its own scale") {

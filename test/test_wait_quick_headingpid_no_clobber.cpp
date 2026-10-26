@@ -1,18 +1,19 @@
-// pid_wait_quick() (unlike pid_wait(), see test_headingpid_no_clobber.cpp) had no check that its
-// own motion was still the current one before writing headingPID once its inner wait returned.
-// The inner wait (pid_wait_until_point() / pid_wait_until_index()) already ends early with
-// interfered=true when it notices a concurrent retarget, but that alone does not stop
-// pid_wait_quick()'s own write below it from running on whatever odom_target_start now holds --
-// a stale, already-abandoned pid_wait_quick() call could clobber headingPID with the hijacking
-// motion's own in-flight heading, corrupting shared state that motion is already relying on.
-// headingPID drives heading-hold, relative turns/swings, and odom vector targeting, so this is
-// load-bearing.
+// pid_wait_quick() on an odom motion writes headingPID once its inner wait returns: the motion's final theta, resolved to the equivalent
+// angle nearest the IMU.  A wait follows a new motion set from another task mid-wait, so after a retarget the inner wait returns on the
+// new motion's exits and the write is the new motion's own final heading, exactly what waiting on the new motion alone leaves.  What
+// must not happen is the replaced motion's final heading landing in headingPID.  headingPID drives heading-hold, relative turns/swings,
+// and odom vector targeting, so this is load-bearing.
 //
-// raw_pid_odom_ptp_set() sets headingPID to the angle that FACES the target point, not the
-// target's own final theta -- a value pid_wait_quick()'s write (new_turn_target_compute of
-// odom_target_start.theta) cannot coincidentally reproduce, so any clobber is caught reliably.
+// The original point-to-point motions here end at theta 0, which resolves to 0; the new point-to-point motion ends at theta 45, which resolves to 45
+// with the IMU at 0.  raw_pid_odom_ptp_set() sets headingPID to the angle that faces the target point (0 here), not the final theta.
+//
+// pid_wait_quick() hands its inner wait the replaced motion's point, so the restarted wait checks the new motion against that old point and
+// can return partway through the new motion (3.2.2 behavior).  The robot never moves here, so no point is ever passed and the waits end on
+// the new motion's exits.  A path retargeted to a point-to-point is a mode pid_wait_until_index_started() doesn't accept: it prints the
+// misuse message and returns, and pid_wait_until_index() goes on to wait for the old path's point on the new motion.
 #include "doctest.h"
 #include "drive_test_access.hpp"
+#include "stdout_capture.hpp"
 
 using namespace ez;
 
@@ -34,10 +35,7 @@ int g_retarget_at = -1;
 bool g_retargeted = false;
 double g_heading_after_retarget = 0.0;
 
-// Retargets to a point-to-point motion whose final theta (45) disagrees with the angle that
-// faces the point from the origin (~0) -- pid_odom_ptp_set() itself sets headingPID to face the
-// point as part of legitimately starting this new motion; that is the hijacking task's own
-// in-flight state the stale pid_wait_quick() call must not then stomp.
+// Retargets to a point-to-point motion whose final theta (45) disagrees with the original motion's (0).
 void retarget_to_ptp() {
   g_chassis->pid_odom_ptp_set({{0.0, 90.0, 45.0}, fwd, 100});
   g_heading_after_retarget = g_chassis->headingPID.target_get();
@@ -47,7 +45,7 @@ void retarget_to_ptp() {
 void on_delay_ptp_original() {
   ++g_pass;
   if (g_pass == g_retarget_at) retarget_to_ptp();
-  // Pin the ORIGINAL motion's errors so it can never finish on its own before the retarget lands.
+  // Pin the errors of whichever motion is live, so neither finishes on its own: only their velocity exits can end them.
   g_chassis->xyPID.error = 10.0;
   g_chassis->xyPID.derivative = 0.0;
   g_chassis->current_a_odomPID.error = 10.0;
@@ -62,13 +60,12 @@ void on_delay_pp_original() {
 
 bool g_pass1_retargeted = false;
 double g_pass1_heading_after_retarget = 0.0;
+int g_pass1_passes = 0;
 
-// Lands during pid_wait_until_point()'s OWN first pros::delay(10) -- before it has taken any baseline
-// of its own. The new motion's errors are zeroed here too, so its exit conditions read as already
-// satisfied the moment the inner wait's post-delay snapshot and first check run.
-// A real compute_error() call, not a direct `.error =` write -- small_exit_time=0 on the new motion
-// only needs ONE real compute to fire the instant it's checked (see PID.cpp's freshness gate).
+// Lands during pid_wait_until_point()'s OWN first pros::delay(10), before it has polled anything.  The new motion's errors are zeroed
+// here, so with small_exit_time=0 its exits fire on the first poll of it.
 void on_delay_pass1_retarget() {
+  ++g_pass1_passes;
   if (g_pass1_retargeted) return;
   g_chassis->pid_odom_ptp_set({{0.0, 90.0, 45.0}, fwd, 100});
   g_chassis->xyPID.compute_error(0.0, 0.0);
@@ -78,7 +75,7 @@ void on_delay_pass1_retarget() {
 }
 }  // namespace
 
-TEST_CASE("pid_wait_quick() on point-to-point does not clobber headingPID when retargeted mid-wait") {
+TEST_CASE("pid_wait_quick() on point-to-point follows a point-to-point set mid-wait and leaves the new motion's final heading") {
   Drive chassis = make_chassis();
   DriveTestAccess::imu_calibration_complete(chassis) = true;
   chassis.pid_print_toggle(false);
@@ -92,7 +89,8 @@ TEST_CASE("pid_wait_quick() on point-to-point does not clobber headingPID when r
   g_retargeted = false;
   g_heading_after_retarget = 0.0;
   test_stub::g_clock.on_delay = on_delay_ptp_original;
-  test_stub::g_clock.delay_calls_until_stop = 60;
+  // Room for the new motion's velocity exits, counted from the retarget (see below)
+  test_stub::g_clock.delay_calls_until_stop = 300;
 
   bool returned = true;
   try {
@@ -102,16 +100,24 @@ TEST_CASE("pid_wait_quick() on point-to-point does not clobber headingPID when r
   }
   test_stub::g_clock.delay_calls_until_stop = -1;
   test_stub::g_clock.on_delay = nullptr;
-  MESSAGE("returned=", returned, " passes=", g_pass, " interfered=", chassis.interfered,
-          " final_heading=", chassis.headingPID.target_get(), " heading_after_retarget=", g_heading_after_retarget);
+  MESSAGE("returned=", returned, " passes=", g_pass, " interfered=", chassis.interfered, " final_heading=", chassis.headingPID.target_get(),
+          " heading_after_retarget=", g_heading_after_retarget);
 
   REQUIRE(returned);
   REQUIRE(g_retargeted);
+  // The inner wait starts over on the new motion: one leading delay (pass 4), then its pinned xy and angle end on their velocity exits,
+  // armed by the 1000 ms fallback (speed reads 0) and then 500 ms more, 151 polls.  Without the restart it would end a pass sooner.  Both
+  // errors are outside big_error, so the verdict is interfered.
   CHECK(chassis.interfered);
-  CHECK(chassis.headingPID.target_get() == g_heading_after_retarget);
+  CHECK(g_pass == g_retarget_at + 1 + 150);
+  // headingPID holds the new motion's own final heading, not the replaced motion's
+  double new_final = DriveTestAccess::new_turn_target_compute(chassis, 45.0, chassis.drive_angle_get(), shortest);
+  double old_final = DriveTestAccess::new_turn_target_compute(chassis, 0.0, chassis.drive_angle_get(), shortest);
+  REQUIRE(new_final != old_final);
+  CHECK(chassis.headingPID.target_get() == new_final);
 }
 
-TEST_CASE("pid_wait_quick() on pure pursuit does not clobber headingPID when retargeted mid-wait") {
+TEST_CASE("pid_wait_quick() on pure pursuit returns when a point-to-point is set mid-wait, leaving the new motion's final heading") {
   Drive chassis = make_chassis();
   DriveTestAccess::imu_calibration_complete(chassis) = true;
   chassis.pid_print_toggle(false);
@@ -124,34 +130,38 @@ TEST_CASE("pid_wait_quick() on pure pursuit does not clobber headingPID when ret
   g_retarget_at = 3;
   g_retargeted = false;
   g_heading_after_retarget = 0.0;
-  test_stub::g_clock.on_delay = on_delay_pp_original;
-  test_stub::g_clock.delay_calls_until_stop = 60;
-
   bool returned = true;
-  try {
-    chassis.pid_wait_quick();
-  } catch (test_stub::StopLoop&) {
-    returned = false;
-  }
-  test_stub::g_clock.delay_calls_until_stop = -1;
-  test_stub::g_clock.on_delay = nullptr;
+  std::string printed = test_stub::capture_stdout([&] {
+    test_stub::g_clock.on_delay = on_delay_pp_original;
+    test_stub::g_clock.delay_calls_until_stop = 60;
+    try {
+      chassis.pid_wait_quick();
+    } catch (test_stub::StopLoop&) {
+      returned = false;
+    }
+    test_stub::g_clock.delay_calls_until_stop = -1;
+    test_stub::g_clock.on_delay = nullptr;
+  });
   MESSAGE("returned=", returned, " passes=", g_pass, " interfered=", chassis.interfered);
 
   REQUIRE(returned);
   REQUIRE(g_retargeted);
-  CHECK(chassis.interfered);
-  CHECK(chassis.headingPID.target_get() == g_heading_after_retarget);
+  // 3.2.2 behavior: pid_wait_until_index_started() starts over after the retarget (one leading delay, pass 4), finds a point-to-point
+  // where it only accepts pure pursuit, prints the misuse message and returns.  pid_wait_until_index() then waits on the old path's point
+  // with pid_wait_until_point(), which accepts the point-to-point: one more leading delay (pass 5), then the new motion's xy and angle
+  // errors (0, nothing computes them here) small-exit after 10 polls, the first on pass 5.  Small exits are clean.
+  CHECK(printed.find("Mode needs to be pure pursuit!") != std::string::npos);
+  CHECK(g_pass == g_retarget_at + 1 + 1 + 10 - 1);
+  CHECK_FALSE(chassis.interfered);
+  CHECK(chassis.mode == ez::POINT_TO_POINT);
+  // pid_wait_quick()'s closing write resolves odom_target_start's theta, which is the new motion's 45, not the replaced path's
+  double new_final = DriveTestAccess::new_turn_target_compute(chassis, 45.0, chassis.drive_angle_get(), shortest);
+  CHECK(chassis.headingPID.target_get() == new_final);
 }
 
-// pid_wait_until_point() (the inner wait for the POINT_TO_POINT branch) now also takes its own
-// retarget baseline before its own first settle delay (see test_wait_until_point_retarget_before_
-// first_delay.cpp), so this specific retarget is caught twice over -- by the inner wait itself, and by
-// pid_wait_quick()'s own outer guard below (snapshotted before the inner call, before even its delay).
-// This test is kept as a regression check on the outer guard specifically: baited so the new motion's
-// own exit conditions are already satisfied the instant the inner wait's baseline is taken, so even an
-// inner wait blind to the retarget would return "cleanly" almost immediately instead of hanging --
-// exactly the shape that would read as an innocuous success if the outer guard alone didn't catch it.
-TEST_CASE("pid_wait_quick() on point-to-point catches a retarget landing in the inner wait's own first settle delay") {
+// pid_wait_until_point() (the inner wait for the POINT_TO_POINT branch) remembers the motion it was called for before its own first
+// delay, so a retarget landing in that delay is followed like any other.
+TEST_CASE("pid_wait_quick() on point-to-point follows a retarget landing in the inner wait's own first delay") {
   Drive chassis = make_chassis();
   DriveTestAccess::imu_calibration_complete(chassis) = true;
   chassis.pid_print_toggle(false);
@@ -164,6 +174,7 @@ TEST_CASE("pid_wait_quick() on point-to-point catches a retarget landing in the 
   g_chassis = &chassis;
   g_pass1_retargeted = false;
   g_pass1_heading_after_retarget = 0.0;
+  g_pass1_passes = 0;
   test_stub::g_clock.on_delay = on_delay_pass1_retarget;
   test_stub::g_clock.delay_calls_until_stop = 30;
 
@@ -175,18 +186,23 @@ TEST_CASE("pid_wait_quick() on point-to-point catches a retarget landing in the 
   }
   test_stub::g_clock.delay_calls_until_stop = -1;
   test_stub::g_clock.on_delay = nullptr;
-  MESSAGE("returned=", returned, " retargeted=", g_pass1_retargeted, " interfered=", chassis.interfered,
-          " final_heading=", chassis.headingPID.target_get(), " heading_after_retarget=", g_pass1_heading_after_retarget);
+  MESSAGE("returned=", returned, " retargeted=", g_pass1_retargeted, " interfered=", chassis.interfered, " final_heading=", chassis.headingPID.target_get(),
+          " heading_after_retarget=", g_pass1_heading_after_retarget);
 
   REQUIRE(returned);
   REQUIRE(g_pass1_retargeted);
-  CHECK(chassis.interfered);
-  CHECK(chassis.headingPID.target_get() == g_pass1_heading_after_retarget);
+  // The inner wait sees the new motion after its first delay, starts over on it (a second leading delay, pass 2), and the new motion's
+  // zeroed errors with small_exit_time=0 end it on that first poll, clean.  Without the restart it would return on pass 1.
+  CHECK_FALSE(chassis.interfered);
+  CHECK(g_pass1_passes == 2);
+  // headingPID holds the new motion's own final heading, not the replaced motion's
+  double new_final = DriveTestAccess::new_turn_target_compute(chassis, 45.0, chassis.drive_angle_get(), shortest);
+  double old_final = DriveTestAccess::new_turn_target_compute(chassis, 0.0, chassis.drive_angle_get(), shortest);
+  REQUIRE(new_final != old_final);
+  CHECK(chassis.headingPID.target_get() == new_final);
 }
 
-// What could go wrong with the fix: it could skip the legitimate heading write on a healthy,
-// un-retargeted pid_wait_quick() call, leaving headingPID stale instead of facing the requested
-// final heading once the motion genuinely settles.
+// Control: a healthy, un-retargeted pid_wait_quick() call sets headingPID to the requested final heading once the motion settles.
 TEST_CASE("pid_wait_quick() on point-to-point still sets headingPID to the final theta when not retargeted") {
   Drive chassis = make_chassis();
   DriveTestAccess::imu_calibration_complete(chassis) = true;
@@ -194,8 +210,7 @@ TEST_CASE("pid_wait_quick() on point-to-point still sets headingPID to the final
   chassis.pid_odom_drive_exit_condition_set(0, 1.0, 250, 3.0, 500, 750);  // small_exit_time=0: fires on the first in-tolerance pass
   chassis.pid_odom_turn_exit_condition_set(0, 3.0, 250, 7.0, 500, 750);
   chassis.pid_odom_ptp_set({{0.0, 24.0, 45.0}, fwd, 100});
-  // A real compute_error() call, not a direct `.error =` write -- small_exit_time=0 only needs ONE
-  // real compute to fire on the wait's first check (see PID.cpp's freshness gate).
+  // Both errors at 0, inside small_error: with small_exit_time=0 the exits fire on the first poll
   chassis.xyPID.compute_error(0.0, 0.0);
   chassis.current_a_odomPID.compute_error(0.0, 0.0);
 

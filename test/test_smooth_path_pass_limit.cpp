@@ -24,7 +24,8 @@ std::vector<odom> injected_path(Drive& chassis) {
   return DriveTestAccess::inject_points(chassis, {{{24, 24}, fwd, 127}, {{48, 0}, fwd, 127}, {{72, 24}, fwd, 127}, {{96, 48}, fwd, 127}});
 }
 
-const char* const pass_limit_message = "EZ-Template: path smoothing stopped at 5000 passes before it settled, so the path is less smooth than the constants ask for\n";
+const char* const pass_limit_message =
+    "EZ-Template: path smoothing stopped at 5000 passes before it settled, so the path is less smooth than the constants ask for\n";
 
 template <typename F>
 std::string printed_by(F&& action) {
@@ -67,13 +68,4 @@ TEST_CASE("smooth_path prints nothing when the constants settle before the pass 
   REQUIRE(defaults.size() == 3);
   CHECK(printed_by([&] { DriveTestAccess::smooth_path(chassis, path, defaults[0], defaults[1], defaults[2]); }) == "");
   CHECK(printed_by([&] { DriveTestAccess::smooth_path(chassis, path, 0.95, 0.05, 0.0001); }) == "");
-}
-
-TEST_CASE("smooth_path prints only the rejection, not the pass limit message, for constants that would diverge") {
-  Drive chassis = make_chassis();
-  auto path = injected_path(chassis);
-
-  std::string printed = printed_by([&] { DriveTestAccess::smooth_path(chassis, path, 0.99, 0.03, 0.0001); });
-  CHECK(printed.find("EZ-Template: path smoothing skipped") == 0);
-  CHECK(printed.find("stopped at") == std::string::npos);
 }

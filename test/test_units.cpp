@@ -19,9 +19,7 @@ uint64_t bits(double v) {
 }
 }  // namespace
 
-TEST_CASE("EZ-Units reports the version EZ-Template was built against") {
-  CHECK(EZ_UNITS_VERSION_MAJOR == 1);
-}
+TEST_CASE("EZ-Units reports the version EZ-Template was built against") { CHECK(EZ_UNITS_VERSION_MAJOR == 1); }
 
 TEST_CASE("unit constants are bit-identical to OkapiLib's") {
   CHECK(bits(ez::degree.getValue()) == 0x3f91df46a2529d39ULL);

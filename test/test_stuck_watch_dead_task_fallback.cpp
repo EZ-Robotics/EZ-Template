@@ -1,17 +1,10 @@
-// Coverage gap found by mutation testing exit_conditions.cpp's StuckWatch/SingleStuckWatch.
-// When ez_auto_task never runs again at all (killed or deadlocked, not merely busy), the only
-// thing standing between a stuck robot and a wait that never returns is the wall-clock-only
-// fallback:
+// When ez_auto_task never runs again at all (killed or deadlocked, not merely busy), nothing recomputes the PIDs and the drive's sensor
+// reading never changes.  pid_wait() still ends: its exit timers count real milliseconds from the waiting task's own clock, and the
+// velocity exit arms itself after VELOCITY_ARM_FALLBACK (1000 ms) when the robot never moves, then ends the wait after
+// velocity_exit_time of speed at or under 5 units/s.
 //
-//   waited > STUCK_STARVED_WINDOWS * window_
-//
-// This scripts ez_auto_task's pass counter frozen from before the wait even starts (so the
-// pass-based confirmation path -- which needs at least one observed pass to compute anything
-// other than its DELAY_TIME fallback -- never contributes a mismatch of its own: `pass` and
-// `last_progress_pass_` both stay pinned at the watch's own start_pass_ snapshot the whole time,
-// so `pass - last_progress_pass_` is always 0 and can never exceed `expected_passes`). That
-// isolates the wall-clock fallback as the only thing that can end this wait, and pins how long
-// it actually takes to fire.
+// This scripts ez_auto_task's pass counter frozen from before the wait even starts and the PID error frozen with it, so the velocity exit
+// is the only thing that can end this wait, and pins how long it takes.
 #include "doctest.h"
 #include "drive_test_access.hpp"
 
@@ -23,11 +16,8 @@ Drive make_chassis() {
   return Drive({1, -2}, {-3, 4}, 5, 3.25, 360);
 }
 
-// Robot pinned from the very first pass: error frozen, but a nonzero derivative (above
-// velocity_zero_main's default 0.05) so the ordinary velocity/mA exits can never fire on their
-// own -- isolating the StuckWatch/SingleStuckWatch backstop as the only way this wait can end.
-// ez_auto_task's pass counter is never advanced at all (not even once), so the watch's own
-// start_pass_ snapshot equals every later reading of it.
+// Robot pinned from the very first pass: error frozen, and `cur` never moves, so the PID's speed reads zero.  ez_auto_task's pass counter
+// is never advanced at all (not even once).
 Drive* g_chassis = nullptr;
 int g_pass = 0;
 
@@ -36,21 +26,16 @@ void freeze() {
   Drive& c = *g_chassis;
   c.leftPID.error = 5.0;
   c.rightPID.error = 5.0;
-  c.leftPID.derivative = 0.2;
-  c.rightPID.derivative = 0.2;
-  // ez::detail::stats.auto_task_passes is deliberately never touched here.
+  // ez::detail::stats.auto_task_passes is deliberately never touched here, and neither is `cur`.
 }
 }  // namespace
 
-TEST_CASE("pid_wait() DRIVE: a dead ez_auto_task is still caught by the wall-clock-only fallback") {
+TEST_CASE("pid_wait() DRIVE: a dead ez_auto_task is still caught by the velocity exit's arming fallback") {
   Drive chassis = make_chassis();
   chassis.pid_print_toggle(false);
-  // Only velocity_exit_time is set (500 ms), so window_ = 500 ms and STUCK_STARVED_WINDOWS(4) *
-  // window_ = 2000 ms = 200 passes. SingleStuckWatch also adds a fixed 1000 ms (100 passes)
-  // "hasn't moved yet" allowance up front (unconditional in its constructor), so the earliest a
-  // correct implementation can give up is around 300 passes, and it must not give up dramatically
-  // sooner than that just because the underlying window_ (500 ms) alone was exceeded, or
-  // dramatically later either.
+  // Only velocity_exit_time is set (500 ms).  The robot never moves, so the velocity exit arms through its 1000 ms fallback (100 passes)
+  // and then needs 500 ms (50 passes) at speed zero, so the earliest it can end is around 150 passes, and it must not end dramatically
+  // sooner than that (before the arming) or dramatically later.
   chassis.pid_drive_exit_condition_set(0, 0.0, 0, 0.0, 500, 0);
   chassis.pid_drive_set(100, 100);
 
@@ -72,10 +57,9 @@ TEST_CASE("pid_wait() DRIVE: a dead ez_auto_task is still caught by the wall-clo
 
   REQUIRE(returned);
   CHECK(chassis.interfered);
-  // Measured at pass 303 (STUCK_START_ALLOWANCE_MS's 100 passes + STUCK_STARVED_WINDOWS(4) *
-  // window_'s 50-pass window = 200, plus the pass on which "waited > ..." first reads true).
-  // Tight enough to separate this from STUCK_STARVED_WINDOWS being off by even 1 (a 50-pass
-  // swing either way), not just from an unrelated fast/slow path.
-  CHECK(g_pass > 280);
-  CHECK(g_pass < 330);
+  // Measured at pass 153: the 1000 ms arming fallback's 100 passes + the 500 ms velocity_exit_time's 50 passes, plus the pass on which
+  // "timer > ..." first reads true and the wait's leading delay.  Tight enough to separate this from the arming being skipped (a 100-pass
+  // swing), not just from an unrelated fast/slow path.
+  CHECK(g_pass > 140);
+  CHECK(g_pass < 165);
 }

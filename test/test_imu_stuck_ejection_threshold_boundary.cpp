@@ -54,7 +54,7 @@ TEST_CASE("check_imu_task(): a frozen IMU during a turn is not yet ejected after
   for (int pass = 0; pass < 49; pass++) turn_one_pass(chassis, healthy);
   CHECK(chassis.good_imus.size() == 2);  // 49 consecutive stuck passes: threshold (50) not yet reached
 
-  turn_one_pass(chassis, healthy);  // the 50th consecutive stuck pass
+  turn_one_pass(chassis, healthy);       // the 50th consecutive stuck pass
   CHECK(chassis.good_imus.size() == 1);  // ejected on exactly this pass, not one later
   CHECK(std::find(chassis.good_imus.begin(), chassis.good_imus.end(), frozen) == chassis.good_imus.end());
   CHECK(chassis.good_imus.front() == healthy);

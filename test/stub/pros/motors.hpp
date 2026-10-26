@@ -29,6 +29,10 @@ struct MotorFakeState {
   // way. Kept separate from over_current so a test can represent "read failed" distinctly
   // from "genuinely over limit".
   bool disconnected = false;
+  // A transient read failure on is_over_current() only -- get_position() still succeeds. Real PROS
+  // motors can fail one read without the motor being gone for good; kept separate from
+  // `disconnected` (where every read fails) so a test can tell the two apart.
+  bool current_read_failed = false;
   bool reversed = false;
   motor_brake_mode_e_t brake_mode = E_MOTOR_BRAKE_COAST;
 };
@@ -37,6 +41,10 @@ inline std::map<int, MotorFakeState>& motor_fake_registry() {
   static std::map<int, MotorFakeState> registry;
   return registry;
 }
+
+// Test-only: when set, every Motor::get_position() calls it once the value is read and before it returns, so a test can
+// land another task's call inside a sensor read. Null by default and cleared by test_stub::reset_all().
+inline void (*motor_read_hook)() = nullptr;
 
 class Motor {
  public:
@@ -58,7 +66,11 @@ class Motor {
   // disconnected flag is_over_current() honors below, since a real disconnected motor fails
   // every read, not just that one. INFINITY inline for the same include-order reason as
   // is_over_current()'s INT32_MAX below.
-  double get_position() const { return fake().disconnected ? INFINITY : (double)fake().position; }
+  double get_position() const {
+    double position = fake().disconnected ? INFINITY : (double)fake().position;
+    if (motor_read_hook != nullptr) motor_read_hook();  // test-only: runs after the value is read, before it is returned
+    return position;
+  }
   double get_actual_velocity() const { return fake().actual_velocity; }
   double get_current_draw() const { return fake().current_draw; }
   double get_voltage() const { return fake().voltage; }
@@ -67,7 +79,7 @@ class Motor {
   // a genuine "yes" -- that ambiguity is exactly what PID::exit_condition() must not repeat.
   // INT32_MAX inline rather than the PROS_ERR macro: api.h #defines PROS_ERR only after
   // #including this header, so the macro isn't visible here yet in that include order.
-  std::int32_t is_over_current() const { return fake().disconnected ? INT32_MAX : (fake().over_current ? 1 : 0); }
+  std::int32_t is_over_current() const { return (fake().disconnected || fake().current_read_failed) ? INT32_MAX : (fake().over_current ? 1 : 0); }
 
   std::int32_t tare_position() {
     fake().position = 0;

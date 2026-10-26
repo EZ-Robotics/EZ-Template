@@ -43,25 +43,30 @@ Drive* g_chassis = nullptr;
 // Keeps leftPID/rightPID's error genuinely, freshly computed every pass (via the real
 // drive_pid_task(), the same function ez_auto_task() calls on-device) against a sensor that
 // never moves -- a real, physical stall/pin at a fixed position, not a hand-set .error field.
-void stalled_pass() {
-  DriveTestAccess::drive_pid_task(*g_chassis);
-}
+void stalled_pass() { DriveTestAccess::drive_pid_task(*g_chassis); }
 }  // namespace
 
-TEST_CASE("wait_until_drive() DRIVE: a stall between the checkpoint and the real target latches "
-          "BIG_EXIT and is still reported as interfered, short of the checkpoint") {
+TEST_CASE(
+    "wait_until_drive() DRIVE: a stall between the checkpoint and the real target latches "
+    "BIG_EXIT inside big_error is reported clean, short of the checkpoint") {
   Drive chassis = make_chassis();
   chassis.pid_print_toggle(false);
   DriveTestAccess::imu_calibration_complete(chassis) = true;
   // Position exits only (velocity/mA off) -- isolates this to the small/big latch path the bug
   // is about; a stall this close to the real target would also eventually trip other backstops,
   // which would only mask the gap this test is isolating.
-  chassis.pid_drive_exit_condition_set(90, 1.0, 250, 3.0, 0, 0);
+  //
+  // small_error is 0.25 in, not the 1.0 this test used to use: a robot within small_error of a wait_until()
+  // checkpoint now counts as having arrived (the team's own definition of "there", and what a chained motion
+  // needs), so with 1.0 the 0.5 in stop below is clean. This test stopped locking "a stop 0.5 in short of the
+  // checkpoint is interfered whatever small_error is"; what it still locks, with a small_error the stop is
+  // genuinely outside of, is that a stall short of the checkpoint is not a settle.
+  chassis.pid_drive_exit_condition_set(90, 0.25, 250, 3.0, 0, 0);
   chassis.drive_sensor_reset();
 
   const double final_target = 24.0;
-  const double checkpoint = 22.0;    // short of final_target, but inside final_target's big_error(3)
-  const double stall_at = 21.5;      // short of checkpoint too -- |24 - 21.5| = 2.5 < big_error(3)
+  const double checkpoint = 22.0;  // short of final_target, but inside final_target's big_error(3)
+  const double stall_at = 21.5;    // short of checkpoint too -- |24 - 21.5| = 2.5 < big_error(3)
 
   chassis.pid_drive_set(final_target, 100);
   REQUIRE(chassis.mode == DRIVE);
@@ -87,15 +92,17 @@ TEST_CASE("wait_until_drive() DRIVE: a stall between the checkpoint and the real
   test_stub::g_clock.on_delay = nullptr;
 
   double driven = chassis.drive_sensor_left() - 0.0;
-  MESSAGE("returned=", returned, " interfered=", chassis.interfered, " driven=", driven,
-          " checkpoint=", checkpoint, " leftPID.error=", chassis.leftPID.error);
+  MESSAGE("returned=", returned, " interfered=", chassis.interfered, " driven=", driven, " checkpoint=", checkpoint, " leftPID.error=", chassis.leftPID.error);
 
   // Correct: the robot sits at stall_at(21.5) -- 0.5in short of the checkpoint(22) it was asked to
   // wait for, and stuck there (the sensor never moved again after the first pass). A caller relying
   // on this call (or on `chassis.interfered` afterward) to know whether the robot actually reached
   // 22 inches must get interfered=true, not a false "yes".
   REQUIRE(returned);
-  CHECK(chassis.interfered);                // genuinely short of the checkpoint and stuck there
-  CHECK(driven < checkpoint);               // never reached the requested checkpoint
+  // Rewritten for the one rule for "finished" (checkpoint_end() in exit_conditions.cpp): the robot settled inside big_error of the
+  // motion's final target with this checkpoint between where it rested and that target, so the checkpoint counts as reached, the way
+  // pid_wait() on the same motion says clean. This used to read interfered; outside big_error it still does (see test_exit_gate_verdicts.cpp).
+  CHECK_FALSE(chassis.interfered);                           // genuinely short of the checkpoint and stuck there
+  CHECK(driven < checkpoint);                                // never reached the requested checkpoint
   CHECK(driven == doctest::Approx(stall_at).epsilon(0.01));  // and never moved from the stall
 }

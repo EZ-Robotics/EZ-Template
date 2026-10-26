@@ -1,21 +1,12 @@
-// pid_wait()'s leading pros::delay(util::DELAY_TIME) (its own "let the PID run at least 1 iteration"
-// settle) now has a pre-delay snapshot of `mode` plus DRIVE's own leftPID/rightPID target -- see
-// test_wait_retarget_before_first_delay.cpp -- so a concurrent retarget landing during that delay is
-// caught on DRIVE's own very first loop pass instead of being silently adopted as this call's own
-// baseline.
+// pid_wait() remembers the motion it was called for before its leading pros::delay(util::DELAY_TIME), so a concurrent SAME-family
+// retarget (another pid_turn_set()/pid_swing_set()/pid_odom_*_set()) landing during that delay is still a new motion to it: mode hasn't
+// changed, but the target has, so the wait starts over on the new motion instead of ending.  This covers TURN, SWING and the odom branch
+// (POINT_TO_POINT/PURE_PURSUIT); test_wait_retarget_before_first_delay.cpp covers DRIVE.
 //
-// TURN, SWING, and the odom branch (POINT_TO_POINT/PURE_PURSUIT) used to read their OWN retarget
-// baseline (turnPID.target_get()/swingPID.target_get()/odom_target_start) AFTER that same leading
-// delay, not before it -- so a concurrent SAME-family retarget (another pid_turn_set()/
-// pid_swing_set()/pid_odom_*_set()) landing during that delay was invisible to them: mode itself
-// hasn't changed, so the shared entry_mode_snapshot check a few lines above let it through, and by
-// the time each branch took its own snapshot the snapshot already reflected the hijacking motion,
-// not the one this call actually started for. All three now reuse the entry snapshot taken before
-// this function's own leading delay instead of taking their own fresh one after it. This file
-// supplies the runnable repro (mirroring test_wait_retarget_before_first_delay.cpp's own DRIVE
-// repro), plus a no-retarget control per branch proving the fix doesn't false-fire on a healthy,
-// un-retargeted wait -- neither of which test_all_public_waits_retarget_table.cpp exercises (that
-// file's own retargets land mid-loop, after each function's snapshot is already taken).
+// Every row here sets its velocity exit and mA timeout to 0 and pins its error outside big_error, and nothing advances pure pursuit's
+// pp_index, so no exit can end the motion, retargeted or not: a pinned robot with those two exits off waits forever, as in 3.2.2 (the
+// setter warns about it).  The retarget rows therefore end the same way as the no-retarget controls: still waiting, on the new motion,
+// when the pass cap stops them, with nothing reported interfered.
 #include "doctest.h"
 #include "drive_test_access.hpp"
 
@@ -122,7 +113,7 @@ void on_delay_no_retarget() {
 }
 }  // namespace
 
-TEST_CASE("pid_wait() TURN/SWING/odom: a same-family retarget landing during the leading settle delay is caught") {
+TEST_CASE("pid_wait() TURN/SWING/odom: a same-family retarget landing during the leading delay is followed, not ended on") {
   for (const Row& row : ROWS) {
     SUBCASE(row.name.c_str()) {
       CAPTURE(row.name);
@@ -145,15 +136,11 @@ TEST_CASE("pid_wait() TURN/SWING/odom: a same-family retarget landing during the
       test_stub::g_clock.on_delay = nullptr;
 
       MESSAGE("returned=", returned, " passes=", g_pass, " interfered=", chassis.interfered);
-      CHECK(returned);
-      CHECK(chassis.interfered);
-      // Tight bound, the same discriminator test_all_public_waits_retarget_table.cpp uses: every
-      // row's pin() holds its PID at a fixed, never-progressing error, which a generic stuck-watch
-      // fallback would ALSO eventually flag as interfered given enough passes -- that alone would
-      // make the bare CHECK(interfered) above pass even with the pre-delay snapshot gap still open,
-      // just much later. The tight bound is what actually proves the leading-delay snapshot caught
-      // the retarget immediately, rather than a slow, unrelated stuck detection catching it later.
-      CHECK(g_pass <= RETARGET_AT + 10);
+      // The wait doesn't end at the retarget: it carries on waiting on the new, equally pinned motion, which nothing can end (see the
+      // header), until the cap stops it on its 301st delay.  It never reports interfered.
+      CHECK_FALSE(returned);
+      CHECK(g_pass == 301);
+      CHECK_FALSE(chassis.interfered);
     }
   }
 }
@@ -169,10 +156,8 @@ TEST_CASE("pid_wait() TURN/SWING/odom control: no retarget during the leading se
       g_pass = 0;
       g_row = &row;
       test_stub::g_clock.on_delay = on_delay_no_retarget;
-      // Capped well past where a retarget would have been caught above -- with nothing retargeting
-      // this motion and pin() holding its PID at a fixed error forever, the wait can only end by
-      // hitting this cap (StopLoop). Reaching the cap without ever reporting interfered is exactly
-      // the "didn't false-fire" outcome this control exists to check.
+      // With nothing retargeting this motion and pin() holding its PID at a fixed error forever, the wait can only end by hitting this
+      // cap (StopLoop), without reporting interfered.
       test_stub::g_clock.delay_calls_until_stop = RETARGET_AT + 10;
 
       bool returned = true;

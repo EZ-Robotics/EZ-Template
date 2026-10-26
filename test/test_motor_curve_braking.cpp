@@ -45,7 +45,7 @@ TEST_CASE("sim physics: a straight-line PID easing off its duty still decelerate
   double v_at_speed = sim.left().velocity_in_s;
 
   chassis.drive_set(20, 20);  // command drops a lot, same sign -- must decelerate toward the
-                               // new, lower commanded speed, not stay pinned at v_at_speed
+                              // new, lower commanded speed, not stay pinned at v_at_speed
   pump_ticks(150);
   double v_after_ease_off = sim.left().velocity_in_s;
 

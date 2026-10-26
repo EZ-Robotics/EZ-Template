@@ -37,10 +37,14 @@ void Drive::ez_auto_task() {
       // Entering autonomous must NOT trigger this: the autonomous task's first setter can run
       // before this pass sees the status change, and disabling here would cancel that motion.
       bool autonomous_now = pros::competition::is_autonomous();
-      if (pros::competition::is_disabled() || (last_was_autonomous && !autonomous_now)) {
+      bool autonomous_started = autonomous_now && !last_was_autonomous;
+      bool disabled_now = pros::competition::is_disabled();
+      bool enabled_again = last_was_disabled && !disabled_now;
+      if (disabled_now || (last_was_autonomous && !autonomous_now)) {
         if (drive_mode_get() != DISABLE) drive_mode_set(DISABLE, true);
       }
       last_was_autonomous = autonomous_now;
+      last_was_disabled = disabled_now;
 
       // Autonomous PID
       switch (drive_mode_get()) {
@@ -65,8 +69,21 @@ void Drive::ez_auto_task() {
           break;
       }
 
-      // This is used to reset sensors for active braking
-      util::AUTON_RAN = drive_mode_get() != DISABLE ? true : false;
+      // This is used to reset sensors for active braking. It is set by a nonzero drive_set(), by drive_sensor_reset() and
+      // here, and cleared only by opcontrol_drive_sensors_reset(). Here it is only ever set: the disabled gap between autonomous and
+      // driver control puts the mode back to DISABLE, and recomputing the flag from it every pass cleared it before
+      // opcontrol_drive_sensors_reset() (the only thing that clears it) could re-aim the brake target, so the first
+      // driver pass drove the robot back toward where autonomous started.
+      // Autonomous itself counts, not only a PID mode inside it: an autonomous that only uses raw drive_set never leaves
+      // DISABLE, and the flag is false again after the first driver control of the night, so a second match drove the
+      // robot back toward the target drive_sensor_reset() left at 0. Only the moment autonomous starts, not every pass of
+      // it: opcontrol_* clears the flag and re-aims the brake once, and setting it on every pass would make driver code
+      // run while the status says autonomous (a hybrid or skills routine) re-aim the brake on every call.
+      // The moment the robot is enabled after being disabled counts too. The motors are limp while disabled, so a robot
+      // carried or slid by hand rolls its wheels, and the brake target would still be wherever the sticks were last
+      // released before the disable. Driver control that starts with the sticks released would then drive the robot back
+      // there. Again only the edge: a robot pushed while enabled is still pulled back to its target.
+      if (autonomous_started || enabled_again || drive_mode_get() != DISABLE) util::AUTON_RAN = true;
     }
 
     pros::delay(ez::util::DELAY_TIME);
@@ -113,8 +130,7 @@ void Drive::drive_pid_task() {
   }
 
   // Set motors
-  if (drive_toggle)
-    private_drive_set(l_out, r_out);
+  if (drive_toggle) private_drive_set(l_out, r_out);
 }
 
 // Turn PID task
@@ -141,14 +157,13 @@ void Drive::turn_pid_task() {
   double gyro_out = util::clamp(turnPID.output, slew_turn.output(), -slew_turn.output());
 
   // Clip the speed of the turn when the robot is within StartI, only do this when the turn is larger then StartI
-  if (turnPID.constants.ki != 0 && (fabs(chain_target_start - chain_sensor_start) > turnPID.constants.start_i && fabs(turnPID.error) < turnPID.constants.start_i)) {
-    if (pid_turn_min_get() != 0)
-      gyro_out = util::clamp(gyro_out, pid_turn_min_get(), -pid_turn_min_get());
+  if (turnPID.constants.ki != 0 &&
+      (fabs(chain_target_start - chain_sensor_start) > turnPID.constants.start_i && fabs(turnPID.error) < turnPID.constants.start_i)) {
+    if (pid_turn_min_get() != 0) gyro_out = util::clamp(gyro_out, pid_turn_min_get(), -pid_turn_min_get());
   }
 
   // Set motors
-  if (drive_toggle)
-    private_drive_set(gyro_out, -gyro_out);
+  if (drive_toggle) private_drive_set(gyro_out, -gyro_out);
 }
 
 // Swing PID task
@@ -166,9 +181,9 @@ void Drive::swing_pid_task() {
   double swing_out = util::clamp(swingPID.output, slew_swing.output(), -slew_swing.output());
 
   // Clip the speed of the swing when the robot is within StartI, only do this when the swing is larger then StartI
-  if (swingPID.constants.ki != 0 && (fabs(chain_target_start - chain_sensor_start) > swingPID.constants.start_i && fabs(swingPID.error) < swingPID.constants.start_i)) {
-    if (pid_swing_min_get() != 0)
-      swing_out = util::clamp(swing_out, pid_swing_min_get(), -pid_swing_min_get());
+  if (swingPID.constants.ki != 0 &&
+      (fabs(chain_target_start - chain_sensor_start) > swingPID.constants.start_i && fabs(swingPID.error) < swingPID.constants.start_i)) {
+    if (pid_swing_min_get() != 0) swing_out = util::clamp(swing_out, pid_swing_min_get(), -pid_swing_min_get());
   }
 
   // Set the motors powers, and decide what to do with the "still" side of the drive
@@ -194,13 +209,25 @@ void Drive::ptp_task() {
   double max_slew_out = fmax(slew_left.output(), slew_right.output());
 
   // Decide if we've past the target or not
-  double temp_target = is_past_target(odom_target, odom_pose_get());        // Use this instead of distance formula to fix impossible movements
-  int dir = (current_drive_direction == REV ? -1 : 1);                      // If we're going backwards, add a -1
-  int flipped = util::sgn(temp_target) != util::sgn(past_target) ? -1 : 1;  // Check if we've flipped directions to what we started
+  double temp_target = is_past_target(odom_target, odom_pose_get());  // Use this instead of distance formula to fix impossible movements
+  int dir = (current_drive_direction == REV ? -1 : 1);                // If we're going backwards, add a -1
+
+  // xyPID's error is the distance left to the target, negative once the robot is past it.  is_past_target() is that
+  // distance with the sign flipped, forwards or backwards: a motion always starts short of its target, so what it
+  // returns starts negative and only goes positive once the robot has passed the target.
+  //
+  // xyPID's sensor moves by how much the robot's own movement this pass changed that error: it is measured at this
+  // pass's pose and at last pass's pose, both against this pass's target.  A target that moved (the next pure
+  // pursuit point, a boomerang carrot, a new motion) is not movement and never shows up here, and neither does where
+  // the robot is on the field.  So xyPID's derivative is the robot's real speed toward the target.
+  auto xy_error_at = [&](double past) { return -dir * past; };
+  pose last_pose = {odom_x_get() - xy_pose_delta.x, odom_y_get() - xy_pose_delta.y, odom_theta_get()};
+  xy_delta_fake = -(xy_error_at(temp_target) - xy_error_at(is_past_target(odom_target, last_pose)));
+  if (!std::isfinite(xy_delta_fake)) xy_delta_fake = 0.0;  // a non-finite pose must not poison the sensor for good
 
   // Compute xy PID
-  new_current_fake += xy_delta_fake * ((dir * flipped));  // Create a "current sensor value" for the PID to calculate off of
-  xyPID.compute_error(fabs(temp_target) * dir * flipped, new_current_fake);
+  new_current_fake += xy_delta_fake;
+  xyPID.compute_error(xy_error_at(temp_target), new_current_fake);
 
   // Compute angle
   pose ptf = point_to_face[!ptf1_running];
@@ -240,12 +267,10 @@ void Drive::ptp_task() {
   // double scale = std::cos(util::to_rad(current_a_odomPID.error)) / odom_turn_bias_amount;
   double scale = 1.0 - ((1.0 - std::cos(util::to_rad(current_a_odomPID.error))) / odom_turn_bias_amount);  // 1 - ((1-0.7)/0.75)
   scale = util::clamp(scale, 1.0, 0.0);
-  // xy_translation_bias_gated feeds xy_velocity_exit_hold_update(): when turn bias has clamped scale
-  // to exactly 0, xy_out (and so real translation) is fully zeroed to prioritize turning, and xyPID's
-  // velocity exit can't tell that apart from a stall on its own.
+  // When turn bias has clamped scale to exactly 0, xy_out (and so real translation) is fully zeroed to
+  // prioritize turning, which xyPID's velocity exit can't tell apart from a stall on its own.
   xy_translation_bias_gated = odom_turn_bias_enabled() && scale <= 0.0;
-  if (odom_turn_bias_enabled())
-    xy_out *= scale;
+  if (odom_turn_bias_enabled()) xy_out *= scale;
   double a_out = current_a_odomPID.output;
   // a_out = util::clamp(a_out, max_slew_out);
 
@@ -271,13 +296,15 @@ void Drive::ptp_task() {
 
   // printf("lr out (%.2f, %.2f)   xy/a(%.2f, %.2f)   lr slew (%.2f, %.2f)\n", l_out, r_out, xy_out, a_out, slew_left.output(), slew_right.output());
   // printf("max_slew_out %.2f      headingerr: %.2f\n", max_slew_out, aPID.error);
-  // printf("lr(%.2f, %.2f)   xy_raw: %.2f   xy_out: %.2f   heading_out: %.2f      max_slew_out: %.2f\n", l_out, r_out, xyPID.output, xy_out, current_a_odomPID.output, max_slew_out);
-  // printf("xy(%.2f, %.2f, %.2f)   xyPID: %.2f   aPID: %.2f     dir: %i   sgn: %i   past_target: %i    is_past_target: %i   is_past_using_xy: %i      fake_xy(%.2f, %.2f, %.2f)\n", odom_x_get(), odom_y_get(), odom_theta_get(), xyPID.target_get(), current_a_odomPID.target_get(), dir, flipped, past_target, (int)is_past_target(odom_target, odom_pose_get()), is_past_target_using_xy, fake_x, fake_y, util::to_deg(fake_angle));
-  // printf("xy(%.2f, %.2f, %.2f)   xyPID: %.2f   aPID: %.2f   ptf:(%.2f, %.2f)   xy/a(%.2f, %.2f)   lr(%.2f, %.2f)   fake xy: %.2f\n", odom_x_get(), odom_y_get(), odom_theta_get(), xyPID.error, current_a_odomPID.error, ptf.x, ptf.y, xy_out, a_out, l_out, r_out, new_current_fake);
+  // printf("lr(%.2f, %.2f)   xy_raw: %.2f   xy_out: %.2f   heading_out: %.2f      max_slew_out: %.2f\n", l_out, r_out, xyPID.output, xy_out,
+  // current_a_odomPID.output, max_slew_out); printf("xy(%.2f, %.2f, %.2f)   xyPID: %.2f   aPID: %.2f     dir: %i   sgn: %i   past_target: %i    is_past_target:
+  // %i   is_past_using_xy: %i      fake_xy(%.2f, %.2f, %.2f)\n", odom_x_get(), odom_y_get(), odom_theta_get(), xyPID.target_get(),
+  // current_a_odomPID.target_get(), dir, flipped, past_target, (int)is_past_target(odom_target, odom_pose_get()), is_past_target_using_xy, fake_x, fake_y,
+  // util::to_deg(fake_angle)); printf("xy(%.2f, %.2f, %.2f)   xyPID: %.2f   aPID: %.2f   ptf:(%.2f, %.2f)   xy/a(%.2f, %.2f)   lr(%.2f, %.2f)   fake xy:
+  // %.2f\n", odom_x_get(), odom_y_get(), odom_theta_get(), xyPID.error, current_a_odomPID.error, ptf.x, ptf.y, xy_out, a_out, l_out, r_out, new_current_fake);
 
   // Set motors
-  if (drive_toggle)
-    private_drive_set(l_out, r_out);
+  if (drive_toggle) private_drive_set(l_out, r_out);
 
   // This is for wait_until
   leftPID.compute(drive_sensor_left());

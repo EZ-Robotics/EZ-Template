@@ -66,7 +66,7 @@ void stalled_swing_pass() {
 // swingPID.error is scripted directly -- so wait_until_turn_swing_internal()'s own crossing check
 // never fires here, isolating that the result comes from the exit-condition/gate machinery this test
 // is about, not the crossing check.
-TEST_CASE("pid_wait_until() TURN: a stall between the checkpoint and the real target latches BIG_EXIT and is still reported as interfered") {
+TEST_CASE("pid_wait_until() TURN: a stall between the checkpoint and the real target that latches BIG_EXIT inside big_error is reported clean") {
   Drive chassis = make_chassis();
   chassis.pid_print_toggle(false);
   // Position exits only (velocity/mA off) -- isolates this to the small/big latch path, matching
@@ -93,13 +93,15 @@ TEST_CASE("pid_wait_until() TURN: a stall between the checkpoint and the real ta
   test_stub::g_clock.delay_calls_until_stop = -1;
   test_stub::g_clock.on_delay = nullptr;
 
-  MESSAGE("returned=", returned, " interfered=", chassis.interfered,
-          " checkpoint=", checkpoint, " turnPID.error=", chassis.turnPID.error);
+  MESSAGE("returned=", returned, " interfered=", chassis.interfered, " checkpoint=", checkpoint, " turnPID.error=", chassis.turnPID.error);
   REQUIRE(returned);
-  CHECK(chassis.interfered);
+  // Rewritten for the one rule for "finished" (checkpoint_end() in exit_conditions.cpp): the robot settled inside big_error of the
+  // motion's final target with this checkpoint between where it rested and that target, so the checkpoint counts as reached, the way
+  // pid_wait() on the same motion says clean. This used to read interfered; outside big_error it still does (see test_exit_gate_verdicts.cpp).
+  CHECK_FALSE(chassis.interfered);
 }
 
-TEST_CASE("pid_wait_until() SWING: a stall between the checkpoint and the real target latches BIG_EXIT and is still reported as interfered") {
+TEST_CASE("pid_wait_until() SWING: a stall between the checkpoint and the real target that latches BIG_EXIT inside big_error is reported clean") {
   Drive chassis = make_chassis();
   chassis.pid_print_toggle(false);
   chassis.pid_swing_exit_condition_set(90, 3.0, 250, 7.0, 0, 0);
@@ -124,10 +126,12 @@ TEST_CASE("pid_wait_until() SWING: a stall between the checkpoint and the real t
   test_stub::g_clock.delay_calls_until_stop = -1;
   test_stub::g_clock.on_delay = nullptr;
 
-  MESSAGE("returned=", returned, " interfered=", chassis.interfered,
-          " checkpoint=", checkpoint, " swingPID.error=", chassis.swingPID.error);
+  MESSAGE("returned=", returned, " interfered=", chassis.interfered, " checkpoint=", checkpoint, " swingPID.error=", chassis.swingPID.error);
   REQUIRE(returned);
-  CHECK(chassis.interfered);
+  // Rewritten for the one rule for "finished" (checkpoint_end() in exit_conditions.cpp): the robot settled inside big_error of the
+  // motion's final target with this checkpoint between where it rested and that target, so the checkpoint counts as reached, the way
+  // pid_wait() on the same motion says clean. This used to read interfered; outside big_error it still does (see test_exit_gate_verdicts.cpp).
+  CHECK_FALSE(chassis.interfered);
 }
 
 // Control: a genuinely stuck-and-settled turn (hovers across small_error, never fully latches, ends

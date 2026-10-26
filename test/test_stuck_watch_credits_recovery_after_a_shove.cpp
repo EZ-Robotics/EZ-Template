@@ -1,15 +1,9 @@
-// Coverage gap found by mutation testing exit_conditions.cpp's Channel::made(), the progress
-// primitive behind SingleStuckWatch/StuckWatch. A straight push that shoves the robot's error a
-// full step worse without ever crossing its target (no sign flip) is supposed to count as progress
-// once the robot recovers back past where the shove started -- Channel::made()'s "shoved" branch
-// raises `low` to follow the push, so recovering from it re-triggers a normal per-step credit
-// instead of forcing the whole recovery back to the original low before anything counts again.
+// A defense push that shoves the robot's error a full step worse mid-motion, without ever crossing its target (no sign flip), is not a
+// stall: the robot keeps moving through the shove and the recovery, so its speed stays above the stop speed and neither the velocity exit
+// nor the small/big exit timers run out until it has genuinely arrived.  The wait must finish the motion and not report interfered.
 //
-// Every existing pid_wait()/StuckWatch test scripts either a steadily-closing motion, a robot fully
-// pinned (error frozen, no push away from target), or an overshoot PAST the target (a sign flip,
-// caught by the separate "overshot" half of the same condition) -- none scripts a mid-motion shove
-// that pushes the error further from the target without crossing it, so none of them exercise the
-// "shoved" branch specifically.
+// The other pid_wait() tests script either a steadily-closing motion, a robot fully pinned, or an overshoot past the target -- none
+// scripts a mid-motion shove that pushes the error further from the target without crossing it.
 #include <functional>
 
 #include "doctest.h"
@@ -29,23 +23,20 @@ int g_pass = 0;
 // A healthy motion closing toward its target (passes 1-100, error 20 -> 5), then something shoves
 // the robot backward for a moment without crossing the target (101-110, error 5 -> 15, same sign
 // the whole time -- no sign flip), then the robot recovers and finishes closing normally (error
-// 15 -> 0 over the next 150 passes). Defense contact mid-motion, not a stall.
+// 15 -> 0 over the next 150 passes).  Defense contact mid-motion, not a stall.  The sensor reading
+// `cur` follows the error (target 24, cur = 24 - error), so the PID's speed sees the real movement:
+// 15 in/s closing, 100 in/s shoved, 10 in/s recovering.
 void shoved_then_recovers(Drive& c, int n) {
-  double error, derivative;
+  double error;
   if (n <= 100) {
     error = 20.0 - 0.15 * n;
-    derivative = -0.15;
   } else if (n <= 110) {
     error = 5.0 + 1.0 * (n - 100);
-    derivative = 1.0;
   } else {
     error = std::fmax(0.0, 15.0 - 0.1 * (n - 110));
-    derivative = error > 0.0 ? -0.1 : 0.0;
   }
-  c.leftPID.error = error;
-  c.leftPID.derivative = derivative;
-  c.rightPID.error = error;
-  c.rightPID.derivative = derivative;
+  c.leftPID.compute_error(error, 24.0 - error);
+  c.rightPID.compute_error(error, 24.0 - error);
 }
 
 void on_delay() {

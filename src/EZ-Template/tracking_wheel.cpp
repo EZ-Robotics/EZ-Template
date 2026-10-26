@@ -13,27 +13,10 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 // using namespace ez;
 
 namespace ez {
-namespace {
-// An ADI encoder needs a top and a bottom port.  The constructors below read them in the member initializer list,
-// before their bodies run, so a vector with fewer than two ports has to be caught there or ports[1] reads past its
-// end.  Without both ports there is nothing to read, so the encoder is built on -1 for every port, the same "no
-// device" value the Rotation sensor constructor gives its unused ADI encoder.  A lone 'A' is not used as the top
-// port either, because that would still configure a port the user may have wired to something else.
-constexpr int NO_PORT = -1;
-bool has_adi_pair(const std::vector<int>& ports) { return ports.size() >= 2; }
-
-pros::adi::ext_adi_port_tuple_t expander_ports(int smart_port, const std::vector<int>& ports) {
-  if (!has_adi_pair(ports)) return {NO_PORT, NO_PORT, NO_PORT};
-  return {std::abs(smart_port), std::abs(ports[0]), std::abs(ports[1])};
-}
-}  // namespace
 
 // ADI Encoder
 tracking_wheel::tracking_wheel(std::vector<int> ports, double wheel_diameter, double distance_to_center, double ratio)
-    : adi_encoder(has_adi_pair(ports) ? std::abs(ports[0]) : NO_PORT,
-                  has_adi_pair(ports) ? std::abs(ports[1]) : NO_PORT,
-                  has_adi_pair(ports) && util::reversed_active(ports[0])),
-      smart_encoder(-1) {
+    : adi_encoder(std::abs(ports[0]), std::abs(ports[1]), util::reversed_active(ports[0])), smart_encoder(-1) {
   IS_TRACKER = DRIVE_ADI_ENCODER;
 
   distance_to_center_set(distance_to_center);
@@ -44,8 +27,7 @@ tracking_wheel::tracking_wheel(std::vector<int> ports, double wheel_diameter, do
 
 // ADI Encoder in 3-wire expander
 tracking_wheel::tracking_wheel(int smart_port, std::vector<int> ports, double wheel_diameter, double distance_to_center, double ratio)
-    : adi_encoder(expander_ports(smart_port, ports), has_adi_pair(ports) && util::reversed_active(ports[0])),
-      smart_encoder(-1) {
+    : adi_encoder({std::abs(smart_port), std::abs(ports[0]), std::abs(ports[1])}, util::reversed_active(ports[0])), smart_encoder(-1) {
   IS_TRACKER = DRIVE_ADI_ENCODER;
 
   distance_to_center_set(distance_to_center);
@@ -56,8 +38,7 @@ tracking_wheel::tracking_wheel(int smart_port, std::vector<int> ports, double wh
 
 // Rotation Sensor
 tracking_wheel::tracking_wheel(int port, double wheel_diameter, double distance_to_center, double ratio)
-    : adi_encoder(-1, -1, false),
-      smart_encoder(std::abs(port)) {
+    : adi_encoder(-1, -1, false), smart_encoder(std::abs(port)) {
   IS_TRACKER = DRIVE_ROTATION;
   smart_encoder.set_reversed(util::reversed_active(port));
 
@@ -106,8 +87,7 @@ bool tracking_wheel::last_read_ok() { return last_read_ok_; }
 double tracking_wheel::get() {
   double tpi = ticks_per_inch();
   double raw = get_raw();
-  if (tpi != 0)
-    return raw / tpi;
+  if (tpi != 0) return raw / tpi;
   return raw;
 }
 
@@ -125,5 +105,5 @@ void tracking_wheel::reset() {
     return;
   }
 }
-}  
+}  // namespace ez
 // namespace ez

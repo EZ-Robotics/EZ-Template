@@ -56,12 +56,8 @@ double turn_disturbance_error(int n) {
   return std::fmax(40.0 - 0.3 * (n - 13), 0.0);
 }
 
-void turn_disturbance_script(Drive& c, int n) {
-  c.turnPID.error = turn_disturbance_error(n);
-}
-void swing_disturbance_script(Drive& c, int n) {
-  c.swingPID.error = turn_disturbance_error(n);
-}
+void turn_disturbance_script(Drive& c, int n) { c.turnPID.error = turn_disturbance_error(n); }
+void swing_disturbance_script(Drive& c, int n) { c.swingPID.error = turn_disturbance_error(n); }
 
 Drive* g_chassis = nullptr;
 void (*g_script)(Drive&, int) = nullptr;

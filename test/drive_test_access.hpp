@@ -16,9 +16,7 @@
 namespace ez {
 
 struct DriveTestAccess {
-  static std::vector<odom> inject_points(Drive& d, std::vector<odom> movements) {
-    return d.inject_points(std::move(movements));
-  }
+  static std::vector<odom> inject_points(Drive& d, std::vector<odom> movements) { return d.inject_points(std::move(movements)); }
   static std::vector<odom> smooth_path(Drive& d, std::vector<odom> ipath, double weight_smooth, double weight_data, double tolerance) {
     return d.smooth_path(std::move(ipath), weight_smooth, weight_data, tolerance);
   }
@@ -48,15 +46,23 @@ struct DriveTestAccess {
   static void drive_pid_task(Drive& d) { d.drive_pid_task(); }
   static std::deque<pros::Imu*>& all_imus(Drive& d) { return d.all_imus; }
   static Lock<pros::RecursiveMutex>& drive_mutex(Drive& d) { return d.drive_mutex; }
-  static std::uint32_t& motion_generation(Drive& d) { return d.motion_generation; }
-  static std::uint32_t& interfered_generation(Drive& d) { return d.interfered_generation; }
   static void turn_pid_task(Drive& d) { d.turn_pid_task(); }
   static void ptp_task(Drive& d) { d.ptp_task(); }
   static void pp_task(Drive& d) { d.pp_task(); }
   static pose& odom_current(Drive& d) { return d.odom_current; }
   static void swing_pid_task(Drive& d) { d.swing_pid_task(); }
   static bool& xy_translation_bias_gated(Drive& d) { return d.xy_translation_bias_gated; }
-  static void xy_velocity_exit_hold_update(Drive& d) { d.xy_velocity_exit_hold_update(); }
+
+  // xyPID's sensor and the geometry behind it (ptp_task()), for the odom origin tests
+  static double is_past_target(Drive& d, pose target, pose current) { return d.is_past_target(target, current); }
+  static pose& odom_target(Drive& d) { return d.odom_target; }
+  static const pose& xy_pose_delta(Drive& d) { return d.xy_pose_delta; }
+  static int drive_dir_sign(Drive& d) { return d.current_drive_direction == REV ? -1 : 1; }
+  static double& xy_delta_fake(Drive& d) { return d.xy_delta_fake; }
+  static double& new_current_fake(Drive& d) { return d.new_current_fake; }
+  static bool& tracking_is_custom(Drive& d) { return d.tracking_is_custom; }
+  static bool& tracking_resync_pending(Drive& d) { return d.tracking_resync_pending; }
+  static pose& central_pose(Drive& d) { return d.central_pose; }
 
   static bool is_swing_slew_enabled(Drive& d, e_swing type, double target, double current, e_angle_behavior behavior) {
     return d.is_swing_slew_enabled(type, target, current, behavior);

@@ -37,8 +37,7 @@ void run_one_auto_task_pass(Drive& chassis) {
   test_stub::g_clock.delay_calls_until_stop = 0;
   try {
     DriveTestAccess::ez_auto_task(chassis);
-  } catch (test_stub::StopLoop&) {
-  }
+  } catch (test_stub::StopLoop&) {}
   test_stub::g_clock.delay_calls_until_stop = -1;
 }
 
@@ -47,7 +46,7 @@ void run_one_auto_task_pass(Drive& chassis) {
 // straight leg a healthy IMU's heading genuinely does not change, so leaving both flat is the
 // honest simulation, not a shortcut.
 void drive_straight_one_pass(Drive& c) {
-  c.left_motors.front().fake().position += 50;   // ~1.02in at this chassis's tick/inch
+  c.left_motors.front().fake().position += 50;  // ~1.02in at this chassis's tick/inch
   c.right_motors.front().fake().position += 50;
   run_one_auto_task_pass(c);
 }

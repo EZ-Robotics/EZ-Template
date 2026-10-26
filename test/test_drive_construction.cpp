@@ -30,7 +30,7 @@ TEST_CASE("a freshly constructed Drive doesn't leak the memory it was built in")
   alignas(Drive) unsigned char storage[sizeof(Drive)];
   Drive& chassis = construct_into_dirty_memory(storage);
 
-  CHECK(chassis.JOYSTICK_THRESHOLD == 0);
+  CHECK(chassis.JOYSTICK_THRESHOLD == 3);
   CHECK(chassis.mode == DISABLE);
   CHECK(chassis.current_swing == LEFT_SWING);
   CHECK(chassis.odom_tracker_left == nullptr);

@@ -12,6 +12,20 @@ Used by thousands of VEX teams.
 
 [**Get Started**](https://ez-robotics.github.io/EZ-Template/tutorials/installation) · [Documentation](https://ez-robotics.github.io/EZ-Template/) · [Join the Discord](https://discord.gg/EHjXBcK2Gy) · [Download example project](https://github.com/EZ-Robotics/EZ-Template/releases/latest/download/EZ-Template-Example-Project.zip)
 
+## Where to start
+
+| You want to... | Read |
+| --- | --- |
+| Use EZ-Template | [Getting started](https://ez-robotics.github.io/EZ-Template/tutorials/installation) |
+| Ask a question | [The Discord](https://discord.gg/EHjXBcK2Gy) |
+| Report a bug, fix something, or add a feature | [CONTRIBUTING.md](CONTRIBUTING.md) |
+| Send your first PR, step by step | [FIRST-PR.md](FIRST-PR.md) |
+| See how we decide what gets fixed | [WHAT-IS-A-BUG.md](WHAT-IS-A-BUG.md) |
+| Maintain EZ-Template | [MAINTAINING.md](MAINTAINING.md) |
+| Run an AI agent on this repo | [AGENTS.md](AGENTS.md) |
+
+**AI agents MUST read [AGENTS.md](AGENTS.md) in full before doing anything in this repo.**
+
 ## Configure your drivetrain
 
 ```cpp

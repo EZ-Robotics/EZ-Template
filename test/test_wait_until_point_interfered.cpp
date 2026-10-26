@@ -51,6 +51,16 @@ void refresh_odom_pids() {
   DriveTestAccess::refresh(g_chassis->current_a_odomPID);
 }
 
+// Same refresh, plus a real step of pure pursuit's own index -- pid_wait_until_index_started() never
+// trusts xy's position exit before its own checkpoint (see exit_conditions.cpp), so a control case that
+// wants a clean, uninterfered finish needs pp_index to genuinely get there, not a stationary fake PID's
+// exit_condition() to end things on its own.
+void advance_pp_index_and_refresh_odom_pids() {
+  refresh_odom_pids();
+  int& idx = DriveTestAccess::pp_index(*g_chassis);
+  idx = std::min(idx + 1, (int)DriveTestAccess::pp_movements(*g_chassis).size() - 1);
+}
+
 // Runs `wait` with the fake pros::delay() set to throw after `max_delays` calls, so a wait that never returns
 // fails the test instead of hanging it.
 template <typename F>
@@ -70,9 +80,7 @@ bool returns(int max_delays, F&& wait) {
 
 void start_point_move(Drive& chassis) { chassis.pid_odom_ptp_set({{0.0, 24.0, 0.0}, fwd, 60}); }
 
-void start_path(Drive& chassis) {
-  chassis.pid_odom_pp_set({{{0.0, 12.0, 0.0}, fwd, 110}, {{0.0, 24.0, 0.0}, fwd, 110}, {{0.0, 36.0, 0.0}, fwd, 110}});
-}
+void start_path(Drive& chassis) { chassis.pid_odom_pp_set({{{0.0, 12.0, 0.0}, fwd, 110}, {{0.0, 24.0, 0.0}, fwd, 110}, {{0.0, 36.0, 0.0}, fwd, 110}}); }
 }  // namespace
 
 TEST_CASE("pid_wait_until_point sets interfered when the motors pull too much current") {
@@ -132,7 +140,22 @@ TEST_CASE("pid_wait_until_index_started leaves interfered alone when the wait en
   start_path(chassis);
   motors_pull_too_much_current(chassis, false);
 
-  CHECK(returns(500, [&] { chassis.pid_wait_until_index_started(0); }));
+  // Unlike every other case in this file, configure() leaves velocity and current exits both off, so
+  // xy's position exit -- never trusted before pure pursuit's own checkpoint -- and StuckWatch (whose
+  // window is 0 with velocity and mA both off, see stuck_window()'s own comment) are both out of the
+  // picture; only genuinely reaching the checkpoint can end this cleanly.
+  test_stub::g_clock.on_delay = advance_pp_index_and_refresh_odom_pids;
+  test_stub::g_clock.delay_calls_until_stop = 500;
+  bool returned = true;
+  try {
+    chassis.pid_wait_until_index_started(0);
+  } catch (test_stub::StopLoop&) {
+    returned = false;
+  }
+  test_stub::g_clock.delay_calls_until_stop = -1;
+  test_stub::g_clock.on_delay = nullptr;
+
+  CHECK(returned);
   CHECK_FALSE(chassis.interfered);
 }
 

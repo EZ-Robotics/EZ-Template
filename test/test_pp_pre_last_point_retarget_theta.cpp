@@ -1,16 +1,8 @@
-// pid_wait()'s PURE_PURSUIT pre-last-point loop guards against a concurrent motion retargeting the
-// path mid-wait by comparing odom_target_start's x, y AND theta against a snapshot taken when the
-// wait began (exit_conditions.cpp). All three fields matter: a retarget that lands on the exact same
-// final (x, y) but with a different explicit final heading is still a genuinely different motion (a
-// boomerang-style approach angle change) and must be caught immediately, the same as any other
-// retarget shape in this family (the matching guard in the loop's own final leg, right after this
-// one, already compares all three the same way).
-//
-// No existing test exercises a retarget that keeps the same final x/y but changes only the explicit
-// final heading, so nothing currently pins the theta comparison specifically. Without it, this
-// specific retarget shape would only be caught later -- by the final loop's own guard once the path
-// reaches its last point, or by StuckWatch's own progress backstop -- instead of on the very next
-// pass, the way every other retarget in this family already is.
+// pid_wait() follows a new motion set mid-wait, and tells a new motion from the one it is waiting on by comparing odom_target_start's x, y
+// AND theta against what they were when the wait began.  All three fields matter: a retarget that lands on the exact same final (x, y)
+// but with a different explicit final heading is still a different motion (a boomerang-style approach angle change), so the wait has to
+// start over on it.  This pins the theta comparison in PURE_PURSUIT's pre-last-point loop: a retarget that keeps the same final x/y and
+// changes only the final heading.
 #include <functional>
 
 #include "doctest.h"
@@ -28,11 +20,8 @@ Drive* g_chassis = nullptr;
 int g_pass = 0;
 
 constexpr int RETARGET_AT = 10;
-constexpr int GUARD_SLACK = 5;
 
-// Cruises without ever exiting on its own within the test's pass budget, so only the retarget guard
-// (catching it immediately vs. not at all until much later) can explain an early vs. a run-to-cap
-// outcome.
+// Holds xy outside small_error and big_error and never advances pp_index, so the path can only end on the mid-path stall check.
 void on_delay(Drive& c, int n) {
   double e = 7.3 - 0.15 * (n % 3);
   c.xyPID.error = e;
@@ -57,7 +46,7 @@ void hook() {
 }
 }  // namespace
 
-TEST_CASE("pid_wait() odom PURE_PURSUIT: a same-point, theta-only concurrent retarget before the last point is caught immediately") {
+TEST_CASE("pid_wait() odom PURE_PURSUIT: a same-point, theta-only concurrent retarget before the last point is followed") {
   Drive chassis = make_chassis();
   DriveTestAccess::imu_calibration_complete(chassis) = true;
   chassis.pid_print_toggle(false);
@@ -85,7 +74,10 @@ TEST_CASE("pid_wait() odom PURE_PURSUIT: a same-point, theta-only concurrent ret
 
   MESSAGE("returned=" << returned << " passes=" << g_pass << " interfered=" << chassis.interfered);
 
+  // The stall check ends a pinned path once speed has read 0 for over 1000 ms with no movement and then over the 500 ms velocity exit
+  // time: 151 polls, counted from the start of the wait.  Without the retarget that is pass 151.  The wait starts over on the new path at
+  // the retarget, so its stall count does too, and it ends RETARGET_AT passes later.  The new path is pinned too, so it ends interfered.
   CHECK(returned);
   CHECK(chassis.interfered);
-  CHECK(g_pass <= RETARGET_AT + GUARD_SLACK);
+  CHECK(g_pass == RETARGET_AT + 151);
 }

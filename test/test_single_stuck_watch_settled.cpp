@@ -82,7 +82,10 @@ TEST_CASE("pid_wait() DRIVE: a robot hovering across its small-error window, but
   g_chassis = &chassis;
   g_pass = 0;
   hovering_settled(chassis, 0);
-  test_stub::g_clock.on_delay = [] { on_delay(); hovering_settled(*g_chassis, g_pass); };
+  test_stub::g_clock.on_delay = [] {
+    on_delay();
+    hovering_settled(*g_chassis, g_pass);
+  };
   test_stub::g_clock.delay_calls_until_stop = 400;
   bool returned = true;
   try {
@@ -111,7 +114,10 @@ TEST_CASE("pid_wait() TURN: a robot hovering across its small-error window, but 
   g_chassis = &chassis;
   g_pass = 0;
   hovering_settled_turn(chassis, 0);
-  test_stub::g_clock.on_delay = [] { on_delay(); hovering_settled_turn(*g_chassis, g_pass); };
+  test_stub::g_clock.on_delay = [] {
+    on_delay();
+    hovering_settled_turn(*g_chassis, g_pass);
+  };
   test_stub::g_clock.delay_calls_until_stop = 400;
   bool returned = true;
   try {

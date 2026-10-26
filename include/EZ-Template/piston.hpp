@@ -11,7 +11,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 namespace ez {
 class Piston {
- public:
+public:
   /**
    * Piston used throughout.
    */
@@ -83,7 +83,7 @@ class Piston {
    *        sets piston to false
    */
   void buttons(int active, int deactive);
-  
+
   /**
    * Two buttons trigger the piston. Active is enabled, deactive is disabled.
    *
@@ -94,7 +94,7 @@ class Piston {
    */
   void buttons(pros::controller_digital_e_t active, pros::controller_digital_e_t deactive);
 
- private:
+private:
   bool reversed = false;
   bool current = false;
   int last_press = 0;

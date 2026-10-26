@@ -10,7 +10,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 namespace ez {
 class Auton {
- public:
+public:
   /**
    * Blank auton.  Name is empty and auton_call is null.
    */
@@ -36,6 +36,6 @@ class Auton {
    */
   std::function<void()> auton_call;
 
- private:
+private:
 };
 }  // namespace ez

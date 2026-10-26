@@ -1,40 +1,15 @@
-// wait_until_drive() on an odom move (POINT_TO_POINT/PURE_PURSUIT) decides whether the requested
-// distance has been reached partly through leftPID/rightPID's own small/big/velocity/mA
-// exit_condition(), plus a progress backstop -- both keyed to leftPID/rightPID's own target. An
-// odom move retargets that target ONCE, to a fixed look-ahead point a few inches past where the
-// motion started (raw_pid_odom_ptp_set, set_odom_pid.cpp), and never updates it again for the rest
-// of the motion ("// This is for wait_until" at the leftPID.compute()/rightPID.compute() call in
-// pid_tasks.cpp confirms this is deliberately what feeds this function). Two failures come out of
-// keying the wait's own success/failure off that frozen point instead of the real requested
-// distance:
+// wait_until_drive() on an odom move (POINT_TO_POINT/PURE_PURSUIT) ends once both sides have driven the requested distance since
+// the motion started (the crossed check), or on leftPID/rightPID's velocity and mA exits before that.  An odom move aims
+// leftPID/rightPID ONCE at a fixed look-ahead point a few inches past where the motion started (raw_pid_odom_ptp_set,
+// set_odom_pid.cpp) and never moves it, so being near that point says nothing about the checkpoint: their small and big exits
+// don't end the wait in an odom move.  A slow cruise that settles near that frozen point keeps going to the real target, and a
+// fast cruise straight through it is not aborted.
 //
-//   - At a slow, steady cruise, leftPID/rightPID settle close to that near, frozen point long
-//     enough for their own SMALL_EXIT/BIG_EXIT to fire -- ending the wait silently
-//     (interfered=false), far short of the distance actually asked for.
-//   - At a faster, steady cruise, leftPID/rightPID drive straight through that same near point.
-//     Once they have, their error only grows from there (the frozen target never catches up), so a
-//     progress backstop watching that error reads permanent non-progress and aborts a perfectly
-//     healthy drive (interfered=true).
-//
-// The fix: wait_until_drive()'s own crossed check -- comparing how far the left/right side has
-// actually driven since the motion started (l_error/r_error, computed from l_start/r_start plus the
-// requested distance, i.e. against the real target) -- is the only thing allowed to end the wait
-// successfully, and the progress backstop has to watch that same real signal, not
-// leftPID/rightPID's own error. The wait ends the moment EITHER side's real distance driven reaches
-// the requested target, not only once both have (see the dedicated test for this below) -- and the
-// direction each side is expected to close from comes from the requested distance's own sign, not
-// from a live read, so a robot already past a short target when the wait is first checked can't
-// latch the wrong starting direction.
-//
-// These tests script leftPID/rightPID's error/derivative and the fake drive sensors directly, pass
-// by pass, mirroring exactly what the look-ahead retarget plus a real, constant-speed cruise would
-// produce through the real leftPID.compute()/rightPID.compute() calls above -- the same scripting
-// style test_jc1_non_odom_stuck.cpp uses for DRIVE/TURN/SWING's own progress backstop, applied here
-// to the odom look-ahead shape specifically. xyPID/current_a_odomPID are pinned to values that never
-// exit (see pin_xy_running() below) so every case here isolates to the leftPID/rightPID codepath
-// these findings are about, regardless of whether the on_last_point/xyPID failsafe would otherwise
-// also be in play (always for POINT_TO_POINT, never for a PURE_PURSUIT path pp_index has not
-// finished).
+// These tests script leftPID/rightPID and the fake drive sensors directly, pass by pass, mirroring what the look-ahead retarget
+// plus a real, constant-speed cruise would produce through the real leftPID.compute()/rightPID.compute() calls.
+// xyPID/current_a_odomPID are kept away from every exit (see pin_xy_running() below) so every case here isolates the
+// leftPID/rightPID codepath, regardless of whether the on_last_point/xyPID failsafe would otherwise also be in play (always for
+// POINT_TO_POINT, never for a PURE_PURSUIT path pp_index has not finished).
 #include <cmath>
 #include <cstdint>
 
@@ -81,31 +56,28 @@ void set_sensor_inches(std::vector<pros::Motor>& motors, double tick_per_inch, d
   for (auto& m : motors) m.fake().position = ticks;
 }
 
-// Keeps xyPID away from every one of its own exits (small/big/velocity), so wait_until_drive()'s
+// Keeps xyPID away from every one of its own exits (small/big/velocity): far from its target and moving fast, so wait_until_drive()'s
 // on_last_point check -- which only matters for point to point here, since the pure pursuit path
 // above never reaches its last point -- can never end the wait on its own. That check is real,
 // correct behavior in its own right (xyPID's target is the odom move's real end point, not a frozen
 // look ahead), and isn't what these tests are about.
-void pin_xy_running(Drive& chassis) {
-  chassis.xyPID.error = 999.0;
-  chassis.xyPID.derivative = 1.0;
-}
+// A robot that is pinned is not moving in xy either, so xy stands still then.
+void pin_xy_running(Drive& chassis, bool pinned = false) { chassis.xyPID.compute_error(999.0, chassis.xyPID.cur + (pinned ? 0.0 : 1.0)); }
 
 Drive* g_chassis = nullptr;
-double g_speed = 0.0;         // left side's inches driven per pass (10ms)
-double g_right_speed = 0.0;   // right side's inches driven per pass -- equal to g_speed unless a test sets otherwise
-int g_pin_after_pass = -1;    // -1: cruises the whole time.  >=0: position freezes once g_pass exceeds this
+double g_speed = 0.0;        // left side's inches driven per pass (10ms)
+double g_right_speed = 0.0;  // right side's inches driven per pass -- equal to g_speed unless a test sets otherwise
+int g_pin_after_pass = -1;   // -1: cruises the whole time.  >=0: position freezes once g_pass exceeds this
 double g_l_start = 0.0, g_r_start = 0.0;
 int g_pass = 0;
 
-// Mirrors, pass by pass, exactly what leftPID.compute()/rightPID.compute() (pid_tasks.cpp) compute
+// Mirrors, pass by pass, what leftPID.compute()/rightPID.compute() (pid_tasks.cpp) compute
 // against leftPID/rightPID's OWN (frozen, look-ahead) target while the robot cruises at a constant
 // real speed -- without needing the full physics sim to land on a specific speed. Position is the
-// real sensor reading; error/derivative follow PID::compute_error()'s own convention (error = target
-// - current, derivative = current - previous current) exactly. Past g_pin_after_pass, position stops
-// advancing and derivative alternates +/-0.2 every pass instead -- the same jitter shape
-// test_jc1_non_odom_stuck.cpp's pinned_jitter uses to keep a genuine stall from ever reading as
-// "velocity 0 long enough", so only a progress backstop -- not the velocity exit -- can end the wait.
+// real sensor reading, and a real compute_error() lands every pass with the PID's own reading moving
+// at the scripted rate, so the exits see the robot's speed. Past g_pin_after_pass, position stops
+// advancing and the PIDs' readings jitter +/-0.2 every pass instead, which nets out to no movement
+// over the 100 ms the exits measure speed across.
 void cruise_on_delay() {
   ++g_pass;
   ez::detail::stats.auto_task_passes.fetch_add(1, std::memory_order_relaxed);
@@ -116,19 +88,11 @@ void cruise_on_delay() {
   double r_pos = g_r_start + g_right_speed * advancing_pass;
   set_sensor_inches(g_chassis->left_motors, tpi, l_pos);
   set_sensor_inches(g_chassis->right_motors, tpi, r_pos);
-  g_chassis->leftPID.error = g_chassis->leftPID.target_get() - l_pos;
-  g_chassis->rightPID.error = g_chassis->rightPID.target_get() - r_pos;
   double l_rate = pinned ? (g_pass % 2 == 0 ? 0.2 : -0.2) : g_speed;
   double r_rate = pinned ? (g_pass % 2 == 0 ? 0.2 : -0.2) : g_right_speed;
-  g_chassis->leftPID.derivative = l_rate;
-  g_chassis->rightPID.derivative = r_rate;
-  // Also drive the raw reading itself, not just derivative, so leftPID/rightPID's own velocity
-  // exit sees genuinely fresh samples matching what real position tracking would report (a real,
-  // nonzero rate always advances the raw value; this harness has no "genuinely frozen" case, so
-  // this never leaves it stale).
-  g_chassis->leftPID.cur += l_rate;
-  g_chassis->rightPID.cur += r_rate;
-  pin_xy_running(*g_chassis);
+  g_chassis->leftPID.compute_error(g_chassis->leftPID.target_get() - l_pos, g_chassis->leftPID.cur + l_rate);
+  g_chassis->rightPID.compute_error(g_chassis->rightPID.target_get() - r_pos, g_chassis->rightPID.cur + r_rate);
+  pin_xy_running(*g_chassis, pinned);
 }
 
 struct Outcome {
@@ -164,9 +128,8 @@ Outcome run_wait_until(Drive& chassis, double target, double speed, int max_pass
 }
 }  // namespace
 
-// A slow, steady cruise: leftPID/rightPID settle close to the frozen look-ahead point (7in) long
-// enough for their own SMALL_EXIT/BIG_EXIT to fire. This must not end the wait -- the crossed check
-// against the real 30in target is the only thing allowed to.
+// A slow, steady cruise (12 in/s, over the velocity exit's 5 in/s): leftPID/rightPID pass close to the frozen look-ahead
+// point (7in).  Their small and big exits must not end the wait -- the crossed check against the real 30in target does.
 TEST_CASE("wait_until_drive() odom: a slow cruise does not end short of the real target") {
   for (bool point_to_point : {false, true}) {
     CAPTURE(point_to_point);
@@ -187,11 +150,8 @@ TEST_CASE("wait_until_drive() odom: a slow cruise does not end short of the real
   }
 }
 
-// A faster, steady cruise: leftPID/rightPID drive straight through the frozen look-ahead point too
-// quickly for SMALL_EXIT/BIG_EXIT to accumulate, but once past it their own error only grows. A
-// progress backstop watching that error reads this as no progress and falsely aborts a healthy
-// drive; one watching real remaining distance to the real 40in target (which keeps shrinking the
-// whole time) does not.
+// A faster, steady cruise: leftPID/rightPID drive straight through the frozen look-ahead point, and once past it their own
+// error only grows.  That must not abort a healthy drive to the real 40in target.
 TEST_CASE("wait_until_drive() odom: a healthy fast cruise past the look ahead point is not falsely aborted") {
   Drive chassis = make_chassis();
   chassis.pid_print_toggle(false);
@@ -237,8 +197,8 @@ TEST_CASE("wait_until_drive() odom: a robot pinned partway through a cruise is c
 }
 
 // Same shape as the case above, but pinned well past the look-ahead point (~20in) instead of just
-// short of it -- outside every one of leftPID/rightPID's own windows already, the region the fast-
-// cruise false abort above happens in. The backstop still has to catch a genuine stall there too.
+// short of it -- outside every one of leftPID/rightPID's own windows already. The velocity exit catches the stall there, 500 ms
+// after the robot reads stopped.
 TEST_CASE("wait_until_drive() odom: a robot pinned past the look ahead point is still caught") {
   Drive chassis = make_chassis();
   chassis.pid_print_toggle(false);
@@ -257,11 +217,10 @@ TEST_CASE("wait_until_drive() odom: a robot pinned past the look ahead point is 
   CHECK(o.left_driven < 40.0);
 }
 
-// The wait ends successfully as soon as either side's distance driven since the motion started
-// reaches the requested target, not only once both have. Left and right cruise at different speeds
-// here (a turn woven into the path, or simply two sides that never track perfectly), so only one
-// side ever gets there within this test's bound.
-TEST_CASE("wait_until_drive() odom: either side reaching the target ends the wait") {
+// The crossed check keeps waiting while either side is still short, so the wait ends once both sides have driven the requested
+// distance since the motion started. Left and right cruise at different speeds here (a turn woven into the path, or simply two
+// sides that never track perfectly), so the slower right side decides when it ends.
+TEST_CASE("wait_until_drive() odom: the wait ends once both sides reach the target") {
   Drive chassis = make_chassis();
   chassis.pid_print_toggle(false);
   configure_chassis(chassis);
@@ -277,5 +236,6 @@ TEST_CASE("wait_until_drive() odom: either side reaching the target ends the wai
   CHECK(o.returned);
   CHECK_FALSE(o.interfered);
   CHECK(o.left_driven >= 40.0);
-  CHECK(o.right_driven < 40.0);  // the wait ended on the left side alone -- right never got there
+  CHECK(o.right_driven >= 40.0);
+  CHECK(o.passes <= 40.0 / 0.3 + 2);  // the pass the right side gets there, not later
 }

@@ -36,8 +36,7 @@ void run_auto_task(Drive& chassis, int passes) {
   test_stub::g_clock.delay_calls_until_stop = passes - 1;
   try {
     DriveTestAccess::ez_auto_task(chassis);
-  } catch (test_stub::StopLoop&) {
-  }
+  } catch (test_stub::StopLoop&) {}
   test_stub::g_clock.delay_calls_until_stop = -1;
 }
 

@@ -1,15 +1,13 @@
-// pid_wait_until_point() calls its own leading pros::delay(10) BEFORE taking any mode/target
-// snapshot to compare against -- unlike wait_until_turn_swing_internal() and
-// pid_wait_until_index_started(), which both snapshot first, specifically to guard against this (see
-// their own comments). A concurrent motion setter call from another task landing during that first
-// ~10ms is invisible to the retarget guard a few lines later: by the time mode_snapshot/
-// retarget_target are read, they already reflect whatever the concurrent call just changed, not the
-// motion this wait was actually started for.
+// pid_wait_until_point() remembers the motion it was called for before its own leading pros::delay(10), so a concurrent setter call from
+// another task landing during that first ~10 ms is seen like one landing later.  What happens next depends on the new motion:
 //
-// pid_wait() and wait_until_drive() have this identical ordering gap -- they are not fixed here,
-// only pid_wait_until_point() is; they're being handled separately.
+//   - A different mode (a turn): pid_wait_until_point() only accepts odom motions, so as in 3.2.2 it prints "Mode needs to be an odom mode"
+//     and returns at the retarget, with interfered false and the turn left as it was set.  The control lands the same call two passes
+//     later, inside the polling loop, and gets the same return one leading delay after the retarget.
+//   - The same family (another point-to-point): the wait starts over on it and returns on its exits.
 #include "doctest.h"
 #include "drive_test_access.hpp"
+#include "stdout_capture.hpp"
 
 using namespace ez;
 
@@ -24,9 +22,7 @@ int g_pass = 0;
 int g_retarget_at = 1;
 void (*g_retarget)(Drive&) = nullptr;
 
-// Every pass but the retargeting one holds the ORIGINAL motion's errors comfortably away from
-// exiting, so the only way a pre-fix run can end is by having silently adopted whatever the
-// concurrent call changed things to.
+// Every pass but the retargeting one holds the live odom motion's xy error at 10, outside big_error, so only its velocity exit can end it.
 void on_delay() {
   ++g_pass;
   ez::detail::stats.auto_task_passes.fetch_add(1);
@@ -74,69 +70,73 @@ Outcome run_hijack(Drive& chassis, pose target, int retarget_at, void (*retarget
 }
 
 // Same-family case: the retarget lands on another point-to-point motion, so `mode` itself never
-// changes -- only odom_target_start does. Baited exactly like
-// test_wait_quick_headingpid_no_clobber.cpp's pass-1 case (small_exit_time=0 plus zeroed errors on
-// the NEW motion, so its own exit conditions read as already satisfied the instant they're first
-// checked) so a pre-fix run's outcome is deterministic, not timing- or geometry-dependent.
+// changes -- only odom_target_start does.  The new motion gets small_exit_time=0 and zeroed errors here, but on_delay() writes xy back
+// to 10 on every later pass, before the restarted wait polls it.
 void retarget_same_family(Drive& c) {
   c.pid_odom_drive_exit_condition_set(0, 1.0, 250, 3.0, 500, 750);  // small_exit_time=0: fires the instant it's checked
   c.pid_odom_turn_exit_condition_set(0, 3.0, 250, 7.0, 500, 750);
   c.pid_odom_ptp_set({{0.0, 90.0, 0.0}, fwd, 100});  // a real, different point-to-point motion
-  // A real compute_error() call, not a direct `.error =` write -- small_exit_time=0 above only needs
-  // ONE real compute to fire on the new motion's very first check (see PID.cpp's freshness gate),
-  // matching test_wait_quick_headingpid_no_clobber.cpp's identical pass-1 bait.
   c.xyPID.compute_error(0.0, 0.0);
   c.current_a_odomPID.compute_error(0.0, 0.0);
 }
 
-// Nothing steps the drive task in the three "ordinary, un-retargeted" controls below (same reasoning
-// as test_wait_until_odom.cpp's own run_odom_task_pass()), but PID.cpp's small/big exit timers only
-// credit `error` when a real compute() call has landed since they last checked. DriveTestAccess::
-// refresh() re-feeds exit_condition() the error/cur/derivative these controls already established --
-// a real compute, with no other side effect (no pp_index advance, no retarget) -- so their SMALL_EXIT
-// latch fires on the same schedule it did before that gate existed.
+// Nothing steps the drive task in the "ordinary, un-retargeted" controls below.  DriveTestAccess::refresh() re-runs compute on the
+// error/cur these controls already established, with no other side effect (no pp_index advance, no retarget).
 void refresh_odom_pids() {
   DriveTestAccess::refresh(g_chassis->xyPID);
   DriveTestAccess::refresh(g_chassis->current_a_odomPID);
 }
+
+// Same refresh, plus a real step of pure pursuit's own index, so pid_wait_until_index() reaches the requested index.
+void advance_pp_index_and_refresh_odom_pids() {
+  refresh_odom_pids();
+  int& idx = DriveTestAccess::pp_index(*g_chassis);
+  idx = std::min(idx + 1, (int)DriveTestAccess::pp_movements(*g_chassis).size() - 1);
+}
 }  // namespace
 
-TEST_CASE("pid_wait_until_point(): a cross-mode retarget landing during the leading settle delay is caught, not silently absorbed") {
+TEST_CASE("pid_wait_until_point(): a cross-mode retarget landing during the leading delay returns at the retarget") {
   Drive chassis = make_chassis();
   DriveTestAccess::imu_calibration_complete(chassis) = true;
   chassis.pid_print_toggle(false);
   chassis.pid_odom_ptp_set({{0.0, 24.0, 0.0}, fwd, 100});
   REQUIRE(chassis.mode == POINT_TO_POINT);
 
-  Outcome o = run_hijack(chassis, {0.0, 24.0, 0.0}, /*retarget_at=*/1, retarget_cross_mode);
+  Outcome o{};
+  std::string printed = test_stub::capture_stdout([&] { o = run_hijack(chassis, {0.0, 24.0, 0.0}, /*retarget_at=*/1, retarget_cross_mode); });
   MESSAGE("returned=", o.returned, " passes=", o.passes, " interfered=", o.interfered, " mode=", (int)o.mode);
 
   REQUIRE(o.returned);
-  // Bug: pid_wait_until_point() takes its mode/target snapshot AFTER its own leading pros::delay(10),
-  // so a concurrent pid_turn_set() landing during that delay is read as though it had always been this
-  // call's own starting mode -- except it isn't: by the time the "Mode needs to be an odom mode" check
-  // runs, mode is already TURN, so this returns silently, with interfered left false and the original
-  // POINT_TO_POINT motion abandoned, untracked.
-  CHECK(o.interfered);
+  // 3.2.2's mode check: after the leading delay the wait finds a turn, prints the misuse message and returns on that same pass, clean.
+  // The turn runs as the other task set it.
+  CHECK(printed.find("Mode needs to be an odom mode") != std::string::npos);
+  CHECK(o.passes == 1);
+  CHECK_FALSE(o.interfered);
   CHECK(o.mode == ez::TURN);
+  CHECK(chassis.turnPID.target_get() == doctest::Approx(30.0));
 }
 
-TEST_CASE("pid_wait_until_point(): control -- the identical cross-mode retarget landing one pass later, after the snapshot, IS caught") {
+TEST_CASE("pid_wait_until_point(): control -- the identical cross-mode retarget landing two passes later returns the same way") {
   Drive chassis = make_chassis();
   DriveTestAccess::imu_calibration_complete(chassis) = true;
   chassis.pid_print_toggle(false);
   chassis.pid_odom_ptp_set({{0.0, 24.0, 0.0}, fwd, 100});
 
-  Outcome o = run_hijack(chassis, {0.0, 24.0, 0.0}, /*retarget_at=*/3, retarget_cross_mode);
+  Outcome o{};
+  std::string printed = test_stub::capture_stdout([&] { o = run_hijack(chassis, {0.0, 24.0, 0.0}, /*retarget_at=*/3, retarget_cross_mode); });
   MESSAGE("returned=", o.returned, " passes=", o.passes, " interfered=", o.interfered, " mode=", (int)o.mode);
 
   REQUIRE(o.returned);
-  // The existing mid-loop guard already catches this one -- isolates timing as the only variable
-  // between this file's two cross-mode outcomes.
-  CHECK(o.interfered);
+  // The loop sees the new motion after the delay the turn landed in, starts over, takes its leading delay (pass 4) and stops at the
+  // mode check, clean.  Timing is the only variable between this file's two cross-mode outcomes.
+  CHECK(printed.find("Mode needs to be an odom mode") != std::string::npos);
+  CHECK(o.passes == 3 + 1);
+  CHECK_FALSE(o.interfered);
+  CHECK(o.mode == ez::TURN);
+  CHECK(chassis.turnPID.target_get() == doctest::Approx(30.0));
 }
 
-TEST_CASE("pid_wait_until_point(): a same-family retarget landing during the leading settle delay is caught, not silently absorbed") {
+TEST_CASE("pid_wait_until_point(): a same-family retarget landing during the leading delay is followed onto the new motion") {
   Drive chassis = make_chassis();
   DriveTestAccess::imu_calibration_complete(chassis) = true;
   chassis.pid_print_toggle(false);
@@ -147,19 +147,14 @@ TEST_CASE("pid_wait_until_point(): a same-family retarget landing during the lea
   MESSAGE("returned=", o.returned, " passes=", o.passes, " interfered=", o.interfered);
 
   REQUIRE(o.returned);
-  // Bug: pid_wait_until_point()'s mode/target snapshot is taken AFTER the concurrent pid_odom_ptp_set()
-  // already landed, so retarget_target already equals the NEW odom_target_start -- the guard inside the
-  // loop compares the new target against itself for the rest of the call and never fires. Meanwhile the
-  // NEW motion's own (zeroed, small_exit_time=0) exit conditions read as satisfied the instant they're
-  // first checked, so this returns a clean, uninterfered "success" for a motion this call was never
-  // actually waiting for.
+  // The wait starts over on the new point-to-point (a second leading delay, pass 2).  on_delay() pins xy at 10 every pass after the
+  // retarget, outside big_error, so the new motion ends on its velocity exit: armed by the 1000 ms fallback (speed reads 0), then 500 ms,
+  // 151 polls from pass 2.  Without the restart it would end on pass 151.  Outside big_error a velocity exit is interfered.
+  CHECK(o.passes == 1 + 151);
   CHECK(o.interfered);
 }
 
-// What could go wrong with moving the snapshot earlier: it could misread an ordinary, un-retargeted
-// call as though something had retargeted it, if anything internal happens to touch `mode`/
-// odom_target_start during the call's own first iteration. Covers all three ways this function is
-// reached.
+// Controls: an ordinary, un-retargeted call must not be read as retargeted.  Covers all three ways this function is reached.
 TEST_CASE("pid_wait_until_point(): an ordinary, un-retargeted call still returns cleanly, not falsely interfered") {
   Drive chassis = make_chassis();
   DriveTestAccess::imu_calibration_complete(chassis) = true;
@@ -167,8 +162,7 @@ TEST_CASE("pid_wait_until_point(): an ordinary, un-retargeted call still returns
   chassis.pid_odom_drive_exit_condition_set(0, 1.0, 250, 3.0, 500, 750);  // small_exit_time=0: fires on the first in-tolerance pass
   chassis.pid_odom_turn_exit_condition_set(0, 3.0, 250, 7.0, 500, 750);
   chassis.pid_odom_ptp_set({{0.0, 24.0, 0.0}, fwd, 100});
-  // A real compute_error() call, not a direct `.error =` write -- small_exit_time=0 only needs ONE
-  // real compute to fire on the wait's very first poll (see PID.cpp's freshness gate).
+  // Both errors at 0, inside small_error: with small_exit_time=0 the exits fire on the first poll
   chassis.xyPID.compute_error(0.0, 0.0);
   chassis.current_a_odomPID.compute_error(0.0, 0.0);
 
@@ -193,8 +187,7 @@ TEST_CASE("pid_wait_quick() on point-to-point: an ordinary, un-retargeted call s
   chassis.pid_odom_drive_exit_condition_set(0, 1.0, 250, 3.0, 500, 750);
   chassis.pid_odom_turn_exit_condition_set(0, 3.0, 250, 7.0, 500, 750);
   chassis.pid_odom_ptp_set({{0.0, 24.0, 45.0}, fwd, 100});
-  // A real compute_error() call, not a direct `.error =` write -- small_exit_time=0 only needs ONE
-  // real compute to fire on the wait's very first poll (see PID.cpp's freshness gate).
+  // Both errors at 0, inside small_error: with small_exit_time=0 the exits fire on the first poll
   chassis.xyPID.compute_error(0.0, 0.0);
   chassis.current_a_odomPID.compute_error(0.0, 0.0);
 
@@ -222,12 +215,12 @@ TEST_CASE("pid_wait_until_index(): an ordinary, un-retargeted call still returns
   for (int i = 1; i <= 10; i++) path.push_back({{0.0, 7.0 + i, ANGLE_NOT_SET}, fwd, 100});
   chassis.pid_odom_pp_set(path);
 
-  // Nothing else advances pp_index in this control (see refresh_odom_pids()'s own comment) -- phase 1
-  // (pid_wait_until_index_started()) only ever falls out of its own loop here via its xy/a exit
-  // latching, same as phase 2 below, so both need a real compute landing every pass to stay on the
-  // same schedule this test had before PID.cpp's freshness gate existed.
+  // Neither phase 1 (pid_wait_until_index_started()) nor phase 2 (pid_wait_until_point(), before pure
+  // pursuit's last point) trusts xy's position exit as a clean finish on its own -- see
+  // advance_pp_index_and_refresh_odom_pids()'s own comment -- so this control needs pp_index to
+  // genuinely advance to stay on the same schedule this test had before that fix.
   g_chassis = &chassis;
-  test_stub::g_clock.on_delay = refresh_odom_pids;
+  test_stub::g_clock.on_delay = advance_pp_index_and_refresh_odom_pids;
   test_stub::g_clock.delay_calls_until_stop = 400;
   bool returned = true;
   try {

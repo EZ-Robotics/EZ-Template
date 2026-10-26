@@ -15,6 +15,7 @@
 
 #include "doctest.h"
 #include "drive_test_access.hpp"
+#include "stdout_capture.hpp"
 
 using namespace ez;
 using test_stub::g_sched;
@@ -46,6 +47,7 @@ TEST_CASE("every public setter holds the chassis lock at a raised priority, once
   std::vector<std::pair<std::string, std::function<void(Drive&)>>> setters = {
       {"drive_sensor_reset", [](Drive& c) { c.drive_sensor_reset(); }},
       {"drive_imu_reset", [](Drive& c) { c.drive_imu_reset(); }},
+      {"drive_rpm_set", [](Drive& c) { c.drive_rpm_set(300.0); }},
       {"drive_imu_scaler_3600_set", [](Drive& c) { c.drive_imu_scaler_3600_set(3600.0); }},
       {"drive_imus_scalers_3600_set", [](Drive& c) { c.drive_imus_scalers_3600_set({3600.0}); }},
       {"odom_tracker_left_set", [](Drive& c) { c.odom_tracker_left_set(nullptr); }},
@@ -104,8 +106,7 @@ TEST_CASE("ez_auto_task takes the chassis lock without changing its priority") {
   test_stub::g_clock.delay_calls_until_stop = 0;
   try {
     DriveTestAccess::ez_auto_task(chassis);
-  } catch (test_stub::StopLoop&) {
-  }
+  } catch (test_stub::StopLoop&) {}
   test_stub::g_clock.delay_calls_until_stop = -1;
 
   for (const std::string& call : g_sched.calls) CHECK(call == "get");  // its own two priority checks, and no set

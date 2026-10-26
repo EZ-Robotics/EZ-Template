@@ -24,8 +24,7 @@ ez::AutonSelector::AutonSelector(std::vector<Auton> autons) {
 void ez::AutonSelector::selected_auton_print() {
   // auton_count includes the blank pages, so it can't be used to check the index
   if (Autons.empty() || auton_page_current < 0 || auton_page_current >= static_cast<int>(Autons.size())) return;
-  for (int i = 0; i < 8; i++)
-    ez::screen_line_clear(i);
+  for (int i = 0; i < 8; i++) ez::screen_line_clear(i);
   ez::screen_print("Page " + std::to_string(auton_page_current + 1) + "\n" + Autons[auton_page_current].Name);
 }
 
@@ -38,8 +37,7 @@ void ez::AutonSelector::selected_auton_call() {
   // pages appended after the list (odom debug, motor temps, ...), which
   // come and go as a competition switch is plugged in and unplugged. Fall
   // back to the last real auton page that was actually selected.
-  if (index >= static_cast<int>(Autons.size()))
-    index = last_auton_page_current;
+  if (index >= static_cast<int>(Autons.size())) index = last_auton_page_current;
 
   if (index < 0)
     index = 0;

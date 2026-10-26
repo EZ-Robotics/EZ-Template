@@ -16,7 +16,9 @@
 
 #include <array>
 #include <cmath>
+#include <functional>
 #include <random>
+#include <vector>
 
 #include "EZ-Template/api.hpp"
 #include "drive_test_access.hpp"
@@ -40,8 +42,8 @@ struct MotorCurve {
   double free_speed_rpm;   // cartridge output shaft, unloaded
   double stall_torque_nm;  // cartridge output shaft, current at stall_current_a
   double stall_current_a;  // approximated as the 2.5A default current limit (sourced, Purdue
-                            // SIGBots wiki, per SIM_FIDELITY.md) -- treating the limit as a stand-in
-                            // for true stall current, not independently sourced as the same number.
+                           // SIGBots wiki, per SIM_FIDELITY.md) -- treating the limit as a stand-in
+                           // for true stall current, not independently sourced as the same number.
   double free_current_a;   // small no-load current draw; not sourced, a conventional small value.
 
   // Signed torque at a given output-shaft angular velocity (rad/s, signed in the wheel's own
@@ -112,9 +114,9 @@ inline double current_scale_for_temperature(double temp_c) {
 struct SimArchetype {
   const char* name;
   int motors_per_side;
-  double cartridge_rpm;       // 100 (red), 200 (green), or 600 (blue)
+  double cartridge_rpm;  // 100 (red), 200 (green), or 600 (blue)
   double wheel_diameter_in;
-  double track_width_in;      // center-to-center distance between left and right wheel contact
+  double track_width_in;  // center-to-center distance between left and right wheel contact
   double mass_kg;
   double moment_of_inertia_kg_m2;  // about the vertical (yaw) axis
   double rolling_resistance_nm;    // constant opposing torque per side, referred to the wheel
@@ -123,11 +125,11 @@ struct SimArchetype {
   // harder to pivot, more current drawn while turning, models traction wheels / high-friction
   // tile better than a plain omni-like drive. Not measured against a real robot.
   double scrub_coefficient;
-  bool has_tracking_wheels;   // if true, drive_sensor_left/right read a tracking wheel (never
-                               // slips with the drive base) rather than the drive motors directly
-  double encoder_noise_stddev_in;      // Gaussian, applied to reported position (inches)
-  double velocity_noise_stddev_in_s;   // Gaussian, applied to reported actual_velocity
-  double imu_noise_stddev_deg;         // Gaussian, applied to reported IMU heading
+  bool has_tracking_wheels;           // if true, drive_sensor_left/right read a tracking wheel (never
+                                      // slips with the drive base) rather than the drive motors directly
+  double encoder_noise_stddev_in;     // Gaussian, applied to reported position (inches)
+  double velocity_noise_stddev_in_s;  // Gaussian, applied to reported actual_velocity
+  double imu_noise_stddev_deg;        // Gaussian, applied to reported IMU heading
 };
 
 // moment_of_inertia_kg_m2 for all three: modeled as a uniform 18in x 18in square plate (VEX's
@@ -138,25 +140,49 @@ struct SimArchetype {
 // still a simplification, not sourced hardware data -- a real chassis with mechanisms extending
 // away from center would have a higher figure than this plate estimate.
 inline SimArchetype archetype_light_fast() {
-  return SimArchetype{
-      "light_fast", 4, 600.0 /*blue*/, 3.25, 12.0, 3.5, 0.122,
-      /*rolling_resistance_nm=*/0.02, /*scrub_coefficient=*/0.15,
-      /*has_tracking_wheels=*/false,
-      /*encoder_noise_stddev_in=*/0.01, /*velocity_noise_stddev_in_s=*/0.05, /*imu_noise_stddev_deg=*/0.05};
+  return SimArchetype{"light_fast",
+                      4,
+                      600.0 /*blue*/,
+                      3.25,
+                      12.0,
+                      3.5,
+                      0.122,
+                      /*rolling_resistance_nm=*/0.02,
+                      /*scrub_coefficient=*/0.15,
+                      /*has_tracking_wheels=*/false,
+                      /*encoder_noise_stddev_in=*/0.01,
+                      /*velocity_noise_stddev_in_s=*/0.05,
+                      /*imu_noise_stddev_deg=*/0.05};
 }
 inline SimArchetype archetype_heavy_slow() {
-  return SimArchetype{
-      "heavy_slow", 6, 100.0 /*red*/, 4.125, 15.0, 9.0, 0.314,
-      /*rolling_resistance_nm=*/0.08, /*scrub_coefficient=*/0.35,
-      /*has_tracking_wheels=*/true,
-      /*encoder_noise_stddev_in=*/0.015, /*velocity_noise_stddev_in_s=*/0.08, /*imu_noise_stddev_deg=*/0.08};
+  return SimArchetype{"heavy_slow",
+                      6,
+                      100.0 /*red*/,
+                      4.125,
+                      15.0,
+                      9.0,
+                      0.314,
+                      /*rolling_resistance_nm=*/0.08,
+                      /*scrub_coefficient=*/0.35,
+                      /*has_tracking_wheels=*/true,
+                      /*encoder_noise_stddev_in=*/0.015,
+                      /*velocity_noise_stddev_in_s=*/0.08,
+                      /*imu_noise_stddev_deg=*/0.08};
 }
 inline SimArchetype archetype_sticky_high_friction() {
-  return SimArchetype{
-      "sticky_high_friction", 6, 200.0 /*green*/, 4.0, 13.5, 6.0, 0.209,
-      /*rolling_resistance_nm=*/0.18, /*scrub_coefficient=*/0.65,
-      /*has_tracking_wheels=*/false,
-      /*encoder_noise_stddev_in=*/0.01, /*velocity_noise_stddev_in_s=*/0.06, /*imu_noise_stddev_deg=*/0.06};
+  return SimArchetype{"sticky_high_friction",
+                      6,
+                      200.0 /*green*/,
+                      4.0,
+                      13.5,
+                      6.0,
+                      0.209,
+                      /*rolling_resistance_nm=*/0.18,
+                      /*scrub_coefficient=*/0.65,
+                      /*has_tracking_wheels=*/false,
+                      /*encoder_noise_stddev_in=*/0.01,
+                      /*velocity_noise_stddev_in_s=*/0.06,
+                      /*imu_noise_stddev_deg=*/0.06};
 }
 
 struct NoiseConfig {
@@ -181,8 +207,8 @@ struct SideState {
 // not a calibrated one.
 inline void step_temperature(double& temp_c, double current_a, double dt_s) {
   constexpr double kAmbient = 25.0;
-  constexpr double kHeatGain = 6.0;    // deg C per (A^2 * s), unvalidated
-  constexpr double kCoolRate = 0.05;   // 1/s toward ambient, unvalidated
+  constexpr double kHeatGain = 6.0;   // deg C per (A^2 * s), unvalidated
+  constexpr double kCoolRate = 0.05;  // 1/s toward ambient, unvalidated
   temp_c += current_a * current_a * kHeatGain * dt_s;
   temp_c += (kAmbient - temp_c) * kCoolRate * dt_s;
 }
@@ -191,9 +217,16 @@ inline void step_temperature(double& temp_c, double current_a, double dt_s) {
 // One instance is installed as the active sim via install(); ~SimRobot() uninstalls it. Owns the
 // ordering decision documented at length below.
 class SimRobot {
- public:
-  SimRobot(ez::Drive& drive, SimArchetype archetype, NoiseConfig noise = {})
-      : drive_(drive), archetype_(archetype), noise_(noise), rng_(noise.seed) {
+public:
+  SimRobot(ez::Drive& drive, SimArchetype archetype, NoiseConfig noise = {}) : drive_(drive), archetype_(archetype), noise_(noise), rng_(noise.seed) {
+    // Whatever the fake IMU holds right now is the sim's own baseline, replaced by the physical heading on
+    // the first tick as it always was. Only a write made after this point is adopted as an offset (see
+    // write_back()'s IMU comment).
+    auto& imus = ez::DriveTestAccess::all_imus(drive_);
+    if (imus.size() > 0) {
+      imu_last_written_ = imus[0]->fake_rotation;
+      imu_written_ = true;
+    }
     install(this);
   }
   ~SimRobot() {
@@ -203,11 +236,85 @@ class SimRobot {
   SimRobot(const SimRobot&) = delete;
   SimRobot& operator=(const SimRobot&) = delete;
 
+  // Off by default: the sim runs the per-mode task bodies itself (run_auto_task_pass()). On: it runs the real
+  // ez_auto_task() once per tick instead.
+  void use_real_auto_task(bool on) { use_real_auto_task_ = on; }
+  // How many auto task passes run per tick (default 1). Two or three is a task that catches up after being late, and a
+  // heavy robot is only stable in the sim with more than one.
+  void passes_per_tick(int n) { passes_per_tick_ = n; }
+  // Run on every auto task pass, just before and just after it, with the pass's number (counting from 0 across the
+  // sim's life). Before is where a test relocalizes or shoves the robot the way another thread would between passes;
+  // after is where it reads what the pass computed. Both are empty by default.
+  std::function<void(int)> before_pass;
+  std::function<void(int)> after_pass;
+  // Moves both wheels `inches` along the robot's heading at once, without giving the robot any velocity: what being
+  // pushed a short way and let go looks like to the sensors. The motors read the new position right away, not only
+  // after the next tick.
+  void displace(double inches) {
+    left_.position_in += inches;
+    right_.position_in += inches;
+    double tick_per_inch = encoder_tick_per_inch();
+    for (auto* side : {&drive_.left_motors, &drive_.right_motors}) {
+      bool is_left = side == &drive_.left_motors;
+      double pos = (is_left ? left_.position_in : right_.position_in) * tick_per_inch + (is_left ? enc_off_left_ : enc_off_right_);
+      for (auto& m : *side)
+        if (!drive_.pto_check(m)) m.fake().position = pos;
+    }
+  }
+
+  // A transmission shifts: the wheel's real speed becomes `new_wheel_rpm` (the same number drive_rpm_set() takes), so the
+  // motors' free speed and torque change with it and each encoder tick now stands for a different distance. The encoders
+  // keep counting from where they were: the raw count does not jump, only how many ticks a wheel inch is worth does. A
+  // test that wants the library told calls drive_rpm_set() itself, at the same instant, AFTER this: the sim
+  // reads what the Drive believes right now to work out the physical scale it is leaving, so telling the library first makes
+  // it take the new number for the old one.
+  void shift_gearing(double new_wheel_rpm) {
+    double old_tpi = encoder_tick_per_inch();
+    double new_tpi = old_tpi * archetype_.cartridge_rpm / new_wheel_rpm;
+    enc_off_left_ += left_.position_in * (old_tpi - new_tpi);
+    enc_off_right_ += right_.position_in * (old_tpi - new_tpi);
+    phys_tpi_ = new_tpi;
+    archetype_.cartridge_rpm = new_wheel_rpm;
+  }
+
+  // Zeroes both wheels' encoder readings without moving the robot: what drive_sensor_reset()'s tare_position() does on a real
+  // motor. The sim keeps its own wheel positions and writes them to the motors every tick, so a tare made only on the motor
+  // is undone one tick later; a test that resets sensors mid motion calls this right after.
+  void tare_encoders() {
+    left_.position_in = 0.0;
+    right_.position_in = 0.0;
+    enc_off_left_ = 0.0;
+    enc_off_right_ = 0.0;
+    for (auto* side : {&drive_.left_motors, &drive_.right_motors})
+      for (auto& m : *side)
+        if (!drive_.pto_check(m)) m.fake().position = 0.0;
+  }
+
+  // --- Physical interference, all off by default. Times are sim milliseconds (now_ms(), one DELAY_TIME per tick). ---
+
+  double now_ms() const { return sim_ms_; }
+  // An external force along the robot's heading, in newtons (positive pushes it forward), from `start_ms` for
+  // `duration_ms`. Windows add up; a robot being shoved by another robot is a window of 40 to 150 N for 100 to 600 ms.
+  void push(double newtons, double start_ms, double duration_ms) { forces_.push_back({newtons, start_ms, start_ms + duration_ms}); }
+  // The robot is held still, in every direction, from `start_ms` for `duration_ms` (a robot pinned against a defender).
+  void pin(double start_ms, double duration_ms) { pins_.push_back({0.0, start_ms, start_ms + duration_ms}); }
+  // The robot is held (pinned) and carried at v in/s along its heading and w deg/s (library sign, clockwise positive) for the
+  // window: wheels, heading and encoders all move, nothing the motors do changes it. A robot dragged along by something else.
+  void carry(double v_in_s, double w_deg_s, double start_ms, double duration_ms) {
+    pins_.push_back({0.0, start_ms, start_ms + duration_ms});
+    carries_.push_back({v_in_s, w_deg_s, start_ms, start_ms + duration_ms});
+  }
+  // A wall `position_in` inches ahead of where the wheels are zero: the average wheel travel cannot pass it, and
+  // whatever velocity it hits it at is lost. The motors keep pushing, so they stall against it.
+  void wall(double position_in) {
+    wall_in_ = position_in;
+    wall_set_ = true;
+  }
   double heading_deg() const { return heading_deg_; }
   const SideState& left() const { return left_; }
   const SideState& right() const { return right_; }
 
- private:
+private:
   static void install(SimRobot* r) {
     active_ = r;
     test_stub::g_clock.on_delay = &SimRobot::on_delay_trampoline;
@@ -248,8 +355,34 @@ class SimRobot {
   // never calls ez_auto_task() itself, which is the one function that both contains this logic
   // AND ends with its own pros::delay(), which would re-enter on_delay from inside on_delay.
   void tick() {
-    run_auto_task_pass();
+    for (int i = 0; i < passes_per_tick_; i++) {
+      if (before_pass) before_pass(pass_count_);
+      if (use_real_auto_task_)
+        run_real_auto_task_pass();
+      else
+        run_auto_task_pass();
+      if (after_pass) after_pass(pass_count_);
+      pass_count_++;
+    }
     step_physics(ez::util::DELAY_TIME / 1000.0);
+  }
+
+  // One pass of the real ez_auto_task(), for tests that need what run_auto_task_pass() leaves out: the
+  // competition-status handling and everything else that function does around the per-mode task bodies.
+  // ez_auto_task() ends in its own pros::delay(), which would re-enter this hook and advance the fake clock a
+  // second time, so the hook is parked and the loop is unwound with StopLoop, and the extra DELAY_TIME the
+  // inner delay added is taken back out.
+  void run_real_auto_task_pass() {
+    auto saved_hook = test_stub::g_clock.on_delay;
+    int saved_stop = test_stub::g_clock.delay_calls_until_stop;
+    test_stub::g_clock.on_delay = nullptr;
+    test_stub::g_clock.delay_calls_until_stop = 0;
+    try {
+      ez::DriveTestAccess::ez_auto_task(drive_);
+    } catch (test_stub::StopLoop&) {}
+    test_stub::g_clock.now_ms -= ez::util::DELAY_TIME;
+    test_stub::g_clock.on_delay = saved_hook;
+    test_stub::g_clock.delay_calls_until_stop = saved_stop;
   }
 
   void run_auto_task_pass() {
@@ -348,7 +481,7 @@ class SimRobot {
     // rolling-resistance + scrub-placeholder model as before, but now returns a ground-contact
     // force instead of directly integrating that side's own motion.
     auto side_force = [&](double commanded_mv, double this_wheel_v_m_s, double other_wheel_v_m_s) {
-      double supply_mv = 12000.0;  // no battery sag model, per SIM_FIDELITY.md's recommendation
+      double supply_mv = 12000.0;                                                      // no battery sag model, per SIM_FIDELITY.md's recommendation
       double duty = ez::util::clamp(commanded_mv, supply_mv, -supply_mv) / supply_mv;  // signed, -1..1
 
       double wheel_angular_v = this_wheel_v_m_s / wheel_radius_m;  // rad/s at the wheel
@@ -395,7 +528,10 @@ class SimRobot {
 
     // Translation: resisted by the whole robot's mass. Rotation: resisted by
     // moment_of_inertia_kg_m2 about the yaw axis -- the piece that was missing entirely before.
-    double common_accel_m_s2 = (left_r.net_force_n + right_r.net_force_n) / archetype_.mass_kg;
+    double external_n = 0.0;
+    for (const auto& f : forces_)
+      if (sim_ms_ >= f.start_ms && sim_ms_ < f.end_ms) external_n += f.value;
+    double common_accel_m_s2 = (left_r.net_force_n + right_r.net_force_n + external_n) / archetype_.mass_kg;
     double yaw_torque_nm = (right_r.net_force_n - left_r.net_force_n) * track_radius_m;
     double yaw_accel_rad_s2 = yaw_torque_nm / archetype_.moment_of_inertia_kg_m2;
 
@@ -443,13 +579,69 @@ class SimRobot {
     common_velocity_in_s_ = common_v_m_s / 0.0254;
     yaw_rate_deg_s_ = yaw_rate_rad_s * 180.0 / M_PI;
 
+    // Interference that holds the robot rather than pushing it (a push is external_n above). A pin freezes it
+    // where it stands for as long as its window lasts; a wall stops forward travel below.
+    bool pinned = false;
+    for (const auto& p : pins_)
+      if (sim_ms_ >= p.start_ms && sim_ms_ < p.end_ms) pinned = true;
+    if (pinned) {
+      if (!was_pinned_) {
+        pin_left_in_ = left_.position_in;
+        pin_right_in_ = right_.position_in;
+        pin_heading_deg_ = heading_deg_;
+      }
+      common_velocity_in_s_ = 0.0;
+      yaw_rate_deg_s_ = 0.0;
+      left_wheel_v_new = 0.0;
+      right_wheel_v_new = 0.0;
+      heading_deg_ = pin_heading_deg_;
+      double cv = 0.0, cw = 0.0;
+      for (const auto& c : carries_)
+        if (sim_ms_ >= c.start_ms && sim_ms_ < c.end_ms) {
+          cv += c.v;
+          cw += c.w;
+        }
+      if (cv != 0.0 || cw != 0.0) {
+        yaw_rate_deg_s_ = -cw;
+        common_velocity_in_s_ = cv;
+        double yaw_rad = yaw_rate_deg_s_ * M_PI / 180.0;
+        left_wheel_v_new = cv * 0.0254 - yaw_rad * track_radius_m;
+        right_wheel_v_new = cv * 0.0254 + yaw_rad * track_radius_m;
+        pin_heading_deg_ += yaw_rate_deg_s_ * dt_s;
+        pin_left_in_ += left_wheel_v_new / 0.0254 * dt_s;
+        pin_right_in_ += right_wheel_v_new / 0.0254 * dt_s;
+      }
+    }
+    was_pinned_ = pinned;
+
     // For encoder reporting; next tick's torque calc re-derives from common_velocity_in_s_/
     // yaw_rate_deg_s_ (above) rather than from these, so the zero-crossing guard above already
     // reached the value that matters for the sim's own recurrence.
     left_.velocity_in_s = left_wheel_v_new / 0.0254;
     right_.velocity_in_s = right_wheel_v_new / 0.0254;
-    left_.position_in += left_.velocity_in_s * dt_s;
-    right_.position_in += right_.velocity_in_s * dt_s;
+    if (pinned) {
+      left_.position_in = pin_left_in_;
+      right_.position_in = pin_right_in_;
+    } else {
+      left_.position_in += left_.velocity_in_s * dt_s;
+      right_.position_in += right_.velocity_in_s * dt_s;
+    }
+
+    // A wall: average wheel travel cannot pass it, and the forward velocity it hits it at is lost.
+    if (wall_set_) {
+      double avg = (left_.position_in + right_.position_in) / 2.0;
+      if (avg > wall_in_) {
+        left_.position_in -= avg - wall_in_;
+        right_.position_in -= avg - wall_in_;
+        double v_common = (left_.velocity_in_s + right_.velocity_in_s) / 2.0;
+        if (v_common > 0.0) {
+          left_.velocity_in_s -= v_common;
+          right_.velocity_in_s -= v_common;
+        }
+        if (common_velocity_in_s_ > 0.0) common_velocity_in_s_ = 0.0;
+      }
+    }
+    sim_ms_ += dt_s * 1000.0;
 
     double left_current = left_r.current_a;
     double right_current = right_r.current_a;
@@ -474,14 +666,17 @@ class SimRobot {
   }
 
   void write_back(double left_current_a, double right_current_a) {
-    double tick_per_inch = drive_.drive_tick_per_inch();
+    double tick_per_inch = encoder_tick_per_inch();
 
-    auto write_side = [&](std::vector<pros::Motor>& motors, SideState& side, double current_a) {
+    auto write_side = [&](std::vector<pros::Motor>& motors, SideState& side, double current_a, double offset_ticks) {
       double reported_pos_in = side.position_in + gaussian(archetype_.encoder_noise_stddev_in);
       double reported_vel_in_s = side.velocity_in_s + gaussian(archetype_.velocity_noise_stddev_in_s);
       for (auto& m : motors) {
+        // A motor handed to the PTO isn't the drive's: whatever a test scripts on it (say, an intake that
+        // stalls) must survive the tick instead of being overwritten with the drive's own reading.
+        if (drive_.pto_check(m)) continue;
         auto& fake = m.fake();
-        fake.position = reported_pos_in * tick_per_inch;
+        fake.position = reported_pos_in * tick_per_inch + offset_ticks;
         fake.actual_velocity = reported_vel_in_s * tick_per_inch;
         fake.current_draw = current_a * 1000.0;  // PROS reports current in mA
         // 2.5A: the default current limit (sourced, Purdue SIGBots wiki, per SIM_FIDELITY.md),
@@ -489,8 +684,8 @@ class SimRobot {
         fake.over_current = current_a >= 2.5;
       }
     };
-    write_side(drive_.left_motors, left_, left_current_a);
-    write_side(drive_.right_motors, right_, right_current_a);
+    write_side(drive_.left_motors, left_, left_current_a, enc_off_left_);
+    write_side(drive_.right_motors, right_, right_current_a, enc_off_right_);
 
     // Tracking-wheel archetypes: a dedicated tracker never slips with the drive base and isn't
     // modeled separately here (its reading would be identical to the noise-free position in this
@@ -513,8 +708,22 @@ class SimRobot {
       // are unaffected: heading stays near 0 there regardless of sign convention. Negating here, not
       // the yaw formula itself, keeps step_physics()'s internal force/torque bookkeeping consistent
       // and only fixes what's handed to the one consumer that has an external sign convention to match.
-      double reported_heading = -heading_deg_ + gaussian(archetype_.imu_noise_stddev_deg);
+      //
+      // The sim owns this register, but the library (drive_angle_set(), odom_xyt_set(), odom_pose_set()) and
+      // tests also write it between ticks to say "the heading is now X". Overwriting it from the physical
+      // heading every tick silently undid those, so a robot set to 180 read 0 again one tick later. A write
+      // the sim did not make is instead adopted as an offset the sim adds to its own physical heading, the
+      // way a real IMU's set_rotation() shifts its reading without moving the robot. The constructor
+      // records the register's starting value, so one a test left there before the sim existed is still
+      // replaced by the first tick, as it always was.
+      if (imu_written_ && imus[0]->fake_rotation != imu_last_written_) {
+        imu_offset_deg_ = imus[0]->fake_rotation + imu_heading_at_write_deg_;
+      }
+      double reported_heading = -heading_deg_ + imu_offset_deg_ + gaussian(archetype_.imu_noise_stddev_deg);
       imus[0]->fake_rotation = reported_heading;
+      imu_last_written_ = reported_heading;
+      imu_heading_at_write_deg_ = heading_deg_;
+      imu_written_ = true;
     }
   }
 
@@ -524,6 +733,35 @@ class SimRobot {
   std::mt19937 rng_;
   SideState left_, right_;
   double heading_deg_ = 0.0;
+  // See write_back()'s IMU comment: what the sim last wrote to the fake IMU, the physical heading at that
+  // moment, and the offset a foreign write to the register (set_rotation) has added since.
+  // Interference (push / pin / wall), see the public block.
+  struct Window {
+    double value, start_ms, end_ms;
+  };
+  std::vector<Window> forces_, pins_;
+  struct Carry {
+    double v, w, start_ms, end_ms;
+  };
+  std::vector<Carry> carries_;
+  double sim_ms_ = 0.0;
+  bool wall_set_ = false, was_pinned_ = false;
+  double wall_in_ = 0.0, pin_left_in_ = 0.0, pin_right_in_ = 0.0, pin_heading_deg_ = 0.0;
+  bool use_real_auto_task_ = false;
+
+  // Ticks per wheel inch the encoders really count at. Until shift_gearing() is called this is whatever the Drive believes
+  // (so every existing test is unchanged); after, it is the physical value, which the Drive only learns about if the test
+  // tells it. enc_off_* keep the raw count continuous across a shift.
+  double encoder_tick_per_inch() { return phys_tpi_ > 0.0 ? phys_tpi_ : drive_.drive_tick_per_inch(); }
+  double phys_tpi_ = 0.0;
+  double enc_off_left_ = 0.0;
+  double enc_off_right_ = 0.0;
+  int pass_count_ = 0;
+  int passes_per_tick_ = 1;
+  bool imu_written_ = false;
+  double imu_last_written_ = 0.0;
+  double imu_heading_at_write_deg_ = 0.0;
+  double imu_offset_deg_ = 0.0;
   // Robot-level translational/rotational state -- see step_physics()'s header comment for why
   // these exist instead of deriving everything from left_/right_.velocity_in_s directly.
   double common_velocity_in_s_ = 0.0;

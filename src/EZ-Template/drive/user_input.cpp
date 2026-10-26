@@ -37,9 +37,7 @@ void Drive::opcontrol_curve_default_set(double left, double right) {
   save_r_curve_sd();
 }
 
-std::vector<double> Drive::opcontrol_curve_default_get() {
-  return {left_curve_scale, right_curve_scale};
-}
+std::vector<double> Drive::opcontrol_curve_default_get() { return {left_curve_scale, right_curve_scale}; }
 
 // Initialize curve SD card
 void Drive::opcontrol_curve_sd_initialize() {
@@ -126,13 +124,9 @@ void Drive::opcontrol_curve_buttons_right_set(pros::controller_digital_e_t decre
   r_decrease_.button = decrease;
 }
 
-std::vector<pros::controller_digital_e_t> Drive::opcontrol_curve_buttons_left_get() {
-  return {l_decrease_.button, l_increase_.button};
-}
+std::vector<pros::controller_digital_e_t> Drive::opcontrol_curve_buttons_left_get() { return {l_decrease_.button, l_increase_.button}; }
 
-std::vector<pros::controller_digital_e_t> Drive::opcontrol_curve_buttons_right_get() {
-  return {r_decrease_.button, r_increase_.button};
-}
+std::vector<pros::controller_digital_e_t> Drive::opcontrol_curve_buttons_right_get() { return {r_decrease_.button, r_increase_.button}; }
 
 // Increase / decrease left and right curves
 void Drive::l_increase() { left_curve_scale = util::curve_scale_clamp(left_curve_scale + 0.1); }
@@ -343,7 +337,9 @@ void Drive::opcontrol_joystick_threshold_iterate(int l_stick, int r_stick) {
   l_out = util::clamp(l_out, opcontrol_speed_max);
   r_out = util::clamp(r_out, opcontrol_speed_max);
 
-  drive_set(l_out, r_out);
+  // What drive_set() does, without marking the brake's target as stale: this is the driver's own output, and the brake's.
+  drive_mode_set(DISABLE, false);
+  private_drive_set(l_out, r_out);
 }
 
 // This is used as a multiplier, so a negative value would reverse the whole drive and a value over 127 would

@@ -77,9 +77,9 @@ void script() {
     c.current_a_odomPID.compute_error(0.0, 0.0);
     c.xyPID.compute_error(5.0, 5.0);
   } else {
-    idx = g_last;  // jumps directly from (last-1) to last -- never visits the loop body at `last`
-    c.xyPID.compute_error(0.0, 0.0);                        // converges quickly after the jump
-    double a = g_pass < 150 ? 60.0 : 0.0;                   // the real final-heading mismatch
+    idx = g_last;                          // jumps directly from (last-1) to last -- never visits the loop body at `last`
+    c.xyPID.compute_error(0.0, 0.0);       // converges quickly after the jump
+    double a = g_pass < 150 ? 60.0 : 0.0;  // the real final-heading mismatch
     c.current_a_odomPID.compute_error(a, a);
   }
 }
@@ -96,7 +96,7 @@ Outcome run_wait(Drive& chassis, int max_passes) {
   g_pass = 0;
   g_last = last_index(chassis);
   REQUIRE(g_last >= 2);  // needs at least 3 points for a distinct "second-to-last" index
-  script();  // pass 0 / initial state before the wait's first delay
+  script();              // pass 0 / initial state before the wait's first delay
   test_stub::g_clock.on_delay = script;
   test_stub::g_clock.delay_calls_until_stop = max_passes;
   Outcome o{true, 0, false, 0.0};
