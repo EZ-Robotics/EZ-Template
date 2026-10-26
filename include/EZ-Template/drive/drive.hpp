@@ -135,65 +135,11 @@ public:
   /**
    * Sets constants for slew for swing movements.
    *
-   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set distance.  A movement with a lower max speed is capped at that speed,
-   * so it reaches that speed before the distance is traveled.
+   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set angle.  A movement with a lower max speed is capped at that speed,
+   * so it reaches that speed before the angle is turned.
    *
    * \param distance
-   *        the distance the robot travels to ramp up to full speed (127), a distance unit
-   * \param min_speed
-   *        the starting speed for the movement, 0 - 127
-   *
-   * \code{.cpp}
-   * void autonomous() {
-   *   chassis.pid_targets_reset();                // Resets PID targets to 0
-   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
-   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
-   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
-   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
-   *
-   *   chassis.slew_swing_constants_set(5_in, 50);
-   *
-   *   chassis.pid_swing_set(ez::LEFT_SWING, 90_deg, 110, 0, true);
-   *   chassis.pid_wait();
-   * }
-   * \endcode
-   */
-  void slew_swing_constants_set(ez::QLength distance, int min_speed);
-
-  /**
-   * Sets constants for slew for forward swing movements.
-   *
-   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set distance.  A movement with a lower max speed is capped at that speed,
-   * so it reaches that speed before the distance is traveled.
-   *
-   * \param distance
-   *        the distance the robot travels to ramp up to full speed (127), a distance unit
-   * \param min_speed
-   *        the starting speed for the movement, 0 - 127
-   */
-  void slew_swing_constants_forward_set(ez::QLength distance, int min_speed);
-
-  /**
-   * Sets constants for slew for backward swing movements.
-   *
-   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set distance.  A movement with a lower max speed is capped at that speed,
-   * so it reaches that speed before the distance is traveled.
-   *
-   * \param distance
-   *        the distance the robot travels to ramp up to full speed (127), a distance unit
-   * \param min_speed
-   *        the starting speed for the movement, 0 - 127
-   */
-  void slew_swing_constants_backward_set(ez::QLength distance, int min_speed);
-
-  /**
-   * Sets constants for slew for swing movements.
-   *
-   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set distance.  A movement with a lower max speed is capped at that speed,
-   * so it reaches that speed before the distance is traveled.
-   *
-   * \param distance
-   *        the distance the robot travels to ramp up to full speed (127), an angle unit
+   *        the angle the robot swings through to ramp up to full speed (127), in degrees or any angle unit
    * \param min_speed
    *        the starting speed for the movement, 0 - 127
    *
@@ -215,39 +161,93 @@ public:
   void slew_swing_constants_set(ez::QAngle distance, int min_speed);
 
   /**
-   * Sets constants for slew for forward swing movements.
+   * Sets constants for slew for swing movements.
    *
-   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set distance.  A movement with a lower max speed is capped at that speed,
-   * so it reaches that speed before the distance is traveled.
+   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set angle.  A movement with a lower max speed is capped at that speed,
+   * so it reaches that speed before the angle is turned.
    *
    * \param distance
-   *        the distance the robot travels to ramp up to full speed (127), an angle unit
+   *        the angle the robot swings through to ramp up to full speed (127), in degrees
+   * \param min_speed
+   *        the starting speed for the movement, 0 - 127
+   *
+   * code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   chassis.slew_swing_constants_set(7.0, 50);
+   *
+   *   chassis.pid_swing_set(ez::LEFT_SWING, 90_deg, 110, 0, true);
+   *   chassis.pid_wait();
+   * }
+   * endcode
+   */
+  void slew_swing_constants_set(double distance, int min_speed);
+
+  /**
+   * Sets constants for slew for swing forward movements.
+   *
+   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set angle.  A movement with a lower max speed is capped at that speed,
+   * so it reaches that speed before the angle is turned.
+   *
+   * \param distance
+   *        the angle the robot swings through to ramp up to full speed (127), in degrees or any angle unit
    * \param min_speed
    *        the starting speed for the movement, 0 - 127
    */
   void slew_swing_constants_forward_set(ez::QAngle distance, int min_speed);
 
   /**
-   * Sets constants for slew for backward swing movements.
+   * Sets constants for slew for swing forward movements.
    *
-   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set distance.  A movement with a lower max speed is capped at that speed,
-   * so it reaches that speed before the distance is traveled.
+   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set angle.  A movement with a lower max speed is capped at that speed,
+   * so it reaches that speed before the angle is turned.
    *
    * \param distance
-   *        the distance the robot travels to ramp up to full speed (127), an angle unit
+   *        the angle the robot swings through to ramp up to full speed (127), in degrees
+   * \param min_speed
+   *        the starting speed for the movement, 0 - 127
+   */
+  void slew_swing_constants_forward_set(double distance, int min_speed);
+
+  /**
+   * Sets constants for slew for swing backward movements.
+   *
+   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set angle.  A movement with a lower max speed is capped at that speed,
+   * so it reaches that speed before the angle is turned.
+   *
+   * \param distance
+   *        the angle the robot swings through to ramp up to full speed (127), in degrees or any angle unit
    * \param min_speed
    *        the starting speed for the movement, 0 - 127
    */
   void slew_swing_constants_backward_set(ez::QAngle distance, int min_speed);
 
   /**
-   * Sets constants for slew for turns.
+   * Sets constants for slew for swing backward movements.
    *
-   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set distance.  A movement with a lower max speed is capped at that speed,
-   * so it reaches that speed before the distance is traveled.
+   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set angle.  A movement with a lower max speed is capped at that speed,
+   * so it reaches that speed before the angle is turned.
    *
    * \param distance
-   *        the distance the robot travels to ramp up to full speed (127), an angle unit
+   *        the angle the robot swings through to ramp up to full speed (127), in degrees
+   * \param min_speed
+   *        the starting speed for the movement, 0 - 127
+   */
+  void slew_swing_constants_backward_set(double distance, int min_speed);
+
+  /**
+   * Sets constants for slew for turns.
+   *
+   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set angle.  A movement with a lower max speed is capped at that speed,
+   * so it reaches that speed before the angle is turned.
+   *
+   * \param distance
+   *        the angle the robot turns through to ramp up to full speed (127), in degrees or any angle unit
    * \param min_speed
    *        the starting speed for the movement, 0 - 127
    *
@@ -269,6 +269,34 @@ public:
   void slew_turn_constants_set(ez::QAngle distance, int min_speed);
 
   /**
+   * Sets constants for slew for turns.
+   *
+   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set angle.  A movement with a lower max speed is capped at that speed,
+   * so it reaches that speed before the angle is turned.
+   *
+   * \param distance
+   *        the angle the robot turns through to ramp up to full speed (127), in degrees
+   * \param min_speed
+   *        the starting speed for the movement, 0 - 127
+   *
+   * code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   chassis.slew_turn_constants_set(5.0, 50);
+   *
+   *   chassis.pid_turn_set(-90_deg, 110, true);
+   *   chassis.pid_wait();
+   * }
+   * endcode
+   */
+  void slew_turn_constants_set(double distance, int min_speed);
+
+  /**
    * Sets constants for slew for driving forward.
    *
    * Slew ramps up the speed of the robot from `min_speed` to full speed (127) over the set distance.  A movement with a lower max speed is capped at
@@ -282,6 +310,19 @@ public:
   void slew_drive_constants_forward_set(ez::QLength distance, int min_speed);
 
   /**
+   * Sets constants for slew for driving forward.
+   *
+   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set distance.  A movement with a lower max speed is capped at that speed,
+   * so it reaches that speed before the distance is traveled.
+   *
+   * \param distance
+   *        the distance the robot travels to ramp up to full speed (127), in inches
+   * \param min_speed
+   *        the starting speed for the movement, 0 - 127
+   */
+  void slew_drive_constants_forward_set(double distance, int min_speed);
+
+  /**
    * Sets constants for slew for driving backward.
    *
    * Slew ramps up the speed of the robot from `min_speed` to full speed (127) over the set distance.  A movement with a lower max speed is capped at
@@ -293,6 +334,19 @@ public:
    *        the starting speed for the movement, 0 - 127
    */
   void slew_drive_constants_backward_set(ez::QLength distance, int min_speed);
+
+  /**
+   * Sets constants for slew for driving backward.
+   *
+   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set distance.  A movement with a lower max speed is capped at that speed,
+   * so it reaches that speed before the distance is traveled.
+   *
+   * \param distance
+   *        the distance the robot travels to ramp up to full speed (127), in inches
+   * \param min_speed
+   *        the starting speed for the movement, 0 - 127
+   */
+  void slew_drive_constants_backward_set(double distance, int min_speed);
 
   /**
    * Sets constants for slew for driving.
@@ -324,6 +378,37 @@ public:
    * \endcode
    */
   void slew_drive_constants_set(ez::QLength distance, int min_speed);
+
+  /**
+   * Sets constants for slew for driving.
+   *
+   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set distance.  A movement with a lower max speed is capped at that speed,
+   * so it reaches that speed before the distance is traveled.
+   *
+   * \param distance
+   *        the distance the robot travels to ramp up to full speed (127), in inches
+   * \param min_speed
+   *        the starting speed for the movement, 0 - 127
+   *
+   * code{.cpp}
+   * void autonomous() {
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the start position
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
+   *
+   *   chassis.slew_drive_constants_set(5.0, 50);
+   *
+   *   chassis.pid_drive_set(12_in, 110, true);
+   *   chassis.pid_wait();
+   *
+   *   chassis.pid_drive_set(-12_in, 110, true);
+   *   chassis.pid_wait();
+   * }
+   * endcode
+   */
+  void slew_drive_constants_set(double distance, int min_speed);
 
   /**
    * Sets the default slew for drive forwards and backwards motions, can be overwritten in movement functions.
@@ -1873,7 +1958,7 @@ public:
   void odom_tracker_back_set(tracking_wheel* input);
 
   /**
-   * Sets the default behavior for turns in odom, swinging, and turning.
+   * Sets the default behavior for turns in odom, swinging, and turning.  The default is ez::shortest.
    *
    * \param behavior
    *        ez::shortest, ez::longest, ez::ccw, ez::cw, ez::raw
@@ -1906,7 +1991,7 @@ public:
   void pid_angle_behavior_set(e_angle_behavior behavior);
 
   /**
-   * Sets the default behavior for turns in turning movements.
+   * Sets the default behavior for turns in turning movements.  The default is ez::shortest.
    *
    * \param behavior
    *        ez::shortest, ez::longest, ez::ccw, ez::cw, ez::raw
@@ -1931,7 +2016,7 @@ public:
   void pid_turn_behavior_set(e_angle_behavior behavior);
 
   /**
-   * Sets the default behavior for turns in swinging movements.
+   * Sets the default behavior for turns in swinging movements.  The default is ez::shortest.
    *
    * \param behavior
    *        ez::shortest, ez::longest, ez::ccw, ez::cw, ez::raw
@@ -1956,7 +2041,8 @@ public:
   void pid_swing_behavior_set(e_angle_behavior behavior);
 
   /**
-   * Sets the default behavior for turns in odom turning movements.
+   * Sets the default behavior for the turn in odom movements.  The default is ez::shortest.  An odom movement that sets its own turn_behavior uses that
+   * instead, and one that leaves it unset follows this.
    *
    * \param behavior
    *        ez::shortest, ez::longest, ez::ccw, ez::cw, ez::raw
@@ -1981,7 +2067,7 @@ public:
   void pid_odom_behavior_set(e_angle_behavior behavior);
 
   /**
-   * Returns the turn behavior for turns.
+   * Returns the default behavior for turns, ez::shortest unless changed.
    *
    * \code{.cpp}
    * void autonomous() {
@@ -2009,7 +2095,7 @@ public:
   e_angle_behavior pid_turn_behavior_get();
 
   /**
-   * Returns the turn behavior for swings.
+   * Returns the default behavior for swings, ez::shortest unless changed.
    *
    * \code{.cpp}
    * void autonomous() {
@@ -2037,7 +2123,7 @@ public:
   e_angle_behavior pid_swing_behavior_get();
 
   /**
-   * Returns the turn behavior for odom turns.
+   * Returns the default behavior for the turn in odom movements, ez::shortest unless changed.
    *
    * \code{.cpp}
    * void autonomous() {
@@ -2431,7 +2517,7 @@ public:
    * \param kd
    *        derivative term
    * \param start_i
-   *        error threshold to start integral
+   *        error threshold to start integral, 0 means i always accumulates
    *
    * \code{.cpp}
    * void initialize() {
@@ -5544,7 +5630,7 @@ public:
    * \param d
    *        derivative term
    * \param p_start_i
-   *        error threshold to start integral
+   *        error threshold to start integral, 0 means i always accumulates
    *
    * \code{.cpp}
    * void initialize() {
@@ -5617,7 +5703,7 @@ public:
    * \param d
    *        derivative term
    * \param p_start_i
-   *        error threshold to start integral
+   *        error threshold to start integral, 0 means i always accumulates
    *
    * \code{.cpp}
    * void initialize() {
@@ -5655,7 +5741,7 @@ public:
    * \param d
    *        derivative term
    * \param p_start_i
-   *        error threshold to start integral
+   *        error threshold to start integral, 0 means i always accumulates
    */
   void pid_swing_constants_forward_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
@@ -5677,7 +5763,7 @@ public:
    * \param d
    *        derivative term
    * \param p_start_i
-   *        error threshold to start integral
+   *        error threshold to start integral, 0 means i always accumulates
    */
   void pid_swing_constants_backward_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
@@ -5782,7 +5868,7 @@ public:
    * \param d
    *        derivative term
    * \param p_start_i
-   *        error threshold to start integral
+   *        error threshold to start integral, 0 means i always accumulates
    *
    * \code{.cpp}
    * void initialize() {
@@ -5819,7 +5905,7 @@ public:
    * \param d
    *        derivative term
    * \param p_start_i
-   *        error threshold to start integral
+   *        error threshold to start integral, 0 means i always accumulates
    *
    * \code{.cpp}
    * void initialize() {
@@ -5860,7 +5946,7 @@ public:
    * \param d
    *        derivative term
    * \param p_start_i
-   *        error threshold to start integral
+   *        error threshold to start integral, 0 means i always accumulates
    */
   void pid_drive_constants_forward_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
@@ -5881,7 +5967,7 @@ public:
    * \param d
    *        derivative term
    * \param p_start_i
-   *        error threshold to start integral
+   *        error threshold to start integral, 0 means i always accumulates
    */
   void pid_drive_constants_backward_set(double p, double i = 0.0, double d = 0.0, double p_start_i = 0.0);
 
@@ -6078,7 +6164,7 @@ public:
    * \param d
    *        derivative term
    * \param p_start_i
-   *        error threshold to start integral
+   *        error threshold to start integral, 0 means i always accumulates
    *
    * \code{.cpp}
    * void initialize() {
@@ -6098,7 +6184,7 @@ public:
    * \param d
    *        derivative term
    * \param p_start_i
-   *        error threshold to start integral
+   *        error threshold to start integral, 0 means i always accumulates
    *
    * \code{.cpp}
    * void initialize() {
@@ -7463,8 +7549,8 @@ private:
   double turn_tolerance = 3.0;
   bool global_turn_slew_enabled = false;
   e_angle_behavior current_angle_behavior = raw;
-  e_angle_behavior default_swing_type = raw;
-  e_angle_behavior default_turn_type = raw;
+  e_angle_behavior default_swing_type = shortest;
+  e_angle_behavior default_turn_type = shortest;
   e_angle_behavior default_odom_type = shortest;
   bool turn_biased_left = false;
   bool odom_tracker_left_enabled = false;
@@ -7491,9 +7577,6 @@ private:
   bool slow_mode_is_on = false;
   double slow_mode_speed = 64.0;
   int swing_opposite_speed = 0;
-  bool slew_swing_fwd_using_angle = false;
-  bool slew_swing_rev_using_angle = false;
-  bool slew_swing_using_angle = false;
   bool pid_tuner_terminal_b = false;
   bool pid_tuner_lcd_b = true;
   void pid_tuner_print();

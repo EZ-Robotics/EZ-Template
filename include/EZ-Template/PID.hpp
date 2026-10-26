@@ -30,7 +30,7 @@ public:
    * \param d
    *        kD
    * \param start_i
-   *        i will start when error is within this
+   *        i will start when error is within this, 0 means i always accumulates
    * \param name
    *        a string for the name of the PID
    */
@@ -46,7 +46,7 @@ public:
    * \param d
    *        kD
    * \param p_start_i
-   *        error value that i starts within
+   *        error value that i starts within, 0 means i always accumulates
    *
    * \code{.cpp}
    * ez::PID liftPID;

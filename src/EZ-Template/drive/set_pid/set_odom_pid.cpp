@@ -531,9 +531,11 @@ void Drive::raw_pid_odom_ptp_set(odom imovement, bool slew_on, bool is_boomerang
   // Calculate the point to look at
   point_to_face = find_point_to_face(odom_pose_get(), {imovement.target.x, imovement.target.y}, current_drive_direction, true);
   double target = util::absolute_angle_to_point(point_to_face[!ptf1_running], odom_pose_get());  // Calculate the point for angle to face
-  if (imovement.turn_behavior != raw) {
+  // A movement that didn't pick a behavior follows pid_odom_behavior_set()
+  e_angle_behavior turn_behavior = imovement.turn_behavior == ODOM_BEHAVIOR_NOT_SET ? default_odom_type : imovement.turn_behavior;
+  if (turn_behavior != raw) {
     odom_imu_start = drive_angle_get();
-    current_angle_behavior = imovement.turn_behavior;
+    current_angle_behavior = turn_behavior;
   }
 
   if (current_slew_on && imovement.max_xy_speed > pid_speed_max_get() && slew_odom_reenabled()) {
