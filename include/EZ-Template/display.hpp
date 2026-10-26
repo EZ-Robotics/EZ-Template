@@ -26,9 +26,27 @@ namespace ez {
 /// respond where they are drawn; LVGL applies that transform to its own
 /// pointer input. 90/270 swap the screen's width and height. The physical
 /// LLEMU buttons are unaffected.
+///
+/// \code{.cpp}
+/// void initialize() {
+///   ez::as::initialize();
+///
+///   // Brain is mounted sideways
+///   ez::screen_rotation_set(90);
+/// }
+/// \endcode
 void screen_rotation_set(int degrees);
 
 /// True while the portrait screen is the loaded screen (rotation 90 or 270).
+///
+/// \code{.cpp}
+/// void initialize() {
+///   ez::screen_rotation_set(90);
+///
+///   // Prints 1
+///   printf("%i\n", ez::screen_portrait_enabled());
+/// }
+/// \endcode
 bool screen_portrait_enabled();
 
 /// Writes one of the 8 print lines, to the portrait screen when it is loaded
@@ -38,6 +56,12 @@ bool screen_portrait_enabled();
 ///        0 through 7
 /// \param text
 ///        the text to print
+///
+/// \code{.cpp}
+/// void initialize() {
+///   ez::screen_line_set(0, "Hello!");
+/// }
+/// \endcode
 void screen_line_set(int line, std::string text);
 
 /// Clears one of the 8 print lines through the same routing as
@@ -45,9 +69,21 @@ void screen_line_set(int line, std::string text);
 ///
 /// \param line
 ///        0 through 7
+///
+/// \code{.cpp}
+/// void initialize() {
+///   ez::screen_line_clear(0);
+/// }
+/// \endcode
 void screen_line_clear(int line);
 
 /// Clears all 8 print lines through the same routing as ez::screen_line_set.
+///
+/// \code{.cpp}
+/// void initialize() {
+///   ez::screen_lines_clear();
+/// }
+/// \endcode
 void screen_lines_clear();
 
 /// A point in screen coordinates.
@@ -85,6 +121,19 @@ struct screen_point {
 ///        raw touch x from the panel
 /// \param raw_y
 ///        raw touch y from the panel
+///
+/// \code{.cpp}
+/// void opcontrol() {
+///   while (true) {
+///     pros::screen_touch_status_s_t status = pros::screen::touch_status();
+///     ez::screen_point p = ez::screen_touch_rotate(
+///         ez::screen_rotation_get(), 480, 272, status.x, status.y);
+///     printf("x: %i, y: %i\n", p.x, p.y);
+///
+///     pros::delay(ez::util::DELAY_TIME);
+///   }
+/// }
+/// \endcode
 inline screen_point screen_touch_rotate(int degrees, int panel_w, int panel_h, int raw_x, int raw_y) {
   switch (degrees) {
     case 90:
@@ -99,6 +148,15 @@ inline screen_point screen_touch_rotate(int degrees, int panel_w, int panel_h, i
 }
 
 /// Current rotation in degrees (0, 90, 180, or 270).
+///
+/// \code{.cpp}
+/// void initialize() {
+///   ez::screen_rotation_set(90);
+///
+///   // Prints 90
+///   printf("%i\n", ez::screen_rotation_get());
+/// }
+/// \endcode
 int screen_rotation_get();
 
 }  // namespace ez

@@ -54,6 +54,16 @@ public:
    *
    * If auton_page_current is sitting on a blank page or is otherwise out of range, falls back to
    * last_auton_page_current (clamped into range) instead of running nothing.
+   *
+   * \code{.cpp}
+   * void autonomous() {
+   *   chassis.drive_imu_reset();
+   *   chassis.drive_sensor_reset();
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);
+   *
+   *   ez::as::auton_selector.selected_auton_call();
+   * }
+   * \endcode
    */
   void selected_auton_call();
 
@@ -62,6 +72,12 @@ public:
    *
    * Does nothing if Autons is empty or auton_page_current is out of range (for example, while a blank
    * page is on screen).
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   ez::as::auton_selector.selected_auton_print();
+   * }
+   * \endcode
    */
   void selected_auton_print();
 
@@ -71,6 +87,28 @@ public:
    *
    * \param autons
    *        vector of Autons to append to the current list, each an object of a string and a function
+   *
+   * \code{.cpp}
+   * void auto1() {
+   *   // Do something
+   * }
+   *
+   * void auto2() {
+   *   // Do something
+   * }
+   *
+   * void auto3() {
+   *   // Do something
+   * }
+   *
+   * void initialize() {
+   *   ez::as::auton_selector.autons_add({
+   *       ez::Auton("Autonomous 1\nDoes Something", auto1),
+   *       ez::Auton("Autonomous 2\nDoes Something Else", auto2),
+   *       ez::Auton("Autonomous 3\nDoes Something More", auto3),
+   *   });
+   * }
+   * \endcode
    */
   void autons_add(std::vector<Auton> autons);
 };
