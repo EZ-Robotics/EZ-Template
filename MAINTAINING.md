@@ -146,6 +146,8 @@ Check whether `website-dev` has changes that aren't released yet.
 
 Wording of a function entry comes from the header comment, so it can only change on the live site with a new snapshot.
 
+When the headers change on `dev`, the **Refresh docs snapshot** workflow opens a bot PR into `website-dev` with the new `dev` snapshot. Merge it when you want staging current.
+
 ## Regressions
 
 A regression is something that worked in an earlier stable release and works worse in a later one, on the same robot and code. For example, the robot ends 1 in or more farther from its target over 5 runs of each version, a motion stops short, a wait returns 100 ms or more later or hangs, or code stops compiling without a message saying what to write instead. "Just retune" doesn't make it not a regression.
