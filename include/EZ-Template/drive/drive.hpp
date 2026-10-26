@@ -728,7 +728,7 @@ public:
    * \param ticks
    *        the wheel's RPM: cartridge RPM * (motor gear / wheel gear). A 600 RPM cartridge with a 36 tooth motor
    *        gear driving a 48 tooth wheel gear is 600 * (36 / 48) = 450. With no external gearing it is just the
-   *        cartridge RPM (100, 200 or 600).
+   *        cartridge RPM (100, 200 or 600).  Get it wrong and every distance the robot reports is off by the same factor.
    */
   Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, int imu_port, double wheel_diameter, double ticks);
 
@@ -753,7 +753,7 @@ public:
    * \param ticks
    *        the wheel's RPM: cartridge RPM * (motor gear / wheel gear). A 600 RPM cartridge with a 36 tooth motor
    *        gear driving a 48 tooth wheel gear is 600 * (36 / 48) = 450. With no external gearing it is just the
-   *        cartridge RPM (100, 200 or 600).
+   *        cartridge RPM (100, 200 or 600).  Get it wrong and every distance the robot reports is off by the same factor.
    */
   Drive(std::vector<int> left_motor_ports, std::vector<int> right_motor_ports, std::vector<int> imu_ports, double wheel_diameter, double ticks);
 
