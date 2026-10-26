@@ -21,6 +21,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
+  # The live site may only show text from a release snapshot (scripts/api/prepare.mjs)
+  DOCS_TARGET: website
   # Hosted GitHub runners have 7 GB of memory available, let's use 6 GB
   NODE_OPTIONS: --max-old-space-size=6144
 

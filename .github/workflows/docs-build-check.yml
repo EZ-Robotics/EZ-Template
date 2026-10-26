@@ -17,6 +17,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
+  # A PR into website is a deploy in waiting, so it gets the deploy workflow's live-site check
+  DOCS_TARGET: ${{ github.base_ref == 'website' && 'website' || '' }}
   # Same heap limit as the deploy workflow
   NODE_OPTIONS: --max-old-space-size=6144
 
