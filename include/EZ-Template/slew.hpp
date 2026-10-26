@@ -31,6 +31,11 @@ public:
    *        it reaches that speed before this distance has been traveled
    * \param minimum_speed
    *        the starting speed for the movement
+   *
+   * \code{.cpp}
+   * // Ramps from 60 up to full speed over 100
+   * ez::slew lift_slew(100, 60);
+   * \endcode
    */
   slew(double distance, int minimum_speed);
 
@@ -42,6 +47,14 @@ public:
    *        it reaches that speed before this distance has been traveled
    * \param minimum_speed
    *        the starting speed for the movement
+   *
+   * \code{.cpp}
+   * ez::slew lift_slew;
+   *
+   * void initialize() {
+   *   lift_slew.constants_set(100, 50);
+   * }
+   * \endcode
    */
   void constants_set(double distance, int minimum_speed);
   Constants constants_get();
@@ -57,6 +70,16 @@ public:
    *        the target position for the motion
    * \param current
    *        the position at the start of the motion
+   *
+   * \code{.cpp}
+   * ez::slew lift_slew;
+   * pros::Motor lift(1);
+   *
+   * void initialize() {
+   *   lift_slew.constants_set(100, 50);
+   *   lift_slew.initialize(true, 127, 500, lift.get_position());
+   * }
+   * \endcode
    */
   void initialize(bool enabled, double maximum_speed, double target, double current);
 
@@ -65,16 +88,78 @@ public:
    *
    * \param current
    *        current sensor value
+   *
+   * \code{.cpp}
+   * ez::slew lift_slew;
+   * pros::Motor lift(1);
+   *
+   * void initialize() {
+   *   lift_slew.constants_set(100, 50);
+   *   lift_slew.initialize(true, 127, 500, lift.get_position());
+   * }
+   *
+   * void autonomous() {
+   *   while (lift.get_position() <= 500) {
+   *     lift = lift_slew.iterate(lift.get_position());
+   *     pros::delay(10);
+   *   }
+   *   lift = 0;
+   * }
+   * \endcode
    */
   double iterate(double current);
 
   /**
    * Returns true if slew is enabled, and false if it isn't.
+   *
+   * \code{.cpp}
+   * ez::slew lift_slew;
+   * pros::Motor lift(1);
+   *
+   * void initialize() {
+   *   lift_slew.constants_set(100, 50);
+   *   lift_slew.initialize(true, 127, 500, lift.get_position());
+   * }
+   *
+   * void autonomous() {
+   *   // Returns true
+   *   printf("Slew Enabled? %i\n", lift_slew.enabled());
+   *
+   *   while (lift.get_position() <= 500) {
+   *     lift_slew.iterate(lift.get_position());
+   *     lift = lift_slew.output();
+   *     pros::delay(10);
+   *   }
+   *   lift = 0;
+   *
+   *   // Returns false
+   *   printf("Slew Enabled? %i\n", lift_slew.enabled());
+   * }
+   * \endcode
    */
   bool enabled();
 
   /**
    * Returns what the current max speed should be, which is the last output of iterate().
+   *
+   * \code{.cpp}
+   * ez::slew lift_slew;
+   * pros::Motor lift(1);
+   *
+   * void initialize() {
+   *   lift_slew.constants_set(100, 50);
+   *   lift_slew.initialize(true, 127, 500, lift.get_position());
+   * }
+   *
+   * void autonomous() {
+   *   while (lift.get_position() <= 500) {
+   *     lift_slew.iterate(lift.get_position());
+   *     lift = lift_slew.output();
+   *     pros::delay(10);
+   *   }
+   *   lift = 0;
+   * }
+   * \endcode
    */
   double output();
 
@@ -83,11 +168,60 @@ public:
    *
    * \param speed
    *        maximum speed
+   *
+   * \code{.cpp}
+   * ez::slew lift_slew;
+   * pros::Motor lift(1);
+   *
+   * void initialize() {
+   *   lift_slew.constants_set(100, 50);
+   *   lift_slew.initialize(true, 127, 500, lift.get_position());
+   * }
+   *
+   * void autonomous() {
+   *   while (lift.get_position() <= 500) {
+   *     if (lift.get_position() < 100)
+   *       lift_slew.speed_max_set(50);
+   *     else
+   *       lift_slew.speed_max_set(127);
+   *
+   *     lift_slew.iterate(lift.get_position());
+   *     lift = lift_slew.output();
+   *     pros::delay(10);
+   *   }
+   *   lift = 0;
+   * }
+   * \endcode
    */
   void speed_max_set(double speed);
 
   /**
    * Returns the max speed the slew can be.
+   *
+   * \code{.cpp}
+   * ez::slew lift_slew;
+   * pros::Motor lift(1);
+   *
+   * void initialize() {
+   *   lift_slew.constants_set(100, 50);
+   *   lift_slew.initialize(true, 127, 500, lift.get_position());
+   * }
+   *
+   * void autonomous() {
+   *   while (lift.get_position() <= 500) {
+   *     if (lift.get_position() < 100)
+   *       lift_slew.speed_max_set(50);
+   *     else
+   *       lift_slew.speed_max_set(127);
+   *     printf("%.2f", lift_slew.speed_max_get());
+   *
+   *     lift_slew.iterate(lift.get_position());
+   *     lift = lift_slew.output();
+   *     pros::delay(10);
+   *   }
+   *   lift = 0;
+   * }
+   * \endcode
    */
   double speed_max_get();
 

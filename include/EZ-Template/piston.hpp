@@ -27,6 +27,10 @@ public:
    * \param default_state
    *        level the solenoid's pin starts at.  get() and set() are relative to it: get() is false at startup,
    *        and set(true) moves the piston to the opposite of default_state
+   *
+   * \code{.cpp}
+   * ez::Piston left_wing('A');
+   * \endcode
    */
   Piston(int input_port, bool default_state = false);
 
@@ -42,6 +46,10 @@ public:
    * \param default_state
    *        level the solenoid's pin starts at.  get() and set() are relative to it: get() is false at startup,
    *        and set(true) moves the piston to the opposite of default_state
+   *
+   * \code{.cpp}
+   * ez::Piston left_wing('A', 1);
+   * \endcode
    */
   Piston(int input_port, int expander_smart_port, bool default_state = false);
 
@@ -50,11 +58,27 @@ public:
    *
    * \param input
    *        true sets to the opposite of the starting position
+   *
+   * \code{.cpp}
+   * ez::Piston left_wing('A');
+   *
+   * void autonomous() {
+   *   left_wing.set(true);
+   * }
+   * \endcode
    */
   void set(bool input);
 
   /**
    * Gets the state of the piston.
+   *
+   * \code{.cpp}
+   * ez::Piston left_wing('A');
+   *
+   * void autonomous() {
+   *   left_wing.set(!left_wing.get());
+   * }
+   * \endcode
    */
   bool get();
 
@@ -63,6 +87,18 @@ public:
    *
    * \param toggle
    *        an input button
+   *
+   * \code{.cpp}
+   * ez::Piston left_wing('A');
+   *
+   * void opcontrol() {
+   *   while (true) {
+   *     left_wing.button_toggle(master.get_digital(DIGITAL_X));
+   *
+   *     pros::delay(10);
+   *   }
+   * }
+   * \endcode
    */
   void button_toggle(int toggle);
 
@@ -71,6 +107,18 @@ public:
    *
    * \param toggle
    *        an input button
+   *
+   * \code{.cpp}
+   * ez::Piston left_wing('A');
+   *
+   * void opcontrol() {
+   *   while (true) {
+   *     left_wing.button_toggle(DIGITAL_X);
+   *
+   *     pros::delay(10);
+   *   }
+   * }
+   * \endcode
    */
   void button_toggle(pros::controller_digital_e_t toggle);
 
@@ -81,6 +129,19 @@ public:
    *        the button to activate the piston
    * \param deactive
    *        the button to retract the piston
+   *
+   * \code{.cpp}
+   * ez::Piston left_wing('A');
+   *
+   * void opcontrol() {
+   *   while (true) {
+   *     left_wing.buttons(master.get_digital(DIGITAL_L1),
+   *                        master.get_digital(DIGITAL_L2));
+   *
+   *     pros::delay(10);
+   *   }
+   * }
+   * \endcode
    */
   void buttons(int active, int deactive);
 
@@ -91,6 +152,18 @@ public:
    *        the button to activate the piston
    * \param deactive
    *        the button to retract the piston
+   *
+   * \code{.cpp}
+   * ez::Piston left_wing('A');
+   *
+   * void opcontrol() {
+   *   while (true) {
+   *     left_wing.buttons(DIGITAL_L1, DIGITAL_L2);
+   *
+   *     pros::delay(10);
+   *   }
+   * }
+   * \endcode
    */
   void buttons(pros::controller_digital_e_t active, pros::controller_digital_e_t deactive);
 
