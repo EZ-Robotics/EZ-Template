@@ -123,6 +123,12 @@ enum e_angle_behavior {
 };
 
 const double ANGLE_NOT_SET = 0.0000000000000000000001;
+
+/**
+ * Marks an odom movement that did not pick a turn behavior, so it follows pid_odom_behavior_set().
+ * Kept inside the enum's value range (it needs 3 bits) so the cast is well defined.
+ */
+const e_angle_behavior ODOM_BEHAVIOR_NOT_SET = static_cast<e_angle_behavior>(7);
 const ez::QAngle p_ANGLE_NOT_SET = 0.0000000000000000000001_deg;
 
 /**
@@ -150,7 +156,7 @@ typedef struct odom {
   pose target;
   drive_directions drive_direction;
   int max_xy_speed;
-  e_angle_behavior turn_behavior = shortest;
+  e_angle_behavior turn_behavior = ODOM_BEHAVIOR_NOT_SET;
 } odom;
 
 /**
@@ -160,7 +166,7 @@ typedef struct united_odom {
   united_pose target;
   drive_directions drive_direction;
   int max_xy_speed;
-  e_angle_behavior turn_behavior = shortest;
+  e_angle_behavior turn_behavior = ODOM_BEHAVIOR_NOT_SET;
 } united_odom;
 
 /**

@@ -26,6 +26,7 @@ struct DriveTestAccess {
   static const std::vector<int>& injected_pp_index(Drive& d) { return d.injected_pp_index; }
   static int& pp_index(Drive& d) { return d.pp_index; }
   static const std::vector<odom>& pp_movements(Drive& d) { return d.pp_movements; }
+  static e_angle_behavior current_angle_behavior(Drive& d) { return d.current_angle_behavior; }
 
   // Marks p's current error fresh (what a real ez_auto_task pass provides) without changing error,
   // cur, or derivative -- exit_condition() sees exactly what the calling test's own script set,
