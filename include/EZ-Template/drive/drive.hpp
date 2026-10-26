@@ -171,7 +171,7 @@ public:
    * \param min_speed
    *        the starting speed for the movement, 0 - 127
    *
-   * code{.cpp}
+   * \code{.cpp}
    * void autonomous() {
    *   chassis.pid_targets_reset();                // Resets PID targets to 0
    *   chassis.drive_imu_reset();                  // Reset gyro position to 0
@@ -184,7 +184,7 @@ public:
    *   chassis.pid_swing_set(ez::LEFT_SWING, 90_deg, 110, 0, true);
    *   chassis.pid_wait();
    * }
-   * endcode
+   * \endcode
    */
   void slew_swing_constants_set(double distance, int min_speed);
 
@@ -279,7 +279,7 @@ public:
    * \param min_speed
    *        the starting speed for the movement, 0 - 127
    *
-   * code{.cpp}
+   * \code{.cpp}
    * void autonomous() {
    *   chassis.pid_targets_reset();                // Resets PID targets to 0
    *   chassis.drive_imu_reset();                  // Reset gyro position to 0
@@ -292,7 +292,7 @@ public:
    *   chassis.pid_turn_set(-90_deg, 110, true);
    *   chassis.pid_wait();
    * }
-   * endcode
+   * \endcode
    */
   void slew_turn_constants_set(double distance, int min_speed);
 
@@ -390,7 +390,7 @@ public:
    * \param min_speed
    *        the starting speed for the movement, 0 - 127
    *
-   * code{.cpp}
+   * \code{.cpp}
    * void autonomous() {
    *   chassis.pid_targets_reset();                // Resets PID targets to 0
    *   chassis.drive_imu_reset();                  // Reset gyro position to 0
@@ -406,7 +406,7 @@ public:
    *   chassis.pid_drive_set(-12_in, 110, true);
    *   chassis.pid_wait();
    * }
-   * endcode
+   * \endcode
    */
   void slew_drive_constants_set(double distance, int min_speed);
 
