@@ -113,10 +113,25 @@ function Blocks({blocks}: {blocks: Block[]}): ReactNode {
 }
 
 // "{3,7}" for the example lines that call one of these functions, so the reader sees which line to copy.
-// Comment lines are skipped. Returns nothing when no line calls them.
+// A call that wraps onto more lines is highlighted until its parentheses close. Comment lines are
+// skipped. Returns nothing when no line calls them.
 function highlightLines(code: string, names: string[]): string | undefined {
   const call = new RegExp('\\b(?:' + [...new Set(names)].join('|') + ')\\s*\\(');
-  const lines = code.split('\n').flatMap((line, i) => (line.trimStart().startsWith('//') || !call.test(line) ? [] : [i + 1]));
+  const balance = (text: string) => [...text].reduce((n, ch) => n + (ch === '(' ? 1 : ch === ')' ? -1 : 0), 0);
+  const lines: number[] = [];
+  let open = 0; // parentheses still open from a call that started on an earlier line
+  code.split('\n').forEach((raw, i) => {
+    const line = raw.replace(/\/\/.*$/, '');
+    if (open === 0) {
+      const m = call.exec(line);
+      if (!m) return;
+      lines.push(i + 1);
+      open = Math.max(0, balance(line.slice(m.index)));
+    } else {
+      lines.push(i + 1);
+      open = Math.max(0, open + balance(line));
+    }
+  });
   return lines.length > 0 ? '{' + lines.join(',') + '}' : undefined;
 }
 
