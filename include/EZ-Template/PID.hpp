@@ -21,18 +21,18 @@ public:
   PID();
 
   /**
-   * Constructor with constants.
+   * Creates a PID object with constants.  Everything past kP has a default starting value, so you can just put kP.
    *
    * \param p
    *        kP
    * \param i
-   *        ki
+   *        kI
    * \param d
    *        kD
    * \param start_i
-   *        error value that i starts within
+   *        i will start when error is within this
    * \param name
-   *        std::string of name that prints
+   *        a string for the name of the PID
    */
   PID(double p, double i = 0, double d = 0, double start_i = 0, std::string name = "");
 
@@ -73,7 +73,7 @@ public:
   };
 
   /**
-   * Set's constants for exit conditions.
+   * Sets constants for exit conditions.  To disable one of the conditions, set the constants relating to it to 0.
    *
    * \param p_small_exit_time
    *        sets small_exit_time, timer for to exit within small_error
@@ -220,6 +220,8 @@ public:
    * acceleration, so this can't tell cruising from actually stalled.  That's why the secondary sensor is off
    * by default (see Drive::pid_drive_exit_condition_set and friends).
    *
+   * This is defaulted to 0.075.  This is only used when the secondary sensor is enabled.
+   *
    * \param zero
    *        a small double
    */
@@ -227,11 +229,16 @@ public:
 
   /**
    * Returns the threshold that the secondary sensor will return 0 velocity within.
+   *
+   * This is defaulted to 0.075, and it is only used when the secondary sensor is enabled.
    */
   double velocity_sensor_secondary_exit_get();
 
   /**
    * Iterative exit condition for PID.
+   *
+   * Checks if the error is small for X amount of time, if the error is a little bigger for Y amount of time, or if the velocity is 0 for Z amount of time
+   * (after the robot has moved), if you have constants enabled for them in exit_condition_set().  Returns one of the exit_output states.
    *
    * \param print = false
    *        if true, prints when complete
@@ -240,6 +247,10 @@ public:
 
   /**
    * Iterative exit condition for PID.
+   *
+   * Checks if the error is small for X amount of time, if the error is a little bigger for Y amount of time, or if the velocity is 0 for Z amount of time
+   * (after the robot has moved), if you have constants enabled for them in exit_condition_set().  Then it checks if the motor is pulling too many amps for A
+   * amount of time, only if you have constants enabled for it.  Returns one of the exit_output states.
    *
    * \param sensor
    *        a pros motor on your mechanism
@@ -251,6 +262,9 @@ public:
   /**
    * Iterative exit condition for PID.
    *
+   * This checks the same thing as one motor, except it checks through multiple motors instead of 1.  If any of the motors are pulling too many amps
+   * the function starts the timer for mA, and when the timer runs out it returns mA_EXIT.  Returns one of the exit_output states.
+   *
    * \param sensor
    *        pros motors on your mechanism
    * \param print = false
@@ -261,6 +275,9 @@ public:
   /**
    * Iterative exit condition for PID.
    *
+   * This checks the same thing as one motor, except it checks through the whole motor group instead of 1 motor.  If any of the motors are pulling too many amps
+   * the function starts the timer for mA, and when the timer runs out it returns mA_EXIT.  Returns one of the exit_output states.
+   *
    * \param sensor
    *        pros motor group on your mechanism
    * \param print = false
@@ -270,6 +287,8 @@ public:
 
   /**
    * Sets the name of the PID that prints during exit conditions.
+   *
+   * When you have multiple mechanisms using exit conditions and you are debugging, seeing which exit condition is doing what can be useful.
    *
    * \param name
    *        the name of the mechanism for printing
@@ -306,7 +325,7 @@ public:
   /**
    * Resets the parts of the PID that must not carry over from one motion to the next.
    * Clears the integral and primes the derivative so the first iteration of a new motion
-   * does not see a spike from the previous motion's final position.
+   * does not see a spike from the previous motion's final position.  Call it when you reuse one PID for several targets, alongside timers_reset().
    *
    * \param current
    *        the sensor value the next compute() will be given
