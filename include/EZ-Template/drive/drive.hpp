@@ -565,10 +565,13 @@ public:
    *
    *   // This will slew from the start to 110,
    *   // and once the speed dips down to 50 it won't slew again up to 90
-   *   chassis.pid_odom_set({{{6_in, 10_in}, ez::fwd, 110},
-   *                         {{0_in, 20_in}, ez::fwd, 50},
-   *                         {{0_in, 30_in}, ez::fwd, 90}},
-   *                        true);
+   *   chassis.pid_odom_set(
+   *       {
+   *           {{6_in, 10_in}, ez::fwd, 110},
+   *           {{0_in, 20_in}, ez::fwd, 50},
+   *           {{0_in, 30_in}, ez::fwd, 90},
+   *       },
+   *       true);
    *   chassis.pid_wait();
    * }
    * \endcode
@@ -593,10 +596,13 @@ public:
    *
    *   // This will slew from the start to 110,
    *   // and once the speed dips down to 50 it'll slew again up to 90
-   *   chassis.pid_odom_set({{{6_in, 10_in}, ez::fwd, 110},
-   *                         {{0_in, 20_in}, ez::fwd, 50},
-   *                         {{0_in, 30_in}, ez::fwd, 90}},
-   *                        true);
+   *   chassis.pid_odom_set(
+   *       {
+   *           {{6_in, 10_in}, ez::fwd, 110},
+   *           {{0_in, 20_in}, ez::fwd, 50},
+   *           {{0_in, 30_in}, ez::fwd, 90},
+   *       },
+   *       true);
    *   chassis.pid_wait();
    * }
    * \endcode
@@ -1517,9 +1523,12 @@ public:
    *   std::vector<double> smooth_consts = chassis.odom_path_smooth_constants_get();
    *   printf("Weight Smooth: %.4f   Weight Data: %.4f   Tolerance: %.4f\n",
    *          smooth_consts[0], smooth_consts[1], smooth_consts[2]);
-   *   chassis.pid_odom_set({{{0_in, 24_in}, ez::fwd, 110},
-   *                         {{24_in, 24_in}, ez::fwd, 110}},
-   *                        false);
+   *   chassis.pid_odom_set(
+   *       {
+   *           {{0_in, 24_in}, ez::fwd, 110},
+   *           {{24_in, 24_in}, ez::fwd, 110},
+   *       },
+   *       false);
    *
    *   // Print the full path to terminal
    *   chassis.odom_path_print();
@@ -1529,9 +1538,12 @@ public:
    *   smooth_consts = chassis.odom_path_smooth_constants_get();
    *   printf("Weight Smooth: %.4f   Weight Data: %.4f   Tolerance: %.4f\n",
    *          smooth_consts[0], smooth_consts[1], smooth_consts[2]);
-   *   chassis.pid_odom_set({{{0_in, 24_in}, ez::fwd, 110},
-   *                         {{24_in, 24_in}, ez::fwd, 110}},
-   *                        false);
+   *   chassis.pid_odom_set(
+   *       {
+   *           {{0_in, 24_in}, ez::fwd, 110},
+   *           {{24_in, 24_in}, ez::fwd, 110},
+   *       },
+   *       false);
    *
    *   // Print the full path to terminal
    *   chassis.odom_path_print();
@@ -1564,11 +1576,14 @@ public:
    *
    *   // Print default smooth constants
    *   std::vector<double> smooth_consts = chassis.odom_path_smooth_constants_get();
-   *   printf("Weight Smooth: %.2f   Weight Data: %.2f   Tolerance: %.2f\n",
+   *   printf("Weight Smooth: %.4f   Weight Data: %.4f   Tolerance: %.4f\n",
    *          smooth_consts[0], smooth_consts[1], smooth_consts[2]);
-   *   chassis.pid_odom_set({{{0_in, 24_in}, ez::fwd, 110},
-   *                         {{24_in, 24_in}, ez::fwd, 110}},
-   *                        false);
+   *   chassis.pid_odom_set(
+   *       {
+   *           {{0_in, 24_in}, ez::fwd, 110},
+   *           {{24_in, 24_in}, ez::fwd, 110},
+   *       },
+   *       false);
    *
    *   // Print the full path to terminal
    *   chassis.odom_path_print();
@@ -1576,11 +1591,14 @@ public:
    *   // Print updated smooth constants
    *   chassis.odom_path_smooth_constants_set(0.5, 0.003, 0.0001);
    *   smooth_consts = chassis.odom_path_smooth_constants_get();
-   *   printf("Weight Smooth: %.2f   Weight Data: %.2f   Tolerance: %.2f\n",
+   *   printf("Weight Smooth: %.4f   Weight Data: %.4f   Tolerance: %.4f\n",
    *          smooth_consts[0], smooth_consts[1], smooth_consts[2]);
-   *   chassis.pid_odom_set({{{0_in, 24_in}, ez::fwd, 110},
-   *                         {{24_in, 24_in}, ez::fwd, 110}},
-   *                        false);
+   *   chassis.pid_odom_set(
+   *       {
+   *           {{0_in, 24_in}, ez::fwd, 110},
+   *           {{24_in, 24_in}, ez::fwd, 110},
+   *       },
+   *       false);
    *
    *   // Print the full path to terminal
    *   chassis.odom_path_print();
@@ -1608,11 +1626,14 @@ public:
    *
    *   // Print default smooth constants
    *   std::vector<double> smooth_consts = chassis.odom_path_smooth_constants_get();
-   *   printf("Weight Smooth: %.2f   Weight Data: %.2f   Tolerance: %.2f\n",
+   *   printf("Weight Smooth: %.4f   Weight Data: %.4f   Tolerance: %.4f\n",
    *          smooth_consts[0], smooth_consts[1], smooth_consts[2]);
-   *   chassis.pid_odom_set({{{0_in, 24_in}, ez::fwd, 110},
-   *                         {{24_in, 24_in}, ez::fwd, 110}},
-   *                        false);
+   *   chassis.pid_odom_set(
+   *       {
+   *           {{0_in, 24_in}, ez::fwd, 110},
+   *           {{24_in, 24_in}, ez::fwd, 110},
+   *       },
+   *       false);
    *
    *   // Print the full path to terminal
    *   chassis.odom_path_print();
@@ -1620,11 +1641,14 @@ public:
    *   // Print updated smooth constants
    *   chassis.odom_path_smooth_constants_set(0.5, 0.003, 0.0001);
    *   smooth_consts = chassis.odom_path_smooth_constants_get();
-   *   printf("Weight Smooth: %.2f   Weight Data: %.2f   Tolerance: %.2f\n",
+   *   printf("Weight Smooth: %.4f   Weight Data: %.4f   Tolerance: %.4f\n",
    *          smooth_consts[0], smooth_consts[1], smooth_consts[2]);
-   *   chassis.pid_odom_set({{{0_in, 24_in}, ez::fwd, 110},
-   *                         {{24_in, 24_in}, ez::fwd, 110}},
-   *                        false);
+   *   chassis.pid_odom_set(
+   *       {
+   *           {{0_in, 24_in}, ez::fwd, 110},
+   *           {{24_in, 24_in}, ez::fwd, 110},
+   *       },
+   *       false);
    *
    *   // Print the full path to terminal
    *   chassis.odom_path_print();
@@ -3900,14 +3924,20 @@ public:
    *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
    *
    *   // Uses the global slew setting
-   *   chassis.pid_odom_smooth_pp_set({{{0_in, 24_in}, ez::fwd, 110},
-   *                                   {{24_in, 24_in}, ez::fwd, 110}});
+   *   chassis.pid_odom_smooth_pp_set(
+   *       {
+   *           {{0_in, 24_in}, ez::fwd, 110},
+   *           {{24_in, 24_in}, ez::fwd, 110},
+   *       });
    *   chassis.pid_wait();
    *
    *   // Slew on for this motion only
-   *   chassis.pid_odom_smooth_pp_set({{{24_in, 48_in}, ez::fwd, 110},
-   *                                   {{48_in, 48_in}, ez::fwd, 110}},
-   *                                  true);
+   *   chassis.pid_odom_smooth_pp_set(
+   *       {
+   *           {{24_in, 48_in}, ez::fwd, 110},
+   *           {{48_in, 48_in}, ez::fwd, 110},
+   *       },
+   *       true);
    *   chassis.pid_wait();
    * }
    * \endcode
@@ -3941,14 +3971,20 @@ public:
    *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
    *
    *   // Uses the global slew setting
-   *   chassis.pid_odom_injected_pp_set({{{0_in, 24_in}, ez::fwd, 110},
-   *                                     {{24_in, 24_in}, ez::fwd, 110}});
+   *   chassis.pid_odom_injected_pp_set(
+   *       {
+   *           {{0_in, 24_in}, ez::fwd, 110},
+   *           {{24_in, 24_in}, ez::fwd, 110},
+   *       });
    *   chassis.pid_wait();
    *
    *   // Slew on for this motion only
-   *   chassis.pid_odom_injected_pp_set({{{24_in, 48_in}, ez::fwd, 110},
-   *                                     {{48_in, 48_in}, ez::fwd, 110}},
-   *                                    true);
+   *   chassis.pid_odom_injected_pp_set(
+   *       {
+   *           {{24_in, 48_in}, ez::fwd, 110},
+   *           {{48_in, 48_in}, ez::fwd, 110},
+   *       },
+   *       true);
    *   chassis.pid_wait();
    * }
    * \endcode
@@ -3980,14 +4016,20 @@ public:
    *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
    *
    *   // Uses the global slew setting
-   *   chassis.pid_odom_pp_set({{{0_in, 24_in}, ez::fwd, 110},
-   *                            {{24_in, 24_in}, ez::fwd, 110}});
+   *   chassis.pid_odom_pp_set(
+   *       {
+   *           {{0_in, 24_in}, ez::fwd, 110},
+   *           {{24_in, 24_in}, ez::fwd, 110},
+   *       });
    *   chassis.pid_wait();
    *
    *   // Slew on for this motion only
-   *   chassis.pid_odom_pp_set({{{24_in, 48_in}, ez::fwd, 110},
-   *                            {{48_in, 48_in}, ez::fwd, 110}},
-   *                           true);
+   *   chassis.pid_odom_pp_set(
+   *       {
+   *           {{24_in, 48_in}, ez::fwd, 110},
+   *           {{48_in, 48_in}, ez::fwd, 110},
+   *       },
+   *       true);
    *   chassis.pid_wait();
    * }
    * \endcode
@@ -4021,14 +4063,20 @@ public:
    *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Hold motors for consistency
    *
    *   // Uses the global slew setting
-   *   chassis.pid_odom_set({{{0_in, 24_in}, ez::fwd, 110},
-   *                         {{24_in, 24_in}, ez::fwd, 110}});
+   *   chassis.pid_odom_set(
+   *       {
+   *           {{0_in, 24_in}, ez::fwd, 110},
+   *           {{24_in, 24_in}, ez::fwd, 110},
+   *       });
    *   chassis.pid_wait();
    *
    *   // Slew on for this motion only
-   *   chassis.pid_odom_set({{{24_in, 48_in}, ez::fwd, 110},
-   *                         {{48_in, 48_in}, ez::fwd, 110}},
-   *                        true);
+   *   chassis.pid_odom_set(
+   *       {
+   *           {{24_in, 48_in}, ez::fwd, 110},
+   *           {{48_in, 48_in}, ez::fwd, 110},
+   *       },
+   *       true);
    *   chassis.pid_wait();
    * }
    * \endcode
