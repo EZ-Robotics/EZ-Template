@@ -25,7 +25,7 @@ We can't test on every robot, so this helps a lot.
 
 ## Fix it yourself
 
-Typos, docs, the example project, and small bug fixes outside `src/EZ-Template/drive/` can go straight to a PR.
+Typos, docs (including fixes to a function's header comment), the example project, and small bug fixes outside `src/EZ-Template/drive/` can go straight to a PR.
 
 Everything else starts with an issue, and waits for a maintainer to OK it. That means anything in `src/EZ-Template/drive/` (the code that drives the robot), a new function teams can call, or more than 30 changed lines in the library.
 
@@ -39,6 +39,12 @@ Everything else starts with an issue, and waits for a maintainer to OK it. That 
 Before you start on an issue, comment "I'd like to work on this" so two people don't make the same fix. Look for issues labeled `good first issue`.
 
 To fix a typo on the docs site, click **Edit this page** at the bottom of the page and GitHub walks you through it.
+
+### Where to fix the docs
+
+The text of a function's entry comes from its comment in the header, in `include/EZ-Template/` on `dev`. To fix that wording, change the header comment in a PR into `dev`. A header fix shows on the live site at the next release.
+
+Pages, tutorials and where a function appears are on `website-dev`. **Edit this page** works for tutorials and page text. For a function's entry it opens a page with only a tag, so fix the header on `dev` instead.
 
 ## If AI helped
 
