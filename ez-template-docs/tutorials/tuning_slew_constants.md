@@ -75,18 +75,10 @@ chassis.slew_turn_constants_set(5_deg, 50);
 ```
 
 ### Swinging
-Swinging is the most complex.  Because of the introduction of arcs, EZ-Template now supports either inches or degrees for tuning slew.  You can also have independent forward and backward constants.  it doesn't matter if you decide to use inches or degrees for tuning, you can change it later.  
+Swinging slew is measured in degrees, the angle the robot swings through to ramp up to full speed.  You can also have independent forward and backward constants.  
 
-Using degrees, these are your options for setting slew constants. 
 ```cpp
-chassis.slew_swing_constants_set(5_deg, 50);  // This sets forwards and backwards constants
+chassis.slew_swing_constants_set(5_deg, 50);  // This sets forwards and backwards constants
 chassis.slew_swing_constants_forward_set(5_deg, 50);
 chassis.slew_swing_constants_backward_set(5_deg, 50);
-```
-
-Using inches, these are your options for setting slew constants. 
-```cpp
-chassis.slew_swing_constants_set(7_in, 80);  // This sets forwards and backwards constants
-chassis.slew_swing_constants_forward_set(7_in, 80);
-chassis.slew_swing_constants_backward_set(7_in, 80);
 ```

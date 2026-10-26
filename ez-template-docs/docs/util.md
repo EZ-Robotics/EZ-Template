@@ -3,13 +3,58 @@ layout: default
 title: Util
 description:  chat, util is short for utility if you're new here.  we're just using slang
 ---
-
-
-
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
+## Printing
 
+### screen_print()
+
+<ApiFunction name="screen_print" />
+
+### ez_template_print()
+
+<ApiFunction name="ez_template_print" />
+
+### to_string_with_precision()
+
+<ApiFunction name="util::to_string_with_precision" />
+
+## Math
+
+### sgn()
+
+<ApiFunction name="util::sgn" />
+
+### clamp()
+
+<ApiFunction name="util::clamp" args="double, double, double | double, double" />
+
+### to_deg()
+
+<ApiFunction name="util::to_deg" />
+
+### to_rad()
+
+<ApiFunction name="util::to_rad" />
+
+### wrap_angle()
+
+<ApiFunction name="util::wrap_angle" />
+
+## Points
+
+### absolute_angle_to_point()
+
+<ApiFunction name="util::absolute_angle_to_point" />
+
+### distance_to_point()
+
+<ApiFunction name="util::distance_to_point" />
+
+### vector_off_point()
+
+<ApiFunction name="util::vector_off_point" />
 
 ## controller
 The pros controller is defined globally in our library as `master`.     
@@ -58,293 +103,6 @@ extern pros::Controller master;
 
  
 
-
-## screen_print() 
-Prints to the LLEMU.  This function handles text that's too long for a line by finding the last word and starting it on a new line, and takes `\n` to set a new line.   
-
-There are 8 lines, 0 through 7, and a line holds 38 characters.  If the text wraps past line 7, the last line is cut off and ends in `...`, and the lines above it are left alone.  A `line` outside of 0 to 7 does nothing, and an empty string clears that line.   
-
-`text` input string   
-`line` starting line, 0 through 7.  Defaults to 0     
-<Tabs
-  groupId="ex3"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-    { label: 'Example 2',  value: 'ex2', },
-    ]}>
-
-<TabItem value="example">
-
-**Returns:**  
-  hello, this is line 0   
-  this is line 1
-
-
-```cpp
-void initialize() {
-  ez::screen_print("hello, this is line 0\nthis is line 1");
-}
-```
-
-</TabItem>
-
-
-<TabItem value="proto">
-
-```cpp
-void screen_print(std::string text, int line = 0);
-```
-
-
-
-</TabItem>
-
-
-<TabItem value="ex2">
-
-**Returns:**  
-  01234567890123456789012345678901234567   
-  hello
-
-
-```cpp
-void initialize() {
-  std::string digits = "01234567890123456789012345678901234567";  // 38 characters, a full line
-  ez::screen_print(digits + "hello", 2);                          // "hello" doesn't fit, so it goes on line 3
-}
-```
-
-</TabItem>
-</Tabs>
-
-
-
-
-
-## to_string_with_precision() 
-Returns a string with a specific number of decimal points.     
-
-`input` your input value     
- `n` the amount of decimals you want to display    
-<Tabs
-  groupId="to_string_with_precision"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-<TabItem value="proto">
-
-```cpp
-std::string to_string_with_precision(double input, int n = 2);
-```
-</TabItem>
-<TabItem value="example">
-
-```cpp
-void initialize() {
-  // This will print 1.23
-  double test = 1.23456789;
-  std::cout << ez::util::to_string_with_precision(test) << std::endl;
-}
-```
-</TabItem>
-</Tabs>
-
-
-
- 
-
-
-## ez_template_print() 
-Prints our branding on your terminal :D.   
-<Tabs
-  groupId="ex4"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-
-<TabItem value="example">
-
-```cpp
-void initialize() {
-  ez::ez_template_print();
-}
-```
-
-</TabItem>
-
-
-<TabItem value="proto">
-
-```cpp
-void ez_template_print();
-```
-
-
-
-</TabItem>
-</Tabs>
-
-
-
-
-
-
- 
-
-
-## sgn() 
-Returns the sign of the input.  Returns 1 if positive, -1 if negative, and 0 if 0.    
-
-`input` value to check the sign of
-<Tabs
-  groupId="ex5"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-
-<TabItem value="example">
-
-```cpp
-void opcontrol() {
-  while (true) {
-    printf("Sgn of Controller: %i \n", ez::util::sgn(master.get_analog(ANALOG_LEFT_Y)));
-
-    pros::delay(ez::util::DELAY_TIME);
-  }
-}
-```
-
-</TabItem>
-
-
-<TabItem value="proto">
-
-```cpp
-int sgn(double input);
-```
-
-
-
-</TabItem>
-</Tabs>
-
-
-
-
-
-
- 
-
-
-## clamp() 
-Returns input restricted to min-max threshold.    
-
-`input` your input value   
-`max` the maximum input can be    
-`min` the minimum input can be     
-<Tabs
-  groupId="ex6"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-
-<TabItem value="example">
-
-```cpp
-void opcontrol() {
-  while (true) {
-    int joy = master.get_analog(ANALOG_LEFT_Y);
-
-    // When the joystick is between 100 and 127
-    // (or -100 and -127) this will print 100 (or -100).
-    printf("Clipped Controller: %.0f \n", ez::util::clamp(joy, 100, -100)); 
-  }
-}
-```
-
-</TabItem>
-
-
-<TabItem value="proto">
-
-```cpp
-double clamp(double input, double max, double min);
-```
-
-
-
-</TabItem>
-</Tabs>
-
-
-
-
-## clamp() 
-Returns input restricted to min-max threshold.  
-
-The minimum used is negative max.      
-
-`input` your input value     
-`max` the absolute value maximum input can be    
-<Tabs
-  groupId="ex66"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-
-<TabItem value="example">
-
-```cpp
-void opcontrol() {
-  while (true) {
-    int joy = master.get_analog(ANALOG_LEFT_Y);
-
-    // When the joystick is between 100 and 127
-    // (or -100 and -127) this will print 100 (or -100).
-    printf("Clipped Controller: %.0f \n", ez::util::clamp(joy, 100)); 
-  }
-}
-```
-
-</TabItem>
-
-
-<TabItem value="proto">
-
-```cpp
-double clamp(double input, double max);
-```
-
-
-
-</TabItem>
-</Tabs>
-
-
-
-
-
-
- 
-
-
 ## DELAY_TIME 
 Standard delay time for loops in ms.    
 <Tabs
@@ -389,7 +147,6 @@ const int DELAY_TIME = 10;
 
  
 
-
 ## SD_CARD_ACTIVE
 Boolean that checks if an SD card is installed.  True if there is one, false if there isn't.    
 <Tabs
@@ -430,217 +187,6 @@ const bool SD_CARD_ACTIVE = pros::usd::is_installed();
 
 
  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-## to_deg() 
-Converts radians to degrees.       
-
-`input` your input radian    
-<Tabs
-  groupId="to_deg"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-<TabItem value="proto">
-
-```cpp
-double to_deg(double input);
-```
-</TabItem>
-<TabItem value="example">
-
-```cpp
-void initialize() {
-  double test = ez::util::to_deg(3.14);
-  std::cout << ez::util::to_string_with_precision(test) << std::endl;
-}
-```
-</TabItem>
-</Tabs>
-
-
-
-
-## to_rad() 
-Converts degrees to radians.       
-
-`input` your input degree    
-<Tabs
-  groupId="to_rad"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-<TabItem value="proto">
-
-```cpp
-double to_rad(double input);
-```
-</TabItem>
-<TabItem value="example">
-
-```cpp
-void initialize() {
-  double test = ez::util::to_rad(180.0);
-  std::cout << ez::util::to_string_with_precision(test) << std::endl;
-}
-```
-</TabItem>
-</Tabs>
-
-
-
-
-## absolute_angle_to_point() 
-Returns the angle between two points.      
-
-`itarget` target pose    
-`icurrent` current pose    
-<Tabs
-  groupId="absolute_angle_to_point"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-<TabItem value="proto">
-
-```cpp
-double absolute_angle_to_point(pose itarget, pose icurrent);
-```
-</TabItem>
-<TabItem value="example">
-
-```cpp
-void initialize() {
-  double test = ez::util::absolute_angle_to_point({12, 12}, {0, 0});
-  std::cout << ez::util::to_string_with_precision(test) << std::endl;
-}
-```
-</TabItem>
-</Tabs>
-
-
-
-
-
-## distance_to_point() 
-Returns the distance between two points.      
-
-`itarget` target pose    
-`icurrent` current pose     
-<Tabs
-  groupId="distance_to_point"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-<TabItem value="proto">
-
-```cpp
-double distance_to_point(pose itarget, pose icurrent);
-```
-</TabItem>
-<TabItem value="example">
-
-```cpp
-void initialize() {
-  double test = ez::util::distance_to_point({12, 12}, {0, 0});
-  std::cout << ez::util::to_string_with_precision(test) << std::endl;
-}
-```
-</TabItem>
-</Tabs>
-
-
-## wrap_angle() 
-Constrains an angle between 180 and -180.     
-
-`theta` input angle in degrees  
-<Tabs
-  groupId="wrap_angle"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-<TabItem value="proto">
-
-```cpp
-double wrap_angle(double theta);
-```
-</TabItem>
-<TabItem value="example">
-
-```cpp
-void initialize() {
-  double test = ez::util::wrap_angle(3600);
-  std::cout << ez::util::to_string_with_precision(test) << std::endl;
-}
-```
-</TabItem>
-</Tabs>
-
-
-
-
-## vector_off_point() 
-Returns a new pose that is projected off of the current pose.     
-
-`added` how far to project a new point   
-`icurrent` point to project off of  
-<Tabs
-  groupId="vector_off_point"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-<TabItem value="proto">
-
-```cpp
-pose vector_off_point(double added, pose icurrent);
-```
-</TabItem>
-<TabItem value="example">
-
-```cpp
-void initialize() {
-  ez::pose test = ez::util::vector_off_point(24, {0, 0, 0});
-  printf("(%.2f, %.2f, %.2f)\n", test.x, test.y, test.theta);
-}
-```
-</TabItem>
-</Tabs>
-
-
 
 ## Version macros
 Macros that tell you which version of EZ-Template your code is being built against.  They're for libraries and shared code that need to work with more than one EZ-Template version.  Include `EZ-Template/api.hpp` and they're available, there's nothing to call.  

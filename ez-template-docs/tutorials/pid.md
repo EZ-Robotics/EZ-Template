@@ -29,7 +29,7 @@ You can create a PID object with the line of code below.  The parameters are:
 `kP` this is the first value, it's the scaling value for the proportional term    
 `kI` this is the second value, it's the scaling value for the integral term    
 `kD` this is the third value, it's the scaling value for the derivative term  
-`start_i` this is the fourth value, it's what error has to be within for integral to start winding up  
+`start_i` this is the fourth value, it's what error has to be within for integral to start winding up.  A `start_i` of 0 means integral always winds up  
 `name` this is the name of the subsystem and is used for debugging to your computer  
 ```cpp
 ez::PID liftPID{0.45, 0, 0, 0, "Lift"};

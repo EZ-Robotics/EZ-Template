@@ -33,7 +33,7 @@ The parameters are:
 `p` kP  
 `i` kI  
 `d` kD  
-`p_start_i` i will start when error is within this  
+`p_start_i` i will start when error is within this, 0 means i always accumulates  
 ```cpp
 void default_constants() {
   // P, I, D, and Start I

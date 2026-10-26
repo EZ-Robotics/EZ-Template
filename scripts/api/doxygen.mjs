@@ -92,17 +92,21 @@ function inlineElement(c, ctx) {
   }
 }
 
-function codeText(node) {
+// Text inside one <highlight>: plain text, <sp/> for spaces, and nested <ref> elements.
+function codeInline(node) {
   let out = '';
   for (const c of kids(node)) {
     if (c.nodeType === 3 || c.nodeType === 4) out += c.data;
-    else if (c.nodeType === 1) {
-      if (c.tagName === 'sp') out += ' '.repeat(Number(c.getAttribute('value')) || 1);
-      else if (c.tagName === 'codeline') out += codeText(c) + '\n';
-      else out += codeText(c);
-    }
+    else if (c.nodeType === 1) out += c.tagName === 'sp' ? ' '.repeat(Number(c.getAttribute('value')) || 1) : codeInline(c);
   }
   return out;
+}
+
+// One line of a \code listing. Text sitting directly under <codeline> is the XML's own formatting, so only its elements count.
+function codeLine(line) {
+  return els(line)
+    .map((c) => (c.tagName === 'sp' ? ' '.repeat(Number(c.getAttribute('value')) || 1) : codeInline(c)))
+    .join('');
 }
 
 function parseBlocks(container, ctx) {
@@ -138,7 +142,7 @@ function parsePara(para, ctx) {
       case 'programlisting': {
         flush();
         const lang = (c.getAttribute('filename') || '').replace(/^\./, '') || 'cpp';
-        ctx.examples.push({lang, code: codeText(c).replace(/\s+$/, '')});
+        ctx.examples.push({lang, code: els(c, 'codeline').map(codeLine).join('\n').replace(/\s+$/, '')});
         break;
       }
       case 'verbatim':
