@@ -122,7 +122,13 @@ The full list is at [gitmoji.dev](https://gitmoji.dev).
 4. Build the template with `pros make template` from the tag.
 5. Build the example project zip from `example-project`, named exactly `EZ-Template-Example-Project.zip`.
 6. Make the GitHub release with both zips and the notes. Check "Set as a pre-release" for alphas, betas and RCs.
-7. Update the docs site and post in the Discord.
+7. Update the docs site.
+   1. On `website-dev`, run `npm run api:update -- vX.Y.Z --use`. Use Doxygen 1.18.0, so snapshots only change when the headers do.
+   2. Update the version label in `docusaurus.config.js`.
+   3. Commit, and open a PR into `website-dev`.
+   4. Promote `website-dev` into `website` with a merge commit, never a squash.
+   5. At a stable release, also do the `docs:version` step in the `website-dev` README.
+8. Post in the Discord.
 
 **Before every release**
 - [ ] No open `regression` issues, or a maintainer wrote on each why it can ship
@@ -131,6 +137,14 @@ The full list is at [gitmoji.dev](https://gitmoji.dev).
 - [ ] The notes thank every contributor by GitHub name
 - [ ] The notes describe every behavior change in words a team can act on, like "waits end about 50 ms later on heavy robots"
 - [ ] The notes list everything deprecated and what to use instead
+
+### Fixing the live docs between releases
+
+Check whether `website-dev` has changes that aren't released yet.
+- **Nothing unreleased.** Fix it on `website-dev` and promote as usual.
+- **Something unreleased.** Branch off `website` and open a PR with the fix into `website`, merged with a merge commit. Then merge `website` into `website-dev`. This is the only time `website` goes back into `website-dev`.
+
+Wording of a function entry comes from the header comment, so it can only change on the live site with a new snapshot.
 
 ## Regressions
 
