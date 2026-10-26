@@ -30,7 +30,7 @@ public:
    * \param d
    *        kD
    * \param start_i
-   *        error value that i starts within
+   *        error value that i starts within, 0 means i always accumulates
    * \param name
    *        std::string of name that prints
    */
@@ -46,7 +46,7 @@ public:
    * \param d
    *        kD
    * \param p_start_i
-   *        error value that i starts within
+   *        error value that i starts within, 0 means i always accumulates
    */
   void constants_set(double p, double i = 0, double d = 0, double p_start_i = 0);
 
