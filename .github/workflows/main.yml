@@ -108,6 +108,29 @@ jobs:
           pipx install clang-format==18.1.8
           sh tools/format.sh --check
 
+  # The docs site builds its function pages from the \code examples in include/EZ-Template, so a
+  # team pastes them into a project. tools/check-doc-examples.py checks that each one is
+  # clang-format output at 100 columns and that every \param is a real parameter, then that it
+  # compiles on its own against the real PROS headers. The compile step runs in the same pinned
+  # pros-build image as warnings-clean, because that is where the ARM compiler is.
+  doc-examples:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Examples are formatted and every param is real
+        run: |
+          pipx install clang-format==18.1.8
+          python3 tools/check-doc-examples.py --skip compile
+
+      - name: Examples compile in a fresh example project
+        if: ${{ !cancelled() }}
+        uses: docker://ghcr.io/lemlib/pros-build:v5.1.0
+        with:
+          entrypoint: bash
+          args: -c "python3 tools/check-doc-examples.py --skip format,params"
+
   # include/EZ-Units/units.hpp is a vendored copy of EZ-Units and must stay
   # byte-identical to the tagged release. To upgrade it, copy the file from the new
   # tag and bump EZ_UNITS_TAG below in the same commit.
