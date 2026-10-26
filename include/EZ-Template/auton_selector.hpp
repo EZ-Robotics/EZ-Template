@@ -57,11 +57,13 @@ public:
    *
    * \code{.cpp}
    * void autonomous() {
-   *   chassis.drive_imu_reset();
-   *   chassis.drive_sensor_reset();
-   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);
+   *   chassis.pid_targets_reset();                // Resets PID targets to 0
+   *   chassis.drive_imu_reset();                  // Reset gyro position to 0
+   *   chassis.drive_sensor_reset();               // Reset drive sensors to 0
+   *   chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+   *   chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
    *
-   *   ez::as::auton_selector.selected_auton_call();
+   *   ez::as::auton_selector.selected_auton_call();  // Calls selected auton from autonomous selector
    * }
    * \endcode
    */

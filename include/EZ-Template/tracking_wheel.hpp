@@ -133,7 +133,7 @@ public:
   bool last_read_ok();
 
   /**
-   * Sets the distance to the center of the robot.
+   * Sets the distance to the center of the robot.  The sign is ignored, use distance_to_center_flip_set() to make it negative.
    *
    * \param input
    *        distance to the center of your robot in inches
@@ -288,8 +288,8 @@ public:
    * ez::tracking_wheel right_tracker(1, 2.75, 4.0);
    *
    * void opcontrol() {
-   *   // Set ticks per rev to 36000
-   *   right_tracker.ticks_per_rev_set(36000);
+   *   // A custom encoder that gives 8192 ticks per revolution
+   *   right_tracker.ticks_per_rev_set(8192);
    *
    *   while (true) {
    *     // Tank control
@@ -334,13 +334,13 @@ public:
    * Sets the gear ratio for your tracking wheel.
    *
    * \param input
-   *        gear ratio of tracking wheel
+   *        ratio is how many times the sensor turns for one turn of the wheel
    *
    * \code{.cpp}
    * ez::tracking_wheel right_tracker(1, 2.75, 4.0);
    *
    * void opcontrol() {
-   *   // Set ratio to 2:1
+   *   // The sensor turns 2 times for every 1 turn of the wheel
    *   right_tracker.ratio_set(2.0);
    *
    *   while (true) {

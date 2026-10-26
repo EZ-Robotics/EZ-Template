@@ -126,9 +126,9 @@ public:
    * Sets the piston to go in and out with 2 buttons during opcontrol.
    *
    * \param active
-   *        the button to activate the piston
+   *        while this is true (button held), sets the piston to true (opposite of default_state)
    * \param deactive
-   *        the button to retract the piston
+   *        while this is true (button held), sets the piston to false
    *
    * \code{.cpp}
    * ez::Piston left_wing('A');
@@ -149,9 +149,9 @@ public:
    * Sets the piston to go in and out with 2 buttons during opcontrol.
    *
    * \param active
-   *        the button to activate the piston
+   *        while this button is held, sets the piston to true (opposite of default_state)
    * \param deactive
-   *        the button to retract the piston
+   *        while this button is held, sets the piston to false
    *
    * \code{.cpp}
    * ez::Piston left_wing('A');

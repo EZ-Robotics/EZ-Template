@@ -39,8 +39,8 @@ namespace ez {
 void ez_template_print();
 
 /**
- * Prints to the LLEMU.  This function handles text that's too long for a line by finding the last word and starting it on a new line, and takes \\n to set a
- * new line.
+ * Prints to the brain screen's 8 print lines (LLEMU, or the portrait screen when rotated).  This function handles text that's too long for a line by finding
+ * the last word and starting it on a new line, and takes \\n to set a new line.
  *
  * There are 8 lines, 0 through 7, and a line holds 38 characters.  If the text wraps past line 7, the last line is cut off and ends in "...", and the lines
  * above it are left alone.  A line outside of 0 to 7 does nothing, and an empty string clears that line.
@@ -267,6 +267,8 @@ bool reversed_active(double input);
  *     // When the joystick is between 100 and 127
  *     // (or -100 and -127) this will print 100 (or -100).
  *     printf("Clipped Controller: %.0f \n", ez::util::clamp(joy, 100, -100));
+ *
+ *     pros::delay(ez::util::DELAY_TIME);
  *   }
  * }
  * \endcode
@@ -291,6 +293,8 @@ double clamp(double input, double max, double min);
  *     // When the joystick is between 100 and 127
  *     // (or -100 and -127) this will print 100 (or -100).
  *     printf("Clipped Controller: %.0f \n", ez::util::clamp(joy, 100));
+ *
+ *     pros::delay(ez::util::DELAY_TIME);
  *   }
  * }
  * \endcode
@@ -375,7 +379,7 @@ double to_deg(double input);
 double to_rad(double input);
 
 /**
- * Returns the angle between two points.
+ * Returns the heading in degrees from icurrent to itarget, 0 is +Y.
  *
  * \param itarget
  *        target position
@@ -384,6 +388,7 @@ double to_rad(double input);
  *
  * \code{.cpp}
  * void initialize() {
+ *   // This prints 45.00
  *   double test = ez::util::absolute_angle_to_point({12, 12}, {0, 0});
  *   std::cout << ez::util::to_string_with_precision(test) << std::endl;
  * }

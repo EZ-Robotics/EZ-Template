@@ -100,10 +100,10 @@ public:
    *
    * void autonomous() {
    *   while (lift.get_position() <= 500) {
-   *     lift = lift_slew.iterate(lift.get_position());
-   *     pros::delay(10);
+   *     lift.move(lift_slew.iterate(lift.get_position()));
+   *     pros::delay(ez::util::DELAY_TIME);
    *   }
-   *   lift = 0;
+   *   lift.move(0);
    * }
    * \endcode
    */
@@ -127,10 +127,10 @@ public:
    *
    *   while (lift.get_position() <= 500) {
    *     lift_slew.iterate(lift.get_position());
-   *     lift = lift_slew.output();
-   *     pros::delay(10);
+   *     lift.move(lift_slew.output());
+   *     pros::delay(ez::util::DELAY_TIME);
    *   }
-   *   lift = 0;
+   *   lift.move(0);
    *
    *   // Returns false
    *   printf("Slew Enabled? %i\n", lift_slew.enabled());
@@ -154,10 +154,10 @@ public:
    * void autonomous() {
    *   while (lift.get_position() <= 500) {
    *     lift_slew.iterate(lift.get_position());
-   *     lift = lift_slew.output();
-   *     pros::delay(10);
+   *     lift.move(lift_slew.output());
+   *     pros::delay(ez::util::DELAY_TIME);
    *   }
-   *   lift = 0;
+   *   lift.move(0);
    * }
    * \endcode
    */
@@ -186,10 +186,10 @@ public:
    *       lift_slew.speed_max_set(127);
    *
    *     lift_slew.iterate(lift.get_position());
-   *     lift = lift_slew.output();
-   *     pros::delay(10);
+   *     lift.move(lift_slew.output());
+   *     pros::delay(ez::util::DELAY_TIME);
    *   }
-   *   lift = 0;
+   *   lift.move(0);
    * }
    * \endcode
    */
@@ -216,10 +216,10 @@ public:
    *     printf("%.2f", lift_slew.speed_max_get());
    *
    *     lift_slew.iterate(lift.get_position());
-   *     lift = lift_slew.output();
-   *     pros::delay(10);
+   *     lift.move(lift_slew.output());
+   *     pros::delay(ez::util::DELAY_TIME);
    *   }
-   *   lift = 0;
+   *   lift.move(0);
    * }
    * \endcode
    */

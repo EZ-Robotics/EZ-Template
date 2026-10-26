@@ -4,28 +4,14 @@
 
 namespace ez {
 
-/// Rotates the brain screen in 90-degree steps for brains mounted sideways or
-/// upside down. Accepts 0, 90, 180, or 270 (measured clockwise); other values
-/// are rejected with a printed message. Call after the screen is initialized
-/// (ez::as::initialize or pros::lcd::initialize).
+/// Rotates the brain screen in 90-degree steps, for a brain mounted sideways or upside down.  Call it after the screen is initialized
+/// (ez::as::initialize() or pros::lcd::initialize()).
+///
+/// At 90 and 270 the stock LLEMU screen is swapped for EZ's portrait screen, which re-flows the same print lines and button bar to the rotated
+/// size.  At 0 and 180 LLEMU stays.  Touch rotates with the screen.  Experimental, unverified on hardware.
 ///
 /// \param degrees
-///        0, 90, 180, or 270
-///
-/// At 90 and 270 the stock LLEMU screen is swapped for EZ's portrait screen:
-/// LLEMU builds its widgets at the resolution live when pros::lcd::initialize
-/// ran (480x272), so once the canvas becomes 272x480 its text runs off the
-/// right edge. The portrait screen re-flows the same LLEMU theme, font, print
-/// lines and three-button bar to the rotated resolution, wrapping long lines
-/// rather than clipping them, and replays its button presses onto LLEMU's own
-/// buttons so pros::lcd::register_btn*_cb callbacks behave identically.
-/// 0 and 180 restore LLEMU untouched.
-///
-/// Experimental, unverified on hardware: uses LVGL's software rotation on the
-/// live display driver. Touch rotates with the pixels, so on-screen buttons
-/// respond where they are drawn; LVGL applies that transform to its own
-/// pointer input. 90/270 swap the screen's width and height. The physical
-/// LLEMU buttons are unaffected.
+///        0, 90, 180, or 270, measured clockwise.  Any other value prints a message and does nothing
 ///
 /// \code{.cpp}
 /// void initialize() {
@@ -41,6 +27,7 @@ void screen_rotation_set(int degrees);
 ///
 /// \code{.cpp}
 /// void initialize() {
+///   ez::as::initialize();
 ///   ez::screen_rotation_set(90);
 ///
 ///   // Prints 1
@@ -72,6 +59,13 @@ void screen_line_set(int line, std::string text);
 ///
 /// \code{.cpp}
 /// void initialize() {
+///   ez::as::initialize();
+///
+///   ez::screen_print("Hello!", 0);
+///
+///   // Leave it up long enough to see
+///   pros::delay(2000);
+///
 ///   ez::screen_line_clear(0);
 /// }
 /// \endcode
@@ -81,6 +75,14 @@ void screen_line_clear(int line);
 ///
 /// \code{.cpp}
 /// void initialize() {
+///   ez::as::initialize();
+///
+///   ez::screen_print("Hello!", 0);
+///   ez::screen_print("Goodbye!", 1);
+///
+///   // Leave them up long enough to see
+///   pros::delay(2000);
+///
 ///   ez::screen_lines_clear();
 /// }
 /// \endcode
@@ -151,6 +153,7 @@ inline screen_point screen_touch_rotate(int degrees, int panel_w, int panel_h, i
 ///
 /// \code{.cpp}
 /// void initialize() {
+///   ez::as::initialize();
 ///   ez::screen_rotation_set(90);
 ///
 ///   // Prints 90
