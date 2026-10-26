@@ -25,6 +25,9 @@ void screen_rotation_set(int degrees);
 
 /// True while the portrait screen is the loaded screen (rotation 90 or 270).
 ///
+/// \return
+///        true while the portrait screen is loaded, false otherwise
+///
 /// \code{.cpp}
 /// void initialize() {
 ///   ez::as::initialize();
@@ -123,6 +126,8 @@ struct screen_point {
 ///        raw touch x from the panel
 /// \param raw_y
 ///        raw touch y from the panel
+/// \return
+///        the touch point in the rotated screen's coordinates, as an ez::screen_point
 ///
 /// \code{.cpp}
 /// void opcontrol() {
@@ -150,6 +155,9 @@ inline screen_point screen_touch_rotate(int degrees, int panel_w, int panel_h, i
 }
 
 /// Current rotation in degrees (0, 90, 180, or 270).
+///
+/// \return
+///        the current rotation in degrees, measured clockwise
 ///
 /// \code{.cpp}
 /// void initialize() {

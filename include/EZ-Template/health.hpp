@@ -36,6 +36,8 @@ struct Report {
 ///        your drive
 /// \param controller
 ///        the controller to rumble on failure
+/// \return
+///        a Report of what responded, with all_ok() true when nothing needs attention
 ///
 /// \code{.cpp}
 /// void initialize() {
