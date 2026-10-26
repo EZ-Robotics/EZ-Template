@@ -135,50 +135,11 @@ public:
   /**
    * Sets constants for slew for swing movements.
    *
-   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set distance.  A movement with a lower max speed is capped at that speed,
-   * so it reaches that speed before the distance is traveled.
+   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set angle.  A movement with a lower max speed is capped at that speed,
+   * so it reaches that speed before the angle is turned.
    *
    * \param distance
-   *        the distance the robot travels to ramp up to full speed (127), a distance unit
-   * \param min_speed
-   *        the starting speed for the movement, 0 - 127
-   */
-  void slew_swing_constants_set(ez::QLength distance, int min_speed);
-
-  /**
-   * Sets constants for slew for forward swing movements.
-   *
-   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set distance.  A movement with a lower max speed is capped at that speed,
-   * so it reaches that speed before the distance is traveled.
-   *
-   * \param distance
-   *        the distance the robot travels to ramp up to full speed (127), a distance unit
-   * \param min_speed
-   *        the starting speed for the movement, 0 - 127
-   */
-  void slew_swing_constants_forward_set(ez::QLength distance, int min_speed);
-
-  /**
-   * Sets constants for slew for backward swing movements.
-   *
-   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set distance.  A movement with a lower max speed is capped at that speed,
-   * so it reaches that speed before the distance is traveled.
-   *
-   * \param distance
-   *        the distance the robot travels to ramp up to full speed (127), a distance unit
-   * \param min_speed
-   *        the starting speed for the movement, 0 - 127
-   */
-  void slew_swing_constants_backward_set(ez::QLength distance, int min_speed);
-
-  /**
-   * Sets constants for slew for swing movements.
-   *
-   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set distance.  A movement with a lower max speed is capped at that speed,
-   * so it reaches that speed before the distance is traveled.
-   *
-   * \param distance
-   *        the distance the robot travels to ramp up to full speed (127), an angle unit
+   *        the angle the robot swings through to ramp up to full speed (127), in degrees or any angle unit
    * \param min_speed
    *        the starting speed for the movement, 0 - 127
    */
@@ -187,11 +148,11 @@ public:
   /**
    * Sets constants for slew for swing forward movements.
    *
-   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set distance.  A movement with a lower max speed is capped at that speed,
-   * so it reaches that speed before the distance is traveled.
+   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set angle.  A movement with a lower max speed is capped at that speed,
+   * so it reaches that speed before the angle is turned.
    *
    * \param distance
-   *        the distance the robot travels to ramp up to full speed (127), an angle unit
+   *        the angle the robot swings through to ramp up to full speed (127), in degrees or any angle unit
    * \param min_speed
    *        the starting speed for the movement, 0 - 127
    */
@@ -200,11 +161,11 @@ public:
   /**
    * Sets constants for slew for swing backward movements.
    *
-   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set distance.  A movement with a lower max speed is capped at that speed,
-   * so it reaches that speed before the distance is traveled.
+   * Slew ramps up the speed of the robot from min_speed to full speed (127) over the set angle.  A movement with a lower max speed is capped at that speed,
+   * so it reaches that speed before the angle is turned.
    *
    * \param distance
-   *        the distance the robot travels to ramp up to full speed (127), an angle unit
+   *        the angle the robot swings through to ramp up to full speed (127), in degrees or any angle unit
    * \param min_speed
    *        the starting speed for the movement, 0 - 127
    */
@@ -4171,9 +4132,6 @@ private:
   bool slow_mode_is_on = false;
   double slow_mode_speed = 64.0;
   int swing_opposite_speed = 0;
-  bool slew_swing_fwd_using_angle = false;
-  bool slew_swing_rev_using_angle = false;
-  bool slew_swing_using_angle = false;
   bool pid_tuner_terminal_b = false;
   bool pid_tuner_lcd_b = true;
   void pid_tuner_print();

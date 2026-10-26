@@ -174,7 +174,7 @@ void Drive::swing_pid_task() {
   rightPID.compute(drive_sensor_right());
 
   // Compute slew
-  double current = slew_swing_using_angle ? drive_angle_get() : (current_swing == LEFT_SWING ? drive_sensor_left() : drive_sensor_right());
+  double current = drive_angle_get();
   slew_swing.iterate(current);
 
   // Clip swingPID to max speed
