@@ -8,6 +8,10 @@ import TabItem from '@theme/TabItem';
 
 Most angles take units (`45_deg`) or a plain number in degrees. The distance `pid_wait_until` waits for takes units or a plain number in inches.
 
+<span id="functions-with-units" />
+<span id="functions-without-units" />
+<span id="misc" />
+
 ## Waiting
 
 ### pid_wait()
@@ -137,6 +141,8 @@ bool interfered = false;
 ### pid_angle_behavior_bias_set()
 
 <ApiFunction name="pid_angle_behavior_bias_set" />
+
+<span id="getter" />
 
 ## Getters
 

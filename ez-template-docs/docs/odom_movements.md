@@ -6,6 +6,9 @@ description:  moving with odometry in autonomous
 
 Most distances, points and angles take units (`24_in`, `90_deg`) or a plain number in inches and degrees.
 
+<span id="functions-with-units" />
+<span id="functions-without-units" />
+
 ## Moving
 
 ### pid_odom_set()

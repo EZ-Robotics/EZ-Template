@@ -4,6 +4,8 @@ title: PID Tuner
 description:  tuning pid live :O
 ---
 
+<span id="setter-functions" />
+
 ## Controlling the tuner
 
 ### pid_tuner_enable()
@@ -29,6 +31,8 @@ description:  tuning pid live :O
 ### pid_tuner_add()
 
 <ApiFunction name="pid_tuner_add" />
+
+<span id="getter-functions" />
 
 ## Printing
 

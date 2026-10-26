@@ -6,6 +6,9 @@ description:  turning in place
 
 Most angles and times take units (`90_deg`, `300_ms`) or a plain number in degrees and milliseconds. The turn slew constants (`slew_turn_constants_set`) also take units or a plain number in degrees.
 
+<span id="functions-with-units" />
+<span id="functions-without-units" />
+
 ## Turning
 
 ### pid_turn_set()
@@ -47,6 +50,8 @@ Most angles and times take units (`90_deg`, `300_ms`) or a plain number in degre
 ### pid_turn_behavior_set()
 
 <ApiFunction name="pid_turn_behavior_set" />
+
+<span id="getter" />
 
 ## Getters
 
