@@ -1,0 +1,151 @@
+# Keeps the docs site's staging text current with the headers on dev.
+#
+# The docs site (branch website-dev) shows function text from a snapshot of these headers,
+# api/data/dev.json. When include/EZ-Template changes on dev, this runs the site's own update
+# script on website-dev and opens a PR into website-dev with the new snapshot, or force-updates
+# the open one. Maintainers merge it when they want staging current. It pushes only
+# bot/refresh-dev-snapshot, never website-dev, website, dev or main.
+#
+# A PR opened with GITHUB_TOKEN does not start other workflows, so the Docs build check will
+# not run on the bot PR. That is why this builds the site itself and reports the result in the
+# PR body.
+name: Refresh docs snapshot
+
+on:
+  push:
+    branches: [dev]
+    paths: ["include/EZ-Template/**"]
+
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: refresh-docs-snapshot
+  cancel-in-progress: false
+
+env:
+  NODE_OPTIONS: --max-old-space-size=6144
+  DOXYGEN_VERSION: 1.18.0
+  BRANCH: bot/refresh-dev-snapshot
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      # update.mjs clones the tip of dev itself, so only the docs site needs checking out.
+      - name: Checkout website-dev
+        uses: actions/checkout@v7
+        with:
+          ref: website-dev
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22.x
+          cache: npm
+
+      # The README pins this version so a snapshot only changes when the headers do. Ubuntu's
+      # apt package is older.
+      - name: Install Doxygen
+        run: |
+          curl -fsSL --retry 3 "https://github.com/doxygen/doxygen/releases/download/Release_${DOXYGEN_VERSION//./_}/doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz" -o "$RUNNER_TEMP/doxygen.tar.gz"
+          tar -xzf "$RUNNER_TEMP/doxygen.tar.gz" -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/doxygen-${DOXYGEN_VERSION}/bin" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/doxygen-${DOXYGEN_VERSION}/bin/doxygen" --version
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Update the dev snapshot
+        run: npm run api:update -- dev --use 2>&1 | tee "$RUNNER_TEMP/update.log"
+
+      # The snapshot records the commit it came from, so it differs whenever dev moved. Only the
+      # text counts: when that is unchanged, put the old file back so the PR is not just a hash.
+      - name: Check whether anything changed
+        id: changes
+        run: |
+          if node --input-type=module -e '
+            import fs from "node:fs";
+            import {execFileSync} from "node:child_process";
+            const strip = (s) => { const o = JSON.parse(s); delete o.source.commit; return JSON.stringify(o); };
+            let old = "";
+            try { old = strip(execFileSync("git", ["show", "HEAD:api/data/dev.json"], {encoding: "utf8"})); } catch {}
+            process.exit(strip(fs.readFileSync("api/data/dev.json", "utf8")) === old ? 0 : 1);
+          '; then
+            git checkout -- api/data/dev.json
+          fi
+          if git diff --quiet -- api; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "The dev snapshot is already current; nothing to do."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            git status --short api
+          fi
+
+      - name: Build the site
+        id: build
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          if npm run build > "$RUNNER_TEMP/build.log" 2>&1; then
+            echo "passed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "passed=false" >> "$GITHUB_OUTPUT"
+            tail -n 40 "$RUNNER_TEMP/build.log"
+          fi
+
+      - name: Push the branch
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -C "$BRANCH"
+          git add api/data/dev.json api/config.json
+          git commit -m "🔧 Refresh the dev API snapshot"
+          git push --force origin "HEAD:refs/heads/$BRANCH"
+
+      - name: Open or update the PR
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BUILD_PASSED: ${{ steps.build.outputs.passed }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ "$BUILD_PASSED" = true ]; then
+            build="\`npm run build\` passed on this branch."
+          else
+            build="\`npm run build\` **failed** on this branch. Do not merge until it builds. The end of its output is in the run log."
+          fi
+          # The body limit is 65536 characters, so keep the script output well under it.
+          {
+            echo "Refreshes \`api/data/dev.json\` from the headers on \`dev\`, and sets \`current\` in \`api/config.json\` back to \`dev\`. Merge it when you want staging current."
+            echo
+            echo "$build The Docs build check does not run on PRs the bot opens, so [the workflow run]($RUN_URL) built the site instead."
+            echo
+            echo "Before promoting to \`website\`, \`current\` has to be a release tag again: run \`npm run api:update -- vX.Y.Z --use\` and merge that."
+            echo
+            echo "## Output of \`npm run api:update -- dev --use\`"
+            echo
+            echo "~~~~text"
+            head -c 50000 "$RUNNER_TEMP/update.log"
+            echo
+            echo "~~~~"
+          } > "$RUNNER_TEMP/body.md"
+          title="🔧 Refresh the dev API snapshot"
+          number=$(gh pr list --base website-dev --head "$BRANCH" --state open --json number --jq '.[0].number // empty')
+          if [ -n "$number" ]; then
+            gh pr edit "$number" --title "$title" --body-file "$RUNNER_TEMP/body.md"
+            echo "Updated PR #$number"
+          else
+            gh pr create --base website-dev --head "$BRANCH" --title "$title" --body-file "$RUNNER_TEMP/body.md"
+          fi
+
+      # The PR is open either way so the output is visible; this makes the run red when the site does not build.
+      - name: Fail if the build failed
+        if: steps.build.outputs.passed == 'false'
+        run: exit 1
