@@ -87,8 +87,8 @@ double PID::raw_compute() {
   derivative = cur - prev_current;
 
   if (constants.ki != 0) {
-    // Only compute i when within a threshold of target
-    if (fabs(error) < constants.start_i) integral += error;
+    // Only compute i when within a threshold of target, a start_i of 0 means no threshold
+    if (constants.start_i == 0 || fabs(error) < constants.start_i) integral += error;
 
     // Reset i when the sign of error flips
     if (util::sgn(error) != util::sgn(prev_error) && reset_i_sgn) integral = 0;
