@@ -66,10 +66,11 @@ public:
   void selected_auton_print();
 
   /**
-   * Appends the given autons to the existing list of autons.
+   * Appends autonomous routines to the autonomous selector's list.  Calling this more than once keeps the routines you've already added, and the
+   * selector goes back to the first page.
    *
    * \param autons
-   *        vector of Autons to append to the current list
+   *        vector of Autons to append to the current list, each an object of a string and a function
    */
   void autons_add(std::vector<Auton> autons);
 };

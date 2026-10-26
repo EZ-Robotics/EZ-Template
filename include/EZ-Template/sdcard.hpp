@@ -25,17 +25,19 @@ void auton_selector_initialize();
 void auto_sd_update();
 
 /**
- * Increases the page by 1.
+ * Increases the page number by 1.  Best used with the lcd callback functions.
  */
 void page_up();
 
 /**
- * Decreases the page by 1.
+ * Decreases the page number by 1.  Best used with the lcd callback functions.
  */
 void page_down();
 
 /**
- * Initializes LLEMU and sets up callbacks for auton selector.
+ * Initializes the autonomous selector.  If an SD card is plugged in, the current page will set to what's on the SD card.
+ *
+ * Also initializes LLEMU and sets up the callbacks for the auton selector.
  */
 void initialize();
 
@@ -57,18 +59,18 @@ extern pros::adi::DigitalIn* limit_switch_left;
 extern pros::adi::DigitalIn* limit_switch_right;
 
 /**
- * Initialize two limit switches to change pages on the lcd.
+ * Sets external buttons to increase/decrease the current autonomous page.
  *
  * The library never takes ownership of the pointers passed in and will not
- * delete them.  The switches must outlive this call, the library keeps polling the pointers.
+ * delete them.  The switches must outlive this call, the library keeps polling the pointers.  Make them global, not locals inside initialize().
  *
  * Calling this with both pointers null disables the limit switches, this works any time it is called.
  * The library stops polling the old pointers.
  *
  * @param right_limit
- *        limit switch that goes forward a page
+ *        a button to go forward a page
  * @param left_limit
- *        limit switch that goes back a page, defaults to nullptr
+ *        a button to go backwards a page, defaults to nullptr
  */
 void limit_switch_lcd_initialize(pros::adi::DigitalIn* right_limit, pros::adi::DigitalIn* left_limit = nullptr);
 
@@ -101,6 +103,9 @@ void page_blank_remove(int page);
 
 /**
  * Removes all blank pages.
+ *
+ * The next page_blank_is_on() call creates its page again, so stop calling it once you have removed the pages (for example, only call it while
+ * pros::competition::is_connected() is false).
  */
 void page_blank_remove_all();
 

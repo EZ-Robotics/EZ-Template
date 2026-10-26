@@ -31,12 +31,22 @@ struct Report {
 /// failure, with its port where the device has one, and rumbles the
 /// controller when anything is wrong. Safe to call from initialize() and
 /// again at the start of autonomous.
+///
+/// \param chassis
+///        your drive
+/// \param controller
+///        the controller to rumble on failure
 Report preflight(ez::Drive& chassis, pros::Controller& controller);
 
 /// Registers a smart device (a motor that isn't on the drive, a distance,
 /// rotation, or optical sensor, anything deriving from pros::Device) for
 /// inclusion in preflight checks. A null device is ignored, and a null name is
 /// reported as "unnamed device".
+///
+/// \param device
+///        the sensor or motor to watch
+/// \param name
+///        a label used when it fails a check
 void device_add(pros::Device* device, const char* name);
 
 /// Adds a "Health Check" page to the auton selector, so preflight can be run
@@ -46,6 +56,9 @@ void device_add(pros::Device* device, const char* name);
 /// This is only a convenience: preflight() is an ordinary function, so calling
 /// it from an opcontrol button works just as well, e.g.
 /// `if (master.get_digital_new_press(DIGITAL_Y)) ez::health::preflight(chassis, master);`
+///
+/// \param chassis
+///        your drive
 void preflight_register(ez::Drive& chassis);
 
 }  // namespace health
