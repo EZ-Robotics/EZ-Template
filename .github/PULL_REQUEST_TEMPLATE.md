@@ -11,6 +11,7 @@
 - [ ] Format On Save was on in VS Code, or I ran `sh tools/format.sh` (PRs into `dev`)
 - [ ] Robot run: <!-- which robot, which auton, what happened. Drag a video or photos in here if you have them. -->
 - [ ] No robot run, or it's a typo or docs fix
+- [ ] If this changes what a function does, I updated its header comment
 
 ## AI tools used
 <!-- Each tool and what it did, like "Claude wrote the fix" or "ChatGPT found the bug". If a tool wrote most of the change, paste your prompt or a summary. Leave it blank if you didn't use any. Completing a name or the rest of a line you were typing doesn't count. -->
