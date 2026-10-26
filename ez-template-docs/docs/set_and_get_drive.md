@@ -6,6 +6,8 @@ description: get and set stuff to the drive
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
+<span id="initialize-drive" />
+
 ## Setup
 
 ### initialize()

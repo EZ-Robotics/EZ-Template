@@ -154,6 +154,12 @@ export default function ApiFunction({name, args, also, summary, children}: Props
       {[...shown.filter((f) => f !== fn), ...extras].map((f) => (
         <span key={f.anchor} id={f.anchor} />
       ))}
+      {/* The hand-written pages gave each sibling its own "### name()" heading; keep that id so old links land here. */}
+      {extras
+        .filter((f, i) => f.name !== fn.name && extras.findIndex((g) => g.name === f.name) === i)
+        .map((f) => (
+          <span key={f.name} id={f.name.toLowerCase()} />
+        ))}
       {summary !== undefined ? (
         <p>{summary}</p>
       ) : (

@@ -6,6 +6,9 @@ description:  turns but only using one side of the drive
 
 Most angles and times take units (`90_deg`, `300_ms`) or a plain number in degrees and milliseconds. The swing slew constants (`slew_swing_constants_set` and its forward and backward versions) take an angle (`7_deg`) or a plain number in degrees.
 
+<span id="functions-with-units" />
+<span id="functions-without-units" />
+
 ## Swinging
 
 ### pid_swing_set()
@@ -47,6 +50,8 @@ Most angles and times take units (`90_deg`, `300_ms`) or a plain number in degre
 ### pid_swing_behavior_set()
 
 <ApiFunction name="pid_swing_behavior_set" />
+
+<span id="getter" />
 
 ## Getters
 

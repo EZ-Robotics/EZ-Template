@@ -203,3 +203,6 @@ html[data-theme='dark'] {
 html[data-theme='dark'] { --ez-ground:#0d0f14; --ez-nav:#12151b; --ez-surface:#191d25;
   --ez-raise:#1d222c; --ez-line:#242a34;
   --ifm-background-color:var(--ez-ground); --ifm-background-surface-color:var(--ez-surface); }
+
+/* Empty anchors that keep old heading links working: stop the sticky navbar covering where they land. */
+.markdown span[id]:empty { scroll-margin-top:calc(var(--ifm-navbar-height) + 0.5rem); }

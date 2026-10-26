@@ -44,7 +44,7 @@ Some entries take their text from the library's header comments. The text is sav
 
 A tag that does not match fails the build with the file, line and the candidates.
 
-Keep example code to 80 columns or fewer, comments included, so it fits on screen without scrolling sideways. Put a long comment on its own line above the code.
+Keep example code to 100 columns or fewer, comments included, so it fits on screen without scrolling sideways. Put a long comment on its own line above the code.
 
 **Preview header edits.** Install Doxygen (`brew install doxygen`, or `winget install DimitriVanHeesch.Doxygen`), then `npm run api:update -- ../EZ-Template --use` and `npm run start`. Before committing, delete `api/data/local.json` and undo the change to `api/config.json`.
 

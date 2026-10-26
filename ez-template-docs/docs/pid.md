@@ -94,6 +94,10 @@ import TabItem from '@theme/TabItem';
 
 <ApiFunction name="PID::speed_get" />
 
+<span id="no-motor" />
+<span id="one-motor" />
+<span id="multiple-motors" />
+
 ## Exit Conditions
 Exit conditions are a series of things that need to happen for you to know your subsystem has arrived at the desired target.  
 

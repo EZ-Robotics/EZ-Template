@@ -36,6 +36,18 @@ Experimental, unverified on hardware.  This uses LVGL's software rotation on the
 
 <ApiFunction name="screen_portrait_enabled" />
 
+<span id="touch-coordinates" />
+
 ### screen_touch_rotate()
 
 <ApiFunction name="screen_touch_rotate" />
+
+
+`screen_touch_rotate()` returns an `ez::screen_point`, a point in screen coordinates.
+
+```cpp
+struct screen_point {
+  int x;
+  int y;
+};
+```

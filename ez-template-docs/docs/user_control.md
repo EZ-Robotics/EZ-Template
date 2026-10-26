@@ -122,6 +122,8 @@ See [Control Schemes](../tutorials/control_schemes.md#curvature) for more on how
 
 <ApiFunction name="opcontrol_drive_activebrake_constants_get" />
 
+<span id="reversing-drive" />
+
 ## Reversing and speed
 
 ### opcontrol_drive_reverse_set()
