@@ -4,7 +4,7 @@ title: Swinging
 description:  turns but only using one side of the drive
 ---
 
-Most angles and times take units (`90_deg`, `300_ms`) or a plain number in degrees and milliseconds. The slew constants (`slew_swing_constants_set` and its forward and backward versions) take units only, either a distance or an angle.
+Most angles and times take units (`90_deg`, `300_ms`) or a plain number in degrees and milliseconds. The swing slew constants (`slew_swing_constants_set` and its forward and backward versions) take an angle (`7_deg`) or a plain number in degrees.
 
 ## Swinging
 
@@ -20,7 +20,7 @@ Most angles and times take units (`90_deg`, `300_ms`) or a plain number in degre
 
 ### slew_swing_constants_set()
 
-<ApiFunction name="slew_swing_constants_set" args="ez::QLength, int | ez::QAngle, int" also="slew_swing_constants_forward_set, slew_swing_constants_backward_set" />
+<ApiFunction name="slew_swing_constants_set" args="ez::QAngle, int" also="slew_swing_constants_forward_set, slew_swing_constants_backward_set" />
 
 ### slew_swing_set()
 

@@ -4,7 +4,7 @@ title: Turning
 description:  turning in place
 ---
 
-Most angles and times take units (`90_deg`, `300_ms`) or a plain number in degrees and milliseconds. The turn slew constants (`slew_turn_constants_set`) take units only.
+Most angles and times take units (`90_deg`, `300_ms`) or a plain number in degrees and milliseconds. The turn slew constants (`slew_turn_constants_set`) also take units or a plain number in degrees.
 
 ## Turning
 

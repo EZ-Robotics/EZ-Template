@@ -4,7 +4,7 @@ title: Driving
 description:  moving forward and backward autonomously
 ---
 
-Most distances and times take units (`24_in`, `300_ms`) or a plain number in inches and milliseconds. The slew constants (`slew_drive_constants_set` and its forward and backward versions) take units only.
+Most distances and times take units (`24_in`, `300_ms`) or a plain number in inches and milliseconds. The slew constants (`slew_drive_constants_set` and its forward and backward versions) also take units or a plain number in inches.
 
 ## Driving
 
