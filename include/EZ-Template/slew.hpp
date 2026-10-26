@@ -24,7 +24,7 @@ public:
   Constants constants;
 
   /**
-   * Sets constants for slew.  Slew ramps up the speed of the robot until the set distance is traveled.
+   * Creates a slew object with constants.  Slew ramps up the speed of the robot from minimum_speed until the set distance is traveled.
    *
    * \param distance
    *        the distance the robot travels to ramp from minimum_speed up to full speed (127).  A movement with a lower maximum speed is capped at that speed, so
@@ -61,7 +61,7 @@ public:
   void initialize(bool enabled, double maximum_speed, double target, double current);
 
   /**
-   * Iterates slew and ramps up speed the farther along the motion the robot gets.
+   * Iterates slew and ramps up speed the farther along the motion the robot gets.  Returns what the current max speed should be.
    *
    * \param current
    *        current sensor value
@@ -74,7 +74,7 @@ public:
   bool enabled();
 
   /**
-   * Returns the last output of iterate.
+   * Returns what the current max speed should be, which is the last output of iterate().
    */
   double output();
 
