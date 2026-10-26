@@ -30,8 +30,8 @@ if (process.env.DOCS_TARGET === 'website') {
   const snapshot = readSnapshot(config.current);
   if (snapshot && !(/^v\d/.test(config.current) && snapshot.source.kind === 'tag' && snapshot.source.ref === config.current)) {
     errors.push(
-      `DOCS_TARGET=website: api/config.json "current" is "${config.current}" (${snapshot.source.kind} ${snapshot.source.ref}), but the live site may only use a released tag snapshot.\n` +
-        `    Run: npm run api:update -- vX.Y.Z --use   (with the release tag), commit it, and try again.`,
+      `api/config.json "current" is "${config.current}" (${snapshot.source.kind} ${snapshot.source.ref}) and DOCS_TARGET=website is set.\n` +
+        `    The live site can only use a release snapshot. On website-dev run npm run api:update -- vX.Y.Z --use, merge that, then promote.`,
     );
   }
 }

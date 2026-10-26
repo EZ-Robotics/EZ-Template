@@ -52,6 +52,13 @@ Keep example code to 100 columns or fewer, comments included, so it fits on scre
 
 **Cutting a docs version.** After `npm run docusaurus docs:version X.Y.Z`, add `"X.Y.Z": "vX.Y.Z"` under `versions` in `api/config.json`. A tag in a version that is not mapped fails the build.
 
+### How staging and live relate
+
+- **Staging** (`website-dev`) shows function text from the `dev` snapshot, `api/data/dev.json`. **Live** (`website`) shows text from a release snapshot, like `api/data/v4.0.0-beta.6.json`.
+- `api/config.json` `"current"` picks the snapshot the current docs use. A build with `DOCS_TARGET=website` fails unless `"current"` is a release tag.
+- That check runs when the live site deploys and on every PR into `website`. A promotion PR fails its **Docs build check** until `"current"` is a release tag: on `website-dev` run `npm run api:update -- vX.Y.Z --use`, merge that, then promote.
+- The `dev` snapshot is refreshed by a bot PR into `website-dev`, opened by a workflow on `dev` whenever the headers change. Maintainers merge it when they want staging current. Between releases, a live fix goes through a hotfix branch off `website`: open a merge-commit PR into `website`, then merge `website` into `website-dev`.
+
 ### Branches and promoting docs
 
 | Branch | Role |
@@ -59,7 +66,7 @@ Keep example code to 100 columns or fewer, comments included, so it fits on scre
 | `website-dev` | Staging. Docs changes land here first, through PRs from topic branches (squash is fine). Test here. |
 | `website` | The live site. Every push to it deploys to GitHub Pages. |
 
-Changes only flow one way, `website-dev` into `website`. Do not commit to `website` directly, do not merge `website` back into `website-dev`, and do not force-push either branch.
+Changes only flow one way, `website-dev` into `website`. Do not commit to `website` directly, do not merge `website` back into `website-dev` (except after a hotfix, above), and do not force-push either branch.
 
 **Test on staging.** Check out `website-dev`, run `npm ci`, then `npm run start` for the dev server, or `npm run build && npm run serve` for the real output. `onBrokenLinks` is `throw`, so a bad link fails the build.
 
@@ -76,4 +83,4 @@ Changes only flow one way, `website-dev` into `website`. Do not commit to `websi
 
 ### Deployment
 
-`.github/workflows/deploy-to-github-pages.yml` builds the site and deploys it to GitHub Pages on every push to `website`. Nothing needs to be run by hand. `.github/workflows/docs-build-check.yml` builds it on every PR into `website-dev` or `website`, so a build failure shows up before the merge.
+`.github/workflows/deploy-to-github-pages.yml` builds the site and deploys it to GitHub Pages on every push to `website`. Nothing needs to be run by hand. `.github/workflows/docs-build-check.yml` builds it on every PR into `website-dev` or `website`, so a build failure shows up before the merge. Both set `DOCS_TARGET=website` for the live site (the check only for PRs into `website`), which is what makes a non-release snapshot fail.
