@@ -62,9 +62,7 @@ public:
    * \code{.cpp}
    * ez::Piston left_wing('A');
    *
-   * void autonomous() {
-   *   left_wing.set(true);
-   * }
+   * void autonomous() { left_wing.set(true); }
    * \endcode
    */
   void set(bool input);
@@ -75,9 +73,7 @@ public:
    * \code{.cpp}
    * ez::Piston left_wing('A');
    *
-   * void autonomous() {
-   *   left_wing.set(!left_wing.get());
-   * }
+   * void autonomous() { left_wing.set(!left_wing.get()); }
    * \endcode
    */
   bool get();
@@ -135,8 +131,7 @@ public:
    *
    * void opcontrol() {
    *   while (true) {
-   *     left_wing.buttons(master.get_digital(DIGITAL_L1),
-   *                        master.get_digital(DIGITAL_L2));
+   *     left_wing.buttons(master.get_digital(DIGITAL_L1), master.get_digital(DIGITAL_L2));
    *
    *     pros::delay(10);
    *   }

@@ -92,8 +92,7 @@ void device_add(pros::Device* device, const char* name);
 /// void opcontrol() {
 ///   while (true) {
 ///     // Or run the check from a button
-///     if (master.get_digital_new_press(DIGITAL_Y))
-///       ez::health::preflight(chassis, master);
+///     if (master.get_digital_new_press(DIGITAL_Y)) ez::health::preflight(chassis, master);
 ///
 ///     pros::delay(ez::util::DELAY_TIME);
 ///   }

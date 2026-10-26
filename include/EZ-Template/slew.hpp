@@ -51,9 +51,7 @@ public:
    * \code{.cpp}
    * ez::slew lift_slew;
    *
-   * void initialize() {
-   *   lift_slew.constants_set(100, 50);
-   * }
+   * void initialize() { lift_slew.constants_set(100, 50); }
    * \endcode
    */
   void constants_set(double distance, int minimum_speed);
@@ -122,8 +120,7 @@ public:
    * }
    *
    * void autonomous() {
-   *   // Returns true
-   *   printf("Slew Enabled? %i\n", lift_slew.enabled());
+   *   printf("Slew Enabled? %i\n", lift_slew.enabled());  // Returns true
    *
    *   while (lift.get_position() <= 500) {
    *     lift_slew.iterate(lift.get_position());
@@ -131,9 +128,7 @@ public:
    *     pros::delay(ez::util::DELAY_TIME);
    *   }
    *   lift.move(0);
-   *
-   *   // Returns false
-   *   printf("Slew Enabled? %i\n", lift_slew.enabled());
+   *   printf("Slew Enabled? %i\n", lift_slew.enabled());  // Returns false
    * }
    * \endcode
    */

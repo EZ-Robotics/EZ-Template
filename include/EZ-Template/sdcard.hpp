@@ -28,9 +28,7 @@ void auto_sd_update();
  * Increases the page number by 1.  Best used with the lcd callback functions.
  *
  * \code{.cpp}
- * void initialize() {
- *   pros::lcd::register_btn2_cb(ez::as::page_up);
- * }
+ * void initialize() { pros::lcd::register_btn2_cb(ez::as::page_up); }
  * \endcode
  */
 void page_up();
@@ -58,9 +56,7 @@ void page_down();
  * Also initializes LLEMU and sets up the callbacks for the auton selector.
  *
  * \code{.cpp}
- * void initialize() {
- *   ez::as::initialize();
- * }
+ * void initialize() { ez::as::initialize(); }
  * \endcode
  */
 void initialize();
@@ -85,13 +81,10 @@ void shutdown();
  *
  * \code{.cpp}
  * void initialize() {
- *   // Returns false
- *   printf("Enabled? %i\n", ez::as::enabled());
+ *   printf("Enabled? %i\n", ez::as::enabled());  // Returns false
  *
  *   ez::as::initialize();
- *
- *   // Returns true
- *   printf("Enabled? %i\n", ez::as::enabled());
+ *   printf("Enabled? %i\n", ez::as::enabled());  // Returns true
  * }
  * \endcode
  */
@@ -152,8 +145,7 @@ int page_blank_current();
  * \code{.cpp}
  * void opcontrol() {
  *   while (true) {
- *     // Tank control
- *     chassis.opcontrol_tank();
+ *     chassis.opcontrol_tank();  // Tank control
  *
  *     if (ez::as::page_blank_is_on(0)) {
  *       ez::screen_print("Hello World!", 1);
@@ -187,8 +179,7 @@ void page_blank_remove(int page);
  *   bool page_wanted = true;
  *
  *   while (true) {
- *     // Tank control
- *     chassis.opcontrol_tank();
+ *     chassis.opcontrol_tank();  // Tank control
  *
  *     // Once the pages are removed, page_wanted is false so this does not create the page again
  *     if (page_wanted && ez::as::page_blank_is_on(0)) {
