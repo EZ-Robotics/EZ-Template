@@ -32,9 +32,7 @@ void screen_rotation_set(int degrees);
 /// void initialize() {
 ///   ez::as::initialize();
 ///   ez::screen_rotation_set(90);
-///
-///   // Prints 1
-///   printf("%i\n", ez::screen_portrait_enabled());
+///   printf("%i\n", ez::screen_portrait_enabled());  // Prints 1
 /// }
 /// \endcode
 bool screen_portrait_enabled();
@@ -133,8 +131,8 @@ struct screen_point {
 /// void opcontrol() {
 ///   while (true) {
 ///     pros::screen_touch_status_s_t status = pros::screen::touch_status();
-///     ez::screen_point p = ez::screen_touch_rotate(
-///         ez::screen_rotation_get(), 480, 272, status.x, status.y);
+///     ez::screen_point p =
+///         ez::screen_touch_rotate(ez::screen_rotation_get(), 480, 272, status.x, status.y);
 ///     printf("x: %i, y: %i\n", p.x, p.y);
 ///
 ///     pros::delay(ez::util::DELAY_TIME);
@@ -163,9 +161,7 @@ inline screen_point screen_touch_rotate(int degrees, int panel_w, int panel_h, i
 /// void initialize() {
 ///   ez::as::initialize();
 ///   ez::screen_rotation_set(90);
-///
-///   // Prints 90
-///   printf("%i\n", ez::screen_rotation_get());
+///   printf("%i\n", ez::screen_rotation_get());  // Prints 90
 /// }
 /// \endcode
 int screen_rotation_get();

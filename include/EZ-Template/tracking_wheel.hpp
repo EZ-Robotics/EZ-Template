@@ -82,8 +82,7 @@ public:
    *
    * void opcontrol() {
    *   while (true) {
-   *     // Tank control
-   *     chassis.opcontrol_tank();
+   *     chassis.opcontrol_tank();  // Tank control
    *
    *     if (ez::as::page_blank_is_on(0)) {
    *       ez::screen_print(std::to_string(right_tracker.get()), 1);
@@ -109,8 +108,7 @@ public:
    *
    * void opcontrol() {
    *   while (true) {
-   *     // Tank control
-   *     chassis.opcontrol_tank();
+   *     chassis.opcontrol_tank();  // Tank control
    *
    *     if (ez::as::page_blank_is_on(0)) {
    *       ez::screen_print(std::to_string(right_tracker.get_raw()), 1);
@@ -142,16 +140,13 @@ public:
    * ez::tracking_wheel right_tracker(1, 2.75, 4.0);
    *
    * void opcontrol() {
-   *   // Update center distance
-   *   right_tracker.distance_to_center_set(2.0);
+   *   right_tracker.distance_to_center_set(2.0);  // Update center distance
    *
    *   while (true) {
-   *     // Tank control
-   *     chassis.opcontrol_tank();
+   *     chassis.opcontrol_tank();  // Tank control
    *
    *     if (ez::as::page_blank_is_on(0)) {
-   *       ez::screen_print(
-   *           std::to_string(right_tracker.distance_to_center_get()), 1);
+   *       ez::screen_print(std::to_string(right_tracker.distance_to_center_get()), 1);
    *     }
    *
    *     // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
@@ -170,12 +165,10 @@ public:
    *
    * void opcontrol() {
    *   while (true) {
-   *     // Tank control
-   *     chassis.opcontrol_tank();
+   *     chassis.opcontrol_tank();  // Tank control
    *
    *     if (ez::as::page_blank_is_on(0)) {
-   *       ez::screen_print(
-   *           std::to_string(right_tracker.distance_to_center_get()), 1);
+   *       ez::screen_print(std::to_string(right_tracker.distance_to_center_get()), 1);
    *     }
    *
    *     // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
@@ -196,16 +189,13 @@ public:
    * ez::tracking_wheel right_tracker(1, 2.75, 4.0);
    *
    * void opcontrol() {
-   *   // Make center distance negative
-   *   right_tracker.distance_to_center_flip_set(true);
+   *   right_tracker.distance_to_center_flip_set(true);  // Make center distance negative
    *
    *   while (true) {
-   *     // Tank control
-   *     chassis.opcontrol_tank();
+   *     chassis.opcontrol_tank();  // Tank control
    *
    *     if (ez::as::page_blank_is_on(0)) {
-   *       ez::screen_print(
-   *           std::to_string(right_tracker.distance_to_center_get()), 1);
+   *       ez::screen_print(std::to_string(right_tracker.distance_to_center_get()), 1);
    *     }
    *
    *     // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
@@ -224,12 +214,10 @@ public:
    *
    * void opcontrol() {
    *   while (true) {
-   *     // Tank control
-   *     chassis.opcontrol_tank();
+   *     chassis.opcontrol_tank();  // Tank control
    *
    *     if (ez::as::page_blank_is_on(0)) {
-   *       ez::screen_print(
-   *           std::to_string(right_tracker.distance_to_center_flip_get()), 1);
+   *       ez::screen_print(std::to_string(right_tracker.distance_to_center_flip_get()), 1);
    *     }
    *
    *     // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
@@ -261,8 +249,7 @@ public:
    *
    * void opcontrol() {
    *   while (true) {
-   *     // Tank control
-   *     chassis.opcontrol_tank();
+   *     chassis.opcontrol_tank();  // Tank control
    *
    *     if (ez::as::page_blank_is_on(0)) {
    *       ez::screen_print(std::to_string(right_tracker.ticks_per_inch()), 1);
@@ -292,8 +279,7 @@ public:
    *   right_tracker.ticks_per_rev_set(8192);
    *
    *   while (true) {
-   *     // Tank control
-   *     chassis.opcontrol_tank();
+   *     chassis.opcontrol_tank();  // Tank control
    *
    *     if (ez::as::page_blank_is_on(0)) {
    *       ez::screen_print(std::to_string(right_tracker.ticks_per_rev_get()), 1);
@@ -315,8 +301,7 @@ public:
    *
    * void opcontrol() {
    *   while (true) {
-   *     // Tank control
-   *     chassis.opcontrol_tank();
+   *     chassis.opcontrol_tank();  // Tank control
    *
    *     if (ez::as::page_blank_is_on(0)) {
    *       ez::screen_print(std::to_string(right_tracker.ticks_per_rev_get()), 1);
@@ -340,12 +325,10 @@ public:
    * ez::tracking_wheel right_tracker(1, 2.75, 4.0);
    *
    * void opcontrol() {
-   *   // The sensor turns 2 times for every 1 turn of the wheel
-   *   right_tracker.ratio_set(2.0);
+   *   right_tracker.ratio_set(2.0);  // The sensor turns 2 times for every 1 turn of the wheel
    *
    *   while (true) {
-   *     // Tank control
-   *     chassis.opcontrol_tank();
+   *     chassis.opcontrol_tank();  // Tank control
    *
    *     if (ez::as::page_blank_is_on(0)) {
    *       ez::screen_print(std::to_string(right_tracker.ratio_get()), 1);
@@ -367,8 +350,7 @@ public:
    *
    * void opcontrol() {
    *   while (true) {
-   *     // Tank control
-   *     chassis.opcontrol_tank();
+   *     chassis.opcontrol_tank();  // Tank control
    *
    *     if (ez::as::page_blank_is_on(0)) {
    *       ez::screen_print(std::to_string(right_tracker.ratio_get()), 1);
@@ -392,12 +374,10 @@ public:
    * ez::tracking_wheel right_tracker(1, 2.75, 4.0);
    *
    * void opcontrol() {
-   *   // Update wheel diameter
-   *   right_tracker.wheel_diameter_set(3.25);
+   *   right_tracker.wheel_diameter_set(3.25);  // Update wheel diameter
    *
    *   while (true) {
-   *     // Tank control
-   *     chassis.opcontrol_tank();
+   *     chassis.opcontrol_tank();  // Tank control
    *
    *     if (ez::as::page_blank_is_on(0)) {
    *       ez::screen_print(std::to_string(right_tracker.wheel_diameter_get()), 1);
@@ -419,8 +399,7 @@ public:
    *
    * void opcontrol() {
    *   while (true) {
-   *     // Tank control
-   *     chassis.opcontrol_tank();
+   *     chassis.opcontrol_tank();  // Tank control
    *
    *     if (ez::as::page_blank_is_on(0)) {
    *       ez::screen_print(std::to_string(right_tracker.wheel_diameter_get()), 1);

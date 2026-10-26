@@ -237,8 +237,7 @@ std::string to_string_with_precision(double input, int n = 2);
  * \code{.cpp}
  * void opcontrol() {
  *   while (true) {
- *     printf("Sgn of Controller: %i \n",
- *            ez::util::sgn(master.get_analog(ANALOG_LEFT_Y)));
+ *     printf("Sgn of Controller: %i \n", ez::util::sgn(master.get_analog(ANALOG_LEFT_Y)));
  *
  *     pros::delay(ez::util::DELAY_TIME);
  *   }

@@ -135,8 +135,7 @@ public:
    *
    * void opcontrol() {
    *   while (true) {
-   *     left_wing.buttons(master.get_digital(DIGITAL_L1),
-   *                        master.get_digital(DIGITAL_L2));
+   *     left_wing.buttons(master.get_digital(DIGITAL_L1), master.get_digital(DIGITAL_L2));
    *
    *     pros::delay(10);
    *   }

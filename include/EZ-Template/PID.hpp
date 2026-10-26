@@ -33,6 +33,10 @@ public:
    *        i will start when error is within this, 0 means i always accumulates
    * \param name
    *        a string for the name of the PID
+   *
+   * \code{.cpp}
+   * ez::PID liftPID{1, 0.003, 4, 100, "Lift"};
+   * \endcode
    */
   PID(double p, double i = 0, double d = 0, double start_i = 0, std::string name = "");
 
@@ -185,8 +189,7 @@ public:
    *       target = 0.0;
    *     }
    *     error = target - lift_motor.get_position();
-   *     lift_motor.move(
-   *         liftPID.compute_error(error, lift_motor.get_position()));
+   *     lift_motor.move(liftPID.compute_error(error, lift_motor.get_position()));
    *
    *     pros::delay(ez::util::DELAY_TIME);
    *   }
@@ -206,12 +209,10 @@ public:
    *   while (true) {
    *     if (master.get_digital(DIGITAL_L1)) {
    *       liftPID.target_set(500);
-   *       // This prints 500
-   *       printf("%.2f\n", liftPID.target_get());
+   *       printf("%.2f\n", liftPID.target_get());  // This prints 500
    *     } else if (master.get_digital(DIGITAL_L2)) {
    *       liftPID.target_set(0);
-   *       // This prints 0
-   *       printf("%.2f\n", liftPID.target_get());
+   *       printf("%.2f\n", liftPID.target_get());  // This prints 0
    *     }
    *     lift_motor.move(liftPID.compute(lift_motor.get_position()));
    *
@@ -263,9 +264,7 @@ public:
    *
    * void initialize() {
    *   liftPID.exit_condition_set(100, 3, 500, 7, 500, 500);
-   *
-   *   // Enable the secondary sensor
-   *   liftPID.velocity_sensor_secondary_toggle_set(true);
+   *   liftPID.velocity_sensor_secondary_toggle_set(true);  // Enable the secondary sensor
    *
    *   // The lift counts as stopped within 50 centidegrees per second
    *   liftPID.velocity_sensor_secondary_exit_set(50);
@@ -277,7 +276,9 @@ public:
    *     // Update the secondary sensor every loop, before exit_condition()
    *     liftPID.velocity_sensor_secondary_set(lift_sensor.get_velocity());
    *
-   *     if (liftPID.exit_condition(lift_motor, true) != ez::RUNNING) break;
+   *     if (liftPID.exit_condition(lift_motor, true) != ez::RUNNING) {
+   *       break;
+   *     }
    *     lift_motor.move(liftPID.compute(lift_motor.get_position()));
    *     pros::delay(ez::util::DELAY_TIME);
    *   }
@@ -294,9 +295,7 @@ public:
    *
    * void initialize() {
    *   liftPID.velocity_sensor_secondary_set(0.0);
-   *
-   *   // This prints 0.00
-   *   printf("%.2f\n", liftPID.velocity_sensor_secondary_get());
+   *   printf("%.2f\n", liftPID.velocity_sensor_secondary_get());  // This prints 0.00
    * }
    * \endcode
    */
@@ -312,8 +311,7 @@ public:
    * ez::PID liftPID;
    *
    * void initialize() {
-   *   // Enable the secondary sensor
-   *   liftPID.velocity_sensor_secondary_toggle_set(true);
+   *   liftPID.velocity_sensor_secondary_toggle_set(true);  // Enable the secondary sensor
    * }
    * \endcode
    */
@@ -326,14 +324,9 @@ public:
    * ez::PID liftPID;
    *
    * void initialize() {
-   *   // This prints 0
-   *   printf("%i\n", liftPID.velocity_sensor_secondary_toggle_get());
-   *
-   *   // Enable the secondary sensor
-   *   liftPID.velocity_sensor_secondary_toggle_set(true);
-   *
-   *   // This prints 1
-   *   printf("%i\n", liftPID.velocity_sensor_secondary_toggle_get());
+   *   printf("%i\n", liftPID.velocity_sensor_secondary_toggle_get());  // This prints 0
+   *   liftPID.velocity_sensor_secondary_toggle_set(true);              // Enable the secondary sensor
+   *   printf("%i\n", liftPID.velocity_sensor_secondary_toggle_get());  // This prints 1
    * }
    * \endcode
    */
@@ -343,6 +336,8 @@ public:
    * Sets the velocity exit's speed: how slow the sensor has to be moving for the velocity exit's timer to run, as the distance it moves in one
    * 10 ms tick.  The speed is measured over the last 100 ms.  The default is 0.05, which is 5 units per second.  This is not the stop speed (see
    * stop_speed_set()), which only the small and big exits use.
+   *
+   * The velocity exit's timer only starts once the robot has moved faster than this at least once, or after 1 second if it never moves.
    *
    * \param zero
    *        a small double
@@ -361,12 +356,13 @@ public:
   /**
    * Returns the velocity exit's speed as the distance the sensor moves in one 10 ms tick.
    *
+   * The velocity exit's timer only starts once the robot has moved faster than this at least once, or after 1 second if it never moves.
+   *
    * \code{.cpp}
    * ez::PID liftPID;
    *
    * void initialize() {
-   *   // This prints 0.05
-   *   printf("%.2f\n", liftPID.velocity_sensor_main_exit_get());
+   *   printf("%.2f\n", liftPID.velocity_sensor_main_exit_get());  // This prints 0.05
    * }
    * \endcode
    */
@@ -383,8 +379,7 @@ public:
    * ez::PID liftPID;
    *
    * void initialize() {
-   *   // The lift counts as stopped under 10 units per second
-   *   liftPID.stop_speed_set(10.0);
+   *   liftPID.stop_speed_set(10.0);  // The lift counts as stopped under 10 units per second
    * }
    * \endcode
    */
@@ -433,6 +428,8 @@ public:
    *
    * This is defaulted to 0.075.  This is only used when the secondary sensor is enabled.
    *
+   * The velocity exit's timer also waits until the robot has moved, see velocity_sensor_main_exit_set(), or 1 second if it never moves.
+   *
    * \param zero
    *        a small double
    *
@@ -440,8 +437,7 @@ public:
    * ez::PID liftPID;
    *
    * void initialize() {
-   *   // Enable the secondary sensor
-   *   liftPID.velocity_sensor_secondary_toggle_set(true);
+   *   liftPID.velocity_sensor_secondary_toggle_set(true);  // Enable the secondary sensor
    *
    *   // The secondary sensor counts as stopped within 0.1
    *   liftPID.velocity_sensor_secondary_exit_set(0.1);
@@ -455,12 +451,13 @@ public:
    *
    * This is defaulted to 0.075, and it is only used when the secondary sensor is enabled.
    *
+   * The velocity exit's timer also waits until the robot has moved, see velocity_sensor_main_exit_set(), or 1 second if it never moves.
+   *
    * \code{.cpp}
    * ez::PID liftPID;
    *
    * void initialize() {
-   *   // This prints 0.075
-   *   printf("%.3f\n", liftPID.velocity_sensor_secondary_exit_get());
+   *   printf("%.3f\n", liftPID.velocity_sensor_secondary_exit_get());  // This prints 0.075
    * }
    * \endcode
    */
@@ -564,15 +561,13 @@ public:
    *
    * void autonomous() {
    *   liftPID.target_set(500);
-   *   while (liftPID.exit_condition({r_lift_motor, l_lift_motor}, true) ==
-   *          ez::RUNNING) {
+   *   while (liftPID.exit_condition({r_lift_motor, l_lift_motor}, true) == ez::RUNNING) {
    *     set_lift(liftPID.compute(l_lift_motor.get_position()));
    *     pros::delay(ez::util::DELAY_TIME);
    *   }
    *
    *   liftPID.target_set(0);
-   *   while (liftPID.exit_condition({r_lift_motor, l_lift_motor}, true) ==
-   *          ez::RUNNING) {
+   *   while (liftPID.exit_condition({r_lift_motor, l_lift_motor}, true) == ez::RUNNING) {
    *     set_lift(liftPID.compute(l_lift_motor.get_position()));
    *     pros::delay(ez::util::DELAY_TIME);
    *   }
@@ -643,9 +638,7 @@ public:
    *
    * void initialize() {
    *   liftPID.name_set("Lift");
-   *
-   *   // This prints Lift
-   *   printf("%s\n", liftPID.name_get().c_str());
+   *   printf("%s\n", liftPID.name_get().c_str());  // This prints Lift
    * }
    * \endcode
    */
@@ -716,8 +709,7 @@ public:
    * void opcontrol() {
    *   while (true) {
    *     if (master.get_digital_new_press(DIGITAL_L1)) {
-   *       // Start fresh from where the lift is now
-   *       liftPID.motion_reset(lift_motor.get_position());
+   *       liftPID.motion_reset(lift_motor.get_position());  // Start fresh from where the lift is now
    *       liftPID.timers_reset();
    *       liftPID.target_set(500);
    *     } else if (master.get_digital_new_press(DIGITAL_L2)) {
