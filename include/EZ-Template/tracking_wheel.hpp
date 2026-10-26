@@ -26,6 +26,11 @@ public:
    *        the distance to the center of your robot, this is used for tracking
    * \param ratio
    *        the gear ratio of your tracking wheel. if it's not geared, this should be 1.0
+   *
+   * \code{.cpp}
+   * // ADI Encoders
+   * ez::tracking_wheel right_tracker({-'A', -'B'}, 2.75, 4.0);
+   * \endcode
    */
   tracking_wheel(std::vector<int> ports, double wheel_diameter, double distance_to_center = 0.0, double ratio = 1.0);
 
@@ -42,6 +47,11 @@ public:
    *        the distance to the center of your robot, this is used for tracking
    * \param ratio
    *        the gear ratio of your tracking wheel. if it's not geared, this should be 1.0
+   *
+   * \code{.cpp}
+   * // ADI Encoders plugged into a 3 wire expander in Smart port 1
+   * ez::tracking_wheel left_tracker(1, {'C', 'D'}, 2.75, 4.0);
+   * \endcode
    */
   tracking_wheel(int smart_port, std::vector<int> ports, double wheel_diameter, double distance_to_center = 0.0, double ratio = 1.0);
 
@@ -56,11 +66,34 @@ public:
    *        the distance to the center of your robot, this is used for tracking
    * \param ratio
    *        the gear ratio of your tracking wheel. if it's not geared, this should be 1.0
+   *
+   * \code{.cpp}
+   * // Rotation sensor in port 1
+   * ez::tracking_wheel horiz_tracker(1, 2.75, 4.0);
+   * \endcode
    */
   tracking_wheel(int port, double wheel_diameter, double distance_to_center = 0.0, double ratio = 1.0);
 
   /**
    * Returns how far the wheel has traveled in inches.
+   *
+   * \code{.cpp}
+   * ez::tracking_wheel right_tracker(1, 2.75, 4.0);
+   *
+   * void opcontrol() {
+   *   while (true) {
+   *     // Tank control
+   *     chassis.opcontrol_tank();
+   *
+   *     if (ez::as::page_blank_is_on(0)) {
+   *       ez::screen_print(std::to_string(right_tracker.get()), 1);
+   *     }
+   *
+   *     // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   double get();
 
@@ -70,6 +103,24 @@ public:
    * Falls back to the last successfully-read raw value when the underlying sensor read fails
    * (PROS_ERR / PROS_ERR_F / a non-finite reading), instead of handing that sentinel to
    * whatever math consumes this value.
+   *
+   * \code{.cpp}
+   * ez::tracking_wheel right_tracker(1, 2.75, 4.0);
+   *
+   * void opcontrol() {
+   *   while (true) {
+   *     // Tank control
+   *     chassis.opcontrol_tank();
+   *
+   *     if (ez::as::page_blank_is_on(0)) {
+   *       ez::screen_print(std::to_string(right_tracker.get_raw()), 1);
+   *     }
+   *
+   *     // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   double get_raw();
 
@@ -82,15 +133,56 @@ public:
   bool last_read_ok();
 
   /**
-   * Sets the distance to the center of the robot.
+   * Sets the distance to the center of the robot.  The sign is ignored, use distance_to_center_flip_set() to make it negative.
    *
    * \param input
    *        distance to the center of your robot in inches
+   *
+   * \code{.cpp}
+   * ez::tracking_wheel right_tracker(1, 2.75, 4.0);
+   *
+   * void opcontrol() {
+   *   // Update center distance
+   *   right_tracker.distance_to_center_set(2.0);
+   *
+   *   while (true) {
+   *     // Tank control
+   *     chassis.opcontrol_tank();
+   *
+   *     if (ez::as::page_blank_is_on(0)) {
+   *       ez::screen_print(
+   *           std::to_string(right_tracker.distance_to_center_get()), 1);
+   *     }
+   *
+   *     // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   void distance_to_center_set(double input);
 
   /**
    * Returns the distance to the center of the robot.
+   *
+   * \code{.cpp}
+   * ez::tracking_wheel right_tracker(1, 2.75, 4.0);
+   *
+   * void opcontrol() {
+   *   while (true) {
+   *     // Tank control
+   *     chassis.opcontrol_tank();
+   *
+   *     if (ez::as::page_blank_is_on(0)) {
+   *       ez::screen_print(
+   *           std::to_string(right_tracker.distance_to_center_get()), 1);
+   *     }
+   *
+   *     // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   double distance_to_center_get();
 
@@ -99,21 +191,88 @@ public:
    *
    * \param input
    *        flips distance to center to negative. false leaves it alone, true flips it
+   *
+   * \code{.cpp}
+   * ez::tracking_wheel right_tracker(1, 2.75, 4.0);
+   *
+   * void opcontrol() {
+   *   // Make center distance negative
+   *   right_tracker.distance_to_center_flip_set(true);
+   *
+   *   while (true) {
+   *     // Tank control
+   *     chassis.opcontrol_tank();
+   *
+   *     if (ez::as::page_blank_is_on(0)) {
+   *       ez::screen_print(
+   *           std::to_string(right_tracker.distance_to_center_get()), 1);
+   *     }
+   *
+   *     // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   void distance_to_center_flip_set(bool input);
 
   /**
    * Returns if the distance to center is flipped or not.  False is not, true is.
+   *
+   * \code{.cpp}
+   * ez::tracking_wheel right_tracker(1, 2.75, 4.0);
+   *
+   * void opcontrol() {
+   *   while (true) {
+   *     // Tank control
+   *     chassis.opcontrol_tank();
+   *
+   *     if (ez::as::page_blank_is_on(0)) {
+   *       ez::screen_print(
+   *           std::to_string(right_tracker.distance_to_center_flip_get()), 1);
+   *     }
+   *
+   *     // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   bool distance_to_center_flip_get();
 
   /**
    * Resets your sensor.
+   *
+   * \code{.cpp}
+   * ez::tracking_wheel right_tracker(1, 2.75, 4.0);
+   *
+   * void initialize() {
+   *   right_tracker.reset();
+   * }
+   * \endcode
    */
   void reset();
 
   /**
    * Returns the constant for how many ticks is 1 inch.
+   *
+   * \code{.cpp}
+   * ez::tracking_wheel right_tracker(1, 2.75, 4.0);
+   *
+   * void opcontrol() {
+   *   while (true) {
+   *     // Tank control
+   *     chassis.opcontrol_tank();
+   *
+   *     if (ez::as::page_blank_is_on(0)) {
+   *       ez::screen_print(std::to_string(right_tracker.ticks_per_inch()), 1);
+   *     }
+   *
+   *     // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   double ticks_per_inch();
 
@@ -124,11 +283,50 @@ public:
    *
    * \param input
    *        ticks per revolution
+   *
+   * \code{.cpp}
+   * ez::tracking_wheel right_tracker(1, 2.75, 4.0);
+   *
+   * void opcontrol() {
+   *   // A custom encoder that gives 8192 ticks per revolution
+   *   right_tracker.ticks_per_rev_set(8192);
+   *
+   *   while (true) {
+   *     // Tank control
+   *     chassis.opcontrol_tank();
+   *
+   *     if (ez::as::page_blank_is_on(0)) {
+   *       ez::screen_print(std::to_string(right_tracker.ticks_per_rev_get()), 1);
+   *     }
+   *
+   *     // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   void ticks_per_rev_set(double input);
 
   /**
    * Returns the amount of ticks per revolution of your sensor.
+   *
+   * \code{.cpp}
+   * ez::tracking_wheel right_tracker(1, 2.75, 4.0);
+   *
+   * void opcontrol() {
+   *   while (true) {
+   *     // Tank control
+   *     chassis.opcontrol_tank();
+   *
+   *     if (ez::as::page_blank_is_on(0)) {
+   *       ez::screen_print(std::to_string(right_tracker.ticks_per_rev_get()), 1);
+   *     }
+   *
+   *     // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   double ticks_per_rev_get();
 
@@ -136,12 +334,51 @@ public:
    * Sets the gear ratio for your tracking wheel.
    *
    * \param input
-   *        gear ratio of tracking wheel
+   *        ratio is how many times the sensor turns for one turn of the wheel
+   *
+   * \code{.cpp}
+   * ez::tracking_wheel right_tracker(1, 2.75, 4.0);
+   *
+   * void opcontrol() {
+   *   // The sensor turns 2 times for every 1 turn of the wheel
+   *   right_tracker.ratio_set(2.0);
+   *
+   *   while (true) {
+   *     // Tank control
+   *     chassis.opcontrol_tank();
+   *
+   *     if (ez::as::page_blank_is_on(0)) {
+   *       ez::screen_print(std::to_string(right_tracker.ratio_get()), 1);
+   *     }
+   *
+   *     // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   void ratio_set(double input);
 
   /**
    * Returns the gear ratio for your tracking wheel.
+   *
+   * \code{.cpp}
+   * ez::tracking_wheel right_tracker(1, 2.75, 4.0);
+   *
+   * void opcontrol() {
+   *   while (true) {
+   *     // Tank control
+   *     chassis.opcontrol_tank();
+   *
+   *     if (ez::as::page_blank_is_on(0)) {
+   *       ez::screen_print(std::to_string(right_tracker.ratio_get()), 1);
+   *     }
+   *
+   *     // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   double ratio_get();
 
@@ -150,11 +387,50 @@ public:
    *
    * \param input
    *        wheel diameter
+   *
+   * \code{.cpp}
+   * ez::tracking_wheel right_tracker(1, 2.75, 4.0);
+   *
+   * void opcontrol() {
+   *   // Update wheel diameter
+   *   right_tracker.wheel_diameter_set(3.25);
+   *
+   *   while (true) {
+   *     // Tank control
+   *     chassis.opcontrol_tank();
+   *
+   *     if (ez::as::page_blank_is_on(0)) {
+   *       ez::screen_print(std::to_string(right_tracker.wheel_diameter_get()), 1);
+   *     }
+   *
+   *     // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   void wheel_diameter_set(double input);
 
   /**
    * Returns the diameter of your wheel.
+   *
+   * \code{.cpp}
+   * ez::tracking_wheel right_tracker(1, 2.75, 4.0);
+   *
+   * void opcontrol() {
+   *   while (true) {
+   *     // Tank control
+   *     chassis.opcontrol_tank();
+   *
+   *     if (ez::as::page_blank_is_on(0)) {
+   *       ez::screen_print(std::to_string(right_tracker.wheel_diameter_get()), 1);
+   *     }
+   *
+   *     // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   double wheel_diameter_get();
 

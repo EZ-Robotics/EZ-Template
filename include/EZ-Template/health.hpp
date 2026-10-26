@@ -31,12 +31,43 @@ struct Report {
 /// failure, with its port where the device has one, and rumbles the
 /// controller when anything is wrong. Safe to call from initialize() and
 /// again at the start of autonomous.
+///
+/// \param chassis
+///        your drive
+/// \param controller
+///        the controller to rumble on failure
+/// \return
+///        a Report of what responded, with all_ok() true when nothing needs attention
+///
+/// \code{.cpp}
+/// void initialize() {
+///   chassis.initialize();
+///
+///   ez::health::preflight(chassis, master);
+/// }
+/// \endcode
 Report preflight(ez::Drive& chassis, pros::Controller& controller);
 
 /// Registers a smart device (a motor that isn't on the drive, a distance,
 /// rotation, or optical sensor, anything deriving from pros::Device) for
 /// inclusion in preflight checks. A null device is ignored, and a null name is
 /// reported as "unnamed device".
+///
+/// \param device
+///        the sensor or motor to watch
+/// \param name
+///        a label used when it fails a check
+///
+/// \code{.cpp}
+/// pros::Distance front_distance(10);
+///
+/// void initialize() {
+///   chassis.initialize();
+///
+///   ez::health::device_add(&front_distance, "front distance");
+///   ez::health::preflight(chassis, master);
+/// }
+/// \endcode
 void device_add(pros::Device* device, const char* name);
 
 /// Adds a "Health Check" page to the auton selector, so preflight can be run
@@ -46,6 +77,28 @@ void device_add(pros::Device* device, const char* name);
 /// This is only a convenience: preflight() is an ordinary function, so calling
 /// it from an opcontrol button works just as well, e.g.
 /// `if (master.get_digital_new_press(DIGITAL_Y)) ez::health::preflight(chassis, master);`
+///
+/// \param chassis
+///        your drive
+///
+/// \code{.cpp}
+/// void initialize() {
+///   ez::as::initialize();
+///   ez::health::preflight_register(chassis);
+///
+///   chassis.initialize();
+/// }
+///
+/// void opcontrol() {
+///   while (true) {
+///     // Or run the check from a button
+///     if (master.get_digital_new_press(DIGITAL_Y))
+///       ez::health::preflight(chassis, master);
+///
+///     pros::delay(ez::util::DELAY_TIME);
+///   }
+/// }
+/// \endcode
 void preflight_register(ez::Drive& chassis);
 
 }  // namespace health

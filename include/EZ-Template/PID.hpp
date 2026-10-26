@@ -21,18 +21,18 @@ public:
   PID();
 
   /**
-   * Constructor with constants.
+   * Creates a PID object with constants.  Everything past kP has a default starting value, so you can just put kP.
    *
    * \param p
    *        kP
    * \param i
-   *        ki
+   *        kI
    * \param d
    *        kD
    * \param start_i
-   *        error value that i starts within, 0 means i always accumulates
+   *        i will start when error is within this, 0 means i always accumulates
    * \param name
-   *        std::string of name that prints
+   *        a string for the name of the PID
    */
   PID(double p, double i = 0, double d = 0, double start_i = 0, std::string name = "");
 
@@ -47,6 +47,14 @@ public:
    *        kD
    * \param p_start_i
    *        error value that i starts within, 0 means i always accumulates
+   *
+   * \code{.cpp}
+   * ez::PID liftPID;
+   *
+   * void initialize() {
+   *   liftPID.constants_set(1, 0, 4);
+   * }
+   * \endcode
    */
   void constants_set(double p, double i = 0, double d = 0, double p_start_i = 0);
 
@@ -73,7 +81,7 @@ public:
   };
 
   /**
-   * Set's constants for exit conditions.
+   * Sets constants for exit conditions.  To disable one of the conditions, set the constants relating to it to 0.
    *
    * \param p_small_exit_time
    *        sets small_exit_time, timer for to exit within small_error
@@ -89,6 +97,14 @@ public:
    * \param p_mA_timeout
    *        sets mA_timeout, time the motor can be over its current limit before exiting.  Only checked by the exit_condition overloads that take a motor or
    *        motors.
+   *
+   * \code{.cpp}
+   * ez::PID liftPID{1, 0.003, 4, 100, "Lift"};
+   *
+   * void initialize() {
+   *   liftPID.exit_condition_set(100, 3, 500, 7, 500, 500);
+   * }
+   * \endcode
    */
   void exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time = 0, double p_big_error = 0, int p_velocity_exit_time = 0,
                           int p_mA_timeout = 0);
@@ -98,6 +114,24 @@ public:
    *
    * \param input
    *        new target for PID
+   *
+   * \code{.cpp}
+   * ez::PID liftPID{1, 0.003, 4, 100, "Lift"};
+   * pros::Motor lift_motor(1);
+   *
+   * void opcontrol() {
+   *   while (true) {
+   *     if (master.get_digital(DIGITAL_L1)) {
+   *       liftPID.target_set(500);
+   *     } else if (master.get_digital(DIGITAL_L2)) {
+   *       liftPID.target_set(0);
+   *     }
+   *     lift_motor.move(liftPID.compute(lift_motor.get_position()));
+   *
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   void target_set(double input);
 
@@ -106,23 +140,85 @@ public:
    *
    * \param current
    *        current sensor value
+   *
+   * \code{.cpp}
+   * ez::PID liftPID{1, 0.003, 4, 100, "Lift"};
+   * pros::Motor lift_motor(1);
+   *
+   * void opcontrol() {
+   *   while (true) {
+   *     if (master.get_digital(DIGITAL_L1)) {
+   *       liftPID.target_set(500);
+   *     } else if (master.get_digital(DIGITAL_L2)) {
+   *       liftPID.target_set(0);
+   *     }
+   *     lift_motor.move(liftPID.compute(lift_motor.get_position()));
+   *
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   double compute(double current);
 
   /**
    * Computes PID, but you compute the error yourself.
    *
-   * Current is only used here for calculative derivative to solve derivative kick.
+   * Current is only used to calculate the derivative, which avoids derivative kick.
    *
    * \param err
    *        error for the PID, you need to calculate this yourself
    * \param current
    *        current sensor value
+   *
+   * \code{.cpp}
+   * ez::PID liftPID{1, 0.003, 4, 100, "Lift"};
+   * pros::Motor lift_motor(1);
+   *
+   * void opcontrol() {
+   *   double target = 0.0;
+   *   double error = 0.0;
+   *   while (true) {
+   *     if (master.get_digital(DIGITAL_L1)) {
+   *       target = 500.0;
+   *     } else if (master.get_digital(DIGITAL_L2)) {
+   *       target = 0.0;
+   *     }
+   *     error = target - lift_motor.get_position();
+   *     lift_motor.move(
+   *         liftPID.compute_error(error, lift_motor.get_position()));
+   *
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   double compute_error(double err, double current);
 
   /**
    * Returns target value.
+   *
+   * \code{.cpp}
+   * ez::PID liftPID{1, 0.003, 4, 100, "Lift"};
+   * pros::Motor lift_motor(1);
+   *
+   * void opcontrol() {
+   *   while (true) {
+   *     if (master.get_digital(DIGITAL_L1)) {
+   *       liftPID.target_set(500);
+   *       // This prints 500
+   *       printf("%.2f\n", liftPID.target_get());
+   *     } else if (master.get_digital(DIGITAL_L2)) {
+   *       liftPID.target_set(0);
+   *       // This prints 0
+   *       printf("%.2f\n", liftPID.target_get());
+   *     }
+   *     lift_motor.move(liftPID.compute(lift_motor.get_position()));
+   *
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   double target_get();
 
@@ -159,24 +255,87 @@ public:
    *        the secondary sensor's current velocity or acceleration reading, not its position.  It counts as
    *        stopped while the absolute value of this is at or below velocity_sensor_secondary_exit_get().
    *        EZ-Template passes the IMU acceleration magnitude.
+   *
+   * \code{.cpp}
+   * ez::PID liftPID{1, 0.003, 4, 100, "Lift"};
+   * pros::Motor lift_motor(1);
+   * pros::Rotation lift_sensor(3);
+   *
+   * void initialize() {
+   *   liftPID.exit_condition_set(100, 3, 500, 7, 500, 500);
+   *
+   *   // Enable the secondary sensor
+   *   liftPID.velocity_sensor_secondary_toggle_set(true);
+   *
+   *   // The lift counts as stopped within 50 centidegrees per second
+   *   liftPID.velocity_sensor_secondary_exit_set(50);
+   * }
+   *
+   * void autonomous() {
+   *   liftPID.target_set(500);
+   *   while (true) {
+   *     // Update the secondary sensor every loop, before exit_condition()
+   *     liftPID.velocity_sensor_secondary_set(lift_sensor.get_velocity());
+   *
+   *     if (liftPID.exit_condition(lift_motor, true) != ez::RUNNING) break;
+   *     lift_motor.move(liftPID.compute(lift_motor.get_position()));
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   void velocity_sensor_secondary_set(double secondary_sensor);
 
   /**
    * Returns the updated secondary sensor for velocity exiting.
+   *
+   * \code{.cpp}
+   * ez::PID liftPID;
+   *
+   * void initialize() {
+   *   liftPID.velocity_sensor_secondary_set(0.0);
+   *
+   *   // This prints 0.00
+   *   printf("%.2f\n", liftPID.velocity_sensor_secondary_get());
+   * }
+   * \endcode
    */
   double velocity_sensor_secondary_get();
 
   /**
-   * Boolean for if the secondary sensor will be updated or not.  True uses this sensor, false does not.
+   * Sets whether exit_condition() uses the secondary sensor for the velocity exit.  True uses this sensor, false does not.
    *
    * \param toggle
    *        true uses this sensor, false does not
+   *
+   * \code{.cpp}
+   * ez::PID liftPID;
+   *
+   * void initialize() {
+   *   // Enable the secondary sensor
+   *   liftPID.velocity_sensor_secondary_toggle_set(true);
+   * }
+   * \endcode
    */
   void velocity_sensor_secondary_toggle_set(bool toggle);
 
   /**
-   * Returns the boolean for if the secondary sensor will be updated or not.  True uses this sensor, false does not.
+   * Returns whether exit_condition() uses the secondary sensor for the velocity exit.  True uses this sensor, false does not.
+   *
+   * \code{.cpp}
+   * ez::PID liftPID;
+   *
+   * void initialize() {
+   *   // This prints 0
+   *   printf("%i\n", liftPID.velocity_sensor_secondary_toggle_get());
+   *
+   *   // Enable the secondary sensor
+   *   liftPID.velocity_sensor_secondary_toggle_set(true);
+   *
+   *   // This prints 1
+   *   printf("%i\n", liftPID.velocity_sensor_secondary_toggle_get());
+   * }
+   * \endcode
    */
   bool velocity_sensor_secondary_toggle_get();
 
@@ -187,11 +346,29 @@ public:
    *
    * \param zero
    *        a small double
+   *
+   * \code{.cpp}
+   * ez::PID liftPID;
+   *
+   * void initialize() {
+   *   // Velocity exit runs when the sensor moves under 0.1 per 10 ms (10 units per second)
+   *   liftPID.velocity_sensor_main_exit_set(0.1);
+   * }
+   * \endcode
    */
   void velocity_sensor_main_exit_set(double zero);
 
   /**
    * Returns the velocity exit's speed as the distance the sensor moves in one 10 ms tick.
+   *
+   * \code{.cpp}
+   * ez::PID liftPID;
+   *
+   * void initialize() {
+   *   // This prints 0.05
+   *   printf("%.2f\n", liftPID.velocity_sensor_main_exit_get());
+   * }
+   * \endcode
    */
   double velocity_sensor_main_exit_get();
 
@@ -201,16 +378,50 @@ public:
    *
    * \param units_per_s
    *        sensor units per second
+   *
+   * \code{.cpp}
+   * ez::PID liftPID;
+   *
+   * void initialize() {
+   *   // The lift counts as stopped under 10 units per second
+   *   liftPID.stop_speed_set(10.0);
+   * }
+   * \endcode
    */
   void stop_speed_set(double units_per_s);
 
   /**
    * Returns the stop speed, in sensor units per second.
+   *
+   * \code{.cpp}
+   * ez::PID liftPID;
+   *
+   * void initialize() {
+   *   printf("Stop speed: %f\n", liftPID.stop_speed_get());
+   * }
+   * \endcode
    */
   double stop_speed_get();
 
   /**
    * Returns how fast the sensor has been moving over the last 100 ms, in sensor units per second.  It updates on every compute()/compute_error().
+   *
+   * \code{.cpp}
+   * ez::PID liftPID{1, 0.003, 4, 100, "Lift"};
+   * pros::Motor lift_motor(1);
+   *
+   * void opcontrol() {
+   *   liftPID.target_set(500);
+   *   while (true) {
+   *     lift_motor.move(liftPID.compute(lift_motor.get_position()));
+   *
+   *     // Updated by compute() above
+   *     printf("Lift speed: %f\n", liftPID.speed_get());
+   *
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   double speed_get();
 
@@ -220,64 +431,223 @@ public:
    * acceleration, so this can't tell cruising from actually stalled.  That's why the secondary sensor is off
    * by default (see Drive::pid_drive_exit_condition_set and friends).
    *
+   * This is defaulted to 0.075.  This is only used when the secondary sensor is enabled.
+   *
    * \param zero
    *        a small double
+   *
+   * \code{.cpp}
+   * ez::PID liftPID;
+   *
+   * void initialize() {
+   *   // Enable the secondary sensor
+   *   liftPID.velocity_sensor_secondary_toggle_set(true);
+   *
+   *   // The secondary sensor counts as stopped within 0.1
+   *   liftPID.velocity_sensor_secondary_exit_set(0.1);
+   * }
+   * \endcode
    */
   void velocity_sensor_secondary_exit_set(double zero);
 
   /**
    * Returns the threshold that the secondary sensor will return 0 velocity within.
+   *
+   * This is defaulted to 0.075, and it is only used when the secondary sensor is enabled.
+   *
+   * \code{.cpp}
+   * ez::PID liftPID;
+   *
+   * void initialize() {
+   *   // This prints 0.075
+   *   printf("%.3f\n", liftPID.velocity_sensor_secondary_exit_get());
+   * }
+   * \endcode
    */
   double velocity_sensor_secondary_exit_get();
 
   /**
    * Iterative exit condition for PID.
    *
+   * Checks if the error is small for X amount of time, if the error is a little bigger for Y amount of time, or if the velocity is 0 for Z amount of time
+   * (after the robot has moved), if you have constants enabled for them in exit_condition_set().  Returns one of the exit_output states.
+   *
    * \param print = false
    *        if true, prints when complete
+   *
+   * \code{.cpp}
+   * ez::PID liftPID{1, 0.003, 4, 100, "Lift"};
+   * pros::Motor lift_motor(1);
+   *
+   * void initialize() {
+   *   liftPID.exit_condition_set(100, 3, 500, 7, 500, 500);
+   * }
+   *
+   * void autonomous() {
+   *   liftPID.target_set(500);
+   *   while (liftPID.exit_condition(true) == ez::RUNNING) {
+   *     lift_motor.move(liftPID.compute(lift_motor.get_position()));
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   *
+   *   liftPID.target_set(0);
+   *   while (liftPID.exit_condition(true) == ez::RUNNING) {
+   *     lift_motor.move(liftPID.compute(lift_motor.get_position()));
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   ez::exit_output exit_condition(bool print = false);
 
   /**
    * Iterative exit condition for PID.
    *
+   * Checks if the error is small for X amount of time, if the error is a little bigger for Y amount of time, or if the velocity is 0 for Z amount of time
+   * (after the robot has moved), if you have constants enabled for them in exit_condition_set().  It also exits if the motor reports over current for
+   * mA_timeout ms (checked before the other exits), only if you have constants enabled for it.  Returns one of the exit_output states.
+   *
    * \param sensor
    *        a pros motor on your mechanism
    * \param print = false
    *        if true, prints when complete
+   *
+   * \code{.cpp}
+   * ez::PID liftPID{1, 0.003, 4, 100, "Lift"};
+   * pros::Motor lift_motor(1);
+   *
+   * void initialize() {
+   *   liftPID.exit_condition_set(100, 3, 500, 7, 500, 500);
+   * }
+   *
+   * void autonomous() {
+   *   liftPID.target_set(500);
+   *   while (liftPID.exit_condition(lift_motor, true) == ez::RUNNING) {
+   *     lift_motor.move(liftPID.compute(lift_motor.get_position()));
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   *
+   *   liftPID.target_set(0);
+   *   while (liftPID.exit_condition(lift_motor, true) == ez::RUNNING) {
+   *     lift_motor.move(liftPID.compute(lift_motor.get_position()));
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   ez::exit_output exit_condition(pros::Motor sensor, bool print = false);
 
   /**
    * Iterative exit condition for PID.
    *
+   * This checks the same thing as one motor, except it checks through multiple motors instead of 1.  If any of the motors are pulling too many amps
+   * the function starts the timer for mA, and when the timer runs out it returns mA_EXIT.  Returns one of the exit_output states.
+   *
    * \param sensor
    *        pros motors on your mechanism
    * \param print = false
    *        if true, prints when complete
+   *
+   * \code{.cpp}
+   * ez::PID liftPID{1, 0.003, 4, 100, "Lift"};
+   * pros::Motor l_lift_motor(1);
+   * pros::Motor r_lift_motor(-2);
+   *
+   * void set_lift(int input) {
+   *   l_lift_motor.move(input);
+   *   r_lift_motor.move(input);
+   * }
+   *
+   * void initialize() {
+   *   liftPID.exit_condition_set(100, 3, 500, 7, 500, 500);
+   * }
+   *
+   * void autonomous() {
+   *   liftPID.target_set(500);
+   *   while (liftPID.exit_condition({r_lift_motor, l_lift_motor}, true) ==
+   *          ez::RUNNING) {
+   *     set_lift(liftPID.compute(l_lift_motor.get_position()));
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   *
+   *   liftPID.target_set(0);
+   *   while (liftPID.exit_condition({r_lift_motor, l_lift_motor}, true) ==
+   *          ez::RUNNING) {
+   *     set_lift(liftPID.compute(l_lift_motor.get_position()));
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   ez::exit_output exit_condition(const std::vector<pros::Motor>& sensor, bool print = false);
 
   /**
    * Iterative exit condition for PID.
    *
+   * This checks the same thing as one motor, except it checks through the whole motor group instead of 1 motor.  If any of the motors are pulling too many amps
+   * the function starts the timer for mA, and when the timer runs out it returns mA_EXIT.  Returns one of the exit_output states.
+   *
    * \param sensor
    *        pros motor group on your mechanism
    * \param print = false
    *        if true, prints when complete
+   *
+   * \code{.cpp}
+   * ez::PID liftPID{1, 0.003, 4, 100, "Lift"};
+   * pros::MotorGroup lift({1, -2});
+   *
+   * void initialize() {
+   *   liftPID.exit_condition_set(100, 3, 500, 7, 500, 500);
+   * }
+   *
+   * void autonomous() {
+   *   liftPID.target_set(500);
+   *   while (liftPID.exit_condition(lift, true) == ez::RUNNING) {
+   *     lift.move(liftPID.compute(lift.get_position()));
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   *
+   *   liftPID.target_set(0);
+   *   while (liftPID.exit_condition(lift, true) == ez::RUNNING) {
+   *     lift.move(liftPID.compute(lift.get_position()));
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   ez::exit_output exit_condition(const pros::MotorGroup& sensor, bool print = false);
 
   /**
    * Sets the name of the PID that prints during exit conditions.
    *
+   * When you have multiple mechanisms using exit conditions and you are debugging, seeing which exit condition is doing what can be useful.
+   *
    * \param name
    *        the name of the mechanism for printing
+   *
+   * \code{.cpp}
+   * ez::PID liftPID{1, 0.003, 4, 100};
+   *
+   * void initialize() {
+   *   liftPID.name_set("Lift");
+   * }
+   * \endcode
    */
   void name_set(std::string name);
 
   /**
    * Returns the name of the PID that prints during exit conditions.
+   *
+   * \code{.cpp}
+   * ez::PID liftPID{1, 0.003, 4, 100};
+   *
+   * void initialize() {
+   *   liftPID.name_set("Lift");
+   *
+   *   // This prints Lift
+   *   printf("%s\n", liftPID.name_get().c_str());
+   * }
+   * \endcode
    */
   std::string name_get();
 
@@ -300,16 +670,67 @@ public:
 
   /**
    * Resets all timers for exit conditions.
+   *
+   * \code{.cpp}
+   * ez::PID liftPID{1, 0.003, 4, 100, "Lift"};
+   * pros::Motor lift_motor(1);
+   *
+   * void initialize() {
+   *   liftPID.exit_condition_set(100, 3, 500, 7, 500, 500);
+   * }
+   *
+   * void opcontrol() {
+   *   while (true) {
+   *     if (master.get_digital_new_press(DIGITAL_L1)) {
+   *       // Start the exit timers over for the new target
+   *       liftPID.timers_reset();
+   *       liftPID.target_set(500);
+   *     } else if (master.get_digital_new_press(DIGITAL_L2)) {
+   *       liftPID.timers_reset();
+   *       liftPID.target_set(0);
+   *     }
+   *     lift_motor.move(liftPID.compute(lift_motor.get_position()));
+   *
+   *     // Prints when the lift is done
+   *     liftPID.exit_condition(true);
+   *
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   void timers_reset();
 
   /**
    * Resets the parts of the PID that must not carry over from one motion to the next.
    * Clears the integral and primes the derivative so the first iteration of a new motion
-   * does not see a spike from the previous motion's final position.
+   * does not see a spike from the previous motion's final position.  Call it when you reuse one PID for several targets, alongside timers_reset().
    *
    * \param current
    *        the sensor value the next compute() will be given
+   *
+   * \code{.cpp}
+   * ez::PID liftPID{1, 0.003, 4, 100, "Lift"};
+   * pros::Motor lift_motor(1);
+   *
+   * void opcontrol() {
+   *   while (true) {
+   *     if (master.get_digital_new_press(DIGITAL_L1)) {
+   *       // Start fresh from where the lift is now
+   *       liftPID.motion_reset(lift_motor.get_position());
+   *       liftPID.timers_reset();
+   *       liftPID.target_set(500);
+   *     } else if (master.get_digital_new_press(DIGITAL_L2)) {
+   *       liftPID.motion_reset(lift_motor.get_position());
+   *       liftPID.timers_reset();
+   *       liftPID.target_set(0);
+   *     }
+   *     lift_motor.move(liftPID.compute(lift_motor.get_position()));
+   *
+   *     pros::delay(ez::util::DELAY_TIME);
+   *   }
+   * }
+   * \endcode
    */
   void motion_reset(double current);
 

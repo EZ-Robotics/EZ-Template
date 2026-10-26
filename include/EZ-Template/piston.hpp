@@ -18,30 +18,38 @@ public:
   pros::adi::DigitalOut piston;
 
   /**
-   * Piston constructor.
+   * Creates a new Piston object.
    *
    * The starting position of your piston defaults to false.
    *
    * \param input_port
-   *        the ADI port of your piston
+   *        ADI port the solenoid is plugged into
    * \param default_state
    *        level the solenoid's pin starts at.  get() and set() are relative to it: get() is false at startup,
    *        and set(true) moves the piston to the opposite of default_state
+   *
+   * \code{.cpp}
+   * ez::Piston left_wing('A');
+   * \endcode
    */
   Piston(int input_port, bool default_state = false);
 
   /**
-   * Piston constructor in 3 wire expander.
+   * Creates a new Piston object where the solenoid is plugged into a 3 wire expander.
    *
    * The starting position of your piston defaults to false.
    *
    * \param input_port
-   *        the ADI port of your piston on the expander
+   *        ADI port the solenoid is plugged into
    * \param expander_smart_port
-   *        the smart port the 3 wire expander is plugged into
+   *        smart port the 3 wire expander is plugged into
    * \param default_state
    *        level the solenoid's pin starts at.  get() and set() are relative to it: get() is false at startup,
    *        and set(true) moves the piston to the opposite of default_state
+   *
+   * \code{.cpp}
+   * ez::Piston left_wing('A', 1);
+   * \endcode
    */
   Piston(int input_port, int expander_smart_port, bool default_state = false);
 
@@ -50,47 +58,112 @@ public:
    *
    * \param input
    *        true sets to the opposite of the starting position
+   *
+   * \code{.cpp}
+   * ez::Piston left_wing('A');
+   *
+   * void autonomous() {
+   *   left_wing.set(true);
+   * }
+   * \endcode
    */
   void set(bool input);
 
   /**
-   * Returns current piston state.
+   * Gets the state of the piston.
+   *
+   * \code{.cpp}
+   * ez::Piston left_wing('A');
+   *
+   * void autonomous() {
+   *   left_wing.set(!left_wing.get());
+   * }
+   * \endcode
    */
   bool get();
 
   /**
-   * One button toggle for the piston.
+   * Toggles the piston back and forward with a single button during opcontrol.
    *
    * \param toggle
    *        an input button
+   *
+   * \code{.cpp}
+   * ez::Piston left_wing('A');
+   *
+   * void opcontrol() {
+   *   while (true) {
+   *     left_wing.button_toggle(master.get_digital(DIGITAL_X));
+   *
+   *     pros::delay(10);
+   *   }
+   * }
+   * \endcode
    */
   void button_toggle(int toggle);
 
   /**
-   * One button toggle for the piston.
+   * Toggles the piston back and forward with a single button during opcontrol.
    *
    * \param toggle
    *        an input button
+   *
+   * \code{.cpp}
+   * ez::Piston left_wing('A');
+   *
+   * void opcontrol() {
+   *   while (true) {
+   *     left_wing.button_toggle(DIGITAL_X);
+   *
+   *     pros::delay(10);
+   *   }
+   * }
+   * \endcode
    */
   void button_toggle(pros::controller_digital_e_t toggle);
 
   /**
-   * Two buttons trigger the piston.  Active is enabled, deactive is disabled.
+   * Sets the piston to go in and out with 2 buttons during opcontrol.
    *
    * \param active
-   *        sets piston to true
+   *        while this is true (button held), sets the piston to true (opposite of default_state)
    * \param deactive
-   *        sets piston to false
+   *        while this is true (button held), sets the piston to false
+   *
+   * \code{.cpp}
+   * ez::Piston left_wing('A');
+   *
+   * void opcontrol() {
+   *   while (true) {
+   *     left_wing.buttons(master.get_digital(DIGITAL_L1),
+   *                        master.get_digital(DIGITAL_L2));
+   *
+   *     pros::delay(10);
+   *   }
+   * }
+   * \endcode
    */
   void buttons(int active, int deactive);
 
   /**
-   * Two buttons trigger the piston. Active is enabled, deactive is disabled.
+   * Sets the piston to go in and out with 2 buttons during opcontrol.
    *
    * \param active
-   *        sets piston to true
+   *        while this button is held, sets the piston to true (opposite of default_state)
    * \param deactive
-   *        sets piston to false
+   *        while this button is held, sets the piston to false
+   *
+   * \code{.cpp}
+   * ez::Piston left_wing('A');
+   *
+   * void opcontrol() {
+   *   while (true) {
+   *     left_wing.buttons(DIGITAL_L1, DIGITAL_L2);
+   *
+   *     pros::delay(10);
+   *   }
+   * }
+   * \endcode
    */
   void buttons(pros::controller_digital_e_t active, pros::controller_digital_e_t deactive);
 

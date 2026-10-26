@@ -29,18 +29,38 @@ namespace ez {
 
 /**
  * Prints our branding all over your pros terminal.
+ *
+ * \code{.cpp}
+ * void initialize() {
+ *   ez::ez_template_print();
+ * }
+ * \endcode
  */
 void ez_template_print();
 
 /**
- * Prints to the brain screen in one string.
+ * Prints to the brain screen's 8 print lines (LLEMU, or the portrait screen when rotated).  This function handles text that's too long for a line by finding
+ * the last word and starting it on a new line, and takes \\n to set a new line.
  *
- * Splits input between lines with '\n' or when text is longer than 38 characters.
+ * There are 8 lines, 0 through 7, and a line holds 38 characters.  If the text wraps past line 7, the last line is cut off and ends in "...", and the lines
+ * above it are left alone.  A line outside of 0 to 7 does nothing, and an empty string clears that line.
  *
  * \param text
  *        input string
  * \param line
- *        starting line to print on, defaults to 0
+ *        starting line, 0 through 7.  Defaults to 0
+ *
+ * \code{.cpp}
+ * void initialize() {
+ *   ez::screen_print("hello, this is line 0\nthis is line 1");
+ *
+ *   // 38 characters, a full line
+ *   std::string digits = "01234567890123456789012345678901234567";
+ *
+ *   // "hello" doesn't fit, so it goes on line 3
+ *   ez::screen_print(digits + "hello", 2);
+ * }
+ * \endcode
  */
 void screen_print(std::string text, int line = 0);
 
@@ -150,7 +170,7 @@ typedef struct united_pose {
 } united_pose;
 
 /**
- * Struct for odom movements.
+ * Struct for odom movements.  turn_behavior is how the robot turns to face the point.  Left unset, it follows pid_odom_behavior_set().
  */
 typedef struct odom {
   pose target;
@@ -160,7 +180,7 @@ typedef struct odom {
 } odom;
 
 /**
- * Struct for united odom movements.
+ * Struct for united odom movements.  turn_behavior is how the robot turns to face the point.  Left unset, it follows pid_odom_behavior_set().
  */
 typedef struct united_odom {
   united_pose target;
@@ -197,6 +217,14 @@ int places_after_decimal(double input, int min = 0);
  *        your input value
  * \param n
  *        the amount of decimals you want to display
+ *
+ * \code{.cpp}
+ * void initialize() {
+ *   // This will print 1.23
+ *   double test = 1.23456789;
+ *   std::cout << ez::util::to_string_with_precision(test) << std::endl;
+ * }
+ * \endcode
  */
 std::string to_string_with_precision(double input, int n = 2);
 
@@ -205,6 +233,17 @@ std::string to_string_with_precision(double input, int n = 2);
  *
  * \param input
  *        your input value
+ *
+ * \code{.cpp}
+ * void opcontrol() {
+ *   while (true) {
+ *     printf("Sgn of Controller: %i \n",
+ *            ez::util::sgn(master.get_analog(ANALOG_LEFT_Y)));
+ *
+ *     pros::delay(ez::util::DELAY_TIME);
+ *   }
+ * }
+ * \endcode
  */
 int sgn(double input);
 
@@ -225,6 +264,20 @@ bool reversed_active(double input);
  *        the maximum input can be
  * \param min
  *        the minimum input can be
+ *
+ * \code{.cpp}
+ * void opcontrol() {
+ *   while (true) {
+ *     int joy = master.get_analog(ANALOG_LEFT_Y);
+ *
+ *     // When the joystick is between 100 and 127
+ *     // (or -100 and -127) this will print 100 (or -100).
+ *     printf("Clipped Controller: %.0f \n", ez::util::clamp(joy, 100, -100));
+ *
+ *     pros::delay(ez::util::DELAY_TIME);
+ *   }
+ * }
+ * \endcode
  */
 double clamp(double input, double max, double min);
 
@@ -237,6 +290,20 @@ double clamp(double input, double max, double min);
  *        your input value
  * \param max
  *        the absolute value maximum input can be
+ *
+ * \code{.cpp}
+ * void opcontrol() {
+ *   while (true) {
+ *     int joy = master.get_analog(ANALOG_LEFT_Y);
+ *
+ *     // When the joystick is between 100 and 127
+ *     // (or -100 and -127) this will print 100 (or -100).
+ *     printf("Clipped Controller: %.0f \n", ez::util::clamp(joy, 100));
+ *
+ *     pros::delay(ez::util::DELAY_TIME);
+ *   }
+ * }
+ * \endcode
  */
 double clamp(double input, double max);
 
@@ -292,6 +359,13 @@ const int DELAY_TIME = 10;
  *
  * \param input
  *        your input radian
+ *
+ * \code{.cpp}
+ * void initialize() {
+ *   double test = ez::util::to_deg(3.14);
+ *   std::cout << ez::util::to_string_with_precision(test) << std::endl;
+ * }
+ * \endcode
  */
 double to_deg(double input);
 
@@ -300,16 +374,31 @@ double to_deg(double input);
  *
  * \param input
  *        your input degree
+ *
+ * \code{.cpp}
+ * void initialize() {
+ *   double test = ez::util::to_rad(180.0);
+ *   std::cout << ez::util::to_string_with_precision(test) << std::endl;
+ * }
+ * \endcode
  */
 double to_rad(double input);
 
 /**
- * Returns the angle between two points.
+ * Returns the heading in degrees from icurrent to itarget, 0 is +Y.
  *
  * \param itarget
  *        target position
  * \param icurrent
  *        current position
+ *
+ * \code{.cpp}
+ * void initialize() {
+ *   // This prints 45.00
+ *   double test = ez::util::absolute_angle_to_point({12, 12}, {0, 0});
+ *   std::cout << ez::util::to_string_with_precision(test) << std::endl;
+ * }
+ * \endcode
  */
 double absolute_angle_to_point(pose itarget, pose icurrent);
 
@@ -320,6 +409,13 @@ double absolute_angle_to_point(pose itarget, pose icurrent);
  *        target position
  * \param icurrent
  *        current position
+ *
+ * \code{.cpp}
+ * void initialize() {
+ *   double test = ez::util::distance_to_point({12, 12}, {0, 0});
+ *   std::cout << ez::util::to_string_with_precision(test) << std::endl;
+ * }
+ * \endcode
  */
 double distance_to_point(pose itarget, pose icurrent);
 
@@ -328,6 +424,13 @@ double distance_to_point(pose itarget, pose icurrent);
  *
  * \param theta
  *        input angle in degrees
+ *
+ * \code{.cpp}
+ * void initialize() {
+ *   double test = ez::util::wrap_angle(3600);
+ *   std::cout << ez::util::to_string_with_precision(test) << std::endl;
+ * }
+ * \endcode
  */
 double wrap_angle(double theta);
 
@@ -338,6 +441,13 @@ double wrap_angle(double theta);
  *        how far to project a new point
  * \param icurrent
  *        point to project off of
+ *
+ * \code{.cpp}
+ * void initialize() {
+ *   ez::pose test = ez::util::vector_off_point(24, {0, 0, 0});
+ *   printf("(%.2f, %.2f, %.2f)\n", test.x, test.y, test.theta);
+ * }
+ * \endcode
  */
 pose vector_off_point(double added, pose icurrent);
 
