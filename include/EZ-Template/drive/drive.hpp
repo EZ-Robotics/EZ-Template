@@ -3839,8 +3839,8 @@ class Drive {
   double turn_tolerance = 3.0;
   bool global_turn_slew_enabled = false;
   e_angle_behavior current_angle_behavior = raw;
-  e_angle_behavior default_swing_type = raw;
-  e_angle_behavior default_turn_type = raw;
+  e_angle_behavior default_swing_type = shortest;
+  e_angle_behavior default_turn_type = shortest;
   e_angle_behavior default_odom_type = shortest;
   bool turn_biased_left = false;
   bool odom_tracker_left_enabled = false;
