@@ -12,7 +12,11 @@ description:  wheels that track the ground
 
 ### ADI Encoder
 
-<ApiFunction name="tracking_wheel::tracking_wheel" args="std::vector<int>, double, double, double | int, std::vector<int>, double, double, double" summary="Creates a new tracking wheel with an ADI Encoder, on a built-in ADI port or a 3-wire expander." />
+<ApiFunction name="tracking_wheel::tracking_wheel" args="std::vector<int>, double, double, double" />
+
+### ADI Encoder 3-wire Expander
+
+<ApiFunction name="tracking_wheel::tracking_wheel" args="int, std::vector<int>, double, double, double" />
 
 ## Getters
 

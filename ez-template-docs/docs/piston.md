@@ -8,7 +8,11 @@ description:  some people say these are cylinders and not pistons
 
 ### Piston()
 
-<ApiFunction name="Piston::Piston" args="int, bool | int, int, bool" summary="Piston constructor, on a built-in ADI port or a 3-wire expander." />
+<ApiFunction name="Piston::Piston" args="int, bool" />
+
+### Piston()
+
+<ApiFunction name="Piston::Piston" args="int, int, bool" />
 
 ## Controlling
 
