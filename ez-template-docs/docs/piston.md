@@ -3,296 +3,31 @@ layout: default
 title: Piston
 description:  some people say these are cylinders and not pistons
 ---
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-
-
 
 ## Constructors
 
+### Piston()
+
+<ApiFunction name="Piston::Piston" args="int, bool" />
 
 ### Piston()
-Creates a new Piston object.  
 
-`input_port` ADI port the solenoid is plugged into.  
-`default_state` the level the solenoid's pin starts at.  `get()` and `set()` are relative to it: `get()` is `false` at startup, and `set(true)` moves the piston to the opposite of `default_state`.    
-<Tabs
-  groupId="piston_no_expander"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
+<ApiFunction name="Piston::Piston" args="int, int, bool" />
 
-<TabItem value="example">
-
-```cpp
-ez::Piston left_wing('A');
-```
-
-</TabItem>
-
-<TabItem value="proto">
-
-```cpp
-Piston(int input_port, bool default_state = false);
-```
-
-</TabItem>
-</Tabs>
-
-
-
-### Piston()
-Creates a new Piston object where the solenoid is plugged into a 3 wire expander.  
-
-`input_port` ADI port the solenoid is plugged into.  
-`expander_smart_port` smart port the 3 wire expander is plugged into.  
-`default_state` the level the solenoid's pin starts at.  `get()` and `set()` are relative to it: `get()` is `false` at startup, and `set(true)` moves the piston to the opposite of `default_state`.    
-<Tabs
-  groupId="slew_backward_constant_set"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-
-<TabItem value="example">
-
-```cpp
-ez::Piston left_wing('A', 1);
-```
-
-</TabItem>
-
-<TabItem value="proto">
-
-```cpp
-Piston(int input_port, int expander_smart_port, bool default_state = false);
-```
-
-</TabItem>
-</Tabs>
-
-
-## Setters
+## Controlling
 
 ### set()
-Sets the piston to fire.  
 
-`input` boolean to fire the piston.       
-<Tabs
-  groupId="piston"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-
-<TabItem value="example">
-
-```cpp
-ez::Piston left_wing('A');
-void autonomous() {
-  left_wing.set(true);
-}
-```
-
-</TabItem>
-
-<TabItem value="proto">
-
-```cpp
-void set(bool input);
-```
-
-</TabItem>
-</Tabs>
-
-
-
-
+<ApiFunction name="Piston::set" />
 
 ### button_toggle()
-Toggles the piston back and forward with a single button during opcontrol.
 
-`toggle` an input button.       
-<Tabs
-  groupId="button_toggle"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-
-<TabItem value="example">
-
-```cpp
-ez::Piston left_wing('A');
-void opcontrol() {
-  while (true) {
-    left_wing.button_toggle(master.get_digital(DIGITAL_X));
-
-    pros::delay(10);
-  }
-}
-```
-
-</TabItem>
-
-<TabItem value="proto">
-
-```cpp
-void button_toggle(int toggle);
-```
-
-</TabItem>
-</Tabs>
-
-
-Also accepts a `pros::controller_digital_e_t` directly.  
-<Tabs
-  groupId="button_toggle_digital"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-
-<TabItem value="example">
-
-```cpp
-ez::Piston left_wing('A');
-void opcontrol() {
-  while (true) {
-    left_wing.button_toggle(DIGITAL_X);
-
-    pros::delay(10);
-  }
-}
-```
-
-</TabItem>
-
-<TabItem value="proto">
-
-```cpp
-void button_toggle(pros::controller_digital_e_t toggle);
-```
-
-</TabItem>
-</Tabs>
-
-
+<ApiFunction name="Piston::button_toggle" args="int | pros::controller_digital_e_t" />
 
 ### buttons()
-Sets the piston to go in and out with 2 buttons during opcontrol.  
 
-`active` the button to activate the piston.   
-`deactive` the button to retract the piston.         
-<Tabs
-  groupId="buttons"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-
-<TabItem value="example">
-
-```cpp
-ez::Piston left_wing('A');
-void opcontrol() {
-  while (true) {
-    left_wing.buttons(master.get_digital(DIGITAL_L1), master.get_digital(DIGITAL_L2));
-
-    pros::delay(10);
-  }
-}
-```
-
-</TabItem>
-
-<TabItem value="proto">
-
-```cpp
-void buttons(int active, int deactive);
-```
-
-</TabItem>
-</Tabs>
-
-
-Also accepts `pros::controller_digital_e_t` directly.  
-<Tabs
-  groupId="buttons_digital"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
-
-<TabItem value="example">
-
-```cpp
-ez::Piston left_wing('A');
-void opcontrol() {
-  while (true) {
-    left_wing.buttons(DIGITAL_L1, DIGITAL_L2);
-
-    pros::delay(10);
-  }
-}
-```
-
-</TabItem>
-
-<TabItem value="proto">
-
-```cpp
-void buttons(pros::controller_digital_e_t active, pros::controller_digital_e_t deactive);
-```
-
-</TabItem>
-</Tabs>
-
-
-## Getter
+<ApiFunction name="Piston::buttons" args="int, int | pros::controller_digital_e_t, pros::controller_digital_e_t" />
 
 ### get()
-Gets the state of the piston.       
-<Tabs
-  groupId="get_piston"
-  defaultValue="proto"
-  values={[
-    { label: 'Prototype',  value: 'proto', },
-    { label: 'Example',  value: 'example', },
-  ]
-}>
 
-<TabItem value="example">
-
-```cpp
-ez::Piston left_wing('A');
-void autonomous() {
-  left_wing.set(!left_wing.get());
-}
-```
-
-</TabItem>
-
-<TabItem value="proto">
-
-```cpp
-bool get();
-```
-
-</TabItem>
-</Tabs>
+<ApiFunction name="Piston::get" />
