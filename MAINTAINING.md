@@ -76,7 +76,7 @@ Assisted-by: <AI tool, like Claude Code, one line per tool>
 
 The person who opened the PR stays the author. Never include a session link.
 
-The release PR from `dev` into `main` is a merge commit. Process doc PRs go into `main`, and after one merges, merge `main` into `dev`. Nobody force-pushes a shared branch or someone else's PR branch. Undo merged changes with `git revert`. After a rebase, the checks MUST pass again before merging.
+The release PR from `dev` into `main` is a merge commit. Process doc PRs go into `main`. After one merges, cherry-pick its commit onto a branch off `dev` with `git cherry-pick -x`, and open a PR into `dev`. Never merge `main` into `dev`, because `main` holds the #584 revert and the merge would undo 4.0 on `dev`. Nobody force-pushes a shared branch or someone else's PR branch. Undo merged changes with `git revert`. After a rebase, the checks MUST pass again before merging.
 
 ### Gitmoji
 
@@ -118,7 +118,7 @@ The full list is at [gitmoji.dev](https://gitmoji.dev).
 **How to release**
 1. Go through the checklist below.
 2. Bump `VERSION` in the `Makefile`, run `sh tools/gen-version.sh`, and commit the three changed files in their own PR, like #561.
-3. Tag a pre-release on `dev`. For a stable release, merge a release PR from `dev` into `main` and tag the merge commit.
+3. Tag a pre-release on `dev`. For a stable release, merge a release PR from `dev` into `main` and tag the merge commit. For the 4.0.0 stable release only, revert #584 on `main` before the release PR, or git treats 4.0 as already merged.
 4. Build the template with `pros make template` from the tag.
 5. Build the example project zip from `example-project`, named exactly `EZ-Template-Example-Project.zip`.
 6. Make the GitHub release with both zips and the notes. Check "Set as a pre-release" for alphas, betas and RCs.
