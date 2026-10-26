@@ -31,7 +31,9 @@ namespace ez {
  * Prints our branding all over your pros terminal.
  *
  * \code{.cpp}
- * void initialize() { ez::ez_template_print(); }
+ * void initialize() {
+ *   ez::ez_template_print();
+ * }
  * \endcode
  */
 void ez_template_print();

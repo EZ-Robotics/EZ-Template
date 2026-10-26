@@ -234,7 +234,9 @@ public:
    * \code{.cpp}
    * ez::tracking_wheel right_tracker(1, 2.75, 4.0);
    *
-   * void initialize() { right_tracker.reset(); }
+   * void initialize() {
+   *   right_tracker.reset();
+   * }
    * \endcode
    */
   void reset();

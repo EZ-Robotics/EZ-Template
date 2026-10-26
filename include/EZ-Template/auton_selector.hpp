@@ -76,7 +76,9 @@ public:
    * page is on screen).
    *
    * \code{.cpp}
-   * void initialize() { ez::as::auton_selector.selected_auton_print(); }
+   * void initialize() {
+   *   ez::as::auton_selector.selected_auton_print();
+   * }
    * \endcode
    */
   void selected_auton_print();

@@ -8,8 +8,9 @@ into a project. Each example is checked three ways.
            the example project's main.h setup and checked with -fsyntax-only by the ARM
            compiler against the real PROS headers in include/, not the host test stubs.
   format   It equals clang-format output with the repo's .clang-format but ColumnLimit 100,
-           so every line is 100 columns or fewer. The width is that of the example text, not
-           counting the comment's " * " or "/// " prefix.
+           so every line is 100 columns or fewer, and with EXAMPLE_STYLE below: no function,
+           loop or if body on one line, and braces on every if, else, for and while.  The width
+           is that of the example text, not counting the comment's " * " or "/// " prefix.
   params   Every \\param name is a parameter of the function the comment documents.
 
 Usage: python3 tools/check-doc-examples.py [--fix] [--skip compile,format,params] [--jobs N]
@@ -40,6 +41,17 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 HEADER_DIR = "include/EZ-Template"
 SKIP_FILES = {"include/EZ-Template/version.hpp"}
 FORMAT_COLUMNS = 100
+# What the examples change from the repo's .clang-format. Examples are read by students, so a
+# function body or a loop body is never joined onto one line, and an if, else, for or while
+# always has braces.
+EXAMPLE_STYLE = {
+    "ColumnLimit": str(FORMAT_COLUMNS),
+    "AllowShortFunctionsOnASingleLine": "None",
+    "AllowShortIfStatementsOnASingleLine": "Never",
+    "AllowShortLoopsOnASingleLine": "false",
+    "AllowShortBlocksOnASingleLine": "Never",
+    "InsertBraces": "true",
+}
 CHECKS = ("compile", "format", "params")
 
 # The example project's main.h, which every team's code sees.
@@ -366,9 +378,13 @@ def format_examples(examples, tmp):
     """Returns the formatted text of each example, in order."""
     cf = clang_format_path()
     with open(os.path.join(ROOT, ".clang-format"), encoding="utf-8") as f:
-        config, n = re.subn(r"(?m)^ColumnLimit:.*$", "ColumnLimit: %d" % FORMAT_COLUMNS, f.read())
-    if n != 1:
-        sys.exit(".clang-format needs exactly one ColumnLimit line")
+        config = f.read()
+    for key, value in EXAMPLE_STYLE.items():
+        config, n = re.subn(r"(?m)^%s:.*$" % key, "%s: %s" % (key, value), config)
+        if n == 0:
+            config += "\n%s: %s\n" % (key, value)
+        elif n > 1:
+            sys.exit(".clang-format has %s more than once" % key)
     cfg = os.path.join(tmp, "clang-format-100.yaml")
     with open(cfg, "w", encoding="utf-8", newline="\n") as f:
         f.write(config)

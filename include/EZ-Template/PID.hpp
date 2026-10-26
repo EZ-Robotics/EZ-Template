@@ -55,7 +55,9 @@ public:
    * \code{.cpp}
    * ez::PID liftPID;
    *
-   * void initialize() { liftPID.constants_set(1, 0, 4); }
+   * void initialize() {
+   *   liftPID.constants_set(1, 0, 4);
+   * }
    * \endcode
    */
   void constants_set(double p, double i = 0, double d = 0, double p_start_i = 0);
@@ -103,7 +105,9 @@ public:
    * \code{.cpp}
    * ez::PID liftPID{1, 0.003, 4, 100, "Lift"};
    *
-   * void initialize() { liftPID.exit_condition_set(100, 3, 500, 7, 500, 500); }
+   * void initialize() {
+   *   liftPID.exit_condition_set(100, 3, 500, 7, 500, 500);
+   * }
    * \endcode
    */
   void exit_condition_set(int p_small_exit_time, double p_small_error, int p_big_exit_time = 0, double p_big_error = 0, int p_velocity_exit_time = 0,
@@ -272,7 +276,9 @@ public:
    *     // Update the secondary sensor every loop, before exit_condition()
    *     liftPID.velocity_sensor_secondary_set(lift_sensor.get_velocity());
    *
-   *     if (liftPID.exit_condition(lift_motor, true) != ez::RUNNING) break;
+   *     if (liftPID.exit_condition(lift_motor, true) != ez::RUNNING) {
+   *       break;
+   *     }
    *     lift_motor.move(liftPID.compute(lift_motor.get_position()));
    *     pros::delay(ez::util::DELAY_TIME);
    *   }
@@ -385,7 +391,9 @@ public:
    * \code{.cpp}
    * ez::PID liftPID;
    *
-   * void initialize() { printf("Stop speed: %f\n", liftPID.stop_speed_get()); }
+   * void initialize() {
+   *   printf("Stop speed: %f\n", liftPID.stop_speed_get());
+   * }
    * \endcode
    */
   double stop_speed_get();
@@ -468,7 +476,9 @@ public:
    * ez::PID liftPID{1, 0.003, 4, 100, "Lift"};
    * pros::Motor lift_motor(1);
    *
-   * void initialize() { liftPID.exit_condition_set(100, 3, 500, 7, 500, 500); }
+   * void initialize() {
+   *   liftPID.exit_condition_set(100, 3, 500, 7, 500, 500);
+   * }
    *
    * void autonomous() {
    *   liftPID.target_set(500);
@@ -503,7 +513,9 @@ public:
    * ez::PID liftPID{1, 0.003, 4, 100, "Lift"};
    * pros::Motor lift_motor(1);
    *
-   * void initialize() { liftPID.exit_condition_set(100, 3, 500, 7, 500, 500); }
+   * void initialize() {
+   *   liftPID.exit_condition_set(100, 3, 500, 7, 500, 500);
+   * }
    *
    * void autonomous() {
    *   liftPID.target_set(500);
@@ -543,7 +555,9 @@ public:
    *   r_lift_motor.move(input);
    * }
    *
-   * void initialize() { liftPID.exit_condition_set(100, 3, 500, 7, 500, 500); }
+   * void initialize() {
+   *   liftPID.exit_condition_set(100, 3, 500, 7, 500, 500);
+   * }
    *
    * void autonomous() {
    *   liftPID.target_set(500);
@@ -577,7 +591,9 @@ public:
    * ez::PID liftPID{1, 0.003, 4, 100, "Lift"};
    * pros::MotorGroup lift({1, -2});
    *
-   * void initialize() { liftPID.exit_condition_set(100, 3, 500, 7, 500, 500); }
+   * void initialize() {
+   *   liftPID.exit_condition_set(100, 3, 500, 7, 500, 500);
+   * }
    *
    * void autonomous() {
    *   liftPID.target_set(500);
@@ -607,7 +623,9 @@ public:
    * \code{.cpp}
    * ez::PID liftPID{1, 0.003, 4, 100};
    *
-   * void initialize() { liftPID.name_set("Lift"); }
+   * void initialize() {
+   *   liftPID.name_set("Lift");
+   * }
    * \endcode
    */
   void name_set(std::string name);
@@ -650,7 +668,9 @@ public:
    * ez::PID liftPID{1, 0.003, 4, 100, "Lift"};
    * pros::Motor lift_motor(1);
    *
-   * void initialize() { liftPID.exit_condition_set(100, 3, 500, 7, 500, 500); }
+   * void initialize() {
+   *   liftPID.exit_condition_set(100, 3, 500, 7, 500, 500);
+   * }
    *
    * void opcontrol() {
    *   while (true) {

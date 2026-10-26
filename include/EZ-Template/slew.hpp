@@ -51,7 +51,9 @@ public:
    * \code{.cpp}
    * ez::slew lift_slew;
    *
-   * void initialize() { lift_slew.constants_set(100, 50); }
+   * void initialize() {
+   *   lift_slew.constants_set(100, 50);
+   * }
    * \endcode
    */
   void constants_set(double distance, int minimum_speed);
@@ -175,10 +177,11 @@ public:
    *
    * void autonomous() {
    *   while (lift.get_position() <= 500) {
-   *     if (lift.get_position() < 100)
+   *     if (lift.get_position() < 100) {
    *       lift_slew.speed_max_set(50);
-   *     else
+   *     } else {
    *       lift_slew.speed_max_set(127);
+   *     }
    *
    *     lift_slew.iterate(lift.get_position());
    *     lift.move(lift_slew.output());
@@ -204,10 +207,11 @@ public:
    *
    * void autonomous() {
    *   while (lift.get_position() <= 500) {
-   *     if (lift.get_position() < 100)
+   *     if (lift.get_position() < 100) {
    *       lift_slew.speed_max_set(50);
-   *     else
+   *     } else {
    *       lift_slew.speed_max_set(127);
+   *     }
    *     printf("%.2f", lift_slew.speed_max_get());
    *
    *     lift_slew.iterate(lift.get_position());

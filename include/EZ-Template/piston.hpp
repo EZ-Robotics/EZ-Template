@@ -62,7 +62,9 @@ public:
    * \code{.cpp}
    * ez::Piston left_wing('A');
    *
-   * void autonomous() { left_wing.set(true); }
+   * void autonomous() {
+   *   left_wing.set(true);
+   * }
    * \endcode
    */
   void set(bool input);
@@ -73,7 +75,9 @@ public:
    * \code{.cpp}
    * ez::Piston left_wing('A');
    *
-   * void autonomous() { left_wing.set(!left_wing.get()); }
+   * void autonomous() {
+   *   left_wing.set(!left_wing.get());
+   * }
    * \endcode
    */
   bool get();

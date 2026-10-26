@@ -46,7 +46,9 @@ bool screen_portrait_enabled();
 ///        the text to print
 ///
 /// \code{.cpp}
-/// void initialize() { ez::screen_line_set(0, "Hello!"); }
+/// void initialize() {
+///   ez::screen_line_set(0, "Hello!");
+/// }
 /// \endcode
 void screen_line_set(int line, std::string text);
 

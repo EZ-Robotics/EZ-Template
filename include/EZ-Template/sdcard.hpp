@@ -28,7 +28,9 @@ void auto_sd_update();
  * Increases the page number by 1.  Best used with the lcd callback functions.
  *
  * \code{.cpp}
- * void initialize() { pros::lcd::register_btn2_cb(ez::as::page_up); }
+ * void initialize() {
+ *   pros::lcd::register_btn2_cb(ez::as::page_up);
+ * }
  * \endcode
  */
 void page_up();
@@ -56,7 +58,9 @@ void page_down();
  * Also initializes LLEMU and sets up the callbacks for the auton selector.
  *
  * \code{.cpp}
- * void initialize() { ez::as::initialize(); }
+ * void initialize() {
+ *   ez::as::initialize();
+ * }
  * \endcode
  */
 void initialize();
