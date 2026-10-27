@@ -393,6 +393,10 @@ struct TeamEnd : End {
 
 TeamEnd run_team(const sim::SimArchetype& a, Style style, int passes, Team team) {
   gate::Rig r(a, passes);
+  // These scenarios are about what the library does when it cannot tell how far the robot moved on a pass, so they run on the exits and stop
+  // speeds from when they were written (a 90 ms small exit, 1.5 in/s), which a fast robot cannot cross in one go
+  r.chassis.pid_odom_drive_exit_condition_set(90_ms, 1_in, 250_ms, 3_in, 500_ms, 750_ms);
+  r.chassis.pid_distance_exit_stop_speed_set(1.5);
   Truth truth(r.sim, r.chassis);
   install(r.chassis, truth, style);
   r.chassis.odom_xyt_set(0, 0, 0);

@@ -28,10 +28,10 @@ TEST_CASE("pure pursuit inject_points on a 24in straight path at 0.5in spacing")
   auto output = DriveTestAccess::inject_points(chassis, path);
 
   // 24in / 0.5in default SPACING = 48 candidate slots between the injected
-  // start point and the target; points within ODOM_LOOK_AHEAD (7in default)
+  // start point and the target; points within ODOM_LOOK_AHEAD (16in default)
   // of either end are skipped, so the actual count is derived by running
   // the injection loop, not just 24/0.5.
-  CHECK(output.size() == 36);
+  CHECK(output.size() == 18);
   CHECK(DriveTestAccess::injected_pp_index(chassis).size() == 2);
 }
 
@@ -60,7 +60,7 @@ namespace {
 std::vector<odom> bent_path() {
   std::vector<odom> path;
   for (int i = 0; i < 60; i++) {
-    double x = i < 20 ? 0.3 * i : 6.0;
+    double x = i < 40 ? 0.3 * i : 12.0;
     path.push_back({{x, 0.5 * i}, fwd, 127});
   }
   return path;
@@ -84,8 +84,8 @@ TEST_CASE("pure pursuit smooth_path smooths a bent path with constants that sett
 
     REQUIRE(output.size() == path.size());
     CHECK(all_finite_within(output, 100.0));
-    // The kink at point 20 is what smoothing should round off.
-    CHECK(output[20].target.x != doctest::Approx(path[20].target.x));
+    // The kink at point 40 is what smoothing should round off.  It is past the 16 in look-ahead from the start, where points are left alone.
+    CHECK(output[40].target.x != doctest::Approx(path[40].target.x));
   }
 }
 

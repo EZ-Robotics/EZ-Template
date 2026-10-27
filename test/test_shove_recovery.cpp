@@ -45,6 +45,11 @@ struct Rig {
       : a(arch), chassis(make_drive(arch)), sim(chassis, arch, sim::NoiseConfig{noise, seed}) {
     DriveTestAccess::imu_calibration_complete(chassis) = true;
     chassis.pid_print_toggle(false);
+    chassis.pid_exit_speed_window_set(40);  // 40 ms: even number of ticks, see test_speed_window.cpp
+    // A team whose stop speed is 5 in/s and 5 deg/s, the velocity exit's old threshold: a robot recovering from a shove crawls back in under the
+    // 8 in/s default for longer than the corpus velocity exit time and would be read as held
+    chassis.pid_distance_exit_stop_speed_set(5.0);
+    chassis.pid_angle_exit_stop_speed_set(5.0);
   }
 };
 
@@ -209,6 +214,9 @@ TEST_CASE("control: the slow corner path on light_fast at 450 rpm gets through t
 namespace {
 Outcome run_held(const sim::SimArchetype& a, void (*setup)(Rig&), int budget_ticks = 3000) {
   Rig r(a);
+  // A robot dragged back by a force this large only ends on the mA exit, and its over-current signal clears after about 600 ms, so the 750 ms
+  // default would never fire.  These controls use a 500 ms mA timeout.
+  r.chassis.pid_drive_exit_condition_set(30_ms, 1_in, 100_ms, 4_in, 500_ms, 500_ms);
   setup(r);
   std::uint32_t t0 = pros::millis();
   bool returned = run_capped([&] { r.chassis.pid_wait(); }, budget_ticks);

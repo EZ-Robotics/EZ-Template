@@ -373,15 +373,15 @@ Pass pinned_and_spun(int n) {
 }
 
 // A boomerang's last point: xy's error is measured to a carrot that moves as the robot closes in, so it swings
-// up and down, while the robot really is getting closer to the point, slowly (5 in/s from 10 in out).
+// up and down, while the robot really is getting closer to the point, slowly (10 in/s from 10 in out, over the 8 in/s stop speed).
 Pass boomerang_close_in(int n) {
   Pass p = cruising(n);
   if (n < 20) return p;
   p.jump_to_last = true;
   p.advance_index = 0;
-  p.distance = std::fmax(0.0, 10.0 - 0.05 * (n - 20));
+  p.distance = std::fmax(0.0, 10.0 - 0.1 * (n - 20));
   p.xy_error = p.distance > 1.0 ? 4.0 + 3.0 * std::sin((n - 20) / 8.0) : p.distance;
-  p.xy_rate = p.distance > 0.0 ? 0.05 : 0.0;
+  p.xy_rate = p.distance > 0.0 ? 0.1 : 0.0;
   return p;
 }
 
@@ -416,12 +416,12 @@ Pass pinned_and_spun_slower(int n) {
 }
 }  // namespace
 
-TEST_CASE("pid_wait ends a return from an overshoot of the last point slower than 5 in/s on the velocity exit") {
+TEST_CASE("pid_wait ends a return from an overshoot of the last point slower than 8 in/s on the velocity exit") {
   Drive chassis = make_chassis();
   start_path(chassis);
   Outcome o = run(chassis, overshoot_then_return, 600);
   REQUIRE(o.returned);
-  // 3 in/s is under the velocity exit's 5 in/s, so the velocity exit ends the wait 500 ms after the 100 ms speed window first reads the
+  // 3 in/s is under the velocity exit's 8 in/s, so the velocity exit ends the wait 500 ms after the 100 ms speed window first reads the
   // return (pass 40 to 50), about 3.2 in out, which is outside the 3 in big error: interfered
   CHECK(o.interfered);
   CHECK(o.passes >= 40 + 50);
@@ -434,8 +434,8 @@ TEST_CASE("pid_wait measures a boomerang's progress to its point, not to its mov
   Outcome o = run(chassis, boomerang_close_in, 600);
   REQUIRE(o.returned);
   CHECK_FALSE(o.interfered);
-  // inside 1 in of the point at pass 200
-  CHECK(o.passes >= 200);
+  // inside 1 in of the point at pass 110
+  CHECK(o.passes >= 110);
 }
 
 TEST_CASE("pid_wait does not end on xy's velocity exit while the robot turns to face the last point") {

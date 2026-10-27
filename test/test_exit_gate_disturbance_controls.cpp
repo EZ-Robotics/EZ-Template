@@ -43,6 +43,9 @@ TEST_CASE("controls: a turn or swing pinned from the start is interfered within 
 
 TEST_CASE("controls: a drive held back by a steady force is interfered within 5 s") {
   Rig r(sim::archetype_light_fast(), 1);
+  // A robot dragged back by a steady force only ends on the mA exit, and its over-current signal clears after about 600 ms, so the 750 ms default
+  // would never fire.  This control uses a 500 ms mA timeout and a 3 in big_error.
+  r.chassis.pid_drive_exit_condition_set(30_ms, 1_in, 100_ms, 3_in, 500_ms, 500_ms);  // 3 in big_error: the force holds it 3.55 in short
   r.chassis.pid_drive_set(48_in, 110);
   r.sim.push(-70.0, 0, 20000);
   double elapsed = 0;

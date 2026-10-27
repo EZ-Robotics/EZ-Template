@@ -66,10 +66,11 @@ void healthy_close(Drive& c, int n) {
   c.rightPID.compute_error(e, e);
 }
 
-// Pinned from the start: error frozen well outside small/big windows, `cur` jitters by +-0.1 every other pass -- the noisy-contact shape,
-// not a literal silent stall.  The jitter cancels over the 100 ms speed window, so the robot reads as stopped.
+// Pinned from the start: error frozen well outside small/big windows, `cur` jitters by +-0.05 every other pass -- the noisy-contact shape,
+// not a literal silent stall.  The jitter is small enough that its net movement over the 30 ms speed window stays under the 5 units per second velocity exit
+// speed, so the robot reads as stopped.
 void pinned_jitter(Drive& c, int n) {
-  double cur = (n % 2 == 0) ? 0.1 : -0.1;  // alternating +-0.1
+  double cur = (n % 2 == 0) ? 0.05 : -0.05;  // alternating +-0.05
   c.leftPID.compute_error(24.0, cur);
   c.rightPID.compute_error(24.0, cur);
 }
@@ -80,7 +81,7 @@ void healthy_turn(Drive& c, int n) {
 }
 
 void pinned_turn_jitter(Drive& c, int n) {
-  double cur = (n % 2 == 0) ? 0.15 : -0.15;  // +-0.3 swing, same reasoning as pinned_jitter above
+  double cur = (n % 2 == 0) ? 0.05 : -0.05;  // same reasoning as pinned_jitter above
   c.turnPID.compute_error(60.0, cur);
 }
 
@@ -90,7 +91,7 @@ void healthy_swing(Drive& c, int n) {
 }
 
 void pinned_swing_jitter(Drive& c, int n) {
-  double cur = (n % 2 == 0) ? 0.15 : -0.15;
+  double cur = (n % 2 == 0) ? 0.05 : -0.05;
   c.swingPID.compute_error(45.0, cur);
 }
 
@@ -104,7 +105,7 @@ void pinned_frozen(Drive& c, int n) {
 
 // The realistic shape of the frozen-sensor case above: a robot that drives normally for a while (real, fresh, closing readings), then hits a
 // wall and pins there, at which point its sensor starts reading bit-identical every poll.  The robot moved, so the velocity exit is already
-// armed and only has to wait out the 100 ms speed window and velocity_exit_time.
+// armed and only has to wait out the speed window and velocity_exit_time.
 void drives_then_pins(Drive& c, int n) {
   bool pinned = n > 20;
   double e = pinned ? 14.0 : std::fmax(14.0, 24.0 - 0.5 * n);

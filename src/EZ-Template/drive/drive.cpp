@@ -146,7 +146,7 @@ void Drive::drive_defaults_set() {
   // PID Constants
   pid_drive_constants_set(20.0, 0.0, 100.0);
   pid_heading_constants_set(11.0, 0.0, 20.0);
-  pid_turn_constants_set(3.0, 0.05, 20.0, 15.0);
+  pid_turn_constants_set(3.0, 0.07, 20.0, 25.0);
   pid_swing_constants_set(6.0, 0.0, 65.0);
   pid_odom_angular_constants_set(6.5, 0.0, 52.5);
   pid_odom_boomerang_constants_set(5.8, 0.0, 32.5);
@@ -157,25 +157,25 @@ void Drive::drive_defaults_set() {
   odom_path_smooth_constants_set(0.75, 0.03, 0.0001);
   odom_path_spacing_set(0.5_in);
   odom_turn_bias_set(0.9);
-  odom_look_ahead_set(7_in);
+  odom_look_ahead_set(16_in);
   odom_boomerang_distance_set(16_in);
   odom_boomerang_dlead_set(0.625);
 
   // Slew constants
-  slew_turn_constants_set(3_deg, 70);
-  slew_drive_constants_set(3_in, 70);
-  slew_swing_constants_set(15_deg, 80);
+  slew_turn_constants_set(5_deg, 70);
+  slew_drive_constants_set(3_in, 80);
+  slew_swing_constants_set(5_deg, 70);
 
   // Exit condition constants
-  pid_turn_exit_condition_set(90_ms, 3_deg, 250_ms, 7_deg, 500_ms, 500_ms);
-  pid_swing_exit_condition_set(90_ms, 3_deg, 250_ms, 7_deg, 500_ms, 500_ms);
-  pid_drive_exit_condition_set(90_ms, 1_in, 250_ms, 3_in, 500_ms, 500_ms);
-  pid_odom_turn_exit_condition_set(90_ms, 3_deg, 250_ms, 7_deg, 500_ms, 750_ms);
-  pid_odom_drive_exit_condition_set(90_ms, 1_in, 250_ms, 3_in, 500_ms, 750_ms);
+  pid_turn_exit_condition_set(30_ms, 3_deg, 100_ms, 7_deg, 500_ms, 750_ms);
+  pid_swing_exit_condition_set(30_ms, 3_deg, 100_ms, 7_deg, 500_ms, 750_ms);
+  pid_drive_exit_condition_set(30_ms, 1_in, 100_ms, 4_in, 500_ms, 750_ms);
+  pid_odom_turn_exit_condition_set(30_ms, 3_deg, 100_ms, 7_deg, 500_ms, 750_ms);
+  pid_odom_drive_exit_condition_set(30_ms, 1_in, 100_ms, 3_in, 500_ms, 750_ms);
 
-  // How slow the robot has to be to count as stopped.  Placeholders until a robot log sets them
-  pid_distance_exit_stop_speed_set(1.5);
-  pid_angle_exit_stop_speed_set(4.0);
+  // How slow the robot has to be to count as stopped, in inches per second and degrees per second
+  pid_distance_exit_stop_speed_set(8.0);
+  pid_angle_exit_stop_speed_set(13.0);
 
   pid_odom_behavior_set(ez::shortest);  // Default odom turning to shortest
 

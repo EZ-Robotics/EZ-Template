@@ -74,6 +74,7 @@ Result run(const Cfg& c) {
   test_stub::g_clock.now_ms = 0;
 
   PID pid(1, 0, 0, 0, "lift");
+  pid.speed_window_set(100);  // These timelines are worked out for a 100 ms speed window
   pid.exit_condition_set(c.small_t, c.small_e, c.big_t, c.big_e, c.vel_t, c.mA_t);
   pid.velocity_sensor_main_exit_set(c.vzero);
   pid.target_set(c.target);

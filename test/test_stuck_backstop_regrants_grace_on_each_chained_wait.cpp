@@ -21,15 +21,15 @@ Drive* g_chassis = nullptr;
 int g_pass = 0;
 
 // Drives normally toward the 24in target for the first 20 passes (closing steadily at 50 in/s, well above the 5 in/s that arms the velocity
-// exit), then pins hard at 14in for the rest of the test: error frozen well outside small/big windows, `cur` jittering by +-0.1 every other
-// pass so the robot reads as stopped over the 100 ms speed window.
+// exit), then pins hard at 14in for the rest of the test: error frozen well outside small/big windows, `cur` jittering by +-0.05 every other
+// pass so the robot reads as stopped over the 30 ms speed window.
 //
 // Also advances the fake drive encoders in step with the scripted error, the same as a real robot's would: on real hardware, compute_error()
 // is always fed FROM drive_sensor_left()/right(), so the two never drift apart the way they would if only PID.error were written here.
 void drives_then_pins(Drive& c, int n) {
   bool pinned = n > 20;
   double e = pinned ? 14.0 : std::fmax(14.0, 24.0 - 0.5 * n);
-  double jitter = (n % 2 == 0) ? 0.1 : -0.1;
+  double jitter = (n % 2 == 0) ? 0.05 : -0.05;
   double cur = pinned ? jitter : -0.5 * std::fmin((double)n, 20.0);
   c.leftPID.compute_error(e, cur);
   c.rightPID.compute_error(e, cur);

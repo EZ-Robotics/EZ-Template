@@ -107,6 +107,7 @@ const char* name(Wait w) {
 TEST_CASE("PTO'd motors over current do not end the drive, swing, turn or odom waits") {
   for (Wait w : {Wait::Drive, Wait::DriveUntil, Wait::Turn, Wait::TurnUntil, Wait::Swing, Wait::Odom}) {
     Drive chassis = make_chassis();
+    chassis.pid_exit_speed_window_set(40);  // 40 ms: even number of ticks, see test_speed_window.cpp
     DriveTestAccess::imu_calibration_complete(chassis) = true;
     ma_only(chassis);
     pto_on(chassis);
@@ -121,6 +122,7 @@ TEST_CASE("PTO'd motors over current do not end the drive, swing, turn or odom w
 TEST_CASE("control: the first drive motor of each side over current still ends every wait on mA_EXIT at mA_timeout") {
   for (Wait w : {Wait::Drive, Wait::DriveUntil, Wait::Turn, Wait::TurnUntil, Wait::Swing, Wait::Odom}) {
     Drive chassis = make_chassis();
+    chassis.pid_exit_speed_window_set(40);  // 40 ms: even number of ticks, see test_speed_window.cpp
     DriveTestAccess::imu_calibration_complete(chassis) = true;
     ma_only(chassis);
     pto_on(chassis);
@@ -135,6 +137,7 @@ TEST_CASE("control: the first drive motor of each side over current still ends e
 TEST_CASE("control: only the first motor of each side counts toward the mA exit, a jam on another drive motor does not end the waits") {
   for (Wait w : {Wait::Drive, Wait::DriveUntil, Wait::Turn, Wait::TurnUntil, Wait::Swing, Wait::Odom}) {
     Drive chassis = make_chassis();
+    chassis.pid_exit_speed_window_set(40);  // 40 ms: even number of ticks, see test_speed_window.cpp
     DriveTestAccess::imu_calibration_complete(chassis) = true;
     ma_only(chassis);
     over_current(chassis, 1, true);  // a middle drive motor, not PTO'd, is over current
@@ -148,6 +151,7 @@ TEST_CASE("sim: a 6 motor drive with a stalled PTO'd intake still finishes a 90 
   for (int rep = 0; rep < 2; rep++) {
     auto a = rep == 0 ? sim::archetype_light_fast() : sim::archetype_sticky_high_friction();
     Drive chassis = make_chassis(a.wheel_diameter_in, a.cartridge_rpm);
+    chassis.pid_exit_speed_window_set(40);  // 40 ms: even number of ticks, see test_speed_window.cpp
     DriveTestAccess::imu_calibration_complete(chassis) = true;
     chassis.pid_print_toggle(false);
     sim::SimRobot sim(chassis, a, sim::NoiseConfig{false, 1});

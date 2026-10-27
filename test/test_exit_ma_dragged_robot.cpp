@@ -41,7 +41,11 @@ TEST_CASE("a robot dragged away from its drive target while its motors stall ret
   for (auto& e : EXITS)
     for (bool heavy : {false, true}) {
       Rig r(heavy ? sim::archetype_heavy_slow() : sim::archetype_light_fast(), heavy ? 2 : 1, false, 1);
+      r.chassis.pid_exit_speed_window_set(40);  // 40 ms: even number of ticks, see test_speed_window.cpp
       apply(r.chassis, e);
+      // The over-current signal of a robot dragged like this clears after about 600 ms, so the 750 ms default mA timeout would never fire.  The
+      // default exits run with a 500 ms one here
+      if (e.defaults) r.chassis.pid_drive_exit_condition_set(30_ms, 1_in, 100_ms, 4_in, 500_ms, 500_ms);
       r.sim.carry(-15.0, 0.0, 300, 20000);
       r.chassis.pid_drive_set(24_in, 127);
       double ms = 0;
@@ -57,6 +61,7 @@ TEST_CASE("a robot dragged away from its drive target while its motors stall ret
 TEST_CASE("a robot held still while its motors stall still ends on mA at mA_timeout") {
   for (bool heavy : {false, true}) {
     Rig r(heavy ? sim::archetype_heavy_slow() : sim::archetype_light_fast(), heavy ? 2 : 1, false, 1);
+    r.chassis.pid_exit_speed_window_set(40);  // 40 ms: even number of ticks, see test_speed_window.cpp
     r.chassis.pid_drive_exit_condition_set(90, 1, 200, 3, 0, 100);
     r.sim.pin(150, 20000);
     r.chassis.pid_drive_set(24_in, 127);

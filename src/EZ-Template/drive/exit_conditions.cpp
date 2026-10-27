@@ -13,7 +13,7 @@ using namespace ez;
 
 namespace {
 // The speed under which a PID's velocity exit counts the robot as stopped, in units per second
-double velocity_exit_speed(PID& pid) { return pid.velocity_sensor_main_exit_get() * 1000.0 / util::DELAY_TIME; }
+double velocity_exit_speed(PID& pid) { return pid.stop_speed_get(); }
 void exit_times_warn(int velocity_exit_time, int mA_timeout, bool& warned) {
   if (velocity_exit_time == 0 && mA_timeout == 0 && !warned) printf("Warning: velocity and mA exit times of 0 can't end a wait on a pinned robot\n");
   warned = warned || (velocity_exit_time == 0 && mA_timeout == 0);
@@ -152,6 +152,17 @@ void Drive::pid_angle_exit_stop_speed_set(double deg_per_s) {
 }
 void Drive::pid_angle_exit_stop_speed_set(ez::QAngularSpeed speed) { pid_angle_exit_stop_speed_set(speed.convert(ez::degree / ez::second)); }
 double Drive::pid_angle_exit_stop_speed_get() { return turnPID.stop_speed_get(); }
+
+// How long a robot's speed is measured over for every exit.  A window under one tick is refused with a warning.
+void Drive::pid_exit_speed_window_set(int ms) {
+  if (ms < util::DELAY_TIME) {
+    printf("pid_exit_speed_window_set needs at least %i ms, keeping %i ms\n", util::DELAY_TIME, pid_exit_speed_window_get());
+    return;
+  }
+  for (PID* pid : {&leftPID, &rightPID, &xyPID, &turnPID, &swingPID, &current_a_odomPID}) pid->speed_window_set(ms);
+}
+void Drive::pid_exit_speed_window_set(ez::QTime window) { pid_exit_speed_window_set((int)window.convert(ez::millisecond)); }
+int Drive::pid_exit_speed_window_get() { return xyPID.speed_window_get(); }
 
 // xyPID's exit condition, except its velocity exit doesn't count while the robot pivots in place.  A point beside or behind the robot makes turn bias
 // zero translation until the heading is close, and xyPID reads that as stopped.  A pinned robot is stopped in heading too, so that still counts.

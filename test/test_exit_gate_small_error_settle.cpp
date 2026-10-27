@@ -38,6 +38,7 @@ TEST_CASE("tight small_error: repeated until_point + quick_chain waits on a sett
   for (const Cfg& c : cfgs) {
     for (int reverse = 0; reverse < 2; reverse++) {
       Rig r(sim::archetype_sticky_high_friction(), 1, false, 1);
+      r.chassis.pid_exit_speed_window_set(40);  // 40 ms: even number of ticks, see test_speed_window.cpp
       configure(r, c);
       pose p = reverse ? pose{-12, -24, ANGLE_NOT_SET} : pose{12, 24, ANGLE_NOT_SET};
       r.chassis.pid_odom_set(odom{p, reverse ? rev : fwd, 110});

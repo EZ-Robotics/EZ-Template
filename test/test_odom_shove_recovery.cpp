@@ -43,6 +43,11 @@ struct Rig {
     chassis.pid_print_toggle(false);
     chassis.pid_odom_drive_exit_condition_set(90_ms, 1_in, 200_ms, 3_in, 100_ms, 100_ms);
     chassis.pid_odom_turn_exit_condition_set(90_ms, 1_deg, 200_ms, 3_deg, 100_ms, 100_ms);
+    // A team whose stop speed is 5 in/s and 5 deg/s: a robot recovering from a shove crawls back in under the 8 in/s default for longer than
+    // the 100 ms velocity exit time and would be read as held
+    chassis.pid_distance_exit_stop_speed_set(5.0);
+    chassis.pid_angle_exit_stop_speed_set(5.0);
+    chassis.pid_exit_speed_window_set(40);  // 40 ms: even number of ticks, see test_speed_window.cpp
   }
 };
 
@@ -67,7 +72,7 @@ Outcome shoved(double newtons, double duration_ms, bool as_path) {
 }
 }  // namespace
 
-// 60 N, and 90 N for 250 ms, the robot drives through and arrives. 90 N for 300 ms or more stops the robot about 5.5 in
+// 60 N, the robot drives through and arrives. 90 N for 250 ms or more stops the robot about 5.5 in
 // short of the point, outside the 3 in big_error, and holds it there for more than the 100 ms velocity_exit_time: the
 // velocity exit ends the wait interfered while the robot is still held. Promptly: by the end of the shove, one 100 ms speed
 // window for the speed to read the stop, the velocity exit time, and a pass or two.
@@ -76,7 +81,8 @@ TEST_CASE("an odom point move on 90/1/200/3/100/100 exits recovers from a 60 to 
     for (double newtons : {60.0, 90.0}) {
       for (double ms : {250.0, 300.0, 350.0}) {
         Outcome o = shoved(newtons, ms, as_path);
-        bool held_outside = newtons == 90.0 && ms >= 300.0;
+        // A shorter speed window reads the stop sooner, so a 250 ms shove already holds the robot long enough to be read as held
+        bool held_outside = newtons == 90.0 && ms >= 250.0;
         CAPTURE(as_path);
         CAPTURE(newtons);
         CAPTURE(ms);

@@ -1,7 +1,7 @@
 // The stop speed setters: what a team can set for "stopped" (in/s for drives and odom xy, deg/s for turns, swings and odom heading), with a
 // plain number or an EZ-Units speed.
 //
-//   - Nothing set means the old values: 1.5 in/s and 4 deg/s, on every constructor.
+//   - Nothing set means the defaults: 8 in/s and 13 deg/s, on every constructor.
 //   - A number that is zero, negative, NaN or infinite is refused with a printed warning and the previous value stays. Any other number is taken.
 //   - The units forms give the same number the plain form does.
 //   - Each setter changes only its own kind of motion: distance (drive, odom xy) or angle (turn, swing, odom heading).
@@ -52,12 +52,12 @@ const Setter SETTERS[] = {
 
 }  // namespace
 
-TEST_CASE("stop speeds default to 1.5 in/s and 4 deg/s on every constructor") {
-  const Two defaults = {{1.5, 4.0}};
+TEST_CASE("stop speeds default to 8 in/s and 13 deg/s on every constructor") {
+  const Two defaults = {{8.0, 13.0}};
   {
     Drive d = make_chassis();
     CHECK(read(d) == defaults);
-    CHECK(pids_follow(d, 1.5, 4.0));
+    CHECK(pids_follow(d, 8.0, 13.0));
   }
   {
     test_stub::reset_all();
@@ -120,9 +120,9 @@ TEST_CASE("the default numbers written with units are exactly the defaults") {
   // A robot that writes them this way has to behave exactly like one that never set them, so the conversion through metres and radians has to
   // come back to the very same double, not a neighbour of it
   Drive d = make_chassis();
-  d.pid_angle_exit_stop_speed_set(4_deg / 1_s);
-  d.pid_distance_exit_stop_speed_set(1.5_in / 1_s);
-  CHECK(read(d) == Two{{1.5, 4.0}});
+  d.pid_angle_exit_stop_speed_set(13_deg / 1_s);
+  d.pid_distance_exit_stop_speed_set(8_in / 1_s);
+  CHECK(read(d) == Two{{8.0, 13.0}});
 }
 
 TEST_CASE("zero, negative, NaN and infinity are refused with a warning and the previous speed stays") {

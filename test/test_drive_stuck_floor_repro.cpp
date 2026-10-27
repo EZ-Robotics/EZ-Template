@@ -94,7 +94,7 @@ TEST_CASE("DRIVE pid_wait() reports interfered on a sustained cruise below the 5
 TEST_CASE("control: the same drivetrain at a higher commanded speed is not falsely flagged stuck") {
   // Same archetype and leg, only the commanded speed changes -- ties the early exit above to how
   // slow the resulting cruise actually is, not to some other property of this scenario.  At this
-  // higher speed the same drivetrain cruises above the 5 in/s velocity exit speed and finishes cleanly.
+  // higher speed the same drivetrain cruises above the 8 in/s velocity exit speed and finishes cleanly.
   sim::SimArchetype a = sim::archetype_sticky_high_friction();
   Drive chassis = make_chassis(a);
   DriveTestAccess::imu_calibration_complete(chassis) = true;
@@ -103,7 +103,7 @@ TEST_CASE("control: the same drivetrain at a higher commanded speed is not false
   sim::SimRobot sim(chassis, a, no_noise);
 
   double leg_length_in = 30.0;
-  int speed = 30;  // speed 20 still cruises under 5 in/s on this archetype and ends early on the velocity exit
+  int speed = 60;  // speed 30 still cruises under 8 in/s on this archetype and ends early on the velocity exit
   chassis.pid_drive_set(leg_length_in, speed);
 
   bool wait_returned = run_capped([&] { chassis.pid_wait(); }, /*max_ticks=*/6000);

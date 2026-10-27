@@ -107,6 +107,7 @@ struct Result {
 
 Result run_turn_control(const sim::SimArchetype& a, double target, int speed) {
   Drive chassis = make_chassis(a);
+  chassis.pid_exit_speed_window_set(40);  // 40 ms: even number of ticks, see test_speed_window.cpp
   DriveTestAccess::imu_calibration_complete(chassis) = true;
   sim::NoiseConfig no_noise{/*enabled=*/false, /*seed=*/1};
   sim::SimRobot sim(chassis, a, no_noise);
@@ -161,6 +162,7 @@ TEST_CASE("control run: all archetypes at TEAM_CORPUS's tight Worlds turn consta
   sim::SimArchetype archetypes[] = {sim::archetype_light_fast(), sim::archetype_heavy_slow(), sim::archetype_sticky_high_friction()};
   for (const auto& a : archetypes) {
     Drive chassis = make_chassis(a);
+    chassis.pid_exit_speed_window_set(40);  // 40 ms: even number of ticks, see test_speed_window.cpp
     DriveTestAccess::imu_calibration_complete(chassis) = true;
     sim::NoiseConfig no_noise{/*enabled=*/false, /*seed=*/1};
     sim::SimRobot sim(chassis, a, no_noise);

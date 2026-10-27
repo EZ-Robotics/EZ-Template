@@ -6,6 +6,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #pragma once
 
+#include <atomic>
 #include <cstdint>
 #include <limits>
 
@@ -96,8 +97,8 @@ public:
    * \param p_big_error
    *        sets big_error, timer will start when error is within this
    * \param p_velocity_exit_time
-   *        sets velocity_exit_time, timer will start when the sensor is moving slower than the velocity exit speed (5 units per second unless
-   *        velocity_sensor_main_exit_set() changed it) after the robot has moved.  If the robot never moves, it starts after 1 second.
+   *        sets velocity_exit_time, timer will start when the sensor is moving slower than the stop speed (5 units per second unless
+   *        stop_speed_set() changed it) after the robot has moved.  If the robot never moves, it starts after 1 second.
    * \param p_mA_timeout
    *        sets mA_timeout, time the motor can be over its current limit before exiting.  Only checked by the exit_condition overloads that take a motor or
    *        motors.
@@ -333,9 +334,9 @@ public:
   bool velocity_sensor_secondary_toggle_get();
 
   /**
-   * Sets the velocity exit's speed: how slow the sensor has to be moving for the velocity exit's timer to run, as the distance it moves in one
-   * 10 ms tick.  The speed is measured over the last 100 ms.  The default is 0.05, which is 5 units per second.  This is not the stop speed (see
-   * stop_speed_set()), which only the small and big exits use.
+   * Sets the stop speed as the distance the sensor moves in one 10 ms tick.  The velocity exit uses the stop speed too, so this is the same as
+   * stop_speed_set() with the speed in units per second divided by 100.  The speed is measured over the speed window (see speed_window_set()).
+   * The default is 0.05, which is 5 units per second.
    *
    * The velocity exit's timer only starts once the robot has moved faster than this at least once, or after 1 second if it never moves.
    *
@@ -354,7 +355,7 @@ public:
   void velocity_sensor_main_exit_set(double zero);
 
   /**
-   * Returns the velocity exit's speed as the distance the sensor moves in one 10 ms tick.
+   * Returns the stop speed as the distance the sensor moves in one 10 ms tick.
    *
    * The velocity exit's timer only starts once the robot has moved faster than this at least once, or after 1 second if it never moves.
    *
@@ -370,7 +371,8 @@ public:
 
   /**
    * Sets the stop speed: how slow the sensor has to be moving to count as stopped, in sensor units per second.  The small and big exits only
-   * count time while the sensor is under it.  The speed is measured from the sensor over the last 100 ms.  The default is 5.
+   * count time while the sensor is under it, and the velocity exit's timer runs while the sensor is under it.  The speed is measured from the sensor over the
+   * speed window (see speed_window_set()).  The default is 5.
    *
    * \param units_per_s
    *        sensor units per second
@@ -399,7 +401,39 @@ public:
   double stop_speed_get();
 
   /**
-   * Returns how fast the sensor has been moving over the last 100 ms, in sensor units per second.  It updates on every compute()/compute_error().
+   * Sets how long the sensor's speed is measured over, in milliseconds.  speed_get(), the stop speed and the velocity exit all read this speed.
+   * A shorter window reacts sooner but is rougher, because the sensor only moves in steps.  A longer one is steadier but reacts later.  The
+   * default is 30.  A window under 10 (one tick) is refused with a printed warning and the old window is kept.
+   *
+   * \param ms
+   *        milliseconds
+   *
+   * \code{.cpp}
+   * ez::PID liftPID;
+   *
+   * void initialize() {
+   *   liftPID.speed_window_set(50);  // Measure the lift's speed over 50 ms
+   * }
+   * \endcode
+   */
+  void speed_window_set(int ms);
+
+  /**
+   * Returns how long the sensor's speed is measured over, in milliseconds.
+   *
+   * \code{.cpp}
+   * ez::PID liftPID;
+   *
+   * void initialize() {
+   *   printf("Speed window: %i ms\n", liftPID.speed_window_get());  // This prints 30
+   * }
+   * \endcode
+   */
+  int speed_window_get();
+
+  /**
+   * Returns how fast the sensor has been moving over the last speed window (30 ms by default), in sensor units per second.  It updates on every
+   * compute()/compute_error().
    *
    * \code{.cpp}
    * ez::PID liftPID{1, 0.003, 4, 100, "Lift"};
@@ -428,7 +462,7 @@ public:
    *
    * This is defaulted to 0.075.  This is only used when the secondary sensor is enabled.
    *
-   * The velocity exit's timer also waits until the robot has moved, see velocity_sensor_main_exit_set(), or 1 second if it never moves.
+   * The velocity exit's timer also waits until the robot has moved faster than the stop speed (see stop_speed_set()), or 1 second if it never moves.
    *
    * \param zero
    *        a small double
@@ -451,7 +485,7 @@ public:
    *
    * This is defaulted to 0.075, and it is only used when the secondary sensor is enabled.
    *
-   * The velocity exit's timer also waits until the robot has moved, see velocity_sensor_main_exit_set(), or 1 second if it never moves.
+   * The velocity exit's timer also waits until the robot has moved faster than the stop speed (see stop_speed_set()), or 1 second if it never moves.
    *
    * \code{.cpp}
    * ez::PID liftPID;
@@ -739,13 +773,14 @@ public:
   double derivative = 0.0;
 
 private:
-  double stop_speed = 5.0;          // units per second, gates the small and big exits
-  double velocity_zero_main = 5.0;  // units per second, the velocity exit's speed
-  // The sensor's speed over the last SPEED_WINDOW ms, in units per second, and where that window started
+  double stop_speed = 5.0;  // units per second, gates the small and big exits and is the velocity exit's speed
+  // The sensor's speed over the last speed_window ms, in units per second, and where that window started.  speed_window is written by the team's
+  // task and read by the auto task.
   double speed = 0.0;
   double speed_start_cur = 0.0;
   std::uint32_t speed_start_ms = 0;
-  static constexpr int SPEED_WINDOW = 100;
+  std::atomic<int> speed_window{30};
+  static constexpr int SPEED_STALL_GAP = 200;
   double velocity_zero_secondary = 0.075;
   int i = 0, j = 0, k = 0, l = 0, m = 0;
   int arm_timer = 0;

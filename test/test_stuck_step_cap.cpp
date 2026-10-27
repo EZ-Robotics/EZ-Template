@@ -36,9 +36,10 @@ bool run_capped(F&& wait, int max_ticks) {
 }
 }  // namespace
 
-TEST_CASE("DRIVE pid_wait() does not report interfered on a healthy cruise at speed 30 under loosened exits") {
+TEST_CASE("DRIVE pid_wait() does not report interfered on a healthy cruise at speed 60 under loosened exits") {
   sim::SimArchetype a = sim::archetype_sticky_high_friction();
   Drive chassis = make_chassis(a);
+  chassis.pid_exit_speed_window_set(40);  // 40 ms: even number of ticks, see test_speed_window.cpp
   DriveTestAccess::imu_calibration_complete(chassis) = true;
   chassis.pid_print_toggle(false);
   sim::NoiseConfig no_noise{/*enabled=*/false, /*seed=*/1};
@@ -47,7 +48,7 @@ TEST_CASE("DRIVE pid_wait() does not report interfered on a healthy cruise at sp
   // (300 ms, 3 in, 500 ms, 7 in, 500 ms, 500 ms)
   chassis.pid_drive_exit_condition_set(300, 3.0, 500, 7.0, 500, 500);
   double leg_length_in = 24.0;
-  int speed = 30;
+  int speed = 60;
   chassis.pid_drive_set(leg_length_in, speed);
 
   bool wait_returned = run_capped([&] { chassis.pid_wait(); }, /*max_ticks=*/6000);
@@ -94,12 +95,12 @@ TEST_CASE("DRIVE pid_wait() pinned still reports interfered promptly with the sa
 namespace {
 Drive* g_noisy_pinned_chassis = nullptr;
 int g_noisy_pinned_pass = 0;
-// Pinned 5 in short of a 24 in target, with a bounded +/-0.3 in encoder jitter around that fixed point.  The jitter alternates sign every
-// pass, so over the 100 ms speed window the net movement is at most 0.3 in and the robot reads as stopped.  Deterministic (alternating, not a
-// real RNG) so the pass bound below is exact, not probabilistic.
+// Pinned 5 in short of a 24 in target, with a bounded +/-0.05 in encoder jitter around that fixed point.  The jitter alternates sign every
+// pass, so over the 30 ms speed window the net movement is at most 0.1 in (3 ticks of 0.05 in alternating) and the robot reads as stopped.  Deterministic
+// (alternating, not a real RNG) so the pass bound below is exact, not probabilistic.
 void jittered_pin() {
   ++g_noisy_pinned_pass;
-  double jitter = (g_noisy_pinned_pass % 2 == 0) ? 0.3 : -0.3;
+  double jitter = (g_noisy_pinned_pass % 2 == 0) ? 0.05 : -0.05;
   g_noisy_pinned_chassis->leftPID.error = 19.0 + jitter;
   g_noisy_pinned_chassis->rightPID.error = 19.0 + jitter;
   DriveTestAccess::refresh(g_noisy_pinned_chassis->leftPID);
@@ -133,6 +134,7 @@ TEST_CASE(
 TEST_CASE("TURN pid_wait() does not report interfered on a healthy turn with loosened exits") {
   sim::SimArchetype a = sim::archetype_sticky_high_friction();
   Drive chassis = make_chassis(a);
+  chassis.pid_exit_speed_window_set(40);  // 40 ms: even number of ticks, see test_speed_window.cpp
   DriveTestAccess::imu_calibration_complete(chassis) = true;
   chassis.pid_print_toggle(false);
   sim::NoiseConfig no_noise{/*enabled=*/false, /*seed=*/1};
@@ -140,7 +142,7 @@ TEST_CASE("TURN pid_wait() does not report interfered on a healthy turn with loo
 
   // (300 ms, 8 deg, 500 ms, 15 deg, 500 ms, 500 ms)
   chassis.pid_turn_exit_condition_set(300, 8.0, 500, 15.0, 500, 500);
-  chassis.pid_turn_set(90, 15);
+  chassis.pid_turn_set(90, 45);
 
   bool wait_returned = run_capped([&] { chassis.pid_wait(); }, /*max_ticks=*/6000);
   double final_angle = chassis.drive_imu_get();
@@ -152,16 +154,17 @@ TEST_CASE("TURN pid_wait() does not report interfered on a healthy turn with loo
   CHECK(std::fabs(90.0 - final_angle) < 15.0);
 }
 
-TEST_CASE("TURN pid_wait() does not report interfered on a healthy turn at speed 30 with loosened exits") {
+TEST_CASE("TURN pid_wait() does not report interfered on a healthy turn at speed 60 with loosened exits") {
   sim::SimArchetype a = sim::archetype_sticky_high_friction();
   Drive chassis = make_chassis(a);
+  chassis.pid_exit_speed_window_set(40);  // 40 ms: even number of ticks, see test_speed_window.cpp
   DriveTestAccess::imu_calibration_complete(chassis) = true;
   chassis.pid_print_toggle(false);
   sim::NoiseConfig no_noise{/*enabled=*/false, /*seed=*/1};
   sim::SimRobot sim(chassis, a, no_noise);
 
   chassis.pid_turn_exit_condition_set(300, 8.0, 500, 15.0, 500, 500);
-  chassis.pid_turn_set(90, 30);
+  chassis.pid_turn_set(90, 60);
 
   bool wait_returned = run_capped([&] { chassis.pid_wait(); }, /*max_ticks=*/6000);
   double final_angle = chassis.drive_imu_get();

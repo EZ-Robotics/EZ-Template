@@ -50,6 +50,7 @@ double move_passes(PID& pid, double current, int passes) {
 TEST_CASE("PID BIG_EXIT after 26 passes at a held 2in error, never SMALL_EXIT") {
   clock_start();
   PID pid;
+  pid.speed_window_set(100);  // These timelines are worked out for a 100 ms speed window
   pid.exit_condition_set(90, 1.0, 250, 3.0);
 
   // The sensor sits still (speed 0 reads as stopped), so the held error counts 10 ms per pass: 260 ms is the first value over big_exit_time.
@@ -63,6 +64,7 @@ TEST_CASE("PID BIG_EXIT after 26 passes at a held 2in error, never SMALL_EXIT") 
 TEST_CASE("PID SMALL_EXIT after 10 passes at a held 0.5in error") {
   clock_start();
   PID pid;
+  pid.speed_window_set(100);  // These timelines are worked out for a 100 ms speed window
   pid.exit_condition_set(90, 1.0, 250, 3.0);
 
   for (int pass = 1; pass < 10; pass++) {
@@ -80,6 +82,7 @@ TEST_CASE("PID exit_condition(MotorGroup) matches the plain overload's pass coun
   // (ignoring the mA-timeout skip) might suggest.
   clock_start();
   PID pid;
+  pid.speed_window_set(100);  // These timelines are worked out for a 100 ms speed window
   pid.exit_condition_set(90, 1.0, 250, 3.0);
   pros::MotorGroup mg({1, 2});
 
@@ -102,6 +105,7 @@ TEST_CASE("PID small exit still settles when the caller polls twice for every on
   // The second poll lands in the same millisecond as the first, so it credits nothing: it neither fires too early nor delays the exit.
   clock_start();
   PID pid;
+  pid.speed_window_set(100);  // These timelines are worked out for a 100 ms speed window
   pid.exit_condition_set(90, 1.0, 250, 3.0);
 
   exit_output result = RUNNING;
@@ -125,6 +129,7 @@ TEST_CASE("PID small exit still settles when the caller polls once for every two
   // case, just with twice as many computes behind it.
   clock_start();
   PID pid;
+  pid.speed_window_set(100);  // These timelines are worked out for a 100 ms speed window
   pid.exit_condition_set(90, 1.0, 250, 3.0);
 
   exit_output result = RUNNING;
@@ -198,6 +203,7 @@ TEST_CASE("PID motion_reset zeroes the integral and primes the next derivative t
 TEST_CASE("PID velocity exit does not run before the robot has moved") {
   clock_start();
   PID pid;
+  pid.speed_window_set(100);  // These timelines are worked out for a 100 ms speed window
   pid.exit_condition_set(0, 0, 0, 0, 50, 0);
 
   // The sensor never moves; 500 ms is well past the 6 passes an unarmed timer would have exited on, and short of the 1000 ms fallback
@@ -210,6 +216,7 @@ TEST_CASE("PID velocity exit does not run before the robot has moved") {
 TEST_CASE("PID velocity exit ignores sensor noise below the zero threshold") {
   clock_start();
   PID pid;
+  pid.speed_window_set(100);  // These timelines are worked out for a 100 ms speed window
   pid.exit_condition_set(0, 0, 0, 0, 50, 0);
 
   // 0.04 units per pass is 4 units/s over a window, under the 5 units/s default, so not movement
@@ -224,6 +231,7 @@ TEST_CASE("PID velocity exit ignores sensor noise below the zero threshold") {
 TEST_CASE("PID velocity exit fires after enough stationary passes once the robot has moved") {
   clock_start();
   PID pid;
+  pid.speed_window_set(100);  // These timelines are worked out for a 100 ms speed window
   pid.exit_condition_set(0, 0, 0, 0, 50, 0);
 
   double cur = move_passes(pid, 0.0, 10);  // the first window reads 100 units/s: arms
@@ -245,6 +253,7 @@ TEST_CASE("PID velocity timer clears on a single moving window, no debounce") {
   // movement is seen.
   clock_start();
   PID pid;
+  pid.speed_window_set(100);  // These timelines are worked out for a 100 ms speed window
   pid.exit_condition_set(0, 0, 0, 0, 300, 0);
 
   double cur = move_passes(pid, 0.0, 10);  // arms on pass 10
@@ -268,6 +277,7 @@ TEST_CASE("PID velocity exit does not fire on a healthy motion whose sensor only
   // the repeat polls do not read as stopped.
   clock_start();
   PID pid;
+  pid.speed_window_set(100);  // These timelines are worked out for a 100 ms speed window
   pid.exit_condition_set(0, 0, 0, 0, 50, 0);
 
   double real_position = 0.0;
@@ -284,6 +294,7 @@ TEST_CASE("PID velocity exit does not fire on real motion whose sensor refreshes
   // 10 units/s, so the timer never runs.
   clock_start();
   PID pid;
+  pid.speed_window_set(100);  // These timelines are worked out for a 100 ms speed window
   pid.exit_condition_set(0, 0, 0, 0, 500, 0);
 
   double position = 0.0;
@@ -299,6 +310,7 @@ TEST_CASE("PID velocity exit fires once a repeated reading has genuinely lasted 
   // real stillness, counted from the first window that reads the robot as stopped.
   clock_start();
   PID pid;
+  pid.speed_window_set(100);  // These timelines are worked out for a 100 ms speed window
   pid.exit_condition_set(0, 0, 0, 0, 500, 0);
   double cur = move_passes(pid, 0.0, 10);  // arms
 
@@ -319,6 +331,7 @@ TEST_CASE("PID timers_reset clears the velocity timer for the next motion") {
   // 1000 ms fallback, which is the only way to reach the timer without a moving window clearing it.
   clock_start();
   PID pid;
+  pid.speed_window_set(100);  // These timelines are worked out for a 100 ms speed window
   pid.exit_condition_set(0, 0, 0, 0, 300, 0);
 
   double cur = move_passes(pid, 0.0, 10);  // first motion arms
@@ -346,6 +359,7 @@ TEST_CASE("PID velocity exit: a mechanism moving above the stopped floor every p
   // Each pass here moves 0.1, 10 units/s, twice the 5 units/s zero threshold, so this must never exit.
   clock_start();
   PID pid;
+  pid.speed_window_set(100);  // These timelines are worked out for a 100 ms speed window
   pid.exit_condition_set(0, 0, 0, 0, 50, 0);
 
   double real_position = 0.0;
@@ -364,6 +378,7 @@ TEST_CASE("PID velocity exit: two real computes landing before one poll still ex
   // with one compute per poll.
   clock_start();
   PID pid;
+  pid.speed_window_set(100);  // These timelines are worked out for a 100 ms speed window
   pid.exit_condition_set(0, 0, 0, 0, 50, 0);
   double cur = move_passes(pid, 0.0, 10);  // arms
 
@@ -386,6 +401,7 @@ TEST_CASE("PID velocity timer does not double-count when exit_condition is polle
   // credit it a second time.
   clock_start();
   PID pid;
+  pid.speed_window_set(100);  // These timelines are worked out for a 100 ms speed window
   pid.exit_condition_set(0, 0, 0, 0, 50, 0);
   double cur = move_passes(pid, 0.0, 10);  // arms
 
@@ -408,6 +424,7 @@ TEST_CASE("PID velocity exit treats a non-finite sensor reading as stopped") {
   // See test_sensorfault_mA_disconnect.cpp for the matching Motor-level coverage (a disconnected motor's mA timer independently catches this too).
   clock_start();
   PID pid;
+  pid.speed_window_set(100);  // These timelines are worked out for a 100 ms speed window
   pid.exit_condition_set(0, 0, 0, 0, 50, 0);
   move_passes(pid, 0.0, 10);  // arms with a real, finite speed first
 
@@ -425,6 +442,7 @@ TEST_CASE("PID velocity exit treats a non-finite sensor reading as stopped") {
 TEST_CASE("PID timers_reset disarms velocity exit for the next motion") {
   clock_start();
   PID pid;
+  pid.speed_window_set(100);  // These timelines are worked out for a 100 ms speed window
   pid.exit_condition_set(0, 0, 0, 0, 500, 0);
 
   double cur = move_passes(pid, 0.0, 10);  // armed
@@ -443,6 +461,7 @@ TEST_CASE("PID timers_reset disarms velocity exit for the next motion") {
 TEST_CASE("PID secondary velocity sensor is gated by the same arming") {
   clock_start();
   PID pid;
+  pid.speed_window_set(100);  // These timelines are worked out for a 100 ms speed window
   pid.exit_condition_set(0, 0, 0, 0, 50, 0);
   pid.velocity_sensor_secondary_toggle_set(true);
   pid.velocity_sensor_secondary_set(0.0);  // reads as stationary
@@ -459,6 +478,7 @@ TEST_CASE("PID secondary velocity sensor never exits on a reading that was never
   // way this must never be misread as "0 acceleration", which would falsely count as stopped.
   clock_start();
   PID pid;
+  pid.speed_window_set(100);  // These timelines are worked out for a 100 ms speed window
   pid.exit_condition_set(0, 0, 0, 0, 50, 0);
   pid.velocity_sensor_secondary_toggle_set(true);
 

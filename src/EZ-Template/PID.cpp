@@ -73,10 +73,12 @@ double PID::compute_error(double err, double current) {
 }
 
 double PID::raw_compute() {
-  // Speed over the last SPEED_WINDOW ms, not one tick: a window that ran long because compute() stopped for a while says nothing about the speed
+  // Speed over the last speed_window ms, not one tick: a window that ran long because compute() stopped for a while says nothing about the speed
   std::uint32_t now = pros::millis();
-  if (now - speed_start_ms >= SPEED_WINDOW) {
-    speed = now - speed_start_ms > 2 * SPEED_WINDOW ? 0.0 : std::fabs(cur - speed_start_cur) * 1000.0 / (now - speed_start_ms);
+  int window = speed_window;
+  if (now - speed_start_ms >= (std::uint32_t)window) {
+    speed =
+        now - speed_start_ms > (std::uint32_t)std::max(SPEED_STALL_GAP, 2 * window) ? 0.0 : std::fabs(cur - speed_start_cur) * 1000.0 / (now - speed_start_ms);
     if (!std::isfinite(speed)) speed = 0.0;  // a failed read (NaN, PROS_ERR_F) reads as stopped, not as a speed nothing can ever be under
     speed_start_cur = cur;
     speed_start_ms = now;
@@ -143,11 +145,20 @@ bool PID::velocity_sensor_secondary_toggle_get() { return use_second_sensor; }
 void PID::velocity_sensor_secondary_set(double secondary_sensor) { second_sensor = secondary_sensor; }
 double PID::velocity_sensor_secondary_get() { return second_sensor; }
 
-void PID::velocity_sensor_main_exit_set(double zero) { velocity_zero_main = zero * 1000.0 / util::DELAY_TIME; }
-double PID::velocity_sensor_main_exit_get() { return velocity_zero_main * util::DELAY_TIME / 1000.0; }
+void PID::velocity_sensor_main_exit_set(double zero) { stop_speed_set(zero * 1000.0 / util::DELAY_TIME); }
+double PID::velocity_sensor_main_exit_get() { return stop_speed_get() * util::DELAY_TIME / 1000.0; }
 void PID::stop_speed_set(double units_per_s) { stop_speed = units_per_s; }
 double PID::stop_speed_get() { return stop_speed; }
 double PID::speed_get() { return speed; }
+
+void PID::speed_window_set(int ms) {
+  if (ms < util::DELAY_TIME) {
+    printf("speed_window_set needs at least %i ms, keeping %i ms\n", util::DELAY_TIME, speed_window_get());
+    return;
+  }
+  speed_window = ms;
+}
+int PID::speed_window_get() { return speed_window; }
 
 void PID::velocity_sensor_secondary_exit_set(double zero) { velocity_zero_secondary = zero; }
 double PID::velocity_sensor_secondary_exit_get() { return velocity_zero_secondary; }
@@ -209,12 +220,12 @@ exit_output PID::exit_condition_core(int elapsed, bool print) {
   // If it never moves (pinned, stalled) arm anyway after a fallback window so pid_wait can't hang.
   if (exit.velocity_exit_time != 0 && !velocity_armed) {
     arm_timer += elapsed;
-    if (speed > velocity_zero_main || arm_timer > VELOCITY_ARM_FALLBACK) velocity_armed = true;
+    if (speed > stop_speed || arm_timer > VELOCITY_ARM_FALLBACK) velocity_armed = true;
   }
 
   // If the motor velocity is 0, the code will timeout and set interfered to true.
   if (exit.velocity_exit_time != 0 && velocity_armed) {  // Check if this condition is enabled
-    if (speed <= velocity_zero_main) {
+    if (speed <= stop_speed) {
       k += elapsed;
       if (k > exit.velocity_exit_time) {
         timers_reset();

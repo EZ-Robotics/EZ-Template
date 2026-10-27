@@ -29,8 +29,8 @@ inline sim::SimArchetype archetype_classroom() {
 }
 
 // Floors, restated for the asserts (exit_conditions.cpp keeps its own)
-constexpr double FLOOR_DISTANCE = 1.5;
-constexpr double FLOOR_ANGLE = 4.0;
+constexpr double FLOOR_DISTANCE = 8.0;
+constexpr double FLOOR_ANGLE = 13.0;
 
 template <typename F>
 bool run_capped(F&& wait, int max_ticks) {
