@@ -49,6 +49,8 @@ public:
 
   // Field situations. Times are ms from now.
   void pin(int start, int duration) { pins_.push_back({now() + start, now() + start + duration, 0}); }
+  // As hard as this robot can push at full power: what an identical robot shoving it can do.
+  double full_push_n() const { return 2.0 * stall_force_n(); }
   void push(double newtons, int start, int duration) { pushes_.push_back({now() + start, now() + start + duration, newtons}); }
   void wall_ahead(double inches) { wall_at_in_ = forward_in_ + inches; }
   void unplug_sensor_motor() { drive_.left_motors.front().fake().disconnected = true; }

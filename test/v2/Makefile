@@ -3,7 +3,7 @@
 # default_constants() and autons.
 
 CXX ?= g++
-CXXFLAGS := -std=c++20 -g -O1 -Wall -Wextra -Wno-unused-parameter -D_USE_MATH_DEFINES -I ../stub -I ../../include -iquote ../../include/EZ-Template -I ..
+CXXFLAGS := -std=c++20 -g -O1 -Wall -Wextra -Wno-unused-parameter -D_USE_MATH_DEFINES -MMD -MP -I ../stub -I ../../include -iquote ../../include/EZ-Template -I ..
 
 EXCLUDED := display.cpp sdcard.cpp health.cpp pid_tuner.cpp
 LIB_SRC := $(filter-out $(foreach f,$(EXCLUDED),%/$(f)), $(wildcard ../../src/EZ-Template/*.cpp ../../src/EZ-Template/drive/*.cpp ../../src/EZ-Template/drive/set_pid/*.cpp))
@@ -36,9 +36,11 @@ build/%.o: ../%.cpp
 	@mkdir -p build
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-build/%.o: %.cpp sim.hpp robot.hpp
+build/%.o: %.cpp
 	@mkdir -p build
 	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+-include $(shell find build -name '*.d' 2>/dev/null)
 
 clean:
 	rm -rf build run_tests

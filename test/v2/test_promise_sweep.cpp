@@ -1,4 +1,4 @@
-// Promise 2: every wait returns, and a wait that returns without interfered means the robot got there.
+// Promise 2: every wait returns, and a wait that returns without interfered means the robot got there and stopped.
 //
 // Every motion, times every wait, on every team robot, in every field situation. A new motion, wait or situation is a
 // new row in one of the tables below and gets the same checks. Speeds are the example's DRIVE_SPEED, TURN_SPEED and SWING_SPEED.
@@ -74,7 +74,7 @@ struct Situation {
 
 const std::vector<Situation> SITUATIONS{
     {"nothing in the way", true, [](sim::Robot&, ez::Drive&) {}},
-    {"shoved for 300 ms", true, [](sim::Robot& s, ez::Drive&) { s.push(-150, 200, 300); }},
+    {"shoved for 300 ms by a robot like it", true, [](sim::Robot& s, ez::Drive&) { s.push(-s.full_push_n(), 200, 300); }},
     {"pinned for 1 s", true, [](sim::Robot& s, ez::Drive&) { s.pin(200, 1000); }},
     {"pinned for good", true, [](sim::Robot& s, ez::Drive&) { s.pin(200, 60000); }},
     {"wall 12 in ahead", true, [](sim::Robot& s, ez::Drive&) { s.wall_ahead(12); }},
@@ -114,10 +114,13 @@ void run_row(const v2::TeamRobot& robot, const Motion& motion, const Wait& wait,
 
   CHECK_MESSAGE(motion.miss(s) <= motion.big_error(c), "returned without interfered, but outside big_error");
   if (!wait.robot_stops) return;
+
+  // Stopped means slower than the team's stop speeds, measured over the exit speed window, for every motion: a turn can't be sliding either
   double x = s.x(), y = s.y(), heading = s.heading();
-  pros::delay(500);
-  CHECK_MESSAGE(std::hypot(s.x() - x, s.y() - y) < 0.5, "returned without interfered, but kept driving");
-  CHECK_MESSAGE(std::fabs(s.heading() - heading) < 1.0, "returned without interfered, but kept turning");
+  int window = c.pid_exit_speed_window_get();
+  pros::delay(window);
+  CHECK_MESSAGE(std::hypot(s.x() - x, s.y() - y) * 1000.0 / window <= c.pid_distance_exit_stop_speed_get(), "returned without interfered, but still driving");
+  CHECK_MESSAGE(std::fabs(s.heading() - heading) * 1000.0 / window <= c.pid_angle_exit_stop_speed_get(), "returned without interfered, but still turning");
 }
 
 }  // namespace
