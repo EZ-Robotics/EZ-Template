@@ -75,14 +75,14 @@ double PID::compute_error(double err, double current) {
 double PID::raw_compute() {
   // Speed over the last speed_window ms, not one tick: a window that ran long because compute() stopped for a while says nothing about the speed
   std::uint32_t now = pros::millis();
-  int window = speed_window;
-  if (now - speed_start_ms >= (std::uint32_t)window) {
-    speed =
-        now - speed_start_ms > (std::uint32_t)std::max(SPEED_STALL_GAP, 2 * window) ? 0.0 : std::fabs(cur - speed_start_cur) * 1000.0 / (now - speed_start_ms);
-    if (!std::isfinite(speed)) speed = 0.0;  // a failed read (NaN, PROS_ERR_F) reads as stopped, not as a speed nothing can ever be under
-    speed_start_cur = cur;
-    speed_start_ms = now;
-  }
+  std::uint32_t window = speed_window;
+  if (!speed_readings.empty() && now - speed_readings.back().first > std::max((std::uint32_t)SPEED_STALL_GAP, 2 * window)) speed_readings.clear();
+  speed_readings.push_back({now, cur});
+  // Keep the newest reading that is at least a window old, and nothing older
+  while (speed_readings.size() > 2 && now - speed_readings[1].first >= window) speed_readings.pop_front();
+  auto [then_ms, then_cur] = speed_readings.front();
+  speed = now - then_ms >= window ? std::fabs(cur - then_cur) * 1000.0 / (now - then_ms) : 0.0;  // 0 until a whole window has been seen
+  if (!std::isfinite(speed)) speed = 0.0;  // a failed read (NaN, PROS_ERR_F) reads as stopped, not as a speed nothing can ever be under
 
   // calculate derivative on measurement instead of error to avoid "derivative kick"
   // https://www.isa.org/intech-home/2023/june-2023/features/fundamentals-pid-control
@@ -117,6 +117,8 @@ void PID::timers_reset() {
 }
 
 void PID::motion_reset(double current) {
+  speed = 0;
+  speed_readings.clear();  // a new motion measures its own speed, not the last motion's
   integral = 0;
   prev_current = current;
   cur = current;

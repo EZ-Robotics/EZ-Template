@@ -8,6 +8,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include <atomic>
 #include <cstdint>
+#include <deque>
 #include <limits>
 
 #include "EZ-Template/util.hpp"
@@ -774,11 +775,11 @@ public:
 
 private:
   double stop_speed = 5.0;  // units per second, gates the small and big exits and is the velocity exit's speed
-  // The sensor's speed over the last speed_window ms, in units per second, and where that window started.  speed_window is written by the team's
-  // task and read by the auto task.
+  // The sensor's speed over the last speed_window ms, in units per second, and the readings it is measured from, oldest first.  Every compute
+  // drops the readings that are no longer needed, so the window slides with each reading instead of restarting every speed_window ms.
+  // speed_window is written by the team's task and read by the auto task.
   double speed = 0.0;
-  double speed_start_cur = 0.0;
-  std::uint32_t speed_start_ms = 0;
+  std::deque<std::pair<std::uint32_t, double>> speed_readings;
   std::atomic<int> speed_window{30};
   static constexpr int SPEED_STALL_GAP = 200;
   double velocity_zero_secondary = 0.075;
