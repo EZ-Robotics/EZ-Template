@@ -144,41 +144,56 @@ private:
     return side.front().fake().voltage != 0.0 || side.front().fake().brake_mode != pros::E_MOTOR_BRAKE_COAST;
   }
 
+  // Each side of the drive pushes its wheels with its motors and is held back by friction at the wheels. Friction is
+  // what 1 V of motor push gives, a guess at what a VEX drive needs before it starts to move. Friction only slows a wheel,
+  // and holds it still while the push on it is smaller than the friction. Steps are 1 ms so a light robot stays stable.
   void step(double dt) {
-    const double g = 9.81, m = body_.mass_kg, track = body_.track_width_in * 0.0254;
+    const double m = body_.mass_kg, half_track = body_.track_width_in * 0.0254 / 2.0;
     const double inertia = m * 0.38 * 0.38 / 6.0;  // a flat 15 in square chassis, an estimate
-    const double a = stall_force_n(), b = a / free_speed_m_s();
-    double dl = duty(drive_.left_motors), dr = duty(drive_.right_motors);
-    double damping = b * ((motor_acts(drive_.left_motors) ? 1 : 0) + (motor_acts(drive_.right_motors) ? 1 : 0));
-
+    const double a = stall_force_n(), vfree = free_speed_m_s(), friction = a * 1.0 / 12.0;
+    const double dl = duty(drive_.left_motors), dr = duty(drive_.right_motors);
+    const bool left_acts = motor_acts(drive_.left_motors), right_acts = motor_acts(drive_.right_motors);
     double push = 0.0;
     for (const auto& w : pushes_)
       if (sim_ms_ >= w.start && sim_ms_ < w.end) push += w.force;
-
-    // Rolling resistance (0.05 g) and turning scrub (0.10 g) are guesses. Scrub is low enough that the example project's own swing
-    // finishes, as it does on a robot.
-    v_ = integrate(v_, a * (dl + dr) + push, damping / m, 0.05 * m * g, m, dt);
-    w_ = integrate(w_, a * (dl - dr) * track / 2.0, damping * track * track / 4.0 / inertia, 0.10 * m * g * track / 2.0, inertia, dt);
-
+    bool pinned = false;
     for (const auto& p : pins_)
-      if (sim_ms_ >= p.start && sim_ms_ < p.end) v_ = w_ = 0.0;
-    double forward = v_ * dt / 0.0254;
+      if (sim_ms_ >= p.start && sim_ms_ < p.end) pinned = true;
+
+    const int substeps = 10;
+    const double h = dt / substeps;
+    double forward_m = 0.0, turn_rad = 0.0;
+    for (int i = 0; i < substeps && !pinned; i++) {
+      double vl = v_ + w_ * half_track, vr = v_ - w_ * half_track;
+      double pl = (left_acts ? a * (dl - vl / vfree) : 0.0) + push / 2.0;
+      double pr = (right_acts ? a * (dr - vr / vfree) : 0.0) + push / 2.0;
+      double fl = wheel_force(vl, pl, friction), fr = wheel_force(vr, pr, friction);
+      v_ += (fl + fr) / m * h;
+      w_ += (fl - fr) * half_track / inertia * h;
+      // Friction can stop a wheel but never turns it around
+      double nl = v_ + w_ * half_track, nr = v_ - w_ * half_track;
+      if (nl * vl < 0.0 && pl * std::copysign(1.0, nl) <= friction) nl = 0.0;
+      if (nr * vr < 0.0 && pr * std::copysign(1.0, nr) <= friction) nr = 0.0;
+      v_ = (nl + nr) / 2.0;
+      w_ = (nl - nr) / (2.0 * half_track);
+      forward_m += v_ * h;
+      turn_rad += w_ * h;
+    }
+    if (pinned) v_ = w_ = 0.0;
+
+    double forward = forward_m / 0.0254;
     if (forward_in_ + forward > wall_at_in_) {
       forward = wall_at_in_ - forward_in_;
-      v_ = 0.0;
+      v_ = std::fmin(v_, 0.0);
     }
-    move(forward, w_ * dt * 180.0 / M_PI);
+    move(forward, turn_rad * 180.0 / M_PI);
   }
 
-  // Implicit Euler on the speed term, so a light, fast robot settles instead of reversing every step. Friction can stop
-  // the robot but never reverses it, and holds it still while the push on it is smaller than the friction.
-  static double integrate(double v, double force, double damping, double friction, double mass, double dt) {
-    if (v == 0.0 && std::fabs(force) <= friction) return 0.0;
-    double direction = v != 0.0 ? std::copysign(1.0, v) : std::copysign(1.0, force);
-    double next = (v + dt * (force - direction * friction) / mass) / (1.0 + dt * damping);
-    bool reversed = next * v < 0.0;
-    if (reversed && (force * next <= 0.0 || std::fabs(force) <= friction)) return 0.0;
-    return next;
+  // The force left on one side's wheels after friction, given how fast they roll and what pushes them
+  static double wheel_force(double speed, double push, double friction) {
+    if (std::fabs(speed) > 1e-6) return push - std::copysign(friction, speed);
+    if (std::fabs(push) <= friction) return 0.0;
+    return push - std::copysign(friction, push);
   }
 
   void move(double forward_in, double cw_deg) {
