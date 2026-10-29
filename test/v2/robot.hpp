@@ -3,6 +3,7 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -31,15 +32,28 @@ inline const TeamRobot HEAVY_ROBOT{"8 motors, 3.25 in, 480 rpm", {1, 2, 3, 8}, {
 inline const TeamRobot CLASSROOM_ROBOT{"4 motors, 4 in, 200 rpm", {1, 2}, {-4, -5}, 4.0, 200, {4.5, 13.0}};
 inline const std::vector<TeamRobot> TEAM_ROBOTS{EXAMPLE_ROBOT, FAST_ROBOT, HEAVY_ROBOT, CLASSROOM_ROBOT};
 
+// Two vertical tracking wheels, set up like the example project's left_tracker and right_tracker options (2.75 in, ADI encoders).
+// Each offset is how far that wheel really sits from the turning center, and what the team tells EZ-Template.
+struct VerticalTrackers {
+  double left_offset_in;
+  double right_offset_in;
+};
+
 class Built {
 public:
-  explicit Built(const TeamRobot& robot) {
+  explicit Built(const TeamRobot& robot, std::optional<VerticalTrackers> trackers = std::nullopt) {
     test_stub::reset_all();
     test_stub::g_competition.autonomous = true;
     chassis_ = std::make_unique<ez::Drive>(robot.left_ports, robot.right_ports, 7, robot.wheel_diameter_in, robot.wheel_rpm);
     example_chassis = chassis_.get();
 
     // initialize() in the example project
+    if (trackers) {
+      left_tracker_ = std::make_unique<ez::tracking_wheel>(std::vector<int>{'A', 'B'}, 2.75, trackers->left_offset_in);
+      right_tracker_ = std::make_unique<ez::tracking_wheel>(std::vector<int>{'C', 'D'}, 2.75, trackers->right_offset_in);
+      chassis().odom_tracker_left_set(left_tracker_.get());
+      chassis().odom_tracker_right_set(right_tracker_.get());
+    }
     chassis().opcontrol_drive_activebrake_set(0.0);
     chassis().opcontrol_curve_default_set(0.0, 0.0);
     default_constants();
@@ -48,6 +62,10 @@ public:
 
     // The top of autonomous() in the example project
     sim_ = std::make_unique<sim::Robot>(chassis(), robot.wheel_rpm, robot.wheel_diameter_in, robot.body);
+    if (trackers) {
+      sim().track_with(left_tracker_.get(), -trackers->left_offset_in);
+      sim().track_with(right_tracker_.get(), trackers->right_offset_in);
+    }
     chassis().pid_targets_reset();
     chassis().drive_imu_reset();
     chassis().drive_sensor_reset();
@@ -70,6 +88,7 @@ private:
     test_stub::g_clock.on_delay = [] { example_chassis->imu->fake_calibrating = test_stub::g_clock.now_ms < done_at; };
   }
 
+  std::unique_ptr<ez::tracking_wheel> left_tracker_, right_tracker_;
   std::unique_ptr<ez::Drive> chassis_;
   std::unique_ptr<sim::Robot> sim_;
 };

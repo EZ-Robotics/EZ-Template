@@ -68,6 +68,9 @@ public:
   // How long the robot has moved less than 0.5 in and 1 deg in every 500 ms, or 0 while it is moving.
   int stopped_for_ms() const { return history_.size() < 51 ? 0 : sim_ms_ - stopped_since_; }
 
+  // A vertical tracking wheel the robot carries, right_of_center_in inches right of its turning center (negative is left).
+  void track_with(ez::tracking_wheel* wheel, double right_of_center_in) { trackers_.push_back({wheel, right_of_center_in, 0.0}); }
+
   // Something the team's own code does between two library passes, like a second task starting a motion.
   void at(int start, std::function<void()> action) { actions_.push_back({now() + start, std::move(action)}); }
 
@@ -85,6 +88,11 @@ private:
   };
   struct Sample {
     double x, y, heading;
+  };
+  struct Tracker {
+    ez::tracking_wheel* wheel;
+    double right_of_center_in;
+    double ticks;
   };
   struct Action {
     int at;
@@ -182,6 +190,7 @@ private:
     add_ticks(drive_.right_motors, (forward_in - half_turn_in) * ticks_per_in, right_ticks_);
     drive_.imu->fake_rotation += cw_deg;
     write_motor_readings();
+    for (auto& t : trackers_) turn_tracker(t, forward_in - cw_deg * M_PI / 180.0 * t.right_of_center_in);
     record_history();
   }
 
@@ -191,6 +200,15 @@ private:
     total += ticks;
     for (auto& motor : side) motor.fake().position = (std::int32_t)std::lround(total);
     if (&side == &drive_.left_motors && fail_read_at_ >= 0) sensor.disconnected = sim_ms_ == fail_read_at_;  // one PROS_ERR read
+  }
+
+  // A tracker counts what its wheel rolls, and keeps counting from wherever the library last reset it.
+  static void turn_tracker(Tracker& t, double rolled_in) {
+    bool rotation = t.wheel->smart_encoder.get_port() > 0;
+    std::int32_t& count = rotation ? t.wheel->smart_encoder.fake_position : t.wheel->adi_encoder.fake_value;
+    if (count != (std::int32_t)std::lround(t.ticks)) t.ticks = count;
+    t.ticks += rolled_in * t.wheel->ticks_per_inch();
+    count = (std::int32_t)std::lround(t.ticks);
   }
 
   void write_motor_readings() {
@@ -228,6 +246,7 @@ private:
   std::vector<Window> pins_, pushes_;
   std::vector<Action> actions_;
   std::deque<Sample> history_;
+  std::vector<Tracker> trackers_;
 };
 
 }  // namespace sim
