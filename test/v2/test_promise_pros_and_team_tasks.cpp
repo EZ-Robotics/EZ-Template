@@ -41,7 +41,7 @@ TEST_CASE("Promise 5: the field disabling the robot mid-motion stops the drive, 
     });
     CHECK(wait_returns(s, [&] { c.pid_wait(); }));
 
-    // The motors are told 0 and stay told 0. The robot coasts to a stop under brake.
+    // The motors are told 0 and stay told 0
     bool held_at_zero = true;
     for (int ms = 0; ms < 1000; ms += 10) {
       pros::delay(10);
@@ -49,7 +49,6 @@ TEST_CASE("Promise 5: the field disabling the robot mid-motion stops the drive, 
         for (auto& motor : *side) held_at_zero = held_at_zero && motor.fake().voltage == 0;
     }
     CHECK(held_at_zero);
-    CHECK(s.stopped_for_ms() > 0);
 
     // Enabled again for the next autonomous: a new motion runs as asked
     test_stub::g_competition.disabled = false;

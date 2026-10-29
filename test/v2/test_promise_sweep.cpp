@@ -34,6 +34,10 @@ const std::vector<Motion> MOTIONS{
     {"left swing to 45, other side at 45 (the example's swing)", [](ez::Drive& c) { c.pid_swing_set(ez::LEFT_SWING, 45_deg, 110, 45); },
      [](ez::Drive& c) { c.pid_wait_until(22_deg); }, [](sim::Robot& s) { return std::fabs(45 - s.heading()); },
      [](ez::Drive& c) { return c.swingPID.exit.big_error; }},
+    {"drive 24 in at full speed", [](ez::Drive& c) { c.pid_drive_set(24_in, 127, true); }, [](ez::Drive& c) { c.pid_wait_until(12_in); },
+     [](sim::Robot& s) { return std::fabs(24 - s.forward_travel()); }, [](ez::Drive& c) { return c.leftPID.exit.big_error; }},
+    {"turn to 180 at full speed", [](ez::Drive& c) { c.pid_turn_set(180_deg, 127); }, [](ez::Drive& c) { c.pid_wait_until(90_deg); },
+     [](sim::Robot& s) { return std::fabs(180 - s.heading()); }, [](ez::Drive& c) { return c.turnPID.exit.big_error; }},
     {"odom 24 in", [](ez::Drive& c) { c.pid_odom_set(24_in, 110, true); }, [](ez::Drive& c) { c.pid_wait_until(12_in); },
      [](sim::Robot& s) { return distance_to(s, 0, 24); }, [](ez::Drive& c) { return c.xyPID.exit.big_error; }},
     {"odom to (12, 24)", [](ez::Drive& c) { c.pid_odom_set({{12_in, 24_in}, ez::fwd, 110}, true); },
@@ -69,17 +73,18 @@ const std::vector<Wait> WAITS{
 struct Situation {
   const char* name;
   bool robot_knows_where_it_is;  // false when a sensor is gone for good or the code changed the motion
+  bool nothing_stops_it;         // true when the robot can still get there, so it must arrive without interfered
   std::function<void(sim::Robot&, ez::Drive&)> apply;
 };
 
 const std::vector<Situation> SITUATIONS{
-    {"nothing in the way", true, [](sim::Robot&, ez::Drive&) {}},
-    {"shoved for 300 ms by a robot like it", true, [](sim::Robot& s, ez::Drive&) { s.push(-s.full_push_n(), 200, 300); }},
-    {"pinned for 1 s", true, [](sim::Robot& s, ez::Drive&) { s.pin(200, 1000); }},
-    {"pinned for good", true, [](sim::Robot& s, ez::Drive&) { s.pin(200, 60000); }},
-    {"wall 12 in ahead", true, [](sim::Robot& s, ez::Drive&) { s.wall_ahead(12); }},
-    {"one failed encoder read", true, [](sim::Robot& s, ez::Drive&) { s.fail_one_read(200); }},
-    {"drive_rpm_set while moving", true,
+    {"nothing in the way", true, true, [](sim::Robot&, ez::Drive&) {}},
+    {"shoved for 300 ms by a robot like it", true, false, [](sim::Robot& s, ez::Drive&) { s.push(-s.full_push_n(), 200, 300); }},
+    {"pinned for 1 s", true, false, [](sim::Robot& s, ez::Drive&) { s.pin(200, 1000); }},
+    {"pinned for good", true, false, [](sim::Robot& s, ez::Drive&) { s.pin(200, 60000); }},
+    {"wall 12 in ahead", true, false, [](sim::Robot& s, ez::Drive&) { s.wall_ahead(12); }},
+    {"one failed encoder read", true, true, [](sim::Robot& s, ez::Drive&) { s.fail_one_read(200); }},
+    {"drive_rpm_set while moving", true, true,
      [](sim::Robot& s, ez::Drive& c) {
        double low_gear = c.drive_rpm_get() * 0.75;
        s.at(300, [&s, &c, low_gear] {
@@ -87,8 +92,8 @@ const std::vector<Situation> SITUATIONS{
          c.drive_rpm_set(low_gear);
        });
      }},
-    {"sensor motor unplugged", false, [](sim::Robot& s, ez::Drive&) { s.at(200, [&s] { s.unplug_sensor_motor(); }); }},
-    {"another task starts a turn", false, [](sim::Robot& s, ez::Drive& c) { s.at(300, [&c] { c.pid_turn_set(-90_deg, 90); }); }},
+    {"sensor motor unplugged", false, false, [](sim::Robot& s, ez::Drive&) { s.at(200, [&s] { s.unplug_sensor_motor(); }); }},
+    {"another task starts a turn", false, false, [](sim::Robot& s, ez::Drive& c) { s.at(300, [&c] { c.pid_turn_set(-90_deg, 90); }); }},
 };
 
 void run_row(const v2::TeamRobot& robot, const Motion& motion, const Wait& wait, const Situation& situation) {
@@ -110,6 +115,7 @@ void run_row(const v2::TeamRobot& robot, const Motion& motion, const Wait& wait,
   s.give_up(0, 0);
 
   CHECK_MESSAGE(returned, "the wait was still running 3 s after the robot stopped, or 10 s after the motion started");
+  if (returned && situation.nothing_stops_it) CHECK_MESSAGE(!c.interfered, "nothing stopped the robot, but the wait said interfered");
   if (!returned || !situation.robot_knows_where_it_is || c.interfered) return;
 
   CHECK_MESSAGE(motion.miss(s) <= motion.big_error(c), "returned without interfered, but outside big_error");

@@ -32,7 +32,8 @@ build/corpus_autons.o: corpus_autons.cpp
 	@mkdir -p build
 	$(CXX) $(CXXFLAGS) -iquote example_shim -c $< -o $@
 
-build/%.o: ../%.cpp
+# Shared with the old suite in test/
+build/link_stubs.o build/doctest_main.o: build/%.o: ../%.cpp
 	@mkdir -p build
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 

@@ -133,7 +133,7 @@ private:
     double wheel_torque = 2.1 * 100.0 / wheel_rpm_;
     return drive_.left_motors.size() * wheel_torque / (wheel_diameter_in_ / 2.0 * 0.0254);
   }
-  // While the field has the robot disabled, VEXos keeps every motor limp whatever it was last told.
+  // While the field has the robot disabled, every motor is limp whatever it was last told. A guess until a robot log shows it.
   static bool disabled() { return test_stub::g_competition.disabled; }
   static double duty(const std::vector<pros::Motor>& side) { return disabled() ? 0.0 : side.front().fake().voltage / 12000.0; }
 
