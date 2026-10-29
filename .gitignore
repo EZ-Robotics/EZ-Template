@@ -20,6 +20,10 @@ temp.errors
 test/run_tests
 test/run_tests.exe
 test/run_tests.pdb
+test/v2/run_tests
+test/v2/run_tests.exe
+test/v2/run_tests.pdb
+test/v2/build/
 
 # Docusaurus (docs site lives on the website branch, not here)
 /node_modules
