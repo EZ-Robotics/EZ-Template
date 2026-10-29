@@ -61,9 +61,9 @@ Outcome run_hijack(Drive& chassis, int retarget_at) {
   return o;
 }
 
-// The turn's error is inside its small_error (3) 30 passes after the retarget (90 - 3 * 30 = 0), and the small exit then takes 4 polls
-// to pass 30 ms, the first of them on that pass.  pid_wait() delays once more after the poll that latches the exit.
-constexpr int TURN_END_AFTER_RETARGET = 30 + 4 - 1 + 1;
+// The turn's error is inside its small_error (3) 30 passes after the retarget (90 - 3 * 30 = 0), and the small exit then takes 10 polls
+// to pass 90 ms, the first of them on that pass.  pid_wait() delays once more after the poll that latches the exit.
+constexpr int TURN_END_AFTER_RETARGET = 30 + 10 - 1 + 1;
 }  // namespace
 
 TEST_CASE("pid_wait(): a retarget landing during the leading delay is followed onto the new motion") {

@@ -69,11 +69,11 @@ TEST_CASE("unitless swing slew constants are degrees") {
   check_constants(chassis.slew_swing_backward, 30.0, 90);
 }
 
-TEST_CASE("a new Drive swings with slew over 5 degrees starting at 70") {
+TEST_CASE("a new Drive swings with slew over 15 degrees starting at 80") {
   Drive chassis = make_chassis();
 
-  check_constants(chassis.slew_swing_forward, 5.0, 70);
-  check_constants(chassis.slew_swing_backward, 5.0, 70);
+  check_constants(chassis.slew_swing_forward, 15.0, 80);
+  check_constants(chassis.slew_swing_backward, 15.0, 80);
 }
 
 TEST_CASE("swing slew ramps by heading, not by how far a side of the drive has moved") {

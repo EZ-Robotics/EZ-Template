@@ -92,7 +92,7 @@ void pinned_after_healthy_start(Drive& c, int n, bool ticked) {
     return;
   }
   double e = PATH_LENGTH_IN - IN_PER_WALL_TICK * PIN_AT_TICK;
-  double jitter_cur = (n % 2 == 0) ? 0.05 : -0.05;  // alternating +-0.05
+  double jitter_cur = (n % 2 == 0) ? 0.1 : -0.1;  // alternating +-0.1
   c.xyPID.compute_error(e, jitter_cur);
   c.current_a_odomPID.compute_error(0.0, 0.0);
 }

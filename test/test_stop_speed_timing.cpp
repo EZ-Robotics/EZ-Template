@@ -39,16 +39,16 @@ void stop_speed_set(Drive& c, Kind k, double v) {
 
 // The default stop speed of both kinds, written with units, so a team writing the defaults down gets exactly the numbers it already had
 void stop_speed_defaults_with_units(Drive& c) {
-  c.pid_distance_exit_stop_speed_set(8_in / 1_s);
-  c.pid_angle_exit_stop_speed_set(13_deg / 1_s);
+  c.pid_distance_exit_stop_speed_set(1.5_in / 1_s);
+  c.pid_angle_exit_stop_speed_set(4_deg / 1_s);
 }
 void stop_speed_defaults(Drive& c) {
-  c.pid_distance_exit_stop_speed_set(8.0);
-  c.pid_angle_exit_stop_speed_set(13.0);
+  c.pid_distance_exit_stop_speed_set(1.5);
+  c.pid_angle_exit_stop_speed_set(4.0);
 }
 
 double lowered(Kind k) { return is_angle(k) ? 1.0 : 0.4; }
-double raised(Kind k) { return is_angle(k) ? 40.0 : 20.0; }
+double raised(Kind k) { return is_angle(k) ? 16.0 : 6.0; }
 
 struct Row {
   const char* name;
@@ -60,8 +60,6 @@ struct Row {
   bool hi_strict = true;   // a raised stop speed of a `must` kind ends the wait strictly sooner
   bool lo_strict = true;  // a lowered one ends it strictly later and clean; false where the robot is already stiller than the lowered speed at the band, or the
                           // velocity exit gives up first
-  bool hi_clean = true;   // a raised stop speed of a `must` kind ends the wait clean; false where it also raises the velocity exit enough to end a slow wait as
-                          // interfered
 };
 
 std::vector<Row> rows() {
@@ -91,7 +89,6 @@ std::vector<Row> rows() {
                {Kind::Angle},
                {},
                true,
-               false,
                false});
   r.push_back(
       {"swing, pid_wait", classroom, [](Drive& c) { c.pid_swing_set(ez::LEFT_SWING, 90_deg, 110); }, [](Drive& c) { c.pid_wait(); }, {Kind::Angle}, {}});
@@ -118,28 +115,19 @@ std::vector<Row> rows() {
                [](Drive& c) { c.pid_odom_set({{12_in, 24_in, 90_deg}, fwd, 110}); },
                [](Drive& c) { c.pid_wait_until(pose{12, 24, 90}); },
                {Kind::Distance},
-               {Kind::Angle},
-               true,
-               true,
-               false});
+               {Kind::Angle}});
   r.push_back({"odom path, pid_wait",
                classroom,
                [](Drive& c) { c.pid_odom_set({{{0_in, 12_in}, fwd, 110}, {{12_in, 24_in, 90_deg}, fwd, 110}}); },
                [](Drive& c) { c.pid_wait(); },
                {Kind::Distance},
-               {Kind::Angle},
-               true,
-               true,
-               false});
+               {Kind::Angle}});
   r.push_back({"odom path, pid_wait_until_index(last)",
                classroom,
                [](Drive& c) { c.pid_odom_set({{{0_in, 12_in}, fwd, 110}, {{12_in, 24_in, 90_deg}, fwd, 110}}); },
                [](Drive& c) { c.pid_wait_until_index(1); },
                {Kind::Distance},
-               {Kind::Angle},
-               true,
-               true,
-               false});
+               {Kind::Angle}});
   // The heading is what a heavy robot is last to settle on a path, so this is where the odom heading's stop speed shows
   r.push_back({"odom path on a heavy robot, pid_wait",
                heavy,
@@ -147,7 +135,6 @@ std::vector<Row> rows() {
                [](Drive& c) { c.pid_wait(); },
                {Kind::Distance, Kind::Angle},
                {},
-               false,
                false,
                false});
   return r;
@@ -173,7 +160,6 @@ constexpr int CAP_TICKS = 3000;  // 30 s of sim time
 Run run(const Row& row, const std::function<void(Drive&)>& configure = nullptr, const std::vector<Event>& events = {}, int cap = CAP_TICKS) {
   // The table's heavy_slow rows run at 2 passes per poll, where that robot is stable (the other tests that use it say the same)
   Rig r(row.arch, std::string(row.name).find("heavy robot") != std::string::npos ? 2 : 1, false, 1);
-  r.chassis.pid_exit_speed_window_set(40);  // 40 ms: even number of ticks, see test_speed_window.cpp
   if (configure) configure(r.chassis);
   size_t next = 0;
   if (!events.empty()) {
@@ -222,7 +208,7 @@ TEST_CASE("a lowered stop speed ends a wait later and a raised one sooner, and o
           CHECK(lo.elapsed >= base.elapsed);
         }
         CHECK(hi.returned);
-        if (row.hi_clean) CHECK_FALSE(hi.interfered);
+        CHECK_FALSE(hi.interfered);
         if (row.hi_strict)
           CHECK(hi.elapsed < base.elapsed);
         else
@@ -304,7 +290,7 @@ TEST_CASE("a stop speed changed in the middle of a motion takes effect on the ne
     REQUIRE(base.elapsed > 700);
     for (Kind k : row.must) {
       INFO("kind " << (int)k);
-      double def = is_angle(k) ? 13.0 : 8.0;
+      double def = is_angle(k) ? 4.0 : 1.5;
       // Set to the value it already has: nothing may change, not even by a millisecond
       CHECK(run(row, nullptr, {{300, [&](Drive& c) { stop_speed_set(c, k, def); }}}) == base);
       // Lowered, then put back before the wait is decided: as if it had never been touched
@@ -318,25 +304,19 @@ TEST_CASE("a stop speed changed in the middle of a motion takes effect on the ne
       CHECK(lo_mid == lo_from_start);
       Run hi_from_start = run(row, [&](Drive& c) { stop_speed_set(c, k, raised(k)); });
       Run hi_mid = run(row, nullptr, {{300, [&](Drive& c) { stop_speed_set(c, k, raised(k)); }}});
-      // Raised mid-motion it takes effect on the next poll: the wait ends, and no later than one that never had it raised.  It does not have to
-      // match one that had the raised speed from the start, because the velocity exit arms the first time the robot is faster than the stop
-      // speed it has (or after 1 second), and that already happened under the old speed
-      CHECK(hi_mid.returned);
-      CHECK(hi_mid.elapsed <= base.elapsed);
+      CHECK(hi_mid == hi_from_start);
     }
   }
 }
 
 // ---- What the stop speeds do not touch --------------------------------------------------------------------------------------------
 
-TEST_CASE("a robot held outside big_error is reported stuck, at the same time for every stop speed it moved faster than") {
-  // The velocity exit arms the first time the robot is faster than the stop speed, or after 1 second if it never is.  The robot here moves for
-  // 300 ms before it is held, so every stop speed under what it reached arms at the same time and ends the wait at the same time, and a stop
-  // speed over what it reached waits for the 1 second fallback
+TEST_CASE("a robot held outside big_error is reported stuck at the same time whatever the stop speed is") {
+  // The stuck check outside big_error (1 in over 350 ms, about 2.86 in/s) is its own number: it asks about progress, not about stopped, so
+  // raising the drive stop speed above it or lowering it close to zero changes nothing there
   Row row{"drive held", archetype_classroom(), [](Drive& c) { c.pid_drive_set(24_in, 110); }, [](Drive& c) { c.pid_wait(); }, {}, {}};
   auto held = [&](double v) {
     Rig r(row.arch, 1, false, 1);
-    r.chassis.pid_exit_speed_window_set(40);  // 40 ms: even number of ticks, see test_speed_window.cpp
     r.chassis.pid_distance_exit_stop_speed_set(v);
     r.sim.pin(300, 1e7);
     row.start(r.chassis);
@@ -345,30 +325,28 @@ TEST_CASE("a robot held outside big_error is reported stuck, at the same time fo
     out.interfered = r.chassis.interfered;
     return out;
   };
-  Run base = held(8.0);
+  Run base = held(1.5);
   REQUIRE(base.returned);
   CHECK(base.interfered);
-  for (double v : {0.1, 0.4, 2.9, 5.0, 10.0}) {
+  for (double v : {0.1, 0.4, 2.9, 5.0, 10.0, 100.0}) {
     CAPTURE(v);
     Run o = held(v);
     CHECK(o.returned);
     CHECK(o.interfered);
     CHECK(o.elapsed == base.elapsed);
   }
-  Run never_armed = held(100.0);
-  CHECK(never_armed.returned);
-  CHECK(never_armed.interfered);
-  CHECK(never_armed.elapsed > base.elapsed);
 }
 
-TEST_CASE("a stop speed well over the default ends the wait no later than the default does") {
-  // The velocity exit uses the stop speed too, so a raised one can end a slow wait as interfered, but it never ends it later
+TEST_CASE("a stop speed over the velocity exit's own threshold ends the wait on the window exit, never later than the velocity exit would") {
+  // The velocity exit (a speed under 0.05 in or deg in one 10 ms pass, which is 5 in/s or 5 deg/s, for velocity_exit_time) is a fixed number
+  // of its own. A stop speed above it makes every window exit the first thing to fire, so a raised stop speed can only end a wait sooner
   for (const auto& row : rows()) {
     INFO(row.name);
     Run base = run(row);
     for (Kind k : row.must) {
       Run above = run(row, [&](Drive& c) { stop_speed_set(c, k, is_angle(k) ? 40.0 : 10.0); });
       CHECK(above.returned);
+      CHECK_FALSE(above.interfered);
       CHECK(above.elapsed <= base.elapsed);
     }
   }
@@ -432,6 +410,6 @@ TEST_CASE("a stop speed far above anything real ends a wait no later than a larg
     Run o = run(turn, [&](Drive& c) { c.pid_angle_exit_stop_speed_set(v); });
     CHECK(o.returned);
     CHECK_FALSE(o.interfered);
-    CHECK(o.elapsed <= t40.elapsed + 50);  // a robot that never gets faster than the stop speed arms the velocity exit by its 1 second fallback
+    CHECK(o.elapsed <= t40.elapsed);
   }
 }

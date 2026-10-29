@@ -31,7 +31,6 @@ std::vector<Arch> coasters() {
 TEST_CASE("small exit only: an undisturbed odom point move that rests inside the small band is not interfered") {
   for (auto& ar : coasters()) {
     Rig r(ar.a, ar.passes, false, 1);
-    r.chassis.pid_exit_speed_window_set(40);  // 40 ms: even number of ticks, see test_speed_window.cpp
     r.chassis.pid_odom_drive_exit_condition_set(90, 1, 0, 0, 500, 750);
     r.chassis.pid_odom_set(odom{pose{12, 24, ANGLE_NOT_SET}, fwd, 110});
     CAPTURE(ar.name);
@@ -44,7 +43,6 @@ TEST_CASE("small exit only: an undisturbed odom point move that rests inside the
 TEST_CASE("small exit only: an undisturbed turn that rests inside the small band is not interfered") {
   for (auto& ar : coasters()) {
     Rig r(ar.a, ar.passes, false, 1);
-    r.chassis.pid_exit_speed_window_set(40);  // 40 ms: even number of ticks, see test_speed_window.cpp
     r.chassis.pid_turn_exit_condition_set(90, 1.5, 0, 0, 500, 750);
     r.chassis.pid_turn_set(90, 110);
     CAPTURE(ar.name);
@@ -57,7 +55,6 @@ TEST_CASE("small exit only: an undisturbed turn that rests inside the small band
 TEST_CASE("small exit only: an undisturbed turn to a point and a swing that rest inside the small band are not interfered") {
   {
     Rig r(sim::archetype_sticky_high_friction(), 1, false, 1);
-    r.chassis.pid_exit_speed_window_set(40);  // 40 ms: even number of ticks, see test_speed_window.cpp
     r.chassis.pid_turn_exit_condition_set(90, 1.5, 0, 0, 500, 750);
     r.chassis.pid_turn_set(pose{12, 24}, fwd, 110);
     REQUIRE(r.wait([&] { r.chassis.pid_wait(); }, 3000));
@@ -65,7 +62,6 @@ TEST_CASE("small exit only: an undisturbed turn to a point and a swing that rest
   }
   {
     Rig r(sim::archetype_heavy_slow(), 2, false, 1);
-    r.chassis.pid_exit_speed_window_set(40);  // 40 ms: even number of ticks, see test_speed_window.cpp
     r.chassis.pid_swing_exit_condition_set(90, 1.5, 0, 0, 500, 750);
     r.chassis.pid_swing_set(ez::LEFT_SWING, 90, 110);
     REQUIRE(r.wait([&] { r.chassis.pid_wait(); }, 3000));
@@ -78,7 +74,6 @@ TEST_CASE("controls: with the big exit on, or big_error set and its time 0, the 
     for (auto& ar : coasters()) {
       {
         Rig r(ar.a, ar.passes, false, 1);
-        r.chassis.pid_exit_speed_window_set(40);  // 40 ms: even number of ticks, see test_speed_window.cpp
         r.chassis.pid_odom_drive_exit_condition_set(90, 1, big_time, 3, 500, 750);
         r.chassis.pid_odom_set(odom{pose{12, 24, ANGLE_NOT_SET}, fwd, 110});
         CAPTURE(ar.name);
@@ -88,7 +83,6 @@ TEST_CASE("controls: with the big exit on, or big_error set and its time 0, the 
       }
       {
         Rig r(ar.a, ar.passes, false, 1);
-        r.chassis.pid_exit_speed_window_set(40);  // 40 ms: even number of ticks, see test_speed_window.cpp
         r.chassis.pid_turn_exit_condition_set(90, 1.5, big_time, 3, 500, 750);
         r.chassis.pid_turn_set(90, 110);
         CAPTURE(ar.name);
@@ -103,7 +97,6 @@ TEST_CASE("controls: with the big exit on, or big_error set and its time 0, the 
 TEST_CASE("controls: with only the small exit configured, a robot pinned or walled outside the small band is still interfered") {
   {
     Rig r(sim::archetype_light_fast(), 1);
-    r.chassis.pid_exit_speed_window_set(40);  // 40 ms: even number of ticks, see test_speed_window.cpp
     r.chassis.pid_odom_drive_exit_condition_set(90, 1, 0, 0, 500, 750);
     r.chassis.pid_odom_set(odom{pose{12, 24, ANGLE_NOT_SET}, fwd, 110});
     r.sim.pin(300, 600000);
@@ -112,7 +105,6 @@ TEST_CASE("controls: with only the small exit configured, a robot pinned or wall
   }
   {
     Rig r(sim::archetype_light_fast(), 1);
-    r.chassis.pid_exit_speed_window_set(40);  // 40 ms: even number of ticks, see test_speed_window.cpp
     r.chassis.pid_odom_drive_exit_condition_set(90, 1, 0, 0, 500, 750);
     r.chassis.pid_odom_set(odom{pose{12, 24, ANGLE_NOT_SET}, fwd, 110});
     r.sim.wall(8);
@@ -121,7 +113,6 @@ TEST_CASE("controls: with only the small exit configured, a robot pinned or wall
   }
   {
     Rig r(sim::archetype_light_fast(), 1);
-    r.chassis.pid_exit_speed_window_set(40);  // 40 ms: even number of ticks, see test_speed_window.cpp
     r.chassis.pid_drive_exit_condition_set(90, 1, 0, 0, 500, 750);
     r.chassis.pid_drive_set(48_in, 110);
     r.sim.pin(400, 20000);
@@ -130,7 +121,6 @@ TEST_CASE("controls: with only the small exit configured, a robot pinned or wall
   }
   {
     Rig r(sim::archetype_light_fast(), 1);
-    r.chassis.pid_exit_speed_window_set(40);  // 40 ms: even number of ticks, see test_speed_window.cpp
     r.chassis.pid_turn_exit_condition_set(90, 1.5, 0, 0, 500, 750);
     r.chassis.pid_turn_set(90_deg, 90);
     r.sim.pin(0, 20000);
@@ -139,7 +129,6 @@ TEST_CASE("controls: with only the small exit configured, a robot pinned or wall
   }
   {
     Rig r(sim::archetype_light_fast(), 1);
-    r.chassis.pid_exit_speed_window_set(40);  // 40 ms: even number of ticks, see test_speed_window.cpp
     r.chassis.pid_swing_exit_condition_set(90, 1.5, 0, 0, 500, 750);
     r.chassis.pid_swing_set(ez::LEFT_SWING, 90_deg, 90, 0);
     r.sim.pin(0, 20000);

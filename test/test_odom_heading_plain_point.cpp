@@ -67,14 +67,14 @@ TEST_CASE("ptp_task keeps headingPID's target synced to the point-to-face angle 
   double target_after_second_move = chassis.headingPID.target_get();
   CHECK(target_after_second_move != doctest::Approx(target_after_first_move));
 
-  // Sanity bound: point_to_face's look-ahead offset (16 in, so up to atan(16 / 24) = 33.7 degrees here) is small relative to this 48in swing, so
+  // Sanity bound: point_to_face's look-ahead offset is small relative to this 48in swing, so
   // the tracked angle should land within a wide but still meaningful absolute band of the two
   // clean "bearing to (24,0)" readings (0 and 180) -- not a tight equality, just ruling out
   // nonsense (e.g. a wrap bug landing hundreds of degrees off). Approx's epsilon() is a
   // *relative* tolerance (useless against an expected value of 0), so this uses a plain
   // absolute-difference check instead.
-  CHECK(std::fabs(target_after_first_move - 0.0) < 45.0);
-  CHECK(std::fabs(target_after_second_move - 180.0) < 45.0);
+  CHECK(std::fabs(target_after_first_move - 0.0) < 30.0);
+  CHECK(std::fabs(target_after_second_move - 180.0) < 30.0);
 }
 
 TEST_CASE("ptp_task's plain-point headingPID resync does not fire for an explicit-theta (boomerang) motion") {

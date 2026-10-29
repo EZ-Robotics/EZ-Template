@@ -124,7 +124,7 @@ TEST_CASE("relocalizing every pass against a wall reads no movement and the wait
   Outcome o = r.run([&] { r.chassis.pid_wait(); }, 1000);
   REQUIRE(o.returned);
   REQUIRE(contact_ms != 0);
-  CHECK(still_passes > 2);  // the wait returns soon after contact now, so there are fewer still passes to sample
+  CHECK(still_passes > 5);
   CHECK(worst_still < 0.05);
   CHECK(o.interfered);
   // the stuck window with these exits is the 350 ms floor

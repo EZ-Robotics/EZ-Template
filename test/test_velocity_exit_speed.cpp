@@ -1,5 +1,6 @@
-// The velocity exit gives up at the stop speed, the same number the small and big exits wait on.  A robot creeping against a force under the stop
-// speed counts as stopped, and one moving over it does not.
+// The velocity exit gives up at its own speed, 5 units per second like v3.2.2, not at the stop speed.  A robot creeping at about 3 inches per
+// second against a force is over the 1.5 in/s stop speed on every pass, so it never gets under it, and nothing ended the wait.  The stop speed
+// only decides when the small and big exit timers run.
 #include <cmath>
 
 #include "doctest.h"
@@ -30,33 +31,33 @@ exit_output creep(PID& pid, double speed, int max_ms, int& took_ms) {
 }
 }  // namespace
 
-TEST_CASE("a robot creeping under the stop speed ends the wait") {
+TEST_CASE("a robot creeping over the stop speed but under the velocity exit speed ends the wait") {
   test_stub::reset_all();
   PID pid(1, 0, 0, 0, "test");
   pid.exit_condition_set(0, 0.0, 0, 0.0, 100, 0);
-  pid.stop_speed_set(5.0);
+  pid.stop_speed_set(1.5);
   int took = 0;
   CHECK(creep(pid, 3.0, 2000, took) == VELOCITY_EXIT);
   CHECK(took < 600);
 }
 
-TEST_CASE("a robot moving over the stop speed does not end the wait") {
+TEST_CASE("a robot moving over the velocity exit speed does not end the wait") {
   test_stub::reset_all();
   PID pid(1, 0, 0, 0, "test");
   pid.exit_condition_set(0, 0.0, 0, 0.0, 100, 0);
-  pid.stop_speed_set(5.0);
+  pid.stop_speed_set(1.5);
   int took = 0;
   CHECK(creep(pid, 8.0, 2000, took) == RUNNING);
 }
 
-TEST_CASE("velocity_sensor_main_exit_set sets the stop speed, in units per 10 ms tick") {
+TEST_CASE("velocity_sensor_main_exit_set changes the velocity exit's speed, in units per 10 ms tick, and not the stop speed") {
   test_stub::reset_all();
   PID pid(1, 0, 0, 0, "test");
   CHECK(pid.velocity_sensor_main_exit_get() == doctest::Approx(0.05));
   pid.stop_speed_set(1.5);
   pid.velocity_sensor_main_exit_set(0.02);
   CHECK(pid.velocity_sensor_main_exit_get() == doctest::Approx(0.02));
-  CHECK(pid.stop_speed_get() == doctest::Approx(2.0));
+  CHECK(pid.stop_speed_get() == doctest::Approx(1.5));
   pid.exit_condition_set(0, 0.0, 0, 0.0, 100, 0);
   int took = 0;
   CHECK(creep(pid, 3.0, 1000, took) == RUNNING);  // over 2 units per second now

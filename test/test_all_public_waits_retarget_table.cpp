@@ -169,8 +169,8 @@ constexpr int RETARGET_AT = 5;
 // Polls for a pinned motion's velocity exit: 1000 ms until the fallback arms it, then 500 ms of velocity exit time, each a strict > at 10 ms
 // per poll.  A wait that also delays before its first poll and after its last (pid_wait(), wait_until_drive()) ends one pass later.
 constexpr int VELOCITY_POLLS = 151;
-// Polls for a small exit on a PID that is already inside small_error: 30 ms, a strict > at 10 ms per poll.
-constexpr int SMALL_POLLS = 4;
+// Polls for a small exit on a PID that is already inside small_error: 90 ms, a strict > at 10 ms per poll.
+constexpr int SMALL_POLLS = 10;
 
 // The rows a wait follows.  end_pass counts from the retarget, which resets the new motion's exit timers and starts the wait over.
 const std::vector<Row> TABLE = {

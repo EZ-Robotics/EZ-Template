@@ -60,12 +60,8 @@ Outcome run(Drive& chassis, void (*script)(Drive&, int), int max_passes, std::fu
 // The pass a concurrent retarget lands on: early enough that the healthy, steadily-closing error (100+ passes to reach 0) is nowhere
 // near exiting yet.
 constexpr int RETARGET_AT = 10;
-// Polls for a small exit once the error is inside small_error: 30 ms, a strict > at 10 ms per poll.
-constexpr int SMALL_POLLS = 4;
-// Polls for a big exit once the error is inside big_error: 100 ms, a strict > at 10 ms per poll.
-constexpr int BIG_POLLS = 11;
-// Polls for a small exit when the test sets its own 90 ms small exit time, a strict > at 10 ms per poll.
-constexpr int EXPLICIT_SMALL_POLLS = 10;
+// Polls for a small exit once the error is inside small_error: 90 ms, a strict > at 10 ms per poll.
+constexpr int SMALL_POLLS = 10;
 
 // ---- TURN / TURN_TO_POINT (pid_wait(), shared branch) ----
 // Inside the turn's small_error (3) from pass 115 on: 60 - 0.5 * 115 = 2.5.
@@ -99,8 +95,6 @@ void drive_healthy_then_retargeted(Drive& c, int n) {
   if (n == RETARGET_AT) c.pid_drive_set(200, 100);  // a real second drive, different target, mid-wait
 }
 constexpr int DRIVE_IN_SMALL_AT = 127;
-// The drive's big_error is 4 in, so the error is inside it first, from pass 107: 20 - 0.15 * 107 = 3.95.  The big exit gets there before the small one.
-constexpr int DRIVE_IN_BIG_AT = 107;
 
 // ---- wait_until_drive(), odom (POINT_TO_POINT) mode ----
 void odom_wud_healthy_then_retargeted(Drive& c, int n) {
@@ -210,7 +204,7 @@ TEST_CASE("wait_until_drive() DRIVE: a concurrent pid_drive_set() mid-wait is fo
   Outcome o = run(chassis, drive_healthy_then_retargeted, 300, [&] { chassis.pid_wait_until(12.0); });
   CHECK(o.returned);
   CHECK_FALSE(o.interfered);
-  CHECK(o.passes == DRIVE_IN_BIG_AT + BIG_POLLS - 1 + 1);
+  CHECK(o.passes == DRIVE_IN_SMALL_AT + SMALL_POLLS - 1 + 1);
 }
 
 TEST_CASE("wait_until_drive() odom: a concurrent pid_odom_ptp_set() mid-wait is followed, and the wait returns on the new motion's xy exit") {
@@ -222,7 +216,7 @@ TEST_CASE("wait_until_drive() odom: a concurrent pid_odom_ptp_set() mid-wait is 
   Outcome o = run(chassis, odom_wud_healthy_then_retargeted, 300, [&] { chassis.pid_wait_until(12.0); });
   CHECK(o.returned);
   CHECK_FALSE(o.interfered);
-  CHECK(o.passes == DRIVE_IN_SMALL_AT + EXPLICIT_SMALL_POLLS - 1);
+  CHECK(o.passes == DRIVE_IN_SMALL_AT + SMALL_POLLS - 1);
 }
 
 TEST_CASE("pid_wait() odom POINT_TO_POINT: a concurrent pid_odom_ptp_set() mid-wait is followed, and the wait returns on the new motion's exits") {
@@ -235,7 +229,7 @@ TEST_CASE("pid_wait() odom POINT_TO_POINT: a concurrent pid_odom_ptp_set() mid-w
   Outcome o = run(chassis, odom_ptp_healthy_then_retargeted, 300, [&] { chassis.pid_wait(); });
   CHECK(o.returned);
   CHECK_FALSE(o.interfered);
-  CHECK(o.passes == DRIVE_IN_SMALL_AT + EXPLICIT_SMALL_POLLS - 1 + 1);
+  CHECK(o.passes == DRIVE_IN_SMALL_AT + SMALL_POLLS - 1 + 1);
 }
 
 TEST_CASE("pid_wait() odom PURE_PURSUIT: a concurrent pid_odom_pp_set() mid-wait (before the last point) is followed onto the new path") {
@@ -341,7 +335,7 @@ TEST_CASE("pid_wait_until_point(): a concurrent pid_odom_ptp_set() mid-wait is f
   Outcome o = run(chassis, point_wait_healthy_then_retargeted, 300, [&] { chassis.pid_wait_until_point({0.0, 24.0, ANGLE_NOT_SET}); });
   CHECK(o.returned);
   CHECK_FALSE(o.interfered);
-  CHECK(o.passes == DRIVE_IN_SMALL_AT + EXPLICIT_SMALL_POLLS - 1);
+  CHECK(o.passes == DRIVE_IN_SMALL_AT + SMALL_POLLS - 1);
 }
 
 // ---- A concurrent setter from a DIFFERENT mode changes `mode` without touching turnPID's target.  The wait follows it onto the swing

@@ -1,8 +1,8 @@
 // DRIVE/TURN/SWING pid_wait() and the wait_until/quick waits end on a healthy cruise cleanly, and a pinned/jammed motion still ends the wait through the
 // velocity exit.  The exit's speed is the sensor's net movement over the last 100 ms, and it only starts counting once the robot has moved (a window read
-// more than the stop speed, 8 in/s for drives and 13 deg/s for turns and swings) or 1000 ms have passed (the arm fallback).  The floor is a fixed constant,
-// independent of gearing or wheel size, so a drivetrain commanded to cruise under it (200rpm/2.75in at speed 30, for example, about 7 in/s) reads as stopped
-// after the fallback and ends the wait interfered a small fraction into the leg.  That is the library's behavior, not something these tests expect to avoid, so
+// more than velocity_exit's 5 units/s, 0.05 per 10 ms tick) or 1000 ms have passed (the arm fallback).  The floor is a fixed constant, independent of
+// gearing or wheel size, so a drivetrain commanded to cruise under it (200rpm/2.75in at speed 15-20, for example, about 4.5 in/s) reads as stopped after
+// the fallback and ends the wait interfered a small fraction into the leg.  That is the library's behavior, not something these tests expect to avoid, so
 // every healthy cruise here is commanded fast enough to stay above the floor.  A robot that never moves ends the wait at the fallback plus
 // velocity_exit_time (500 ms by default), interfered.
 #include <cmath>
@@ -24,7 +24,7 @@ Drive make_chassis(const sim::SimArchetype& a) {
 // A custom archetype for a specific (cartridge_rpm, wheel_diameter_in) combination -- see its own
 // comment below for why it's hand-tuned rather than one of sim_physics.hpp's three presets.
 sim::SimArchetype archetype_for(double cartridge_rpm, double wheel_diameter_in) {
-  // A moderate, hand-tuned mid-size chassis -- not one of sim_physics.hpp's three preset archetypes: light_fast cruises well above the 8in/s velocity
+  // A moderate, hand-tuned mid-size chassis -- not one of sim_physics.hpp's three preset archetypes: light_fast cruises well above the 5in/s velocity
   // floor at the speeds this file sweeps, and heavy_slow and sticky_high_friction's higher resistance couldn't move the chassis enough to register
   // progress at the sweep's lowest commanded speeds. 2 motors/side and a lighter resistance profile than either heavy preset keeps the cruise in the
   // range the floor matters for while still letting the lowest commanded speed register real progress.
@@ -61,8 +61,8 @@ std::pair<bool, std::uint32_t> run_capped(F&& call, int max_ticks) {
 
 }  // namespace
 
-// A realistic drivetrain (200rpm/2.75in) at speed=60 cruises above the fixed velocity floor, so the wait runs the whole leg and ends clean.
-TEST_CASE("pid_wait() DRIVE: a realistic cruise (200rpm/2.75in, speed=60) drives the full 60in leg") {
+// A realistic drivetrain (200rpm/2.75in) at speed=30 cruises above the fixed velocity floor, so the wait runs the whole leg and ends clean.
+TEST_CASE("pid_wait() DRIVE: a realistic cruise (200rpm/2.75in, speed=30) drives the full 60in leg") {
   sim::SimArchetype a = archetype_for(/*cartridge_rpm=*/200.0, /*wheel_diameter_in=*/2.75);
   Drive chassis = make_chassis(a);
   sim::NoiseConfig no_noise{/*enabled=*/false, /*seed=*/1};
@@ -70,7 +70,7 @@ TEST_CASE("pid_wait() DRIVE: a realistic cruise (200rpm/2.75in, speed=60) drives
   chassis.pid_print_toggle(false);
 
   double target_in = 60.0;
-  chassis.pid_drive_set(target_in, 60);
+  chassis.pid_drive_set(target_in, 30);
 
   auto [returned, elapsed_ms] = run_capped([&] { chassis.pid_wait(); }, /*max_ticks=*/6000 /* 60s cap */);
   double left_in = chassis.left_motors[0].fake().position / chassis.drive_tick_per_inch();
@@ -86,42 +86,15 @@ TEST_CASE("pid_wait() DRIVE: a realistic cruise (200rpm/2.75in, speed=60) drives
   CHECK(pct_of_leg >= 90.0);
 }
 
-// The velocity exit reads the stop speed, so a drive commanded to cruise under it (200rpm/2.75in at speed 30 is about 7 in/s, under the 8 in/s default)
-// reads as stopped and ends the wait interfered a small fraction into the leg.  Lowering the stop speed under the cruise is how a team runs that slowly.
-TEST_CASE("pid_wait() DRIVE: a cruise slower than the stop speed ends interfered, and a lower stop speed lets it finish") {
-  for (double stop_speed : {8.0, 3.0}) {
-    sim::SimArchetype a = archetype_for(200.0, 2.75);
-    Drive chassis = make_chassis(a);
-    sim::NoiseConfig no_noise{/*enabled=*/false, /*seed=*/1};
-    sim::SimRobot sim(chassis, a, no_noise);
-    chassis.pid_print_toggle(false);
-    chassis.pid_distance_exit_stop_speed_set(stop_speed);
-
-    chassis.pid_drive_set(60.0, 30);
-    auto [returned, elapsed_ms] = run_capped([&] { chassis.pid_wait(); }, 6000);
-    double pct_of_leg = chassis.left_motors[0].fake().position / chassis.drive_tick_per_inch() / 60.0 * 100.0;
-    CAPTURE(stop_speed);
-    CAPTURE(elapsed_ms);
-    CHECK(returned);
-    if (stop_speed == 8.0) {
-      CHECK(chassis.interfered);
-      CHECK(pct_of_leg < 50.0);
-    } else {
-      CHECK_FALSE(chassis.interfered);
-      CHECK(pct_of_leg >= 90.0);
-    }
-  }
-}
-
 // Same cruise, but through wait_until_drive() instead of pid_wait().
-TEST_CASE("pid_wait_until() DRIVE: a realistic cruise (200rpm/2.75in, speed=60) reaches a 60in wait-until target") {
+TEST_CASE("pid_wait_until() DRIVE: a realistic cruise (200rpm/2.75in, speed=30) reaches a 60in wait-until target") {
   sim::SimArchetype a = archetype_for(200.0, 2.75);
   Drive chassis = make_chassis(a);
   sim::NoiseConfig no_noise{/*enabled=*/false, /*seed=*/1};
   sim::SimRobot sim(chassis, a, no_noise);
   chassis.pid_print_toggle(false);
 
-  chassis.pid_drive_set(60.0, 60);
+  chassis.pid_drive_set(60.0, 30);
   auto [returned, elapsed_ms] = run_capped([&] { chassis.pid_wait_until(60.0); }, 6000);
   double left_in = chassis.left_motors[0].fake().position / chassis.drive_tick_per_inch();
 
@@ -132,14 +105,14 @@ TEST_CASE("pid_wait_until() DRIVE: a realistic cruise (200rpm/2.75in, speed=60) 
   CHECK(left_in >= 60.0 * 0.90);
 }
 
-// Sweep: speed 60-127, gearings 200/333/360/450/600 rpm, two common wheel sizes, with and without sensor noise.  Every combination is a healthy cruise
-// on a straight 24in leg -- none of them should ever end the wait interfered, with or without noise.  Speeds under 60 are left out: on the slower
-// gearings they cruise at or under the velocity exit's 8 in/s floor (200rpm/2.75in at speed 30 is about 7 in/s), where the exit reads the robot as
+// Sweep: speed 30-127, gearings 200/333/360/450/600 rpm, two common wheel sizes, with and without sensor noise.  Every combination is a healthy cruise
+// on a straight 24in leg -- none of them should ever end the wait interfered, with or without noise.  Speeds 15 and 20 are left out: on the slower
+// gearings they cruise at or under the velocity exit's 5 in/s floor (200rpm/2.75in at speed 20 is about 4.5 in/s), where the exit reads the robot as
 // stopped once the arm fallback engages.
 namespace {
 const double kSweepRpms[] = {200.0, 333.0, 360.0, 450.0, 600.0};
 const double kSweepWheels[] = {2.75, 4.0};
-const int kSweepSpeeds[] = {60, 70, 100, 127};
+const int kSweepSpeeds[] = {30, 50, 70, 100, 127};
 const bool kSweepNoises[] = {false, true};
 
 struct SweepOutcome {
@@ -308,7 +281,7 @@ TEST_CASE("pid_wait_quick() DRIVE: a realistic cruise still finishes the leg, un
   sim::SimRobot sim(chassis, a, no_noise);
   chassis.pid_print_toggle(false);
 
-  chassis.pid_drive_set(60.0, 60);
+  chassis.pid_drive_set(60.0, 30);
   auto [returned, elapsed_ms] = run_capped([&] { chassis.pid_wait_quick(); }, 6000);
   double left_in = chassis.left_motors[0].fake().position / chassis.drive_tick_per_inch();
 
@@ -328,7 +301,7 @@ TEST_CASE("pid_wait_quick_chain() DRIVE: a realistic cruise still finishes the l
   sim::SimRobot sim(chassis, a, no_noise);
   chassis.pid_print_toggle(false);
 
-  chassis.pid_drive_set(60.0, 60);
+  chassis.pid_drive_set(60.0, 30);
   auto [returned, elapsed_ms] = run_capped([&] { chassis.pid_wait_quick_chain(); }, 6000);
   double left_in = chassis.left_motors[0].fake().position / chassis.drive_tick_per_inch();
 

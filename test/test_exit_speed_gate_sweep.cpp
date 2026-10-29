@@ -1,11 +1,11 @@
 // The undisturbed sweep: every kind of motion a team runs, on every kind of robot, with every set of exits teams use, ended by
 // every kind of wait, with nothing touching the robot. It is a harness for comparing commits as much as a test.
 //
-// Every row must return, and after a pid_wait() the robot must have stopped: it may travel at most 4 in (6.5 degrees) in the next
-// 500 ms, which is the stop speed times 500 ms. How many rows read interfered, and how many ended on an exit while the robot
+// Every row must return, and after a pid_wait() the robot must have stopped: it may travel at most 0.75 in (2 degrees) in the next
+// 500 ms, which is the stop speed times 500 ms, rounded. How many rows read interfered, and how many ended on an exit while the robot
 // still moved at or above the stop speed over that exit's time, are printed per exit set, not asserted: small and big can't count
-// while the library's speed is over the stop speed, and the velocity exit counts at or under the same stop speed, so a robot that crawls
-// under it for longer than velocity_exit_time (or stays over current for mA_timeout) ends on that exit, interfered.
+// while the library's speed is over the stop speed, and the velocity exit counts at or under 5 units/s, so a robot that crawls in
+// between those two speeds for longer than velocity_exit_time (or stays over current for mA_timeout) ends on that exit, interfered.
 //
 // The speed of the robot is the sim's own, never the library's. Set EZ_SWEEP_CSV=<path> to write one line per row (used to
 // compare against another commit); the rows are the same on every commit.
@@ -151,7 +151,6 @@ Row run_row(const sim::SimArchetype& arch, int passes, const ExitSet& es, const 
   Row row;
   row.key = arch_label + "," + es.name + "," + mo.name + "," + w.name;
   Rig r(arch, passes);
-  r.chassis.pid_exit_speed_window_set(40);  // 40 ms: even number of ticks, see test_speed_window.cpp
   r.chassis.pid_print_toggle(true);
   apply(r.chassis, es);
 
@@ -279,8 +278,8 @@ void run_sweep(const sim::SimArchetype& arch, int passes, const std::string& lab
           t.fast_settle.push_back(row.key + " (" + std::to_string(row.speed_at_end) + " vs " + std::to_string(row.speed_limit) + ")");
         if (row.returned && w.which == 0 && !row.hunting) {
           t.after_rows++;
-          double tight = row.angular ? 2.6 : 1.6;
-          double loose = row.angular ? 6.5 : 4.0;
+          double tight = row.angular ? 1.0 : 0.3;
+          double loose = row.angular ? 2.0 : 0.75;
           if (row.after > tight) t.after_over_tight++;
           if (row.after > loose) t.after_big.push_back(row.key + " (" + std::to_string(row.after) + ")");
         }
@@ -314,11 +313,7 @@ void run_sweep(const sim::SimArchetype& arch, int passes, const std::string& lab
     report("a wait did not return", t.not_returned, true);
     report("interfered on an undisturbed run", t.interfered, false);
     report("ended while still moving at or above the stop speed", t.fast_settle, false);
-    // A sticky robot can pause in stiction inside big_error, under the stop speed, for the big exit time, and the wait ends there before it breaks
-    // free and finishes the move.  The heavy and sticky robots also hunt about 1 degree on every pass around their target once they have settled,
-    // which the rig reads as travel.  Both are printed for those robots and not asserted
-    bool quiet_robot = label.find("sticky") == std::string::npos && label.find("heavy") == std::string::npos;
-    report("moved more than 4 in (6.5 deg) in the 500 ms after pid_wait() returned", t.after_big, quiet_robot);
+    report("moved more than 0.75 in (2 deg) in the 500 ms after pid_wait() returned", t.after_big, true);
   }
 }
 

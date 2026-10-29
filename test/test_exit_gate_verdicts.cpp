@@ -90,14 +90,14 @@ TEST_CASE("a sticky robot's fast-exit chained swing is clean when it settles ins
   CHECK_FALSE(r.chassis.interfered);
 }
 
-// It crawls in at about 2.5 in/s and the velocity exit ends the wait at 22.6 in, before it crosses the checkpoint: clean, as it is inside big_error
+// It crawls in at about 2.5 in/s and the velocity exit ends the wait at 23.1 in, before it crosses the checkpoint: clean, as it is inside big_error
 TEST_CASE("the corpus exits on a sticky robot: pid_wait_until(23.5 in) on a 24 in drive returns near the checkpoint, clean") {
   Rig r(sim::archetype_sticky_high_friction(), 1);
   exits_from_corpus(r.chassis);
   r.chassis.pid_drive_set(24_in, 110, true);
   REQUIRE(r.wait([&] { r.chassis.pid_wait_until(23.5_in); }, 3000));
   CHECK_FALSE(r.chassis.interfered);
-  CHECK(r.trace.back().avg >= 22.5);
+  CHECK(r.trace.back().avg >= 23.0);
 }
 
 TEST_CASE("a chained drive with the fast exits is not interfered") {

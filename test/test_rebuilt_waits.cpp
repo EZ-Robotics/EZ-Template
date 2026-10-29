@@ -189,7 +189,7 @@ TEST_CASE("an odom pid_wait_until(distance) returns when the move ends short of 
                        400);
   REQUIRE(m.returned);
   CHECK(m.passes * 0.1 > 19.5);
-  CHECK(m.passes * 0.1 > look_ahead + 2.0);
+  CHECK(m.passes * 0.1 > look_ahead + 5.0);
 }
 
 TEST_CASE("a turn wait_until checkpoint already passed at entry returns at once") {

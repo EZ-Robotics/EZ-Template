@@ -36,7 +36,7 @@ Drive make_sim_chassis(const sim::SimArchetype& a) {
   return Drive({1, -2}, {-3, 4}, 5, a.wheel_diameter_in, a.cartridge_rpm);
 }
 
-constexpr std::uint32_t GOLDEN_T0 = 370, GOLDEN_T1 = 900, GOLDEN_T2 = 1280;  // T0 captured on a107ac8, T1 and T2 recaptured with the 30 ms exit defaults
+constexpr std::uint32_t GOLDEN_T0 = 370, GOLDEN_T1 = 960, GOLDEN_T2 = 1330;  // captured on a107ac8
 }  // namespace
 
 // ---------------------------------------------------------------------------------------------------------------------

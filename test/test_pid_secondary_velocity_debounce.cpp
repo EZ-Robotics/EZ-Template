@@ -32,7 +32,6 @@ TEST_CASE("PID secondary velocity timer clears on a single above-threshold readi
   test_stub::reset_all();
   test_stub::g_clock.now_ms = 0;
   PID pid;
-  pid.speed_window_set(100);  // These timelines are worked out for a 100 ms speed window
   pid.exit_condition_set(0, 0, 0, 0, 50, 0);
   pid.velocity_sensor_secondary_toggle_set(true);
   pid.velocity_sensor_secondary_set(0.0);  // stationary
@@ -56,7 +55,6 @@ TEST_CASE("PID secondary velocity timer: a sensor jittering every other pass nev
   test_stub::reset_all();
   test_stub::g_clock.now_ms = 0;
   PID pid;
-  pid.speed_window_set(100);  // These timelines are worked out for a 100 ms speed window
   pid.exit_condition_set(0, 0, 0, 0, 50, 0);
   pid.velocity_sensor_secondary_toggle_set(true);
   pid.velocity_sensor_secondary_set(0.0);
@@ -75,7 +73,6 @@ TEST_CASE("PID secondary velocity timer still clears on sustained above-threshol
   test_stub::reset_all();
   test_stub::g_clock.now_ms = 0;
   PID pid;
-  pid.speed_window_set(100);  // These timelines are worked out for a 100 ms speed window
   pid.exit_condition_set(0, 0, 0, 0, 50, 0);
   pid.velocity_sensor_secondary_toggle_set(true);
   pid.velocity_sensor_secondary_set(0.0);
