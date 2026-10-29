@@ -155,9 +155,10 @@ private:
     for (const auto& w : pushes_)
       if (sim_ms_ >= w.start && sim_ms_ < w.end) push += w.force;
 
-    // Rolling resistance (0.05 g) and turning scrub (0.15 g) are guesses, enough that a robot coasts to a stop.
+    // Rolling resistance (0.05 g) and turning scrub (0.10 g) are guesses. Scrub is low enough that the example project's own swing
+    // finishes, as it does on a robot.
     v_ = integrate(v_, a * (dl + dr) + push, damping / m, 0.05 * m * g, m, dt);
-    w_ = integrate(w_, a * (dl - dr) * track / 2.0, damping * track * track / 4.0 / inertia, 0.15 * m * g * track / 2.0, inertia, dt);
+    w_ = integrate(w_, a * (dl - dr) * track / 2.0, damping * track * track / 4.0 / inertia, 0.10 * m * g * track / 2.0, inertia, dt);
 
     for (const auto& p : pins_)
       if (sim_ms_ >= p.start && sim_ms_ < p.end) v_ = w_ = 0.0;

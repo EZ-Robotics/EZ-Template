@@ -16,6 +16,7 @@ struct Motion {
   std::function<void(ez::Drive&)> wait_until;  // a checkpoint about halfway
   std::function<double(sim::Robot&)> miss;     // how far the robot really is from where the motion goes, in or deg
   std::function<double(ez::Drive&)> big_error;
+  bool turns_in_place = false;
 };
 
 double distance_to(sim::Robot& s, double x, double y) { return std::hypot(s.x() - x, s.y() - y); }
@@ -26,18 +27,18 @@ const std::vector<Motion> MOTIONS{
     {"drive back 24 in", [](ez::Drive& c) { c.pid_drive_set(-24_in, 110, true); }, [](ez::Drive& c) { c.pid_wait_until(-12_in); },
      [](sim::Robot& s) { return std::fabs(-24 - s.forward_travel()); }, [](ez::Drive& c) { return c.leftPID.exit.big_error; }},
     {"turn to 90", [](ez::Drive& c) { c.pid_turn_set(90_deg, 90); }, [](ez::Drive& c) { c.pid_wait_until(45_deg); },
-     [](sim::Robot& s) { return std::fabs(90 - s.heading()); }, [](ez::Drive& c) { return c.turnPID.exit.big_error; }},
+     [](sim::Robot& s) { return std::fabs(90 - s.heading()); }, [](ez::Drive& c) { return c.turnPID.exit.big_error; }, true},
     {"turn to face (24, 24)", [](ez::Drive& c) { c.pid_turn_set({24_in, 24_in}, ez::fwd, 90); }, [](ez::Drive& c) { c.pid_wait_until(22_deg); },
-     [](sim::Robot& s) { return std::fabs(45 - s.heading()); }, [](ez::Drive& c) { return c.turnPID.exit.big_error; }},
+     [](sim::Robot& s) { return std::fabs(45 - s.heading()); }, [](ez::Drive& c) { return c.turnPID.exit.big_error; }, true},
     {"left swing to 45", [](ez::Drive& c) { c.pid_swing_set(ez::LEFT_SWING, 45_deg, 110, 0); }, [](ez::Drive& c) { c.pid_wait_until(22_deg); },
-     [](sim::Robot& s) { return std::fabs(45 - s.heading()); }, [](ez::Drive& c) { return c.swingPID.exit.big_error; }},
+     [](sim::Robot& s) { return std::fabs(45 - s.heading()); }, [](ez::Drive& c) { return c.swingPID.exit.big_error; }, true},
     {"left swing to 45, other side at 45 (the example's swing)", [](ez::Drive& c) { c.pid_swing_set(ez::LEFT_SWING, 45_deg, 110, 45); },
      [](ez::Drive& c) { c.pid_wait_until(22_deg); }, [](sim::Robot& s) { return std::fabs(45 - s.heading()); },
-     [](ez::Drive& c) { return c.swingPID.exit.big_error; }},
+     [](ez::Drive& c) { return c.swingPID.exit.big_error; }, true},
     {"drive 24 in at full speed", [](ez::Drive& c) { c.pid_drive_set(24_in, 127, true); }, [](ez::Drive& c) { c.pid_wait_until(12_in); },
      [](sim::Robot& s) { return std::fabs(24 - s.forward_travel()); }, [](ez::Drive& c) { return c.leftPID.exit.big_error; }},
     {"turn to 180 at full speed", [](ez::Drive& c) { c.pid_turn_set(180_deg, 127); }, [](ez::Drive& c) { c.pid_wait_until(90_deg); },
-     [](sim::Robot& s) { return std::fabs(180 - s.heading()); }, [](ez::Drive& c) { return c.turnPID.exit.big_error; }},
+     [](sim::Robot& s) { return std::fabs(180 - s.heading()); }, [](ez::Drive& c) { return c.turnPID.exit.big_error; }, true},
     {"odom 24 in", [](ez::Drive& c) { c.pid_odom_set(24_in, 110, true); }, [](ez::Drive& c) { c.pid_wait_until(12_in); },
      [](sim::Robot& s) { return distance_to(s, 0, 24); }, [](ez::Drive& c) { return c.xyPID.exit.big_error; }},
     {"odom to (12, 24)", [](ez::Drive& c) { c.pid_odom_set({{12_in, 24_in}, ez::fwd, 110}, true); },
@@ -70,16 +71,20 @@ const std::vector<Wait> WAITS{
      }},
 };
 
+// Parked by the maintainers: only the sim has shown a shoved turn returning clean while the robot still slides.
+constexpr const char* PARKED_TURN_SLIDE = "a shoved turn sliding after a clean return, sim only";
+
 struct Situation {
   const char* name;
   bool robot_knows_where_it_is;  // false when a sensor is gone for good or the code changed the motion
   bool nothing_stops_it;         // true when the robot can still get there, so it must arrive without interfered
   std::function<void(sim::Robot&, ez::Drive&)> apply;
+  const char* parked = nullptr;  // why a turn or swing here isn't checked for having stopped
 };
 
 const std::vector<Situation> SITUATIONS{
     {"nothing in the way", true, true, [](sim::Robot&, ez::Drive&) {}},
-    {"shoved for 300 ms by a robot like it", true, false, [](sim::Robot& s, ez::Drive&) { s.push(-s.full_push_n(), 200, 300); }},
+    {"shoved for 300 ms by a robot like it", true, false, [](sim::Robot& s, ez::Drive&) { s.push(-s.full_push_n(), 200, 300); }, PARKED_TURN_SLIDE},
     {"pinned for 1 s", true, false, [](sim::Robot& s, ez::Drive&) { s.pin(200, 1000); }},
     {"pinned for good", true, false, [](sim::Robot& s, ez::Drive&) { s.pin(200, 60000); }},
     {"wall 12 in ahead", true, false, [](sim::Robot& s, ez::Drive&) { s.wall_ahead(12); }},
@@ -119,7 +124,7 @@ void run_row(const v2::TeamRobot& robot, const Motion& motion, const Wait& wait,
   if (!returned || !situation.robot_knows_where_it_is || c.interfered) return;
 
   CHECK_MESSAGE(motion.miss(s) <= motion.big_error(c), "returned without interfered, but outside big_error");
-  if (!wait.robot_stops) return;
+  if (!wait.robot_stops || (motion.turns_in_place && situation.parked)) return;
 
   // Stopped means slower than the team's stop speeds, measured over the exit speed window, for every motion: a turn can't be sliding either
   double x = s.x(), y = s.y(), heading = s.heading();

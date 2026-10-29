@@ -50,9 +50,13 @@ TEST_CASE("Promise 5: the field disabling the robot mid-motion stops the drive, 
     }
     CHECK(held_at_zero);
 
-    // Enabled again for the next autonomous: a new motion runs as asked
+    // Enabled again for the next autonomous, which starts the way the example's autonomous() does: a new motion runs as asked
     test_stub::g_competition.disabled = false;
     test_stub::g_competition.autonomous = true;
+    c.pid_targets_reset();
+    c.drive_imu_reset();
+    c.drive_sensor_reset();
+    c.odom_xyt_set(0_in, 0_in, 0_deg);
     double travel = s.forward_travel();
     c.pid_drive_set(12_in, 110);
     CHECK(wait_returns(s, [&] { c.pid_wait(); }));
