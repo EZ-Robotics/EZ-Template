@@ -117,7 +117,8 @@ private:
 
   double free_speed_m_s() const { return wheel_rpm_ / 60.0 * M_PI * wheel_diameter_in_ * 0.0254; }
 
-  // One side's push at stall: VEX lists the V5 motor at 2.1 N*m stall with the 100 rpm cartridge, scaled here by gearing.
+  // One side's push at stall. Like EZ-Template, the motor's cartridge is taken to be the wheel rpm with 1:1 external gearing.
+  // VEX lists the V5 motor at 2.1 N*m stall with the 100 rpm cartridge, and torque scales as 100 / rpm for any other cartridge.
   double stall_force_n() const {
     double wheel_torque = 2.1 * 100.0 / wheel_rpm_;
     return drive_.left_motors.size() * wheel_torque / (wheel_diameter_in_ / 2.0 * 0.0254);
