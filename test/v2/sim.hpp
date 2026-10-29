@@ -57,6 +57,8 @@ public:
   void fail_one_read(int start) { fail_read_at_ = now() + start; }
   // The drive's real gearing changes. The encoders keep counting, but each count is now a different distance.
   void shift_to(double new_wheel_rpm) { wheel_rpm_ = new_wheel_rpm; }
+  // Someone pushes the robot forward by hand, at rest, and lets go. The wheels and encoders turn with it.
+  void slide(double inches) { move(inches, 0.0); }
 
   // Where the robot really is. Heading is clockwise positive, like the IMU. y is forward at heading 0.
   double x() const { return x_in_; }
@@ -131,11 +133,14 @@ private:
     double wheel_torque = 2.1 * 100.0 / wheel_rpm_;
     return drive_.left_motors.size() * wheel_torque / (wheel_diameter_in_ / 2.0 * 0.0254);
   }
-  static double duty(const std::vector<pros::Motor>& side) { return side.front().fake().voltage / 12000.0; }
+  // While the field has the robot disabled, VEXos keeps every motor limp whatever it was last told.
+  static bool disabled() { return test_stub::g_competition.disabled; }
+  static double duty(const std::vector<pros::Motor>& side) { return disabled() ? 0.0 : side.front().fake().voltage / 12000.0; }
 
   // A motor pushes stall_force * (duty - speed / free_speed). At 0 volts in brake or hold it is shorted and the speed
   // term still slows it. At 0 volts in coast it does nothing.
   static bool motor_acts(const std::vector<pros::Motor>& side) {
+    if (disabled()) return false;
     return side.front().fake().voltage != 0.0 || side.front().fake().brake_mode != pros::E_MOTOR_BRAKE_COAST;
   }
 
