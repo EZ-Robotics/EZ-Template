@@ -23,8 +23,8 @@ ez::Drive chassis(
 // ez::tracking_wheel horiz_tracker(8, 2.75, 4.0);  // This tracking wheel is perpendicular to the drive wheels
 // ez::tracking_wheel vert_tracker(9, 2.75, 4.0);   // This tracking wheel is parallel to the drive wheels
 
-ez::tracking_wheel left_tracker({'A', 'B'}, 2.75, 4.0);
-ez::tracking_wheel right_tracker({'C', 'D'}, 2.75, 4.0);
+// ez::tracking_wheel left_tracker({'A', 'B'}, 2.75, 4.0);
+// ez::tracking_wheel right_tracker({'C', 'D'}, 2.75, 4.0);
 
 /**
  * Runs initialization code. This occurs as soon as the program is started.
@@ -46,8 +46,8 @@ void initialize() {
   //  - ignore this if you aren't using a vertical tracker
   // chassis.odom_tracker_left_set(&vert_tracker);
 
-  chassis.odom_tracker_left_set(&left_tracker);
-  chassis.odom_tracker_right_set(&right_tracker);
+  // chassis.odom_tracker_left_set(&left_tracker);
+  // chassis.odom_tracker_right_set(&right_tracker);
 
   // Configure your chassis controls
   // chassis.opcontrol_curve_buttons_toggle(true);  // Uncomment to enable modifying the controller curve with buttons on the joysticks (off by default)

@@ -6495,15 +6495,14 @@ public:
 
   /**
    * Sets how slow the robot has to be moving to count as stopped when it drives, in inches per second.  This is a real speed, not the 0 to 127
-   * motor speed.  The default is 1.5.
+   * motor speed.  The default is 8.
    *
-   * The robot's speed is how far it moved over the last 100 ms.  The small and big exits only count time while the robot is under this speed (the
-   * timer pauses while it is moving, it does not start over).  The velocity exit does not use it: it ends a wait when the robot has been under 5
-   * inches per second (5 degrees per second for turns) for the velocity exit time.  A higher speed ends motions sooner, with the
-   * robot still moving a little.  A lower one waits for the robot to be stiller.  A speed of 0 or less, or one that isn't a number, is refused with
-   * a printed warning and the old speed is kept.
+   * The robot's speed is how far it moved over the speed window (see pid_exit_speed_window_set()).  The small and big exits only count time while the robot is
+   * under this speed (the timer pauses while it is moving, it does not start over).  The velocity exit uses it too: it ends a wait when the robot has been
+   * under this speed for the velocity exit time.  A higher speed ends motions sooner, with the robot still moving a little.  A lower one waits for the robot to
+   * be stiller.  A speed of 0 or less, or one that isn't a number, is refused with a printed warning and the old speed is kept.
    *
-   * Applies to drives and odom moves.  The default is a placeholder until it is tuned from a robot log.
+   * Applies to drives and odom moves.
    *
    * \param in_per_s
    *        inches per second
@@ -6525,11 +6524,10 @@ public:
 
   /**
    * Sets how slow the robot has to be turning to count as stopped when it turns or swings, in degrees per second.  This is a real speed, not the
-   * 0 to 127 motor speed.  The default is 4.
+   * 0 to 127 motor speed.  The default is 13.
    *
-   * Works the same as pid_distance_exit_stop_speed_set(): measured over the last 100 ms, the small and big exits pause their timers while the
-   * robot is above it, and the velocity exit does not use it.  Applies to turns, swings, and the heading of odom moves.  The default is a
-   * placeholder until it is tuned from a robot log.
+   * Works the same as pid_distance_exit_stop_speed_set(): measured over the speed window, the small and big exits pause their timers while the
+   * robot is above it, and the velocity exit runs while the robot is under it.  Applies to turns, swings, and the heading of odom moves.
    *
    * \param deg_per_s
    *        degrees per second
@@ -6548,6 +6546,49 @@ public:
    * Returns how slow a turn or swing has to be moving to count as stopped, in degrees per second.
    */
   double pid_angle_exit_stop_speed_get();
+
+  /**
+   * Sets how long, in milliseconds, the robot's speed is measured over.  Every exit reads this speed: the stop speed that the small and big exits
+   * pause on, and the velocity exit.  A shorter window reacts sooner but is rougher, because the sensors only move in steps.  A longer one is
+   * steadier but reacts later.  The default is 30.  A window under 10 ms (one tick) is refused with a printed warning and the old window is kept.
+   *
+   * Applies to drives, turns, swings and odom moves.
+   *
+   * \param ms
+   *        milliseconds
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.pid_exit_speed_window_set(50);  // Measure speed over 50 ms
+   * }
+   * \endcode
+   */
+  void pid_exit_speed_window_set(int ms);
+
+  /**
+   * Same as pid_exit_speed_window_set(int), with a time that has units: `50_ms`.
+   *
+   * \param window
+   *        time with units
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   chassis.pid_exit_speed_window_set(50_ms);
+   * }
+   * \endcode
+   */
+  void pid_exit_speed_window_set(ez::QTime window);
+
+  /**
+   * Returns how long, in milliseconds, the robot's speed is measured over.
+   *
+   * \code{.cpp}
+   * void initialize() {
+   *   printf("Speed window: %i ms\n", chassis.pid_exit_speed_window_get());  // This prints 30
+   * }
+   * \endcode
+   */
+  int pid_exit_speed_window_get();
 
   /**
    * Returns the conversion between raw sensor value and inches.
