@@ -22,7 +22,7 @@ AutonSelector auton_selector{};
 
 void auto_sd_update() {
   // If no SD card, return
-  if (!ez::util::SD_CARD_ACTIVE) return;
+  if (!pros::usd::is_installed()) return;
 
   FILE* usd_file_write = fopen("/usd/auto.txt", "w");
   if (usd_file_write == nullptr) return;
@@ -34,7 +34,7 @@ void auto_sd_update() {
 
 void auton_selector_initialize() {
   // If no SD card, return
-  if (!ez::util::SD_CARD_ACTIVE) return;
+  if (!pros::usd::is_installed()) return;
 
   FILE* as_usd_file_read;
   // If file exists...
