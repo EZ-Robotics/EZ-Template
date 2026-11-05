@@ -42,7 +42,7 @@ std::vector<double> Drive::opcontrol_curve_default_get() { return {left_curve_sc
 // Initialize curve SD card
 void Drive::opcontrol_curve_sd_initialize() {
   // If no SD card, return
-  if (!ez::util::SD_CARD_ACTIVE) return;
+  if (!pros::usd::is_installed()) return;
 
   FILE* l_usd_file_read;
   // If file exists...
@@ -90,7 +90,7 @@ void Drive::opcontrol_curve_sd_initialize() {
 // Save new left curve to SD card
 void Drive::save_l_curve_sd() {
   // If no SD card, return
-  if (!ez::util::SD_CARD_ACTIVE) return;
+  if (!pros::usd::is_installed()) return;
 
   // fopen still fails if the card is missing or pulled after boot; writing to
   // a null FILE is a data abort that pros silently skips, wedging the task.
@@ -105,7 +105,7 @@ void Drive::save_l_curve_sd() {
 // Save new right curve to SD card
 void Drive::save_r_curve_sd() {
   // If no SD card, return
-  if (!ez::util::SD_CARD_ACTIVE) return;
+  if (!pros::usd::is_installed()) return;
 
   FILE* usd_file_write = fopen("/usd/right_curve.txt", "w");
   if (usd_file_write == nullptr) return;
