@@ -12,7 +12,6 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 pros::Controller master(pros::E_CONTROLLER_MASTER);
 
 namespace ez {
-int mode = DISABLE;
 
 void ez_template_print() {
   std::cout << R"(
