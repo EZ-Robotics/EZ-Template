@@ -344,7 +344,10 @@ double curve_scale_clamp(double scale);
 std::pair<double, double> curvature_mix(double fwd, double turn, double point_turn_gain);
 
 /**
- * Is the SD card plugged in?
+ * Was the SD card plugged in when the program started?
+ *
+ * This is read once at program start and doesn't change if a card is plugged in or pulled later.
+ * Use `pros::usd::is_installed()` to check the card right now.
  */
 const bool SD_CARD_ACTIVE = pros::usd::is_installed();
 
