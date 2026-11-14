@@ -198,23 +198,14 @@ std::vector<odom> Drive::inject_points(std::vector<ez::odom> imovements, std::ve
   return output;
 }
 
-// Path smoothing based on https://medium.com/@jaems33/understanding-robot-motion-path-smoothing-5970c8363bc4
-std::vector<odom> Drive::smooth_path(std::vector<odom> ipath, double weight_smooth, double weight_data, double tolerance) {
-  if (ipath.size() < 3) return ipath;
-
-  std::vector<std::array<double, 3>> path(ipath.size());
-  std::vector<std::array<double, 3>> new_path(ipath.size());
+// Which points of a path smooth_path() must not move
+std::vector<bool> Drive::path_dont_touch_mask(const std::vector<odom>& ipath) {
   std::vector<bool> dont_touch;
   int t = 0;
   bool allow_injecting = false;
   bool boomerang_after_not_done = false;
 
-  // Convert odom to array
   for (std::size_t i = 0; i < ipath.size(); i++) {
-    path[i][0] = new_path[i][0] = ipath[i].target.x;
-    path[i][1] = new_path[i][1] = ipath[i].target.y;
-    path[i][2] = new_path[i][2] = ipath[i].target.theta;
-
     bool dont_touch_this_point = false;
 
     // A one time flag to stop points from being smoothed for LOOK_AHEAD from current
@@ -242,6 +233,24 @@ std::vector<odom> Drive::smooth_path(std::vector<odom> ipath, double weight_smoo
       boomerang_after_not_done = true;
       t++;
     }
+  }
+
+  return dont_touch;
+}
+
+// Path smoothing based on https://medium.com/@jaems33/understanding-robot-motion-path-smoothing-5970c8363bc4
+std::vector<odom> Drive::smooth_path(std::vector<odom> ipath, double weight_smooth, double weight_data, double tolerance) {
+  if (ipath.size() < 3) return ipath;
+
+  std::vector<std::array<double, 3>> path(ipath.size());
+  std::vector<std::array<double, 3>> new_path(ipath.size());
+  std::vector<bool> dont_touch = path_dont_touch_mask(ipath);
+
+  // Convert odom to array
+  for (std::size_t i = 0; i < ipath.size(); i++) {
+    path[i][0] = new_path[i][0] = ipath[i].target.x;
+    path[i][1] = new_path[i][1] = ipath[i].target.y;
+    path[i][2] = new_path[i][2] = ipath[i].target.theta;
   }
 
   // Constants that are valid but close to the limit settle very slowly, this keeps them from stalling the caller
