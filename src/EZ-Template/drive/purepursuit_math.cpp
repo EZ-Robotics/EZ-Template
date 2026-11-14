@@ -227,6 +227,10 @@ std::vector<bool> Drive::path_dont_touch_mask(const std::vector<odom>& ipath) {
       dont_touch_this_point = true;
     }
 
+    // Hold the waypoint where the path flips between fwd and rev, so smoothing can't mix the two legs of the fold.
+    // inject_points() gives a waypoint its own leg's direction and the points after it the next leg's.
+    if (i + 1 < ipath.size() && ipath[i].drive_direction != ipath[i + 1].drive_direction) dont_touch_this_point = true;
+
     dont_touch.push_back(dont_touch_this_point);
 
     if (ipath[i].target.theta != ANGLE_NOT_SET) {
