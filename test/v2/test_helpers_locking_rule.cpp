@@ -17,7 +17,8 @@ namespace fs = std::filesystem;
 
 // Functions that are only ever called with the chassis lock held, and are not themselves inside a guard's scope.
 const std::vector<std::string> kLockedHelpers = {
-    "Drive::check_imu_task(", "Drive::raw_pid_odom_ptp_set(", "Drive::smooth_path(", "Drive::inject_points(", "Drive::raw_pid_odom_pp_set(",
+    "Drive::check_imu_task(",       "Drive::raw_pid_odom_ptp_set(", "Drive::smooth_path(",
+    "Drive::path_dont_touch_mask(", "Drive::inject_points(",        "Drive::raw_pid_odom_pp_set(",
 };
 
 // Functions where a PlainGuard is allowed, because the task that runs them is never deleted by PROS: ez_auto_task, and

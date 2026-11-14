@@ -7510,6 +7510,7 @@ private:
   // public pid_speed_max_set().
   void pid_speed_max_set_internal(int speed);
   std::vector<odom> smooth_path(std::vector<odom> ipath, double weight_smooth, double weight_data, double tolerance);
+  std::vector<bool> path_dont_touch_mask(const std::vector<odom>& ipath);
   double is_past_target(pose target, pose current);
   void raw_pid_odom_pp_set(std::vector<odom> imovements, bool slew_on);
   bool ptf1_running = false;
