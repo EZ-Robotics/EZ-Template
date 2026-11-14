@@ -225,7 +225,7 @@ std::vector<odom> Drive::smooth_path(std::vector<odom> ipath, double weight_smoo
     if (boomerang_after_not_done) {
       t++;
       dont_touch_this_point = true;
-      if (t >= odom_look_ahead_get() / SPACING) {
+      if (t > odom_look_ahead_get() / SPACING) {
         t = 0;
         boomerang_after_not_done = false;
       }
